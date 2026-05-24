@@ -1,56 +1,37 @@
 'use client';
-// src/app/workspace/[projectId]/page.js — Enterprise board page
-import { use, useState, useEffect, useCallback } from 'react';
-import { useAppContext } from '@/lib/context/AppContext';
-import { useIssues } from '@/lib/hooks/useIssues';
+// src/app/workspace/[projectId]/page.js — Board page (YouTrack-style navigation)
+import { use, useCallback } from 'react';
+import { useAppContext }  from '@/lib/context/AppContext';
+import { useIssues }     from '@/lib/hooks/useIssues';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
-import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
-import { useComments } from '@/lib/hooks/useComments';
-import { useAuditLog } from '@/lib/hooks/useAuditLog';
-import useWorkspaceStore from '@/store/useWorkspaceStore';
-import AgileBoard from '@/components/workspace/AgileBoard';
-import IssueModal from '@/components/workspace/IssueModal';
-import PortalPanel from '@/components/workspace/PortalPanel';
+import useWorkspaceStore  from '@/store/useWorkspaceStore';
+import AgileBoard        from '@/components/workspace/AgileBoard';
+import PortalPanel       from '@/components/workspace/PortalPanel';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
-import Link from 'next/link';
-import { ArrowLeft, BarChart2, List, MessageSquare } from 'lucide-react';
+import { useState }      from 'react';
+import Link              from 'next/link';
+import { ArrowLeft, BarChart2, List, MessageSquare, Plus } from 'lucide-react';
 
 export default function BoardPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser } = useAppContext();
-  const { issues, loading, createIssue, updateIssue, deleteIssue, moveIssue } = useIssues(projectId);
+  const { issues, loading, createIssue, moveIssue } = useIssues(projectId);
   const { showToast, activeTimer } = useWorkspaceStore();
-  const [activeIssue, setActiveIssue]   = useState(null);
-  const [portalOpen,  setPortalOpen]    = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
 
-  const project = projects?.find(p => p.id === projectId);
+  const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
 
-  // Portal materials for this project
-  const { stages } = useStagesForProject(projectId);
-  const materials = stages.flatMap(s => s.materials || []);
-
-  // Hooks for active issue data
-  const { logs: timeLogs, addTimeLog } = useTimeLogs(activeIssue?.id);
-  const { comments, addComment }       = useComments(activeIssue?.id);
-  const { logs: auditLogs }            = useAuditLog(activeIssue?.id);
-
-  // Keep activeIssue synced with live data
-  useEffect(() => {
-    if (!activeIssue) return;
-    const updated = issues.find(i => i.id === activeIssue.id);
-    if (updated) setActiveIssue(updated);
-  }, [issues]); // eslint-disable-line
-
-  // ── Handlers ──────────────────────────────────────────────────────
+  // Portal materials
+  const { stages }  = useStagesForProject(projectId);
+  const materials   = stages.flatMap(s => s.materials || []);
 
   const handleAddIssue = useCallback(async (columnId, title) => {
     try {
       await createIssue({ title, columnId }, currentUser?.id || currentUser?.uid);
       showToast('Задачу додано ✓');
     } catch (err) {
-      console.error(err);
       showToast('Помилка: ' + err.message, 'error');
     }
   }, [createIssue, currentUser, showToast]);
@@ -62,55 +43,6 @@ export default function BoardPage({ params }) {
       showToast(err.message || 'Помилка переміщення', 'error');
     }
   }, [moveIssue, currentUser, showToast]);
-
-  const handleUpdate = useCallback(async (patch) => {
-    if (!activeIssue) return;
-    try {
-      await updateIssue(activeIssue.id, patch, currentUser?.id, currentUser?.name);
-    } catch (err) {
-      showToast('Помилка збереження', 'error');
-    }
-  }, [activeIssue, updateIssue, currentUser, showToast]);
-
-  const handleDelete = useCallback(async () => {
-    if (!activeIssue) return;
-    await deleteIssue(activeIssue.id);
-    setActiveIssue(null);
-    showToast('Задачу видалено');
-  }, [activeIssue, deleteIssue, showToast]);
-
-  const handleAddComment = useCallback(async (text) => {
-    if (!activeIssue) return;
-    await addComment(activeIssue.id, text, currentUser);
-  }, [activeIssue, addComment, currentUser]);
-
-  const handleLogTime = useCallback(async (minutes, description) => {
-    if (!activeIssue) return;
-    await addTimeLog(
-      activeIssue.id,
-      projectId,
-      currentUser?.id || currentUser?.uid,
-      minutes,
-      description,
-    );
-    // Update issue spentMinutes aggregate
-    const newSpent = (activeIssue.spentMinutes || 0) + minutes;
-    await updateIssue(activeIssue.id, { spentMinutes: newSpent });
-    showToast(`${minutes} хв списано ✓`);
-  }, [activeIssue, addTimeLog, projectId, currentUser, updateIssue, showToast]);
-
-  const handleAddSubtask = useCallback(async (title) => {
-    if (!activeIssue) return;
-    const subs = [...(activeIssue.subtasks || []), { title, done: false }];
-    await handleUpdate({ subtasks: subs });
-  }, [activeIssue, handleUpdate]);
-
-  const handleToggleSubtask = useCallback(async (index) => {
-    if (!activeIssue) return;
-    const subs = [...(activeIssue.subtasks || [])];
-    subs[index] = { ...subs[index], done: !subs[index].done };
-    await handleUpdate({ subtasks: subs });
-  }, [activeIssue, handleUpdate]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
@@ -132,8 +64,7 @@ export default function BoardPage({ params }) {
             className="flex items-center gap-[6px] px-3 py-[6px] text-[11px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-[8px] transition-all">
             <BarChart2 size={13} /> Reports
           </Link>
-          <button
-            onClick={() => setPortalOpen(o => !o)}
+          <button onClick={() => setPortalOpen(o => !o)}
             className={`flex items-center gap-[6px] px-3 py-[6px] text-[11px] font-semibold rounded-[8px] transition-all ${
               portalOpen ? 'bg-[#6366f1] text-white' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7]'
             }`}>
@@ -153,8 +84,8 @@ export default function BoardPage({ params }) {
             <AgileBoard
               issues={issues}
               members={members}
+              projectId={projectId}
               activeTimerIssueId={activeTimer?.issueId}
-              onCardClick={setActiveIssue}
               onAddIssue={handleAddIssue}
               onMoveIssue={handleMoveIssue}
             />
@@ -169,24 +100,6 @@ export default function BoardPage({ params }) {
           />
         )}
       </div>
-
-      {/* Issue modal */}
-      {activeIssue && (
-        <IssueModal
-          issue={activeIssue}
-          members={members}
-          comments={comments}
-          timeLogs={timeLogs}
-          auditLogs={auditLogs}
-          onClose={() => setActiveIssue(null)}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-          onAddComment={handleAddComment}
-          onLogTime={handleLogTime}
-          onAddSubtask={handleAddSubtask}
-          onToggleSubtask={handleToggleSubtask}
-        />
-      )}
     </div>
   );
 }

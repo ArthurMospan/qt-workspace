@@ -3,6 +3,7 @@
 import UserAvatar from '@/components/UserAvatar';
 import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Bug, Star, CheckSquare, Clock, Link2 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
+import { useRouter } from 'next/navigation';
 
 const TYPE_CONFIG = {
   epic:    { icon: Zap,         color: '#8b5cf6', bg: '#f5f3ff', label: 'Epic' },
@@ -25,8 +26,9 @@ function formatMinutes(min) {
   return h > 0 ? `${h}г${m > 0 ? ` ${m}хв` : ''}` : `${m}хв`;
 }
 
-export default function IssueCard({ issue, members = [], index, onClick, isTimerActive }) {
-  const type = TYPE_CONFIG[issue.type] || TYPE_CONFIG.task;
+export default function IssueCard({ issue, members = [], index, projectId, isTimerActive }) {
+  const router   = useRouter();
+  const type     = TYPE_CONFIG[issue.type] || TYPE_CONFIG.task;
   const priority = PRIORITY_CONFIG[issue.priority] || PRIORITY_CONFIG.medium;
   const TypeIcon = type.icon;
   const PriorityIcon = priority.icon;
@@ -49,7 +51,7 @@ export default function IssueCard({ issue, members = [], index, onClick, isTimer
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={onClick}
+          onClick={() => router.push(`/workspace/${projectId}/issue/${issue.id}`)}
           className={`bg-white rounded-[10px] border p-3 cursor-pointer select-none transition-all
             ${snapshot.isDragging
               ? 'border-[#1f1f1f] shadow-xl rotate-[0.5deg] opacity-95'

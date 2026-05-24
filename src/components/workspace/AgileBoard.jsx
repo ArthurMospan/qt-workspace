@@ -61,7 +61,7 @@ function InlineAdd({ onAdd }) {
   );
 }
 
-export default function AgileBoard({ issues, members, activeTimerIssueId, onCardClick, onAddIssue, onMoveIssue }) {
+export default function AgileBoard({ issues, members, projectId, activeTimerIssueId, onAddIssue, onMoveIssue }) {
   const onDragEnd = ({ draggableId, source, destination }) => {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -107,7 +107,7 @@ export default function AgileBoard({ issues, members, activeTimerIssueId, onCard
                         issue={issue}
                         members={members}
                         index={i}
-                        onClick={() => onCardClick(issue)}
+                        projectId={projectId}
                         isTimerActive={activeTimerIssueId === issue.id}
                       />
                     ))}
