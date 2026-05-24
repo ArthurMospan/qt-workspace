@@ -36,6 +36,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     assignees: [], dueDate: '',
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -51,14 +52,18 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     e.preventDefault();
     if (!form.title.trim()) return;
     setLoading(true);
+    setError('');
     try {
       await onSubmit({
         ...form,
-        createdBy: currentUser?.uid,
+        createdBy: currentUser?.id || currentUser?.uid,
         dueDate: form.dueDate ? new Date(form.dueDate) : null,
       });
       setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '' });
       onClose();
+    } catch (err) {
+      console.error('[CreateTask]', err);
+      setError(err?.message || 'Помилка створення задачі. Перевір консоль.');
     } finally {
       setLoading(false);
     }
@@ -177,6 +182,10 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 })}
               </div>
             </div>
+          )}
+
+          {error && (
+            <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2">{error}</p>
           )}
 
           {/* Submit */}
