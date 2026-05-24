@@ -1,62 +1,73 @@
 'use client';
-// src/components/KanbanColumn.jsx
-import { Droppable } from '@hello-pangea/dnd';
+// src/components/KanbanColumn.jsx — Light theme
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
+import { Plus } from 'lucide-react';
 
-const COL = {
-  'todo':        { label: 'До виконання', color: 'text-white/40',   dot: 'bg-white/25',   bg: 'bg-white/[0.03]' },
-  'in-progress': { label: 'В роботі',     color: 'text-blue-400',   dot: 'bg-blue-400',   bg: 'bg-blue-400/[0.06]' },
-  'review':      { label: 'На перевірці', color: 'text-yellow-400', dot: 'bg-yellow-400', bg: 'bg-yellow-400/[0.06]' },
-  'done':        { label: 'Готово',       color: 'text-green-400',  dot: 'bg-green-400',  bg: 'bg-green-400/[0.06]' },
+const STATUS_COLORS = {
+  'todo':        '#9a9a9a',
+  'in-progress': '#6366f1',
+  'review':      '#f97316',
+  'done':        '#10b981',
 };
 
-export default function KanbanColumn({ status, tasks, teamMembers, onAddTask, onSelectTask }) {
-  const cfg = COL[status] || COL['todo'];
+export default function KanbanColumn({ columnId, label, color, tasks, teamMembers, onAddTask, onSelectTask }) {
+  const dotColor = color || STATUS_COLORS[columnId] || '#9a9a9a';
 
   return (
     <div className="flex flex-col w-[280px] shrink-0 h-full">
-      {/* Header */}
-      <div className={`flex items-center justify-between px-[14px] py-[10px] rounded-[12px] mb-[10px] ${cfg.bg}`}>
-        <div className="flex items-center gap-[8px]">
-          <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${cfg.dot}`} />
-          <span className={`text-[11px] font-bold uppercase tracking-[0.08em] ${cfg.color}`}>{cfg.label}</span>
-          <span className="text-white/20 text-[11px] font-bold">{tasks.length}</span>
+      {/* Column header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ background: dotColor }} />
+          <h2 className="text-[13px] font-semibold text-[#1f1f1f]">{label}</h2>
+          <span className="text-[11px] text-[#9a9a9a] font-medium bg-[#f0f0f0] px-[6px] py-[1px] rounded-full">
+            {tasks.length}
+          </span>
         </div>
-        {status === 'todo' && (
-          <button
-            onClick={onAddTask}
-            className="w-[22px] h-[22px] rounded-[6px] bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/40 hover:text-white transition-all"
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </button>
-        )}
+        <button
+          onClick={onAddTask}
+          className="w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#e9e9e9] transition-all"
+        >
+          <Plus size={14} />
+        </button>
       </div>
 
-      {/* Droppable */}
-      <Droppable droppableId={status}>
+      {/* Droppable area */}
+      <Droppable droppableId={columnId}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 flex flex-col gap-[8px] overflow-y-auto pb-[12px] rounded-[12px] transition-colors duration-100 ${
-              snapshot.isDraggingOver ? 'bg-white/[0.025]' : ''
+            className={`flex-1 flex flex-col gap-[8px] overflow-y-auto pb-[8px] px-[2px] rounded-[12px] transition-colors duration-150 min-h-[100px] ${
+              snapshot.isDraggingOver ? 'bg-[#e9e9e9]/50' : ''
             }`}
           >
-            {tasks.map((task, i) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                index={i}
-                teamMembers={teamMembers}
-                onSelect={onSelectTask}
-              />
+            {tasks.map((task, index) => (
+              <Draggable key={task.id} draggableId={task.id} index={index}>
+                {(prov, snap) => (
+                  <div
+                    ref={prov.innerRef}
+                    {...prov.draggableProps}
+                    {...prov.dragHandleProps}
+                  >
+                    <TaskCard
+                      task={task}
+                      teamMembers={teamMembers}
+                      onClick={() => onSelectTask(task)}
+                      isDragging={snap.isDragging}
+                    />
+                  </div>
+                )}
+              </Draggable>
             ))}
             {provided.placeholder}
+
+            {/* Empty state */}
             {tasks.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex items-center justify-center py-[32px] border border-dashed border-white/[0.06] rounded-[12px]">
-                <p className="text-white/20 text-[11px]">Пусто</p>
+              <div className="flex flex-col items-center justify-center py-8 text-[#cfcfcf]">
+                <div className="w-[32px] h-[32px] rounded-full border-2 border-dashed border-[#e9e9e9] mb-2" />
+                <p className="text-[11px]">Немає задач</p>
               </div>
             )}
           </div>

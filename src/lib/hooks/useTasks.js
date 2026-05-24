@@ -2,7 +2,7 @@
 // src/lib/hooks/useTasks.js — CRUD for tasks with organizationId multi-tenancy
 import { useState, useEffect, useCallback } from 'react';
 import {
-  collection, query, where, orderBy, onSnapshot,
+  collection, query, where, onSnapshot,
   addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
 import { db, ORG_ID } from '@/lib/firebase';
@@ -14,15 +14,23 @@ export function useTasks(projectId) {
   useEffect(() => {
     if (!projectId) { setLoading(false); return; }
 
+    // No orderBy to avoid composite index requirement — sorted client-side
     const q = query(
       collection(db, 'tasks'),
       where('organizationId', '==', ORG_ID),
       where('projectId', '==', projectId),
-      orderBy('createdAt', 'desc')
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort client-side: by order within status, then by createdAt desc
+      docs.sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      });
+      setTasks(docs);
       setLoading(false);
     }, (err) => {
       console.error('[useTasks]', err);

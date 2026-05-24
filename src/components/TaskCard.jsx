@@ -1,90 +1,108 @@
 'use client';
-// src/components/TaskCard.jsx
-import { Draggable } from '@hello-pangea/dnd';
+// src/components/TaskCard.jsx — Light theme kanban card
+import { Clock, User, AlertCircle, Tag } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 
-const PRIORITY = {
-  urgent: { label: 'Терміново', color: 'text-red-400',    bg: 'bg-red-400/10 border-red-400/20',     dot: 'bg-red-400' },
-  high:   { label: 'Високий',   color: 'text-orange-400', bg: 'bg-orange-400/10 border-orange-400/20', dot: 'bg-orange-400' },
-  medium: { label: 'Середній',  color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/20', dot: 'bg-yellow-400' },
-  low:    { label: 'Низький',   color: 'text-white/30',   bg: 'bg-white/5 border-white/10',           dot: 'bg-white/20' },
+const PRIORITY_CONFIG = {
+  critical: { label: 'Критичний', color: '#ef4444', bg: '#fef2f2' },
+  high:     { label: 'Високий',   color: '#f97316', bg: '#fff7ed' },
+  medium:   { label: 'Середній',  color: '#eab308', bg: '#fefce8' },
+  low:      { label: 'Низький',   color: '#9a9a9a', bg: '#f7f7f7' },
 };
 
-export default function TaskCard({ task, index, teamMembers, onSelect }) {
-  const priority = PRIORITY[task.priority] || PRIORITY.medium;
+const TYPE_CONFIG = {
+  task:    { label: 'Задача', color: '#6366f1' },
+  bug:     { label: 'Баг',    color: '#ef4444' },
+  feature: { label: 'Фіча',  color: '#10b981' },
+  request: { label: 'Запит', color: '#f97316' },
+};
+
+export default function TaskCard({ task, teamMembers = [], onClick, isDragging }) {
+  const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.low;
+  const type = TYPE_CONFIG[task.type] || TYPE_CONFIG.task;
+
   const assignees = (task.assignees || [])
-    .map(uid => teamMembers?.find(m => m.id === uid))
+    .map(uid => teamMembers.find(m => m.uid === uid || m.id === uid))
     .filter(Boolean);
 
+  const dueDate = task.dueDate?.toDate ? task.dueDate.toDate() : task.dueDate ? new Date(task.dueDate) : null;
+  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
+
+  const subtotalDone = task.subtasks?.filter(s => s.done)?.length ?? 0;
+  const subtotalAll = task.subtasks?.length ?? 0;
+
+  const formatDate = (d) => d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+
   return (
-    <Draggable draggableId={task.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onClick={() => onSelect?.(task)}
-          className={`group bg-[#1e1e1e] border rounded-[14px] p-[14px] flex flex-col gap-[10px] cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
-            snapshot.isDragging
-              ? 'border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.6)] scale-[1.02] rotate-[0.8deg]'
-              : 'border-white/[0.07] hover:border-white/[0.15] hover:bg-[#222]'
-          }`}
-        >
-          {/* Priority + open icon */}
-          <div className="flex items-center justify-between gap-[8px]">
-            <span className={`flex items-center gap-[5px] text-[10px] font-bold uppercase tracking-[0.07em] px-[7px] py-[3px] rounded-full border ${priority.bg} ${priority.color}`}>
-              <span className={`w-[5px] h-[5px] rounded-full shrink-0 ${priority.dot}`} />
-              {priority.label}
-            </span>
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white/25 text-[10px]">
-              натисни →
-            </span>
+    <div
+      onClick={onClick}
+      className={`
+        bg-white border border-[#e9e9e9] rounded-[12px] p-[14px] cursor-pointer
+        hover:border-[#cfcfcf] hover:shadow-sm transition-all duration-150 select-none
+        ${isDragging ? 'opacity-50 rotate-1 shadow-lg' : ''}
+      `}
+    >
+      {/* Type + Priority */}
+      <div className="flex items-center justify-between mb-[10px]">
+        <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full" style={{ color: type.color, background: type.color + '18' }}>
+          {type.label}
+        </span>
+        <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full" style={{ color: priority.color, background: priority.bg }}>
+          {priority.label}
+        </span>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-[13px] font-semibold text-[#1f1f1f] leading-snug mb-[10px] line-clamp-2">
+        {task.title}
+      </h3>
+
+      {/* Subtasks progress */}
+      {subtotalAll > 0 && (
+        <div className="mb-[10px]">
+          <div className="flex items-center justify-between mb-[4px]">
+            <span className="text-[10px] text-[#9a9a9a]">Підзадачі</span>
+            <span className="text-[10px] text-[#9a9a9a] font-medium">{subtotalDone}/{subtotalAll}</span>
           </div>
-
-          {/* Title */}
-          <p className="text-white text-[13px] font-semibold leading-snug line-clamp-3">
-            {task.title}
-          </p>
-
-          {/* Description */}
-          {task.description && (
-            <p className="text-white/35 text-[11px] leading-relaxed line-clamp-2">
-              {task.description}
-            </p>
-          )}
-
-          {/* Footer */}
-          <div className="flex items-center justify-between gap-[8px]">
-            <div className="flex -space-x-[6px]">
-              {assignees.slice(0, 3).map(user => (
-                <UserAvatar key={user.id} user={user} className="w-[22px] h-[22px] border-[2px] border-[#1e1e1e]" />
-              ))}
-              {assignees.length > 3 && (
-                <div className="w-[22px] h-[22px] rounded-full bg-white/10 border-[2px] border-[#1e1e1e] flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-white/50">+{assignees.length - 3}</span>
-                </div>
-              )}
-              {assignees.length === 0 && (
-                <span className="text-white/20 text-[10px]">Без виконавця</span>
-              )}
-            </div>
-            {task.dueDate && (
-              <span className={`text-[10px] font-medium ${isOverdue(task.dueDate) ? 'text-red-400' : 'text-white/30'}`}>
-                {formatDue(task.dueDate)}
-              </span>
-            )}
+          <div className="h-[2px] bg-[#f0f0f0] rounded-full overflow-hidden">
+            <div className="h-full bg-[#1f1f1f] rounded-full transition-all" style={{ width: `${subtotalAll ? (subtotalDone / subtotalAll) * 100 : 0}%` }} />
           </div>
         </div>
       )}
-    </Draggable>
+
+      {/* Footer: date + assignees + time */}
+      <div className="flex items-center justify-between gap-2 mt-auto">
+        <div className="flex items-center gap-[10px]">
+          {dueDate && (
+            <div className={`flex items-center gap-[4px] text-[10px] font-medium ${isOverdue ? 'text-red-500' : 'text-[#9a9a9a]'}`}>
+              <Clock size={10} />
+              {formatDate(dueDate)}
+            </div>
+          )}
+          {task.totalTime > 0 && (
+            <div className="flex items-center gap-[4px] text-[10px] text-[#9a9a9a]">
+              <Clock size={10} />
+              {formatMinutes(task.totalTime)}
+            </div>
+          )}
+        </div>
+
+        {/* Assignees */}
+        {assignees.length > 0 && (
+          <div className="flex -space-x-[6px]">
+            {assignees.slice(0, 3).map(m => (
+              <UserAvatar key={m.uid || m.id} user={m} size={22} className="ring-2 ring-white" />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-function isOverdue(d) {
-  const date = d?.toDate ? d.toDate() : new Date(d);
-  return date < new Date();
-}
-function formatDue(d) {
-  const date = d?.toDate ? d.toDate() : new Date(d);
-  return date.toLocaleDateString('uk', { day: 'numeric', month: 'short' });
+function formatMinutes(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0) return `${h}г ${m}хв`;
+  return `${m}хв`;
 }
