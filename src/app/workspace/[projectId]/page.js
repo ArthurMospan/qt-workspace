@@ -10,19 +10,26 @@ import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import IssueModal from '@/components/workspace/IssueModal';
+import PortalPanel from '@/components/workspace/PortalPanel';
+import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import Link from 'next/link';
-import { ArrowLeft, BarChart2, List } from 'lucide-react';
+import { ArrowLeft, BarChart2, List, MessageSquare } from 'lucide-react';
 
 export default function BoardPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser } = useAppContext();
   const { issues, loading, createIssue, updateIssue, deleteIssue, moveIssue } = useIssues(projectId);
   const { showToast, activeTimer } = useWorkspaceStore();
-  const [activeIssue, setActiveIssue] = useState(null);
+  const [activeIssue, setActiveIssue]   = useState(null);
+  const [portalOpen,  setPortalOpen]    = useState(false);
 
   const project = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
+
+  // Portal materials for this project
+  const { stages } = useStagesForProject(projectId);
+  const materials = stages.flatMap(s => s.materials || []);
 
   // Hooks for active issue data
   const { logs: timeLogs, addTimeLog } = useTimeLogs(activeIssue?.id);
@@ -125,23 +132,40 @@ export default function BoardPage({ params }) {
             className="flex items-center gap-[6px] px-3 py-[6px] text-[11px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-[8px] transition-all">
             <BarChart2 size={13} /> Reports
           </Link>
+          <button
+            onClick={() => setPortalOpen(o => !o)}
+            className={`flex items-center gap-[6px] px-3 py-[6px] text-[11px] font-semibold rounded-[8px] transition-all ${
+              portalOpen ? 'bg-[#6366f1] text-white' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7]'
+            }`}>
+            <MessageSquare size={13} /> Портал
+          </button>
         </div>
       </div>
 
-      {/* Board */}
-      <div className="flex-1 overflow-hidden p-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-          </div>
-        ) : (
-          <AgileBoard
-            issues={issues}
-            members={members}
-            activeTimerIssueId={activeTimer?.issueId}
-            onCardClick={setActiveIssue}
-            onAddIssue={handleAddIssue}
-            onMoveIssue={handleMoveIssue}
+      {/* Board + Portal panel */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden p-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+            </div>
+          ) : (
+            <AgileBoard
+              issues={issues}
+              members={members}
+              activeTimerIssueId={activeTimer?.issueId}
+              onCardClick={setActiveIssue}
+              onAddIssue={handleAddIssue}
+              onMoveIssue={handleMoveIssue}
+            />
+          )}
+        </div>
+
+        {portalOpen && (
+          <PortalPanel
+            projectId={projectId}
+            materials={materials}
+            onClose={() => setPortalOpen(false)}
           />
         )}
       </div>

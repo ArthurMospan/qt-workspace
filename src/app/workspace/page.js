@@ -1,115 +1,159 @@
 'use client';
-// src/app/workspace/page.js — Light overview: project grid with stats
+// src/app/workspace/page.js — Projects overview with archive support + portal link
+import { useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { useTasks } from '@/lib/hooks/useTasks';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { ExternalLink, Folder, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users } from 'lucide-react';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
-function ProjectCard({ project }) {
-  const { tasks } = useTasks(project.id);
-  const done = tasks.filter(t => t.status === 'done').length;
-  const total = tasks.length;
-  const inProgress = tasks.filter(t => t.status === 'in-progress').length;
-  const inReview = tasks.filter(t => t.status === 'review').length;
-  const overdue = tasks.filter(t => {
-    if (!t.dueDate || t.status === 'done') return false;
-    const d = t.dueDate?.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
-    return d < new Date();
-  }).length;
-  const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+const STATUS_BADGE = {
+  active:   { label: 'Активний',   cls: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  paused:   { label: 'Пауза',      cls: 'bg-yellow-50  text-yellow-600  border-yellow-200'  },
+  archived: { label: 'Архів',      cls: 'bg-[#f7f7f7]  text-[#9a9a9a]   border-[#e9e9e9]'  },
+};
+
+export default function WorkspacePage() {
+  const { projects } = useAppContext();
+  const [showArchived, setShowArchived] = useState(false);
+
+  const visible = (projects || []).filter(p =>
+    showArchived ? p.status === 'archived' : p.status !== 'archived'
+  );
+
+  const archive   = (id) => updateDoc(doc(db, 'projects', id), { status: 'archived' });
+  const unarchive = (id) => updateDoc(doc(db, 'projects', id), { status: 'active' });
 
   return (
-    <Link href={`/workspace/${project.id}`}
-      className="group bg-white border border-[#e9e9e9] rounded-[16px] p-[20px] hover:border-[#cfcfcf] hover:shadow-md transition-all duration-150">
-
+    <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="w-[36px] h-[36px] bg-[#f7f7f7] rounded-[10px] flex items-center justify-center shrink-0">
-          <Folder size={16} className="text-[#9a9a9a]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-[14px] font-bold text-[#1f1f1f] truncate">{project.name}</h3>
-          {project.description && (
-            <p className="text-[11px] text-[#9a9a9a] mt-[2px] line-clamp-1">{project.description}</p>
-          )}
-        </div>
-        <a href={`${PORTAL_URL}/project/${project.id}`} target="_blank" rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          className="opacity-0 group-hover:opacity-100 text-[#cfcfcf] hover:text-[#9a9a9a] transition-all shrink-0">
-          <ExternalLink size={13} />
-        </a>
-      </div>
+      <div className="px-8 pt-8 pb-6">
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-[#1f1f1f]">Проєкти</h1>
+            <p className="text-[13px] text-[#9a9a9a] mt-1">
+              {(projects || []).filter(p => p.status !== 'archived').length} активних
+            </p>
+          </div>
 
-      {/* Progress */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-[#9a9a9a]">Прогрес</span>
-          <span className="text-[11px] font-semibold text-[#1f1f1f]">{progress}%</span>
+          <div className="flex items-center gap-2">
+            {/* Toggle archived */}
+            <button
+              onClick={() => setShowArchived(s => !s)}
+              className={`flex items-center gap-2 px-4 py-[8px] rounded-[10px] text-[12px] font-semibold border transition-all ${
+                showArchived
+                  ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
+                  : 'bg-white text-[#9a9a9a] border-[#e9e9e9] hover:border-[#9a9a9a]'
+              }`}
+            >
+              <Archive size={13} />
+              {showArchived ? 'Показати активні' : 'Архів'}
+            </button>
+
+            {/* New project → portal */}
+            <a
+              href={`${PORTAL_URL}/projects/new`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-[8px] rounded-[10px] text-[12px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
+            >
+              <Plus size={13} /> Новий проєкт
+              <ExternalLink size={11} className="opacity-50" />
+            </a>
+          </div>
         </div>
-        <div className="h-[4px] bg-[#f0f0f0] rounded-full overflow-hidden">
-          <div className="h-full bg-[#1f1f1f] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="flex items-center gap-4">
-        <Stat icon={<CheckCircle2 size={12} />} value={done} label="Готово" color="#10b981" />
-        <Stat icon={<Clock size={12} />} value={inProgress} label="В роботі" color="#6366f1" />
-        {inReview > 0 && <Stat icon={<Clock size={12} />} value={inReview} label="Перевірка" color="#f97316" />}
-        {overdue > 0 && <Stat icon={<AlertTriangle size={12} />} value={overdue} label="Прострочено" color="#ef4444" />}
-        <div className="ml-auto text-[11px] font-medium text-[#cfcfcf] group-hover:text-[#9a9a9a] transition-colors">
-          Відкрити →
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function Stat({ icon, value, label, color }) {
-  return (
-    <div className="flex items-center gap-[5px]" style={{ color }}>
-      {icon}
-      <span className="text-[12px] font-bold">{value}</span>
-      <span className="text-[11px] text-[#9a9a9a]">{label}</span>
-    </div>
-  );
-}
-
-export default function WorkspaceOverviewPage() {
-  const { currentUser, projects, projectsLoading } = useAppContext();
-  const firstName = currentUser?.name?.split(' ')[0];
-
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
-      {/* Top bar */}
-      <div className="px-8 pt-8 pb-6 shrink-0">
-        <h1 className="text-[#1f1f1f] text-[24px] font-bold">Привіт, {firstName} 👋</h1>
-        <p className="text-[#9a9a9a] text-[14px] mt-1">{projects?.length || 0} активних проєктів</p>
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-y-auto px-8 pb-8">
-        {projectsLoading ? (
-          <div className="flex items-center justify-center h-[200px]">
-            <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-          </div>
-        ) : projects?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[300px] text-center">
-            <div className="w-[64px] h-[64px] bg-[#e9e9e9] rounded-[20px] flex items-center justify-center mb-4">
-              <Folder size={28} className="text-[#9a9a9a]" />
-            </div>
-            <h2 className="text-[#1f1f1f] text-[18px] font-bold mb-2">Немає проєктів</h2>
-            <p className="text-[#9a9a9a] text-[13px] mb-4">Створіть проєкт у клієнтському порталі</p>
-            <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer"
-              className="text-[13px] font-medium text-[#1f1f1f] underline underline-offset-4 hover:text-[#303030] transition-colors">
-              Відкрити портал →
-            </a>
+      <div className="px-8 pb-8">
+        {visible.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Folder size={40} className="text-[#e9e9e9] mb-4" />
+            <p className="text-[14px] font-semibold text-[#9a9a9a]">
+              {showArchived ? 'Немає архівних проєктів' : 'Немає активних проєктів'}
+            </p>
+            {!showArchived && (
+              <a href={`${PORTAL_URL}/projects/new`} target="_blank" rel="noopener noreferrer"
+                className="mt-4 px-4 py-2 bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-bold hover:bg-[#303030] transition-all">
+                Створити перший проєкт →
+              </a>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-[16px]">
-            {projects.map(p => <ProjectCard key={p.id} project={p} />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visible.map(p => {
+              const badge = STATUS_BADGE[p.status] || STATUS_BADGE.active;
+              const teamCount = Array.isArray(p.team) ? p.team.length : 0;
+              const budget = p.totalBudgetHours;
+              const spent  = p.spentMinutes ? Math.round(p.spentMinutes / 60) : 0;
+              const burnPct = budget && spent ? Math.min(Math.round((spent / budget) * 100), 100) : 0;
+
+              return (
+                <div key={p.id}
+                  className="bg-white border border-[#e9e9e9] rounded-[16px] p-5 hover:border-[#cfcfcf] hover:shadow-sm transition-all group">
+
+                  {/* Top row */}
+                  <div className="flex items-start justify-between mb-3">
+                    <Link href={`/workspace/${p.id}`}
+                      className="flex-1 min-w-0 mr-3">
+                      <h3 className="text-[14px] font-bold text-[#1f1f1f] group-hover:text-[#6366f1] transition-colors truncate">
+                        {p.name}
+                      </h3>
+                    </Link>
+                    <span className={`text-[10px] font-bold px-2 py-[3px] rounded-full border shrink-0 ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-[11px] text-[#9a9a9a] mb-4">
+                    <span className="flex items-center gap-1">
+                      <Users size={11} /> {teamCount} осіб
+                    </span>
+                    {budget > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} /> {spent}г / {budget}г
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Burn rate */}
+                  {budget > 0 && (
+                    <div className="mb-4">
+                      <div className="h-[4px] bg-[#f0f0f0] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${burnPct >= 90 ? 'bg-red-500' : burnPct >= 70 ? 'bg-yellow-400' : 'bg-[#10b981]'}`}
+                          style={{ width: `${burnPct}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-[#9a9a9a] mt-1">{burnPct}% бюджету використано</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-[#f7f7f7]">
+                    <Link href={`/workspace/${p.id}`}
+                      className="flex-1 text-center py-[6px] bg-[#f7f7f7] hover:bg-[#1f1f1f] hover:text-white text-[#1f1f1f] rounded-[8px] text-[11px] font-bold transition-all">
+                      Відкрити
+                    </Link>
+
+                    {p.status !== 'archived' ? (
+                      <button onClick={() => archive(p.id)} title="Архівувати"
+                        className="p-[6px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-[8px] transition-all">
+                        <Archive size={14} />
+                      </button>
+                    ) : (
+                      <button onClick={() => unarchive(p.id)} title="Розархівувати"
+                        className="p-[6px] text-[#9a9a9a] hover:text-[#10b981] hover:bg-emerald-50 rounded-[8px] transition-all">
+                        <ArchiveRestore size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

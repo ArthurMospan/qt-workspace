@@ -1,11 +1,11 @@
 'use client';
-// src/lib/hooks/useStagesForProject.js — Real-time stages for a project
+// src/lib/hooks/useStagesForProject.js — Real-time stages + their materials
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export function useStagesForProject(projectId) {
-  const [stages, setStages] = useState([]);
+  const [stages,  setStages]  = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,11 +14,26 @@ export function useStagesForProject(projectId) {
     const q = query(
       collection(db, 'stages'),
       where('projectId', '==', projectId),
-      orderBy('order', 'asc')
+      orderBy('order', 'asc'),
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      setStages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const unsub = onSnapshot(q, async (snap) => {
+      const stagesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Load materials for each stage
+      const withMaterials = await Promise.all(
+        stagesData.map(async stage => {
+          try {
+            const matSnap = await getDocs(collection(db, 'stages', stage.id, 'materials'));
+            const materials = matSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            return { ...stage, materials };
+          } catch {
+            return { ...stage, materials: [] };
+          }
+        })
+      );
+
+      setStages(withMaterials);
       setLoading(false);
     }, () => setLoading(false));
 
