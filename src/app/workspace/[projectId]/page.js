@@ -4,7 +4,6 @@ import { use, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useTasks } from '@/lib/hooks/useTasks';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
-import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { useStore } from '@/store/useStore';
 import KanbanBoard from '@/components/KanbanBoard';
 import CreateTaskModal from '@/components/CreateTaskModal';
@@ -18,7 +17,6 @@ export default function ProjectKanbanPage({ params }) {
   const { projectId } = use(params);
   const { projects } = useAppContext();
   const { tasks, loading, createTask, updateTask, deleteTask, moveTask } = useTasks(projectId);
-  const { stages } = useStagesForProject(projectId);
   const showToast = useStore(s => s.showToast);
 
   const project = projects?.find(p => p.id === projectId);
@@ -90,7 +88,6 @@ export default function ProjectKanbanPage({ params }) {
                 teamMembers={teamMembers}
                 onAddTask={() => setCreateOpen(true)}
                 onSelectTask={setSelectedTask}
-                statuses={stages}
               />
             </div>
           )}
@@ -100,7 +97,6 @@ export default function ProjectKanbanPage({ params }) {
           <div className="w-[360px] shrink-0 h-full overflow-hidden" onClick={e => e.stopPropagation()}>
             <TaskDetailPanel
               task={selectedTask}
-              stages={stages}
               teamMembers={teamMembers}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
@@ -113,7 +109,6 @@ export default function ProjectKanbanPage({ params }) {
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreate}
-        stages={stages}
         teamMembers={teamMembers}
       />
     </div>
