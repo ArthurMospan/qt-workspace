@@ -7,11 +7,9 @@ import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import {
   LayoutGrid, CheckSquare, Settings, Folder,
-  PanelLeftClose, PanelLeftOpen, LogOut, ChevronDown,
+  PanelLeftClose, PanelLeftOpen, ChevronDown,
   BarChart2, List, Users,
 } from 'lucide-react';
-import NotificationsPanel from './workspace/NotificationsPanel';
-import UserAvatar from './UserAvatar';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
@@ -89,11 +87,6 @@ export default function WorkspaceSidebar() {
           );
         })}
       </nav>
-
-      {/* Notifications */}
-      <div className="px-2 pb-1 shrink-0">
-        <NotificationsPanel collapsed={collapsed} />
-      </div>
 
       {/* ── Projects ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">

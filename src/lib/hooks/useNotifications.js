@@ -19,12 +19,18 @@ export function useNotifications(userId) {
     const q = query(
       collection(db, 'notifications'),
       where('userId', '==', userId),
-      orderBy('createdAt', 'desc'),
-      limit(30),
+      limit(40),                          // no orderBy → no composite index needed
     );
 
     const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const docs = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => {
+          const at = a.createdAt?.toMillis?.() ?? 0;
+          const bt = b.createdAt?.toMillis?.() ?? 0;
+          return bt - at;                 // newest first, client-side
+        })
+        .slice(0, 30);
       setNotifications(docs);
       setUnreadCount(docs.filter(n => !n.read).length);
       setLoading(false);
