@@ -1,116 +1,110 @@
 'use client';
-// src/app/workspace/[projectId]/page.js — Light kanban board
+// src/app/workspace/[projectId]/page.js — Trello-like board page
 import { use, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useTasks } from '@/lib/hooks/useTasks';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useStore } from '@/store/useStore';
-import KanbanBoard from '@/components/KanbanBoard';
-import CreateTaskModal from '@/components/CreateTaskModal';
-import TaskDetailPanel from '@/components/TaskDetailPanel';
+import Board from '@/components/Board';
+import CardModal from '@/components/CardModal';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
-
-export default function ProjectKanbanPage({ params }) {
+export default function BoardPage({ params }) {
   const { projectId } = use(params);
   const { projects } = useAppContext();
   const { tasks, loading, createTask, updateTask, deleteTask, moveTask } = useTasks(projectId);
   const showToast = useStore(s => s.showToast);
 
   const project = projects?.find(p => p.id === projectId);
-  const { members: teamMembers } = useTeamMembers(project?.team);
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  // Safe team fetch — guard against non-array
+  const teamUids = Array.isArray(project?.team) ? project.team : [];
+  const { members } = useTeamMembers(teamUids);
 
+  const [activeCard, setActiveCard] = useState(null);
+
+  // Keep active card in sync with live task data
   useEffect(() => {
-    if (!selectedTask) return;
-    const updated = tasks.find(t => t.id === selectedTask.id);
-    if (updated) setSelectedTask(updated);
-  }, [tasks]);
+    if (!activeCard) return;
+    const updated = tasks.find(t => t.id === activeCard.id);
+    if (updated) setActiveCard(updated);
+  }, [tasks]); // eslint-disable-line
 
-  const handleCreate = async (data) => {
-    await createTask(data);
-    showToast('Задачу створено ✓');
+  const handleAddCard = async (status, title) => {
+    try {
+      await createTask({ title, status, priority: 'low' });
+      showToast('Картку додано ✓');
+    } catch (err) {
+      console.error(err);
+      showToast('Помилка: ' + (err.message || 'невідома'));
+    }
   };
 
-  const handleUpdate = async (id, data) => {
-    await updateTask(id, data);
-    showToast('Збережено ✓');
+  const handleUpdate = async (id, patch) => {
+    try {
+      await updateTask(id, patch);
+    } catch (err) {
+      console.error(err);
+      showToast('Помилка збереження');
+    }
   };
 
   const handleDelete = async (id) => {
-    await deleteTask(id);
-    if (selectedTask?.id === id) setSelectedTask(null);
-    showToast('Задачу видалено');
+    try {
+      await deleteTask(id);
+      showToast('Картку видалено');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMove = async (taskId, newStatus, newOrder) => {
+    try {
+      await moveTask(taskId, newStatus, newOrder);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-white">
       {/* Top bar */}
-      <div className="px-6 pt-5 pb-4 border-b border-[#e9e9e9] bg-white flex items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link href="/workspace" className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors shrink-0">
-            <ArrowLeft size={16} />
-          </Link>
-          <div className="min-w-0">
-            <h1 className="text-[15px] font-bold text-[#1f1f1f] truncate">{project?.name || '...'}</h1>
-            <p className="text-[11px] text-[#9a9a9a]">{tasks.length} задач</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <a href={`${PORTAL_URL}/project/${projectId}`} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-[7px] rounded-[9px] text-[12px] text-[#9a9a9a] border border-[#e9e9e9] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all font-medium">
-            <ExternalLink size={12} /> Портал
-          </a>
-          <button onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 px-4 py-[7px] bg-[#1f1f1f] text-white rounded-[9px] text-[12px] font-bold hover:bg-[#303030] transition-all">
-            <Plus size={13} /> Нова задача
-          </button>
-        </div>
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#e9e9e9] shrink-0">
+        <Link href="/workspace" className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors">
+          <ArrowLeft size={16} />
+        </Link>
+        <h1 className="text-[15px] font-bold text-[#1f1f1f]">{project?.name || '...'}</h1>
+        <span className="text-[12px] text-[#9a9a9a]">· {tasks.length} задач</span>
       </div>
 
-      {/* Kanban + Detail */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-hidden p-6" onClick={() => setSelectedTask(null)}>
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div onClick={e => e.stopPropagation()} className="h-full">
-              <KanbanBoard
-                tasks={tasks}
-                moveTask={moveTask}
-                teamMembers={teamMembers}
-                onAddTask={() => setCreateOpen(true)}
-                onSelectTask={setSelectedTask}
-              />
-            </div>
-          )}
-        </div>
-
-        {selectedTask && (
-          <div className="w-[360px] shrink-0 h-full overflow-hidden" onClick={e => e.stopPropagation()}>
-            <TaskDetailPanel
-              task={selectedTask}
-              teamMembers={teamMembers}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
+      {/* Board */}
+      <div className="flex-1 overflow-hidden p-5 bg-[#f7f7f7]">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
+        ) : (
+          <Board
+            tasks={tasks}
+            members={members}
+            onCardClick={setActiveCard}
+            onAddCard={handleAddCard}
+            onMoveCard={handleMove}
+          />
         )}
       </div>
 
-      <CreateTaskModal
-        isOpen={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={handleCreate}
-        teamMembers={teamMembers}
-      />
+      {/* Card modal */}
+      {activeCard && (
+        <CardModal
+          task={activeCard}
+          members={members}
+          onClose={() => setActiveCard(null)}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }
