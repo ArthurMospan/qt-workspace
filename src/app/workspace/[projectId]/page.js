@@ -7,7 +7,7 @@ import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import IssueModal from '@/components/workspace/IssueModal';
 import Link from 'next/link';

@@ -1,29 +1,58 @@
-// src/store/useWorkspaceStore.js — Zustand: timer + toast
+// src/store/useWorkspaceStore.js — Zustand store for workspace-level state
+// Includes: active timer, elapsed tracking, and toast notifications
 import { create } from 'zustand';
 
-export const useWorkspaceStore = create((set, get) => ({
-  // ── Toast ──────────────────────────────────────────────────────────
-  toast: null,
-  showToast: (message, type = 'success') => {
-    set({ toast: { message, type, id: Date.now() } });
-    setTimeout(() => set({ toast: null }), 3500);
-  },
-  clearToast: () => set({ toast: null }),
+// ---------------------------------------------------------------------------
+// Helper: format seconds → '1:23:45' or '12:34'
+// ---------------------------------------------------------------------------
+function formatElapsed(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
 
-  // ── Active Timer ───────────────────────────────────────────────────
-  activeTimer: null,     // { issueId, startedAt }
-  timerElapsed: 0,       // seconds
-  _timerInterval: null,
+  const pad = (n) => String(n).padStart(2, '0');
 
+  if (h > 0) {
+    return `${h}:${pad(m)}:${pad(sec)}`;
+  }
+  return `${pad(m)}:${pad(sec)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
+const useWorkspaceStore = create((set, get) => ({
+  // ─── Timer state ─────────────────────────────────────────────────────────
+  activeTimer: null,        // null | { issueId: string, startedAt: number }
+  timerElapsed: 0,          // seconds since timer started
+  _timerInterval: null,     // NodeJS / browser interval ID
+
+  // ─── Toast state ─────────────────────────────────────────────────────────
+  toast: null,              // null | { message, type, id }
+
+  // ─── Timer actions ───────────────────────────────────────────────────────
+
+  /**
+   * startTimer(issueId)
+   * Starts a running timer for the given issue.
+   * If a timer is already running, logs a warning.
+   */
   startTimer: (issueId) => {
-    const { _timerInterval, activeTimer } = get();
+    const { activeTimer, _timerInterval } = get();
 
-    // Stop existing if running
+    if (activeTimer) {
+      console.warn('[useWorkspaceStore] Timer already running for issue', activeTimer.issueId);
+    }
+
+    // Clear any orphaned interval
     if (_timerInterval) clearInterval(_timerInterval);
 
     const startedAt = Date.now();
+
     const interval = setInterval(() => {
-      set({ timerElapsed: Math.floor((Date.now() - startedAt) / 1000) });
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      set({ timerElapsed: elapsed });
     }, 1000);
 
     set({
@@ -33,27 +62,53 @@ export const useWorkspaceStore = create((set, get) => ({
     });
   },
 
+  /**
+   * stopTimer()
+   * Stops the running timer.
+   * Returns { issueId, minutes } or null if no timer was running.
+   */
   stopTimer: () => {
-    const { _timerInterval, activeTimer, timerElapsed } = get();
+    const { activeTimer, timerElapsed, _timerInterval } = get();
+
     if (_timerInterval) clearInterval(_timerInterval);
 
-    if (!activeTimer) return null;
+    if (!activeTimer) {
+      set({ _timerInterval: null });
+      return null;
+    }
 
     const result = {
       issueId: activeTimer.issueId,
-      minutes: Math.max(1, Math.round(timerElapsed / 60)),
+      minutes: Math.round(timerElapsed / 60),
     };
 
-    set({ activeTimer: null, timerElapsed: 0, _timerInterval: null });
+    set({
+      activeTimer: null,
+      timerElapsed: 0,
+      _timerInterval: null,
+    });
+
     return result;
   },
 
-  formatElapsed: (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return h > 0
-      ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  /**
+   * formatElapsed(seconds) — pure helper exposed on the store
+   */
+  formatElapsed,
+
+  // ─── Toast actions ────────────────────────────────────────────────────────
+
+  /**
+   * showToast(message, type?)
+   * type: 'success' | 'error' | 'info' | 'warning'
+   * Auto-clears after 3 seconds.
+   */
+  showToast: (message, type = 'success') => {
+    set({ toast: { message, type, id: Date.now() } });
+    setTimeout(() => set({ toast: null }), 3000);
   },
+
+  clearToast: () => set({ toast: null }),
 }));
+
+export default useWorkspaceStore;

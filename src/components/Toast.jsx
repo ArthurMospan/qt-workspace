@@ -1,6 +1,6 @@
 'use client';
 // src/components/Toast.jsx
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { CheckCircle, X, AlertCircle } from 'lucide-react';
 
 export default function Toast() {

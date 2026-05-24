@@ -2,7 +2,7 @@
 // src/components/workspace/TimeTracker.jsx — Play/Stop timer + Log Time modal
 import { useState, useEffect } from 'react';
 import { Play, Square, Clock, Plus, X } from 'lucide-react';
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 function formatSeconds(s) {
   const h = Math.floor(s / 3600);
