@@ -8,7 +8,7 @@ import Image from 'next/image';
 import {
   LayoutGrid, CheckSquare, Settings, Folder,
   PanelLeftClose, PanelLeftOpen, LogOut, ChevronDown,
-  BarChart2, List,
+  BarChart2, List, Users,
 } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 
@@ -45,6 +45,7 @@ export default function WorkspaceSidebar() {
   const topNav = [
     { href: '/workspace',          icon: LayoutGrid,  label: 'Огляд',       exact: true },
     { href: '/workspace/my',       icon: CheckSquare, label: 'Мої задачі' },
+    { href: '/workspace/team',     icon: Users,       label: 'Команда' },
     { href: '/workspace/settings', icon: Settings,    label: 'Налаштування' },
   ];
 
