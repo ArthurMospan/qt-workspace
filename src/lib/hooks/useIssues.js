@@ -6,7 +6,8 @@ import {
   addDoc, updateDoc, deleteDoc, doc,
   serverTimestamp, writeBatch, runTransaction,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -30,11 +31,12 @@ async function writeAudit(issueId, { userId, userName, action, from, to }) {
 // Hook
 // ---------------------------------------------------------------------------
 export function useIssues(projectId) {
+  const { activeOrgId } = useAppContext();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!projectId) {
+    if (!projectId || !activeOrgId) {
       setLoading(false);
       return;
     }
@@ -42,7 +44,7 @@ export function useIssues(projectId) {
     // No orderBy — sorted client-side to avoid composite index
     const q = query(
       collection(db, 'issues'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('projectId', '==', projectId),
     );
 
@@ -90,7 +92,7 @@ export function useIssues(projectId) {
     const newIssueRef = await addDoc(collection(db, 'issues'), {
       issueKey,
       projectId,
-      organizationId: ORG_ID,
+      organizationId: activeOrgId,
       title: data.title || '',
       description: data.description || '',
       type: data.type || 'task',
@@ -119,7 +121,7 @@ export function useIssues(projectId) {
     });
 
     return { id: newIssueRef.id, issueKey };
-  }, [projectId, issues]);
+  }, [projectId, issues, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // updateIssue — updateDoc + conditional audit for key field changes

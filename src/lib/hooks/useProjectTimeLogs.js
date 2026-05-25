@@ -4,22 +4,24 @@ import { useState, useEffect } from 'react';
 import {
   collection, query, where, onSnapshot,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export function useProjectTimeLogs(projectId) {
+  const { activeOrgId } = useAppContext();
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [byUser, setByUser] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!projectId) {
+    if (!projectId || !activeOrgId) {
       setLoading(false);
       return;
     }
 
     const q = query(
       collection(db, 'timeLogs'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('projectId', '==', projectId),
     );
 

@@ -5,7 +5,8 @@ import {
   collection, query, where, onSnapshot,
   addDoc, deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 // Inverse relation map
 const INVERSE = {
@@ -17,6 +18,7 @@ const INVERSE = {
 };
 
 export function useIssueLinks(issueId) {
+  const { activeOrgId } = useAppContext();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +54,7 @@ export function useIssueLinks(issueId) {
     // Query 1: links where this issue is the source
     const q1 = query(
       collection(db, 'issueLinks'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('sourceIssueId', '==', issueId),
     );
 
@@ -70,7 +72,7 @@ export function useIssueLinks(issueId) {
     // Query 2: links where this issue is the target
     const q2 = query(
       collection(db, 'issueLinks'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('targetIssueId', '==', issueId),
     );
 
@@ -96,7 +98,7 @@ export function useIssueLinks(issueId) {
   // -------------------------------------------------------------------------
   const addLink = useCallback(async (sourceId, targetId, relationType, userId) => {
     const base = {
-      organizationId: ORG_ID,
+      organizationId: activeOrgId,
       createdBy: userId || null,
       createdAt: serverTimestamp(),
     };

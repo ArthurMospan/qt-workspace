@@ -5,19 +5,21 @@ import {
   collection, query, where, onSnapshot,
   addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export function useTasks(projectId) {
+  const { activeOrgId } = useAppContext();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!projectId) { setLoading(false); return; }
+    if (!projectId || !activeOrgId) { setLoading(false); return; }
 
     // No orderBy to avoid composite index requirement — sorted client-side
     const q = query(
       collection(db, 'tasks'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('projectId', '==', projectId),
     );
 
@@ -48,7 +50,7 @@ export function useTasks(projectId) {
 
     await addDoc(collection(db, 'tasks'), {
       ...rest,
-      organizationId: ORG_ID,
+      organizationId: activeOrgId,
       projectId,
       assignees,
       createdBy,
@@ -57,7 +59,7 @@ export function useTasks(projectId) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-  }, [projectId, tasks]);
+  }, [projectId, tasks, activeOrgId]);
 
   const updateTask = useCallback(async (taskId, data) => {
     await updateDoc(doc(db, 'tasks', taskId), {

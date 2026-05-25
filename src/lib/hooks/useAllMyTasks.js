@@ -2,23 +2,25 @@
 // src/lib/hooks/useAllMyTasks.js — Fetch all tasks assigned to current user across all projects
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export function useAllMyTasks(userId) {
+  const { activeOrgId } = useAppContext();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId || !activeOrgId) { setLoading(false); return; }
 
     const q = query(
       collection(db, 'tasks'),
-      where('organizationId', '==', ORG_ID),
-      where('assignees', 'array-contains', userId),
+      where('assignees', 'array-contains', userId)
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                     .filter(d => d.organizationId === activeOrgId);
       docs.sort((a, b) => {
         const aTime = a.dueDate?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
         const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
@@ -32,7 +34,7 @@ export function useAllMyTasks(userId) {
     });
 
     return () => unsub();
-  }, [userId]);
+  }, [userId, activeOrgId]);
 
   const updateTask = useCallback(async (taskId, data) => {
     await updateDoc(doc(db, 'tasks', taskId), { ...data, updatedAt: serverTimestamp() });

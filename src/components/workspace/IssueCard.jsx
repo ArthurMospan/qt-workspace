@@ -51,39 +51,28 @@ export default function IssueCard({ issue, members = [], index, projectId, isTim
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => router.push(`/workspace/${projectId}/issue/${issue.id}`)}
-          className="relative rounded-[11px] border p-3 cursor-pointer select-none transition-all overflow-hidden group"
+          className="relative rounded-[8px] bg-white border cursor-pointer select-none transition-all overflow-hidden group"
           style={{
-            background: snapshot.isDragging
-              ? '#ffffff'
-              : `linear-gradient(135deg, ${priority.glow} 0%, #ffffff 55%)`,
-            borderColor: snapshot.isDragging ? '#1f1f1f' : priority.border,
+            borderColor: snapshot.isDragging ? '#6366f1' : '#e9e9e9',
             boxShadow: snapshot.isDragging
-              ? '0 16px 40px rgba(0,0,0,0.15)'
+              ? '0 12px 32px rgba(0,0,0,0.1)'
               : isTimerActive
                 ? '0 0 0 2px rgba(99,102,241,0.35)'
-                : `0 1px 3px rgba(0,0,0,0.04), inset 0 0 0 0 ${priority.color}`,
+                : '0 1px 2px rgba(0,0,0,0.02)',
             transform: snapshot.isDragging ? 'rotate(1.5deg) scale(1.02)' : 'none',
           }}
         >
           {/* Priority accent strip — left edge */}
           <div
-            className="absolute left-0 top-[8px] bottom-[8px] w-[3px] rounded-r-full transition-all"
+            className="absolute left-0 top-0 bottom-0 w-[3px] transition-all"
             style={{
               background: priority.color,
-              opacity: issue.priority === 'low' ? 0.35 : 0.85,
+              opacity: issue.priority === 'low' ? 0.3 : 0.8,
             }}
           />
 
-          {/* Blocker — pulsing top glow bar */}
-          {issue.priority === 'blocker' && (
-            <div
-              className="absolute top-0 left-0 right-0 h-[2px] rounded-t-[11px]"
-              style={{ background: `linear-gradient(90deg, ${priority.color}, transparent)`, opacity: 0.7 }}
-            />
-          )}
-
           {/* Content — left padding to clear the strip */}
-          <div className="pl-[8px]">
+          <div className="pl-[12px] p-3">
 
             {/* Row 1: Type + Key + Priority icon */}
             <div className="flex items-center gap-[6px] mb-[7px]">

@@ -5,15 +5,17 @@ import {
   collection, query, where, onSnapshot,
   addDoc, serverTimestamp,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export function useTimeLogs(issueId) {
+  const { activeOrgId } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!issueId) {
+    if (!issueId || !activeOrgId) {
       setLoading(false);
       return;
     }
@@ -21,7 +23,7 @@ export function useTimeLogs(issueId) {
     // Two equality filters — no composite index required
     const q = query(
       collection(db, 'timeLogs'),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', activeOrgId),
       where('issueId', '==', issueId),
     );
 
@@ -57,12 +59,12 @@ export function useTimeLogs(issueId) {
       issueId,
       projectId,
       userId,
-      organizationId: ORG_ID,
+      organizationId: activeOrgId,
       spentMinutes: Math.round(minutes),
       description: description || '',
       loggedAt: serverTimestamp(),
     });
-  }, []);
+  }, [activeOrgId]);
 
   return { logs, totalMinutes, loading, addTimeLog };
 }

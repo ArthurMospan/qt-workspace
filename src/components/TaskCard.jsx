@@ -1,6 +1,6 @@
 'use client';
-// src/components/TaskCard.jsx — Light theme kanban card
-import { Clock, User, AlertCircle, Tag } from 'lucide-react';
+// src/components/TaskCard.jsx — Clean, minimalist kanban card (Linear style)
+import { Clock, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 
 const PRIORITY_CONFIG = {
@@ -37,51 +37,59 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
     <div
       onClick={onClick}
       className={`
-        bg-white border border-[#e9e9e9] rounded-[12px] p-[14px] cursor-pointer
-        hover:border-[#cfcfcf] hover:shadow-sm transition-all duration-150 select-none
-        ${isDragging ? 'opacity-50 rotate-1 shadow-lg' : ''}
+        bg-white rounded-[16px] p-[16px] cursor-pointer
+        border border-transparent hover:border-[#1f1f1f]/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]
+        transition-all duration-200 select-none shadow-[0_1px_3px_rgba(0,0,0,0.02),0_1px_2px_rgba(0,0,0,0.04)]
+        ${isDragging ? 'opacity-80 rotate-2 shadow-xl border-[#1f1f1f]/20 scale-105 z-50' : ''}
       `}
     >
-      {/* Type + Priority */}
-      <div className="flex items-center justify-between mb-[10px]">
-        <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full" style={{ color: type.color, background: type.color + '18' }}>
+      {/* Type & Priority Header */}
+      <div className="flex items-center justify-between mb-[12px]">
+        <span className="text-[10px] font-bold px-[8px] py-[3px] rounded-full uppercase tracking-wider" 
+              style={{ color: type.color, background: type.color + '12' }}>
           {type.label}
         </span>
-        <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full" style={{ color: priority.color, background: priority.bg }}>
-          {priority.label}
-        </span>
+        
+        {task.priority !== 'low' && (
+           <span className="text-[10px] font-bold px-[8px] py-[3px] rounded-full uppercase tracking-wider" 
+                 style={{ color: priority.color, background: priority.bg }}>
+             {priority.label}
+           </span>
+        )}
       </div>
 
       {/* Title */}
-      <h3 className="text-[13px] font-semibold text-[#1f1f1f] leading-snug mb-[10px] line-clamp-2">
+      <h3 className="text-[14px] font-semibold text-[#1f1f1f] leading-[1.4] mb-[12px] line-clamp-3">
         {task.title}
       </h3>
 
       {/* Subtasks progress */}
       {subtotalAll > 0 && (
-        <div className="mb-[10px]">
-          <div className="flex items-center justify-between mb-[4px]">
-            <span className="text-[10px] text-[#9a9a9a]">Підзадачі</span>
-            <span className="text-[10px] text-[#9a9a9a] font-medium">{subtotalDone}/{subtotalAll}</span>
+        <div className="mb-[16px]">
+          <div className="flex items-center gap-[6px] mb-[6px]">
+            <CheckSquare size={12} className="text-[#9a9a9a]" />
+            <span className="text-[11px] font-semibold text-[#1f1f1f]">{subtotalDone}/{subtotalAll}</span>
+            <span className="text-[11px] font-medium text-[#cfcfcf]">підзадач</span>
           </div>
-          <div className="h-[2px] bg-[#f0f0f0] rounded-full overflow-hidden">
-            <div className="h-full bg-[#1f1f1f] rounded-full transition-all" style={{ width: `${subtotalAll ? (subtotalDone / subtotalAll) * 100 : 0}%` }} />
+          <div className="h-[3px] bg-[#f0f0f0] rounded-full overflow-hidden">
+            <div className="h-full bg-[#1f1f1f] rounded-full transition-all duration-500" 
+                 style={{ width: `${subtotalAll ? (subtotalDone / subtotalAll) * 100 : 0}%` }} />
           </div>
         </div>
       )}
 
-      {/* Footer: date + assignees + time */}
-      <div className="flex items-center justify-between gap-2 mt-auto">
-        <div className="flex items-center gap-[10px]">
+      {/* Footer: Date & Assignees */}
+      <div className="flex items-center justify-between mt-auto pt-[4px]">
+        <div className="flex items-center gap-[12px]">
           {dueDate && (
-            <div className={`flex items-center gap-[4px] text-[10px] font-medium ${isOverdue ? 'text-red-500' : 'text-[#9a9a9a]'}`}>
-              <Clock size={10} />
+            <div className={`flex items-center gap-[6px] text-[11px] font-bold ${isOverdue ? 'text-red-500 bg-red-50 px-2 py-1 rounded-md' : 'text-[#9a9a9a]'}`}>
+              <Clock size={12} strokeWidth={isOverdue ? 2.5 : 2} />
               {formatDate(dueDate)}
             </div>
           )}
-          {task.totalTime > 0 && (
-            <div className="flex items-center gap-[4px] text-[10px] text-[#9a9a9a]">
-              <Clock size={10} />
+          {task.totalTime > 0 && !dueDate && (
+            <div className="flex items-center gap-[4px] text-[11px] font-bold text-[#9a9a9a]">
+              <Clock size={12} strokeWidth={2} />
               {formatMinutes(task.totalTime)}
             </div>
           )}
@@ -89,9 +97,9 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
 
         {/* Assignees */}
         {assignees.length > 0 && (
-          <div className="flex -space-x-[6px]">
+          <div className="flex -space-x-[8px]">
             {assignees.slice(0, 3).map(m => (
-              <UserAvatar key={m.uid || m.id} user={m} size={22} className="ring-2 ring-white" />
+              <UserAvatar key={m.uid || m.id} user={m} size={24} className="ring-2 ring-white shadow-sm" />
             ))}
           </div>
         )}
@@ -103,6 +111,6 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
 function formatMinutes(minutes) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h > 0) return `${h}г ${m}хв`;
+  if (h > 0) return `${h}г ${m > 0 ? m + 'хв' : ''}`;
   return `${m}хв`;
 }

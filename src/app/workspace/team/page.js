@@ -96,14 +96,18 @@ export default function TeamPage() {
   return (
     <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 bg-white border-b border-[#e9e9e9]">
-        <h1 className="text-[22px] font-bold text-[#1f1f1f]">Команда</h1>
-        <p className="text-[13px] text-[#9a9a9a] mt-1">
-          {members.length} учасник{members.length === 1 ? '' : 'ів'} · {org?.name || 'QuickTeam'}
-        </p>
+      <div className="pt-[32px] mb-[32px] px-[16px] md:px-[32px]">
+        <div>
+          <h1 className="text-[26px] md:text-[36px] font-bold text-[#1f1f1f] tracking-tight leading-tight truncate">
+            Команда
+          </h1>
+          <p className="text-[#9a9a9a] mt-[4px] text-[14px]">
+            {members.length} учасник{members.length === 1 ? '' : 'ів'} · {org?.name || 'QuickTeam'}
+          </p>
+        </div>
       </div>
 
-      <div className="px-8 py-6 max-w-[740px]">
+      <div className="px-[16px] md:px-[32px] max-w-[740px]">
 
         {/* Invite form */}
         {isOwner && (
@@ -118,12 +122,12 @@ export default function TeamPage() {
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
                 placeholder="email@example.com"
-                className="flex-1 px-4 py-[10px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:border-[#1f1f1f] transition-colors"
+                className="flex-1 px-4 py-[12px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[14px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:border-[#1f1f1f] transition-colors"
               />
               <select
                 value={inviteRole}
                 onChange={e => setInviteRole(e.target.value)}
-                className="px-3 py-[10px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px] text-[12px] font-semibold text-[#1f1f1f] cursor-pointer"
+                className="px-3 py-[12px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[14px] text-[13px] font-semibold text-[#1f1f1f] cursor-pointer"
               >
                 <option value="member">Учасник</option>
                 <option value="admin">Адмін</option>
@@ -131,7 +135,7 @@ export default function TeamPage() {
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail.trim()}
-                className="px-5 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all whitespace-nowrap"
+                className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all whitespace-nowrap shadow-sm"
               >
                 {inviting ? '...' : 'Запросити'}
               </button>

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ORG_ID } from '@/lib/firebase';
 
 // ── Default workflow config ─────────────────────────────────────────
 
@@ -63,14 +62,16 @@ function Toggle({ value, onChange }) {
 
 function SectionHeader({ icon: Icon, title, desc }) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-3 mb-1">
-        <div className="w-8 h-8 bg-[#f7f7f7] rounded-[8px] flex items-center justify-center">
-          <Icon size={16} className="text-[#1f1f1f]" />
+    <div className="pt-[16px] mb-[32px]">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-[#f7f7f7] rounded-[12px] flex items-center justify-center shrink-0">
+          <Icon size={22} className="text-[#1f1f1f]" />
         </div>
-        <h2 className="text-[18px] font-bold text-[#1f1f1f]">{title}</h2>
+        <div>
+          <h2 className="text-[26px] md:text-[32px] font-bold text-[#1f1f1f] tracking-tight leading-tight">{title}</h2>
+          {desc && <p className="text-[14px] text-[#9a9a9a] mt-[2px]">{desc}</p>}
+        </div>
       </div>
-      {desc && <p className="text-[13px] text-[#9a9a9a] ml-11">{desc}</p>}
     </div>
   );
 }
@@ -199,7 +200,7 @@ const NAV = [
 // ── MAIN PAGE ──────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const { currentUser, projects, signOut } = useAppContext();
+  const { currentUser, projects, signOut, activeOrgId } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
 
   const teamUids = projects?.flatMap(p => Array.isArray(p.team) ? p.team : []) || [];
@@ -226,25 +227,37 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const load = async () => {
+      if (!activeOrgId) return;
       try {
-        const ref  = doc(db, 'workspaceSettings', 'workflow');
+        const ref  = doc(db, 'organizations', activeOrgId, 'settings', 'workflow');
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const d = snap.data();
           if (d.statuses?.length)    setStatuses(d.statuses);
           if (d.types?.length)       setTypes(d.types);
           if (d.priorities?.length)  setPriorities(d.priorities);
+        } else {
+          // Fallback to legacy global settings if not found in org
+          const legacyRef = doc(db, 'workspaceSettings', 'workflow');
+          const legacySnap = await getDoc(legacyRef);
+          if (legacySnap.exists()) {
+             const d = legacySnap.data();
+             if (d.statuses?.length)    setStatuses(d.statuses);
+             if (d.types?.length)       setTypes(d.types);
+             if (d.priorities?.length)  setPriorities(d.priorities);
+          }
         }
       } catch {}
       setWfLoading(false);
     };
     load();
-  }, []);
+  }, [activeOrgId]);
 
   const saveWorkflow = async () => {
+    if (!activeOrgId) return;
     setWfSaving(true);
     try {
-      await setDoc(doc(db, 'workspaceSettings', 'workflow'), {
+      await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'), {
         statuses, types, priorities, updatedAt: serverTimestamp(),
       });
       showToast('Workflow збережено ✓');
@@ -311,7 +324,7 @@ export default function SettingsPage() {
           </Card>
           <button
             onClick={() => { showToast('Профіль оновлено ✓'); }}
-            className="px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors"
+            className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm"
           >
             Зберегти профіль
           </button>
@@ -367,7 +380,7 @@ export default function SettingsPage() {
             </CardRow>
           </Card>
           <button onClick={() => showToast('Налаштування воркспейсу збережено ✓')}
-            className="px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors">
+            className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm">
             Зберегти
           </button>
         </div>
@@ -405,7 +418,7 @@ export default function SettingsPage() {
           </Card>
 
           <button onClick={saveWorkflow} disabled={wfSaving}
-            className="flex items-center gap-2 px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm disabled:opacity-50">
             {wfSaving ? <><RefreshCw size={13} className="animate-spin" /> Збереження...</> : <><Save size={13} /> Зберегти зміни</>}
           </button>
         </div>
@@ -427,7 +440,7 @@ export default function SettingsPage() {
             </div>
           </Card>
           <button onClick={saveWorkflow} disabled={wfSaving}
-            className="flex items-center gap-2 px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm disabled:opacity-50">
             {wfSaving ? <><RefreshCw size={13} className="animate-spin" /> Збереження...</> : <><Save size={13} /> Зберегти зміни</>}
           </button>
         </div>
@@ -476,7 +489,7 @@ export default function SettingsPage() {
           </div>
 
           <button onClick={saveWorkflow} disabled={wfSaving}
-            className="flex items-center gap-2 px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm disabled:opacity-50">
             {wfSaving ? <><RefreshCw size={13} className="animate-spin" /> Збереження...</> : <><Save size={13} /> Зберегти зміни</>}
           </button>
         </div>
@@ -657,7 +670,7 @@ export default function SettingsPage() {
             </CardRow>
           </Card>
           <button onClick={() => showToast('Сповіщення збережено ✓')}
-            className="px-6 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-colors">
+            className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] transition-all shadow-sm">
             Зберегти
           </button>
         </div>

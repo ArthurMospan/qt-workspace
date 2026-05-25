@@ -162,9 +162,15 @@ export default function MyTasksPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 shrink-0">
-        <h1 className="text-[#1f1f1f] text-[22px] font-bold">Мої задачі</h1>
-        <p className="text-[#9a9a9a] text-[13px] mt-1">{tasks.filter(t => t.status !== 'done').length} активних</p>
+      <div className="pt-[32px] mb-[32px] px-[16px] md:px-[32px]">
+        <div>
+          <h1 className="text-[26px] md:text-[36px] font-bold text-[#1f1f1f] tracking-tight leading-tight truncate">
+            Мої задачі
+          </h1>
+          <p className="text-[#9a9a9a] mt-[4px] text-[14px]">
+            {tasks.filter(t => t.status !== 'done').length} активних
+          </p>
+        </div>
       </div>
 
       {/* Filter tabs */}

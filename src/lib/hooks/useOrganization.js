@@ -8,16 +8,19 @@ import {
   setDoc, getDoc, collection, addDoc, query, where, getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export function useOrganization() {
+  const { activeOrgId } = useAppContext();
   const [org,     setOrg]     = useState(null);
   const [members, setMembers] = useState([]);   // full user profiles
   const [loading, setLoading] = useState(true);
 
   // Listen to org doc
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'organizations', ORG_ID), async (snap) => {
+    if (!activeOrgId) { setLoading(false); return; }
+    const unsub = onSnapshot(doc(db, 'organizations', activeOrgId), async (snap) => {
       if (!snap.exists()) {
         setOrg(null);
         setMembers([]);
@@ -43,15 +46,16 @@ export function useOrganization() {
     }, () => setLoading(false));
 
     return () => unsub();
-  }, []);
+  }, [activeOrgId]);
 
   // Ensure org exists (called by owner on first load)
   const initOrg = useCallback(async (ownerId, ownerName) => {
-    const ref = doc(db, 'organizations', ORG_ID);
+    if (!activeOrgId) return;
+    const ref = doc(db, 'organizations', activeOrgId);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
       await setDoc(ref, {
-        id: ORG_ID,
+        id: activeOrgId,
         name: 'QuickTeam',
         ownerId,
         members: [{ uid: ownerId, role: 'owner', joinedAt: new Date().toISOString() }],
@@ -66,7 +70,7 @@ export function useOrganization() {
         });
       }
     }
-  }, []);
+  }, [activeOrgId]);
 
   // Invite by email
   const inviteMember = useCallback(async (email, invitedBy, role = 'member') => {
@@ -77,7 +81,7 @@ export function useOrganization() {
     if (!userSnap.empty) {
       // User exists → add them directly
       const uid = userSnap.docs[0].id;
-      const orgRef = doc(db, 'organizations', ORG_ID);
+      const orgRef = doc(db, 'organizations', activeOrgId);
       const orgSnap = await getDoc(orgRef);
       const existing = orgSnap.data()?.members || [];
       if (existing.find(m => m.uid === uid)) {
@@ -93,7 +97,7 @@ export function useOrganization() {
     const existingInvite = await getDocs(
       query(collection(db, 'invitations'),
         where('email', '==', email),
-        where('organizationId', '==', ORG_ID),
+        where('organizationId', '==', activeOrgId),
         where('status', '==', 'pending'),
       )
     );
@@ -103,55 +107,60 @@ export function useOrganization() {
 
     await addDoc(collection(db, 'invitations'), {
       email,
-      organizationId: ORG_ID,
+      organizationId: activeOrgId,
       invitedBy,
       role,
       status: 'pending',
       createdAt: serverTimestamp(),
     });
     return { type: 'invitation_sent' };
-  }, []);
+  }, [activeOrgId]);
 
   // Change role
   const changeMemberRole = useCallback(async (uid, newRole) => {
-    const orgRef  = doc(db, 'organizations', ORG_ID);
+    if (!activeOrgId) return;
+    const orgRef  = doc(db, 'organizations', activeOrgId);
     const orgSnap = await getDoc(orgRef);
     const members = (orgSnap.data()?.members || []).map(m =>
       m.uid === uid ? { ...m, role: newRole } : m
     );
     await updateDoc(orgRef, { members });
-  }, []);
+  }, [activeOrgId]);
 
   // Remove member
   const removeMember = useCallback(async (uid) => {
-    const orgRef  = doc(db, 'organizations', ORG_ID);
+    if (!activeOrgId) return;
+    const orgRef  = doc(db, 'organizations', activeOrgId);
     const orgSnap = await getDoc(orgRef);
     const members = (orgSnap.data()?.members || []).filter(m => m.uid !== uid);
     await updateDoc(orgRef, { members });
-  }, []);
+  }, [activeOrgId]);
 
   return { org, members, loading, initOrg, inviteMember, changeMemberRole, removeMember };
 }
 
 // Called when a user signs in — checks if they have a pending invitation
+// Uses the default org from env as the fallback (for single-org deployments)
 export async function acceptPendingInvitation(uid, email) {
   try {
+    const defaultOrgId = process.env.NEXT_PUBLIC_ORG_ID || 'quickteam';
     const q = query(
       collection(db, 'invitations'),
       where('email', '==', email),
-      where('organizationId', '==', ORG_ID),
+      where('organizationId', '==', defaultOrgId),
       where('status', '==', 'pending'),
     );
     const snap = await getDocs(q);
     if (snap.empty) return false;
 
     // Add user to org
-    const orgRef = doc(db, 'organizations', ORG_ID);
+    const orgRef = doc(db, 'organizations', defaultOrgId);
     const orgSnap = await getDoc(orgRef);
     const existing = orgSnap.data()?.members || [];
     if (!existing.find(m => m.uid === uid)) {
       await updateDoc(orgRef, {
         members: arrayUnion({ uid, role: snap.docs[0].data().role || 'member', joinedAt: new Date().toISOString() }),
+        memberUids: arrayUnion(uid),
       });
     }
 

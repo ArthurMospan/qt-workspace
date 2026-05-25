@@ -7,7 +7,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import {
   LayoutGrid, CheckSquare, Settings, Folder,
-  PanelLeftClose, PanelLeftOpen, Users, Plus,
+  PanelLeftClose, PanelLeftOpen, Users, Plus, MessageSquare
 } from 'lucide-react';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
@@ -21,10 +21,11 @@ export default function WorkspaceSidebar() {
     exact ? pathname === href : pathname.startsWith(href);
 
   const topNav = [
-    { href: '/workspace',          icon: LayoutGrid,  label: 'Огляд',       exact: true },
-    { href: '/workspace/my',       icon: CheckSquare, label: 'Мої задачі' },
-    { href: '/workspace/team',     icon: Users,       label: 'Команда' },
-    { href: '/workspace/settings', icon: Settings,    label: 'Налаштування' },
+    { href: '/workspace',          icon: LayoutGrid,    label: 'Проєкти',     exact: true },
+    { href: '/workspace/my',       icon: CheckSquare,   label: 'Мої задачі' },
+    { href: '/workspace/team',     icon: Users,         label: 'Команда' },
+    { href: '/workspace/chat',     icon: MessageSquare, label: 'Чат' },
+    { href: '/workspace/settings', icon: Settings,      label: 'Налаштування' },
   ];
 
   return (

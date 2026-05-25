@@ -1,17 +1,20 @@
 'use client';
 // src/lib/context/AppContext.js
 import { createContext, useContext, useEffect } from 'react';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useProjects } from '@/lib/hooks/useProjects';
+import { useAuth }         from '@/lib/hooks/useAuth';
+import { useProjects }     from '@/lib/hooks/useProjects';
 import { acceptPendingInvitation } from '@/lib/hooks/useOrganization';
+import { OrgProvider, useOrg } from '@/lib/context/OrgContext';
+import { runMigrations } from '@/lib/migrations/runMigrations';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db, ORG_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 const AppContext = createContext(null);
 
-export function AppProvider({ children }) {
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
-  const { projects, loading: projectsLoading } = useProjects(user?.id);
+// ─── Inner provider (has access to OrgContext) ────────────────────────────
+function AppProviderInner({ user, authLoading, signInWithGoogle, signOut, children }) {
+  const { activeOrgId, activeOrg, orgRole, orgLoading, noOrg } = useOrg();
+  const { projects, loading: projectsLoading } = useProjects(user?.id, activeOrgId);
 
   // When user signs in: init org if needed + accept pending invitations
   useEffect(() => {
@@ -22,34 +25,39 @@ export function AppProvider({ children }) {
 
     (async () => {
       try {
-        const orgRef  = doc(db, 'organizations', ORG_ID);
+        // If the user has no org yet, check for pending invitations
+        // and auto-create org if they're the very first user
+        const defaultOrgId = process.env.NEXT_PUBLIC_ORG_ID || 'quickteam';
+        const orgRef  = doc(db, 'organizations', defaultOrgId);
         const orgSnap = await getDoc(orgRef);
 
         if (!orgSnap.exists()) {
-          // First user ever → becomes owner
+          // Very first user → becomes owner and creates the org
           await setDoc(orgRef, {
-            id: ORG_ID,
+            id: defaultOrgId,
             name: 'QuickTeam',
             ownerId: uid,
+            memberUids: [uid],
             members: [{ uid, role: 'owner', joinedAt: new Date().toISOString() }],
             createdAt: new Date().toISOString(),
           });
         } else {
-          const members = orgSnap.data().members || [];
+          const orgData = orgSnap.data();
+          const members = orgData.members || [];
           const isAlreadyMember = members.some(m => m.uid === uid);
 
           if (!isAlreadyMember) {
             // Check pending invitations
             const accepted = await acceptPendingInvitation(uid, email);
             if (!accepted) {
-              // Not invited → still add as member (open workspace)
-              // Remove this line if you want strict invite-only access
-              await updateDoc(orgRef, {
-                members: arrayUnion({ uid, role: 'member', joinedAt: new Date().toISOString() }),
-              });
+              // Not invited → do NOT auto-add (strict multi-tenant boundary)
+              console.warn('[AppContext] User not invited to any org. Showing onboarding.');
             }
           }
         }
+
+        // Run one-time migrations (idempotent — safe to call every login)
+        await runMigrations();
       } catch (err) {
         console.error('[AppContext] org init error:', err);
       }
@@ -59,18 +67,56 @@ export function AppProvider({ children }) {
   const value = {
     authLoading,
     projectsLoading,
+    orgLoading,
     signInWithGoogle,
     signOut,
     currentUser: user,
     projects,
+    // Org-related
+    activeOrgId,
+    activeOrg,
+    orgRole,
+    noOrg,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+// ─── Outer provider: sets up auth, wraps OrgProvider ─────────────────────
+export function AppProvider({ children }) {
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+
+  return (
+    <OrgProvider user={user}>
+      <AppProviderInner
+        user={user}
+        authLoading={authLoading}
+        signInWithGoogle={signInWithGoogle}
+        signOut={signOut}
+      >
+        {children}
+      </AppProviderInner>
+    </OrgProvider>
+  );
+}
+
 export const useAppContext = () => {
   const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useAppContext must be used inside AppProvider');
+  // During SSG prerender, AppProvider is not present — return safe defaults
+  if (!ctx) {
+    return {
+      authLoading: true,
+      projectsLoading: true,
+      orgLoading: true,
+      signInWithGoogle: async () => {},
+      signOut: async () => {},
+      currentUser: null,
+      projects: [],
+      activeOrgId: null,
+      activeOrg: null,
+      orgRole: null,
+      noOrg: false,
+    };
+  }
   return ctx;
 };
-

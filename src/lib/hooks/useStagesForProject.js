@@ -13,12 +13,12 @@ export function useStagesForProject(projectId) {
 
     const q = query(
       collection(db, 'stages'),
-      where('projectId', '==', projectId),
-      orderBy('order', 'asc'),
+      where('projectId', '==', projectId)
     );
 
     const unsub = onSnapshot(q, async (snap) => {
       const stagesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      stagesData.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       // Load materials for each stage
       const withMaterials = await Promise.all(
