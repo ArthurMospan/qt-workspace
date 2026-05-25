@@ -1,17 +1,43 @@
 'use client';
 // src/lib/hooks/useNotifications.js
-import { useState, useEffect, useCallback } from 'react';
+// Real-time notifications: detects truly NEW docs, fires browser Notification + in-app popup
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  collection, query, where, orderBy, limit,
+  collection, query, where, limit,
   onSnapshot, addDoc, updateDoc, doc, writeBatch,
   serverTimestamp, getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export function useNotifications(userId) {
+// Request browser notification permission once
+export async function requestNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+// Fire a browser native notification
+function fireBrowserNotif(title, body, link) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const n = new Notification(title, {
+    body,
+    icon: '/logo.svg',
+    badge: '/logo.svg',
+    silent: false,
+  });
+  if (link) n.onclick = () => { window.focus(); window.location.href = link; n.close(); };
+  setTimeout(() => n.close(), 8000);
+}
+
+export function useNotifications(userId, { onNew } = {}) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [loading,       setLoading]       = useState(true);
+
+  const seenIds     = useRef(new Set());
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
@@ -19,25 +45,39 @@ export function useNotifications(userId) {
     const q = query(
       collection(db, 'notifications'),
       where('userId', '==', userId),
-      limit(40),                          // no orderBy → no composite index needed
+      limit(40),
     );
 
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => {
-          const at = a.createdAt?.toMillis?.() ?? 0;
-          const bt = b.createdAt?.toMillis?.() ?? 0;
-          return bt - at;                 // newest first, client-side
-        })
+        .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
         .slice(0, 30);
+
+      if (isFirstLoad.current) {
+        // On first load: just populate seenIds, don't fire popups
+        isFirstLoad.current = false;
+        docs.forEach(d => seenIds.current.add(d.id));
+      } else {
+        // On subsequent updates: detect new docs
+        docs.forEach(n => {
+          if (!seenIds.current.has(n.id)) {
+            seenIds.current.add(n.id);
+            // 1. Browser native notification
+            fireBrowserNotif(n.title, n.body, n.link);
+            // 2. In-app popup callback (goes to store)
+            if (onNew) onNew(n);
+          }
+        });
+      }
+
       setNotifications(docs);
       setUnreadCount(docs.filter(n => !n.read).length);
       setLoading(false);
     }, () => setLoading(false));
 
     return () => unsub();
-  }, [userId]);
+  }, [userId]); // eslint-disable-line
 
   const markAllRead = useCallback(async () => {
     if (!userId) return;
@@ -56,7 +96,8 @@ export function useNotifications(userId) {
   return { notifications, unreadCount, loading, markAllRead, markRead };
 }
 
-// ── Send a notification to one or more users ──────────────────────
+// ── Send notification(s) to users ───────────────────────────────────
+
 export async function sendNotification({ userIds = [], type, title, body, link = '', issueId = '', projectId = '' }) {
   await Promise.all(
     userIds.map(userId =>
