@@ -7,9 +7,10 @@ import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import {
   LayoutGrid, CheckSquare, Settings, Folder,
-  PanelLeftClose, PanelLeftOpen, ChevronDown,
+  PanelLeftClose, PanelLeftOpen, ChevronDown, LogOut,
   BarChart2, List, Users,
 } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
