@@ -139,12 +139,9 @@ export default function WorkspaceHeader() {
         <div className="relative" ref={userRef}>
           <button
             onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
-            className="flex items-center gap-2 px-2 py-1 rounded-[8px] hover:bg-[#f7f7f7] transition-all ml-1"
+            className="flex items-center justify-center w-9 h-9 rounded-[8px] hover:bg-[#f7f7f7] transition-all ml-1"
           >
             <UserAvatar user={currentUser} size={28} />
-            <span className="text-[12px] font-semibold text-[#1f1f1f] max-w-[100px] truncate hidden sm:block">
-              {currentUser?.name || 'Користувач'}
-            </span>
           </button>
 
           {userOpen && (

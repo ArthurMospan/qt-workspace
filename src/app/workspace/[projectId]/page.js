@@ -1,25 +1,36 @@
 'use client';
-// src/app/workspace/[projectId]/page.js — Board page with project tabs
-import { use, useCallback, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+// src/app/workspace/[projectId]/page.js
+// Project page: Board | Backlog | Аналітика | Матеріали — all client-side tabs
+import { use, useState, useCallback } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useIssues }     from '@/lib/hooks/useIssues';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
-import AgileBoard        from '@/components/workspace/AgileBoard';
-import { LayoutGrid, List, BarChart2, MessageSquare } from 'lucide-react';
+import AgileBoard    from '@/components/workspace/AgileBoard';
+import BacklogTab    from '@/components/workspace/BacklogTab';
+import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
+import MaterialsTab  from '@/components/workspace/MaterialsTab';
+import { LayoutGrid, List, BarChart2, Image } from 'lucide-react';
+
+const TABS = [
+  { id: 'board',     label: 'Дошка',     icon: LayoutGrid },
+  { id: 'backlog',   label: 'Backlog',   icon: List },
+  { id: 'analytics', label: 'Аналітика', icon: BarChart2 },
+  { id: 'materials', label: 'Матеріали', icon: Image },
+];
 
 export default function BoardPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser } = useAppContext();
   const { issues, loading, createIssue, moveIssue } = useIssues(projectId);
-  const showToast = useWorkspaceStore(s => s.showToast);
+  const showToast  = useWorkspaceStore(s => s.showToast);
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
 
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
+
+  const [activeTab, setActiveTab] = useState('board');
 
   const actor = {
     userId:   currentUser?.id   || currentUser?.uid,
@@ -33,66 +44,87 @@ export default function BoardPage({ params }) {
     } catch (err) {
       showToast('Помилка: ' + err.message, 'error');
     }
-  }, [createIssue, actor, showToast]);
+  }, [createIssue, showToast]); // eslint-disable-line
 
   const handleMoveIssue = useCallback(async (issueId, newColumnId, newIndex) => {
     try {
       await moveIssue(issueId, newColumnId, newIndex, actor);
     } catch (err) {
-      showToast(err.message || 'Помилка переміщення', 'error');
+      showToast(err.message || 'Помилка', 'error');
     }
-  }, [moveIssue, actor, showToast]);
-
-  const tabs = [
-    { href: `/workspace/${projectId}`,         label: 'Дошка',   icon: LayoutGrid,    exact: true },
-    { href: `/workspace/${projectId}/backlog`,  label: 'Backlog', icon: List },
-    { href: `/workspace/${projectId}/reports`,  label: 'Reports', icon: BarChart2 },
-    { href: `/workspace/${projectId}/portal`,   label: 'Портал',  icon: MessageSquare },
-  ];
+  }, [moveIssue, showToast]); // eslint-disable-line
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
-      {/* Project tab bar */}
-      <div className="bg-white border-b border-[#e9e9e9] px-5 flex items-center gap-1 shrink-0">
-        <h1 className="text-[13px] font-bold text-[#1f1f1f] pr-4 mr-2 border-r border-[#e9e9e9]">
+
+      {/* ── Project tab bar ──────────────────────────────── */}
+      <div className="bg-white border-b border-[#e9e9e9] flex items-center gap-0 px-5 shrink-0">
+        <h1 className="text-[13px] font-bold text-[#1f1f1f] pr-5 mr-1 border-r border-[#e9e9e9] py-[11px] truncate max-w-[160px]">
           {project?.name || '…'}
         </h1>
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          // Simple active check based on pathname matching
-          const isActive = tab.exact
-            ? typeof window !== 'undefined' && window.location.pathname === tab.href
-            : typeof window !== 'undefined' && window.location.pathname.startsWith(tab.href);
+
+        {TABS.map(tab => {
+          const Icon   = tab.icon;
+          const active = activeTab === tab.id;
           return (
-            <Link key={tab.href} href={tab.href}
-              className={`flex items-center gap-[6px] px-4 py-[11px] text-[12px] font-semibold border-b-2 transition-all ${
-                isActive
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-[6px] px-5 py-[11px] text-[12px] font-semibold border-b-2 transition-all whitespace-nowrap ${
+                active
                   ? 'border-[#1f1f1f] text-[#1f1f1f]'
-                  : 'border-transparent text-[#9a9a9a] hover:text-[#1f1f1f]'
-              }`}>
-              <Icon size={13} />{tab.label}
-            </Link>
+                  : 'border-transparent text-[#9a9a9a] hover:text-[#4a4a4a]'
+              }`}
+            >
+              <Icon size={13} />
+              {tab.label}
+            </button>
           );
         })}
       </div>
 
-      {/* Board */}
-      <div className="flex-1 overflow-hidden p-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+      {/* ── Tab content ─────────────────────────────────── */}
+      {activeTab === 'board' && (
+        loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-7 h-7 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
         ) : (
-          <AgileBoard
-            issues={issues}
-            members={members}
-            projectId={projectId}
-            activeTimerIssueId={activeTimer?.issueId}
-            onAddIssue={handleAddIssue}
-            onMoveIssue={handleMoveIssue}
-          />
-        )}
-      </div>
+          <div className="flex-1 overflow-hidden p-4">
+            <AgileBoard
+              issues={issues}
+              members={members}
+              projectId={projectId}
+              activeTimerIssueId={activeTimer?.issueId}
+              onAddIssue={handleAddIssue}
+              onMoveIssue={handleMoveIssue}
+            />
+          </div>
+        )
+      )}
+
+      {activeTab === 'backlog' && (
+        <BacklogTab
+          issues={issues}
+          loading={loading}
+          projectId={projectId}
+          members={members}
+          onAddIssue={handleAddIssue}
+        />
+      )}
+
+      {activeTab === 'analytics' && (
+        <AnalyticsTab
+          issues={issues}
+          members={members}
+          project={project}
+          projectId={projectId}
+        />
+      )}
+
+      {activeTab === 'materials' && (
+        <MaterialsTab projectId={projectId} />
+      )}
     </div>
   );
 }

@@ -1,0 +1,156 @@
+'use client';
+// src/components/workspace/MaterialsTab.jsx — Client portal materials + chat (read-only)
+import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
+import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
+import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
+
+const STATUS_CFG = {
+  approved: { label: 'Погоджено',     color: '#10b981', Icon: CheckCircle },
+  rejected: { label: 'Відхилено',     color: '#ef4444', Icon: XCircle },
+  pending:  { label: 'На погодженні', color: '#f97316', Icon: Clock },
+  none:     { label: 'Не надіслано',  color: '#cfcfcf', Icon: AlertCircle },
+};
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts?.toDate ? ts.toDate() : new Date(ts);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60000)    return 'щойно';
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)} хв тому`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
+  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+}
+
+export default function MaterialsTab({ projectId }) {
+  const { stages, loading: stagesLoading } = useStagesForProject(projectId);
+  const { messages, loading: chatLoading } = usePortalChat(projectId);
+
+  const materials = stages.flatMap(s =>
+    (s.materials || []).map(m => ({ ...m, stageName: s.title || s.name }))
+  );
+
+  return (
+    <div className="flex-1 overflow-hidden flex">
+      {/* Left: Materials */}
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[14px] font-bold text-[#1f1f1f]">
+            Матеріали клієнта
+            {materials.length > 0 && <span className="ml-2 text-[12px] font-normal text-[#9a9a9a]">{materials.length} шт.</span>}
+          </h3>
+          <a href={PORTAL_URL} target="_blank" rel="noopener"
+            className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline font-medium">
+            <ExternalLink size={11} /> Відкрити в порталі
+          </a>
+        </div>
+
+        {stagesLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+          </div>
+        ) : stages.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center">
+            <ImageIcon size={32} className="text-[#e9e9e9] mb-3" />
+            <p className="text-[13px] text-[#cfcfcf]">Матеріалів ще немає</p>
+            <p className="text-[11px] text-[#e9e9e9] mt-1">Вони з'являться коли клієнт їх додасть</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {stages.map(stage => {
+              const mats = stage.materials || [];
+              return (
+                <div key={stage.id} className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+                  <div className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#fafafa]">
+                    <FileCheck size={13} className="text-[#9a9a9a]" />
+                    <p className="text-[12px] font-bold text-[#1f1f1f]">{stage.title || stage.name || 'Без назви'}</p>
+                    <span className="text-[10px] text-[#cfcfcf]">· {mats.length} матеріал{mats.length !== 1 ? 'и' : ''}</span>
+                  </div>
+
+                  {mats.length === 0 ? (
+                    <p className="px-5 py-4 text-[12px] text-[#cfcfcf]">Немає матеріалів</p>
+                  ) : (
+                    mats.map((mat, i) => {
+                      const statusKey = mat.status || (mat.clientApprovalPending ? 'pending' : 'none');
+                      const cfg = STATUS_CFG[statusKey] || STATUS_CFG.none;
+                      const StatusIcon = cfg.Icon;
+                      return (
+                        <div key={mat.id || i} className="flex items-center gap-4 px-5 py-4 border-b border-[#f7f7f7] last:border-0 hover:bg-[#fafafa] transition-colors">
+                          {/* Thumbnail */}
+                          <div className="w-[44px] h-[44px] bg-[#f7f7f7] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
+                            {mat.url && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(mat.url) ? (
+                              <img src={mat.url} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+                            ) : (
+                              <ImageIcon size={16} className="text-[#cfcfcf]" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{mat.name || mat.title || 'Без назви'}</p>
+                            {mat.description && <p className="text-[11px] text-[#9a9a9a] truncate mt-[2px]">{mat.description}</p>}
+                          </div>
+
+                          <div className="flex items-center gap-[5px] shrink-0">
+                            <StatusIcon size={13} style={{ color: cfg.color }} />
+                            <span className="text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+                          </div>
+
+                          {mat.url && (
+                            <a href={mat.url} target="_blank" rel="noopener"
+                              className="shrink-0 p-1 text-[#cfcfcf] hover:text-[#6366f1] transition-colors">
+                              <ExternalLink size={13} />
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Right: Chat */}
+      <div className="w-[320px] shrink-0 border-l border-[#e9e9e9] flex flex-col bg-white">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0]">
+          <MessageSquare size={13} className="text-[#9a9a9a]" />
+          <h3 className="text-[12px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
+          <span className="ml-auto text-[9px] text-[#cfcfcf] font-medium uppercase tracking-wide">read-only</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto divide-y divide-[#f7f7f7]">
+          {chatLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-5 h-5 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center py-10">
+              <MessageSquare size={22} className="text-[#e9e9e9] mb-2" />
+              <p className="text-[11px] text-[#cfcfcf]">Повідомлень немає</p>
+            </div>
+          ) : (
+            messages.map((msg, i) => (
+              <div key={msg.id || i} className="px-4 py-3">
+                <div className="flex items-baseline gap-2 mb-[2px]">
+                  <span className="text-[12px] font-bold text-[#1f1f1f]">{msg.senderName || 'Клієнт'}</span>
+                  <span className="text-[10px] text-[#cfcfcf]">{timeAgo(msg.createdAt || msg.timestamp)}</span>
+                </div>
+                <p className="text-[12px] text-[#4a4a4a] leading-relaxed">{msg.text || msg.message}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#fafafa]">
+          <a href={PORTAL_URL} target="_blank" rel="noopener"
+            className="flex items-center justify-center gap-2 w-full py-[8px] bg-white border border-[#e9e9e9] text-[12px] font-semibold text-[#1f1f1f] rounded-[8px] hover:bg-[#f0f0f0] transition-colors">
+            <ExternalLink size={12} /> Відповісти в порталі
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
