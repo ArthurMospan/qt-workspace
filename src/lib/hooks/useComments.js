@@ -44,9 +44,9 @@ export function useComments(issueId) {
     if (!text?.trim()) throw new Error('Comment text cannot be empty');
 
     await addDoc(collection(db, 'issues', issueId, 'comments'), {
-      authorId: user.uid || null,
-      authorName: user.displayName || 'Unknown',
-      authorAvatar: user.photoURL || null,
+      authorId:     user.uid    || user.id    || null,
+      authorName:   user.name   || user.displayName || user.email?.split('@')[0] || 'Невідомо',
+      authorAvatar: user.avatar || user.photoURL    || null,
       text: text.trim(),
       createdAt: serverTimestamp(),
     });
