@@ -4,7 +4,7 @@
 // CLIENT-FACING data — read only from workspace side
 import { useState, useEffect } from 'react';
 import {
-  collection, doc, query, orderBy, limit,
+  collection, doc, query, limit,
   onSnapshot, getDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -17,7 +17,6 @@ export function usePortalMaterial(linkedId) {
   useEffect(() => {
     if (!linkedId) { setLoading(false); return; }
 
-    // linkedId can be stageId OR stageId/materialId
     const parts = linkedId.split('/');
     let ref;
     if (parts.length === 2) {
@@ -35,7 +34,8 @@ export function usePortalMaterial(linkedId) {
   return { material, loading };
 }
 
-// ── Stream last 50 messages from portal project chat ─────────────────────────
+// ── Stream last 60 messages from portal project chat ─────────────────────────
+// NO orderBy — avoids composite index requirement. Sort client-side.
 export function usePortalChat(projectId) {
   const [messages, setMessages] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -43,19 +43,26 @@ export function usePortalChat(projectId) {
   useEffect(() => {
     if (!projectId) { setLoading(false); return; }
 
+    // Query without orderBy to avoid needing a Firestore composite index
     const q = query(
       collection(db, 'projects', projectId, 'messages'),
-      orderBy('createdAt', 'desc'),
-      limit(50),
+      limit(60),
     );
 
     const unsub = onSnapshot(q, snap => {
-      const msgs = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .reverse(); // oldest first
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort client-side: oldest first (ascending createdAt)
+      msgs.sort((a, b) => {
+        const aT = a.createdAt?.toMillis?.() ?? a.timestamp?.toMillis?.() ?? 0;
+        const bT = b.createdAt?.toMillis?.() ?? b.timestamp?.toMillis?.() ?? 0;
+        return aT - bT;
+      });
       setMessages(msgs);
       setLoading(false);
-    }, () => setLoading(false));
+    }, (err) => {
+      console.warn('[usePortalChat] error:', err.message);
+      setLoading(false);
+    });
 
     return () => unsub();
   }, [projectId]);

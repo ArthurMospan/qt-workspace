@@ -5,6 +5,7 @@ import { AppProvider } from '@/lib/context/AppContext';
 export const metadata = {
   title: 'QuickTeam Workspace',
   description: 'Internal task manager for the QuickTeam team',
+  icons: { icon: '/favicon.png' },
 };
 
 export default function RootLayout({ children }) {
