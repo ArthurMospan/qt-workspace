@@ -14,8 +14,8 @@ export function useAllMyTasks(userId) {
     if (!userId || !activeOrgId) { setLoading(false); return; }
 
     const q = query(
-      collection(db, 'tasks'),
-      where('assignees', 'array-contains', userId)
+      collection(db, 'issues'),
+      where('assigneeIds', 'array-contains', userId)
     );
 
     const unsub = onSnapshot(q, (snap) => {
@@ -37,7 +37,7 @@ export function useAllMyTasks(userId) {
   }, [userId, activeOrgId]);
 
   const updateTask = useCallback(async (taskId, data) => {
-    await updateDoc(doc(db, 'tasks', taskId), { ...data, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, 'issues', taskId), { ...data, updatedAt: serverTimestamp() });
   }, []);
 
   return { tasks, loading, updateTask };
