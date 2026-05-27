@@ -1,7 +1,7 @@
 'use client';
 // src/app/workspace/chat/page.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X, Pin } from 'lucide-react';
+import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X, Pin, ChevronDown } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -347,10 +347,10 @@ export default function ChatPage() {
     <div className="flex h-full bg-white overflow-hidden">
       
       {/* Sidebar (Channels & DMs) */}
-      <div className="w-[240px] bg-white border-r border-[#e9e9e9] flex flex-col h-full shrink-0">
+      <div className="w-[240px] bg-[#1f1f1f] border-r border-[#333333] flex flex-col h-full shrink-0">
 
         {/* Search Box */}
-        <div className="px-[12px] py-[12px] border-b border-[#e9e9e9]">
+        <div className="px-[12px] py-[12px] border-b border-[#333333]">
           <div className="relative">
             <Search size={14} className="absolute left-[10px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
             <input
@@ -358,7 +358,7 @@ export default function ChatPage() {
               placeholder="Шукати..."
               value={chatSearch}
               onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-              className="w-full pl-[32px] pr-[10px] py-[6px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[6px] text-[12px] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
+              className="w-full pl-[32px] pr-[10px] py-[6px] bg-[#2a2a2a] border border-[#333333] rounded-[6px] text-[12px] text-white placeholder-[#9a9a9a] focus:bg-[#303030] focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/20 outline-none transition-colors"
             />
           </div>
         </div>
@@ -369,9 +369,9 @@ export default function ChatPage() {
           <div className="mb-[24px]">
             <div className="flex items-center justify-between px-[8px] mb-[8px] group">
               <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Канали</span>
-              <button 
+              <button
                 onClick={() => setIsCreatingChannel(true)}
-                className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-[#9a9a9a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <Plus size={14} />
               </button>
@@ -396,19 +396,19 @@ export default function ChatPage() {
               {channels
                 .filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()))
                 .map(c => {
-                const unreadCount = getUnreadCount(c.id);
+                const hasUnread = readState[c.id] && c.lastMessageAt && (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
                 return (
                   <button
                     key={c.id}
                     onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
                     className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                      isActive(c.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
+                      isActive(c.id) ? 'bg-[#333333] text-white' : 'text-[#b4b4b4] hover:text-white hover:bg-white/[0.05]'
                     }`}
                   >
                     <div className="flex items-start gap-[6px] truncate flex-1">
                       <Hash size={13} className={`shrink-0 mt-[2px] ${isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'}`} />
                       <div className="truncate flex-1 min-w-0">
-                        <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(c.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
+                        <p className={`text-[13px] truncate ${hasUnread && !isActive(c.id) ? 'font-bold text-white' : ''}`}>
                           {c.name}
                         </p>
                         {c.lastMessageText && (
@@ -418,12 +418,10 @@ export default function ChatPage() {
                         )}
                       </div>
                     </div>
-                    {unreadCount > 0 && (
-                      <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
-                        isActive(c.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
-                      }`}>
-                        {unreadCount}
-                      </div>
+                    {hasUnread && (
+                      <div className={`shrink-0 w-[6px] h-[6px] rounded-full ml-1 ${
+                        isActive(c.id) ? 'bg-white' : 'bg-[#6366f1]'
+                      }`} />
                     )}
                   </button>
                 );
@@ -432,11 +430,11 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* DMs Section (Hardcoded UI for now) */}
+          {/* DMs Section */}
           <div>
             <div className="flex items-center justify-between px-[8px] mb-[8px] group">
               <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Особисті</span>
-              <button className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity">
+              <button className="text-[#9a9a9a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
                 <Plus size={14} />
               </button>
             </div>
@@ -445,41 +443,34 @@ export default function ChatPage() {
                 .filter(u => u.name.toLowerCase().includes(chatSearch.toLowerCase()))
                 .map((u, idx, arr) => {
                 const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
-                const dmRoomId = [myUid, u.id].sort().join('_');
-                const unreadCount = getUnreadCount(dmRoomId);
                 return (
                   <React.Fragment key={u.id}>
                     {showSeparator && (
-                      <div className="my-1 border-t border-[#e9e9e9]" />
+                      <div className="my-1 border-t border-[#333333]" />
                     )}
                     <button
                       onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
                       className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                        isActive(u.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
+                        isActive(u.id) ? 'bg-[#333333] text-white' : 'text-[#b4b4b4] hover:text-white hover:bg-white/[0.05]'
                       }`}
                     >
                       <div className="flex items-start gap-[8px] truncate flex-1">
                         <div className="relative flex-shrink-0 mt-[2px]">
-                          <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
+                          <div className="w-[20px] h-[20px] rounded-full bg-[#333333] flex items-center justify-center overflow-hidden border border-[#444444]">
                             <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
                           </div>
                           {u.online && (
-                            <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#fafafa] bg-[#10b981]" />
+                            <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#1f1f1f] bg-[#10b981]" />
                           )}
                         </div>
                         <div className="truncate flex-1 min-w-0">
-                          <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(u.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
+                          <p className={`text-[13px] truncate ${u.isActive && !isActive(u.id) ? 'font-bold text-white' : ''}`}>
                             {u.name}
                           </p>
-                          {/* Note: DM rooms don't have lastMessageText like channels - would need to fetch separately */}
                         </div>
                       </div>
-                      {unreadCount > 0 && (
-                        <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
-                          isActive(u.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
-                        }`}>
-                          {unreadCount}
-                        </div>
+                      {u.isActive && !isActive(u.id) && (
+                        <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
                       )}
                     </button>
                   </React.Fragment>
@@ -492,10 +483,10 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-        
+      <div className="flex-1 flex flex-col min-w-0 bg-[#f9f9f9] relative">
+
         {/* Chat Header */}
-        <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] shrink-0 bg-white z-10">
+        <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#e9e9e9] shrink-0 bg-white z-10">
           <div className="flex flex-col">
             <div className="flex items-center gap-[6px]">
               {activeChannel.type === 'channel' ? (
@@ -524,16 +515,16 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-[20px] custom-scrollbar flex flex-col gap-[8px]">
+        <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-[24px] custom-scrollbar flex flex-col gap-[0px]">
            {loading && messages.length === 0 ? (
              <div className="flex-1 flex items-center justify-center">
                <div className="w-6 h-6 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
              </div>
            ) : messages.length === 0 ? (
-             <div className="flex-1 flex flex-col items-center justify-center text-[#9a9a9a]">
-               <MessageSquare size={32} className="mb-2 opacity-50" />
-               <p className="text-[14px]">Тут поки що немає повідомлень</p>
-               <p className="text-[12px]">Почніть розмову першим!</p>
+             <div className="flex-1 flex flex-col items-center justify-center text-[#cfcfcf]">
+               <MessageSquare size={40} className="mb-4 opacity-40" />
+               <p className="text-[15px] font-medium text-[#9a9a9a]">Тут поки що немає повідомлень</p>
+               <p className="text-[13px] text-[#9a9a9a] mt-1">Почніть розмову першим!</p>
              </div>
            ) : (() => {
              const displayMessages = chatSearch.trim() ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase())) : messages;
@@ -553,10 +544,10 @@ export default function ChatPage() {
                return (
                  <React.Fragment key={msg.id}>
                    {showDateSeparator && (
-                     <div className="flex items-center gap-3 my-4">
-                       <div className="flex-1 h-px bg-[#f0f0f0]" />
-                       <span className="text-[11px] font-bold text-[#9a9a9a]">{msgDate}</span>
-                       <div className="flex-1 h-px bg-[#f0f0f0]" />
+                     <div className="flex items-center gap-2 my-5 px-[8px]">
+                       <div className="flex-1 h-px bg-[#e9e9e9]" />
+                       <span className="text-[11px] font-bold text-[#9a9a9a] px-2">{msgDate}</span>
+                       <div className="flex-1 h-px bg-[#e9e9e9]" />
                      </div>
                    )}
 
@@ -567,7 +558,7 @@ export default function ChatPage() {
                        </span>
                      </div>
                    ) : (
-                     <div key={msg.id} className={`flex gap-[12px] group px-[8px] py-[4px] hover:bg-[#f8f8f8] -mx-[8px] rounded-[8px] transition-colors relative ${!showHeader ? 'mt-[-4px]' : 'mt-[12px]'}`}>
+                     <div key={msg.id} className={`flex gap-[12px] group px-[8px] py-[4px] hover:bg-[#f5f5f5] -mx-[8px] rounded-[8px] transition-colors relative ${!showHeader ? 'mt-[-2px]' : 'mt-[8px]'}`}>
                    {showHeader ? (
                      <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden mt-[2px]">
                        <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
@@ -727,10 +718,10 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="p-[20px] pt-[10px] shrink-0 relative">
+        <div className="p-[24px] pt-[16px] shrink-0 relative bg-white border-t border-[#e9e9e9]">
           {/* Simple Emoji Picker */}
           {showEmojiPicker && (
-            <div className="absolute bottom-[100%] left-[20px] mb-2 bg-white border border-[#e9e9e9] rounded-[10px] shadow-lg p-2 grid grid-cols-6 gap-1 z-20">
+            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-lg p-2 grid grid-cols-6 gap-1 z-20">
               {['😀','😂','🥰','😎','🤔','👍','🎉','🔥','❤️','✨','🙌','💯'].map(emoji => (
                 <button
                   key={emoji}
@@ -747,7 +738,7 @@ export default function ChatPage() {
           )}
 
           {mentionType === 'user' && mentionQuery !== null && (
-            <div className="absolute bottom-[100%] left-[20px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[200px] z-20">
+            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[200px] z-20">
               {members.filter(m => (m.name||m.email).toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 5).map(m => (
                 <button
                   key={m.uid||m.id}
@@ -769,7 +760,7 @@ export default function ChatPage() {
           )}
 
           {mentionType === 'issue' && mentionQuery !== null && (
-            <div className="absolute bottom-[100%] left-[20px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[240px] z-20">
+            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[240px] z-20">
               {recentIssues.filter(iss => iss.issueKey?.toLowerCase().includes(mentionQuery.toLowerCase()) || iss.title?.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 5).map(iss => (
                 <button
                   key={iss.id}
@@ -792,7 +783,7 @@ export default function ChatPage() {
             </div>
           )}
 
-          <div className="bg-[#f7f7f7] rounded-[16px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/10 transition-all overflow-visible flex flex-col">
+          <div className="bg-[#f9f9f9] rounded-[12px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/5 border border-[#e9e9e9] focus-within:border-[#1f1f1f]/20 transition-all overflow-visible flex flex-col">
             {attachment && (
               <div className="px-[12px] pt-[8px] flex items-center gap-2">
                 <div className="relative inline-block">
@@ -860,8 +851,8 @@ export default function ChatPage() {
 
       {/* Thread Panel */}
       {activeThreadId && activeThreadParent && (
-        <div className="w-[340px] bg-white border-l border-[#f7f7f7] flex flex-col h-full shrink-0 relative z-20">
-          <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#f7f7f7] shrink-0">
+        <div className="w-[340px] bg-[#f9f9f9] border-l border-[#e9e9e9] flex flex-col h-full shrink-0 relative z-20">
+          <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9] shrink-0 bg-white">
             <h3 className="font-bold text-[#1f1f1f] text-[14px]">Гілка відповідей</h3>
             <button onClick={closeThread} className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f0f0f0] transition-colors"><X size={18} /></button>
           </div>
@@ -935,7 +926,7 @@ export default function ChatPage() {
           </div>
 
           <div className="p-[16px] shrink-0">
-            <div className="bg-[#f7f7f7] rounded-[14px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/10 transition-all flex flex-col">
+            <div className="bg-[#f9f9f9] rounded-[12px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/5 border border-[#e9e9e9] focus-within:border-[#1f1f1f]/20 transition-all flex flex-col">
               {threadAttachment && (
                 <div className="px-[10px] pt-[8px] flex items-center gap-2">
                   <div className="relative inline-block">
