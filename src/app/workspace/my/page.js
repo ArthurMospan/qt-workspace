@@ -76,7 +76,7 @@ export default function MyTasksPage() {
         </div>
         <button
           onClick={() => setShowCreateTaskModal(true)}
-          className="flex items-center gap-[6px] px-[14px] py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-all"
+          className="flex items-center gap-[6px] px-[24px] py-[12px] bg-[#1f1f1f] text-white rounded-[12px] text-[14px] font-bold hover:bg-[#303030] transition-all"
         >
           <Plus size={14} /> Створити задачу
         </button>
@@ -147,7 +147,7 @@ export default function MyTasksPage() {
                 });
 
                 return (
-                  <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] rounded-[14px] overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
+                  <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] rounded-[24px] overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
                     <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                       <div className="flex items-center gap-[8px]">
                         <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
@@ -163,22 +163,28 @@ export default function MyTasksPage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`flex-1 overflow-y-auto px-3 flex flex-col gap-2 transition-colors ${snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''}`}
+                          className={`flex-1 overflow-y-auto px-[8px] flex flex-col gap-[8px] transition-colors ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
                         >
-                          {colIssues.map((issue, index) => {
-                            const pName = projects.find(p => p.id === issue.projectId)?.name;
-                            return (
-                              <IssueCard 
-                                key={issue.id} 
-                                issue={issue} 
-                                members={members}
-                                labels={labels}
-                                index={index} 
-                                projectId={issue.projectId}
-                                projectName={pName}
-                              />
-                            );
-                          })}
+                          {colIssues.length === 0 ? (
+                            <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
+                              Немає задач
+                            </div>
+                          ) : (
+                            colIssues.map((issue, index) => {
+                              const pName = projects.find(p => p.id === issue.projectId)?.name;
+                              return (
+                                <IssueCard
+                                  key={issue.id}
+                                  issue={issue}
+                                  members={members}
+                                  labels={labels}
+                                  index={index}
+                                  projectId={issue.projectId}
+                                  projectName={pName}
+                                />
+                              );
+                            })
+                          )}
                           {provided.placeholder}
                         </div>
                       )}
