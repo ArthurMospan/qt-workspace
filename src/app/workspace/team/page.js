@@ -23,7 +23,7 @@ function RoleBadge({ role }) {
   const cfg = ROLES[role] || ROLES.member;
   const Icon = cfg.icon;
   return (
-    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-full"
+    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-[20px]"
       style={{ color: cfg.color, background: cfg.color + '18' }}>
       <Icon size={9} />{cfg.label}
     </span>
@@ -72,7 +72,7 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[440px] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[440px] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#f0f0f0]">
           <h2 className="text-[16px] font-bold text-[#1f1f1f] flex items-center gap-2">
             <UserPlus size={18} className="text-[#6366f1]" /> Запросити учасника
@@ -90,7 +90,7 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
               placeholder="name@company.com"
-              className="w-full px-4 py-[12px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[14px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:border-[#1f1f1f] transition-colors"
+              className="w-full px-4 py-[12px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[12px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:border-[#1f1f1f] transition-colors"
             />
           </div>
           <div>
@@ -105,7 +105,7 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
               className="w-full text-[13px] font-semibold"
             />
           </div>
-          <p className="text-[11px] text-[#9a9a9a] bg-[#f7f7f7] p-3 rounded-[10px]">
+          <p className="text-[11px] text-[#9a9a9a] bg-[#f7f7f7] p-3 rounded-[12px]">
             <span className="font-bold text-[#1f1f1f]">Примітка:</span> Якщо користувач вже зареєстрований — він одразу додається. Якщо ні — отримає запрошення при вході.
           </p>
           <div className="flex justify-end gap-2 mt-2">
@@ -115,7 +115,7 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
             <button
               type="submit"
               disabled={inviting || !inviteEmail.trim()}
-              className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[14px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all shadow-sm flex items-center gap-2"
+              className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[12px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all shadow-sm flex items-center gap-2"
             >
               {inviting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <UserPlus size={16} />}
               Надіслати запрошення
@@ -163,7 +163,7 @@ export default function TeamPage() {
             {isOwner && (
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-[8px] px-[16px] py-[10px] rounded-[12px] text-[13px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
+                className="flex items-center gap-[8px] px-[24px] py-[12px] rounded-[12px] text-[14px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
               >
                 <Plus size={15} /> Запросити
               </button>
@@ -180,7 +180,7 @@ export default function TeamPage() {
               placeholder="Пошук учасників..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-[36px] pr-[12px] py-[9px] bg-[#f7f7f7] border-transparent rounded-[10px] text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] border outline-none transition-colors"
+              className="w-full pl-[36px] pr-[12px] py-[9px] bg-[#f7f7f7] border border-transparent rounded-[12px] text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none transition-colors"
             />
           </div>
         </div>
@@ -204,7 +204,7 @@ export default function TeamPage() {
                   <button
                     key={uid}
                     onClick={() => router.push(`/workspace/team/${uid}`)}
-                    className="flex items-start text-left p-4 rounded-[16px] transition-all border bg-white border-[#e9e9e9] hover:border-[#cfcfcf] hover:shadow-sm"
+                    className="flex items-start text-left p-4 rounded-[24px] transition-all border bg-white border-[#e9e9e9] hover:border-[#cfcfcf] hover:shadow-sm"
                   >
                     {/* Avatar */}
                     <div className="relative mr-4 shrink-0 mt-[2px]">
