@@ -56,27 +56,19 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     return () => unsub();
   }, [activeOrgId, currentUser]);
 
-  // Fetch channels and projects to combine them
+  // Fetch manual channels only (no auto-generated project channels)
   useEffect(() => {
     if (!activeOrgId) return;
 
-    let manualChannels = [];
-    let projectChannels = [];
-
-    const updateCombined = () => {
-      // Avoid duplicate IDs just in case
-      const seen = new Set();
-      const combined = [...manualChannels, ...projectChannels].filter(c => {
-        if (seen.has(c.id)) return false;
-        seen.add(c.id);
-        return true;
-      });
+    const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
+    const unsubChannels = onSnapshot(qChannels, (snap) => {
+      let channels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Always include general channel
-      const hasGeneral = combined.some(c => c.id === 'general');
-      const finalChannels = hasGeneral ? combined : [
+      const hasGeneral = channels.some(c => c.id === 'general');
+      const finalChannels = hasGeneral ? channels : [
         { id: 'general', name: 'general', type: 'public' },
-        ...combined
+        ...channels
       ];
 
       if (finalChannels.length > 0) {
@@ -95,29 +87,9 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
           { id: 'development', name: 'development', type: 'public' }
         ]);
       }
-    };
-
-    const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
-    const unsubChannels = onSnapshot(qChannels, (snap) => {
-      manualChannels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      updateCombined();
     });
 
-    const qProjects = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
-    const unsubProjects = onSnapshot(qProjects, (snap) => {
-      projectChannels = snap.docs.map(d => ({
-        id: `project_${d.id}`,
-        name: d.data().name || 'Project',
-        type: 'project',
-        originalId: d.id
-      }));
-      updateCombined();
-    });
-
-    return () => {
-      unsubChannels();
-      unsubProjects();
-    };
+    return () => unsubChannels();
   }, [activeOrgId]);
 
   // Fetch messages for active channel

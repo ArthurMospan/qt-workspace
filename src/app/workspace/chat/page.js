@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, ChevronDown, Plus, Edit2, Trash2, X } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
+import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useOrganization }  from '@/lib/hooks/useOrganization';
@@ -21,11 +22,13 @@ export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   const [messageText, setMessageText] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const searchQuery = chatSearch; // use global store value
+  const { activeOrg } = useAppContext();
   
   // Create a predictable DM room ID by sorting UIDs
   const getRoomId = () => {
-    if (activeChannel.type === 'channel' || activeChannel.type === 'project') return activeChannel.id;
+    if (activeChannel.type === 'channel') return activeChannel.id;
     const myUid = currentUser?.id || currentUser?.uid;
     const otherUid = activeChannel.id;
     if (!myUid || !otherUid) return 'general';
@@ -306,14 +309,28 @@ export default function ChatPage() {
       {/* Sidebar (Channels & DMs) */}
       <div className="w-[240px] bg-[#fafafa] border-r border-[#f0f0f0] flex flex-col h-full shrink-0">
         
-        {/* Workspace Header */}
-        <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] hover:bg-[#f0f0f0] cursor-pointer transition-colors">
-          <h2 className="font-bold text-[#1f1f1f] text-[15px] tracking-tight">QuickTeam HQ</h2>
+        {/* Workspace Header - Click to switch workspaces */}
+        <button onClick={() => setShowOrgSwitcher(true)} className="h-[56px] w-full flex items-center justify-between px-[24px] border-b border-[#f0f0f0] hover:bg-[#f0f0f0] active:bg-[#e9e9e9] transition-colors">
+          <h2 className="font-bold text-[#1f1f1f] text-[15px] tracking-tight">{activeOrg?.name || 'QuickTeam'}</h2>
           <ChevronDown size={16} className="text-[#9a9a9a]" />
+        </button>
+
+        {/* Search Box */}
+        <div className="px-[12px] py-[12px] border-b border-[#f0f0f0]">
+          <div className="relative">
+            <Search size={14} className="absolute left-[10px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
+            <input
+              type="text"
+              placeholder="Шукати канали..."
+              value={chatSearch}
+              onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
+              className="w-full pl-[32px] pr-[10px] py-[6px] bg-white border border-[#e9e9e9] rounded-[6px] text-[12px] placeholder-[#9a9a9a] focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] outline-none"
+            />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto py-[16px] px-[12px] custom-scrollbar">
-          
+
           {/* Channels Section */}
           <div className="mb-[24px]">
             <div className="flex items-center justify-between px-[8px] mb-[8px] group">
@@ -342,7 +359,9 @@ export default function ChatPage() {
                   <p className="text-[10px] text-[#9a9a9a] mt-1 ml-1">Enter - зберегти, Esc - скасувати</p>
                 </div>
               )}
-              {channels.map(c => {
+              {channels
+                .filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                .map(c => {
                 const unreadCount = getUnreadCount(c.id);
                 return (
                   <button
@@ -388,7 +407,9 @@ export default function ChatPage() {
               </button>
             </div>
             <div className="flex flex-col gap-[2px]">
-              {dms.map((u, idx, arr) => {
+              {dms
+                .filter(u => u.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                .map((u, idx, arr) => {
                 const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
                 const dmRoomId = [myUid, u.id].sort().join('_');
                 const unreadCount = getUnreadCount(dmRoomId);
@@ -443,19 +464,19 @@ export default function ChatPage() {
         <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] shrink-0 bg-white z-10">
           <div className="flex flex-col">
             <div className="flex items-center gap-[6px]">
-              {(activeChannel.type === 'channel' || activeChannel.type === 'project') ? (
+              {activeChannel.type === 'channel' ? (
                 <Hash size={18} className="text-[#1f1f1f]" />
               ) : (
                 <UserAvatar user={{ name: dms.find(d => d.id === activeChannel.id)?.name || 'User', avatar: dms.find(d => d.id === activeChannel.id)?.avatar }} size={24} />
               )}
               <h3 className="font-bold text-[#1f1f1f] text-[16px]">
-                {(activeChannel.type === 'channel' || activeChannel.type === 'project')
+                {activeChannel.type === 'channel'
                   ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
                   : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті повідомлення')}
               </h3>
             </div>
-            {(activeChannel.type === 'channel' || activeChannel.type === 'project') && (
-              <p className="text-[12px] text-[#9a9a9a] ml-[24px]">{activeChannel.type === 'project' ? 'Проектний чат' : 'Командне обговорення'}</p>
+            {activeChannel.type === 'channel' && (
+              <p className="text-[12px] text-[#9a9a9a] ml-[24px]">Командне обговорення</p>
             )}
           </div>
 
@@ -942,6 +963,9 @@ export default function ChatPage() {
         </div>
       )}
 
+      {showOrgSwitcher && (
+        <OrgSwitcherScreen onClose={() => setShowOrgSwitcher(false)} />
+      )}
     </div>
   );
 }
