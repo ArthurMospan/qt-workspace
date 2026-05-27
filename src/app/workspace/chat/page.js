@@ -40,7 +40,7 @@ export default function ChatPage() {
   const textareaRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const { channels, messages, loading, activeChannelData, activeThreadId, threadMessages, sendMessage, deleteMessage, editMessage, toggleReaction, createChannel, setTyping, openThread, closeThread, sendThreadMessage } = useWorkspaceChat(getRoomId(), activeChannel.type);
+  const { channels, messages, loading, activeChannelData, activeThreadId, threadMessages, activeDMs, readState, sendMessage, deleteMessage, editMessage, toggleReaction, createChannel, setTyping, openThread, closeThread, sendThreadMessage, markAsRead, deleteReply, getUnreadCount } = useWorkspaceChat(getRoomId(), activeChannel.type);
   
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editMsgText, setEditMsgText] = useState('');
@@ -51,6 +51,10 @@ export default function ChatPage() {
   const [mentionCursor, setMentionCursor] = useState(0);
   
   const [recentIssues, setRecentIssues] = useState([]);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+
   useEffect(() => {
     if (!projects || projects.length === 0) return;
     const pIds = projects.map(p => p.id).slice(0, 10);
@@ -59,6 +63,39 @@ export default function ChatPage() {
        setRecentIssues(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
   }, [projects]);
+
+  // Mark channel as read when user switches to it
+  useEffect(() => {
+    if (activeChannel) {
+      markAsRead(getRoomId());
+      setIsScrolledUp(false);
+      setUnreadWhileScrolled(0);
+      setLastMessageCount(0);
+    }
+  }, [activeChannel?.id, activeChannel?.type]);
+
+  // Track scroll position
+  useEffect(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+      setIsScrolledUp(!isAtBottom);
+      if (isAtBottom) setUnreadWhileScrolled(0);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track new messages while scrolled up
+  useEffect(() => {
+    if (isScrolledUp && messages.length > lastMessageCount) {
+      setUnreadWhileScrolled(messages.length - lastMessageCount);
+    }
+    setLastMessageCount(messages.length);
+  }, [messages.length, isScrolledUp, lastMessageCount]);
 
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
@@ -230,8 +267,18 @@ export default function ChatPage() {
   }, [members]);
 
   const myUid = currentUser?.uid || currentUser?.id;
+
+  // Build DM list: show active DMs + currently selected DM even if not in activeDMs list
+  const activeDMSet = new Set(activeDMs);
+  if (activeChannel.type === 'dm') {
+    activeDMSet.add(activeChannel.id);
+  }
+
   const dms = members
-    .filter(m => (m.uid || m.id) !== myUid)
+    .filter(m => {
+      const id = m.uid || m.id;
+      return id !== myUid && activeDMSet.has(id);
+    })
     .map(m => {
       const id = m.uid || m.id;
       const lastActive = presenceMap[id] || m.lastActive;
@@ -289,29 +336,40 @@ export default function ChatPage() {
                   <p className="text-[10px] text-[#9a9a9a] mt-1 ml-1">Enter - зберегти, Esc - скасувати</p>
                 </div>
               )}
-              {channels.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
-                  className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors ${
-                    isActive(c.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
-                  }`}
-                >
-                  <div className="flex items-center gap-[6px] truncate">
-                    <Hash size={13} className={isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'} />
-                    <span className={`text-[13px] truncate ${c.unread > 0 && !isActive(c.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
-                      {c.name}
-                    </span>
-                  </div>
-                  {c.unread > 0 && (
-                    <div className={`px-[6px] py-[1px] rounded-full text-[10px] font-bold ${
-                      isActive(c.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
-                    }`}>
-                      {c.unread}
+              {channels.map(c => {
+                const unreadCount = getUnreadCount(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
+                    className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
+                      isActive(c.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-[6px] truncate flex-1">
+                      <Hash size={13} className={`shrink-0 mt-[2px] ${isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'}`} />
+                      <div className="truncate flex-1 min-w-0">
+                        <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(c.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
+                          {c.name}
+                        </p>
+                        {c.lastMessageText && (
+                          <p className={`text-[11px] truncate ${isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'}`}>
+                            {c.lastMessageSender}: {c.lastMessageText}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </button>
-              ))}
+                    {unreadCount > 0 && (
+                      <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
+                        isActive(c.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
+                      }`}>
+                        {unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+
             </div>
           </div>
 
@@ -324,29 +382,43 @@ export default function ChatPage() {
               </button>
             </div>
             <div className="flex flex-col gap-[2px]">
-              {dms.map(u => (
-                <button
-                  key={u.id}
-                  onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
-                  className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors ${
-                    isActive(u.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
-                  }`}
-                >
-                  <div className="flex items-center gap-[8px] truncate">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
-                        <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
+              {dms.map(u => {
+                const dmRoomId = [myUid, u.id].sort().join('_');
+                const unreadCount = getUnreadCount(dmRoomId);
+                return (
+                  <button
+                    key={u.id}
+                    onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
+                    className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
+                      isActive(u.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-[8px] truncate flex-1">
+                      <div className="relative flex-shrink-0 mt-[2px]">
+                        <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
+                          <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
+                        </div>
+                        {u.online && (
+                          <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#fafafa] bg-[#10b981]" />
+                        )}
                       </div>
-                      {u.online && (
-                        <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#fafafa] bg-[#10b981]" />
-                      )}
+                      <div className="truncate flex-1 min-w-0">
+                        <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(u.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
+                          {u.name}
+                        </p>
+                        {/* Note: DM rooms don't have lastMessageText like channels - would need to fetch separately */}
+                      </div>
                     </div>
-                    <span className={`text-[13px] truncate ${u.unread > 0 && !isActive(u.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
-                      {u.name}
-                    </span>
-                  </div>
-                </button>
-              ))}
+                    {unreadCount > 0 && (
+                      <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
+                        isActive(u.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
+                      }`}>
+                        {unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -395,24 +467,39 @@ export default function ChatPage() {
                <p className="text-[14px]">Тут поки що немає повідомлень</p>
                <p className="text-[12px]">Почніть розмову першим!</p>
              </div>
-           ) : (
-             (chatSearch.trim() ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase())) : messages).map((msg, i, arr) => {
-               const prevMsg = arr[i - 1];
-               
-               const showHeader = !prevMsg || prevMsg.senderId !== msg.senderId || msg.isSystem || (i > 0 && prevMsg.isSystem) || (msg.createdAt?.toMillis() - prevMsg.createdAt?.toMillis() > 300000); // 5 mins gap
+           ) : (() => {
+             const displayMessages = chatSearch.trim() ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase())) : messages;
+             return displayMessages.map((msg, i) => {
+               // Find the actual previous message in the original messages array for proper grouping
+               const msgIndex = messages.findIndex(m => m.id === msg.id);
+               const prevMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
 
-               if (msg.isSystem) {
-                 return (
-                   <div key={msg.id} className="flex justify-center my-[16px]">
-                     <span className="text-[12px] text-[#9a9a9a] bg-[#f7f7f7] px-[12px] py-[4px] rounded-full">
-                       {msg.text}
-                     </span>
-                   </div>
-                 );
-               }
+               const showHeader = !prevMsg || prevMsg.senderId !== msg.senderId || msg.isSystem || prevMsg.isSystem || (msg.createdAt?.toMillis() - prevMsg.createdAt?.toMillis() > 300000); // 5 mins gap
+
+               // Check if we need to show date separator (new day)
+               const showDateSeparator = prevMsg && msg.createdAt && prevMsg.createdAt &&
+                 new Date(msg.createdAt.toDate()).toDateString() !== new Date(prevMsg.createdAt.toDate()).toDateString();
+
+               const msgDate = msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleDateString('uk-UA', { weekday: 'long', month: 'short', day: 'numeric' }) : '';
 
                return (
-                 <div key={msg.id} className={`flex gap-[12px] group px-[8px] py-[4px] hover:bg-[#f8f8f8] -mx-[8px] rounded-[8px] transition-colors relative ${!showHeader ? 'mt-[-4px]' : 'mt-[12px]'}`}>
+                 <React.Fragment key={msg.id}>
+                   {showDateSeparator && (
+                     <div className="flex items-center gap-3 my-4">
+                       <div className="flex-1 h-px bg-[#f0f0f0]" />
+                       <span className="text-[11px] font-bold text-[#9a9a9a]">{msgDate}</span>
+                       <div className="flex-1 h-px bg-[#f0f0f0]" />
+                     </div>
+                   )}
+
+                   {msg.isSystem ? (
+                     <div className="flex justify-center my-[16px]">
+                       <span className="text-[12px] text-[#9a9a9a] bg-[#f7f7f7] px-[12px] py-[4px] rounded-full">
+                         {msg.text}
+                       </span>
+                     </div>
+                   ) : (
+                     <div key={msg.id} className={`flex gap-[12px] group px-[8px] py-[4px] hover:bg-[#f8f8f8] -mx-[8px] rounded-[8px] transition-colors relative ${!showHeader ? 'mt-[-4px]' : 'mt-[12px]'}`}>
                    {showHeader ? (
                      <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden mt-[2px]">
                        <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
@@ -531,9 +618,11 @@ export default function ChatPage() {
                      )}
                    </div>
                  </div>
+                   )}
+                 </React.Fragment>
                );
-             })
-           )}
+             });
+             })()}
 
             {activeChannelData?.typing?.length > 0 && activeChannelData.typing.some(uid => uid !== myUid) && (
               <div className="flex items-center gap-2 mt-2 px-[8px]">
@@ -547,7 +636,21 @@ export default function ChatPage() {
                 </span>
               </div>
             )}
-            
+
+            {unreadWhileScrolled > 0 && isScrolledUp && (
+              <div className="fixed bottom-[80px] left-1/2 transform -translate-x-1/2 z-20">
+                <button
+                  onClick={() => {
+                    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#1f1f1f] text-white rounded-full shadow-lg hover:bg-[#303030] transition-all duration-200 hover:scale-105 active:scale-95"
+                >
+                  <span className="text-[12px] font-bold">{unreadWhileScrolled} нових повідомлень</span>
+                  <ChevronDown size={16} />
+                </button>
+              </div>
+            )}
+
             <div ref={messagesEndRef} className="h-4" />
         </div>
 
@@ -746,6 +849,14 @@ export default function ChatPage() {
                     )}
                   </div>
                 </div>
+                {msg.senderId === myUid && (
+                  <button
+                    onClick={() => { if (confirm('Видалити відповідь?')) deleteReply(activeThreadId, msg.id); }}
+                    className="opacity-0 group-hover:opacity-100 p-[6px] text-[#616061] hover:text-[#ef4444] hover:bg-red-50 rounded-[4px] transition-colors shrink-0"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             ))}
             <div ref={threadScrollRef} className="h-2" />

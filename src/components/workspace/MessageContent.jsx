@@ -24,10 +24,10 @@ export default function MessageContent({ text, members }) {
         }
 
         // Tokenizer for formatting
-        // We need to parse **, *, _, ~, `, @user, #issue
+        // We need to parse **, *, _, ~, `, @user, #issue, URLs
         // A simple regex approach that splits the string
-        
-        const tokenRegex = /(\*\*.*?\*\*|\*.*?\*|_.*?_|~.*?~|`[^`]+`|@[a-zA-Zа-яА-ЯіІїЇєЄ0-9_]+|#[a-zA-Z0-9-]+)/g;
+
+        const tokenRegex = /(\*\*.*?\*\*|\*.*?\*|_.*?_|~.*?~|`[^`]+`|@[a-zA-Zа-яА-ЯіІїЇєЄ0-9_]+|#[a-zA-Z0-9-]+|https?:\/\/[^\s]+)/g;
         const parts = line.split(tokenRegex);
 
         return (
@@ -38,8 +38,8 @@ export default function MessageContent({ text, members }) {
               if (part.startsWith('**') && part.endsWith('**')) {
                 return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
               }
-              if (part.startsWith('*') && part.endsWith('*')) {
-                return <strong key={pIdx}>{part.slice(1, -1)}</strong>;
+              if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
+                return <em key={pIdx}>{part.slice(1, -1)}</em>;
               }
               if (part.startsWith('_') && part.endsWith('_')) {
                 return <em key={pIdx}>{part.slice(1, -1)}</em>;
@@ -62,6 +62,22 @@ export default function MessageContent({ text, members }) {
                   <HoverCard key={pIdx} type="issue" value={part.slice(1)} members={members}>
                     {part}
                   </HoverCard>
+                );
+              }
+              if (part.startsWith('http://') || part.startsWith('https://')) {
+                return (
+                  <a
+                    key={pIdx}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#6366f1] hover:underline break-all inline-flex items-center gap-1"
+                  >
+                    {part}
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="inline">
+                      <path d="M2 10L10 2M10 2H6M10 2V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </a>
                 );
               }
 

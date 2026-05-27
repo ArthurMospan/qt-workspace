@@ -11,15 +11,55 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
   const [channels, setChannels] = useState([]);
   const [activeChannelData, setActiveChannelData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [readState, setReadState] = useState({}); // { channelId: Timestamp }
+  const [activeDMs, setActiveDMs] = useState([]); // [uid, ...]
 
   // Thread state
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [threadMessages, setThreadMessages] = useState([]);
 
+  // Fetch read state for all channels (per-user cursor tracking)
+  useEffect(() => {
+    if (!activeOrgId || !currentUser) return;
+    const uid = currentUser.id || currentUser.uid;
+
+    const qReadState = query(
+      collection(db, 'organizations', activeOrgId, 'readState'),
+      where('userId', '==', uid)
+    );
+    const unsub = onSnapshot(qReadState, (snap) => {
+      const state = {};
+      snap.forEach(doc => {
+        const data = doc.data();
+        state[data.channelId] = data.lastReadAt;
+      });
+      setReadState(state);
+    });
+
+    return () => unsub();
+  }, [activeOrgId, currentUser]);
+
+  // Fetch active DMs list for current user
+  useEffect(() => {
+    if (!activeOrgId || !currentUser) return;
+    const uid = currentUser.id || currentUser.uid;
+
+    const dmDocRef = doc(db, 'organizations', activeOrgId, 'activeDMs', uid);
+    const unsub = onSnapshot(dmDocRef, (snap) => {
+      if (snap.exists()) {
+        setActiveDMs(snap.data().partners || []);
+      } else {
+        setActiveDMs([]);
+      }
+    });
+
+    return () => unsub();
+  }, [activeOrgId, currentUser]);
+
   // Fetch channels and projects to combine them
   useEffect(() => {
     if (!activeOrgId) return;
-    
+
     let manualChannels = [];
     let projectChannels = [];
 
@@ -31,7 +71,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         seen.add(c.id);
         return true;
       });
-      
+
       if (combined.length === 0) {
         setChannels([
           { id: 'general', name: 'general', type: 'public' },
@@ -39,11 +79,18 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
           { id: 'development', name: 'development', type: 'public' }
         ]);
       } else {
-        setChannels(combined.sort((a, b) => a.name.localeCompare(b.name)));
+        // Sort by lastMessageAt desc (most recent first), then alphabetically
+        combined.sort((a, b) => {
+          const aTime = a.lastMessageAt?.toMillis?.() ?? 0;
+          const bTime = b.lastMessageAt?.toMillis?.() ?? 0;
+          if (bTime !== aTime) return bTime - aTime;
+          return a.name.localeCompare(b.name);
+        });
+        setChannels(combined);
       }
     };
 
-    const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'), orderBy('name', 'asc'));
+    const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
     const unsubChannels = onSnapshot(qChannels, (snap) => {
       manualChannels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updateCombined();
@@ -51,11 +98,11 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
 
     const qProjects = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
     const unsubProjects = onSnapshot(qProjects, (snap) => {
-      projectChannels = snap.docs.map(d => ({ 
-        id: `project_${d.id}`, 
-        name: d.data().name || 'Project', 
-        type: 'project', 
-        originalId: d.id 
+      projectChannels = snap.docs.map(d => ({
+        id: `project_${d.id}`,
+        name: d.data().name || 'Project',
+        type: 'project',
+        originalId: d.id
       }));
       updateCombined();
     });
@@ -146,23 +193,46 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     if ((!text.trim() && attachments.length === 0) || !currentUser || !channelId) return;
 
     try {
-      // Ensure channel exists (lazy init)
+      const uid = currentUser.id || currentUser.uid;
       const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
-      await setDoc(channelRef, { 
-        name: channelType === 'channel' ? channelId : 'DM', 
-        type: channelType 
+
+      // Ensure channel exists and update metadata
+      await setDoc(channelRef, {
+        name: channelType === 'channel' ? channelId : 'DM',
+        type: channelType,
+        lastMessageAt: serverTimestamp(),
+        lastMessageText: text.trim().slice(0, 80),
+        lastMessageSender: currentUser.name || 'Користувач'
       }, { merge: true });
 
       const messagesRef = collection(channelRef, 'messages');
       await addDoc(messagesRef, {
         text: text.trim(),
         attachments: attachments,
-        senderId: currentUser.id || currentUser.uid,
+        senderId: uid,
         user: currentUser.name || 'Користувач',
         avatar: currentUser.avatar || null,
         createdAt: serverTimestamp(),
-        readBy: [currentUser.id || currentUser.uid]
+        readBy: [uid]
       });
+
+      // Mark this channel as read by the sender
+      await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`), {
+        lastReadAt: serverTimestamp(),
+        channelId,
+        userId: uid
+      }, { merge: true });
+
+      // If DM, update activeDMs for both participants
+      if (channelType === 'dm') {
+        const parts = channelId.split('_');
+        for (const partnerId of parts) {
+          const others = parts.filter(p => p !== partnerId);
+          await setDoc(doc(db, 'organizations', activeOrgId, 'activeDMs', partnerId), {
+            partners: arrayUnion(...others)
+          }, { merge: true });
+        }
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -198,22 +268,20 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     if (!channelId || !activeOrgId || !currentUser) return;
     const uid = currentUser.id || currentUser.uid;
     try {
-
       const msgRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', msgId);
+
+      // First check if user already reacted
       const snap = await getDoc(msgRef);
       if (!snap.exists()) return;
-      
+
       const reactions = snap.data().reactions || {};
-      const currentReactors = reactions[emoji] || [];
-      
-      if (currentReactors.includes(uid)) {
-        reactions[emoji] = currentReactors.filter(id => id !== uid);
-        if (reactions[emoji].length === 0) delete reactions[emoji];
-      } else {
-        reactions[emoji] = [...currentReactors, uid];
-      }
-      
-      await updateDoc(msgRef, { reactions });
+      const hasReacted = (reactions[emoji] || []).includes(uid);
+
+      // Use atomic arrayUnion/arrayRemove to avoid race conditions
+      const update = {};
+      update[`reactions.${emoji}`] = hasReacted ? arrayRemove(uid) : arrayUnion(uid);
+
+      await updateDoc(msgRef, update);
     } catch (e) {
       console.error('Error toggling reaction:', e);
     }
@@ -267,8 +335,66 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     }
   };
 
+  const markAsRead = async (cId) => {
+    if (!currentUser || !activeOrgId || !cId) return;
+    const uid = currentUser.id || currentUser.uid;
+    try {
+      await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${cId}`), {
+        lastReadAt: serverTimestamp(),
+        channelId: cId,
+        userId: uid
+      }, { merge: true });
+    } catch (e) {
+      console.error('Error marking as read:', e);
+    }
+  };
+
+  const deleteReply = async (parentMsgId, replyId) => {
+    if (!channelId || !activeOrgId || !parentMsgId || !replyId) return;
+    try {
+      const replyRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId, 'replies', replyId);
+      await deleteDoc(replyRef);
+
+      // Decrement reply count on parent message
+      const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId);
+      await updateDoc(parentRef, {
+        replyCount: increment(-1)
+      });
+    } catch (e) {
+      console.error('Error deleting reply:', e);
+    }
+  };
+
   const openThread = (msgId) => setActiveThreadId(msgId);
   const closeThread = () => setActiveThreadId(null);
 
-  return { channels, messages, loading, activeChannelData, activeThreadId, threadMessages, sendMessage, deleteMessage, editMessage, toggleReaction, createChannel, setTyping, openThread, closeThread, sendThreadMessage };
+  // Compute unread count for a channel
+  const getUnreadCount = (cId) => {
+    if (!readState[cId]) return messages.length;
+    const lastReadAt = readState[cId]?.toMillis?.() ?? 0;
+    return messages.filter(m => (m.createdAt?.toMillis?.() ?? 0) > lastReadAt).length;
+  };
+
+  return {
+    channels,
+    messages,
+    loading,
+    activeChannelData,
+    activeThreadId,
+    threadMessages,
+    readState,
+    activeDMs,
+    sendMessage,
+    deleteMessage,
+    editMessage,
+    toggleReaction,
+    createChannel,
+    setTyping,
+    openThread,
+    closeThread,
+    sendThreadMessage,
+    markAsRead,
+    deleteReply,
+    getUnreadCount
+  };
 }
