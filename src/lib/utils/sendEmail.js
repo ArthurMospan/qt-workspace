@@ -29,12 +29,6 @@
  * });
  */
 
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
-
-// Reference to Cloud Function (if using Firebase)
-const sendEmailFunction = httpsCallable(functions, 'sendEmailNotification');
-
 /**
  * Send email notification (requires backend setup)
  * @param {string} email - recipient email

@@ -220,7 +220,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
                       {activeAddColId === col.id && (
                         <InlineAddForm
-                          onAdd={(title) => { onAddIssue(col.id, title); setActiveAddColId(null); }}
+                          onAdd={(title) => { onAddIssue(col.id, title, lane.id); setActiveAddColId(null); }}
                           onCancel={() => setActiveAddColId(null)}
                         />
                       )}

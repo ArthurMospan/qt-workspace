@@ -60,9 +60,29 @@ export default function BoardPage({ params }) {
     userName: currentUser?.name || '',
   };
 
-  const handleAddIssue = useCallback(async (columnId, title) => {
+  const handleAddIssue = useCallback(async (columnId, title, laneId = null) => {
     try {
-      await createIssue({ title, columnId }, actor);
+      const data = { title, columnId };
+
+      // Apply lane context if swimlanes are active
+      if (laneId) {
+        if (laneId.startsWith('assignee-')) {
+          const uid = laneId.replace('assignee-', '');
+          if (uid !== 'unassigned') {
+            data.assigneeIds = [uid];
+          }
+        } else if (laneId.startsWith('epic-')) {
+          const epicId = laneId.replace('epic-', '');
+          if (epicId !== 'none') {
+            data.parentEpicId = epicId;
+          }
+        } else if (laneId.startsWith('priority-')) {
+          const priority = laneId.replace('priority-', '');
+          data.priority = priority;
+        }
+      }
+
+      await createIssue(data, actor);
       showToast('Задачу додано ✓');
     } catch (err) {
       showToast('Помилка: ' + err.message, 'error');

@@ -33,6 +33,15 @@ function SortIcon({ k, sortKey, sortDir }) {
   return sortDir === 'asc' ? <ChevronUp size={11} className="inline ml-1" /> : <ChevronDn size={11} className="inline ml-1" />;
 }
 
+function TableHeader({ label, sortKey, tableKey, onSort, sortDir }) {
+  return (
+    <th onClick={() => onSort(tableKey)}
+      className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-[#1f1f1f] transition-colors select-none">
+      {label}<SortIcon k={tableKey} sortKey={sortKey} sortDir={sortDir} />
+    </th>
+  );
+}
+
 export default function BacklogPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser } = useAppContext();
@@ -77,13 +86,6 @@ export default function BacklogPage({ params }) {
       const res = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
       return sortDir === 'asc' ? res : -res;
     });
-
-  const th = (label, key) => (
-    <th onClick={() => toggleSort(key)}
-      className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-[#1f1f1f] transition-colors select-none">
-      {label}<SortIcon k={key} sortKey={sortKey} sortDir={sortDir} />
-    </th>
-  );
 
   const handleUpdate  = async (patch) => { if (activeIssue) await updateIssue(activeIssue.id, patch, currentUser?.id, currentUser?.name); };
   const handleDelete  = async () => { if (activeIssue) { await deleteIssue(activeIssue.id); setActiveIssue(null); showToast('Видалено'); } };
@@ -152,14 +154,14 @@ export default function BacklogPage({ params }) {
             <table className="w-full">
               <thead className="bg-[#f7f7f7] border-b border-[#e9e9e9]">
                 <tr>
-                  {th('ID',         'issueKey')}
-                  {th('Назва',      'title')}
-                  {th('Тип',        'type')}
-                  {th('Статус',     'columnId')}
-                  {th('Спринт',     'sprintId')}
-                  {th('Пріоритет',  'priority')}
+                  <TableHeader label="ID" sortKey={sortKey} tableKey="issueKey" onSort={toggleSort} sortDir={sortDir} />
+                  <TableHeader label="Назва" sortKey={sortKey} tableKey="title" onSort={toggleSort} sortDir={sortDir} />
+                  <TableHeader label="Тип" sortKey={sortKey} tableKey="type" onSort={toggleSort} sortDir={sortDir} />
+                  <TableHeader label="Статус" sortKey={sortKey} tableKey="columnId" onSort={toggleSort} sortDir={sortDir} />
+                  <TableHeader label="Спринт" sortKey={sortKey} tableKey="sprintId" onSort={toggleSort} sortDir={sortDir} />
+                  <TableHeader label="Пріоритет" sortKey={sortKey} tableKey="priority" onSort={toggleSort} sortDir={sortDir} />
                   <th className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3">Виконавці</th>
-                  {th('Час',        'spentMinutes')}
+                  <TableHeader label="Час" sortKey={sortKey} tableKey="spentMinutes" onSort={toggleSort} sortDir={sortDir} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f7f7f7]">
