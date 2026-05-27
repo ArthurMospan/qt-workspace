@@ -21,6 +21,7 @@ export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   const [messageText, setMessageText] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
   const searchQuery = chatSearch; // use global store value
   
   // Create a predictable DM room ID by sorting UIDs
@@ -472,7 +473,9 @@ export default function ChatPage() {
           </div>
 
           <div className="flex items-center gap-[16px]">
-            <button className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Info size={18} /></button>
+            {activeChannel.type === 'channel' && (
+              <button onClick={() => setShowChannelInfo(!showChannelInfo)} className={`transition-colors ${showChannelInfo ? 'text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}><Info size={18} /></button>
+            )}
             <div className="h-[24px] w-[1px] bg-[#f0f0f0]"></div>
             <WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} />
           </div>
@@ -954,6 +957,42 @@ export default function ChatPage() {
         </div>
       )}
 
+      {/* Channel Info Panel */}
+      {showChannelInfo && activeChannel.type === 'channel' && (
+        <div className="w-[280px] border-l border-[#e9e9e9] bg-[#f9f9f9] flex flex-col shrink-0 overflow-hidden">
+          <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9]">
+            <h4 className="font-bold text-[#1f1f1f] text-[14px]">Деталі</h4>
+            <button onClick={() => setShowChannelInfo(false)} className="text-[#9a9a9a] hover:text-[#1f1f1f]">
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-[16px] space-y-[20px]">
+            {/* Channel Name */}
+            <div>
+              <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[4px]">Назва</p>
+              <p className="text-[14px] font-bold text-[#1f1f1f]">{channels.find(c => c.id === activeChannel.id)?.name}</p>
+            </div>
+
+            {/* Members */}
+            <div>
+              <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Члени ({members.length})</p>
+              <div className="flex flex-col gap-[8px] max-h-[300px] overflow-y-auto">
+                {members.map(m => (
+                  <div key={m.id || m.uid} className="flex items-center gap-[8px] p-[8px] rounded-[6px] hover:bg-white/50">
+                    <div className="w-[28px] h-[28px] rounded-[6px] overflow-hidden shrink-0">
+                      <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={28} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-medium text-[#1f1f1f] truncate">{m.name || m.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
