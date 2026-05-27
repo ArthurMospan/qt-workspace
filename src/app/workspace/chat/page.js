@@ -14,7 +14,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import { WorkspaceHeaderRight } from '@/components/WorkspaceHeader';
 
 export default function ChatPage() {
-  const { currentUser, projects, signOut } = useAppContext();
+  const { currentUser, projects, signOut, activeOrgId } = useAppContext();
   const { members } = useOrganization();
   const showToast   = useWorkspaceStore(s => s.showToast);
   const chatSearch  = useWorkspaceStore(s => s.chatSearch);   // synced with header
@@ -22,6 +22,8 @@ export default function ChatPage() {
   const [messageText, setMessageText] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showChannelInfo, setShowChannelInfo] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [newDescription, setNewDescription] = useState('');
   const searchQuery = chatSearch; // use global store value
   
   // Create a predictable DM room ID by sorting UIDs
@@ -206,6 +208,19 @@ export default function ChatPage() {
       e.preventDefault();
       handleSend();
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    }
+  };
+
+  const handleUpdateChannelDescription = async () => {
+    if (!activeChannel.type === 'channel' || !activeOrgId) return;
+    try {
+      const channelRef = doc(db, 'organizations', activeOrgId, 'channels', activeChannel.id);
+      await updateDoc(channelRef, { description: newDescription });
+      setEditingDescription(false);
+      showToast('Опис оновлено ✓');
+    } catch (err) {
+      console.error('Error updating description:', err);
+      showToast('Помилка при збереженні опису', 'error');
     }
   };
 
@@ -541,6 +556,9 @@ export default function ChatPage() {
                        <div className="flex items-baseline gap-[8px] mb-[2px]">
                          <span className="font-bold text-[#1f1f1f] text-[15px] hover:underline cursor-pointer">{msg.user}</span>
                          <span className="text-[11px] text-[#9a9a9a] hover:underline cursor-pointer">{msg.time}</span>
+                         {msg.senderId === myUid && msg.readBy && msg.readBy.length > 1 && (
+                           <span className="text-[10px] text-[#6366f1] cursor-help" title={`Прочитано ${msg.readBy.length - 1} людьми`}>✓✓</span>
+                         )}
                        </div>
                      )}
                      
@@ -972,6 +990,53 @@ export default function ChatPage() {
             <div>
               <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[4px]">Назва</p>
               <p className="text-[14px] font-bold text-[#1f1f1f]">{channels.find(c => c.id === activeChannel.id)?.name}</p>
+            </div>
+
+            {/* Channel Description */}
+            <div>
+              <div className="flex items-center justify-between mb-[4px]">
+                <p className="text-[11px] font-bold text-[#9a9a9a] uppercase">Опис</p>
+              </div>
+              {editingDescription ? (
+                <div className="space-y-[8px]">
+                  <textarea
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    placeholder="Додайте опис каналу..."
+                    className="w-full p-[8px] bg-white border border-[#e9e9e9] rounded-[6px] text-[12px] resize-none focus:border-[#1f1f1f] outline-none"
+                    rows={3}
+                  />
+                  <div className="flex gap-[6px]">
+                    <button
+                      onClick={handleUpdateChannelDescription}
+                      className="flex-1 px-3 py-[6px] bg-[#1f1f1f] text-white text-[11px] font-bold rounded-[4px] hover:bg-[#303030]"
+                    >
+                      Зберегти
+                    </button>
+                    <button
+                      onClick={() => setEditingDescription(false)}
+                      className="flex-1 px-3 py-[6px] bg-[#f0f0f0] text-[#1f1f1f] text-[11px] font-bold rounded-[4px] hover:bg-[#e9e9e9]"
+                    >
+                      Скасувати
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[13px] text-[#4a4a4a] mb-[8px] min-h-[20px]">
+                    {channels.find(c => c.id === activeChannel.id)?.description || 'Немає опису'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEditingDescription(true);
+                      setNewDescription(channels.find(c => c.id === activeChannel.id)?.description || '');
+                    }}
+                    className="text-[11px] text-[#6366f1] hover:underline font-medium"
+                  >
+                    Додати опис
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Members */}
