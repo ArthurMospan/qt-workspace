@@ -1,7 +1,7 @@
 'use client';
 // src/app/workspace/chat/page.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X, Pin } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -24,6 +24,8 @@ export default function ChatPage() {
   const [showChannelInfo, setShowChannelInfo] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [newDescription, setNewDescription] = useState('');
+  const [mutedChannels, setMutedChannels] = useState(new Set());
+  const [drafts, setDrafts] = useState({});
   const searchQuery = chatSearch; // use global store value
   
   // Create a predictable DM room ID by sorting UIDs
@@ -66,6 +68,30 @@ export default function ChatPage() {
        setRecentIssues(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
   }, [projects]);
+
+  // Load draft on channel switch
+  useEffect(() => {
+    const roomId = getRoomId();
+    const savedDraft = localStorage.getItem(`draft_${roomId}`);
+    if (savedDraft) {
+      setMessageText(savedDraft);
+    } else {
+      setMessageText('');
+    }
+  }, [activeChannel?.id]);
+
+  // Auto-save draft as user types (save after 1s of inactivity)
+  useEffect(() => {
+    const roomId = getRoomId();
+    const timer = setTimeout(() => {
+      if (messageText.trim()) {
+        localStorage.setItem(`draft_${roomId}`, messageText);
+      } else {
+        localStorage.removeItem(`draft_${roomId}`);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [messageText, activeChannel?.id]);
 
   // Mark channel as read when user switches to it
   useEffect(() => {
@@ -174,6 +200,7 @@ export default function ChatPage() {
     const currentAttachment = attachment;
     
     setMessageText('');
+    localStorage.removeItem(`draft_${getRoomId()}`);
     setAttachment(null);
     setShowEmojiPicker(false);
     
@@ -654,6 +681,7 @@ export default function ChatPage() {
                        )}
                      </div>
                      <button onClick={() => openThread(msg.id)} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8] rounded-[4px] transition-colors"><MessageSquare size={16} /></button>
+                     <button onClick={() => { if(!msg.isPinned) { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: true }); } else { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: false }); } }} className={`p-[6px] rounded-[4px] transition-colors ${msg.isPinned ? 'text-[#6366f1] bg-[#eef2ff]' : 'text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8]'}`}><Pin size={16} /></button>
                      {msg.senderId === myUid && (
                        <>
                          <button onClick={() => { setEditingMsgId(msg.id); setEditMsgText(msg.text); setReactingMsgId(null); }} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8] rounded-[4px] transition-colors"><Edit2 size={16} /></button>
@@ -980,9 +1008,23 @@ export default function ChatPage() {
         <div className="w-[280px] border-l border-[#e9e9e9] bg-[#f9f9f9] flex flex-col shrink-0 overflow-hidden">
           <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9]">
             <h4 className="font-bold text-[#1f1f1f] text-[14px]">Деталі</h4>
-            <button onClick={() => setShowChannelInfo(false)} className="text-[#9a9a9a] hover:text-[#1f1f1f]">
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-[8px]">
+              <button
+                onClick={() => setMutedChannels(prev => {
+                  const next = new Set(prev);
+                  if (next.has(activeChannel.id)) next.delete(activeChannel.id);
+                  else next.add(activeChannel.id);
+                  return next;
+                })}
+                className={`text-[12px] px-[8px] py-[4px] rounded-[4px] transition-colors ${mutedChannels.has(activeChannel.id) ? 'bg-[#e9e9e9] text-[#1f1f1f]' : 'bg-white text-[#9a9a9a] hover:text-[#1f1f1f]'}`}
+                title={mutedChannels.has(activeChannel.id) ? "Увімкнути сповіщення" : "Вимкнути сповіщення"}
+              >
+                {mutedChannels.has(activeChannel.id) ? '🔕' : '🔔'}
+              </button>
+              <button onClick={() => setShowChannelInfo(false)} className="text-[#9a9a9a] hover:text-[#1f1f1f]">
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-[16px] space-y-[20px]">
@@ -1038,6 +1080,21 @@ export default function ChatPage() {
                 </div>
               )}
             </div>
+
+            {/* Pinned Messages */}
+            {messages.filter(m => m.isPinned).length > 0 && (
+              <div>
+                <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Закріплені ({messages.filter(m => m.isPinned).length})</p>
+                <div className="flex flex-col gap-[8px]">
+                  {messages.filter(m => m.isPinned).map(m => (
+                    <div key={m.id} className="p-[8px] bg-white border border-[#e9e9e9] rounded-[6px] hover:bg-[#f9f9f9] cursor-pointer group">
+                      <p className="text-[11px] font-bold text-[#1f1f1f] mb-[2px]">{m.user}</p>
+                      <p className="text-[12px] text-[#4a4a4a] line-clamp-2">{m.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Members */}
             <div>
