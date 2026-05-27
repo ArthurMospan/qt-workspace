@@ -344,12 +344,14 @@ export default function ChatPage() {
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
 
       {/* Header */}
-      <div className="px-[32px] pt-[24px] pb-[16px] bg-white border-b border-[#e9e9e9] shrink-0">
+      <div className="pt-0 -mt-2 mb-[20px] px-[32px] shrink-0">
         <div className="flex items-center justify-between mb-[16px]">
-          <h1 className="text-[24px] font-bold text-[#1f1f1f]">Чат</h1>
+          <div>
+            <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight">Чат</h1>
+          </div>
         </div>
 
         {/* Search Box */}
@@ -357,19 +359,19 @@ export default function ChatPage() {
           <Search size={14} className="absolute left-[12px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
           <input
             type="text"
-            placeholder="Шукати канали..."
+            placeholder="Шукати..."
             value={chatSearch}
             onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-            className="w-full pl-[36px] pr-[12px] py-[8px] bg-[#f9f9f9] border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
+            className="w-full pl-[36px] pr-[12px] py-[8px] bg-white border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
           />
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex min-w-0 overflow-hidden">
+      <div className="flex-1 flex min-w-0 overflow-hidden px-[32px] pb-[32px] gap-[20px]">
 
         {/* Channels Sidebar */}
-        <div className="w-[280px] bg-white border-r border-[#e9e9e9] flex flex-col shrink-0 overflow-hidden">
+        <div className="w-[280px] bg-white rounded-[16px] flex flex-col shrink-0 overflow-hidden shadow-sm border border-[#e9e9e9]">
           <div className="flex-1 overflow-y-auto custom-scrollbar">
 
             {/* Channels Section */}
@@ -428,7 +430,7 @@ export default function ChatPage() {
             </div>
 
             {/* DMs Section */}
-            <div className="px-[16px] py-[16px] border-t border-[#f0f0f0]">
+            <div className="px-[16px] py-[16px] border-t border-[#f5f5f5]">
               <div className="flex items-center justify-between mb-[12px] group">
                 <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Особисті</span>
                 <button className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -443,7 +445,7 @@ export default function ChatPage() {
                   return (
                     <React.Fragment key={u.id}>
                       {showSeparator && (
-                        <div className="my-2 h-px bg-[#f0f0f0]" />
+                        <div className="my-2 h-px bg-[#f5f5f5]" />
                       )}
                       <button
                         onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
@@ -477,10 +479,10 @@ export default function ChatPage() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#f7f7f7] relative">
+        <div className="flex-1 flex flex-col min-w-0 bg-white rounded-[16px] shadow-sm border border-[#e9e9e9] relative overflow-hidden">
 
           {/* Chat Header */}
-          <div className="h-[56px] flex items-center justify-between px-[32px] border-b border-[#e9e9e9] shrink-0 bg-white z-10">
+          <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] shrink-0 bg-white z-10">
             <div className="flex flex-col">
             <div className="flex items-center gap-[6px]">
               {activeChannel.type === 'channel' ? (
@@ -510,7 +512,7 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-[24px] custom-scrollbar flex flex-col gap-[0px]">
+        <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-[24px] py-[16px] custom-scrollbar flex flex-col gap-[0px]">
            {loading && messages.length === 0 ? (
              <div className="flex-1 flex items-center justify-center">
                <div className="w-6 h-6 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
@@ -713,7 +715,7 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="p-[24px] pt-[16px] shrink-0 relative bg-white border-t border-[#e9e9e9]">
+        <div className="p-[16px] pt-[12px] shrink-0 relative bg-white border-t border-[#f0f0f0]">
           {/* Simple Emoji Picker */}
           {showEmojiPicker && (
             <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-lg p-2 grid grid-cols-6 gap-1 z-20">
@@ -844,7 +846,7 @@ export default function ChatPage() {
 
         {/* Thread Panel */}
         {activeThreadId && activeThreadParent && (
-          <div className="w-[340px] bg-[#f9f9f9] border-l border-[#e9e9e9] flex flex-col shrink-0 relative z-20">
+          <div className="w-[340px] bg-white rounded-[16px] border border-[#e9e9e9] shadow-sm flex flex-col shrink-0 relative z-20 overflow-hidden">
           <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9] shrink-0 bg-white">
             <h3 className="font-bold text-[#1f1f1f] text-[14px]">Гілка відповідей</h3>
             <button onClick={closeThread} className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f0f0f0] transition-colors"><X size={18} /></button>
@@ -989,7 +991,7 @@ export default function ChatPage() {
 
       {/* Channel Info Panel */}
       {showChannelInfo && activeChannel.type === 'channel' && (
-        <div className="w-[280px] border-l border-[#e9e9e9] bg-[#f9f9f9] flex flex-col shrink-0 overflow-hidden">
+        <div className="w-[340px] bg-white rounded-[16px] border border-[#e9e9e9] shadow-sm flex flex-col shrink-0 overflow-hidden">
           <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9]">
             <h4 className="font-bold text-[#1f1f1f] text-[14px]">Деталі</h4>
             <div className="flex items-center gap-[8px]">
