@@ -344,31 +344,25 @@ export default function ChatPage() {
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
+    <div className="flex-1 flex flex-col overflow-hidden bg-white">
 
-      {/* Header */}
-      <div className="pt-0 -mt-2 mb-[20px] px-[32px] shrink-0">
-        <div className="flex items-center justify-between mb-[16px]">
-          <div>
-            <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight">Чат</h1>
-          </div>
-        </div>
-
-        {/* Search Box */}
-        <div className="relative max-w-[320px]">
+      {/* Header with Search */}
+      <div className="px-[32px] pt-[24px] pb-[20px] bg-white border-b border-[#f0f0f0] shrink-0">
+        <div className="relative max-w-[400px] mb-[16px]">
           <Search size={14} className="absolute left-[12px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
           <input
             type="text"
             placeholder="Шукати..."
             value={chatSearch}
             onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-            className="w-full pl-[36px] pr-[12px] py-[8px] bg-white border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
+            className="w-full pl-[36px] pr-[12px] py-[8px] bg-[#f9f9f9] border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
           />
         </div>
+        <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight">Чат</h1>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex min-w-0 overflow-hidden px-[32px] pb-[32px] gap-[20px]">
+      {/* Main Content Area with Gray Background */}
+      <div className="flex-1 flex min-w-0 overflow-hidden bg-[#f7f7f7] px-[32px] py-[32px] gap-[20px]">
 
         {/* Channels Sidebar */}
         <div className="w-[280px] bg-white rounded-[16px] flex flex-col shrink-0 overflow-hidden shadow-sm border border-[#e9e9e9]">
