@@ -25,7 +25,7 @@ export default function ChatPage() {
   
   // Create a predictable DM room ID by sorting UIDs
   const getRoomId = () => {
-    if (activeChannel.type === 'channel') return activeChannel.id;
+    if (activeChannel.type === 'channel' || activeChannel.type === 'project') return activeChannel.id;
     const myUid = currentUser?.id || currentUser?.uid;
     const otherUid = activeChannel.id;
     if (!myUid || !otherUid) return 'general';
@@ -268,7 +268,7 @@ export default function ChatPage() {
 
   const myUid = currentUser?.uid || currentUser?.id;
 
-  // Build DM list: show active DMs + currently selected DM even if not in activeDMs list
+  // Build DM list: show all members, but highlight active DMs
   const activeDMSet = new Set(activeDMs);
   if (activeChannel.type === 'dm') {
     activeDMSet.add(activeChannel.id);
@@ -277,7 +277,7 @@ export default function ChatPage() {
   const dms = members
     .filter(m => {
       const id = m.uid || m.id;
-      return id !== myUid && activeDMSet.has(id);
+      return id !== myUid;
     })
     .map(m => {
       const id = m.uid || m.id;
@@ -286,8 +286,14 @@ export default function ChatPage() {
         id,
         name: m.name || m.email,
         online: lastActive && (Date.now() - new Date(lastActive).getTime() < 120000),
-        avatar: m.avatar
+        avatar: m.avatar,
+        isActive: activeDMSet.has(id)
       };
+    })
+    .sort((a, b) => {
+      // Sort: active conversations first, then by name
+      if (a.isActive !== b.isActive) return b.isActive ? 1 : -1;
+      return (a.name || '').localeCompare(b.name || '');
     });
 
   const isActive = (id) => activeChannel.id === id;
@@ -382,41 +388,46 @@ export default function ChatPage() {
               </button>
             </div>
             <div className="flex flex-col gap-[2px]">
-              {dms.map(u => {
+              {dms.map((u, idx, arr) => {
+                const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
                 const dmRoomId = [myUid, u.id].sort().join('_');
                 const unreadCount = getUnreadCount(dmRoomId);
                 return (
-                  <button
-                    key={u.id}
-                    onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
-                    className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                      isActive(u.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
-                    }`}
-                  >
-                    <div className="flex items-start gap-[8px] truncate flex-1">
-                      <div className="relative flex-shrink-0 mt-[2px]">
-                        <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
-                          <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
-                        </div>
-                        {u.online && (
-                          <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#fafafa] bg-[#10b981]" />
-                        )}
-                      </div>
-                      <div className="truncate flex-1 min-w-0">
-                        <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(u.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
-                          {u.name}
-                        </p>
-                        {/* Note: DM rooms don't have lastMessageText like channels - would need to fetch separately */}
-                      </div>
-                    </div>
-                    {unreadCount > 0 && (
-                      <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
-                        isActive(u.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
-                      }`}>
-                        {unreadCount}
-                      </div>
+                  <React.Fragment key={u.id}>
+                    {showSeparator && (
+                      <div className="my-1 border-t border-[#e9e9e9]" />
                     )}
-                  </button>
+                    <button
+                      onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
+                      className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
+                        isActive(u.id) ? 'bg-[#1f1f1f] text-white' : 'text-[#4a4a4a] hover:bg-[#f0f0f0]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-[8px] truncate flex-1">
+                        <div className="relative flex-shrink-0 mt-[2px]">
+                          <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
+                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
+                          </div>
+                          {u.online && (
+                            <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#fafafa] bg-[#10b981]" />
+                          )}
+                        </div>
+                        <div className="truncate flex-1 min-w-0">
+                          <p className={`text-[13px] truncate ${unreadCount > 0 && !isActive(u.id) ? 'font-bold text-[#1f1f1f]' : ''}`}>
+                            {u.name}
+                          </p>
+                          {/* Note: DM rooms don't have lastMessageText like channels - would need to fetch separately */}
+                        </div>
+                      </div>
+                      {unreadCount > 0 && (
+                        <div className={`shrink-0 px-[6px] py-[1px] rounded-full text-[10px] font-bold ml-1 ${
+                          isActive(u.id) ? 'bg-white/20 text-white' : 'bg-[#1f1f1f] text-white'
+                        }`}>
+                          {unreadCount}
+                        </div>
+                      )}
+                    </button>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -432,19 +443,19 @@ export default function ChatPage() {
         <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] shrink-0 bg-white z-10">
           <div className="flex flex-col">
             <div className="flex items-center gap-[6px]">
-              {activeChannel.type === 'channel' ? (
+              {(activeChannel.type === 'channel' || activeChannel.type === 'project') ? (
                 <Hash size={18} className="text-[#1f1f1f]" />
               ) : (
                 <UserAvatar user={{ name: dms.find(d => d.id === activeChannel.id)?.name || 'User', avatar: dms.find(d => d.id === activeChannel.id)?.avatar }} size={24} />
               )}
               <h3 className="font-bold text-[#1f1f1f] text-[16px]">
-                {activeChannel.type === 'channel' 
+                {(activeChannel.type === 'channel' || activeChannel.type === 'project')
                   ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
                   : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті повідомлення')}
               </h3>
             </div>
-            {activeChannel.type === 'channel' && (
-              <p className="text-[12px] text-[#9a9a9a] ml-[24px]">Командне обговорення</p>
+            {(activeChannel.type === 'channel' || activeChannel.type === 'project') && (
+              <p className="text-[12px] text-[#9a9a9a] ml-[24px]">{activeChannel.type === 'project' ? 'Проектний чат' : 'Командне обговорення'}</p>
             )}
           </div>
 

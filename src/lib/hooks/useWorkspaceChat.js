@@ -72,21 +72,28 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         return true;
       });
 
-      if (combined.length === 0) {
-        setChannels([
-          { id: 'general', name: 'general', type: 'public' },
-          { id: 'design', name: 'design', type: 'public' },
-          { id: 'development', name: 'development', type: 'public' }
-        ]);
-      } else {
+      // Always include general channel
+      const hasGeneral = combined.some(c => c.id === 'general');
+      const finalChannels = hasGeneral ? combined : [
+        { id: 'general', name: 'general', type: 'public' },
+        ...combined
+      ];
+
+      if (finalChannels.length > 0) {
         // Sort by lastMessageAt desc (most recent first), then alphabetically
-        combined.sort((a, b) => {
+        finalChannels.sort((a, b) => {
           const aTime = a.lastMessageAt?.toMillis?.() ?? 0;
           const bTime = b.lastMessageAt?.toMillis?.() ?? 0;
           if (bTime !== aTime) return bTime - aTime;
           return a.name.localeCompare(b.name);
         });
-        setChannels(combined);
+        setChannels(finalChannels);
+      } else {
+        setChannels([
+          { id: 'general', name: 'general', type: 'public' },
+          { id: 'design', name: 'design', type: 'public' },
+          { id: 'development', name: 'development', type: 'public' }
+        ]);
       }
     };
 
