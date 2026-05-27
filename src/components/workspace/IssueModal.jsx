@@ -43,6 +43,7 @@ function Tab({ id, label, icon: Icon, active, onClick, badge }) {
 export default function IssueModal({
   issue, members = [], comments = [], timeLogs = [], auditLogs = [], sprints = [], allIssues = [],
   onClose, onUpdate, onDelete, onAddComment, onLogTime, onAddSubtask, onToggleSubtask,
+  onDeleteTimeLog, onUpdateTimeLog,
   priorities: prioritiesProp, types: typesProp, boardColumns: boardColumnsProp,
 }) {
   const PRIORITIES = (prioritiesProp || PRIORITIES_FALLBACK).map(p =>
@@ -305,8 +306,9 @@ export default function IssueModal({
                 <div className="flex flex-col gap-2">
                   {timeLogs.map(log => {
                     const user = members.find(m => (m.id || m.uid) === log.userId);
+                    const isOwnLog = log.userId === (currentUser?.id || currentUser?.uid);
                     return (
-                      <div key={log.id} className="flex items-center gap-3 py-2 border-b border-[#f7f7f7]">
+                      <div key={log.id} className="flex items-center gap-3 py-2 border-b border-[#f7f7f7] group">
                         <UserAvatar user={user || { name: log.userId }} size={24} className="shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-semibold text-[#1f1f1f]">{formatTime(log.spentMinutes)}</p>
@@ -315,6 +317,15 @@ export default function IssueModal({
                         <span className="text-[10px] text-[#9a9a9a] shrink-0">
                           {log.loggedAt?.toDate?.()?.toLocaleDateString('uk-UA')}
                         </span>
+                        {(isOwnLog || orgRole === 'owner') && onDeleteTimeLog && (
+                          <button
+                            onClick={() => onDeleteTimeLog(log.id)}
+                            className="p-[4px] text-[#cfcfcf] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                            title="Видалити"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     );
                   })}

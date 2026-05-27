@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   collection, query, where, onSnapshot,
-  addDoc, serverTimestamp,
+  addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -67,5 +67,28 @@ export function useTimeLogs(issueId) {
     });
   }, [activeOrgId]);
 
-  return { logs, totalMinutes, loading, addTimeLog };
+  // -------------------------------------------------------------------------
+  // updateTimeLog — Edit existing time log
+  // -------------------------------------------------------------------------
+  const updateTimeLog = useCallback(async (logId, { spentMinutes, description, workType }) => {
+    const updates = {};
+    if (spentMinutes !== undefined) {
+      if (spentMinutes <= 0) throw new Error('minutes must be > 0');
+      updates.spentMinutes = Math.round(spentMinutes);
+    }
+    if (description !== undefined) updates.description = description;
+    if (workType !== undefined) updates.workType = workType;
+    if (Object.keys(updates).length === 0) return;
+
+    await updateDoc(doc(db, 'timeLogs', logId), updates);
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // deleteTimeLog — Delete time log
+  // -------------------------------------------------------------------------
+  const deleteTimeLog = useCallback(async (logId) => {
+    await deleteDoc(doc(db, 'timeLogs', logId));
+  }, []);
+
+  return { logs, totalMinutes, loading, addTimeLog, updateTimeLog, deleteTimeLog };
 }
