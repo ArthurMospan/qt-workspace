@@ -62,7 +62,17 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
 
     const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
     const unsubChannels = onSnapshot(qChannels, (snap) => {
-      let channels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Filter out invalid/test channels
+      let channels = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(c => {
+          // Skip DM as channel, project channels, and obviously invalid names
+          if (c.id === 'DM' || c.id?.startsWith('project_')) return false;
+          if (!c.name || c.name.length === 0) return false;
+          // Skip test channels (single digit IDs like "1", "11")
+          if (/^\d+$/.test(c.id)) return false;
+          return true;
+        });
 
       // Always include general channel
       const hasGeneral = channels.some(c => c.id === 'general');

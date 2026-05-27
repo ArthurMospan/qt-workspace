@@ -1,9 +1,8 @@
 'use client';
 // src/app/workspace/chat/page.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, ChevronDown, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
-import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useOrganization }  from '@/lib/hooks/useOrganization';
@@ -22,9 +21,7 @@ export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   const [messageText, setMessageText] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const searchQuery = chatSearch; // use global store value
-  const { activeOrg } = useAppContext();
   
   // Create a predictable DM room ID by sorting UIDs
   const getRoomId = () => {
@@ -307,24 +304,18 @@ export default function ChatPage() {
     <div className="flex h-full bg-white overflow-hidden">
       
       {/* Sidebar (Channels & DMs) */}
-      <div className="w-[240px] bg-[#fafafa] border-r border-[#f0f0f0] flex flex-col h-full shrink-0">
-        
-        {/* Workspace Header - Click to switch workspaces */}
-        <button onClick={() => setShowOrgSwitcher(true)} className="h-[56px] w-full flex items-center justify-between px-[24px] border-b border-[#f0f0f0] hover:bg-[#f0f0f0] active:bg-[#e9e9e9] transition-colors">
-          <h2 className="font-bold text-[#1f1f1f] text-[15px] tracking-tight">{activeOrg?.name || 'QuickTeam'}</h2>
-          <ChevronDown size={16} className="text-[#9a9a9a]" />
-        </button>
+      <div className="w-[240px] bg-white border-r border-[#e9e9e9] flex flex-col h-full shrink-0">
 
         {/* Search Box */}
-        <div className="px-[12px] py-[12px] border-b border-[#f0f0f0]">
+        <div className="px-[12px] py-[12px] border-b border-[#e9e9e9]">
           <div className="relative">
             <Search size={14} className="absolute left-[10px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
             <input
               type="text"
-              placeholder="Шукати канали..."
+              placeholder="Шукати..."
               value={chatSearch}
               onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-              className="w-full pl-[32px] pr-[10px] py-[6px] bg-white border border-[#e9e9e9] rounded-[6px] text-[12px] placeholder-[#9a9a9a] focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] outline-none"
+              className="w-full pl-[32px] pr-[10px] py-[6px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[6px] text-[12px] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
             />
           </div>
         </div>
@@ -963,9 +954,6 @@ export default function ChatPage() {
         </div>
       )}
 
-      {showOrgSwitcher && (
-        <OrgSwitcherScreen onClose={() => setShowOrgSwitcher(false)} />
-      )}
     </div>
   );
 }
