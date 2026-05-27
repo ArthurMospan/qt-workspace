@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Trash2, CheckSquare, Square, Plus, Clock, User } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import UserAvatar from './UserAvatar';
+import { Select } from '@/components/ui/Select';
 
 const STATUSES = [
   { id: 'todo',        label: 'To Do' },
@@ -80,15 +81,21 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
               />
               <div className="flex items-center gap-2 mt-2 px-2">
                 {/* Status pill */}
-                <select value={task.status} onChange={e => update({ status: e.target.value })}
-                  className="text-[11px] font-bold px-3 py-[3px] rounded-full bg-[#f1f2f4] text-[#1f1f1f] border-none cursor-pointer">
-                  {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                </select>
+                <div className="w-[120px]">
+                  <Select
+                    value={task.status}
+                    onChange={val => update({ status: val })}
+                    options={STATUSES.map(s => ({ value: s.id, label: s.label }))}
+                  />
+                </div>
                 {/* Priority pill */}
-                <select value={task.priority || 'low'} onChange={e => update({ priority: e.target.value })}
-                  className="text-[11px] font-bold px-3 py-[3px] rounded-full bg-[#f1f2f4] text-[#1f1f1f] border-none cursor-pointer">
-                  {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                </select>
+                <div className="w-[120px]">
+                  <Select
+                    value={task.priority || 'low'}
+                    onChange={val => update({ priority: val })}
+                    options={PRIORITIES.map(p => ({ value: p.id, label: p.label, dotColor: p.color }))}
+                  />
+                </div>
               </div>
             </div>
             <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors shrink-0 mt-1">

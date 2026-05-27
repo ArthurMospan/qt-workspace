@@ -37,11 +37,21 @@ export function useAuth() {
             lastActive: new Date().toISOString(),
           });
         } else {
-          await setDoc(userRef, { lastActive: new Date().toISOString() }, { merge: true });
+          await setDoc(userRef, { 
+            lastActive: new Date().toISOString(),
+            name: firebaseUser.displayName || snap.data().name || 'Користувач',
+            avatar: firebaseUser.photoURL || snap.data().avatar || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+          }, { merge: true });
         }
 
         const profile = snap.exists()
-          ? { id: firebaseUser.uid, ...snap.data() }
+          ? {
+              ...snap.data(),
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || snap.data().name || 'Користувач',
+              email: firebaseUser.email,
+              avatar: firebaseUser.photoURL || snap.data().avatar || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+            }
           : {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || 'Користувач',

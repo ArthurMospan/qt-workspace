@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useIssues } from '@/lib/hooks/useIssues';
+import { useSprints } from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import IssueModal from '@/components/workspace/IssueModal';
@@ -13,9 +14,10 @@ import { useEffect } from 'react';
 import {
   AlertOctagon, ArrowUp, Minus, ArrowDown,
   Zap, Bug, Star, CheckSquare,
-  ChevronUp, ChevronDown as ChevronDn, Filter,
+  ChevronUp, ChevronDown as ChevronDn, Filter, Plus,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Select } from '@/components/ui/Select';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
@@ -26,18 +28,25 @@ function Badge({ label, color }) {
   return <span className="text-[10px] font-bold px-[6px] py-[2px] rounded-[5px]" style={{ color, background: color + '18' }}>{label}</span>;
 }
 
+function SortIcon({ k, sortKey, sortDir }) {
+  if (sortKey !== k) return null;
+  return sortDir === 'asc' ? <ChevronUp size={11} className="inline ml-1" /> : <ChevronDn size={11} className="inline ml-1" />;
+}
+
 export default function BacklogPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser } = useAppContext();
-  const { issues, loading, updateIssue, deleteIssue } = useIssues(projectId);
+  const { issues, loading: issuesLoading, updateIssue, deleteIssue } = useIssues(projectId);
+  const { sprints, loading: sprintsLoading, createSprint } = useSprints(projectId);
   const { showToast, activeTimer } = useWorkspaceStore();
+  const loading = issuesLoading || sprintsLoading;
 
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
 
   const [activeIssue, setActiveIssue] = useState(null);
-  const [filters, setFilters]  = useState({ status: 'all', priority: 'all', type: 'all' });
+  const [filters, setFilters]  = useState({ status: 'all', priority: 'all', type: 'all', sprint: 'all' });
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
 
@@ -46,10 +55,8 @@ export default function BacklogPage({ params }) {
   const { logs: auditLogs }            = useAuditLog(activeIssue?.id);
 
   useEffect(() => {
-    if (!activeIssue) return;
-    const updated = issues.find(i => i.id === activeIssue.id);
-    if (updated) setActiveIssue(updated);
-  }, [issues]); // eslint-disable-line
+    setActiveIssue(prev => prev ? issues.find(i => i.id === prev.id) ?? prev : null);
+  }, [issues]);
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
@@ -62,6 +69,7 @@ export default function BacklogPage({ params }) {
     .filter(i => filters.status   === 'all' || i.columnId  === filters.status)
     .filter(i => filters.priority === 'all' || i.priority  === filters.priority)
     .filter(i => filters.type     === 'all' || i.type      === filters.type)
+    .filter(i => filters.sprint   === 'all' || (filters.sprint === 'backlog' ? !i.sprintId : i.sprintId === filters.sprint))
     .sort((a, b) => {
       let av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
       if (sortKey === 'priority') { const O = {blocker:0,high:1,medium:2,low:3}; av = O[a.priority]??3; bv = O[b.priority]??3; }
@@ -70,13 +78,10 @@ export default function BacklogPage({ params }) {
       return sortDir === 'asc' ? res : -res;
     });
 
-  const SortIcon = ({ k }) => sortKey !== k ? null :
-    sortDir === 'asc' ? <ChevronUp size={11} className="inline ml-1" /> : <ChevronDn size={11} className="inline ml-1" />;
-
   const th = (label, key) => (
     <th onClick={() => toggleSort(key)}
       className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-[#1f1f1f] transition-colors select-none">
-      {label}<SortIcon k={key} />
+      {label}<SortIcon k={key} sortKey={sortKey} sortDir={sortDir} />
     </th>
   );
 
@@ -100,25 +105,38 @@ export default function BacklogPage({ params }) {
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 bg-white border-b border-[#e9e9e9] shrink-0">
-        <div className="flex items-center gap-3 mb-4">
-          <Link href={`/workspace/${projectId}`} className="text-[12px] text-[#9a9a9a] hover:text-[#1f1f1f]">← Дошка</Link>
-          <span className="text-[#e9e9e9]">/</span>
-          <h1 className="text-[16px] font-bold text-[#1f1f1f]">Backlog</h1>
-          <span className="text-[11px] text-[#9a9a9a]">{filtered.length} задач</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Link href={`/workspace/${projectId}`} className="text-[12px] text-[#9a9a9a] hover:text-[#1f1f1f]">← Дошка</Link>
+            <span className="text-[#e9e9e9]">/</span>
+            <h1 className="text-[16px] font-bold text-[#1f1f1f]">Backlog</h1>
+            <span className="text-[11px] text-[#9a9a9a]">{filtered.length} задач</span>
+          </div>
+          <button 
+            onClick={() => createSprint({})}
+            className="flex items-center gap-2 px-3 py-[6px] bg-[#1f1f1f] text-white rounded-[8px] text-[12px] font-bold hover:bg-[#303030] transition-colors"
+          >
+            <Plus size={14} /> Створити спринт
+          </button>
         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           <Filter size={12} className="text-[#9a9a9a]" />
           {[
-            { key: 'status',   label: 'Статус',   opts: [['all','Всі'], ...COLUMNS_ORDER.map(c => [c, COLUMN_LABEL[c]])] },
-            { key: 'priority', label: 'Пріоритет', opts: [['all','Всі'],['blocker','Blocker'],['high','High'],['medium','Medium'],['low','Low']] },
-            { key: 'type',     label: 'Тип',       opts: [['all','Всі'],['epic','Epic'],['feature','Feature'],['task','Task'],['bug','Bug']] },
+            { key: 'status',   label: 'Статус',   opts: [{value: 'all', label: 'Всі'}, ...COLUMNS_ORDER.map(c => ({value: c, label: COLUMN_LABEL[c]}))] },
+            { key: 'sprint',   label: 'Спринт',   opts: [{value: 'all', label: 'Всі'}, {value: 'backlog', label: 'Без спринта'}, ...sprints.map(s => ({value: s.id, label: s.name}))] },
+            { key: 'priority', label: 'Пріоритет', opts: [{value: 'all', label: 'Всі'},{value: 'blocker', label: 'Blocker'},{value: 'high', label: 'High'},{value: 'medium', label: 'Medium'},{value: 'low', label: 'Low'}] },
+            { key: 'type',     label: 'Тип',       opts: [{value: 'all', label: 'Всі'},{value: 'epic', label: 'Epic'},{value: 'feature', label: 'Feature'},{value: 'task', label: 'Task'},{value: 'bug', label: 'Bug'}] },
           ].map(({ key, opts }) => (
-            <select key={key} value={filters[key]} onChange={e => setFilter(key, e.target.value)}
-              className="px-3 py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[11px] font-medium text-[#1f1f1f] cursor-pointer hover:border-[#9a9a9a] transition-colors">
-              {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
+            <div key={key} className="w-[140px]">
+              <Select
+                value={filters[key]}
+                onChange={val => setFilter(key, val)}
+                options={opts}
+                className="text-[11px]"
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -130,7 +148,7 @@ export default function BacklogPage({ params }) {
             <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+          <div className="bg-white border border-[#e9e9e9] rounded-[24px] overflow-hidden">
             <table className="w-full">
               <thead className="bg-[#f7f7f7] border-b border-[#e9e9e9]">
                 <tr>
@@ -138,6 +156,7 @@ export default function BacklogPage({ params }) {
                   {th('Назва',      'title')}
                   {th('Тип',        'type')}
                   {th('Статус',     'columnId')}
+                  {th('Спринт',     'sprintId')}
                   {th('Пріоритет',  'priority')}
                   <th className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3">Виконавці</th>
                   {th('Час',        'spentMinutes')}
@@ -169,6 +188,11 @@ export default function BacklogPage({ params }) {
                         <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
                       </td>
                       <td className="px-4 py-3">
+                        <span className="text-[11px] font-medium text-[#1f1f1f]">
+                          {sprints.find(s => s.id === issue.sprintId)?.name || 'Backlog'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
                         <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: prio.c }}>
                           <PrioIcon size={11} /> {issue.priority}
                         </span>
@@ -189,7 +213,7 @@ export default function BacklogPage({ params }) {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-[13px] text-[#cfcfcf]">
+                  <tr><td colSpan={8} className="px-4 py-12 text-center text-[13px] text-[#cfcfcf]">
                     Задачі не знайдено
                   </td></tr>
                 )}
@@ -200,7 +224,7 @@ export default function BacklogPage({ params }) {
       </div>
 
       {activeIssue && (
-        <IssueModal issue={activeIssue} members={members} comments={comments} timeLogs={timeLogs} auditLogs={auditLogs}
+        <IssueModal issue={activeIssue} members={members} comments={comments} timeLogs={timeLogs} auditLogs={auditLogs} sprints={sprints}
           onClose={() => setActiveIssue(null)} onUpdate={handleUpdate} onDelete={handleDelete}
           onAddComment={handleComment} onLogTime={handleLogTime}
           onAddSubtask={handleAddSubtask} onToggleSubtask={handleToggleSubtask}

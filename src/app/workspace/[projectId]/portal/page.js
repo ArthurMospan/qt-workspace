@@ -1,11 +1,12 @@
 'use client';
 // src/app/workspace/[projectId]/portal/page.js
 // Portal tab: real-time chat + materials from client portal
-import { use } from 'react';
+import { use, useState } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
-import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import ProjectTabBar from '@/components/workspace/ProjectTabBar';
+import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send } from 'lucide-react';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
@@ -28,25 +29,36 @@ function timeAgo(ts) {
 
 export default function PortalPage({ params }) {
   const { projectId } = use(params);
-  const { projects } = useAppContext();
+  const { projects, currentUser } = useAppContext();
   const project = projects?.find(p => p.id === projectId);
 
   const { stages, loading: stagesLoading } = useStagesForProject(projectId);
-  const { messages, loading: chatLoading } = usePortalChat(projectId);
+  const { messages, loading: chatLoading, sendPortalMessage } = usePortalChat(projectId);
+
+  const [replyText, setReplyText] = useState('');
+  const [sending,   setSending]   = useState(false);
+
+  const handleSend = async () => {
+    if (!replyText.trim()) return;
+    setSending(true);
+    await sendPortalMessage(replyText, currentUser);
+    setReplyText('');
+    setSending(false);
+  };
 
   const materials = stages.flatMap(s =>
     (s.materials || []).map(m => ({ ...m, stageName: s.title || s.name }))
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
-      {/* Header */}
-      <div className="px-7 pt-6 pb-4 bg-white border-b border-[#e9e9e9]">
-        <h2 className="text-[18px] font-bold text-[#1f1f1f]">Клієнтський портал</h2>
-        <p className="text-[12px] text-[#9a9a9a] mt-1">
-          Матеріали і чат з проєкту «{project?.name}» — в реальному часі
-        </p>
-      </div>
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+      {/* Shared project tab bar — Portal tab highlighted */}
+      <ProjectTabBar
+        projectId={projectId}
+        projectName={project?.name}
+      />
+
+      <div className="flex-1 overflow-y-auto">
 
       <div className="p-7 grid grid-cols-[1fr_360px] gap-5 items-start">
 
@@ -130,7 +142,6 @@ export default function PortalPage({ params }) {
           <div className="px-5 py-4 border-b border-[#f0f0f0] flex items-center gap-2">
             <MessageSquare size={14} className="text-[#9a9a9a]" />
             <h3 className="text-[13px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
-            <span className="ml-auto text-[10px] text-[#9a9a9a]">read-only</span>
           </div>
 
           <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-[#f7f7f7]">
@@ -156,14 +167,26 @@ export default function PortalPage({ params }) {
             )}
           </div>
 
-          {/* CTA */}
-          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f7f7f7]">
-            <a href={PORTAL_URL} target="_blank" rel="noopener"
-              className="flex items-center justify-center gap-2 w-full py-[8px] bg-white border border-[#e9e9e9] text-[12px] font-semibold text-[#1f1f1f] rounded-[8px] hover:bg-[#f0f0f0] transition-colors">
-              <ExternalLink size={12} /> Відповісти в порталі
-            </a>
+          {/* Reply input */}
+          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f7f7f7] flex gap-2">
+            <input
+              type="text"
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+              placeholder="Відповісти клієнту..."
+              disabled={sending}
+              className="flex-1 text-[12px] bg-white rounded-[8px] border border-[#e9e9e9] px-3 py-[7px] outline-none focus:border-[#1f1f1f] transition-colors"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!replyText.trim() || sending}
+              className="p-[8px] bg-[#1f1f1f] text-white rounded-[8px] hover:bg-[#303030] disabled:opacity-40 transition-all flex items-center justify-center">
+              <Send size={13} />
+            </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

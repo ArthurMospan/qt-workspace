@@ -67,7 +67,20 @@ export function usePortalChat(projectId) {
     return () => unsub();
   }, [projectId]);
 
-  return { messages, loading };
+  // Send a reply from the team (visible in both WS and QT portal)
+  const sendPortalMessage = async (text, sender) => {
+    if (!projectId || !text?.trim()) return;
+    const { addDoc, serverTimestamp } = await import('firebase/firestore');
+    await addDoc(collection(db, 'projects', projectId, 'messages'), {
+      text: text.trim(),
+      senderName: sender?.name || 'Команда',
+      senderId: sender?.uid || sender?.id || null,
+      senderRole: 'team',
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  return { messages, loading, sendPortalMessage };
 }
 
 // ── Stage (client project) info ───────────────────────────────────────────────

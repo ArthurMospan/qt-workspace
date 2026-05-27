@@ -1,6 +1,7 @@
 // src/app/layout.js — Root layout
 import './globals.css';
 import { AppProvider } from '@/lib/context/AppContext';
+import AutoFix from '@/components/AutoFix';
 
 export const metadata = {
   title: 'QuickTeam Workspace',
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="uk">
       <body>
         <AppProvider>
+          <AutoFix />
           {children}
         </AppProvider>
       </body>

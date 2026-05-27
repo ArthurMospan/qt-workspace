@@ -1,7 +1,7 @@
 'use client';
 // src/app/workspace/layout.js — Sidebar full-height, header only over main content
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
@@ -9,11 +9,32 @@ import Toast from '@/components/Toast';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
-  const { currentUser, authLoading, activeOrgId, orgLoading, orgRole, noOrg, signOut } = useAppContext();
+  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut } = useAppContext();
+
+  const pathname = usePathname();
+  const isChat = pathname?.startsWith('/workspace/chat');
 
   useEffect(() => {
     if (!authLoading && !currentUser) router.replace('/login');
   }, [currentUser, authLoading, router]);
+
+  // Onboarding redirect: if owner/admin and org not yet onboarded
+  useEffect(() => {
+    if (authLoading || orgLoading) return;
+    if (!currentUser) return;
+    if (!activeOrg) return;
+    const isOwnerOrAdmin = orgRole === 'owner' || orgRole === 'admin';
+    if (isOwnerOrAdmin && activeOrg.onboarded !== true) {
+      router.replace('/onboarding');
+    }
+  }, [authLoading, orgLoading, currentUser, activeOrg, orgRole, router]);
+
+  // 3. Authenticated but not in any org → redirect immediately to onboarding
+  useEffect(() => {
+    if (noOrg && !orgLoading && !authLoading) {
+      router.replace('/onboarding');
+    }
+  }, [noOrg, orgLoading, authLoading, router]);
 
   // 1. Auth loading
   if (authLoading || orgLoading) {
@@ -27,28 +48,15 @@ export default function WorkspaceLayout({ children }) {
   // 2. Not authenticated
   if (!currentUser) return null;
 
-  // 3. Authenticated but not in any org → show onboarding
+  // 3. Authenticated but not in any org → redirect immediately to onboarding
   if (noOrg) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#f7f7f7] p-8 text-center">
-        <div className="text-[48px] mb-4">👋</div>
-        <h1 className="text-[24px] font-bold text-[#1f1f1f] mb-2">Вас ще не додали до команди</h1>
-        <p className="text-[14px] text-[#9a9a9a] max-w-[360px] mb-8">
-          Щоб отримати доступ до воркспейсу, попросіть власника організації надіслати вам запрошення на ваш email:&nbsp;
-          <span className="font-semibold text-[#1f1f1f]">{currentUser.email}</span>
-        </p>
-        <button
-          onClick={async () => {
-            if (signOut) await signOut();
-            // Redirect is handled by the useEffect above when currentUser becomes null
-          }}
-          className="px-6 py-3 bg-[#1f1f1f] text-white rounded-[12px] font-bold text-[14px] hover:bg-[#303030] transition-colors"
-        >
-          Вийти
-        </button>
+      <div className="w-full h-full flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
   }
+
 
   // 4. User is in an org but role is client → redirect to portal
   const isClientOnly = orgRole === 'client';
@@ -70,18 +78,27 @@ export default function WorkspaceLayout({ children }) {
     );
   }
 
-  // 5. All good — render workspace
   return (
-    <div className="w-full h-full flex overflow-hidden">
-      {/* Sidebar — full height, not affected by header */}
-      <WorkspaceSidebar />
+    <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
+      {/* Sidebar — full height, floating panel */}
+      <div className="print:hidden shrink-0 h-full flex p-[12px] pr-[6px]">
+        <div className="h-full rounded-[24px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex">
+          <WorkspaceSidebar />
+        </div>
+      </div>
 
-      {/* Right column: header + content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <WorkspaceHeader />
-        <main className="flex-1 overflow-hidden">
-          {children}
-        </main>
+      {/* Right column: header + content floating panel */}
+      <div className="flex flex-col flex-1 overflow-hidden w-full p-[12px] pl-[6px]">
+        <div className="flex flex-col flex-1 bg-white rounded-[24px] overflow-hidden border border-[#f0f0f0] shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+          {!isChat && (
+            <div className="print:hidden">
+              <WorkspaceHeader />
+            </div>
+          )}
+          <main className="flex-1 flex flex-col overflow-hidden print:overflow-visible bg-transparent">
+            {children}
+          </main>
+        </div>
       </div>
 
       <Toast />

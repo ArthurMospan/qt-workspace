@@ -29,15 +29,11 @@
     height: 100dvh;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: hidden; /* App shell — children scroll individually */
   }
 }
 
 @layer utilities {
-  /* Scrollbars hidden */
-  *, *::-webkit-scrollbar { scrollbar-width: none; }
-  *::-webkit-scrollbar    { display: none; }
-
   /* Remove outlines */
   *, *:focus, *:focus-visible, *:active { outline: none !important; }
 
@@ -52,4 +48,15 @@
     border: 1px solid #e9e9e9;
     border-radius: 12px;
   }
+
+  /* Hide scrollbar utility */
+  .hide-scrollbar { scrollbar-width: none; overflow: -moz-scrollbars-none; -ms-overflow-style: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
 }
+
+/* Thin scrollbars globally — outside @layer to avoid Turbopack specificity issues */
+* { scrollbar-width: thin; scrollbar-color: #e9e9e9 transparent; }
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #e9e9e9; border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: #d0d0d0; }

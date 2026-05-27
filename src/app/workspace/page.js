@@ -1,196 +1,352 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, X, MoreVertical, Edit2, Trash2, User } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, X, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, AlertCircle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { can } from '@/lib/utils/can';
+import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
-const CircularProgress = ({ progress = 0, size = 44, strokeWidth = 3 }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const safeProgress = Math.min(100, Math.max(0, progress || 0));
-  const offset = circumference - (safeProgress / 100) * circumference;
+// ── Edit Project Modal ───────────────────────────────────────────────────────
+function EditProjectModal({ project, onClose }) {
+  const [name, setName] = useState(project.name || '');
+  const [description, setDescription] = useState(project.description || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'projects', project.id), {
+        name: name.trim(),
+        description: description.trim(),
+        updatedAt: serverTimestamp(),
+      });
+      onClose();
+    } catch (err) { console.error(err); }
+    setSaving(false);
+  };
 
   return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#f0f0f0" strokeWidth={strokeWidth} fill="transparent" />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          stroke={safeProgress >= 100 ? "#f0f0f0" : "#1f1f1f"}
-          strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" fill="transparent" className="transition-all duration-500"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        {safeProgress >= 100 ? (
-          <Check size={size * 0.38} strokeWidth={2} className="text-[#1f1f1f]" />
-        ) : (
-          <span className="text-[10px] font-bold text-[#1f1f1f]">
-            {Math.round(safeProgress)}%
-          </span>
-        )}
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[20px] border-b border-[#f0f0f0]">
+          <h2 className="text-[18px] font-bold text-[#1f1f1f]">Редагувати проєкт</h2>
+          <button onClick={onClose} className="p-[6px] hover:bg-[#f7f7f7] rounded-[8px] text-[#9a9a9a]"><X size={18} /></button>
+        </div>
+        <div className="p-[24px] flex flex-col gap-[16px]">
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
+            <input
+              autoFocus
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              className="w-full text-[15px] font-semibold bg-[#f7f7f7] rounded-[12px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Короткий опис проєкту..."
+              className="w-full text-[14px] bg-[#f7f7f7] rounded-[12px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors resize-none"
+            />
+          </div>
+        </div>
+        <div className="flex gap-[8px] px-[24px] pb-[24px]">
+          <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
+          <button onClick={handleSave} disabled={!name.trim() || saving} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors">
+            {saving ? 'Збереження...' : 'Зберегти'}
+          </button>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-const StatCard = ({ title, value, icon: Icon, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`bg-white rounded-[20px] p-[16px] border border-[#f0f0f0] flex items-center gap-[16px] transition-all ${onClick ? 'cursor-pointer hover:border-[#1f1f1f]/20' : ''}`}
-  >
-    <div className="w-[44px] h-[44px] rounded-[14px] flex items-center justify-center shrink-0 bg-[#f7f7f7] text-[#1f1f1f]">
-      <Icon size={20} />
+// ── Add Member Modal ─────────────────────────────────────────────────────────
+function AddMemberModal({ project, allMembers, onClose }) {
+  const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [localTeam, setLocalTeam] = useState(project.team || []);
+
+  const filtered = allMembers.filter(m => {
+    const uid = m.id || m.uid;
+    const q = search.toLowerCase();
+    return (m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q));
+  });
+
+  const toggleMember = (uid) => {
+    setLocalTeam(prev =>
+      prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'projects', project.id), {
+        team: localTeam,
+        updatedAt: serverTimestamp(),
+      });
+      onClose();
+    } catch (err) { console.error(err); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[20px] border-b border-[#f0f0f0]">
+          <h2 className="text-[18px] font-bold text-[#1f1f1f]">Учасники проєкту</h2>
+          <button onClick={onClose} className="p-[6px] hover:bg-[#f7f7f7] rounded-[8px] text-[#9a9a9a]"><X size={18} /></button>
+        </div>
+        <div className="px-[24px] pt-[16px] pb-[12px]">
+          <div className="relative">
+            <Search size={14} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a]" />
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Пошук по імені або email..."
+              className="w-full pl-[36px] pr-[12px] py-[9px] text-[13px] bg-[#f7f7f7] rounded-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-[16px] pb-[16px] flex flex-col gap-[4px]">
+          {filtered.length === 0 && (
+            <p className="text-center text-[13px] text-[#9a9a9a] py-8">Нікого не знайдено</p>
+          )}
+          {filtered.map(m => {
+            const uid = m.id || m.uid;
+            const isIn = localTeam.includes(uid);
+            return (
+              <button
+                key={uid}
+                onClick={() => toggleMember(uid)}
+                className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[12px] transition-colors text-left ${
+                  isIn ? 'bg-[#eef2ff]' : 'hover:bg-[#f7f7f7]'
+                }`}
+              >
+                <UserAvatar user={m} size={36} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-[#1f1f1f] truncate">{m.name || m.email}</p>
+                  <p className="text-[12px] text-[#9a9a9a] truncate">{m.email}</p>
+                </div>
+                <div className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  isIn ? 'bg-[#6366f1] border-[#6366f1]' : 'border-[#e9e9e9]'
+                }`}>
+                  {isIn && <Check size={11} strokeWidth={3} className="text-white" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-[8px] px-[24px] pb-[24px] pt-[12px] border-t border-[#f0f0f0]">
+          <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors">
+            {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
+          </button>
+        </div>
+      </div>
     </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[#9a9a9a] text-[10px] font-bold uppercase tracking-widest mb-[2px]">{title}</p>
-      <h3 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{value}</h3>
+  );
+}
+
+// ── Delete Confirm Modal ─────────────────────────────────────────────────────
+function DeleteConfirmModal({ project, onClose, onDeleted }) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, 'projects', project.id));
+      onDeleted?.();
+      onClose();
+    } catch (err) { console.error(err); setDeleting(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="p-[24px] flex flex-col items-center text-center">
+          <div className="w-[56px] h-[56px] bg-red-50 rounded-full flex items-center justify-center mb-[16px]">
+            <AlertCircle size={24} className="text-red-500" />
+          </div>
+          <h2 className="text-[18px] font-bold text-[#1f1f1f] mb-[8px]">Видалити проєкт?</h2>
+          <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-[24px]">
+            Ви видаляєте <strong className="text-[#1f1f1f]">{project.name}</strong>. Цю дію неможливо скасувати.
+          </p>
+          <div className="flex gap-[8px] w-full">
+            <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
+            <button onClick={handleDelete} disabled={deleting} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-40 transition-colors">
+              {deleting ? 'Видалення...' : 'Видалити'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    {onClick && <ArrowRight size={16} className="text-[#cfcfcf] ml-auto" />}
-  </div>
-);
+  );
+}
 
-
-const ProjectCard = ({ project, archive, unarchive }) => {
+// ── Project Card ─────────────────────────────────────────────────────────────
+const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [] }) => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showBoardConfig, setShowBoardConfig] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
-  const budget = project.totalBudgetHours || 0;
-  const spent = project.spentMinutes ? Math.round(project.spentMinutes / 60) : 0;
-  
+
   const handleCardClick = (e) => {
-    // Prevent navigation if clicking inside the menu or menu button
     if (e.target.closest('.no-nav')) return;
     router.push(`/workspace/${project.id}`);
   };
 
   return (
-    <div 
-      onClick={handleCardClick}
-      className="group cursor-pointer relative bg-white rounded-[24px] flex flex-col justify-between border border-[#f0f0f0] overflow-visible hover:scale-[1.01] hover:ring-8 hover:ring-[#1f1f1f]/5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] hover:border-[#1f1f1f]/10 transition-all duration-300 p-[24px] pb-[32px] gap-[20px]"
-    >
-      <div className="z-10 relative flex flex-col gap-[20px]">
-        {/* Top Row: Team & Progress */}
-        <div className="flex justify-between items-center">
-          <div className="flex -space-x-[12px]">
-             {Array.from({ length: Math.min(teamCount, 3) }).map((_, i) => (
-                <div key={i} className="w-[32px] h-[32px] rounded-full bg-[#f0f0f0] border-2 border-white flex items-center justify-center overflow-hidden">
-                  <User size={16} className="text-[#9a9a9a]" />
-                </div>
-             ))}
-             {teamCount > 3 && (
-               <div className="w-[32px] h-[32px] rounded-full bg-[#f7f7f7] border-2 border-white flex items-center justify-center text-[10px] font-bold text-[#9a9a9a]">
-                 +{teamCount - 3}
-               </div>
-             )}
-             {teamCount === 0 && (
-                <div className="w-[32px] h-[32px] rounded-full bg-[#f0f0f0] border-2 border-white flex items-center justify-center">
-                  <Users size={14} className="text-[#9a9a9a]" />
-                </div>
-             )}
-          </div>
-
-          <div className="flex items-center gap-[12px]">
-            <CircularProgress progress={project.progress || 0} size={44} />
-            <div className="relative no-nav">
-              <button 
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="p-[8px] text-[#9a9a9a] hover:bg-[#f7f7f7] hover:text-[#1f1f1f] rounded-full transition-all"
-              >
-                <MoreVertical size={18} />
-              </button>
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-[180px] bg-white rounded-[16px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-[#f0f0f0] py-[8px] z-50">
-                    <button className="w-full text-left px-[16px] py-[10px] text-[13px] font-bold text-[#1f1f1f] hover:bg-[#f7f7f7] flex items-center gap-[8px]">
-                      <Edit2 size={14} /> Редагувати
-                    </button>
-                    {!isArchived ? (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); archive(project.id); setMenuOpen(false); }}
-                        className="w-full text-left px-[16px] py-[10px] text-[13px] font-bold text-[#9a9a9a] hover:bg-[#f7f7f7] hover:text-[#1f1f1f] flex items-center gap-[8px]"
-                      >
-                        <Archive size={14} /> Архівувати
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); unarchive(project.id); setMenuOpen(false); }}
-                        className="w-full text-left px-[16px] py-[10px] text-[13px] font-bold text-[#10b981] hover:bg-emerald-50 flex items-center gap-[8px]"
-                      >
-                        <ArchiveRestore size={14} /> Розархівувати
-                      </button>
-                    )}
-                    <div className="h-[1px] bg-[#f0f0f0] my-[4px]" />
-                    <button className="w-full text-left px-[16px] py-[10px] text-[13px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-[8px]">
-                      <Trash2 size={14} /> Видалити
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Title & Description */}
-        <div className="flex flex-col gap-[8px]">
-          <h2 className="text-[22px] font-bold text-[#1f1f1f] leading-tight line-clamp-1 group-hover:text-[#6366f1] transition-colors">
-            {project.name}
-          </h2>
-          <p className="text-[#9a9a9a] text-[14px] font-medium leading-[22px] line-clamp-2">
-            {project.description || 'Немає опису...'}
-          </p>
-        </div>
-
-        {/* Visibility badge */}
-        {project.visibility === 'internal' && (
-          <div className="flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#f0f0f0] w-fit">
-            <Lock size={10} className="text-[#9a9a9a]" />
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">Внутрішній</span>
-          </div>
-        )}
-        {project.visibility === 'shared' && (
-          <div className="flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-blue-50 w-fit">
-            <Globe size={10} className="text-blue-400" />
-            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Клієнтський</span>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Row */}
-      <div className="z-10 relative mt-auto flex flex-col gap-[16px]">
-         <div className="flex items-center gap-[12px]">
-            {budget > 0 && (
-              <div className="flex items-center gap-[6px] text-[#9a9a9a]">
-                <Clock size={14} strokeWidth={2.5} className="opacity-30" />
-                <span className="text-[11px] font-bold tracking-tight">{spent}г / {budget}г</span>
+    <>
+      <div
+        onClick={handleCardClick}
+        className="group cursor-pointer relative bg-[#f7f7f7] rounded-[24px] flex flex-col border border-transparent shadow-none overflow-visible hover:bg-[#f0f0f0] transition-all duration-200 p-[20px] gap-[16px]"
+      >
+        {/* Top row: avatars + kebab */}
+        <div className="flex items-center justify-between">
+          <div className="flex -space-x-[10px]">
+            {teamCount === 0 && (
+              <div className="w-[30px] h-[30px] rounded-full bg-[#e9e9e9] border-2 border-[#f7f7f7] flex items-center justify-center">
+                <Users size={13} className="text-[#9a9a9a]" />
               </div>
             )}
-            {isArchived && (
-               <span className="text-[10px] font-bold px-[8px] py-[3px] rounded-full bg-[#f7f7f7] text-[#9a9a9a] border border-[#e9e9e9]">
-                 Архів
-               </span>
+            {(project.team || []).slice(0, 4).map(uid => {
+              const m = members.find(mbr => (mbr.id || mbr.uid) === uid);
+              return m ? (
+                <UserAvatar key={uid} user={m} size={30} className="border-2 border-[#f7f7f7] shadow-none" />
+              ) : (
+                <div key={uid} className="w-[30px] h-[30px] rounded-full bg-[#e9e9e9] border-2 border-[#f7f7f7] flex items-center justify-center">
+                  <User size={13} className="text-[#9a9a9a]" />
+                </div>
+              );
+            })}
+            {teamCount > 4 && (
+              <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] border-2 border-[#f7f7f7] flex items-center justify-center text-[9px] font-bold text-[#9a9a9a]">
+                +{teamCount - 4}
+              </div>
             )}
-         </div>
+          </div>
+
+          {/* Kebab menu */}
+          <div className="relative no-nav">
+            <button
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              className="p-[7px] text-[#9a9a9a] hover:bg-white hover:text-[#1f1f1f] rounded-[8px] transition-all"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-[calc(100%+4px)] w-[200px] bg-white rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#f0f0f0] py-[6px] z-50">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowBoardConfig(true); setMenuOpen(false); }}
+                    className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-[#1f1f1f] hover:bg-[#f7f7f7] flex items-center gap-[8px]"
+                  >
+                    <Settings2 size={14} className="text-[#9a9a9a]" /> Налаштувати
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowAddMember(true); setMenuOpen(false); }}
+                    className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-[#1f1f1f] hover:bg-[#f7f7f7] flex items-center gap-[8px]"
+                  >
+                    <UserPlus size={14} className="text-[#9a9a9a]" /> Учасники
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowEdit(true); setMenuOpen(false); }}
+                    className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-[#1f1f1f] hover:bg-[#f7f7f7] flex items-center gap-[8px]"
+                  >
+                    <Edit2 size={14} className="text-[#9a9a9a]" /> Редагувати
+                  </button>
+                  <div className="h-[1px] bg-[#f0f0f0] my-[4px] mx-[14px]" />
+                  {!isArchived ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); archive(project.id); setMenuOpen(false); }}
+                      className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-[#9a9a9a] hover:bg-[#f7f7f7] hover:text-[#1f1f1f] flex items-center gap-[8px]"
+                    >
+                      <Archive size={14} /> Архівувати
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); unarchive(project.id); setMenuOpen(false); }}
+                      className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-[#10b981] hover:bg-emerald-50 flex items-center gap-[8px]"
+                    >
+                      <ArchiveRestore size={14} /> Розархівувати
+                    </button>
+                  )}
+                  <div className="h-[1px] bg-[#f0f0f0] my-[4px] mx-[14px]" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowDelete(true); setMenuOpen(false); }}
+                    className="w-full text-left px-[14px] py-[9px] text-[13px] font-semibold text-red-500 hover:bg-red-50 flex items-center gap-[8px]"
+                  >
+                    <Trash2 size={14} /> Видалити
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Title + description */}
+        <div className="flex flex-col gap-[6px]">
+          <h2 className="text-[16px] font-bold text-[#1f1f1f] leading-tight line-clamp-2">
+            {project.name}
+          </h2>
+          {project.description && (
+            <p className="text-[13px] text-[#9a9a9a] leading-[1.5] line-clamp-2">
+              {project.description}
+            </p>
+          )}
+        </div>
+
+        {/* Bottom: task count + status badges */}
+        <div className="flex items-center gap-[8px]">
+          <span className="flex items-center gap-[5px] text-[11px] font-semibold text-[#9a9a9a] bg-white px-[8px] py-[4px] rounded-[8px]">
+            <CheckSquare size={11} />{project.issueCounter || 0} задач
+          </span>
+          {isArchived && (
+            <span className="text-[10px] font-bold px-[8px] py-[3px] rounded-[8px] bg-white text-[#9a9a9a]">
+              Архів
+            </span>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Modals */}
+      {showEdit && <EditProjectModal project={project} onClose={() => setShowEdit(false)} />}
+      {showAddMember && <AddMemberModal project={project} allMembers={allOrgMembers} onClose={() => setShowAddMember(false)} />}
+      {showBoardConfig && <BoardConfigModal project={project} onClose={() => setShowBoardConfig(false)} />}
+      {showDelete && <DeleteConfirmModal project={project} onClose={() => setShowDelete(false)} />}
+    </>
   );
 };
 
-
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, userId }) {
+function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
   const [saving,      setSaving]      = useState(false);
+
+  const isFree      = orgPlan !== 'pro';
+  const limitReached = isFree && activeProjectsCount >= 3;
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -210,17 +366,10 @@ function NewProjectModal({ onClose, orgId, userId }) {
         updatedAt: serverTimestamp(),
         createdBy: userId,
       };
-      
-      await addDoc(collection(db, 'debug_logs'), {
-        msg: 'attempting create',
-        payload: { ...payload, createdAt: 'serverTimestamp', updatedAt: 'serverTimestamp' },
-        time: new Date().toISOString()
-      });
 
       const projectRef = await addDoc(collection(db, 'projects'), payload);
-      
+
       const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
-      const newStages = [];
       for (let i = 0; i < stageNames.length; i++) {
         const stageData = {
           label: `${String(i + 1).padStart(2, '0')}. ${stageNames[i]}`,
@@ -231,20 +380,10 @@ function NewProjectModal({ onClose, orgId, userId }) {
         };
         await addDoc(collection(db, 'stages'), stageData);
       }
-      
-      await addDoc(collection(db, 'debug_logs'), {
-        msg: 'create success with stages',
-        time: new Date().toISOString()
-      });
-      
+
       onClose();
     } catch (err) {
       console.error('[NewProject]', err);
-      await addDoc(collection(db, 'debug_logs'), {
-        msg: 'create error',
-        error: err.message,
-        time: new Date().toISOString()
-      }).catch(() => {});
     }
     setSaving(false);
   };
@@ -256,6 +395,30 @@ function NewProjectModal({ onClose, orgId, userId }) {
           <h2 className="text-[18px] font-bold text-[#1f1f1f]">Новий проєкт</h2>
           <button onClick={onClose} className="p-[6px] hover:bg-[#f7f7f7] rounded-[8px] text-[#9a9a9a]"><X size={18} /></button>
         </div>
+        {/* Content: upsell OR form */}
+        {limitReached ? (
+        <div className="p-[24px] flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-[#eef2ff] rounded-[20px] flex items-center justify-center mb-4">
+            <Lock size={28} className="text-[#6366f1]" />
+          </div>
+          <h3 className="text-[17px] font-bold text-[#1f1f1f] mb-2">Ліміт Free плану</h3>
+          <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-6">
+            На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
+            Перейдіть на Pro для необмеженої кількості проєктів.
+          </p>
+          <div className="flex flex-col gap-2 w-full">
+            <button
+              onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }}
+              className="w-full py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#6366f1] hover:bg-[#4f46e5] transition-colors"
+            >
+              Перейти на PRO →
+            </button>
+            <button onClick={onClose} className="w-full py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] hover:bg-[#f7f7f7] transition-colors">
+              Закрити
+            </button>
+          </div>
+        </div>
+      ) : (
         <div className="p-[24px] flex flex-col gap-[16px]">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
@@ -278,53 +441,42 @@ function NewProjectModal({ onClose, orgId, userId }) {
               className="w-full text-[14px] bg-[#f7f7f7] rounded-[12px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors resize-none"
             />
           </div>
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px] block">Видимість</label>
-            <div className="grid grid-cols-2 gap-[8px]">
-              {[
-                { val: 'internal', icon: Lock,  label: 'Внутрішній', desc: 'Лише для команди' },
-                { val: 'shared',   icon: Globe, label: 'Клієнтський', desc: 'Видно у клієнтському порталі' },
-              ].map(({ val, icon: Icon, label, desc }) => (
-                <button
-                  key={val}
-                  onClick={() => setVisibility(val)}
-                  className={`flex flex-col items-start gap-[4px] p-[12px] rounded-[12px] border-2 text-left transition-all ${
-                    visibility === val
-                      ? 'border-[#1f1f1f] bg-[#1f1f1f]/5'
-                      : 'border-[#f0f0f0] hover:border-[#cfcfcf]'
-                  }`}
-                >
-                  <div className="flex items-center gap-[6px]">
-                    <Icon size={14} className={visibility === val ? 'text-[#1f1f1f]' : 'text-[#9a9a9a]'} />
-                    <span className={`text-[13px] font-bold ${visibility === val ? 'text-[#1f1f1f]' : 'text-[#4a4a4a]'}`}>{label}</span>
-                  </div>
-                  <span className="text-[11px] text-[#9a9a9a] leading-tight">{desc}</span>
-                </button>
-              ))}
-            </div>
+        </div>
+        )}
+        {!limitReached && (
+          <div className="flex gap-[8px] px-[24px] pb-[24px]">
+            <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+              Скасувати
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={!name.trim() || saving}
+              className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
+            >
+              {saving ? 'Створення...' : 'Створити проєкт'}
+            </button>
           </div>
-        </div>
-        <div className="flex gap-[8px] px-[24px] pb-[24px]">
-          <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
-            Скасувати
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={!name.trim() || saving}
-            className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
-          >
-            {saving ? 'Створення...' : 'Створити проєкт'}
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default function WorkspacePage() {
-  const { projects, currentUser, activeOrgId } = useAppContext();
-  const [showArchived,  setShowArchived]  = useState(false);
+  const { projects, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
+  const { members } = useOrganization();
+  const searchParams = useSearchParams();
+  const router       = useRouter();
+  const [showArchived,   setShowArchived]   = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
+
+  // Auto-open modal when navigated with ?new=1
+  useEffect(() => {
+    if (searchParams?.get('new') === '1') {
+      setShowNewProject(true);
+      router.replace('/workspace', { scroll: false });
+    }
+  }, [searchParams]);
 
   const visible = (projects || []).filter(p =>
     showArchived ? p.status === 'archived' : p.status !== 'archived'
@@ -342,49 +494,42 @@ export default function WorkspacePage() {
   }, [projects]);
 
   return (<>
-    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden px-[16px] md:px-[32px] pb-[120px] custom-scrollbar bg-[#f7f7f7]">
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden px-[32px] pb-[120px] custom-scrollbar bg-transparent">
       <div className="max-w-[1400px] mx-auto">
         
         {/* Header Section */}
-        <div className="pt-[32px] mb-[32px]">
-          <div className="flex justify-between items-center mb-[24px]">
+        <div className="pt-0 -mt-2 mb-[20px]">
+          <div className="flex justify-between items-center">
             <div>
-               <h1 className="text-[26px] md:text-[36px] font-bold text-[#1f1f1f] tracking-tight leading-tight truncate">
-                 Проєкти команди
+               <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate">
+                 Проєкти
                </h1>
-               <p className="text-[#9a9a9a] mt-[4px] text-[14px]">Внутрішній робочий простір</p>
+               <p className="text-[13px] font-medium text-[#9a9a9a] mt-[4px]">Внутрішній робочий простір</p>
             </div>
 
-            <div className="flex items-center gap-[12px]">
+            <div className="flex items-center gap-[16px]">
               <button
                 onClick={() => setShowArchived(s => !s)}
-                className={`flex items-center gap-[8px] px-[16px] py-[12px] rounded-[14px] text-[13px] font-bold border transition-all ${
+                className={`flex items-center justify-center gap-[8px] w-[88px] h-[40px] rounded-[10px] text-[14px] font-medium transition-all ${
                   showArchived
                     ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
-                    : 'bg-white text-[#9a9a9a] border-[#e9e9e9] hover:border-[#cfcfcf] hover:text-[#1f1f1f]'
+                    : 'bg-[#f5f5f5] text-[#1f1f1f] border border-transparent hover:bg-[#e9e9e9]'
                 }`}
               >
                 <Archive size={16} />
                 <span className="hidden sm:inline">{showArchived ? 'Активні' : 'Архів'}</span>
               </button>
 
-              <button
-                onClick={() => setShowNewProject(true)}
-                className="flex items-center gap-[8px] px-[20px] py-[12px] rounded-[14px] text-[13px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all shadow-sm"
-              >
-                <Plus size={16} /> <span className="hidden sm:inline">Новий проєкт</span>
-              </button>
+              {can(orgRole, 'create:project') && (
+                <button
+                  onClick={() => setShowNewProject(true)}
+                  className="flex items-center pl-[12px] pr-[24px] gap-[12px] h-[40px] rounded-[10px] text-[14px] font-medium bg-[#1f1f1f] text-white hover:bg-[#333333] transition-all"
+                >
+                  <Plus size={16} /> <span className="hidden sm:inline">Новий проєкт</span>
+                </button>
+              )}
             </div>
           </div>
-
-          {/* Stats Grid */}
-          {!showArchived && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
-              <StatCard title="Активних проєктів" value={stats.total} icon={Target} />
-              <StatCard title="Середній прогрес" value={`${stats.avgProgress}%`} icon={TrendingUp} />
-              <StatCard title="Завершено" value={stats.completed} icon={CheckCircle2} />
-            </div>
-          )}
         </div>
 
         {/* Projects Grid */}
@@ -394,10 +539,10 @@ export default function WorkspacePage() {
               <Folder size={40} className="text-[#cfcfcf]" />
             </div>
             <h2 className="text-[22px] font-bold text-[#1f1f1f] mb-[8px]">
-              {showArchived ? 'Немає архівних проєктів' : 'Немає активних проєктів'}
+              {showArchived ? 'Немає архівованих проєктів' : 'Немає активних проєктів'}
             </h2>
             <p className="text-[#9a9a9a] text-[14px] max-w-[280px]">
-              Всі проєкти створюються клієнтами через основний портал.
+              Створіть новий проєкт, щоб розпочати роботу з командою.
             </p>
           </div>
         ) : (
@@ -407,7 +552,9 @@ export default function WorkspacePage() {
                 key={p.id} 
                 project={p} 
                 archive={archive} 
-                unarchive={unarchive} 
+                unarchive={unarchive}
+                members={members}
+                allOrgMembers={members}
               />
             ))}
           </div>
@@ -421,6 +568,8 @@ export default function WorkspacePage() {
         onClose={() => setShowNewProject(false)}
         orgId={activeOrgId}
         userId={currentUser?.id || currentUser?.uid}
+        orgPlan={activeOrg?.plan}
+        activeProjectsCount={stats.total}
       />
     )}
   </>);

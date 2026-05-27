@@ -52,7 +52,7 @@ export function useTimeLogs(issueId) {
   // -------------------------------------------------------------------------
   // addTimeLog
   // -------------------------------------------------------------------------
-  const addTimeLog = useCallback(async (issueId, projectId, userId, minutes, description = '') => {
+  const addTimeLog = useCallback(async (issueId, projectId, userId, minutes, description = '', workType = 'development') => {
     if (!minutes || minutes <= 0) throw new Error('minutes must be > 0');
 
     await addDoc(collection(db, 'timeLogs'), {
@@ -62,6 +62,7 @@ export function useTimeLogs(issueId) {
       organizationId: activeOrgId,
       spentMinutes: Math.round(minutes),
       description: description || '',
+      workType: workType || 'development',
       loggedAt: serverTimestamp(),
     });
   }, [activeOrgId]);

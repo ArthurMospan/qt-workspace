@@ -40,14 +40,15 @@ export function useComments(issueId) {
   // addComment
   // user: { uid, displayName, photoURL }
   // -------------------------------------------------------------------------
-  const addComment = useCallback(async (issueId, text, user = {}) => {
-    if (!text?.trim()) throw new Error('Comment text cannot be empty');
+  const addComment = useCallback(async (issueId, text, user = {}, attachments = []) => {
+    if (!text?.trim() && attachments.length === 0) throw new Error('Comment cannot be empty');
 
     await addDoc(collection(db, 'issues', issueId, 'comments'), {
       authorId:     user.uid    || user.id    || null,
       authorName:   user.name   || user.displayName || user.email?.split('@')[0] || 'Невідомо',
       authorAvatar: user.avatar || user.photoURL    || null,
-      text: text.trim(),
+      text: text?.trim() || '',
+      attachments: attachments,
       createdAt: serverTimestamp(),
     });
   }, []);

@@ -98,6 +98,68 @@ async function migration004_stampIssues() {
   await markDone(name);
 }
 
+// ─── Migration 005: Mark existing org as onboarded (skip wizard for existing users) ─
+async function migration005_markOnboarded() {
+  const name = 'm005_markOnboarded';
+  if (await hasRun(name)) return;
+
+  const orgRef  = doc(db, 'organizations', ORG_ID);
+  const orgSnap = await getDoc(orgRef);
+  if (!orgSnap.exists()) return;
+
+  // Only mark as onboarded if org already has projects (i.e. is NOT brand new)
+  const projectsSnap = await getDocs(collection(db, 'projects'));
+  const hasProjects = projectsSnap.docs.some(d => d.data().organizationId === ORG_ID || !d.data().organizationId);
+
+  if (hasProjects || orgSnap.data().onboarded === true) {
+    await updateDoc(orgRef, { onboarded: true });
+    console.log('[Migration 005] ✅ Existing org marked as onboarded');
+  }
+
+  await markDone(name);
+}
+
+// ─── Migration 006: Extract members to orgMemberships collection ────────────
+async function migration006_extractOrgMemberships() {
+  const name = 'm006_extractOrgMemberships';
+  if (await hasRun(name)) return;
+
+  const orgsSnap = await getDocs(collection(db, 'organizations'));
+  if (orgsSnap.empty) { await markDone(name); return; }
+
+  let extractedCount = 0;
+  // Use a batch to write orgMemberships
+  for (const orgDoc of orgsSnap.docs) {
+    const orgData = orgDoc.data();
+    const members = orgData.members || [];
+    
+    if (members.length > 0) {
+      const batch = writeBatch(db);
+      for (const m of members) {
+        if (!m.uid) continue;
+        const membershipId = `${orgDoc.id}_${m.uid}`;
+        const membershipRef = doc(db, 'orgMemberships', membershipId);
+        batch.set(membershipRef, {
+          id: membershipId,
+          orgId: orgDoc.id,
+          userId: m.uid,
+          role: m.role || 'member',
+          joinedAt: m.joinedAt || new Date().toISOString(),
+          hourlyRate: m.hourlyRate || 0
+        }, { merge: true });
+        extractedCount++;
+      }
+      await batch.commit();
+      
+      // Optionally remove members and memberUids from org document to save space
+      // For safety during transition, we can leave them, but the plan is to rely on orgMemberships.
+    }
+  }
+
+  console.log(`[Migration 006] ✅ Extracted ${extractedCount} memberships to orgMemberships collection`);
+  await markDone(name);
+}
+
 // ─── Main runner ─────────────────────────────────────────────────────────────
 export async function runMigrations() {
   try {
@@ -106,6 +168,8 @@ export async function runMigrations() {
     await migration002_stampProjects();
     await migration003_stampTasks();
     await migration004_stampIssues();
+    await migration005_markOnboarded();
+    await migration006_extractOrgMemberships();
     console.log('[Migrations] ✅ All done.');
   } catch (err) {
     // Non-fatal — log but don't crash the app

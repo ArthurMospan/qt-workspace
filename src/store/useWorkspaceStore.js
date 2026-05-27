@@ -55,6 +55,10 @@ const useWorkspaceStore = create((set, get) => ({
   // ── Breadcrumbs (set by each page) ────────────────────────────────
   breadcrumbs: [],   // [{ label, href? }]
   setBreadcrumbs: (crumbs) => set({ breadcrumbs: crumbs }),
+
+  // ── Chat search (synced between header and chat page) ─────────────
+  chatSearch: '',
+  setChatSearch: (q) => set({ chatSearch: q }),
 }));
 
 export default useWorkspaceStore;

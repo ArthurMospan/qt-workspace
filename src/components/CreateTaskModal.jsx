@@ -2,8 +2,11 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, ChevronDown } from 'lucide-react';
+import { X, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
+import MarkdownEditor from './MarkdownEditor';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { Select } from '@/components/ui/Select';
 
 const PRIORITIES = [
   { value: 'low',      label: 'Низький' },
@@ -26,14 +29,16 @@ const DEFAULT_STATUSES = [
   { id: 'done',        label: 'Готово' },
 ];
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [] }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null }) {
   const { currentUser } = useAppContext();
+  const { labels: availableLabels = [] } = useWorkflowConfig();
   const statuses = stages?.length ? stages : DEFAULT_STATUSES;
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'todo',
     priority: 'medium', type: 'task',
-    assignees: [], dueDate: '',
+    assignees: [], labelIds: [], dueDate: '',
+    projectId: projects && projects.length > 0 ? projects[0].id : ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +53,12 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       : [...form.assignees, uid]);
   };
 
+  const toggleLabel = (labelId) => {
+    set('labelIds', form.labelIds.includes(labelId)
+      ? form.labelIds.filter(id => id !== labelId)
+      : [...form.labelIds, labelId]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
@@ -59,7 +70,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         createdBy: currentUser?.id || currentUser?.uid,
         dueDate: form.dueDate ? new Date(form.dueDate) : null,
       });
-      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '' });
+      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], projectId: '' });
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
@@ -75,7 +86,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-[20px] shadow-xl w-full max-w-[520px] mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[520px] mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e9e9e9]">
           <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова задача</h2>
@@ -93,19 +104,31 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               value={form.title}
               onChange={e => set('title', e.target.value)}
               placeholder="Що потрібно зробити?"
-              className="w-full px-4 py-3 bg-[#f7f7f7] rounded-[10px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
+              className="w-full px-4 py-3 bg-[#f7f7f7] rounded-[12px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
             />
           </div>
 
+          {/* Project Selector (if projects passed) */}
+          {projects && projects.length > 0 && (
+            <div>
+              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Проєкт *</label>
+              <Select
+                value={form.projectId}
+                onChange={val => set('projectId', val)}
+                options={projects.map(p => ({ value: p.id, label: p.name }))}
+                placeholder="Оберіть проєкт..."
+              />
+            </div>
+          )}
+
           {/* Description */}
-          <div>
-            <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Опис</label>
-            <textarea
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px] font-bold text-[#1f1f1f] pl-1">Опис задачі</label>
+            <MarkdownEditor 
               value={form.description}
-              onChange={e => set('description', e.target.value)}
-              placeholder="Деталі задачі..."
-              rows={3}
-              className="w-full px-4 py-3 bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors resize-none"
+              onChange={(val) => set('description', val)}
+              placeholder="Додайте деталі, чеклісти, посилання..."
+              minHeight="120px"
             />
           </div>
 
@@ -113,23 +136,19 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Тип</label>
-              <select
+              <Select
                 value={form.type}
-                onChange={e => set('type', e.target.value)}
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
-              >
-                {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+                onChange={val => set('type', val)}
+                options={TYPES}
+              />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Пріоритет</label>
-              <select
+              <Select
                 value={form.priority}
-                onChange={e => set('priority', e.target.value)}
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
-              >
-                {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
+                onChange={val => set('priority', val)}
+                options={PRIORITIES}
+              />
             </div>
           </div>
 
@@ -137,13 +156,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Статус</label>
-              <select
+              <Select
                 value={form.status}
-                onChange={e => set('status', e.target.value)}
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
-              >
-                {statuses.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-              </select>
+                onChange={val => set('status', val)}
+                options={statuses.map(s => ({ value: s.id, label: s.label }))}
+              />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Дедлайн</label>
@@ -151,7 +168,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 type="date"
                 value={form.dueDate}
                 onChange={e => set('dueDate', e.target.value)}
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
+                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm cursor-pointer"
               />
             </div>
           </div>
@@ -169,7 +186,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       key={uid}
                       type="button"
                       onClick={() => toggleAssignee(uid)}
-                      className={`flex items-center gap-2 px-3 py-[6px] rounded-full text-[12px] font-medium border transition-all ${
+                      className={`flex items-center gap-2 px-3 py-[6px] rounded-[20px] text-[12px] font-medium border transition-all ${
                         selected
                           ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
                           : 'bg-white text-[#1f1f1f] border-[#e9e9e9] hover:border-[#9a9a9a]'
@@ -177,6 +194,35 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                     >
                       <UserAvatar user={m} size={18} />
                       {m.name || m.email}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Labels */}
+          {availableLabels.length > 0 && (
+            <div>
+              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Мітки (Теги)</label>
+              <div className="flex flex-wrap gap-2">
+                {availableLabels.map(l => {
+                  const selected = form.labelIds.includes(l.id);
+                  return (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => toggleLabel(l.id)}
+                      className={`flex items-center gap-[6px] px-[10px] py-[5px] rounded-[20px] text-[11px] font-bold border transition-all ${
+                        selected
+                          ? 'border-transparent'
+                          : 'border-[#e9e9e9] bg-white opacity-60 hover:opacity-100'
+                      }`}
+                      style={selected ? { background: l.color + '18', color: l.color } : { color: '#9a9a9a' }}
+                    >
+                      {selected && <CheckSquare size={12} />}
+                      <span className="w-[6px] h-[6px] rounded-[20px] shrink-0" style={{ background: l.color }} />
+                      {l.label}
                     </button>
                   );
                 })}
@@ -192,7 +238,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           <button
             type="submit"
             disabled={!form.title.trim() || loading}
-            className="w-full py-[13px] bg-[#1f1f1f] text-white rounded-[12px] text-[14px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all mt-1"
+            className="w-full py-[14px] bg-[#1f1f1f] text-white rounded-[12px] text-[14px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-2 shadow-md hover:shadow-lg"
           >
             {loading ? 'Створення...' : 'Створити задачу'}
           </button>

@@ -4,44 +4,45 @@ import { useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-import { useStore } from '@/store/useStore';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from '@/components/workspace/IssueCard';
+import CreateTaskModal from '@/components/CreateTaskModal';
+import { Plus } from 'lucide-react';
+import { Select, MultiSelect } from '@/components/ui/Select';
 
 const COLUMNS = [
-  { id: 'todo',             label: 'To Do',           color: '#6366f1' },
-  { id: 'in-progress',      label: 'In Progress',     color: '#0891b2' },
-  { id: 'code-review',      label: 'Code Review',     color: '#d97706' },
-  { id: 'done',             label: 'Done',            color: '#10b981' },
+  { id: 'todo',        label: 'To Do',       color: '#6366f1' },
+  { id: 'in-progress', label: 'In Progress', color: '#0891b2' },
+  { id: 'done',        label: 'Done',        color: '#10b981' },
 ];
 
-const FILTERS = [
-  { id: 'all',      label: 'Всі' },
-  { id: 'today',    label: 'Сьогодні' },
-  { id: 'week',     label: 'Цей тиждень' },
-  { id: 'overdue',  label: 'Прострочені' },
-];
 
-function filterTasks(tasks, filter) {
-  const now = new Date();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-  const weekEnd  = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
+function filterTasks(tasks, filters) {
+  const { projects, priority, type } = filters;
 
   return tasks.filter(t => {
-    const due = t.dueDate?.toDate ? t.dueDate.toDate() : t.dueDate ? new Date(t.dueDate) : null;
-    if (filter === 'today')   return due && due <= todayEnd;
-    if (filter === 'week')    return due && due <= weekEnd;
-    if (filter === 'overdue') return due && due < now && t.columnId !== 'done';
+    if (projects && projects.length > 0 && !projects.includes(t.projectId)) return false;
+    if (priority !== 'all' && t.priority !== priority) return false;
+    if (type !== 'all' && t.type !== type) return false;
     return true;
   });
 }
 
 export default function MyTasksPage() {
-  const { currentUser, projects } = useAppContext();
+  const { currentUser, projects, activeOrgId } = useAppContext();
   const { members } = useOrganization();
-  const { tasks, loading, updateTask } = useAllMyTasks(currentUser?.uid);
-  const showToast = useStore(s => s.showToast);
-  const [filter, setFilter] = useState('all');
+  const { labels } = useWorkflowConfig();
+  const uid = currentUser?.uid || currentUser?.id;
+  const { tasks, loading, updateTask } = useAllMyTasks(uid);
+  const showToast = useWorkspaceStore(s => s.showToast);
+  const [filters, setFilters] = useState({
+    projects: [],
+    priority: 'all',
+    type: 'all'
+  });
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   const onDragEnd = async ({ draggableId, source, destination }) => {
     if (!destination) return;
@@ -60,47 +61,73 @@ export default function MyTasksPage() {
     }
   };
 
-  const filtered = filterTasks(tasks, filter);
-  
-  const now = new Date();
-  const overdueCount = tasks.filter(t => {
-    const due = t.dueDate?.toDate ? t.dueDate.toDate() : t.dueDate ? new Date(t.dueDate) : null;
-    return due && due < now && t.columnId !== 'done';
-  }).length;
+  const filtered = filterTasks(tasks, filters);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
-      {/* Header */}
-      <div className="pt-[32px] mb-[32px] px-[16px] md:px-[32px] shrink-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
+      <div className="pt-0 -mt-2 mb-[20px] px-[32px] shrink-0 flex items-start justify-between">
         <div>
-          <h1 className="text-[26px] md:text-[36px] font-bold text-[#1f1f1f] tracking-tight leading-tight truncate">
+          <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate">
             Мої задачі
           </h1>
-          <p className="text-[#9a9a9a] mt-[4px] text-[14px]">
+          <p className="text-[13px] font-medium text-[#9a9a9a] mt-[4px]">
             {tasks.filter(t => t.columnId !== 'done').length} активних задач
           </p>
         </div>
+        <button
+          onClick={() => setShowCreateTaskModal(true)}
+          className="flex items-center gap-[6px] px-[14px] py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] transition-all"
+        >
+          <Plus size={14} /> Створити задачу
+        </button>
       </div>
 
       {/* Filter tabs */}
-      <div className="px-[16px] md:px-[32px] pb-4 flex items-center gap-2 shrink-0">
-        {FILTERS.map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
-            className={`px-4 py-[6px] rounded-full text-[12px] font-semibold transition-all ${
-              filter === f.id
-                ? 'bg-[#1f1f1f] text-white'
-                : 'bg-white text-[#9a9a9a] border border-[#e9e9e9] hover:border-[#9a9a9a] hover:text-[#1f1f1f]'
-            }`}>
-            {f.label}
-            {f.id === 'overdue' && overdueCount > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-[9px] font-bold px-[5px] py-[1px] rounded-full">{overdueCount}</span>
-            )}
-          </button>
-        ))}
+      <div className="px-[32px] pb-[16px] shrink-0 flex items-center gap-[12px] flex-wrap">
+        
+        {/* Project Filter (MultiSelect) */}
+        <MultiSelect
+          value={filters.projects}
+          onChange={(val) => setFilters(f => ({ ...f, projects: val }))}
+          options={projects.map(p => ({ value: p.id, label: p.name }))}
+          placeholder="Всі проєкти"
+          searchPlaceholder="Пошук проєкту..."
+          className="w-[180px]"
+        />
+
+
+        {/* Priority Filter */}
+        <Select
+          value={filters.priority}
+          onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
+          options={[
+            { value: 'all', label: 'Будь-який пріоритет' },
+            { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+            { value: 'high', label: 'High', dotColor: '#f97316' },
+            { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+            { value: 'low', label: 'Low', dotColor: '#3b82f6' }
+          ]}
+          className="w-[180px]"
+        />
+
+        {/* Type Filter */}
+        <Select
+          value={filters.type}
+          onChange={(val) => setFilters(f => ({ ...f, type: val }))}
+          options={[
+            { value: 'all', label: 'Будь-який тип' },
+            { value: 'epic', label: 'Epic' },
+            { value: 'feature', label: 'Feature' },
+            { value: 'task', label: 'Task' },
+            { value: 'bug', label: 'Bug' }
+          ]}
+          className="w-[160px]"
+        />
+
       </div>
 
       {/* Kanban Board Content */}
-      <div className="flex-1 overflow-hidden px-[16px] md:px-[32px] pb-8">
+      <div className="flex-1 overflow-hidden px-[32px] pb-[32px]">
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
@@ -112,17 +139,15 @@ export default function MyTasksPage() {
                 // Map legacy 'backlog' or others into these global columns if needed,
                 // but we strictly match columnId or status
                 const colIssues = filtered.filter(i => {
-                   const cId = i.columnId || i.status || 'todo';
-                   // Map custom columns to closest global equivalents
-                   if (col.id === 'todo' && ['todo', 'backlog'].includes(cId)) return true;
-                   if (col.id === 'in-progress' && cId === 'in-progress') return true;
-                   if (col.id === 'code-review' && ['code-review', 'qa', 'client-approval', 'review'].includes(cId)) return true;
-                   if (col.id === 'done' && cId === 'done') return true;
-                   return false;
+                  const cId = i.columnId || i.status || 'todo';
+                  if (col.id === 'todo')        return ['todo', 'backlog'].includes(cId);
+                  if (col.id === 'in-progress') return ['in-progress', 'code-review', 'qa', 'client-approval'].includes(cId);
+                  if (col.id === 'done')        return cId === 'done';
+                  return false;
                 });
 
                 return (
-                  <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f1f2f4] rounded-[14px] overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
+                  <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] rounded-[14px] overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
                     <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                       <div className="flex items-center gap-[8px]">
                         <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
@@ -140,15 +165,20 @@ export default function MyTasksPage() {
                           {...provided.droppableProps}
                           className={`flex-1 overflow-y-auto px-3 flex flex-col gap-2 transition-colors ${snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''}`}
                         >
-                          {colIssues.map((issue, index) => (
-                            <IssueCard 
-                              key={issue.id} 
-                              issue={issue} 
-                              members={members} 
-                              index={index} 
-                              projectId={issue.projectId} 
-                            />
-                          ))}
+                          {colIssues.map((issue, index) => {
+                            const pName = projects.find(p => p.id === issue.projectId)?.name;
+                            return (
+                              <IssueCard 
+                                key={issue.id} 
+                                issue={issue} 
+                                members={members}
+                                labels={labels}
+                                index={index} 
+                                projectId={issue.projectId}
+                                projectName={pName}
+                              />
+                            );
+                          })}
                           {provided.placeholder}
                         </div>
                       )}
@@ -160,6 +190,40 @@ export default function MyTasksPage() {
           </DragDropContext>
         )}
       </div>
+
+      <CreateTaskModal
+        isOpen={showCreateTaskModal}
+        onClose={() => setShowCreateTaskModal(false)}
+        onSubmit={async (formData) => {
+          // Since it's global, require projectId in formData
+          if (!formData.projectId) {
+            throw new Error('Будь ласка, оберіть проєкт');
+          }
+          const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          
+          await addDoc(collection(db, 'issues'), {
+            issueKey: `WS-${Date.now()}`, // fallback key
+            organizationId: activeOrgId,
+            projectId: formData.projectId,
+            title: formData.title,
+            description: formData.description || '',
+            columnId: formData.status || 'todo',
+            status: formData.status || 'todo',
+            priority: formData.priority || 'medium',
+            type: formData.type || 'task',
+            assigneeIds: formData.assignees || [],
+            labelIds: formData.labelIds || [],
+            dueDate: formData.dueDate || null,
+            createdAt: serverTimestamp(),
+            createdBy: uid
+          });
+          showToast('Задачу створено ✓');
+        }}
+        projects={projects}
+        stages={[]} // Will use defaults, or we can make it dynamic based on selected project
+        teamMembers={members}
+      />
     </div>
   );
 }

@@ -1,155 +1,240 @@
 'use client';
-// src/components/workspace/MaterialsTab.jsx — Client portal materials + chat (read-only)
-import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
-import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
-import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+// src/components/workspace/MaterialsTab.jsx — Internal project files (NOT QT portal)
+// Portal chat + QT materials live in /workspace/[projectId]/portal page
+import { useState, useRef } from 'react';
+import {
+  File, FileText, FileImage, Link as LinkIcon, Plus, Trash2,
+  ExternalLink, Upload, FolderOpen, Calendar,
+} from 'lucide-react';
+import { useAppContext } from '@/lib/context/AppContext';
+import { db } from '@/lib/firebase';
+import {
+  collection, addDoc, deleteDoc, doc, query, where, onSnapshot, serverTimestamp,
+} from 'firebase/firestore';
+import { useEffect } from 'react';
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
-
-const STATUS_CFG = {
-  approved: { label: 'Погоджено',     color: '#10b981', Icon: CheckCircle },
-  rejected: { label: 'Відхилено',     color: '#ef4444', Icon: XCircle },
-  pending:  { label: 'На погодженні', color: '#f97316', Icon: Clock },
-  none:     { label: 'Не надіслано',  color: '#cfcfcf', Icon: AlertCircle },
+const FILE_ICONS = {
+  image:    FileImage,
+  pdf:      FileText,
+  doc:      FileText,
+  link:     LinkIcon,
+  other:    File,
 };
 
-function timeAgo(ts) {
+function getFileType(url = '') {
+  if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url)) return 'image';
+  if (/\.pdf$/i.test(url)) return 'pdf';
+  if (/\.(doc|docx|txt|md)$/i.test(url)) return 'doc';
+  if (/^https?:\/\//.test(url)) return 'link';
+  return 'other';
+}
+
+function fmtDate(ts) {
   if (!ts) return '';
   const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  const diff = Date.now() - d.getTime();
-  if (diff < 60000)    return 'щойно';
-  if (diff < 3600000)  return `${Math.floor(diff / 60000)} хв тому`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function MaterialsTab({ projectId }) {
-  const { stages, loading: stagesLoading } = useStagesForProject(projectId);
-  const { messages, loading: chatLoading } = usePortalChat(projectId);
+  const { currentUser } = useAppContext();
+  const [files, setFiles]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showAdd, setShowAdd]   = useState(false);
+  const [addUrl, setAddUrl]     = useState('');
+  const [addName, setAddName]   = useState('');
+  const [addNote, setAddNote]   = useState('');
+  const [saving, setSaving]     = useState(false);
+  const [filter, setFilter]     = useState('all');
 
-  const materials = stages.flatMap(s =>
-    (s.materials || []).map(m => ({ ...m, stageName: s.title || s.name }))
-  );
+  // Load from Firestore: projectFiles sub-collection
+  useEffect(() => {
+    if (!projectId) return;
+    const q = query(collection(db, 'projectFiles'), where('projectId', '==', projectId));
+    const unsub = onSnapshot(q, snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+      setFiles(docs);
+      setLoading(false);
+    }, () => setLoading(false));
+    return () => unsub();
+  }, [projectId]);
+
+  const handleAdd = async () => {
+    if (!addUrl.trim() && !addName.trim()) return;
+    setSaving(true);
+    try {
+      await addDoc(collection(db, 'projectFiles'), {
+        projectId,
+        url: addUrl.trim(),
+        name: addName.trim() || addUrl.trim(),
+        note: addNote.trim(),
+        type: getFileType(addUrl.trim()),
+        addedBy: currentUser?.id || currentUser?.uid || null,
+        addedByName: currentUser?.name || currentUser?.email || '',
+        createdAt: serverTimestamp(),
+      });
+      setAddUrl(''); setAddName(''); setAddNote('');
+      setShowAdd(false);
+    } catch (err) {
+      console.error(err);
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Видалити файл?')) return;
+    await deleteDoc(doc(db, 'projectFiles', id));
+  };
+
+  const filtered = filter === 'all' ? files : files.filter(f => f.type === filter);
+
+  const types = [...new Set(files.map(f => f.type))];
 
   return (
-    <div className="flex-1 overflow-hidden flex">
-      {/* Left: Materials */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[14px] font-bold text-[#1f1f1f]">
-            Матеріали клієнта
-            {materials.length > 0 && <span className="ml-2 text-[12px] font-normal text-[#9a9a9a]">{materials.length} шт.</span>}
-          </h3>
-          <a href={PORTAL_URL} target="_blank" rel="noopener"
-            className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline font-medium">
-            <ExternalLink size={11} /> Відкрити в порталі
-          </a>
+    <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
+      <div className="max-w-[860px] mx-auto px-6 py-5">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-[16px] font-bold text-[#1f1f1f]">Матеріали проєкту</h2>
+            <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Внутрішні файли, посилання та документи команди</p>
+          </div>
+          <button
+            onClick={() => setShowAdd(v => !v)}
+            className="flex items-center gap-2 px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-semibold hover:bg-[#303030] transition-colors"
+          >
+            <Plus size={13} /> Додати матеріал
+          </button>
         </div>
 
-        {stagesLoading ? (
+        {/* Add form */}
+        {showAdd && (
+          <div className="bg-white border border-[#e9e9e9] rounded-[14px] p-5 mb-5">
+            <p className="text-[13px] font-semibold text-[#1f1f1f] mb-3">Новий матеріал</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">URL або посилання</label>
+                <input
+                  autoFocus
+                  value={addUrl}
+                  onChange={e => setAddUrl(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
+                  placeholder="https://..."
+                  className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">Назва</label>
+                  <input
+                    value={addName}
+                    onChange={e => setAddName(e.target.value)}
+                    placeholder="Опціонально"
+                    className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">Нотатка</label>
+                  <input
+                    value={addNote}
+                    onChange={e => setAddNote(e.target.value)}
+                    placeholder="Опціонально"
+                    className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleAdd} disabled={saving || (!addUrl.trim() && !addName.trim())}
+                  className="px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[8px] text-[12px] font-semibold hover:bg-[#303030] transition-colors disabled:opacity-50">
+                  {saving ? 'Збереження...' : 'Додати'}
+                </button>
+                <button onClick={() => { setShowAdd(false); setAddUrl(''); setAddName(''); setAddNote(''); }}
+                  className="px-4 py-[8px] text-[#9a9a9a] hover:text-[#1f1f1f] text-[12px] transition-colors">
+                  Скасувати
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Type filter */}
+        {types.length > 1 && (
+          <div className="flex gap-2 mb-4 flex-wrap">
+            {['all', ...types].map(t => (
+              <button key={t} onClick={() => setFilter(t)}
+                className={`px-3 py-[5px] text-[11px] font-semibold rounded-full border transition-all ${
+                  filter === t
+                    ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
+                    : 'bg-white text-[#9a9a9a] border-[#e9e9e9] hover:border-[#1f1f1f]'
+                }`}>
+                {t === 'all' ? 'Всі' : t === 'image' ? 'Зображення' : t === 'pdf' ? 'PDF' : t === 'doc' ? 'Документи' : t === 'link' ? 'Посилання' : 'Інше'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* List */}
+        {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
-        ) : stages.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
-            <ImageIcon size={32} className="text-[#e9e9e9] mb-3" />
-            <p className="text-[13px] text-[#cfcfcf]">Матеріалів ще немає</p>
-            <p className="text-[11px] text-[#e9e9e9] mt-1">Вони з'являться коли клієнт їх додасть</p>
+            <FolderOpen size={36} className="text-[#e9e9e9] mb-3" />
+            <p className="text-[14px] font-semibold text-[#cfcfcf] mb-1">Матеріалів немає</p>
+            <p className="text-[12px] text-[#e0e0e0]">Додайте посилання на файли, документи або дизайни</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {stages.map(stage => {
-              const mats = stage.materials || [];
+          <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+            {filtered.map((file, i) => {
+              const Icon = FILE_ICONS[file.type] || FILE_ICONS.other;
               return (
-                <div key={stage.id} className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
-                  <div className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#fafafa]">
-                    <FileCheck size={13} className="text-[#9a9a9a]" />
-                    <p className="text-[12px] font-bold text-[#1f1f1f]">{stage.title || stage.name || 'Без назви'}</p>
-                    <span className="text-[10px] text-[#cfcfcf]">· {mats.length} матеріал{mats.length !== 1 ? 'и' : ''}</span>
+                <div key={file.id}
+                  className={`flex items-center gap-4 px-5 py-[14px] group hover:bg-[#fafafa] transition-colors ${i < filtered.length - 1 ? 'border-b border-[#f0f0f0]' : ''}`}>
+                  {/* Preview */}
+                  <div className="w-[40px] h-[40px] bg-[#f7f7f7] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center border border-[#e9e9e9]">
+                    {file.type === 'image' && file.url ? (
+                      <img src={file.url} alt="" className="w-full h-full object-cover"
+                        onError={e => { e.target.style.display='none'; }} />
+                    ) : (
+                      <Icon size={16} className="text-[#9a9a9a]" />
+                    )}
                   </div>
 
-                  {mats.length === 0 ? (
-                    <p className="px-5 py-4 text-[12px] text-[#cfcfcf]">Немає матеріалів</p>
-                  ) : (
-                    mats.map((mat, i) => {
-                      const statusKey = mat.status || (mat.clientApprovalPending ? 'pending' : 'none');
-                      const cfg = STATUS_CFG[statusKey] || STATUS_CFG.none;
-                      const StatusIcon = cfg.Icon;
-                      return (
-                        <div key={mat.id || i} className="flex items-center gap-4 px-5 py-4 border-b border-[#f7f7f7] last:border-0 hover:bg-[#fafafa] transition-colors">
-                          {/* Thumbnail */}
-                          <div className="w-[44px] h-[44px] bg-[#f7f7f7] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
-                            {mat.url && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(mat.url) ? (
-                              <img src={mat.url} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
-                            ) : (
-                              <ImageIcon size={16} className="text-[#cfcfcf]" />
-                            )}
-                          </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{file.name}</p>
+                    <div className="flex items-center gap-3 mt-[2px]">
+                      {file.note && <p className="text-[11px] text-[#9a9a9a] truncate">{file.note}</p>}
+                      <span className="text-[10px] text-[#cfcfcf] flex items-center gap-1 shrink-0">
+                        <Calendar size={9} />
+                        {fmtDate(file.createdAt)}
+                      </span>
+                      {file.addedByName && (
+                        <span className="text-[10px] text-[#cfcfcf] shrink-0">{file.addedByName}</span>
+                      )}
+                    </div>
+                  </div>
 
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{mat.name || mat.title || 'Без назви'}</p>
-                            {mat.description && <p className="text-[11px] text-[#9a9a9a] truncate mt-[2px]">{mat.description}</p>}
-                          </div>
-
-                          <div className="flex items-center gap-[5px] shrink-0">
-                            <StatusIcon size={13} style={{ color: cfg.color }} />
-                            <span className="text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
-                          </div>
-
-                          {mat.url && (
-                            <a href={mat.url} target="_blank" rel="noopener"
-                              className="shrink-0 p-1 text-[#cfcfcf] hover:text-[#6366f1] transition-colors">
-                              <ExternalLink size={13} />
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {file.url && (
+                      <a href={file.url} target="_blank" rel="noopener"
+                        className="p-[6px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[6px] transition-all">
+                        <ExternalLink size={13} />
+                      </a>
+                    )}
+                    <button onClick={() => handleDelete(file.id)}
+                      className="p-[6px] text-[#cfcfcf] hover:text-red-500 hover:bg-red-50 rounded-[6px] transition-all">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
-
-      {/* Right: Chat */}
-      <div className="w-[320px] shrink-0 border-l border-[#e9e9e9] flex flex-col bg-white">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0]">
-          <MessageSquare size={13} className="text-[#9a9a9a]" />
-          <h3 className="text-[12px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
-          <span className="ml-auto text-[9px] text-[#cfcfcf] font-medium uppercase tracking-wide">read-only</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto divide-y divide-[#f7f7f7]">
-          {chatLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="w-5 h-5 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center py-10">
-              <MessageSquare size={22} className="text-[#e9e9e9] mb-2" />
-              <p className="text-[11px] text-[#cfcfcf]">Повідомлень немає</p>
-            </div>
-          ) : (
-            messages.map((msg, i) => (
-              <div key={msg.id || i} className="px-4 py-3">
-                <div className="flex items-baseline gap-2 mb-[2px]">
-                  <span className="text-[12px] font-bold text-[#1f1f1f]">{msg.senderName || 'Клієнт'}</span>
-                  <span className="text-[10px] text-[#cfcfcf]">{timeAgo(msg.createdAt || msg.timestamp)}</span>
-                </div>
-                <p className="text-[12px] text-[#4a4a4a] leading-relaxed">{msg.text || msg.message}</p>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#fafafa]">
-          <a href={PORTAL_URL} target="_blank" rel="noopener"
-            className="flex items-center justify-center gap-2 w-full py-[8px] bg-white border border-[#e9e9e9] text-[12px] font-semibold text-[#1f1f1f] rounded-[8px] hover:bg-[#f0f0f0] transition-colors">
-            <ExternalLink size={12} /> Відповісти в порталі
-          </a>
-        </div>
       </div>
     </div>
   );

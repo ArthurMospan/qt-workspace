@@ -65,41 +65,31 @@ export function useIssues(projectId) {
     });
 
     return () => unsub();
-  }, [projectId]);
+  }, [projectId, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit
   // -------------------------------------------------------------------------
   const createIssue = useCallback(async (data, actorUser = {}) => {
     const { userId, userName } = actorUser;
-    const projectRef = doc(db, 'projects', projectId);
-
-    // Use runTransaction to safely increment the counter and get issueKey
-    const { issueKey } = await runTransaction(db, async (tx) => {
-      const projectSnap = await tx.get(projectRef);
-      if (!projectSnap.exists()) throw new Error('Project not found');
-
-      const current = projectSnap.data().issueCounter ?? 0;
-      const next = current + 1;
-      tx.update(projectRef, { issueCounter: next });
-      return { issueKey: `QT-${next}` };
-    });
-
-    // Count issues in target column to determine order
-    const colId = data.columnId || data.status || 'backlog';
+    const orgId    = activeOrgId || 'unknown';
+    const colId    = data.columnId || data.status || 'backlog';
     const orderVal = issues.filter(i => i.columnId === colId).length;
 
+    // Step 1: Generate a temp optimistic key and create the doc IMMEDIATELY
+    const tempKey = `WS-${Date.now()}`;
+
     const newIssueRef = await addDoc(collection(db, 'issues'), {
-      issueKey,
+      issueKey: tempKey,
       projectId,
-      organizationId: activeOrgId,
+      organizationId: orgId,
       title: data.title || '',
       description: data.description || '',
       type: data.type || 'task',
       columnId: colId,
       status: colId,
       priority: data.priority || 'medium',
-      assigneeIds: data.assigneeIds || [],
+      assigneeIds: data.assigneeIds || (userId ? [userId] : []),
       reporterId: data.reporterId || userId || null,
       order: orderVal,
       estimateMinutes: data.estimateMinutes ?? null,
@@ -111,16 +101,22 @@ export function useIssues(projectId) {
       updatedAt: serverTimestamp(),
     });
 
-    // Audit: issue created
-    await writeAudit(newIssueRef.id, {
-      userId,
-      userName,
-      action: 'created',
-      from: null,
-      to: issueKey,
-    });
+    // Step 2: Get real key via transaction — runs ASYNC, updates key in background
+    const projectRef = doc(db, 'projects', projectId);
+    runTransaction(db, async (tx) => {
+      const projectSnap = await tx.get(projectRef);
+      if (!projectSnap.exists()) return;
+      const current = projectSnap.data().issueCounter ?? 0;
+      const next    = current + 1;
+      tx.update(projectRef, { issueCounter: next });
+      tx.update(doc(db, 'issues', newIssueRef.id), { issueKey: `WS-${next}` });
+    }).catch(err => console.warn('[useIssues] issueCounter update failed (key stays temp):', err));
 
-    return { id: newIssueRef.id, issueKey };
+    // Step 3: Audit log — fire and forget
+    writeAudit(newIssueRef.id, { userId, userName, action: 'created', from: null, to: tempKey })
+      .catch(() => {});
+
+    return { id: newIssueRef.id, issueKey: tempKey };
   }, [projectId, issues, activeOrgId]);
 
   // -------------------------------------------------------------------------
