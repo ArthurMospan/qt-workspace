@@ -54,6 +54,7 @@ export default function IssueModal({
   );
   const { currentUser, orgRole } = useAppContext();
   const { links, addLink, removeLink } = useIssueLinks(issue?.id);
+  const showToast = useWorkspaceStore(s => s.showToast);
   const [activeTab, setActiveTab] = useState('comments');
   const [commentText, setCommentText] = useState('');
   const [subtaskInput, setSubtaskInput] = useState('');
@@ -169,7 +170,16 @@ export default function IssueModal({
           <div className="w-[140px]">
             <Select
               value={issue.columnId}
-              onChange={val => onUpdate({ columnId: val, status: val })}
+              onChange={val => {
+                // Check if trying to move to done with blockers
+                if (val === 'done' && links.some(l =>
+                  l.relationType === 'blocks' && l.targetIssueId === issue.id && l.sourceIssueId
+                )) {
+                  showToast('Не можливо закрити: задача заблокована', 'error');
+                  return;
+                }
+                onUpdate({ columnId: val, status: val });
+              }}
               options={(boardColumnsProp || COLUMNS).map(c => ({ value: c.id, label: c.label }))}
             />
           </div>

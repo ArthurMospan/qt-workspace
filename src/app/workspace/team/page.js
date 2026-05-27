@@ -16,7 +16,8 @@ const NOW = Date.now();
 const ROLES = {
   owner:  { label: 'Власник',      color: '#8b5cf6', icon: Crown },
   admin:  { label: 'Адміністратор', color: '#f97316', icon: Shield },
-  member: { label: 'Учасник',       color: '#9a9a9a', icon: User },
+  member: { label: 'Учасник',       color: '#3b82f6', icon: User },
+  client: { label: 'Клієнт',        color: '#06b6d4', icon: User },
 };
 
 function RoleBadge({ role }) {
@@ -100,7 +101,8 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
               onChange={val => setInviteRole(val)}
               options={[
                 { value: 'member', label: 'Учасник (Member)' },
-                { value: 'admin', label: 'Адміністратор (Admin)' }
+                { value: 'admin', label: 'Адміністратор (Admin)' },
+                { value: 'client', label: 'Клієнт (Client)' }
               ]}
               className="w-full text-[13px] font-semibold"
             />

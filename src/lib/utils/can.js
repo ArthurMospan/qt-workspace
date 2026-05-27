@@ -6,23 +6,27 @@ export const PERMISSIONS = {
   'create:project': ['owner', 'admin'],
   'delete:project': ['owner', 'admin'],
   'edit:project_settings': ['owner', 'admin'],
-  
+
   // Board Configuration
   'edit:board_columns': ['owner', 'admin'],
-  
+
   // Sprints
   'manage:sprints': ['owner', 'admin'], // Створення/старт/завершення спринтів
-  
+
   // Team
   'manage:team': ['owner', 'admin'],    // Запрошення/видалення учасників
-  
+
   // Finance
   'manage:finance': ['owner'],          // Доступ до рейт-карток та інвойсів
-  
+
   // Issues
   'create:issue': ['owner', 'admin', 'member'],
   'edit:issue': ['owner', 'admin', 'member'],
   'delete:issue': ['owner', 'admin'],   // Member не може видаляти задачі
+
+  // Comments (clients can comment on issues they're invited to view)
+  'create:comment': ['owner', 'admin', 'member', 'client'],
+  'edit:comment': ['owner', 'admin', 'member', 'client'], // Only on own comments
 };
 
 /**

@@ -15,14 +15,15 @@ const NOW = Date.now();
 const ROLES = {
   owner:  { label: 'Власник',      color: '#8b5cf6', icon: Crown },
   admin:  { label: 'Адміністратор', color: '#f97316', icon: Shield },
-  member: { label: 'Учасник',       color: '#9a9a9a', icon: User },
+  member: { label: 'Учасник',       color: '#3b82f6', icon: User },
+  client: { label: 'Клієнт',        color: '#06b6d4', icon: User },
 };
 
 function RoleBadge({ role }) {
   const cfg = ROLES[role] || ROLES.member;
   const Icon = cfg.icon;
   return (
-    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-full"
+    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-[20px]"
       style={{ color: cfg.color, background: cfg.color + '18' }}>
       <Icon size={9} />{cfg.label}
     </span>
@@ -210,7 +211,8 @@ export default function MemberDetailPage({ params }) {
                         onChange={val => handleRoleChange(val)}
                         options={[
                           { value: 'member', label: 'Учасник' },
-                          { value: 'admin', label: 'Адміністратор' }
+                          { value: 'admin', label: 'Адміністратор' },
+                          { value: 'client', label: 'Клієнт' }
                         ]}
                       />
                     </div>
