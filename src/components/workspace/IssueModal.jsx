@@ -7,9 +7,12 @@ import { useIssueLinks } from '@/lib/hooks/useIssueLinks';
 import UserAvatar from '@/components/UserAvatar';
 import TimeTracker from './TimeTracker';
 import DependenciesPanel from './DependenciesPanel';
+import EpicsPanel from './EpicsPanel';
 import { DEFAULT_COLUMNS as COLUMNS } from './BoardConfigModal';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 
@@ -35,7 +38,7 @@ function Tab({ id, label, icon: Icon, active, onClick, badge }) {
 }
 
 export default function IssueModal({
-  issue, members, comments = [], timeLogs = [], auditLogs = [], sprints = [],
+  issue, members, comments = [], timeLogs = [], auditLogs = [], sprints = [], allIssues = [],
   onClose, onUpdate, onDelete, onAddComment, onLogTime, onAddSubtask, onToggleSubtask,
   priorities: prioritiesProp, types: typesProp, boardColumns: boardColumnsProp,
 }) {
@@ -346,6 +349,29 @@ export default function IssueModal({
                 ]}
               />
             </div>
+
+            {/* Epic */}
+            <EpicsPanel
+              issue={issue}
+              epics={allIssues.filter(i => i.type === 'epic')}
+              allIssues={allIssues}
+              onUpdateEpic={(_, epicId) => onUpdate({ parentEpicId: epicId || null })}
+              onCreateEpic={async (title) => {
+                const { activeOrgId, currentUser } = useAppContext();
+                await addDoc(collection(db, 'issues'), {
+                  organizationId: activeOrgId,
+                  projectId: issue.projectId,
+                  issueKey: `${issue.issueKey?.split('-')[0]}-${Date.now()}`,
+                  title,
+                  type: 'epic',
+                  priority: 'medium',
+                  columnId: 'backlog',
+                  assigneeIds: [],
+                  createdAt: serverTimestamp(),
+                  createdBy: currentUser?.id || currentUser?.uid
+                });
+              }}
+            />
 
             {/* Priority */}
             <div>
