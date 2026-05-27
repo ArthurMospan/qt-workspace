@@ -4,8 +4,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAppContext }    from '@/lib/context/AppContext';
 import { useNotifications, requestNotifPermission } from '@/lib/hooks/useNotifications';
+import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
 import UserAvatar           from '@/components/UserAvatar';
+import SearchModal          from '@/components/SearchModal';
 import {
   Bell, Search, Check, MessageSquare, GitPullRequest,
   UserCheck, AlertCircle, ChevronRight, X, Hash, ArrowLeft,
@@ -256,8 +258,12 @@ export default function WorkspaceHeader() {
   const [projectSearch,   setProjectSearch]   = useState(false); // inline search toggle for project mode
   const [projectQuery,    setProjectQuery]    = useState('');
   const [globalQuery,     setGlobalQuery]     = useState('');
+  const [showSearch,      setShowSearch]      = useState(false);
 
   const projSearchRef  = useRef(null);
+
+  const { results: searchResults, loading: searchLoading, search } = useSearch();
+  const { activeOrgId } = useAppContext();
 
   useEffect(() => { if (uid) requestNotifPermission(); }, [uid]);
 
@@ -374,12 +380,22 @@ export default function WorkspaceHeader() {
         <Search size={14} className="text-[#9a9a9a] shrink-0" />
         <input
           value={globalQuery}
-          onChange={e => setGlobalQuery(e.target.value)}
+          onChange={async (e) => {
+            const q = e.target.value;
+            setGlobalQuery(q);
+            if (q.trim() && activeOrgId) {
+              setShowSearch(true);
+              await search(q, activeOrgId);
+            } else {
+              setShowSearch(false);
+            }
+          }}
+          onFocus={() => globalQuery && setShowSearch(true)}
           placeholder={placeholder || 'Пошук...'}
           className="flex-1 bg-transparent text-[13px] text-[#1f1f1f] placeholder:text-[#cfcfcf] outline-none"
         />
         {globalQuery && (
-          <button onClick={() => setGlobalQuery('')} className="text-[#cfcfcf] hover:text-[#9a9a9a] transition-colors">
+          <button onClick={() => { setGlobalQuery(''); setShowSearch(false); }} className="text-[#cfcfcf] hover:text-[#9a9a9a] transition-colors">
             <X size={13} />
           </button>
         )}
@@ -399,6 +415,16 @@ export default function WorkspaceHeader() {
 
         <WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} />
       </header>
+
+      {/* ─── Search Modal ────────────────────────────────────────────── */}
+      <SearchModal
+        isOpen={showSearch}
+        results={searchResults}
+        loading={searchLoading}
+        query={globalQuery}
+        onClose={() => setShowSearch(false)}
+        projects={projects}
+      />
     </>
   );
 }
