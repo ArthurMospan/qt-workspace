@@ -344,150 +344,144 @@ export default function ChatPage() {
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
 
   return (
-    <div className="flex h-full bg-white overflow-hidden">
-      
-      {/* Sidebar (Channels & DMs) */}
-      <div className="w-[240px] bg-[#1f1f1f] border-r border-[#333333] flex flex-col h-full shrink-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
 
-        {/* Search Box */}
-        <div className="px-[12px] py-[12px] border-b border-[#333333]">
-          <div className="relative">
-            <Search size={14} className="absolute left-[10px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
-            <input
-              type="text"
-              placeholder="Шукати..."
-              value={chatSearch}
-              onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-              className="w-full pl-[32px] pr-[10px] py-[6px] bg-[#2a2a2a] border border-[#333333] rounded-[6px] text-[12px] text-white placeholder-[#9a9a9a] focus:bg-[#303030] focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/20 outline-none transition-colors"
-            />
-          </div>
+      {/* Header */}
+      <div className="px-[32px] pt-[24px] pb-[16px] bg-white border-b border-[#e9e9e9] shrink-0">
+        <div className="flex items-center justify-between mb-[16px]">
+          <h1 className="text-[24px] font-bold text-[#1f1f1f]">Чат</h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-[16px] px-[12px] custom-scrollbar">
-
-          {/* Channels Section */}
-          <div className="mb-[24px]">
-            <div className="flex items-center justify-between px-[8px] mb-[8px] group">
-              <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Канали</span>
-              <button
-                onClick={() => setIsCreatingChannel(true)}
-                className="text-[#9a9a9a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-[2px]">
-              {isCreatingChannel && (
-                <div className="px-[8px] py-[4px]">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newChannelName}
-                    onChange={(e) => setNewChannelName(e.target.value)}
-                    onKeyDown={handleCreateChannelSubmit}
-                    onBlur={() => { setIsCreatingChannel(false); setNewChannelName(''); }}
-                    placeholder="назва-каналу"
-                    className="w-full text-[13px] bg-white border border-[#1f1f1f] rounded-[8px] px-2 py-1 outline-none"
-                  />
-                  <p className="text-[10px] text-[#9a9a9a] mt-1 ml-1">Enter - зберегти, Esc - скасувати</p>
-                </div>
-              )}
-              {channels
-                .filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()))
-                .map(c => {
-                const hasUnread = readState[c.id] && c.lastMessageAt && (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
-                    className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                      isActive(c.id) ? 'bg-[#333333] text-white' : 'text-[#b4b4b4] hover:text-white hover:bg-white/[0.05]'
-                    }`}
-                  >
-                    <div className="flex items-start gap-[6px] truncate flex-1">
-                      <Hash size={13} className={`shrink-0 mt-[2px] ${isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'}`} />
-                      <div className="truncate flex-1 min-w-0">
-                        <p className={`text-[13px] truncate ${hasUnread && !isActive(c.id) ? 'font-bold text-white' : ''}`}>
-                          {c.name}
-                        </p>
-                        {c.lastMessageText && (
-                          <p className={`text-[11px] truncate ${isActive(c.id) ? 'text-white/60' : 'text-[#9a9a9a]'}`}>
-                            {c.lastMessageSender}: {c.lastMessageText}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {hasUnread && (
-                      <div className={`shrink-0 w-[6px] h-[6px] rounded-full ml-1 ${
-                        isActive(c.id) ? 'bg-white' : 'bg-[#6366f1]'
-                      }`} />
-                    )}
-                  </button>
-                );
-              })}
-
-            </div>
-          </div>
-
-          {/* DMs Section */}
-          <div>
-            <div className="flex items-center justify-between px-[8px] mb-[8px] group">
-              <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Особисті</span>
-              <button className="text-[#9a9a9a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <Plus size={14} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-[2px]">
-              {dms
-                .filter(u => u.name.toLowerCase().includes(chatSearch.toLowerCase()))
-                .map((u, idx, arr) => {
-                const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
-                return (
-                  <React.Fragment key={u.id}>
-                    {showSeparator && (
-                      <div className="my-1 border-t border-[#333333]" />
-                    )}
-                    <button
-                      onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
-                      className={`flex items-start justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                        isActive(u.id) ? 'bg-[#333333] text-white' : 'text-[#b4b4b4] hover:text-white hover:bg-white/[0.05]'
-                      }`}
-                    >
-                      <div className="flex items-start gap-[8px] truncate flex-1">
-                        <div className="relative flex-shrink-0 mt-[2px]">
-                          <div className="w-[20px] h-[20px] rounded-full bg-[#333333] flex items-center justify-center overflow-hidden border border-[#444444]">
-                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
-                          </div>
-                          {u.online && (
-                            <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-[#1f1f1f] bg-[#10b981]" />
-                          )}
-                        </div>
-                        <div className="truncate flex-1 min-w-0">
-                          <p className={`text-[13px] truncate ${u.isActive && !isActive(u.id) ? 'font-bold text-white' : ''}`}>
-                            {u.name}
-                          </p>
-                        </div>
-                      </div>
-                      {u.isActive && !isActive(u.id) && (
-                        <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
-                      )}
-                    </button>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-
+        {/* Search Box */}
+        <div className="relative max-w-[320px]">
+          <Search size={14} className="absolute left-[12px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
+          <input
+            type="text"
+            placeholder="Шукати канали..."
+            value={chatSearch}
+            onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
+            className="w-full pl-[36px] pr-[12px] py-[8px] bg-[#f9f9f9] border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
+          />
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#f9f9f9] relative">
+      {/* Main Content Area */}
+      <div className="flex-1 flex min-w-0 overflow-hidden">
 
-        {/* Chat Header */}
-        <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#e9e9e9] shrink-0 bg-white z-10">
-          <div className="flex flex-col">
+        {/* Channels Sidebar */}
+        <div className="w-[280px] bg-white border-r border-[#e9e9e9] flex flex-col shrink-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+
+            {/* Channels Section */}
+            <div className="px-[16px] py-[16px]">
+              <div className="flex items-center justify-between mb-[12px] group">
+                <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Канали</span>
+                <button
+                  onClick={() => setIsCreatingChannel(true)}
+                  className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-[2px]">
+                {isCreatingChannel && (
+                  <div className="px-[8px] py-[4px]">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newChannelName}
+                      onChange={(e) => setNewChannelName(e.target.value)}
+                      onKeyDown={handleCreateChannelSubmit}
+                      onBlur={() => { setIsCreatingChannel(false); setNewChannelName(''); }}
+                      placeholder="назва-каналу"
+                      className="w-full text-[13px] bg-[#f9f9f9] border border-[#1f1f1f] rounded-[8px] px-2 py-1 outline-none"
+                    />
+                    <p className="text-[10px] text-[#9a9a9a] mt-1 ml-1">Enter - зберегти, Esc - скасувати</p>
+                  </div>
+                )}
+                {channels
+                  .filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                  .map(c => {
+                  const hasUnread = readState[c.id] && c.lastMessageAt && (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
+                      className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
+                        isActive(c.id) ? 'bg-[#f0f0f0] text-[#1f1f1f]' : 'text-[#4a4a4a] hover:bg-[#f9f9f9]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-[6px] truncate flex-1 min-w-0">
+                        <Hash size={13} className="shrink-0 text-[#9a9a9a]" />
+                        <p className={`text-[13px] truncate ${hasUnread && !isActive(c.id) ? 'font-bold' : ''}`}>
+                          {c.name}
+                        </p>
+                      </div>
+                      {hasUnread && !isActive(c.id) && (
+                        <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* DMs Section */}
+            <div className="px-[16px] py-[16px] border-t border-[#f0f0f0]">
+              <div className="flex items-center justify-between mb-[12px] group">
+                <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Особисті</span>
+                <button className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Plus size={14} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-[2px]">
+                {dms
+                  .filter(u => u.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                  .map((u, idx, arr) => {
+                  const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
+                  return (
+                    <React.Fragment key={u.id}>
+                      {showSeparator && (
+                        <div className="my-2 h-px bg-[#f0f0f0]" />
+                      )}
+                      <button
+                        onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
+                        className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
+                          isActive(u.id) ? 'bg-[#f0f0f0] text-[#1f1f1f]' : 'text-[#4a4a4a] hover:bg-[#f9f9f9]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-[8px] truncate flex-1 min-w-0">
+                          <div className="relative flex-shrink-0">
+                            <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
+                              <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
+                            </div>
+                            {u.online && (
+                              <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-white bg-[#10b981]" />
+                            )}
+                          </div>
+                          <p className={`text-[13px] truncate ${u.isActive && !isActive(u.id) ? 'font-bold' : ''}`}>
+                            {u.name}
+                          </p>
+                        </div>
+                        {u.isActive && !isActive(u.id) && (
+                          <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
+                        )}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[#f7f7f7] relative">
+
+          {/* Chat Header */}
+          <div className="h-[56px] flex items-center justify-between px-[32px] border-b border-[#e9e9e9] shrink-0 bg-white z-10">
+            <div className="flex flex-col">
             <div className="flex items-center gap-[6px]">
               {activeChannel.type === 'channel' ? (
                 <Hash size={18} className="text-[#1f1f1f]" />
@@ -503,14 +497,15 @@ export default function ChatPage() {
             {activeChannel.type === 'channel' && (
               <p className="text-[12px] text-[#9a9a9a] ml-[24px]">Командне обговорення</p>
             )}
-          </div>
+            </div>
 
-          <div className="flex items-center gap-[16px]">
-            {activeChannel.type === 'channel' && (
-              <button onClick={() => setShowChannelInfo(!showChannelInfo)} className={`transition-colors ${showChannelInfo ? 'text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}><Info size={18} /></button>
-            )}
-            <div className="h-[24px] w-[1px] bg-[#f0f0f0]"></div>
-            <WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} />
+            <div className="flex items-center gap-[16px]">
+              {activeChannel.type === 'channel' && (
+                <button onClick={() => setShowChannelInfo(!showChannelInfo)} className={`transition-colors ${showChannelInfo ? 'text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}><Info size={18} /></button>
+              )}
+              <div className="h-[24px] w-[1px] bg-[#f0f0f0]"></div>
+              <WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} />
+            </div>
           </div>
         </div>
 
@@ -847,11 +842,9 @@ export default function ChatPage() {
           </div>
         </div>
 
-      </div>
-
-      {/* Thread Panel */}
-      {activeThreadId && activeThreadParent && (
-        <div className="w-[340px] bg-[#f9f9f9] border-l border-[#e9e9e9] flex flex-col h-full shrink-0 relative z-20">
+        {/* Thread Panel */}
+        {activeThreadId && activeThreadParent && (
+          <div className="w-[340px] bg-[#f9f9f9] border-l border-[#e9e9e9] flex flex-col shrink-0 relative z-20">
           <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9] shrink-0 bg-white">
             <h3 className="font-bold text-[#1f1f1f] text-[14px]">Гілка відповідей</h3>
             <button onClick={closeThread} className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f0f0f0] transition-colors"><X size={18} /></button>
@@ -1106,6 +1099,8 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+      </div>
+
     </div>
   );
 }
