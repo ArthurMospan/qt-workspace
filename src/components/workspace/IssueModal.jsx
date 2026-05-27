@@ -4,13 +4,16 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Trash2, ExternalLink, CheckSquare, Square, Plus, Link, Clock, History, MessageSquare } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useIssueLinks } from '@/lib/hooks/useIssueLinks';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 import UserAvatar from '@/components/UserAvatar';
 import TimeTracker from './TimeTracker';
 import DependenciesPanel from './DependenciesPanel';
 import EpicsPanel from './EpicsPanel';
+import CommentText from './CommentText';
 import { DEFAULT_COLUMNS as COLUMNS } from './BoardConfigModal';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
+import { parseMentions, resolveUserIds } from '@/lib/utils/mentions';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -38,7 +41,7 @@ function Tab({ id, label, icon: Icon, active, onClick, badge }) {
 }
 
 export default function IssueModal({
-  issue, members, comments = [], timeLogs = [], auditLogs = [], sprints = [], allIssues = [],
+  issue, members = [], comments = [], timeLogs = [], auditLogs = [], sprints = [], allIssues = [],
   onClose, onUpdate, onDelete, onAddComment, onLogTime, onAddSubtask, onToggleSubtask,
   priorities: prioritiesProp, types: typesProp, boardColumns: boardColumnsProp,
 }) {
@@ -91,8 +94,40 @@ export default function IssueModal({
 
   const handleComment = async () => {
     if (!commentText.trim()) return;
-    await onAddComment(commentText.trim());
+    const trimmedText = commentText.trim();
+
+    // Parse @mentions from comment
+    const mentions = parseMentions(trimmedText);
+    const mentionedUserIds = resolveUserIds(mentions, members);
+
+    // Send comment
+    await onAddComment(trimmedText);
     setCommentText('');
+
+    // Send notifications
+    const notifyUserIds = new Set(mentionedUserIds);
+
+    // Also notify issue creator/assignees (but not commenter)
+    if (issue.createdBy && issue.createdBy !== (currentUser?.id || currentUser?.uid)) {
+      notifyUserIds.add(issue.createdBy);
+    }
+    issue.assigneeIds?.forEach(uid => {
+      if (uid !== (currentUser?.id || currentUser?.uid)) {
+        notifyUserIds.add(uid);
+      }
+    });
+
+    if (notifyUserIds.size > 0) {
+      await sendNotification({
+        userIds: Array.from(notifyUserIds),
+        type: 'commented',
+        title: `${currentUser?.name || 'Користувач'} прокоментував задачу`,
+        body: trimmedText.substring(0, 60) + (trimmedText.length > 60 ? '...' : ''),
+        link: `/workspace/${issue.projectId}/issue/${issue.id}`,
+        issueId: issue.id,
+        projectId: issue.projectId,
+      });
+    }
   };
 
   const formatTime = (min) => {
@@ -236,7 +271,7 @@ export default function IssueModal({
                           </span>
                         </div>
                         <p className="text-[13px] text-[#1f1f1f] leading-relaxed bg-[#f7f7f7] rounded-[12px] px-3 py-2">
-                          {c.text}
+                          <CommentText text={c.text} members={members} />
                         </p>
                       </div>
                     </div>
