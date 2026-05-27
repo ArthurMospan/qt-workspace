@@ -31,7 +31,7 @@ export default function BoardConfigModal({ project, onClose }) {
       showToast('Назви колонок не можуть бути порожніми', 'error');
       return;
     }
-    
+
     setSaving(true);
     try {
       await updateDoc(doc(db, 'projects', project.id), {
@@ -39,7 +39,11 @@ export default function BoardConfigModal({ project, onClose }) {
         updatedAt: serverTimestamp(),
       });
       showToast('Колонки успішно оновлено ✓');
-      onClose();
+      // Small delay to ensure Firestore sync before closing
+      setTimeout(() => {
+        setSaving(false);
+        onClose();
+      }, 300);
     } catch (err) {
       console.error(err);
       showToast('Помилка збереження', 'error');
@@ -79,7 +83,7 @@ export default function BoardConfigModal({ project, onClose }) {
 
           <div className="flex flex-col gap-3">
             {columns.map((col, idx) => (
-              <div key={col.id} className="flex items-center gap-3 bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px] p-2">
+              <div key={col.id} className="flex items-center gap-3 bg-[#f7f7f7] border border-[#e9e9e9] rounded-[12px] p-2">
                 <div className="flex items-center justify-center w-6 h-6 text-[#9a9a9a] text-[10px] font-bold">
                   {idx + 1}
                 </div>
@@ -111,7 +115,7 @@ export default function BoardConfigModal({ project, onClose }) {
 
           <button
             onClick={addColumn}
-            className="mt-4 flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-[#e9e9e9] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] hover:border-[#cfcfcf] hover:text-[#1f1f1f] transition-all"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-[#e9e9e9] rounded-[12px] text-[13px] font-bold text-[#9a9a9a] hover:border-[#cfcfcf] hover:text-[#1f1f1f] transition-all"
           >
             <Plus size={16} /> Додати колонку
           </button>
