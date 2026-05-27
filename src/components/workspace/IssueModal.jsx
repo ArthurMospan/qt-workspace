@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Trash2, ExternalLink, CheckSquare, Square, Plus, Link, Clock, History, MessageSquare } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
+import { useIssueLinks } from '@/lib/hooks/useIssueLinks';
 import UserAvatar from '@/components/UserAvatar';
 import TimeTracker from './TimeTracker';
+import DependenciesPanel from './DependenciesPanel';
 import { DEFAULT_COLUMNS as COLUMNS } from './BoardConfigModal';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
@@ -44,6 +46,7 @@ export default function IssueModal({
     ({ id: t.id, label: t.label.includes(t.emoji ?? '__') ? t.label : `${t.emoji ?? ''} ${t.label}`.trim() })
   );
   const { currentUser, orgRole } = useAppContext();
+  const { links, addLink, removeLink } = useIssueLinks(issue?.id);
   const [activeTab, setActiveTab] = useState('comments');
   const [commentText, setCommentText] = useState('');
   const [subtaskInput, setSubtaskInput] = useState('');
@@ -211,6 +214,7 @@ export default function IssueModal({
             <div className="border-b border-[#f0f0f0] flex px-6 shrink-0">
               <Tab id="comments" label="Коментарі" icon={MessageSquare} active={activeTab === 'comments'} onClick={setActiveTab} badge={comments.length} />
               <Tab id="timelogs" label="Тайм-логи" icon={Clock} active={activeTab === 'timelogs'} onClick={setActiveTab} badge={timeLogs.length} />
+              <Tab id="links" label="Залежності" icon={Link} active={activeTab === 'links'} onClick={setActiveTab} badge={links.length} />
               <Tab id="history"  label="Історія"   icon={History}       active={activeTab === 'history'}  onClick={setActiveTab} badge={0} />
             </div>
 
@@ -280,6 +284,17 @@ export default function IssueModal({
                     <p className="text-[12px] text-[#cfcfcf] text-center py-4">Час ще не списано</p>
                   )}
                 </div>
+              )}
+
+              {activeTab === 'links' && (
+                <DependenciesPanel
+                  issue={issue}
+                  links={links}
+                  onAddLink={(sourceId, targetId, relationType) =>
+                    addLink(sourceId, targetId, relationType, currentUser?.id || currentUser?.uid)
+                  }
+                  onRemoveLink={removeLink}
+                />
               )}
 
               {activeTab === 'history' && (

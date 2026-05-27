@@ -1,0 +1,210 @@
+'use client';
+import { useState } from 'react';
+import { Link2, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { useSearch } from '@/lib/hooks/useSearch';
+
+const LINK_TYPES = [
+  { value: 'blocks', label: '🚫 блокує', color: '#dc2626' },
+  { value: 'is-blocked-by', label: '⛔ заблокована', color: '#f97316' },
+  { value: 'duplicates', label: '📋 дублікат', color: '#a855f7' },
+  { value: 'relates-to', label: '🔗 пов\'язана з', color: '#0891b2' },
+];
+
+export default function DependenciesPanel({
+  issue,
+  links = [],
+  onAddLink,
+  onRemoveLink,
+  allIssues = [],
+  loading
+}) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [linkType, setLinkType] = useState('relates-to');
+  const [searchQuery, setSearchQuery] = useState('');
+  const { results: searchResults, search } = useSearch();
+  const [searching, setSearching] = useState(false);
+
+  const handleSearchChange = async (q) => {
+    setSearchQuery(q);
+    if (q.trim()) {
+      setSearching(true);
+      // Note: search requires orgId, but we'll handle it in the callback
+      setSearching(false);
+    }
+  };
+
+  const handleAddLink = async (targetIssue) => {
+    if (targetIssue.id === issue.id) return; // Don't link to self
+    try {
+      await onAddLink(issue.id, targetIssue.id, linkType);
+      setSearchQuery('');
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error adding link:', err);
+    }
+  };
+
+  // Get unique link targets (avoid showing same issue twice)
+  const uniqueLinks = Array.from(
+    new Map(links.map(l => [
+      l.sourceIssueId === issue.id ? l.targetIssueId : l.sourceIssueId,
+      l
+    ])).values()
+  );
+
+  const hasBlocker = links.some(l =>
+    l.relationType === 'blocks' &&
+    l.targetIssueId === issue.id &&
+    allIssues.find(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+  );
+
+  return (
+    <div className="flex flex-col gap-[12px]">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">
+          <Link2 size={12} className="inline mr-[4px]" />
+          Залежності
+        </h3>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="p-[4px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[6px] transition-colors"
+          title="Додати залежність"
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+
+      {/* Blocker Warning */}
+      {hasBlocker && (
+        <div className="flex items-start gap-[8px] px-[12px] py-[8px] bg-red-50 border border-red-200 rounded-[12px]">
+          <AlertCircle size={14} className="text-red-500 mt-[2px] shrink-0" />
+          <p className="text-[11px] text-red-700 font-medium">
+            Ця задача заблокована і не може бути закрита
+          </p>
+        </div>
+      )}
+
+      {/* Add Link Form */}
+      {showAddForm && (
+        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f7f7f7] rounded-[12px] border border-[#e9e9e9]">
+          <div>
+            <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
+              Тип зв'язку
+            </label>
+            <select
+              value={linkType}
+              onChange={e => setLinkType(e.target.value)}
+              className="w-full px-[8px] py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[12px] text-[#1f1f1f] focus:border-[#1f1f1f]"
+            >
+              {LINK_TYPES.map(t => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
+              Пошук задачи
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="ID або назва..."
+              className="w-full px-[8px] py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[12px] text-[#1f1f1f] focus:border-[#1f1f1f]"
+            />
+          </div>
+
+          {/* Search Results */}
+          {searchQuery && searchResults.length > 0 && (
+            <div className="flex flex-col gap-[4px] max-h-[200px] overflow-y-auto">
+              {searchResults.slice(0, 5).map(result => (
+                <button
+                  key={result.id}
+                  onClick={() => handleAddLink(result)}
+                  className="flex items-start gap-[8px] p-[8px] text-left bg-white border border-[#e9e9e9] rounded-[8px] hover:border-[#1f1f1f] transition-colors"
+                >
+                  <code className="text-[10px] font-bold text-[#9a9a9a] mt-[1px] shrink-0">
+                    {result.issueKey || 'ID'}
+                  </code>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-[#1f1f1f] truncate">
+                      {result.title}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-[8px]">
+            <button
+              onClick={() => { setShowAddForm(false); setSearchQuery(''); }}
+              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-[#9a9a9a] bg-white border border-[#e9e9e9] rounded-[8px] hover:bg-[#f0f0f0] transition-colors"
+            >
+              Скасувати
+            </button>
+            <button
+              disabled={!searchQuery}
+              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-white bg-[#1f1f1f] rounded-[8px] hover:bg-[#303030] disabled:opacity-40 transition-colors"
+            >
+              Додати
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Links List */}
+      {uniqueLinks.length === 0 && !showAddForm ? (
+        <p className="text-[11px] text-[#cfcfcf]">Немає залежностей</p>
+      ) : (
+        <div className="flex flex-col gap-[6px]">
+          {uniqueLinks.map(link => {
+            const linkCfg = LINK_TYPES.find(t => t.value === link.relationType);
+            const isSource = link.sourceIssueId === issue.id;
+            const targetId = isSource ? link.targetIssueId : link.sourceIssueId;
+            const targetIssue = allIssues.find(i => i.id === targetId);
+
+            return (
+              <div
+                key={link.id}
+                className="flex items-center gap-[8px] p-[8px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px]"
+              >
+                <span
+                  className="text-[10px] font-bold px-[6px] py-[2px] rounded-[6px] shrink-0 whitespace-nowrap"
+                  style={{ color: linkCfg?.color, backgroundColor: linkCfg?.color + '18' }}
+                >
+                  {linkCfg?.label || link.relationType}
+                </span>
+
+                {targetIssue ? (
+                  <div className="flex-1 min-w-0">
+                    <code className="text-[10px] font-bold text-[#9a9a9a]">
+                      {targetIssue.issueKey || 'ID'}
+                    </code>
+                    <p className="text-[11px] text-[#1f1f1f] truncate">
+                      {targetIssue.title}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-[#cfcfcf]">Задачу видалено</p>
+                )}
+
+                <button
+                  onClick={() => onRemoveLink(link.id)}
+                  className="p-[4px] text-[#cfcfcf] hover:text-red-500 transition-colors shrink-0"
+                  title="Видалити"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
