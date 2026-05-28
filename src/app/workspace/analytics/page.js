@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
-  BarChart2, TrendingUp, CheckCircle2, AlertTriangle, Clock,
-  Users, Zap, Target, Receipt, ArrowRight, Activity, AlertCircle,
+  BarChart2, AlertTriangle, Clock,
+  Users, Zap, Target, Receipt, ArrowRight,
 } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
@@ -15,6 +15,7 @@ import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
+import { Button, LoadingSpinner, EmptyState, Alert, Card } from '@/components/ui';
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
   if (!min) return '0г';
@@ -143,17 +144,19 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+        <LoadingSpinner size="md" />
       </div>
     );
   }
 
   if (!stats || stats.total === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-20">
-        <BarChart2 size={40} className="text-[#e9e9e9] mb-3" />
-        <p className="text-[14px] font-semibold text-[#cfcfcf]">Даних ще немає</p>
-        <p className="text-[12px] text-[#e0e0e0] mt-1">Аналітика з'явиться після створення задач</p>
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <EmptyState
+          icon={BarChart2}
+          title="Даних ще немає"
+          description="Аналітика з'явиться після створення задач"
+        />
       </div>
     );
   }
@@ -166,12 +169,12 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         <div className="flex justify-end mb-4">
           <div className="flex items-center gap-1 bg-[#f7f7f7] border border-transparent rounded-[12px] p-[3px]">
             {[7, 14, 30, 90].map(d => (
-              <button key={d} onClick={() => setPeriod(d)}
-                className={`px-3 py-[5px] rounded-[7px] text-[11px] font-semibold transition-all ${
-                  period === d ? 'bg-[#1f1f1f] text-white' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'
-                }`}>
+              <Button key={d} onClick={() => setPeriod(d)}
+                variant={period === d ? 'primary' : 'secondary'}
+                color={period === d ? 'dark' : 'gray'}
+                size="sm">
                 {d}д
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -190,7 +193,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
         {/* Activity + Status */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="col-span-2 bg-[#f7f7f7] border border-transparent rounded-[24px] p-5">
+          <Card variant="gray" padding="lg" className="col-span-2">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Активність (14 днів)</SectionTitle>
               <div className="flex items-center gap-3 text-[10px] text-[#9a9a9a]">
@@ -214,9 +217,9 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
               <span className="text-[9px] text-[#cfcfcf]">{stats.days[0]?.label}</span>
               <span className="text-[9px] text-[#cfcfcf]">{stats.days[stats.days.length-1]?.label}</span>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-5">
+          <Card variant="gray" padding="lg">
             <SectionTitle>По статусах</SectionTitle>
             <div className="flex flex-col gap-[10px]">
               {stats.byStatus.map(({ col, count }) => (
@@ -229,11 +232,11 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Projects table */}
-        <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-5 mb-6">
+        <Card variant="gray" padding="lg" className="mb-6">
           <SectionTitle>По проєктах</SectionTitle>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -245,7 +248,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f8f8f8]">
-                {stats.byProject.map(({ p, total, done, open, overdue, minutes, pct }) => (
+                {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
                   <tr key={p.id} className="group">
                     <td className="py-3 pr-4">
                       <p className="text-[13px] font-semibold text-[#1f1f1f]">{p.name}</p>
@@ -277,11 +280,11 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
 
         {/* Member workload */}
         {stats.byMember.length > 0 && (
-          <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 mb-6 shadow-none">
+          <Card variant="gray" padding="lg" className="mb-6">
             <SectionTitle>Навантаження по команді</SectionTitle>
             <table className="w-full text-left">
               <thead>
@@ -311,13 +314,13 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
                 ))}
               </tbody>
             </table>
-          </div>
+          </Card>
         )}
 
         {/* Overdue + Insights */}
         <div className="grid grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
-            <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 shadow-none">
+            <Card variant="gray" padding="lg">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle size={13} className="text-red-500" />
                 <SectionTitle>Прострочені ({stats.overdue.length})</SectionTitle>
@@ -336,48 +339,44 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
                   </div>
                 );
               })}
-            </div>
+            </Card>
           )}
-          <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 shadow-none">
+          <Card variant="gray" padding="lg">
             <SectionTitle>Інсайти</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blockers > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-[12px]">
-                  <AlertCircle size={14} className="text-red-500 shrink-0" />
-                  <div>
-                    <p className="text-[12px] font-semibold text-red-700">{stats.blockers} Blocker-задачі</p>
-                    <p className="text-[11px] text-red-400">Потребують негайної уваги</p>
-                  </div>
-                </div>
+                <Alert
+                  variant="error"
+                  title={`${stats.blockers} Blocker-задачі`}
+                  description="Потребують негайної уваги"
+                />
               )}
               {stats.noAssignee > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-100 rounded-[12px]">
-                  <Users size={14} className="text-yellow-600 shrink-0" />
-                  <div>
-                    <p className="text-[12px] font-semibold text-yellow-700">{stats.noAssignee} задач без виконавця</p>
-                  </div>
-                </div>
+                <Alert
+                  variant="warning"
+                  title={`${stats.noAssignee} задач без виконавця`}
+                />
               )}
               {stats.unestimated > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-[#f0f4ff] border border-[#dbeafe] rounded-[12px]">
-                  <Clock size={14} className="text-[#6366f1] shrink-0" />
-                  <p className="text-[12px] font-semibold text-[#3730a3]">{stats.unestimated} задач без оцінки</p>
-                </div>
+                <Alert
+                  variant="info"
+                  title={`${stats.unestimated} задач без оцінки`}
+                />
               )}
               {stats.inProgress > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-[#f0fdfa] border border-[#ccfbf1] rounded-[12px]">
-                  <Activity size={14} className="text-[#0891b2] shrink-0" />
-                  <p className="text-[12px] font-semibold text-[#0e7490]">{stats.inProgress} задач в роботі</p>
-                </div>
+                <Alert
+                  variant="success"
+                  title={`${stats.inProgress} задач в роботі`}
+                />
               )}
               {stats.blockers === 0 && stats.noAssignee === 0 && stats.overdue.length === 0 && (
-                <div className="flex items-center gap-3 p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px]">
-                  <CheckCircle2 size={14} className="text-[#10b981] shrink-0" />
-                  <p className="text-[12px] font-semibold text-[#059669]">Все виглядає добре!</p>
-                </div>
+                <Alert
+                  variant="success"
+                  title="Все виглядає добре!"
+                />
               )}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
@@ -427,18 +426,16 @@ export default function WorkspaceAnalyticsPage() {
         {/* Tabs */}
         <div className="inline-flex items-center bg-[#f7f7f7] rounded-[12px] p-[4px] gap-[2px]">
           {TABS.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-[6px] px-[14px] py-[7px] rounded-[9px] text-[13px] font-semibold transition-all ${
-                activeTab === id
-                  ? id === 'billing'
-                    ? 'bg-white text-[#059669] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
-                    : 'bg-white text-[#1f1f1f] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
-                  : id === 'billing'
-                    ? 'text-[#9a9a9a] hover:text-[#059669]'
-                    : 'text-[#9a9a9a] hover:text-[#4a4a4a]'
-              }`}>
-              <Icon size={14} />{label}
-            </button>
+            <Button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              variant={activeTab === id ? 'primary' : 'secondary'}
+              color={activeTab === id && id === 'billing' ? 'green' : activeTab === id ? 'dark' : 'gray'}
+              size="md"
+              icon={Icon}
+            >
+              {label}
+            </Button>
           ))}
         </div>
       </div>
@@ -475,14 +472,19 @@ export default function WorkspaceAnalyticsPage() {
               <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Проєкт:</span>
               <div className="flex flex-wrap gap-2">
                 {projects.map(p => (
-                  <button key={p.id} onClick={() => setBillingProjectId(p.id)}
-                    className={`text-[11px] font-medium px-3 py-[5px] rounded-full border transition-all ${
+                  <Button
+                    key={p.id}
+                    onClick={() => setBillingProjectId(p.id)}
+                    variant={
                       (billingProjectId === p.id || (!billingProjectId && p.id === projects[0]?.id))
-                        ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
-                        : 'bg-white text-[#9a9a9a] border-[#e9e9e9] hover:border-[#1f1f1f] hover:text-[#1f1f1f]'
-                    }`}>
+                        ? 'primary'
+                        : 'secondary'
+                    }
+                    color="dark"
+                    size="sm"
+                  >
                     {p.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
