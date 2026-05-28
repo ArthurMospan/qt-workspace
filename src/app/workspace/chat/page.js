@@ -15,6 +15,8 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { LoadingSpinner } from '@/components/ui/Feedback/LoadingSpinner';
+import { Card } from '@/components/ui/Card';
 
 export default function ChatPage() {
   const { currentUser, projects, activeOrgId } = useAppContext();
@@ -483,7 +485,7 @@ export default function ChatPage() {
           <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col px-[32px] py-[16px]">
             {loading && messages.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <Button loading={true} size="icon" style="ghost" color="dark" disabled />
+                <LoadingSpinner size="md" />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -546,8 +548,8 @@ export default function ChatPage() {
                                 rows={3}
                               />
                               <div className="flex gap-2">
-                                <Button onClick={() => setEditingMsgId(null)} style="secondary" color="dark" size="sm" className="text-[12px]">Скасувати</Button>
-                                <Button onClick={() => { editMessage(msg.id, editMsgText); setEditingMsgId(null); }} disabled={!editMsgText.trim()} style="primary" color="dark" size="sm" className="text-[12px]">Зберегти</Button>
+                                <Button onClick={() => setEditingMsgId(null)} style="secondary" color="dark" size="sm">Скасувати</Button>
+                                <Button onClick={() => { editMessage(msg.id, editMsgText); setEditingMsgId(null); }} disabled={!editMsgText.trim()} style="primary" color="dark" size="sm">Зберегти</Button>
                               </div>
                             </div>
                           ) : (
@@ -628,11 +630,7 @@ export default function ChatPage() {
 
             {activeChannelData?.typing?.length > 0 && activeChannelData.typing.some(uid => uid !== myUid) && (
               <div className="flex items-center gap-2 mt-2">
-                <div className="flex gap-1">
-                  <span className="w-[5px] h-[5px] bg-[#cfcfcf] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-[5px] h-[5px] bg-[#cfcfcf] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-[5px] h-[5px] bg-[#cfcfcf] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
+                <LoadingSpinner size="xs" />
                 <span className="text-[12px] text-[#9a9a9a] italic">
                   {activeChannelData.typing.filter(uid => uid !== myUid).map(uid => members.find(m => (m.id || m.uid) === uid)?.name || 'Хтось').join(', ')} друкує...
                 </span>
@@ -665,7 +663,7 @@ export default function ChatPage() {
             
             {/* Mentions Dropdown */}
             {mentionType && (
-              <div className="absolute bottom-full left-[16px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-xl overflow-hidden w-[260px] max-h-[200px] overflow-y-auto z-30">
+              <Card className="absolute bottom-full left-[16px] mb-2 bg-white shadow-xl overflow-hidden w-[260px] max-h-[200px] overflow-y-auto z-30">
                 {mentionType === 'user' && members.filter(m => (m.name || m.email).toLowerCase().includes(mentionQuery)).map(m => (
                   <Button
                     key={m.id || m.uid}
@@ -691,10 +689,10 @@ export default function ChatPage() {
                 {mentionType === 'issue' && (
                   <div className="p-3 text-[12px] text-[#9a9a9a] text-center">Задачі в розробці...</div>
                 )}
-              </div>
+              </Card>
             )}
 
-            <div className="bg-white border-[3px] border-[#d0d0d0]/40 focus-within:border-[#d0d0d0]/60 transition-all overflow-visible flex flex-col rounded-[12px]">
+            <Card className="bg-white overflow-visible flex flex-col">
               {attachments.length > 0 && (
                 <div className="px-[12px] pt-[8px] flex flex-wrap gap-2">
                   {attachments.map((att, idx) => (
@@ -706,12 +704,15 @@ export default function ChatPage() {
                           📎 {att.name}
                         </div>
                       )}
-                      <button
+                      <Button
                         onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                        className="absolute -top-2 -right-2 bg-white border border-[#e9e9e9] rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm"
-                      >
-                        <X size={12} />
-                      </button>
+                        style="ghost"
+                        color="dark"
+                        size="icon"
+                        className="absolute -top-2 -right-2 p-1 h-[20px] w-[20px] text-red-500 hover:bg-red-50 border border-[#e9e9e9]"
+                        icon={X}
+                        iconSize={12}
+                      />
                     </div>
                   ))}
                 </div>
@@ -751,7 +752,7 @@ export default function ChatPage() {
                   {(messageText.trim() || attachments.length > 0) && <span className="text-[13px] font-bold">Надіслати</span>}
                 </Button>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
@@ -916,7 +917,7 @@ export default function ChatPage() {
 
                 {/* Thread Input */}
                 <div className="p-[16px] shrink-0 bg-white border-t border-[#e9e9e9]">
-                  <div className="bg-[#f7f7f7] border border-[#d0d0d0]/60 focus-within:border-[#1f1f1f]/40 transition-all overflow-hidden flex flex-col rounded-[12px]">
+                  <Card className="bg-[#f7f7f7] overflow-hidden flex flex-col">
                     {threadAttachments.length > 0 && (
                        <div className="px-[12px] pt-[8px] flex flex-wrap gap-2">
                          {threadAttachments.map((att, idx) => (
@@ -928,9 +929,7 @@ export default function ChatPage() {
                                  📎 {att.name}
                                </div>
                              )}
-                             <button onClick={() => setThreadAttachments(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white border border-[#e9e9e9] rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm">
-                               <X size={10} />
-                             </button>
+                             <Button onClick={() => setThreadAttachments(prev => prev.filter((_, i) => i !== idx))} style="ghost" color="dark" size="icon" className="absolute -top-2 -right-2 p-1 h-[16px] w-[16px] text-red-500 hover:bg-red-50 border border-[#e9e9e9]" icon={X} iconSize={10} />
                            </div>
                          ))}
                        </div>
@@ -977,7 +976,7 @@ export default function ChatPage() {
                         className="p-[6px] h-[28px] w-[28px]"
                       />
                     </div>
-                  </div>
+                  </Card>
                 </div>
               </div>
             ) : showChannelInfo && currentChannel ? (
@@ -985,11 +984,11 @@ export default function ChatPage() {
               <div className="flex-1 overflow-y-auto custom-scrollbar px-[20px] py-[20px] flex flex-col gap-[24px]">
                 <div>
                   <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Опис</h3>
-                  <div className="bg-white p-[12px] rounded-[12px] border border-[#e9e9e9]">
+                  <Card className="bg-white p-[12px]">
                     <p className="text-[13px] text-[#1f1f1f]">
                       {currentChannel.description || 'Немає опису. Натисніть "i" у заголовку каналу, щоб додати.'}
                     </p>
-                  </div>
+                  </Card>
                 </div>
 
                 <div>
@@ -999,7 +998,7 @@ export default function ChatPage() {
                       <p className="text-[12px] text-[#9a9a9a]">Немає закріплених повідомлень.</p>
                     ) : (
                       messages.filter(m => m.isPinned).map(m => (
-                        <div key={m.id} className="bg-white p-[10px] rounded-[12px] border border-[#e9e9e9] flex flex-col gap-[4px] cursor-pointer hover:border-[#cfcfcf] transition-colors" onClick={() => {
+                        <Card key={m.id} className="bg-white p-[10px] flex flex-col gap-[4px] cursor-pointer hover:border-[#cfcfcf] transition-colors" onClick={() => {
                           // Could scroll to message
                         }}>
                           <div className="flex items-center gap-[6px]">
@@ -1009,7 +1008,7 @@ export default function ChatPage() {
                           <p className="text-[12px] text-[#333333] line-clamp-2">
                             {m.text || 'Долучено файл'}
                           </p>
-                        </div>
+                        </Card>
                       ))
                     )}
                   </div>
@@ -1017,7 +1016,7 @@ export default function ChatPage() {
 
                 <div>
                   <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Учасники команди ({members.length})</h3>
-                  <div className="bg-white rounded-[12px] border border-[#e9e9e9] overflow-hidden">
+                  <Card className="bg-white overflow-hidden">
                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col">
                       {members.map(m => (
                         <div key={m.id || m.uid} className="flex items-center gap-[10px] p-[10px] border-b border-[#f0f0f0] last:border-0 hover:bg-[#f7f7f7] transition-colors">
@@ -1028,7 +1027,7 @@ export default function ChatPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </Card>
                 </div>
               </div>
             ) : null}
