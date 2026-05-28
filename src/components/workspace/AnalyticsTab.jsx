@@ -24,9 +24,9 @@ function fmtDate(ts) {
 
 function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', trend }) {
   return (
-    <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+    <div className="bg-[#f7f7f7] rounded-[24px] p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: color + '18' }}>
+        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ background: color + '18' }}>
           <Icon size={16} style={{ color }} />
         </div>
         {trend !== undefined && (
@@ -134,7 +134,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Бюджет часу</SectionTitle>
               <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
@@ -169,7 +169,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <SectionTitle>Задачі по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-[#cfcfcf] py-4">Задач немає</p>
@@ -188,7 +188,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
             )}
           </div>
 
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
               <p className="text-[12px] text-[#cfcfcf] py-4">Немає відкритих задач</p>
@@ -217,7 +217,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="text-red-500" />
               <SectionTitle>Прострочені задачі ({stats.overdue.length})</SectionTitle>
@@ -255,7 +255,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -295,11 +295,11 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Warnings ─────────────────────────────────────────────── */}
         {(stats.noAssignee.length > 0 || stats.unestimated.length > 0 || stats.blocked > 0) && (
-          <div className="bg-[#f7f7f7] rounded-[16px] p-5">
+          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blocked > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-[10px]">
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-[12px]">
                   <AlertTriangle size={14} className="text-red-500 shrink-0" />
                   <p className="text-[12px] font-medium text-red-700">
                     <span className="font-bold">{stats.blocked}</span> задача з пріоритетом Blocker
@@ -307,7 +307,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 </div>
               )}
               {stats.noAssignee.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-[10px]">
+                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-[12px]">
                   <Users size={14} className="text-yellow-600 shrink-0" />
                   <p className="text-[12px] font-medium text-yellow-700">
                     <span className="font-bold">{stats.noAssignee.length}</span> задач без виконавця
@@ -315,7 +315,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 </div>
               )}
               {stats.unestimated.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-[#eef2ff] rounded-[10px]">
+                <div className="flex items-center gap-3 p-3 bg-[#eef2ff] rounded-[12px]">
                   <Clock size={14} className="text-[#6366f1] shrink-0" />
                   <p className="text-[12px] font-medium text-[#3730a3]">
                     <span className="font-bold">{stats.unestimated.length}</span> задач без оцінки часу

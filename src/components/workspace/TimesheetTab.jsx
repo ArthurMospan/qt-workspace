@@ -94,7 +94,7 @@ export default function TimesheetTab() {
             <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="bg-[#f7f7f7] border-none rounded-[16px] overflow-hidden">
+          <div className="bg-[#f7f7f7] border-none rounded-[24px] overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">

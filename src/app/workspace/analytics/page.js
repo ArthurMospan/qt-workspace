@@ -89,7 +89,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
       const pMin   = timeLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
       const pPct   = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
-    }).filter(s => s.total > 0).sort((a, b) => b.total - a.total);
+    }).sort((a, b) => b.total - a.total);
 
     const byMember = members.map(m => {
       const uid   = m.id || m.uid;
@@ -281,7 +281,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
         {/* Member workload */}
         {stats.byMember.length > 0 && (
-          <div className="bg-white border border-[#e9e9e9] rounded-[24px] p-5 mb-6">
+          <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 mb-6 shadow-none">
             <SectionTitle>Навантаження по команді</SectionTitle>
             <table className="w-full text-left">
               <thead>
@@ -317,7 +317,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         {/* Overdue + Insights */}
         <div className="grid grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
-            <div className="bg-white border border-[#e9e9e9] rounded-[24px] p-5">
+            <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 shadow-none">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle size={13} className="text-red-500" />
                 <SectionTitle>Прострочені ({stats.overdue.length})</SectionTitle>
@@ -338,7 +338,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
               })}
             </div>
           )}
-          <div className="bg-white border border-[#e9e9e9] rounded-[24px] p-5">
+          <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-6 shadow-none">
             <SectionTitle>Інсайти</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blockers > 0 && (

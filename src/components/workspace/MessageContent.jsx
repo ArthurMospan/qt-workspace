@@ -31,7 +31,7 @@ export default function MessageContent({ text, members }) {
         const parts = line.split(tokenRegex);
 
         return (
-          <p key={idx}>
+          <div key={idx} className="mb-1 last:mb-0">
             {parts.map((part, pIdx) => {
               if (!part) return null;
 
@@ -53,7 +53,9 @@ export default function MessageContent({ text, members }) {
               if (part.startsWith('@')) {
                 return (
                   <HoverCard key={pIdx} type="user" value={part.slice(1)} members={members}>
-                    {part}
+                    <span className="bg-[#1f1f1f]/10 text-[#1f1f1f] font-bold px-1 rounded cursor-pointer hover:bg-[#1f1f1f]/20 transition-colors">
+                      {part}
+                    </span>
                   </HoverCard>
                 );
               }
@@ -83,7 +85,7 @@ export default function MessageContent({ text, members }) {
 
               return <span key={pIdx}>{part}</span>;
             })}
-          </p>
+          </div>
         );
       })}
     </>

@@ -95,7 +95,7 @@ function Section({ title, desc, children }) {
 
 function Card({ children, className = '' }) {
   return (
-    <div className={`bg-[#f7f7f7] rounded-[16px] px-5 mb-4 ${className}`}>
+    <div className={`bg-[#f7f7f7] rounded-[24px] p-6 mb-5 ${className}`}>
       {children}
     </div>
   );
@@ -121,7 +121,7 @@ function Input({ value, onChange, placeholder, type = 'text', className = '' }) 
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[7px] outline-none focus:border-[#1f1f1f] transition-colors ${className}`}
+      className={`text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px] px-3 py-[7px] outline-none focus:border-[#1f1f1f] transition-colors ${className}`}
     />
   );
 }
@@ -279,6 +279,15 @@ export default function SettingsPage() {
     if (org?.logo && !orgLogo) setOrgLogo(org.logo);
   }, [currentUser?.name, org?.name, org?.logo]); // eslint-disable-line
 
+  // ── Breadcrumbs ──
+  useEffect(() => {
+    useWorkspaceStore.setState({
+      breadcrumbs: [
+        { label: 'Налаштування', href: null },
+      ]
+    });
+    return () => useWorkspaceStore.setState({ breadcrumbs: [] });
+  }, []);
   useEffect(() => {
     const load = async () => {
       if (!activeOrgId) return;
@@ -583,7 +592,7 @@ export default function SettingsPage() {
                   onChange={e => setInviteEmail(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleInvite(); }}
                   placeholder="email@company.com"
-                  className="flex-1 text-[13px] bg-white border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f] transition-colors"
+                  className="flex-1 text-[13px] bg-white border border-[#e9e9e9] rounded-[10px] px-3 py-[8px] outline-none focus:border-[#1f1f1f] transition-colors"
                 />
                 <div className="w-[100px]">
                   <Select
@@ -598,7 +607,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleInvite}
                   disabled={inviting || !inviteEmail.trim()}
-                  className="flex items-center gap-2 px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[8px] text-[12px] font-medium hover:bg-[#303030] transition-colors disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-2 px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-medium hover:bg-[#303030] transition-colors disabled:opacity-50 shrink-0"
                 >
                   {inviting ? <RefreshCw size={12} className="animate-spin" /> : <Mail size={12} />}
                   Запросити
@@ -892,7 +901,7 @@ export default function SettingsPage() {
                     const typed = prompt('Введіть DELETE для підтвердження');
                     if (typed === 'DELETE') showToast('Функція недоступна в demo-режимі', 'error');
                   }}
-                  className="flex items-center gap-2 text-[12px] font-medium text-red-600 bg-red-50 px-3 py-[5px] rounded-[7px] hover:bg-red-100 transition-colors"
+                  className="flex items-center gap-2 text-[12px] font-medium text-red-600 bg-red-50 px-3 py-[5px] rounded-[10px] hover:bg-red-100 transition-colors"
                 >
                   <Trash2 size={12} /> Видалити воркспейс
                 </button>
@@ -976,8 +985,7 @@ export default function SettingsPage() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="w-full px-[32px] pt-0 pb-16 max-w-[900px]">
-          <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight mb-[24px]">Налаштування</h1>
+        <div className="w-full px-[32px] pt-[24px] pb-16 max-w-[900px]">
           {renderSection()}
         </div>
       </main>

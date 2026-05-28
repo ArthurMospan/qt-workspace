@@ -2,7 +2,7 @@
 // src/components/UserAvatar.jsx — Fixed: uses size prop, supports avatar/photoURL
 export default function UserAvatar({ user, size = 32, className = '' }) {
   if (!user) return (
-    <div style={{ width: size, height: size, minWidth: size }}
+    <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
       className={`rounded-full bg-[#e9e9e9] flex items-center justify-center shrink-0 ${className}`}>
       <span style={{ fontSize: size * 0.38 }} className="font-bold text-[#9a9a9a]">?</span>
     </div>
@@ -18,7 +18,7 @@ export default function UserAvatar({ user, size = 32, className = '' }) {
   const bg = colors[colorIdx];
 
   return (
-    <div style={{ width: size, height: size, minWidth: size }}
+    <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
       className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
       {avatarUrl ? (
         <img

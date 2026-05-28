@@ -29,7 +29,7 @@ const DEFAULT_STATUSES = [
   { id: 'done',        label: 'Готово' },
 ];
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, sprints = [] }) {
   const { currentUser } = useAppContext();
   const { labels: availableLabels = [] } = useWorkflowConfig();
   const statuses = stages?.length ? stages : DEFAULT_STATUSES;
@@ -38,7 +38,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     title: '', description: '', status: 'todo',
     priority: 'medium', type: 'task',
     assignees: [], labelIds: [], dueDate: '',
-    projectId: projects && projects.length > 0 ? projects[0].id : ''
+    parentEpicId: '', estimateHours: '',
+    projectId: projects && projects.length > 0 ? projects[0].id : '',
+    sprintId: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -69,8 +71,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         ...form,
         createdBy: currentUser?.id || currentUser?.uid,
         dueDate: form.dueDate ? new Date(form.dueDate) : null,
+        estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
+        parentEpicId: form.parentEpicId || null,
+        sprintId: form.sprintId || null
       });
-      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], projectId: '' });
+      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], parentEpicId: '', estimateHours: '', projectId: '', sprintId: '' });
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
@@ -117,6 +122,22 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 onChange={val => set('projectId', val)}
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Оберіть проєкт..."
+              />
+            </div>
+          )}
+
+          {/* Sprint Selector */}
+          {sprints && sprints.length > 0 && (
+            <div>
+              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Спринт</label>
+              <Select
+                value={form.sprintId}
+                onChange={val => set('sprintId', val)}
+                options={[
+                  { value: '', label: 'Без спринта (Беклог)' },
+                  ...sprints.map(s => ({ value: s.id, label: s.name }))
+                ]}
+                placeholder="Оберіть спринт..."
               />
             </div>
           )}
@@ -169,6 +190,31 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 value={form.dueDate}
                 onChange={e => set('dueDate', e.target.value)}
                 className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Row: Epic + Estimate */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Епік (Батьківська)</label>
+              <Select
+                value={form.parentEpicId}
+                onChange={val => set('parentEpicId', val)}
+                options={[
+                  { value: '', label: 'Без епіка' },
+                  ...(typeof epics !== 'undefined' ? epics : []).map(e => ({ value: e.id, label: e.title }))
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Оцінка (год)</label>
+              <input
+                type="number" min="0" step="0.5"
+                value={form.estimateHours}
+                onChange={e => set('estimateHours', e.target.value)}
+                placeholder="0"
+                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
               />
             </div>
           </div>

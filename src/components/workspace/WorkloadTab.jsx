@@ -6,7 +6,7 @@ export default function WorkloadTab({ members, issues, timeLogs }) {
   // Simple workload shell
   return (
     <div className="flex-1 overflow-y-auto bg-transparent px-[32px] pt-[20px] pb-16">
-      <div className="w-full bg-[#f7f7f7] rounded-[16px] p-8">
+      <div className="w-full bg-[#f7f7f7] rounded-[24px] p-8">
         <div className="flex items-center gap-3 mb-6">
           <Users size={24} className="text-[#6366f1]" />
           <h2 className="text-[20px] font-bold text-[#1f1f1f]">Завантаженість команди</h2>
@@ -25,7 +25,7 @@ export default function WorkloadTab({ members, issues, timeLogs }) {
               const highPriority = open.filter(i => ['high', 'critical', 'blocker'].includes(i.priority));
               
               return (
-                <div key={uid} className="flex items-center gap-6 p-4 bg-white rounded-[12px] transition-colors shadow-sm">
+                <div key={uid} className="flex items-center gap-6 p-4 bg-white rounded-[16px] transition-colors shadow-sm">
                   <div className="flex items-center gap-3 min-w-[150px]">
                     <UserAvatar user={m} size={36} />
                     <div>

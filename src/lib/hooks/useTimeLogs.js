@@ -1,34 +1,32 @@
 'use client';
+
 // src/lib/hooks/useTimeLogs.js — Time log CRUD for a single issue
 import { useState, useEffect, useCallback } from 'react';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-
 export function useTimeLogs(issueId) {
-  const { activeOrgId } = useAppContext();
+  const {
+    activeOrgId
+  } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!issueId || !activeOrgId) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
 
     // Two equality filters — no composite index required
-    const q = query(
-      collection(db, 'timeLogs'),
-      where('organizationId', '==', activeOrgId),
-      where('issueId', '==', issueId),
-    );
-
-    const unsub = onSnapshot(q, { serverTimestamps: 'estimate' }, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('issueId', '==', issueId));
+    const unsub = onSnapshot(q, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      const docs = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
 
       // Sort client-side by loggedAt desc
       docs.sort((a, b) => {
@@ -36,16 +34,14 @@ export function useTimeLogs(issueId) {
         const bTime = b.loggedAt?.toMillis?.() ?? 0;
         return bTime - aTime;
       });
-
       const total = docs.reduce((sum, l) => sum + (l.spentMinutes || 0), 0);
       setLogs(docs);
       setTotalMinutes(total);
       setLoading(false);
-    }, (err) => {
+    }, err => {
       console.error('[useTimeLogs] onSnapshot error', err);
       setLoading(false);
     });
-
     return () => unsub();
   }, [issueId]);
 
@@ -54,7 +50,6 @@ export function useTimeLogs(issueId) {
   // -------------------------------------------------------------------------
   const addTimeLog = useCallback(async (issueId, projectId, userId, minutes, description = '', workType = 'development') => {
     if (!minutes || minutes <= 0) throw new Error('minutes must be > 0');
-
     await addDoc(collection(db, 'timeLogs'), {
       issueId,
       projectId,
@@ -63,14 +58,18 @@ export function useTimeLogs(issueId) {
       spentMinutes: Math.round(minutes),
       description: description || '',
       workType: workType || 'development',
-      loggedAt: serverTimestamp(),
+      loggedAt: serverTimestamp()
     });
   }, [activeOrgId]);
 
   // -------------------------------------------------------------------------
   // updateTimeLog — Edit existing time log
   // -------------------------------------------------------------------------
-  const updateTimeLog = useCallback(async (logId, { spentMinutes, description, workType }) => {
+  const updateTimeLog = useCallback(async (logId, {
+    spentMinutes,
+    description,
+    workType
+  }) => {
     const updates = {};
     if (spentMinutes !== undefined) {
       if (spentMinutes <= 0) throw new Error('minutes must be > 0');
@@ -79,16 +78,21 @@ export function useTimeLogs(issueId) {
     if (description !== undefined) updates.description = description;
     if (workType !== undefined) updates.workType = workType;
     if (Object.keys(updates).length === 0) return;
-
     await updateDoc(doc(db, 'timeLogs', logId), updates);
   }, []);
 
   // -------------------------------------------------------------------------
   // deleteTimeLog — Delete time log
   // -------------------------------------------------------------------------
-  const deleteTimeLog = useCallback(async (logId) => {
+  const deleteTimeLog = useCallback(async logId => {
     await deleteDoc(doc(db, 'timeLogs', logId));
   }, []);
-
-  return { logs, totalMinutes, loading, addTimeLog, updateTimeLog, deleteTimeLog };
+  return {
+    logs,
+    totalMinutes,
+    loading,
+    addTimeLog,
+    updateTimeLog,
+    deleteTimeLog
+  };
 }

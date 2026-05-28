@@ -5,8 +5,14 @@ import { use, useState } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
-import ProjectTabBar from '@/components/workspace/ProjectTabBar';
-import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send } from 'lucide-react';
+import PageHeader from '@/components/workspace/PageHeader';
+import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send, LayoutGrid, Users, BarChart2 } from 'lucide-react';
+
+const TABS = (projectId) => [
+  { id: 'board',      label: 'Дошка',     icon: LayoutGrid, href: `/workspace/${projectId}` },
+  { id: 'team',       label: 'Команда',   icon: Users, href: `/workspace/${projectId}` },
+  { id: 'analytics',  label: 'Аналітика', icon: BarChart2, href: `/workspace/${projectId}` },
+];
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
@@ -53,9 +59,16 @@ export default function PortalPage({ params }) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
       {/* Shared project tab bar — Portal tab highlighted */}
-      <ProjectTabBar
-        projectId={projectId}
-        projectName={project?.name}
+      <PageHeader
+        variant="alt"
+        title={project?.name}
+        tabs={TABS(projectId)}
+        actions={
+          <div className="relative flex items-center gap-[6px] px-[14px] py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-[#6366f1]/10 text-[#6366f1]">
+            <MessageSquare size={13} />
+            QuickTeam+
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-y-auto">

@@ -1,4 +1,5 @@
 'use client';
+
 // src/lib/hooks/useWorkspaceAnalytics.js
 // Loads issues + timeLogs for ALL projects in a workspace (batched by chunks of 10)
 import { useState, useEffect } from 'react';
@@ -12,42 +13,42 @@ function chunkArray(arr, size) {
   for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
   return chunks;
 }
-
 export function useWorkspaceAnalytics(projectIds = []) {
-  const { activeOrgId } = useAppContext();
-  const [issues,   setIssues]   = useState([]);
+  const {
+    activeOrgId
+  } = useAppContext();
+  const [issues, setIssues] = useState([]);
   const [timeLogs, setTimeLogs] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!activeOrgId || projectIds.length === 0) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
-
     const chunks = chunkArray(projectIds, 10);
-    const allIssues   = {};
+    const allIssues = {};
     const allTimeLogs = {};
-    let pendingIssues   = chunks.length;
+    let pendingIssues = chunks.length;
     let pendingTimeLogs = chunks.length;
     const unsubs = [];
-
     const flushIssues = () => {
       setIssues(Object.values(allIssues));
     };
     const flushLogs = () => {
       setTimeLogs(Object.values(allTimeLogs));
     };
-
     chunks.forEach(chunk => {
       // Issues query
-      const iq = query(
-        collection(db, 'issues'),
-        where('organizationId', '==', activeOrgId),
-        where('projectId', 'in', chunk),
-      );
-      const unsub1 = onSnapshot(iq, { serverTimestamps: 'estimate' }, snap => {
-        snap.docs.forEach(d => { allIssues[d.id] = { id: d.id, ...d.data() }; });
+      const iq = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', 'in', chunk));
+      const unsub1 = onSnapshot(iq, {
+        serverTimestamps: 'estimate'
+      }, snap => {
+        snap.docs.forEach(d => {
+          allIssues[d.id] = {
+            id: d.id,
+            ...d.data()
+          };
+        });
         // Also remove any deleted docs
         const chunkIssueIds = new Set(snap.docs.map(d => d.id));
         // keep only issues from other chunks
@@ -65,13 +66,16 @@ export function useWorkspaceAnalytics(projectIds = []) {
       });
 
       // TimeLogs query
-      const tq = query(
-        collection(db, 'timeLogs'),
-        where('organizationId', '==', activeOrgId),
-        where('projectId', 'in', chunk),
-      );
-      const unsub2 = onSnapshot(tq, { serverTimestamps: 'estimate' }, snap => {
-        snap.docs.forEach(d => { allTimeLogs[d.id] = { id: d.id, ...d.data() }; });
+      const tq = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('projectId', 'in', chunk));
+      const unsub2 = onSnapshot(tq, {
+        serverTimestamps: 'estimate'
+      }, snap => {
+        snap.docs.forEach(d => {
+          allTimeLogs[d.id] = {
+            id: d.id,
+            ...d.data()
+          };
+        });
         if (pendingTimeLogs > 0) pendingTimeLogs--;
         flushLogs();
         if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
@@ -79,12 +83,14 @@ export function useWorkspaceAnalytics(projectIds = []) {
         if (pendingTimeLogs > 0) pendingTimeLogs--;
         if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
       });
-
       unsubs.push(unsub1, unsub2);
     });
-
     return () => unsubs.forEach(u => u());
   }, [activeOrgId, projectIds.join(',')]); // eslint-disable-line
 
-  return { issues, timeLogs, loading };
+  return {
+    issues,
+    timeLogs,
+    loading
+  };
 }

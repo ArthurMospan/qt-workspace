@@ -175,14 +175,14 @@ export default function OrgSwitcherScreen({ onClose }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => { setCreating(false); setNewOrgName(''); }}
-                  className="flex-1 py-[8px] rounded-[8px] text-[12px] font-bold text-[#9a9a9a] bg-white border border-[#e9e9e9] hover:bg-[#f0f0f0] transition-colors"
+                  className="flex-1 h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] bg-white border border-[#e9e9e9] hover:bg-[#f0f0f0] transition-colors"
                 >
                   Скасувати
                 </button>
                 <button
                   onClick={handleCreateOrg}
                   disabled={!newOrgName.trim() || saving}
-                  className="flex-1 py-[8px] rounded-[8px] text-[12px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
+                  className="flex-1 h-[32px] rounded-[10px] text-[13px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
                 >
                   {saving ? 'Створення...' : 'Створити'}
                 </button>
@@ -196,7 +196,7 @@ export default function OrgSwitcherScreen({ onClose }) {
           <div className="p-[16px] border-t border-[#f0f0f0] bg-[#fafafa]">
             <button
               onClick={onClose}
-              className="w-full py-[12px] rounded-[14px] text-[14px] font-bold text-[#1f1f1f] bg-white border border-[#e9e9e9] hover:bg-[#f5f5f5] hover:border-[#d0d0d0] shadow-sm transition-all"
+              className="w-full h-[32px] rounded-[10px] text-[13px] font-bold text-[#1f1f1f] bg-white border border-[#e9e9e9] hover:bg-[#f5f5f5] hover:border-[#d0d0d0] shadow-sm transition-all"
             >
               Назад
             </button>

@@ -297,11 +297,11 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
             </div>
             <div className="flex gap-[12px] justify-end">
               <button onClick={() => setShowDeleteConfirm(false)}
-                className="px-[24px] py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+                className="px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
                 Скасувати
               </button>
               <button onClick={() => { onDelete(task.id); setShowDeleteConfirm(false); }}
-                className="px-[24px] py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">
+                className="px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">
                 Видалити
               </button>
             </div>

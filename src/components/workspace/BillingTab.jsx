@@ -565,7 +565,7 @@ export default function BillingTab({ issues = [], members = [], project, project
       <div className="flex-1 overflow-y-auto px-6 py-5">
 
         {/* ── Rate Cards ─────────────────────────────────────────────── */}
-        <div className="bg-white border border-[#e9e9e9] rounded-[14px] mb-4 overflow-hidden">
+        <div className="bg-white border border-[#efefef] rounded-[24px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] mb-6 overflow-hidden">
           <button
             onClick={() => setShowRates(v => !v)}
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#fafafa] transition-colors"
@@ -623,7 +623,7 @@ export default function BillingTab({ issues = [], members = [], project, project
         </div>
 
         {/* ── Invoice Meta ─────────────────────────────────────────────── */}
-        <div className="bg-white border border-[#e9e9e9] rounded-[14px] mb-4 overflow-hidden">
+        <div className="bg-white border border-[#efefef] rounded-[24px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] mb-6 overflow-hidden">
           <button
             onClick={() => setShowMeta(v => !v)}
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#fafafa] transition-colors"
@@ -673,7 +673,7 @@ export default function BillingTab({ issues = [], members = [], project, project
         </div>
 
         {/* ── Issues list ──────────────────────────────────────────────── */}
-        <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden mb-4">
+        <div className="bg-white border border-[#efefef] rounded-[24px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
           {/* Toolbar */}
           <div className="flex items-center gap-3 px-5 py-3 border-b border-[#f0f0f0] flex-wrap">
             <p className="text-[13px] font-semibold text-[#1f1f1f] shrink-0">
@@ -746,7 +746,7 @@ export default function BillingTab({ issues = [], members = [], project, project
 
         {/* ── History ──────────────────────────────────────────────────── */}
         {savedInvoices.length > 0 && (
-          <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+          <div className="bg-white border border-[#efefef] rounded-[24px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#f0f0f0]">
               <p className="text-[13px] font-semibold text-[#1f1f1f]">Збережені рахунки ({savedInvoices.length})</p>
             </div>

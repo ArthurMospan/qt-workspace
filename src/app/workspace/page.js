@@ -10,6 +10,13 @@ import UserAvatar from '@/components/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
+import PageHeader from '@/components/workspace/PageHeader';
+import Dialog from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Forms/Textarea';
+import { Alert } from '@/components/ui/Feedback/Alert';
+import Card from '@/components/ui/Layout/Card';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
@@ -34,42 +41,34 @@ function EditProjectModal({ project, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[20px] border-b border-[#f0f0f0]">
-          <h2 className="text-[18px] font-bold text-[#1f1f1f]">Редагувати проєкт</h2>
-          <button onClick={onClose} className="p-[6px] hover:bg-[#f7f7f7] rounded-[8px] text-[#9a9a9a]"><X size={18} /></button>
+    <Dialog isOpen={true} onClose={onClose} title="Редагувати проєкт" size="sm">
+      <div className="flex flex-col gap-[16px]">
+        <div>
+          <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
+          <Input
+            autoFocus
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+          />
         </div>
-        <div className="p-[24px] flex flex-col gap-[16px]">
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
-            <input
-              autoFocus
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSave()}
-              className="w-full text-[15px] font-semibold bg-[#f7f7f7] rounded-[12px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Короткий опис проєкту..."
-              className="w-full text-[14px] bg-[#f7f7f7] rounded-[12px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors resize-none"
-            />
-          </div>
-        </div>
-        <div className="flex gap-[8px] px-[24px] pb-[24px]">
-          <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
-          <button onClick={handleSave} disabled={!name.trim() || saving} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors">
-            {saving ? 'Збереження...' : 'Зберегти'}
-          </button>
+        <div>
+          <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
+          <Textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Короткий опис проєкту..."
+          />
         </div>
       </div>
-    </div>
+      <div className="flex gap-[8px] mt-[24px]">
+        <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
+        <Button onClick={handleSave} disabled={!name.trim() || saving} style="primary" size="md" className="flex-1">
+          {saving ? 'Збереження...' : 'Зберегти'}
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -104,25 +103,16 @@ function AddMemberModal({ project, allMembers, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[20px] border-b border-[#f0f0f0]">
-          <h2 className="text-[18px] font-bold text-[#1f1f1f]">Учасники проєкту</h2>
-          <button onClick={onClose} className="p-[6px] hover:bg-[#f7f7f7] rounded-[8px] text-[#9a9a9a]"><X size={18} /></button>
-        </div>
-        <div className="px-[24px] pt-[16px] pb-[12px]">
-          <div className="relative">
-            <Search size={14} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a]" />
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Пошук по імені або email..."
-              className="w-full pl-[36px] pr-[12px] py-[9px] text-[13px] bg-[#f7f7f7] rounded-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors"
-            />
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto px-[16px] pb-[16px] flex flex-col gap-[4px]">
+    <Dialog isOpen={true} onClose={onClose} title="Учасники проєкту" size="sm">
+      <div className="flex flex-col gap-[16px]">
+        <Input
+          autoFocus
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Пошук по імені або email..."
+          icon={Search}
+        />
+        <div className="flex-1 overflow-y-auto max-h-[300px] flex flex-col gap-[4px] -mx-1 px-1">
           {filtered.length === 0 && (
             <p className="text-center text-[13px] text-[#9a9a9a] py-8">Нікого не знайдено</p>
           )}
@@ -151,14 +141,14 @@ function AddMemberModal({ project, allMembers, onClose }) {
             );
           })}
         </div>
-        <div className="flex gap-[8px] px-[24px] pb-[24px] pt-[12px] border-t border-[#f0f0f0]">
-          <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors">
-            {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
-          </button>
-        </div>
       </div>
-    </div>
+      <div className="flex gap-[8px] mt-[24px]">
+        <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
+        <Button onClick={handleSave} disabled={saving} style="primary" size="md" className="flex-1">
+          {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -176,25 +166,23 @@ function DeleteConfirmModal({ project, onClose, onDeleted }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="p-[24px] flex flex-col items-center text-center">
-          <div className="w-[56px] h-[56px] bg-red-50 rounded-full flex items-center justify-center mb-[16px]">
-            <AlertCircle size={24} className="text-red-500" />
-          </div>
-          <h2 className="text-[18px] font-bold text-[#1f1f1f] mb-[8px]">Видалити проєкт?</h2>
-          <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-[24px]">
-            Ви видаляєте <strong className="text-[#1f1f1f]">{project.name}</strong>. Цю дію неможливо скасувати.
-          </p>
-          <div className="flex gap-[8px] w-full">
-            <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">Скасувати</button>
-            <button onClick={handleDelete} disabled={deleting} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-40 transition-colors">
-              {deleting ? 'Видалення...' : 'Видалити'}
-            </button>
-          </div>
+    <Dialog isOpen={true} onClose={onClose} size="sm" showCloseButton={false}>
+      <div className="flex flex-col items-center text-center">
+        <div className="w-[56px] h-[56px] bg-red-50 rounded-full flex items-center justify-center mb-[16px]">
+          <AlertCircle size={24} className="text-red-500" />
+        </div>
+        <h2 className="text-[18px] font-bold text-[#1f1f1f] mb-[8px]">Видалити проєкт?</h2>
+        <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-[24px]">
+          Ви видаляєте <strong className="text-[#1f1f1f]">{project.name}</strong>. Цю дію неможливо скасувати.
+        </p>
+        <div className="flex gap-[8px] w-full">
+          <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
+          <Button onClick={handleDelete} disabled={deleting} color="red" style="primary" size="md" className="flex-1">
+            {deleting ? 'Видалення...' : 'Видалити'}
+          </Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -346,7 +334,7 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
   const [saving,      setSaving]      = useState(false);
 
   const isFree      = orgPlan !== 'pro';
-  const limitReached = isFree && activeProjectsCount >= 3;
+  const limitReached = false;
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -409,11 +397,11 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
           <div className="flex flex-col gap-2 w-full">
             <button
               onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }}
-              className="w-full py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#6366f1] hover:bg-[#4f46e5] transition-colors"
+              className="w-full h-[32px] rounded-[10px] text-[13px] font-bold text-white bg-[#6366f1] hover:bg-[#4f46e5] transition-colors"
             >
               Перейти на PRO →
             </button>
-            <button onClick={onClose} className="w-full py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] hover:bg-[#f7f7f7] transition-colors">
+            <button onClick={onClose} className="w-full h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] hover:bg-[#f7f7f7] transition-colors">
               Закрити
             </button>
           </div>
@@ -445,13 +433,13 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
         )}
         {!limitReached && (
           <div className="flex gap-[8px] px-[24px] pb-[24px]">
-            <button onClick={onClose} className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+            <button onClick={onClose} className="flex-1 h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
               Скасувати
             </button>
             <button
               onClick={handleCreate}
               disabled={!name.trim() || saving}
-              className="flex-1 py-[12px] rounded-[12px] text-[14px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
+              className="flex-1 h-[32px] rounded-[10px] text-[13px] font-bold text-white bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 transition-colors"
             >
               {saving ? 'Створення...' : 'Створити проєкт'}
             </button>
@@ -497,40 +485,34 @@ export default function WorkspacePage() {
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden px-[32px] pb-[120px] custom-scrollbar bg-transparent">
       <div className="max-w-[1400px] mx-auto">
         
-        {/* Header Section */}
-        <div className="pt-0 -mt-2 mb-[20px]">
-          <div className="flex justify-between items-center">
-            <div>
-               <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate">
-                 Проєкти
-               </h1>
-               <p className="text-[13px] font-medium text-[#9a9a9a] mt-[4px]">Внутрішній робочий простір</p>
-            </div>
-
-            <div className="flex items-center gap-[16px]">
+        <PageHeader
+          variant="main"
+          title="Проєкти"
+          actions={
+            <>
               <button
                 onClick={() => setShowArchived(s => !s)}
-                className={`flex items-center justify-center gap-[8px] w-[88px] h-[40px] rounded-[10px] text-[14px] font-medium transition-all ${
+                className={`flex items-center justify-center gap-[6px] px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold transition-all ${
                   showArchived
-                    ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
-                    : 'bg-[#f5f5f5] text-[#1f1f1f] border border-transparent hover:bg-[#e9e9e9]'
+                    ? 'bg-[#1f1f1f] text-white'
+                    : 'bg-[#f5f5f5] text-[#1f1f1f] hover:bg-[#e9e9e9]'
                 }`}
               >
-                <Archive size={16} />
+                <Archive size={14} />
                 <span className="hidden sm:inline">{showArchived ? 'Активні' : 'Архів'}</span>
               </button>
 
               {can(orgRole, 'create:project') && (
                 <button
                   onClick={() => setShowNewProject(true)}
-                  className="flex items-center pl-[12px] pr-[24px] gap-[12px] h-[40px] rounded-[10px] text-[14px] font-medium bg-[#1f1f1f] text-white hover:bg-[#333333] transition-all"
+                  className="flex items-center justify-center px-[20px] gap-[6px] h-[36px] rounded-[10px] text-[14px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
                 >
                   <Plus size={16} /> <span className="hidden sm:inline">Новий проєкт</span>
                 </button>
               )}
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Projects Grid */}
         {visible.length === 0 ? (

@@ -1,6 +1,7 @@
 'use client';
-import { use, useState, useMemo } from 'react';
+import { use, useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -57,6 +58,18 @@ export default function MemberDetailPage({ params }) {
     };
   }, [uid]);
 
+  useEffect(() => {
+    if (member) {
+      useWorkspaceStore.setState({
+        breadcrumbs: [
+          { label: 'Команда', href: '/workspace/team' },
+          { label: 'Профіль учасника', href: null },
+        ]
+      });
+    }
+    return () => useWorkspaceStore.setState({ breadcrumbs: [] });
+  }, [member?.id, member?.uid]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[#f7f7f7]">
@@ -98,17 +111,7 @@ export default function MemberDetailPage({ params }) {
 
   return (
     <div className="flex-1 flex flex-col bg-white overflow-hidden">
-      {/* Top Header */}
-      <div className="flex items-center gap-3 px-[32px] py-[20px] border-b border-[#f0f0f0] shrink-0">
-        <button onClick={() => router.push('/workspace/team')}
-          className="w-[32px] h-[32px] flex items-center justify-center rounded-[10px] bg-[#f7f7f7] text-[#9a9a9a] hover:bg-[#e9e9e9] hover:text-[#1f1f1f] transition-all">
-          <ArrowLeft size={16} />
-        </button>
-        <div>
-          <h1 className="text-[20px] font-bold text-[#1f1f1f] leading-none mb-1">Профіль учасника</h1>
-          <p className="text-[12px] font-medium text-[#9a9a9a]">Команда / {member.name || member.email}</p>
-        </div>
-      </div>
+
 
       <div className="flex-1 overflow-y-auto px-[32px] py-8">
         <div className="max-w-[800px] mx-auto grid grid-cols-1 md:grid-cols-[1fr_340px] gap-8">

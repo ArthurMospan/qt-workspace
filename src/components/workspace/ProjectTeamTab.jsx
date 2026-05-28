@@ -24,7 +24,7 @@ export default function ProjectTeamTab({ members = [] }) {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {members.map(member => (
-            <div key={member.id || member.uid} className="bg-[#f7f7f7] rounded-[12px] p-4 flex items-center gap-4 cursor-default">
+            <div key={member.id || member.uid} className="bg-[#f7f7f7] rounded-[24px] p-5 flex items-center gap-4 cursor-default hover:bg-[#f0f0f0] transition-all duration-200">
               <UserAvatar 
                 user={member} 
                 size={48} 

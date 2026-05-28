@@ -10,14 +10,16 @@ import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
+import BacklogTab from '@/components/workspace/BacklogTab';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import ProjectTabBar from '@/components/workspace/ProjectTabBar';
+import PageHeader from '@/components/workspace/PageHeader';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { LayoutGrid, BarChart2, Plus, Users } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, Users, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 import { can } from '@/lib/utils/can';
 
-const TABS = [
+const TABS = (projectId) => [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
   { id: 'team',       label: 'Команда',   icon: Users },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
@@ -40,7 +42,7 @@ export default function BoardPage({ params }) {
   const isShared = project?.visibility === 'shared';
 
   const [activeTab, setActiveTab] = useState('board');
-  const [boardSprintFilter, setBoardSprintFilter] = useState('active');
+  const [boardSprintFilter, setBoardSprintFilter] = useState('all');
   const [boardSwimlane, setBoardSwimlane] = useState('none');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
@@ -98,8 +100,11 @@ export default function BoardPage({ params }) {
         priority: formData.priority || 'medium',
         type: formData.type || 'task',
         assigneeIds: formData.assignees || [],
-        dueDate: formData.dueDate || null,
-        labelIds: formData.labelIds || []
+        labelIds: formData.labelIds || [],
+        dueDate: formData.dueDate,
+        parentEpicId: formData.parentEpicId || null,
+        estimateMinutes: formData.estimateMinutes || 0,
+        sprintId: formData.sprintId || null,
       }, actor);
       showToast('Задачу створено ✓');
     } catch (err) {
@@ -121,17 +126,37 @@ export default function BoardPage({ params }) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
 
-      {/* ── Project tab bar ── */}
-      <ProjectTabBar
-        projectId={projectId}
-        projectName={project?.name}
-        tabs={TABS}
+      {/* ── PageHeader ── */}
+      <PageHeader
+        variant="alt"
+        title={project?.name}
+        tabs={TABS(projectId)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        showPortal={isShared}
-        showPortalIndicator={project?.hasUnreadPortal || false}
-        onCreateTask={() => setShowCreateTaskModal(true)}
         onConfig={can(orgRole, 'edit:board_columns') ? () => setShowConfigModal(true) : undefined}
+        actions={
+          <>
+            {isShared && (
+              <Link
+                href={`/workspace/${projectId}/portal`}
+                className={`relative flex items-center gap-[6px] px-[14px] py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-[#f7f7f7] text-[#9a9a9a] hover:text-[#6366f1] hover:bg-[#6366f1]/8`}
+              >
+                <MessageSquare size={13} />
+                QuickTeam+
+                {project?.hasUnreadPortal && (
+                  <span className="absolute -top-[3px] -right-[3px] w-[10px] h-[10px] rounded-full bg-[#ef4444] border-2 border-white" />
+                )}
+              </Link>
+            )}
+            <button
+              onClick={() => setShowCreateTaskModal(true)}
+              className="flex items-center gap-[6px] px-[14px] py-[7px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-bold hover:bg-[#303030] transition-colors"
+            >
+              <Plus size={14} />
+              Створити задачу
+            </button>
+          </>
+        }
       />
 
       {/* ── Tab content ── */}
@@ -160,6 +185,7 @@ export default function BoardPage({ params }) {
         )
       )}
 
+
       {showConfigModal && project && (
         <BoardConfigModal project={project} onClose={() => setShowConfigModal(false)} />
       )}
@@ -170,6 +196,8 @@ export default function BoardPage({ params }) {
         onSubmit={handleCreateFullIssue}
         stages={project?.stages || []}
         teamMembers={members}
+        epics={issues.filter(i => i.type === 'epic')}
+        sprints={sprints}
       />
 
       {activeTab === 'analytics' && (

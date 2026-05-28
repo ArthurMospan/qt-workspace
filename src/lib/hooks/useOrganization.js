@@ -1,57 +1,68 @@
 'use client';
+
 // src/lib/hooks/useOrganization.js
 // Organization = the workspace team. Single org per deployment (ORG_ID).
 // Schema: organizations/{ORG_ID} → { name, ownerId, members: [{uid, role, joinedAt}] }
 import { useState, useEffect, useCallback } from 'react';
-import {
-  doc, onSnapshot, updateDoc, arrayUnion, arrayRemove,
-  setDoc, getDoc, collection, addDoc, query, where, getDocs,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-
 export function useOrganization() {
-  const { activeOrgId } = useAppContext();
-  const [org,     setOrg]     = useState(null);
-  const [members, setMembers] = useState([]);   // full user profiles
+  const {
+    activeOrgId
+  } = useAppContext();
+  const [org, setOrg] = useState(null);
+  const [members, setMembers] = useState([]); // full user profiles
   const [loading, setLoading] = useState(true);
 
   // Listen to org doc
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!activeOrgId) { setLoading(prev => prev ? false : prev); return; }
-    
+    if (!activeOrgId) {
+      queueMicrotask(() => setLoading(prev => prev ? false : prev));
+      return;
+    }
     let unsubOrg = () => {};
     let unsubMem = () => {};
-
-    unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), async (snap) => {
+    unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), async snap => {
       if (!snap.exists()) {
         setOrg(null);
         setMembers([]);
         setLoading(false);
         return;
       }
-      setOrg({ id: snap.id, ...snap.data() });
+      setOrg({
+        id: snap.id,
+        ...snap.data()
+      });
+    }, err => {
+      console.error("[useOrganization.js] onSnapshot error", err);
     });
-
     const memQ = query(collection(db, 'orgMemberships'), where('orgId', '==', activeOrgId));
-    unsubMem = onSnapshot(memQ, async (snap) => {
+    unsubMem = onSnapshot(memQ, async snap => {
       const memberEntries = snap.docs.map(d => d.data());
-      
-      const profiles = await Promise.all(
-        memberEntries.map(async (m) => {
-          const uSnap = await getDoc(doc(db, 'users', m.userId));
-          return uSnap.exists()
-            ? { ...uSnap.data(), id: m.userId, role: m.role, joinedAt: m.joinedAt, hourlyRate: m.hourlyRate || 0 }
-            : { id: m.userId, name: m.userId, role: m.role, hourlyRate: m.hourlyRate || 0 };
-        })
-      );
+      const profiles = await Promise.all(memberEntries.map(async m => {
+        const uSnap = await getDoc(doc(db, 'users', m.userId));
+        return uSnap.exists() ? {
+          ...uSnap.data(),
+          id: m.userId,
+          role: m.role,
+          joinedAt: m.joinedAt,
+          hourlyRate: m.hourlyRate || 0
+        } : {
+          id: m.userId,
+          name: m.userId,
+          role: m.role,
+          hourlyRate: m.hourlyRate || 0
+        };
+      }));
       setMembers(profiles.filter(Boolean));
       setLoading(false);
     }, () => setLoading(false));
-
-    return () => { unsubOrg(); unsubMem(); };
+    return () => {
+      unsubOrg();
+      unsubMem();
+    };
   }, [activeOrgId]);
 
   // Ensure org exists (called by owner on first load)
@@ -64,10 +75,10 @@ export function useOrganization() {
         id: activeOrgId,
         name: 'QuickTeam',
         ownerId,
-        createdAt: serverTimestamp(),
+        createdAt: serverTimestamp()
       });
     }
-    
+
     // Ensure owner is in orgMemberships
     const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${ownerId}`);
     const memSnap = await getDoc(membershipRef);
@@ -88,7 +99,6 @@ export function useOrganization() {
     // Check if user with this email already exists
     const usersQ = query(collection(db, 'users'), where('email', '==', email));
     const userSnap = await getDocs(usersQ);
-
     if (!userSnap.empty) {
       // User exists → add them directly
       const uid = userSnap.docs[0].id;
@@ -97,7 +107,6 @@ export function useOrganization() {
       if (memSnap.exists()) {
         throw new Error('Цей користувач вже в команді');
       }
-      
       await setDoc(membershipRef, {
         id: `${activeOrgId}_${uid}`,
         orgId: activeOrgId,
@@ -106,65 +115,70 @@ export function useOrganization() {
         joinedAt: new Date().toISOString(),
         hourlyRate: 0
       });
-      return { type: 'added_directly' };
+      return {
+        type: 'added_directly'
+      };
     }
 
     // User not registered yet → create invitation
-    const existingInvite = await getDocs(
-      query(collection(db, 'invitations'),
-        where('email', '==', email),
-        where('organizationId', '==', activeOrgId),
-        where('status', '==', 'pending'),
-      )
-    );
+    const existingInvite = await getDocs(query(collection(db, 'invitations'), where('email', '==', email), where('organizationId', '==', activeOrgId), where('status', '==', 'pending')));
     if (!existingInvite.empty) {
       throw new Error('Запрошення вже відправлено на цей email');
     }
-
     await addDoc(collection(db, 'invitations'), {
       email,
       organizationId: activeOrgId,
       invitedBy,
       role,
       status: 'pending',
-      createdAt: serverTimestamp(),
+      createdAt: serverTimestamp()
     });
-    return { type: 'invitation_sent' };
+    return {
+      type: 'invitation_sent'
+    };
   }, [activeOrgId]);
 
   // Change role
   const changeMemberRole = useCallback(async (uid, newRole) => {
     if (!activeOrgId) return;
     const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await updateDoc(membershipRef, { role: newRole });
+    await updateDoc(membershipRef, {
+      role: newRole
+    });
   }, [activeOrgId]);
 
   // Change hourly rate
   const setMemberRate = useCallback(async (uid, rate) => {
     if (!activeOrgId) return;
     const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await updateDoc(membershipRef, { hourlyRate: Number(rate) });
+    await updateDoc(membershipRef, {
+      hourlyRate: Number(rate)
+    });
   }, [activeOrgId]);
 
   // Remove member
-  const removeMember = useCallback(async (uid) => {
+  const removeMember = useCallback(async uid => {
     if (!activeOrgId) return;
     const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
     await deleteDoc(membershipRef);
   }, [activeOrgId]);
-
-  return { org, members, loading, initOrg, inviteMember, changeMemberRole, setMemberRate, removeMember };
+  return {
+    org,
+    members,
+    loading,
+    initOrg,
+    inviteMember,
+    changeMemberRole,
+    setMemberRate,
+    removeMember
+  };
 }
 
 // Called when a user signs in — checks if they have a pending invitation
 // across all organizations in the multi-org environment.
 export async function acceptPendingInvitation(uid, email) {
   try {
-    const q = query(
-      collection(db, 'invitations'),
-      where('email', '==', email),
-      where('status', '==', 'pending')
-    );
+    const q = query(collection(db, 'invitations'), where('email', '==', email), where('status', '==', 'pending'));
     const snap = await getDocs(q);
     if (snap.empty) return false;
 
@@ -172,10 +186,8 @@ export async function acceptPendingInvitation(uid, email) {
     for (const d of snap.docs) {
       const inviteData = d.data();
       const orgId = inviteData.organizationId;
-      
       const orgRef = doc(db, 'organizations', orgId);
       const orgSnap = await getDoc(orgRef);
-      
       if (orgSnap.exists()) {
         const membershipRef = doc(db, 'orgMemberships', `${orgId}_${uid}`);
         const memSnap = await getDoc(membershipRef);
@@ -192,9 +204,11 @@ export async function acceptPendingInvitation(uid, email) {
       }
 
       // Mark invitation as accepted
-      await updateDoc(doc(db, 'invitations', d.id), { status: 'accepted', acceptedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'invitations', d.id), {
+        status: 'accepted',
+        acceptedAt: serverTimestamp()
+      });
     }
-    
     return true;
   } catch (err) {
     console.error('[acceptPendingInvitation]', err);

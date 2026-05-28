@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "emoji-picker-react": "^4.19.1",
     "firebase": "^12.13.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",

@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 export const DEFAULT_COLUMNS = [
@@ -34,10 +34,14 @@ export default function BoardConfigModal({ project, onClose }) {
 
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'projects', project.id), {
+      const updates = {
         boardColumns: columns,
         updatedAt: serverTimestamp(),
-      });
+      };
+      if (auth.currentUser?.uid) {
+        updates.team = arrayUnion(auth.currentUser.uid);
+      }
+      await updateDoc(doc(db, 'projects', project.id), updates);
       showToast('Колонки успішно оновлено ✓');
       // Small delay to ensure Firestore sync before closing
       setTimeout(() => {
@@ -67,61 +71,65 @@ export default function BoardConfigModal({ project, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[480px] overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
+        
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9]">
-          <h2 className="text-[16px] font-bold text-[#1f1f1f]">Налаштування колонок дошки</h2>
+          <h2 className="text-[16px] font-bold text-[#1f1f1f]">Налаштування проєкту</h2>
           <button onClick={onClose} className="p-2 text-[#9a9a9a] hover:text-[#1f1f1f] bg-[#f7f7f7] hover:bg-[#e9e9e9] rounded-full transition-colors">
             <X size={16} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <p className="text-[13px] text-[#9a9a9a] mb-5">
-            Налаштуйте статуси для цього проєкту. Видалення колонки не видаляє задачі, але вони можуть не відображатися на дошці до перенесення в активну колонку.
-          </p>
+        <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+          
 
-          <div className="flex flex-col gap-3">
-            {columns.map((col, idx) => (
-              <div key={col.id} className="flex items-center gap-3 bg-[#f7f7f7] border border-[#e9e9e9] rounded-[12px] p-2">
-                <div className="flex items-center justify-center w-6 h-6 text-[#9a9a9a] text-[10px] font-bold">
-                  {idx + 1}
+
+          <div>
+            <h3 className="text-[14px] font-bold text-[#1f1f1f] mb-2">Колонки дошки</h3>
+            <p className="text-[13px] text-[#9a9a9a] mb-4">
+              Налаштуйте статуси для цього проєкту. Видалення колонки не видаляє задачі.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              {columns.map((col, idx) => (
+                <div key={col.id} className="flex items-center gap-3 bg-[#f7f7f7] border border-[#e9e9e9] rounded-[12px] p-2">
+                  <div className="flex items-center justify-center w-6 h-6 text-[#9a9a9a] text-[10px] font-bold">
+                    {idx + 1}
+                  </div>
+                  
+                  <input
+                    type="color"
+                    value={col.color}
+                    onChange={(e) => updateColumn(col.id, 'color', e.target.value)}
+                    className="w-8 h-8 p-0 border-0 rounded cursor-pointer overflow-hidden shrink-0"
+                  />
+                  
+                  <input
+                    type="text"
+                    value={col.label}
+                    onChange={(e) => updateColumn(col.id, 'label', e.target.value)}
+                    placeholder="Назва колонки"
+                    className="flex-1 bg-white border border-[#e9e9e9] rounded-[6px] px-3 py-[6px] text-[13px] font-medium outline-none focus:border-[#1f1f1f]"
+                  />
+
+                  <button 
+                    onClick={() => removeColumn(col.id)}
+                    className="p-2 text-[#cfcfcf] hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                
-                <input
-                  type="color"
-                  value={col.color}
-                  onChange={(e) => updateColumn(col.id, 'color', e.target.value)}
-                  className="w-8 h-8 p-0 border-0 rounded cursor-pointer overflow-hidden shrink-0"
-                />
-                
-                <input
-                  type="text"
-                  value={col.label}
-                  onChange={(e) => updateColumn(col.id, 'label', e.target.value)}
-                  placeholder="Назва колонки"
-                  className="flex-1 bg-white border border-[#e9e9e9] rounded-[6px] px-3 py-[6px] text-[13px] font-medium outline-none focus:border-[#1f1f1f]"
-                />
+              ))}
+            </div>
 
-                <button 
-                  onClick={() => removeColumn(col.id)}
-                  className="p-2 text-[#cfcfcf] hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+            <button
+              onClick={addColumn}
+              className="mt-4 flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-[#e9e9e9] rounded-[12px] text-[13px] font-bold text-[#9a9a9a] hover:border-[#cfcfcf] hover:text-[#1f1f1f] transition-all"
+            >
+              <Plus size={16} /> Додати колонку
+            </button>
           </div>
-
-          <button
-            onClick={addColumn}
-            className="mt-4 flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-[#e9e9e9] rounded-[12px] text-[13px] font-bold text-[#9a9a9a] hover:border-[#cfcfcf] hover:text-[#1f1f1f] transition-all"
-          >
-            <Plus size={16} /> Додати колонку
-          </button>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f7f7f7]">
           <button onClick={onClose} className="px-4 py-2 text-[13px] font-bold text-[#9a9a9a] hover:text-[#1f1f1f]">
             Скасувати
@@ -134,6 +142,7 @@ export default function BoardConfigModal({ project, onClose }) {
             {saving ? 'Збереження...' : 'Зберегти зміни'}
           </button>
         </div>
+
       </div>
     </div>
   );

@@ -144,6 +144,9 @@ export function OrgProvider({ user, children }) {
   useEffect(() => {
     if (!activeOrgId) return;
     
+    // Once an org is active, we are no longer in "noOrg" state
+    setNoOrg(false);
+    
     // Sync organization data
     const unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), (snap) => {
       if (snap.exists()) {

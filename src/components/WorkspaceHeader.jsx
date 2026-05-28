@@ -33,7 +33,7 @@ function timeAgo(ts) {
 
 // ── Detect header mode from pathname ────────────────────────────────
 function useHeaderMode(pathname, projects) {
-  const EXCLUDED = ['my', 'team', 'analytics', 'chat', 'settings'];
+  const EXCLUDED = ['my', 'team', 'analytics', 'chat', 'settings', 'sprints'];
 
   if (!pathname) return { mode: 'default', project: null };
 
@@ -47,7 +47,7 @@ function useHeaderMode(pathname, projects) {
     return { mode: 'search', project: null, placeholder: 'Пошук по команді...' };
   }
   if (pathname.startsWith('/workspace/chat')) {
-    return { mode: 'chat', project: null };
+    return { mode: 'search', project: null, placeholder: 'Пошук по каналах та чатах...' };
   }
   if (pathname.startsWith('/workspace/analytics')) {
     return { mode: 'minimal', label: 'Аналітика' };
@@ -375,27 +375,35 @@ export default function WorkspaceHeader() {
     }
 
     // SEARCH mode
+    const isChat = pathname?.startsWith('/workspace/chat');
+    const searchValue = isChat ? chatSearch : globalQuery;
+    const setSearchValue = isChat
+      ? (val) => useWorkspaceStore.setState({ chatSearch: val })
+      : setGlobalQuery;
+
     return (
       <div className="flex items-center gap-2 border-b border-transparent focus-within:border-[#1f1f1f] px-1 py-[6px] w-full max-w-[320px] cursor-text transition-colors">
         <Search size={14} className="text-[#9a9a9a] shrink-0" />
         <input
-          value={globalQuery}
+          value={searchValue}
           onChange={async (e) => {
             const q = e.target.value;
-            setGlobalQuery(q);
-            if (q.trim() && activeOrgId) {
-              setShowSearch(true);
-              await search(q, activeOrgId);
-            } else {
-              setShowSearch(false);
+            setSearchValue(q);
+            if (!isChat) {
+              if (q.trim() && activeOrgId) {
+                setShowSearch(true);
+                await search(q, activeOrgId);
+              } else {
+                setShowSearch(false);
+              }
             }
           }}
-          onFocus={() => globalQuery && setShowSearch(true)}
+          onFocus={() => !isChat && searchValue && setShowSearch(true)}
           placeholder={placeholder || 'Пошук...'}
           className="flex-1 bg-transparent text-[13px] text-[#1f1f1f] placeholder:text-[#cfcfcf] outline-none"
         />
-        {globalQuery && (
-          <button onClick={() => { setGlobalQuery(''); setShowSearch(false); }} className="text-[#cfcfcf] hover:text-[#9a9a9a] transition-colors">
+        {searchValue && (
+          <button onClick={() => { setSearchValue(''); !isChat && setShowSearch(false); }} className="text-[#cfcfcf] hover:text-[#9a9a9a] transition-colors">
             <X size={13} />
           </button>
         )}

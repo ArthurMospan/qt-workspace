@@ -2,14 +2,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
+// UI Kit Select Component
+// Strict rule enforced: Select buttons are 36px height (h-9)
+// Matches input and button heights for consistent form alignment
+
 // Single Select Component
-export function Select({ 
-  value, 
-  onChange, 
-  options = [], 
+export function Select({
+  value,
+  onChange,
+  options = [],
   placeholder = 'Оберіть...',
   className = '',
-  buttonClassName = 'bg-[#f7f7f7] hover:bg-[#ebebeb] rounded-[10px] px-[12px] py-[8px]',
+  buttonClassName = 'bg-[#f7f7f7] hover:bg-[#ebebeb] rounded-[10px] px-[12px] h-[36px]',
   dropdownClassName = '',
   disabled = false,
   triggerIcon: TriggerIcon
@@ -63,7 +67,7 @@ export function Select({
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-[12px] py-[8px] text-[13px] hover:bg-[#f7f7f7] transition-colors text-left ${value === opt.value ? 'bg-[#f7f7f7] font-bold' : 'font-medium'}`}
+                className={`w-full flex items-center justify-between px-[12px] h-[36px] text-[13px] hover:bg-[#f7f7f7] transition-colors text-left ${value === opt.value ? 'bg-[#f7f7f7] font-bold' : 'font-medium'}`}
               >
                 <div className="flex items-center gap-[8px]">
                   {opt.dotColor && (
@@ -135,7 +139,7 @@ export function MultiSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-[#f7f7f7] hover:bg-[#ebebeb] text-[#1f1f1f] rounded-[10px] px-[12px] py-[8px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1f1f1f]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-between bg-[#f7f7f7] hover:bg-[#ebebeb] text-[#1f1f1f] rounded-[10px] px-[12px] h-[32px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1f1f1f]/10 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <div className="flex items-center gap-[8px] overflow-hidden">
           {TriggerIcon && <TriggerIcon size={14} className="text-[#9a9a9a] shrink-0" />}
@@ -174,7 +178,7 @@ export function MultiSelect({
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
-                    className="w-full flex items-center gap-[10px] px-[8px] py-[6px] rounded-[8px] hover:bg-[#f7f7f7] transition-colors text-left"
+                    className="w-full flex items-center gap-[10px] px-[8px] h-[32px] rounded-[8px] hover:bg-[#f7f7f7] transition-colors text-left"
                   >
                     <div className={`w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-[#1f1f1f] border-[#1f1f1f]' : 'border-[#d9d9d9] bg-white'}`}>
                       {isSelected && <Check size={12} className="text-white" />}

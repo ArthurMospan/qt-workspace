@@ -1,18 +1,21 @@
 'use client';
+
 // src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
 import { useState, useEffect, useCallback } from 'react';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc,
-  serverTimestamp, writeBatch, runTransaction,
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
 // ---------------------------------------------------------------------------
-async function writeAudit(issueId, { userId, userName, action, from, to }) {
+async function writeAudit(issueId, {
+  userId,
+  userName,
+  action,
+  from,
+  to
+}) {
   try {
     await addDoc(collection(db, 'issues', issueId, 'audit'), {
       userId: userId || null,
@@ -20,7 +23,7 @@ async function writeAudit(issueId, { userId, userName, action, from, to }) {
       action,
       from: from ?? null,
       to: to ?? null,
-      createdAt: serverTimestamp(),
+      createdAt: serverTimestamp()
     });
   } catch (err) {
     console.warn('[useIssues] audit write failed', err);
@@ -31,25 +34,26 @@ async function writeAudit(issueId, { userId, userName, action, from, to }) {
 // Hook
 // ---------------------------------------------------------------------------
 export function useIssues(projectId) {
-  const { activeOrgId } = useAppContext();
+  const {
+    activeOrgId
+  } = useAppContext();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!projectId || !activeOrgId) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
 
     // No orderBy — sorted client-side to avoid composite index
-    const q = query(
-      collection(db, 'issues'),
-      where('organizationId', '==', activeOrgId),
-      where('projectId', '==', projectId),
-    );
-
-    const unsub = onSnapshot(q, { serverTimestamps: 'estimate' }, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
+    const unsub = onSnapshot(q, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      const docs = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       // Sort client-side by order ASC, fallback to createdAt asc
       docs.sort((a, b) => {
         if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
@@ -59,11 +63,10 @@ export function useIssues(projectId) {
       });
       setIssues(docs);
       setLoading(false);
-    }, (err) => {
+    }, err => {
       console.error('[useIssues] onSnapshot error', err);
       setLoading(false);
     });
-
     return () => unsub();
   }, [projectId, activeOrgId]);
 
@@ -71,14 +74,16 @@ export function useIssues(projectId) {
   // createIssue — atomic issueCounter increment + addDoc + audit
   // -------------------------------------------------------------------------
   const createIssue = useCallback(async (data, actorUser = {}) => {
-    const { userId, userName } = actorUser;
-    const orgId    = activeOrgId || 'unknown';
-    const colId    = data.columnId || data.status || 'backlog';
+    const {
+      userId,
+      userName
+    } = actorUser;
+    const orgId = activeOrgId || 'unknown';
+    const colId = data.columnId || data.status || 'backlog';
     const orderVal = issues.filter(i => i.columnId === colId).length;
 
     // Step 1: Generate a temp optimistic key and create the doc IMMEDIATELY
     const tempKey = `WS-${Date.now()}`;
-
     const newIssueRef = await addDoc(collection(db, 'issues'), {
       issueKey: tempKey,
       projectId,
@@ -97,53 +102,69 @@ export function useIssues(projectId) {
       linkedClientMaterialId: data.linkedClientMaterialId || null,
       clientVisibility: data.clientVisibility ?? false,
       subtasks: data.subtasks || [],
+      sprintId: data.sprintId || null,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
 
     // Step 2: Get real key via transaction — runs ASYNC, updates key in background
     const projectRef = doc(db, 'projects', projectId);
-    runTransaction(db, async (tx) => {
+    runTransaction(db, async tx => {
       const projectSnap = await tx.get(projectRef);
       if (!projectSnap.exists()) return;
       const current = projectSnap.data().issueCounter ?? 0;
-      const next    = current + 1;
-      tx.update(projectRef, { issueCounter: next });
-      tx.update(doc(db, 'issues', newIssueRef.id), { issueKey: `WS-${next}` });
+      const next = current + 1;
+      tx.update(projectRef, {
+        issueCounter: next
+      });
+      tx.update(doc(db, 'issues', newIssueRef.id), {
+        issueKey: `WS-${next}`
+      });
     }).catch(err => console.warn('[useIssues] issueCounter update failed (key stays temp):', err));
 
     // Step 3: Audit log — fire and forget
-    writeAudit(newIssueRef.id, { userId, userName, action: 'created', from: null, to: tempKey })
-      .catch(() => {});
-
-    return { id: newIssueRef.id, issueKey: tempKey };
+    writeAudit(newIssueRef.id, {
+      userId,
+      userName,
+      action: 'created',
+      from: null,
+      to: tempKey
+    }).catch(() => {});
+    return {
+      id: newIssueRef.id,
+      issueKey: tempKey
+    };
   }, [projectId, issues, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // updateIssue — updateDoc + conditional audit for key field changes
   // -------------------------------------------------------------------------
   const updateIssue = useCallback(async (issueId, data, actorUser = {}) => {
-    const { userId, userName } = actorUser;
+    const {
+      userId,
+      userName
+    } = actorUser;
 
     // Find current issue for diff
     const current = issues.find(i => i.id === issueId);
-
     await updateDoc(doc(db, 'issues', issueId), {
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
 
     // Write audit for notable field changes
     const auditFields = ['status', 'priority', 'title', 'columnId', 'assigneeIds'];
     for (const field of auditFields) {
       if (data[field] !== undefined && current && data[field] !== current[field]) {
-        const from = Array.isArray(current[field])
-          ? JSON.stringify(current[field])
-          : String(current[field] ?? '');
-        const to = Array.isArray(data[field])
-          ? JSON.stringify(data[field])
-          : String(data[field] ?? '');
-        await writeAudit(issueId, { userId, userName, action: `changed_${field}`, from, to });
+        const from = Array.isArray(current[field]) ? JSON.stringify(current[field]) : String(current[field] ?? '');
+        const to = Array.isArray(data[field]) ? JSON.stringify(data[field]) : String(data[field] ?? '');
+        await writeAudit(issueId, {
+          userId,
+          userName,
+          action: `changed_${field}`,
+          from,
+          to
+        });
       }
     }
   }, [issues]);
@@ -151,7 +172,7 @@ export function useIssues(projectId) {
   // -------------------------------------------------------------------------
   // deleteIssue
   // -------------------------------------------------------------------------
-  const deleteIssue = useCallback(async (issueId) => {
+  const deleteIssue = useCallback(async issueId => {
     await deleteDoc(doc(db, 'issues', issueId));
   }, []);
 
@@ -163,8 +184,10 @@ export function useIssues(projectId) {
   //     - 'client-approval': sets clientApprovalPending on linked stage
   // -------------------------------------------------------------------------
   const moveIssue = useCallback(async (issueId, newColumnId, newOrder, actorUser = {}) => {
-    const { userId, userName } = actorUser;
-
+    const {
+      userId,
+      userName
+    } = actorUser;
     const issue = issues.find(i => i.id === issueId);
     if (!issue) throw new Error('Issue not found');
 
@@ -175,19 +198,21 @@ export function useIssues(projectId) {
         throw new Error('Є незакриті підзадачі');
       }
     }
-
     const oldColumnId = issue.columnId;
     const batch = writeBatch(db);
 
     // Reorder destination column (exclude the moving issue)
-    const destIssues = issues
-      .filter(i => i.id !== issueId && i.columnId === newColumnId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const destIssues = issues.filter(i => i.id !== issueId && i.columnId === newColumnId).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     // Insert moving issue at target position
-    destIssues.splice(Math.max(0, newOrder), 0, { id: issueId });
+    destIssues.splice(Math.max(0, newOrder), 0, {
+      id: issueId
+    });
     destIssues.forEach((i, idx) => {
-      batch.update(doc(db, 'issues', i.id), { order: idx, updatedAt: serverTimestamp() });
+      batch.update(doc(db, 'issues', i.id), {
+        order: idx,
+        updatedAt: serverTimestamp()
+      });
     });
 
     // Update the moved issue itself
@@ -195,9 +220,8 @@ export function useIssues(projectId) {
       columnId: newColumnId,
       status: newColumnId,
       order: Math.max(0, newOrder),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-
     await batch.commit();
 
     // Audit
@@ -206,7 +230,7 @@ export function useIssues(projectId) {
       userName,
       action: 'moved',
       from: oldColumnId,
-      to: newColumnId,
+      to: newColumnId
     });
 
     // Side-effect: if moved to client-approval and has a linked stage, mark it
@@ -214,20 +238,19 @@ export function useIssues(projectId) {
       try {
         await updateDoc(doc(db, 'stages', issue.linkedClientMaterialId), {
           clientApprovalPending: true,
-          clientApprovalRequestedAt: serverTimestamp(),
+          clientApprovalRequestedAt: serverTimestamp()
         });
       } catch (err) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
   }, [issues]);
-
   return {
     issues,
     loading,
     createIssue,
     updateIssue,
     deleteIssue,
-    moveIssue,
+    moveIssue
   };
 }

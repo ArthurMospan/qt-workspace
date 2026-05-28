@@ -1,0 +1,39 @@
+'use client';
+import React, { forwardRef } from 'react';
+import { Clock } from 'lucide-react';
+
+export const TimePicker = forwardRef(({
+  value = '',
+  onChange,
+  error,
+  disabled = false,
+  className = '',
+  ...props
+}, ref) => {
+  return (
+    <div className={`relative w-full ${className}`}>
+      <Clock
+        size={14}
+        className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a] pointer-events-none"
+      />
+      <input
+        ref={ref}
+        type="time"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        disabled={disabled}
+        className={`
+          h-[36px] w-full bg-[#f7f7f7] border border-transparent rounded-[12px]
+          text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
+          transition-colors placeholder:text-[#cfcfcf] flex items-center
+          pl-[36px] pr-[12px]
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
+        `}
+        {...props}
+      />
+      {error && <span className="text-[11px] text-red-500 mt-1 block px-1">{error}</span>}
+    </div>
+  );
+});
+TimePicker.displayName = 'TimePicker';

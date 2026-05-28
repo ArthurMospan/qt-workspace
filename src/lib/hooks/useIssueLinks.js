@@ -1,10 +1,8 @@
 'use client';
+
 // src/lib/hooks/useIssueLinks.js — Issue dependency/relationship links
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, deleteDoc, doc, serverTimestamp,
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 
@@ -14,18 +12,18 @@ const INVERSE = {
   'is-blocked-by': 'blocks',
   'duplicates': 'duplicates',
   'relates-to': 'relates-to',
-  'subtask-of': 'subtask-of',
+  'subtask-of': 'subtask-of'
 };
-
 export function useIssueLinks(issueId) {
-  const { activeOrgId } = useAppContext();
+  const {
+    activeOrgId
+  } = useAppContext();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Keep two independent sets and merge them
   const sourceLinksRef = useRef([]);
   const targetLinksRef = useRef([]);
-
   const merge = useCallback(() => {
     const all = [...sourceLinksRef.current, ...targetLinksRef.current];
     // Deduplicate by id
@@ -37,56 +35,52 @@ export function useIssueLinks(issueId) {
     });
     setLinks(deduped);
   }, []);
-
   useEffect(() => {
     if (!issueId) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
-
     let sourceReady = false;
     let targetReady = false;
-
     const checkReady = () => {
       if (sourceReady && targetReady) setLoading(false);
     };
 
     // Query 1: links where this issue is the source
-    const q1 = query(
-      collection(db, 'issueLinks'),
-      where('organizationId', '==', activeOrgId),
-      where('sourceIssueId', '==', issueId),
-    );
-
-    const unsub1 = onSnapshot(q1, { serverTimestamps: 'estimate' }, (snap) => {
-      sourceLinksRef.current = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q1 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', issueId));
+    const unsub1 = onSnapshot(q1, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      sourceLinksRef.current = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       sourceReady = true;
       checkReady();
       merge();
-    }, (err) => {
+    }, err => {
       console.error('[useIssueLinks] source query error', err);
       sourceReady = true;
       checkReady();
     });
 
     // Query 2: links where this issue is the target
-    const q2 = query(
-      collection(db, 'issueLinks'),
-      where('organizationId', '==', activeOrgId),
-      where('targetIssueId', '==', issueId),
-    );
-
-    const unsub2 = onSnapshot(q2, { serverTimestamps: 'estimate' }, (snap) => {
-      targetLinksRef.current = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q2 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('targetIssueId', '==', issueId));
+    const unsub2 = onSnapshot(q2, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      targetLinksRef.current = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       targetReady = true;
       checkReady();
       merge();
-    }, (err) => {
+    }, err => {
       console.error('[useIssueLinks] target query error', err);
       targetReady = true;
       checkReady();
     });
-
     return () => {
       unsub1();
       unsub2();
@@ -100,7 +94,7 @@ export function useIssueLinks(issueId) {
     const base = {
       organizationId: activeOrgId,
       createdBy: userId || null,
-      createdAt: serverTimestamp(),
+      createdAt: serverTimestamp()
     };
 
     // Primary link
@@ -108,7 +102,7 @@ export function useIssueLinks(issueId) {
       ...base,
       sourceIssueId: sourceId,
       targetIssueId: targetId,
-      relationType,
+      relationType
     });
 
     // Inverse link
@@ -117,14 +111,14 @@ export function useIssueLinks(issueId) {
       ...base,
       sourceIssueId: targetId,
       targetIssueId: sourceId,
-      relationType: inverseType,
+      relationType: inverseType
     });
   }, []);
 
   // -------------------------------------------------------------------------
   // removeLink — deletes a single link document
   // -------------------------------------------------------------------------
-  const removeLink = useCallback(async (linkId) => {
+  const removeLink = useCallback(async linkId => {
     await deleteDoc(doc(db, 'issueLinks', linkId));
   }, []);
 
@@ -133,14 +127,17 @@ export function useIssueLinks(issueId) {
   // allIssues: Issue[] from useIssues
   // -------------------------------------------------------------------------
   const hasBlocker = useCallback((targetIssueId, allIssues) => {
-    const blockingLinks = links.filter(
-      l => l.relationType === 'blocks' && l.targetIssueId === targetIssueId
-    );
+    const blockingLinks = links.filter(l => l.relationType === 'blocks' && l.targetIssueId === targetIssueId);
     return blockingLinks.some(l => {
       const blocker = allIssues.find(i => i.id === l.sourceIssueId);
       return blocker && blocker.status !== 'done';
     });
   }, [links]);
-
-  return { links, loading, addLink, removeLink, hasBlocker };
+  return {
+    links,
+    loading,
+    addLink,
+    removeLink,
+    hasBlocker
+  };
 }

@@ -1,12 +1,9 @@
 'use client';
+
 // src/lib/hooks/useNotifications.js
 // Real-time notifications: detects truly NEW docs, fires browser Notification + in-app popup
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  collection, query, where, limit,
-  onSnapshot, addDoc, updateDoc, doc, writeBatch,
-  serverTimestamp, getDocs,
-} from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot, addDoc, updateDoc, doc, writeBatch, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 // Request browser notification permission once
@@ -25,35 +22,34 @@ function fireBrowserNotif(title, body, link) {
     body,
     icon: '/logo.svg',
     badge: '/logo.svg',
-    silent: false,
+    silent: false
   });
-  if (link) n.onclick = () => { window.focus(); window.location.href = link; n.close(); };
+  if (link) n.onclick = () => {
+    window.focus();
+    window.location.href = link;
+    n.close();
+  };
   setTimeout(() => n.close(), 8000);
 }
-
-export function useNotifications(userId, { onNew } = {}) {
+export function useNotifications(userId, {
+  onNew
+} = {}) {
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount,   setUnreadCount]   = useState(0);
-  const [loading,       setLoading]       = useState(true);
-
-  const seenIds     = useRef(new Set());
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const seenIds = useRef(new Set());
   const isFirstLoad = useRef(true);
-
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
-
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', userId),
-      limit(40),
-    );
-
+    if (!userId) {
+      queueMicrotask(() => setLoading(false));
+      return;
+    }
+    const q = query(collection(db, 'notifications'), where('userId', '==', userId), limit(40));
     const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
-        .slice(0, 30);
-
+      const docs = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })).sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)).slice(0, 30);
       if (isFirstLoad.current) {
         // On first load: just populate seenIds, don't fire popups
         isFirstLoad.current = false;
@@ -70,12 +66,10 @@ export function useNotifications(userId, { onNew } = {}) {
           }
         });
       }
-
       setNotifications(docs);
       setUnreadCount(docs.filter(n => !n.read).length);
       setLoading(false);
     }, () => setLoading(false));
-
     return () => unsub();
   }, [userId]); // eslint-disable-line
 
@@ -85,27 +79,45 @@ export function useNotifications(userId, { onNew } = {}) {
     const snap = await getDocs(q);
     if (snap.empty) return;
     const batch = writeBatch(db);
-    snap.docs.forEach(d => batch.update(d.ref, { read: true }));
+    snap.docs.forEach(d => batch.update(d.ref, {
+      read: true
+    }));
     await batch.commit();
   }, [userId]);
-
-  const markRead = useCallback(async (id) => {
-    await updateDoc(doc(db, 'notifications', id), { read: true });
+  const markRead = useCallback(async id => {
+    await updateDoc(doc(db, 'notifications', id), {
+      read: true
+    });
   }, []);
-
-  return { notifications, unreadCount, loading, markAllRead, markRead };
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    markAllRead,
+    markRead
+  };
 }
 
 // ── Send notification(s) to users ───────────────────────────────────
 
-export async function sendNotification({ userIds = [], type, title, body, link = '', issueId = '', projectId = '' }) {
-  await Promise.all(
-    userIds.map(userId =>
-      addDoc(collection(db, 'notifications'), {
-        userId, type, title, body, link, issueId, projectId,
-        read: false,
-        createdAt: serverTimestamp(),
-      }).catch(() => {})
-    )
-  );
+export async function sendNotification({
+  userIds = [],
+  type,
+  title,
+  body,
+  link = '',
+  issueId = '',
+  projectId = ''
+}) {
+  await Promise.all(userIds.map(userId => addDoc(collection(db, 'notifications'), {
+    userId,
+    type,
+    title,
+    body,
+    link,
+    issueId,
+    projectId,
+    read: false,
+    createdAt: serverTimestamp()
+  }).catch(() => {})));
 }

@@ -17,7 +17,7 @@ export default function VelocityTab({ issues, projects }) {
       <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Metric 1 */}
-        <div className="bg-[#f7f7f7] rounded-[16px] p-6 text-center">
+        <div className="bg-[#f7f7f7] rounded-[24px] p-6 text-center">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Zap size={24} />
           </div>
@@ -26,7 +26,7 @@ export default function VelocityTab({ issues, projects }) {
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-[#f7f7f7] rounded-[16px] p-6 text-center">
+        <div className="bg-[#f7f7f7] rounded-[24px] p-6 text-center">
           <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 size={24} />
           </div>
@@ -35,7 +35,7 @@ export default function VelocityTab({ issues, projects }) {
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-[#f7f7f7] rounded-[16px] p-6 text-center">
+        <div className="bg-[#f7f7f7] rounded-[24px] p-6 text-center">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <TrendingUp size={24} />
           </div>
@@ -44,7 +44,7 @@ export default function VelocityTab({ issues, projects }) {
         </div>
 
         {/* Detailed Chart Area */}
-        <div className="md:col-span-3 bg-[#f7f7f7] rounded-[16px] p-8 mt-2">
+        <div className="md:col-span-3 bg-[#f7f7f7] rounded-[24px] p-8 mt-2">
           <h3 className="text-[16px] font-bold text-[#1f1f1f] mb-4">Останні закриті задачі</h3>
           {recentDone.length === 0 ? (
             <p className="text-[13px] text-[#9a9a9a]">За останній тиждень задач не було закрито.</p>

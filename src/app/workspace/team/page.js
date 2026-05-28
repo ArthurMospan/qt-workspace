@@ -111,13 +111,13 @@ function InviteModal({ onClose, inviteMember, currentUser }) {
             <span className="font-bold text-[#1f1f1f]">Примітка:</span> Якщо користувач вже зареєстрований — він одразу додається. Якщо ні — отримає запрошення при вході.
           </p>
           <div className="flex justify-end gap-2 mt-2">
-            <button type="button" onClick={onClose} className="px-[20px] py-[12px] text-[13px] font-bold text-[#9a9a9a] hover:text-[#1f1f1f]">
+            <button type="button" onClick={onClose} className="px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] hover:bg-[#f7f7f7] transition-all">
               Скасувати
             </button>
             <button
               type="submit"
               disabled={inviting || !inviteEmail.trim()}
-              className="px-[20px] py-[12px] bg-[#1f1f1f] text-white rounded-[12px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all shadow-sm flex items-center gap-2"
+              className="px-[16px] h-[32px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all shadow-sm flex items-center justify-center gap-[6px]"
             >
               {inviting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <UserPlus size={16} />}
               Надіслати запрошення
@@ -149,25 +149,22 @@ export default function TeamPage() {
   );
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-white">
+    <div className="flex-1 flex overflow-hidden bg-transparent">
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="pt-0 mb-[20px] px-[32px] shrink-0">
+        <div className="pt-[32px] mb-[24px] px-[32px] shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight">Команда</h1>
-              <p className="text-[13px] font-medium text-[#9a9a9a] mt-[4px]">
-                {members.length} учасник{members.length === 1 ? '' : 'ів'} · Доступ та ролі
-              </p>
+              <h1 className="text-[32px] font-bold text-[#1f1f1f] tracking-tight">Команда</h1>
             </div>
             {isOwner && (
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-[8px] px-[24px] py-[12px] rounded-[12px] text-[14px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
+                className="flex items-center justify-center gap-[6px] px-[20px] h-[36px] rounded-[10px] text-[14px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all"
               >
-                <Plus size={15} /> Запросити
+                <Plus size={16} /> Запросити
               </button>
             )}
           </div>
@@ -206,7 +203,7 @@ export default function TeamPage() {
                   <button
                     key={uid}
                     onClick={() => router.push(`/workspace/team/${uid}`)}
-                    className="flex items-start text-left p-4 rounded-[24px] transition-all border bg-white border-[#e9e9e9] hover:border-[#cfcfcf] hover:shadow-sm"
+                    className="flex items-start text-left p-5 rounded-[24px] transition-colors border border-transparent bg-[#f7f7f7] hover:bg-[#f0f0f0]"
                   >
                     {/* Avatar */}
                     <div className="relative mr-4 shrink-0 mt-[2px]">

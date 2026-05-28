@@ -1,33 +1,29 @@
 'use client';
+
 // src/lib/hooks/useSprints.js — CRUD for sprints
 import { useState, useEffect, useCallback } from 'react';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
-  writeBatch, arrayUnion, arrayRemove
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-
-export function useSprints(projectId) {
-  const { activeOrgId } = useAppContext();
+export function useSprints() {
+  const {
+    activeOrgId
+  } = useAppContext();
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    if (!projectId || !activeOrgId) {
-      setLoading(false);
+    if (!activeOrgId) {
+      queueMicrotask(() => setLoading(false));
       return;
     }
-
-    const q = query(
-      collection(db, 'sprints'),
-      where('organizationId', '==', activeOrgId),
-      where('projectId', '==', projectId)
-    );
-
-    const unsub = onSnapshot(q, { serverTimestamps: 'estimate' }, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q = query(collection(db, 'sprints'), where('organizationId', '==', activeOrgId));
+    const unsub = onSnapshot(q, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      const docs = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       // Sort by createdAt ascending (oldest first)
       docs.sort((a, b) => {
         const aTime = a.createdAt?.toMillis?.() ?? 0;
@@ -36,72 +32,70 @@ export function useSprints(projectId) {
       });
       setSprints(docs);
       setLoading(false);
-    }, (err) => {
+    }, err => {
       console.error('[useSprints] onSnapshot error', err);
       setLoading(false);
     });
-
     return () => unsub();
-  }, [projectId, activeOrgId]);
+  }, [activeOrgId]);
+  const createSprint = useCallback(async data => {
+    if (!activeOrgId) return;
 
-  const createSprint = useCallback(async (data) => {
-    if (!projectId || !activeOrgId) return;
-    
     // Auto-generate name if not provided
     const sprintCount = sprints.length + 1;
     const name = data.name || `Спринт ${sprintCount}`;
-
     await addDoc(collection(db, 'sprints'), {
-      projectId,
       organizationId: activeOrgId,
       name,
       goal: data.goal || '',
       startDate: data.startDate || null,
       endDate: data.endDate || null,
-      status: 'planned', // planned, active, completed
+      status: 'planned',
+      // planned, active, completed
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-  }, [projectId, activeOrgId, sprints]);
-
+  }, [activeOrgId, sprints]);
   const updateSprint = useCallback(async (sprintId, data) => {
     await updateDoc(doc(db, 'sprints', sprintId), {
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
   }, []);
-
-  const deleteSprint = useCallback(async (sprintId) => {
-    await deleteDoc(doc(db, 'sprints', sprintId));
-  }, []);
-
-  const startSprint = useCallback(async (sprintId) => {
-    if (!projectId) return;
+  const deleteSprint = useCallback(async sprintId => {
     const batch = writeBatch(db);
-    batch.update(doc(db, 'sprints', sprintId), {
+    batch.delete(doc(db, 'sprints', sprintId));
+    
+    // Remove sprintId from tasks
+    const q = query(collection(db, 'issues'), where('sprintId', '==', sprintId));
+    const snap = await getDocs(q);
+    snap.forEach(d => {
+      batch.update(d.ref, { sprintId: null, updatedAt: serverTimestamp() });
+    });
+    
+    await batch.commit();
+  }, []);
+  const startSprint = useCallback(async sprintId => {
+    await updateDoc(doc(db, 'sprints', sprintId), {
       status: 'active',
       startedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-    batch.update(doc(db, 'projects', projectId), {
-      activeSprints: arrayUnion(sprintId)
-    });
-    await batch.commit();
-  }, [projectId]);
-
-  const completeSprint = useCallback(async (sprintId) => {
-    if (!projectId) return;
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'sprints', sprintId), {
+  }, []);
+  const completeSprint = useCallback(async sprintId => {
+    await updateDoc(doc(db, 'sprints', sprintId), {
       status: 'completed',
       completedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-    batch.update(doc(db, 'projects', projectId), {
-      activeSprints: arrayRemove(sprintId)
-    });
-    await batch.commit();
-  }, [projectId]);
-
-  return { sprints, loading, createSprint, updateSprint, deleteSprint, startSprint, completeSprint };
+  }, []);
+  return {
+    sprints,
+    loading,
+    createSprint,
+    updateSprint,
+    deleteSprint,
+    startSprint,
+    completeSprint
+  };
 }

@@ -9,7 +9,8 @@ import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
-  Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen
+  Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
+  Zap
 } from 'lucide-react';
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
@@ -27,6 +28,7 @@ export default function WorkspaceSidebar() {
   const topNav = [
     { href: '/workspace',            icon: Folder,        label: 'Проєкти',     exact: true },
     { href: '/workspace/my',         icon: CheckCircle2,  label: 'Мої задачі' },
+    { href: '/workspace/sprints',    icon: Zap,           label: 'Спринти' },
     { href: '/workspace/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/workspace/team',       icon: Users,         label: 'Команда' },
     { href: '/workspace/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },

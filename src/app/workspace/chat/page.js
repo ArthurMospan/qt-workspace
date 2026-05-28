@@ -1,34 +1,31 @@
 'use client';
-// src/app/workspace/chat/page.js
+// src/app/workspace/chat/page.js - Clean zoning with colors only
 import React, { useState, useRef, useEffect } from 'react';
-import { Hash, MessageSquare, Search, Phone, Video, Info, MoreVertical, Send, Smile, Paperclip, Plus, Edit2, Trash2, X, Pin, ChevronDown } from 'lucide-react';
+import { Hash, MessageSquare, Info, Send, Smile, Paperclip, Plus, Edit2, Trash2, X, Pin, ChevronDown } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
-import { useOrganization }  from '@/lib/hooks/useOrganization';
+import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MessageContent from '@/components/workspace/MessageContent';
+import WorkspaceHeader from '@/components/WorkspaceHeader';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, doc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
-import { WorkspaceHeaderRight } from '@/components/WorkspaceHeader';
+import EmojiPicker from 'emoji-picker-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function ChatPage() {
-  const { currentUser, projects, signOut, activeOrgId } = useAppContext();
+  const { currentUser, projects, activeOrgId } = useAppContext();
   const { members } = useOrganization();
-  const showToast   = useWorkspaceStore(s => s.showToast);
-  const chatSearch  = useWorkspaceStore(s => s.chatSearch);   // synced with header
+  const showToast = useWorkspaceStore(s => s.showToast);
+  const chatSearch = useWorkspaceStore(s => s.chatSearch);
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   const [messageText, setMessageText] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
-  const [showChannelInfo, setShowChannelInfo] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [newDescription, setNewDescription] = useState('');
-  const [mutedChannels, setMutedChannels] = useState(new Set());
-  const [drafts, setDrafts] = useState({});
-  const searchQuery = chatSearch; // use global store value
-  
-  // Create a predictable DM room ID by sorting UIDs
+
   const getRoomId = () => {
     if (activeChannel.type === 'channel') return activeChannel.id;
     const myUid = currentUser?.id || currentUser?.uid;
@@ -38,62 +35,54 @@ export default function ChatPage() {
   };
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [attachment, setAttachment] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const threadFileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const { channels, messages, loading, activeChannelData, activeThreadId, threadMessages, activeDMs, readState, sendMessage, deleteMessage, editMessage, toggleReaction, createChannel, setTyping, openThread, closeThread, sendThreadMessage, markAsRead, deleteReply, getUnreadCount } = useWorkspaceChat(getRoomId(), activeChannel.type);
-  
+  const { channels, messages, loading, activeChannelData, activeThreadId, threadMessages, activeDMs, readState, sendMessage, deleteMessage, editMessage, toggleReaction, createChannel, setTyping, openThread, closeThread, sendThreadMessage, markAsRead, deleteReply } = useWorkspaceChat(getRoomId(), activeChannel.type);
+
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editMsgText, setEditMsgText] = useState('');
   const [reactingMsgId, setReactingMsgId] = useState(null);
-  
+
   const [mentionType, setMentionType] = useState(null);
   const [mentionQuery, setMentionQuery] = useState(null);
   const [mentionCursor, setMentionCursor] = useState(0);
-  
+
   const [recentIssues, setRecentIssues] = useState([]);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
   const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
 
   useEffect(() => {
     if (!projects || projects.length === 0) return;
     const pIds = projects.map(p => p.id).slice(0, 10);
     const q = query(collection(db, 'issues'), where('projectId', 'in', pIds));
-    getDocs(q).then(snap => {
-       setRecentIssues(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    getDocs(q).then(snap => setRecentIssues(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, [projects]);
 
-  // Load draft on channel switch
   useEffect(() => {
     const roomId = getRoomId();
     const savedDraft = localStorage.getItem(`draft_${roomId}`);
-    if (savedDraft) {
-      setMessageText(savedDraft);
-    } else {
-      setMessageText('');
-    }
+    if (savedDraft) setMessageText(savedDraft);
+    else setMessageText('');
   }, [activeChannel?.id]);
 
-  // Auto-save draft as user types (save after 1s of inactivity)
   useEffect(() => {
     const roomId = getRoomId();
     const timer = setTimeout(() => {
-      if (messageText.trim()) {
-        localStorage.setItem(`draft_${roomId}`, messageText);
-      } else {
-        localStorage.removeItem(`draft_${roomId}`);
-      }
+      if (messageText.trim()) localStorage.setItem(`draft_${roomId}`, messageText);
+      else localStorage.removeItem(`draft_${roomId}`);
     }, 1000);
     return () => clearTimeout(timer);
   }, [messageText, activeChannel?.id]);
 
-  // Mark channel as read when user switches to it
   useEffect(() => {
     if (activeChannel) {
       markAsRead(getRoomId());
@@ -103,31 +92,91 @@ export default function ChatPage() {
     }
   }, [activeChannel?.id, activeChannel?.type]);
 
-  // Track scroll position
-  useEffect(() => {
-    const container = chatScrollRef.current;
-    if (!container) return;
+  const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const [threadText, setThreadText] = useState('');
+  const threadScrollRef = useRef(null);
 
-    const handleScroll = () => {
-      const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
-      setIsScrolledUp(!isAtBottom);
-      if (isAtBottom) setUnreadWhileScrolled(0);
-    };
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+  useEffect(() => scrollToBottom(), [messages.length, activeChannelData?.typing]);
+  useEffect(() => threadScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), [threadMessages.length]);
 
-  // Track new messages while scrolled up
-  useEffect(() => {
-    if (isScrolledUp && messages.length > lastMessageCount) {
-      setUnreadWhileScrolled(messages.length - lastMessageCount);
+  const [threadAttachments, setThreadAttachments] = useState([]);
+  const [threadUploading, setThreadUploading] = useState(false);
+
+  const handleThreadSend = async () => {
+    if (!threadText.trim() && threadAttachments.length === 0) return;
+    setThreadUploading(true);
+    let uploadedAttaches = [];
+    if (threadAttachments.length > 0) {
+      try {
+        uploadedAttaches = await Promise.all(threadAttachments.map(att => 
+          uploadFile(att.file, `organizations/${currentUser?.orgId || 'quickteam'}/attachments`)
+        ));
+      } catch (e) {
+        showToast('Помилка завантаження файлу', 'error');
+        setThreadUploading(false);
+        return;
+      }
     }
-    setLastMessageCount(messages.length);
-  }, [messages.length, isScrolledUp, lastMessageCount]);
+    await sendThreadMessage(threadText, uploadedAttaches);
+    setThreadText('');
+    setThreadAttachments([]);
+    setThreadUploading(false);
+  };
 
-  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
-  const [newChannelName, setNewChannelName] = useState('');
+  const handleSend = async (e) => {
+    e?.preventDefault();
+    if (!messageText.trim() && attachments.length === 0) return;
+
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    setTyping(false);
+
+    const text = messageText;
+    const currentAttachments = attachments;
+
+    setMessageText('');
+    localStorage.removeItem(`draft_${getRoomId()}`);
+    setAttachments([]);
+    setShowEmojiPicker(false);
+
+    setUploading(true);
+    let uploadedAttaches = [];
+    if (currentAttachments.length > 0) {
+      try {
+        uploadedAttaches = await Promise.all(currentAttachments.map(att => 
+          uploadFile(att.file, `organizations/${currentUser?.orgId || 'quickteam'}/attachments`)
+        ));
+      } catch (e) {
+        showToast('Помилка завантаження файлу', 'error');
+        setUploading(false);
+        return;
+      }
+    }
+
+    await sendMessage(text, uploadedAttaches);
+    setUploading(false);
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const newAttachments = files.map(file => ({ file, url: URL.createObjectURL(file), type: file.type, name: file.name, size: file.size }));
+    setAttachments(prev => [...prev, ...newAttachments]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    }
+  };
 
   const handleCreateChannelSubmit = async (e) => {
     if (e.key === 'Enter') {
@@ -144,129 +193,21 @@ export default function ChatPage() {
       setNewChannelName('');
     }
   };
-  
-  const messagesEndRef = useRef(null);
-  const chatScrollRef = useRef(null);
-  const threadScrollRef = useRef(null);
-  const [threadText, setThreadText] = useState('');
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages.length, activeChannelData?.typing]);
-
-  useEffect(() => {
-    threadScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [threadMessages.length]);
-
-  const [threadAttachment, setThreadAttachment] = useState(null);
-  const [threadUploading, setThreadUploading] = useState(false);
-
-  const handleThreadSend = async () => {
-    if (!threadText.trim() && !threadAttachment) return;
-    
-    setThreadUploading(true);
-    let uploadedAttach = null;
-    if (threadAttachment?.file) {
-      try {
-        uploadedAttach = await uploadFile(threadAttachment.file, `organizations/${currentUser?.orgId || 'quickteam'}/attachments`);
-      } catch (e) {
-        showToast('Помилка завантаження файлу', 'error');
-        setThreadUploading(false);
-        return;
-      }
-    }
-    
-    await sendThreadMessage(threadText, uploadedAttach ? [uploadedAttach] : []);
-    setThreadText('');
-    setThreadAttachment(null);
-    setThreadUploading(false);
-  };
-
-  const handleSend = async (e) => {
-    e?.preventDefault();
-    if (!messageText.trim() && !attachment) return;
-    
-    // Clear typing
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = null;
-    setTyping(false);
-
-    // If there's an attachment but no text, or both
-    const text = messageText;
-    const currentAttachment = attachment;
-    
-    setMessageText('');
-    localStorage.removeItem(`draft_${getRoomId()}`);
-    setAttachment(null);
-    setShowEmojiPicker(false);
-    
-    setUploading(true);
-    let uploadedAttach = null;
-    if (currentAttachment?.file) {
-      try {
-        uploadedAttach = await uploadFile(currentAttachment.file, `organizations/${currentUser?.orgId || 'quickteam'}/attachments`);
-      } catch (e) {
-        showToast('Помилка завантаження файлу', 'error');
-        setUploading(false);
-        return;
-      }
-    }
-    
-    await sendMessage(text, uploadedAttach ? [uploadedAttach] : []);
-    setUploading(false);
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    // simple local preview
-    const url = URL.createObjectURL(file);
-    setAttachment({ file, url, type: file.type });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
-    }
-  };
-
-  const handleUpdateChannelDescription = async () => {
-    if (!activeChannel.type === 'channel' || !activeOrgId) return;
-    try {
-      const channelRef = doc(db, 'organizations', activeOrgId, 'channels', activeChannel.id);
-      await updateDoc(channelRef, { description: newDescription });
-      setEditingDescription(false);
-      showToast('Опис оновлено ✓');
-    } catch (err) {
-      console.error('Error updating description:', err);
-      showToast('Помилка при збереженні опису', 'error');
-    }
-  };
 
   const handleTextChange = (e) => {
     const val = e.target.value;
     setMessageText(val);
-    
-    // Auto-expand
+
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 250) + 'px';
     }
 
-    // Mention trigger
     const cursor = e.target.selectionStart;
     const textBefore = val.slice(0, cursor);
     const matchUser = textBefore.match(/@([a-zA-Zа-яА-ЯіІїЇєЄ0-9_]*)$/);
     const matchIssue = textBefore.match(/#([a-zA-Z0-9-]*)$/);
-    
+
     if (matchUser) {
        setMentionType('user');
        setMentionQuery(matchUser[1]);
@@ -280,10 +221,7 @@ export default function ChatPage() {
        setMentionQuery(null);
     }
 
-    // Typing indicator
-    if (!typingTimeoutRef.current) {
-      setTyping(true);
-    }
+    if (!typingTimeoutRef.current) setTyping(true);
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       setTyping(false);
@@ -295,7 +233,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!members.length) return;
-    
     const uids = members.map(m => m.id || m.uid);
     if (uids.length === 0) return;
     const q = query(collection(db, 'users'), where('__name__', 'in', uids.slice(0, 30)));
@@ -311,11 +248,8 @@ export default function ChatPage() {
 
   const myUid = currentUser?.uid || currentUser?.id;
 
-  // Build DM list: show all members, but highlight active DMs
   const activeDMSet = new Set(activeDMs);
-  if (activeChannel.type === 'dm') {
-    activeDMSet.add(activeChannel.id);
-  }
+  if (activeChannel.type === 'dm') activeDMSet.add(activeChannel.id);
 
   const dms = members
     .filter(m => {
@@ -334,56 +268,80 @@ export default function ChatPage() {
       };
     })
     .sort((a, b) => {
-      // Sort: active conversations first, then by name
       if (a.isActive !== b.isActive) return b.isActive ? 1 : -1;
       return (a.name || '').localeCompare(b.name || '');
     });
 
   const isActive = (id) => activeChannel.id === id;
-
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
+
+  const handleUpdateChannelDescription = async () => {
+    if (activeChannel.type !== 'channel' || !activeOrgId) return;
+    try {
+      const channelRef = doc(db, 'organizations', activeOrgId, 'channels', activeChannel.id);
+      await updateDoc(channelRef, { description: newDescription });
+      setEditingDescription(false);
+      showToast('Опис оновлено ✓');
+    } catch (err) {
+      console.error('Error updating description:', err);
+      showToast('Помилка при збереженні опису', 'error');
+    }
+  };
+
+  const currentChannel = channels.find(c => c.id === activeChannel.id);
+
+  useEffect(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+      setIsScrolledUp(!isAtBottom);
+      if (isAtBottom) setUnreadWhileScrolled(0);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (isScrolledUp && messages.length > lastMessageCount) {
+      setUnreadWhileScrolled(messages.length - lastMessageCount);
+    }
+    setLastMessageCount(messages.length);
+  }, [messages.length, isScrolledUp, lastMessageCount]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
+      {/* Header with search */}
+      <WorkspaceHeader />
 
-      {/* Header with Search */}
-      <div className="px-[32px] pt-[24px] pb-[20px] bg-white border-b border-[#f0f0f0] shrink-0">
-        <div className="relative max-w-[400px] mb-[16px]">
-          <Search size={14} className="absolute left-[12px] top-1/2 transform -translate-y-1/2 text-[#9a9a9a]" />
-          <input
-            type="text"
-            placeholder="Шукати..."
-            value={chatSearch}
-            onChange={(e) => useWorkspaceStore.setState({ chatSearch: e.target.value })}
-            className="w-full pl-[36px] pr-[12px] py-[8px] bg-[#f9f9f9] border border-[#e9e9e9] rounded-[8px] text-[13px] text-[#1f1f1f] placeholder-[#9a9a9a] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f]/10 outline-none transition-colors"
-          />
-        </div>
-        <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight">Чат</h1>
-      </div>
+      {/* Two-zone layout: LEFT gray (channels), RIGHT split into header and messages */}
+      <div className="flex-1 flex overflow-hidden gap-[12px] px-[12px] pb-[12px] pt-0">
 
-      {/* Main Content Area with Gray Background */}
-      <div className="flex-1 flex min-w-0 overflow-hidden bg-[#f7f7f7] px-[32px] py-[32px] gap-[20px]">
-
-        {/* Channels Sidebar */}
-        <div className="w-[280px] bg-white rounded-[16px] flex flex-col shrink-0 overflow-hidden shadow-sm border border-[#e9e9e9]">
+        {/* LEFT: Channels & DMs (GRAY ZONE - ROUNDED CARD) */}
+        <div className="w-[280px] bg-[#f7f7f7] rounded-[24px] flex flex-col overflow-hidden">
+          {/* Channels & DMs list */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-
-            {/* Channels Section */}
-            <div className="px-[16px] py-[16px]">
+            {/* Channels */}
+            <div className="px-[16px] py-[12px]">
               <div className="flex items-center justify-between mb-[12px] group">
                 <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Канали</span>
-                <button
+                <Button
+                  size="icon"
+                  style="ghost"
+                  color="dark"
                   onClick={() => setIsCreatingChannel(true)}
-                  className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Plus size={14} />
-                </button>
+                  icon={Plus}
+                  iconSize={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
 
               <div className="flex flex-col gap-[2px]">
                 {isCreatingChannel && (
-                  <div className="px-[8px] py-[4px]">
-                    <input
+                  <div className="px-[8px] py-[4px] mb-[4px]">
+                    <Input
                       autoFocus
                       type="text"
                       value={newChannelName}
@@ -391,295 +349,285 @@ export default function ChatPage() {
                       onKeyDown={handleCreateChannelSubmit}
                       onBlur={() => { setIsCreatingChannel(false); setNewChannelName(''); }}
                       placeholder="назва-каналу"
-                      className="w-full text-[13px] bg-[#f9f9f9] border border-[#1f1f1f] rounded-[8px] px-2 py-1 outline-none"
+                      className="text-[13px]"
                     />
-                    <p className="text-[10px] text-[#9a9a9a] mt-1 ml-1">Enter - зберегти, Esc - скасувати</p>
                   </div>
                 )}
                 {channels
-                  .filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                  .filter(c => c.status !== 'archived' && c.name && c.name.toLowerCase().includes(chatSearch.toLowerCase()))
                   .map(c => {
                   const hasUnread = readState[c.id] && c.lastMessageAt && (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
                   return (
-                    <button
+                    <Button
                       key={c.id}
                       onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
-                      className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                        isActive(c.id) ? 'bg-[#f0f0f0] text-[#1f1f1f]' : 'text-[#4a4a4a] hover:bg-[#f9f9f9]'
-                      }`}
+                      style={isActive(c.id) ? 'secondary' : 'ghost'}
+                      color="dark"
+                      size="md"
+                      icon={Hash}
+                      iconSize={13}
+                      className={`w-full justify-start px-[8px] py-[6px] h-auto ${!isActive(c.id) ? 'text-[#9a9a9a] hover:text-[#1f1f1f]' : ''}`}
                     >
-                      <div className="flex items-center gap-[6px] truncate flex-1 min-w-0">
-                        <Hash size={13} className="shrink-0 text-[#9a9a9a]" />
-                        <p className={`text-[13px] truncate ${hasUnread && !isActive(c.id) ? 'font-bold' : ''}`}>
-                          {c.name}
-                        </p>
-                      </div>
+                      <span className={`text-[13px] truncate flex-1 text-left ${hasUnread && !isActive(c.id) ? 'font-bold' : ''}`}>
+                        {c.name}
+                      </span>
                       {hasUnread && !isActive(c.id) && (
-                        <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
+                        <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-auto bg-[#6366f1]" />
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
             </div>
 
-            {/* DMs Section */}
-            <div className="px-[16px] py-[16px] border-t border-[#f5f5f5]">
+            {/* DMs */}
+            <div className="px-[16px] py-[12px] border-t border-[#e9e9e9]">
               <div className="flex items-center justify-between mb-[12px] group">
                 <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Особисті</span>
-                <button className="text-[#9a9a9a] hover:text-[#1f1f1f] opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Plus size={14} />
-                </button>
+                <Button
+                  size="icon"
+                  style="ghost"
+                  color="dark"
+                  icon={Plus}
+                  iconSize={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
               <div className="flex flex-col gap-[2px]">
                 {dms
                   .filter(u => u.name.toLowerCase().includes(chatSearch.toLowerCase()))
-                  .map((u, idx, arr) => {
-                  const showSeparator = idx > 0 && arr[idx - 1].isActive && !u.isActive;
-                  return (
-                    <React.Fragment key={u.id}>
-                      {showSeparator && (
-                        <div className="my-2 h-px bg-[#f5f5f5]" />
-                      )}
-                      <button
-                        onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
-                        className={`flex items-center justify-between w-full px-[8px] py-[6px] rounded-[8px] transition-colors group ${
-                          isActive(u.id) ? 'bg-[#f0f0f0] text-[#1f1f1f]' : 'text-[#4a4a4a] hover:bg-[#f9f9f9]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-[8px] truncate flex-1 min-w-0">
-                          <div className="relative flex-shrink-0">
-                            <div className="w-[20px] h-[20px] rounded-full bg-[#e9e9e9] flex items-center justify-center overflow-hidden">
-                              <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
-                            </div>
-                            {u.online && (
-                              <div className="absolute -bottom-[1px] -right-[1px] w-[7px] h-[7px] rounded-full border-2 border-white bg-[#10b981]" />
-                            )}
-                          </div>
-                          <p className={`text-[13px] truncate ${u.isActive && !isActive(u.id) ? 'font-bold' : ''}`}>
-                            {u.name}
-                          </p>
+                  .map(u => (
+                    <Button
+                      key={u.id}
+                      onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
+                      style={isActive(u.id) ? 'secondary' : 'ghost'}
+                      color="dark"
+                      size="md"
+                      className={`w-full justify-start px-[8px] py-[6px] h-auto gap-[8px] ${!isActive(u.id) ? 'text-[#9a9a9a] hover:text-[#1f1f1f]' : ''}`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <div className="w-[20px] h-[20px] rounded-full bg-white flex items-center justify-center overflow-hidden">
+                          <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={20} />
                         </div>
-                        {u.isActive && !isActive(u.id) && (
-                          <div className="shrink-0 w-[6px] h-[6px] rounded-full ml-1 bg-[#6366f1]" />
+                        {u.online && (
+                          <div className="absolute -bottom-[1px] -right-[1px] w-[6px] h-[6px] rounded-full border-2 border-[#f7f7f7] bg-[#10b981]" />
                         )}
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
+                      </div>
+                      <p className={`text-[13px] truncate flex-1 text-left ${u.isActive && !isActive(u.id) ? 'font-bold' : ''}`}>
+                        {u.name}
+                      </p>
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white rounded-[16px] shadow-sm border border-[#e9e9e9] relative overflow-hidden">
-
+        {/* RIGHT: Chat Area - SINGLE GRAY ROUNDED CARD */}
+        <div className="flex-1 bg-[#f7f7f7] rounded-[24px] flex flex-col overflow-hidden">
           {/* Chat Header */}
-          <div className="h-[56px] flex items-center justify-between px-[24px] border-b border-[#f0f0f0] shrink-0 bg-white z-10">
-            <div className="flex flex-col">
-            <div className="flex items-center gap-[6px]">
+          <div className="h-[56px] flex items-center justify-between px-[32px] shrink-0">
+            <div className="flex items-center gap-[12px]">
               {activeChannel.type === 'channel' ? (
                 <Hash size={18} className="text-[#1f1f1f]" />
               ) : (
-                <UserAvatar user={{ name: dms.find(d => d.id === activeChannel.id)?.name || 'User', avatar: dms.find(d => d.id === activeChannel.id)?.avatar }} size={24} />
+                <div className="w-[32px] h-[32px] rounded-full overflow-hidden">
+                  <UserAvatar user={{ name: dms.find(d => d.id === activeChannel.id)?.name || 'User', avatar: dms.find(d => d.id === activeChannel.id)?.avatar }} size={32} />
+                </div>
               )}
-              <h3 className="font-bold text-[#1f1f1f] text-[16px]">
-                {activeChannel.type === 'channel'
-                  ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
-                  : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті повідомлення')}
-              </h3>
-            </div>
-            {activeChannel.type === 'channel' && (
-              <p className="text-[12px] text-[#9a9a9a] ml-[24px]">Командне обговорення</p>
-            )}
+              <div>
+                <h3 className="font-bold text-[#1f1f1f] text-[15px]">
+                  {activeChannel.type === 'channel'
+                    ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
+                    : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті повідомлення')}
+                </h3>
+                {activeChannel.type === 'channel' && !editingDescription && (
+                  <p className="text-[11px] text-[#9a9a9a]">Командне обговорення</p>
+                )}
+                {activeChannel.type === 'channel' && editingDescription && (
+                  <div className="flex items-center gap-2 mt-[4px]">
+                    <Input
+                      type="text"
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                      placeholder="Опис каналу..."
+                      className="flex-1 text-[11px] h-auto py-[2px]"
+                    />
+                    <Button
+                      onClick={handleUpdateChannelDescription}
+                      style="primary"
+                      color="dark"
+                      size="sm"
+                      className="text-[10px] px-[8px] py-[2px] h-auto"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-[16px]">
-              {activeChannel.type === 'channel' && (
-                <button onClick={() => setShowChannelInfo(!showChannelInfo)} className={`transition-colors ${showChannelInfo ? 'text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}><Info size={18} /></button>
-              )}
-              <div className="h-[24px] w-[1px] bg-[#f0f0f0]"></div>
-              <WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} />
-            </div>
+            <Button
+              onClick={() => activeChannel.type === 'channel' && setEditingDescription(!editingDescription)}
+              style="ghost"
+              color="dark"
+              size="icon"
+              icon={Info}
+              iconSize={18}
+              title={activeChannel.type === 'channel' ? 'Інформація про канал' : ''}
+              className="text-[#9a9a9a] hover:text-[#1f1f1f]"
+            />
           </div>
-        </div>
 
-        {/* Messages */}
-        <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-[24px] py-[16px] custom-scrollbar flex flex-col gap-[0px]">
-           {loading && messages.length === 0 ? (
-             <div className="flex-1 flex items-center justify-center">
-               <div className="w-6 h-6 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-             </div>
-           ) : messages.length === 0 ? (
-             <div className="flex-1 flex flex-col items-center justify-center text-[#cfcfcf]">
-               <MessageSquare size={40} className="mb-4 opacity-40" />
-               <p className="text-[15px] font-medium text-[#9a9a9a]">Тут поки що немає повідомлень</p>
-               <p className="text-[13px] text-[#9a9a9a] mt-1">Почніть розмову першим!</p>
-             </div>
-           ) : (() => {
-             const displayMessages = chatSearch.trim() ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase())) : messages;
-             return displayMessages.map((msg, i) => {
-               // Find the actual previous message in the original messages array for proper grouping
-               const msgIndex = messages.findIndex(m => m.id === msg.id);
-               const prevMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+          {/* Messages */}
+          <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col px-[32px] py-[16px]">
+            {loading && messages.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Button loading={true} size="icon" style="ghost" color="dark" disabled />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <MessageSquare size={40} className="mb-4 text-[#9a9a9a] opacity-40" />
+                <p className="text-[15px] font-medium text-[#9a9a9a]">Тут поки що немає повідомлень</p>
+                <p className="text-[13px] text-[#9a9a9a] mt-1">Почніть розмову першим! 👋</p>
+              </div>
+            ) : (() => {
+              const displayMessages = chatSearch.trim() ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase())) : messages;
+              return displayMessages.map((msg) => {
+                const msgIndex = messages.findIndex(m => m.id === msg.id);
+                const prevMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                const showHeader = !prevMsg || prevMsg.senderId !== msg.senderId || msg.isSystem || prevMsg.isSystem || (msg.createdAt?.toMillis() - prevMsg.createdAt?.toMillis() > 300000);
+                const showDateSeparator = prevMsg && msg.createdAt && prevMsg.createdAt &&
+                  new Date(msg.createdAt.toDate()).toDateString() !== new Date(prevMsg.createdAt.toDate()).toDateString();
+                const msgDate = msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleDateString('uk-UA', { weekday: 'long', month: 'short', day: 'numeric' }) : '';
 
-               const showHeader = !prevMsg || prevMsg.senderId !== msg.senderId || msg.isSystem || prevMsg.isSystem || (msg.createdAt?.toMillis() - prevMsg.createdAt?.toMillis() > 300000); // 5 mins gap
+                return (
+                  <React.Fragment key={msg.id}>
+                    {showDateSeparator && (
+                      <div className="flex items-center gap-2 my-[16px]">
+                        <div className="flex-1 h-px bg-[#e9e9e9]" />
+                        <span className="text-[11px] font-bold text-[#9a9a9a]">{msgDate}</span>
+                        <div className="flex-1 h-px bg-[#e9e9e9]" />
+                      </div>
+                    )}
 
-               // Check if we need to show date separator (new day)
-               const showDateSeparator = prevMsg && msg.createdAt && prevMsg.createdAt &&
-                 new Date(msg.createdAt.toDate()).toDateString() !== new Date(prevMsg.createdAt.toDate()).toDateString();
+                    {msg.isSystem ? (
+                      <div className="flex justify-center my-[16px]">
+                        <span className="text-[12px] text-[#9a9a9a] bg-[#f7f7f7] px-[12px] py-[4px] rounded-full">
+                          {msg.text}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className={`relative flex gap-[12px] group px-[12px] py-[4px] hover:bg-[#f5f5f5] -mx-[12px] transition-colors ${!showHeader ? 'mt-[0px]' : 'mt-[8px]'}`}>
+                        {showHeader ? (
+                          <div className="w-[40px] h-[40px] rounded-[8px] shrink-0 overflow-hidden">
+                            <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={40} />
+                          </div>
+                        ) : (
+                          <div className="w-[40px] shrink-0 text-right text-[10px] text-[#9a9a9a] opacity-0 group-hover:opacity-100 flex items-center justify-end">
+                            {msg.time}
+                          </div>
+                        )}
 
-               const msgDate = msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleDateString('uk-UA', { weekday: 'long', month: 'short', day: 'numeric' }) : '';
+                        <div className="flex flex-col min-w-0 flex-1">
+                          {showHeader && (
+                            <div className="flex items-baseline gap-[8px] mb-[2px]">
+                              <span className="font-bold text-[#1f1f1f] text-[15px]">{msg.user}</span>
+                              <span className="text-[11px] text-[#9a9a9a]">{msg.time}</span>
+                            </div>
+                          )}
 
-               return (
-                 <React.Fragment key={msg.id}>
-                   {showDateSeparator && (
-                     <div className="flex items-center gap-2 my-5 px-[8px]">
-                       <div className="flex-1 h-px bg-[#e9e9e9]" />
-                       <span className="text-[11px] font-bold text-[#9a9a9a] px-2">{msgDate}</span>
-                       <div className="flex-1 h-px bg-[#e9e9e9]" />
-                     </div>
-                   )}
+                          {editingMsgId === msg.id ? (
+                            <div className="flex flex-col gap-2">
+                              <textarea
+                                value={editMsgText}
+                                onChange={e => setEditMsgText(e.target.value)}
+                                className="w-full bg-[#f7f7f7] border border-[#1f1f1f] rounded-[10px] p-2 text-[14px] outline-none"
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <Button onClick={() => setEditingMsgId(null)} style="secondary" color="dark" size="sm" className="text-[12px]">Скасувати</Button>
+                                <Button onClick={() => { editMessage(msg.id, editMsgText); setEditingMsgId(null); }} disabled={!editMsgText.trim()} style="primary" color="dark" size="sm" className="text-[12px]">Зберегти</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-[#333333] text-[15px] leading-[1.46]">
+                              <MessageContent text={msg.text} members={members} />
+                              {msg.isEdited && <span className="text-[11px] text-[#9a9a9a] ml-1">(відредаговано)</span>}
 
-                   {msg.isSystem ? (
-                     <div className="flex justify-center my-[16px]">
-                       <span className="text-[12px] text-[#9a9a9a] bg-[#f7f7f7] px-[12px] py-[4px] rounded-full">
-                         {msg.text}
-                       </span>
-                     </div>
-                   ) : (
-                     <div key={msg.id} className={`flex gap-[12px] group px-[8px] py-[4px] hover:bg-[#f5f5f5] -mx-[8px] rounded-[8px] transition-colors relative ${!showHeader ? 'mt-[-2px]' : 'mt-[8px]'}`}>
-                   {showHeader ? (
-                     <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden mt-[2px]">
-                       <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
-                     </div>
-                   ) : (
-                     <div className="w-[36px] shrink-0 text-right pr-[4px] opacity-0 group-hover:opacity-100 flex items-center justify-end">
-                        <span className="text-[10px] text-[#9a9a9a]">{msg.time}</span>
-                     </div>
-                   )}
-                   
-                   <div className="flex flex-col min-w-0 flex-1">
-                     {showHeader && (
-                       <div className="flex items-baseline gap-[8px] mb-[2px]">
-                         <span className="font-bold text-[#1f1f1f] text-[15px] hover:underline cursor-pointer">{msg.user}</span>
-                         <span className="text-[11px] text-[#9a9a9a] hover:underline cursor-pointer">{msg.time}</span>
-                         {msg.senderId === myUid && msg.readBy && msg.readBy.length > 1 && (
-                           <span className="text-[10px] text-[#6366f1] cursor-help" title={`Прочитано ${msg.readBy.length - 1} людьми`}>✓✓</span>
-                         )}
-                       </div>
-                     )}
-                     
-                     {editingMsgId === msg.id ? (
-                        <div className="mt-1 flex flex-col gap-2">
-                           <textarea
-                             value={editMsgText}
-                             onChange={e => setEditMsgText(e.target.value)}
-                             className="w-full bg-[#f7f7f7] border border-[#1f1f1f] rounded-[10px] p-2 text-[14px] outline-none"
-                             rows={3}
-                           />
-                           <div className="flex gap-2">
-                             <button onClick={() => setEditingMsgId(null)} className="px-3 py-1 bg-[#f7f7f7] hover:bg-[#f0f0f0] rounded-[8px] text-[12px] font-medium transition-colors">Скасувати</button>
-                             <button onClick={() => { editMessage(msg.id, editMsgText); setEditingMsgId(null); }} disabled={!editMsgText.trim()} className="px-3 py-1 bg-[#1f1f1f] hover:bg-[#303030] disabled:opacity-40 text-white rounded-[8px] text-[12px] font-medium transition-colors">Зберегти</button>
-                           </div>
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <div className="mt-2 flex flex-col gap-2">
+                                  {msg.attachments.map((att, i) => (
+                                    <div key={i} className="max-w-[300px]">
+                                      {att.type?.startsWith('image/') ? (
+                                        <a href={att.url} target="_blank" rel="noopener">
+                                          <img src={att.url} alt={att.name} className="rounded-[8px] border border-[#e9e9e9] max-h-[200px] object-cover hover:opacity-90 transition-opacity" />
+                                        </a>
+                                      ) : (
+                                        <a href={att.url} target="_blank" rel="noopener" className="flex items-center gap-2 p-2 rounded-[8px] border border-[#e9e9e9] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+                                          <Paperclip size={16} className="text-[#9a9a9a]" />
+                                          <span className="text-[13px] font-medium text-[#1f1f1f] truncate flex-1">{att.name}</span>
+                                          <span className="text-[10px] text-[#9a9a9a]">{Math.round(att.size / 1024)} KB</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {Object.entries(msg.reactions).map(([emoji, users]) => {
+                                const hasReacted = users.includes(myUid);
+                                return (
+                                  <Button
+                                    key={emoji}
+                                    onClick={() => toggleReaction(msg.id, emoji)}
+                                    style={hasReacted ? 'secondary' : 'ghost'}
+                                    color="dark"
+                                    size="sm"
+                                    className={`px-[6px] py-[2px] h-auto text-[11px] ${hasReacted ? 'bg-[#eef2ff] border-[#6366f1]/30 text-[#4f46e5]' : 'text-[#4a4a4a]'}`}
+                                  >
+                                    <span>{emoji}</span>
+                                    <span className="font-bold">{users.length}</span>
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {msg.replyCount > 0 && (
+                            <div className="mt-1">
+                              <Button onClick={() => openThread(msg.id)} style="ghost" color="dark" size="sm" icon={MessageSquare} iconSize={11} className="text-[12px] text-[#6366f1] hover:text-[#6366f1] px-2 py-[3px] h-auto">
+                                {msg.replyCount} {msg.replyCount === 1 ? 'відповідь' : msg.replyCount > 1 && msg.replyCount < 5 ? 'відповіді' : 'відповідей'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                     ) : (
-                       <div className="text-[#333333] text-[15px] leading-[1.46] whitespace-pre-wrap break-words">
-                         <MessageContent text={msg.text} members={members} />
-                         {msg.isEdited && <span className="text-[11px] text-[#9a9a9a] ml-1">(відредаговано)</span>}
-                         
-                         {msg.attachments && msg.attachments.length > 0 && (
-                           <div className="mt-2 flex flex-col gap-2">
-                             {msg.attachments.map((att, i) => (
-                               <div key={i} className="max-w-[300px]">
-                                 {att.type?.startsWith('image/') ? (
-                                   <a href={att.url} target="_blank" rel="noopener">
-                                     <img src={att.url} alt={att.name} className="rounded-[8px] border border-[#e9e9e9] max-h-[200px] object-cover hover:opacity-90 transition-opacity" />
-                                   </a>
-                                 ) : (
-                                   <a href={att.url} target="_blank" rel="noopener" className="flex items-center gap-2 p-2 rounded-[8px] border border-[#e9e9e9] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
-                                     <Paperclip size={16} className="text-[#9a9a9a]" />
-                                     <span className="text-[13px] font-medium text-[#1f1f1f] truncate flex-1">{att.name}</span>
-                                     <span className="text-[10px] text-[#9a9a9a]">{Math.round(att.size / 1024)} KB</span>
-                                   </a>
-                                 )}
-                               </div>
-                             ))}
-                           </div>
-                         )}
-                       </div>
-                     )}
 
-                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                       <div className="flex flex-wrap gap-1 mt-1">
-                         {Object.entries(msg.reactions).map(([emoji, users]) => {
-                           const hasReacted = users.includes(myUid);
-                           return (
-                             <button
-                               key={emoji}
-                               onClick={() => toggleReaction(msg.id, emoji)}
-                               className={`flex items-center gap-1 px-[6px] py-[2px] rounded-[12px] text-[11px] border transition-colors ${hasReacted ? 'bg-[#eef2ff] border-[#6366f1]/30 text-[#4f46e5]' : 'bg-[#f0f0f0] border-transparent text-[#4a4a4a] hover:bg-[#e9e9e9]'}`}
-                             >
-                               <span>{emoji}</span>
-                               <span className="font-bold">{users.length}</span>
-                             </button>
-                           );
-                         })}
-                       </div>
-                     )}
-
-                     {msg.replyCount > 0 && (
-                       <div className="mt-1">
-                         <button onClick={() => openThread(msg.id)} className="text-[12px] text-[#6366f1] font-bold hover:underline flex items-center gap-1 px-2 py-[3px] rounded-[8px] hover:bg-[#eef2ff] transition-colors">
-                           <MessageSquare size={11} />
-                           {msg.replyCount} {msg.replyCount === 1 ? 'відповідь' : msg.replyCount > 1 && msg.replyCount < 5 ? 'відповіді' : 'відповідей'}
-                         </button>
-                       </div>
-                     )}
-                   </div>
-
-                   {/* Hover actions */}
-                   <div className="absolute right-[20px] top-[-10px] opacity-0 group-hover:opacity-100 bg-white border border-[#e9e9e9] rounded-[6px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] flex items-center p-[2px] transition-opacity z-10">
-                     <div className="relative">
-                       <button onClick={() => setReactingMsgId(reactingMsgId === msg.id ? null : msg.id)} className={`p-[6px] hover:text-[#1f1f1f] hover:bg-[#f8f8f8] rounded-[4px] transition-colors ${reactingMsgId === msg.id ? 'text-[#1f1f1f] bg-[#f0f0f0]' : 'text-[#616061]'}`}>
-                         <Smile size={16} />
-                       </button>
-                       {reactingMsgId === msg.id && (
-                         <div className="absolute right-0 top-[32px] bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg p-2 grid grid-cols-6 gap-1 z-20 w-[220px]">
-                           {['👍','❤️','🔥','😂','🎉','👀','🙌','💯','🤔','✅','🚀','👋'].map(emoji => (
-                             <button
-                               key={emoji}
-                               onClick={() => {
-                                 toggleReaction(msg.id, emoji);
-                                 setReactingMsgId(null);
-                               }}
-                               className="w-8 h-8 flex items-center justify-center hover:bg-[#f0f0f0] rounded-[6px] text-[16px] transition-colors"
-                             >
-                               {emoji}
-                             </button>
-                           ))}
-                         </div>
-                       )}
-                     </div>
-                     <button onClick={() => openThread(msg.id)} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8] rounded-[4px] transition-colors"><MessageSquare size={16} /></button>
-                     <button onClick={() => { if(!msg.isPinned) { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: true }); } else { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: false }); } }} className={`p-[6px] rounded-[4px] transition-colors ${msg.isPinned ? 'text-[#6366f1] bg-[#eef2ff]' : 'text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8]'}`}><Pin size={16} /></button>
-                     {msg.senderId === myUid && (
-                       <>
-                         <button onClick={() => { setEditingMsgId(msg.id); setEditMsgText(msg.text); setReactingMsgId(null); }} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] hover:bg-[#f8f8f8] rounded-[4px] transition-colors"><Edit2 size={16} /></button>
-                         <button onClick={() => { if(confirm('Ви впевнені, що хочете видалити це повідомлення?')) deleteMessage(msg.id); }} className="p-[6px] text-[#616061] hover:text-[#ef4444] hover:bg-red-50 rounded-[4px] transition-colors"><Trash2 size={16} /></button>
-                       </>
-                     )}
-                   </div>
-                 </div>
-                   )}
-                 </React.Fragment>
-               );
-             });
-             })()}
+                        {/* Hover actions */}
+                        <div className="absolute right-[32px] bottom-[calc(100%_+_8px)] opacity-0 group-hover:opacity-100 bg-white border border-[#e9e9e9] rounded-[6px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] flex items-center p-[2px] transition-opacity z-10">
+                          <Button onClick={() => setReactingMsgId(reactingMsgId === msg.id ? null : msg.id)} style="ghost" color="dark" size="icon" icon={Smile} iconSize={16} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] h-[28px] w-[28px]" />
+                          <Button onClick={() => openThread(msg.id)} style="ghost" color="dark" size="icon" icon={MessageSquare} iconSize={16} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] h-[28px] w-[28px]" />
+                          <Button onClick={() => { if(!msg.isPinned) { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: true }); } else { updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msg.id), { isPinned: false }); } }} style={msg.isPinned ? 'secondary' : 'ghost'} color="dark" size="icon" icon={Pin} iconSize={16} className={`p-[6px] h-[28px] w-[28px] ${msg.isPinned ? 'text-[#6366f1] bg-[#eef2ff]' : 'text-[#616061] hover:text-[#1f1f1f]'}`} />
+                          {msg.senderId === myUid && (
+                            <>
+                              <Button onClick={() => { setEditingMsgId(msg.id); setEditMsgText(msg.text); }} style="ghost" color="dark" size="icon" icon={Edit2} iconSize={16} className="p-[6px] text-[#616061] hover:text-[#1f1f1f] h-[28px] w-[28px]" />
+                              <Button onClick={() => { if(confirm('Ви впевнені, що хочете видалити це повідомлення?')) deleteMessage(msg.id); }} style="ghost" color="dark" size="icon" icon={Trash2} iconSize={16} className="p-[6px] text-[#616061] hover:text-[#ef4444] h-[28px] w-[28px]" />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              });
+            })()}
 
             {activeChannelData?.typing?.length > 0 && activeChannelData.typing.some(uid => uid !== myUid) && (
-              <div className="flex items-center gap-2 mt-2 px-[8px]">
+              <div className="flex items-center gap-2 mt-2">
                 <div className="flex gap-1">
                   <span className="w-[5px] h-[5px] bg-[#cfcfcf] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-[5px] h-[5px] bg-[#cfcfcf] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -692,411 +640,401 @@ export default function ChatPage() {
             )}
 
             {unreadWhileScrolled > 0 && isScrolledUp && (
-              <div className="fixed bottom-[80px] left-1/2 transform -translate-x-1/2 z-20">
-                <button
+              <div className="fixed bottom-[100px] left-1/2 -translate-x-1/2 z-20">
+                <Button
                   onClick={() => {
                     chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1f1f1f] text-white rounded-full shadow-lg hover:bg-[#303030] transition-all duration-200 hover:scale-105 active:scale-95"
+                  style="primary"
+                  color="dark"
+                  size="md"
+                  icon={ChevronDown}
+                  iconSize={16}
+                  className="rounded-full shadow-lg hover:scale-105 active:scale-95"
                 >
-                  <span className="text-[12px] font-bold">{unreadWhileScrolled} нових повідомлень</span>
-                  <ChevronDown size={16} />
-                </button>
+                  <span className="text-[12px] font-bold">{unreadWhileScrolled} нових</span>
+                </Button>
               </div>
             )}
 
-            <div ref={messagesEndRef} className="h-4" />
-        </div>
-
-        {/* Input Area */}
-        <div className="p-[16px] pt-[12px] shrink-0 relative bg-white border-t border-[#f0f0f0]">
-          {/* Simple Emoji Picker */}
-          {showEmojiPicker && (
-            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-lg p-2 grid grid-cols-6 gap-1 z-20">
-              {['😀','😂','🥰','😎','🤔','👍','🎉','🔥','❤️','✨','🙌','💯'].map(emoji => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    setMessageText(prev => prev + emoji);
-                    setShowEmojiPicker(false);
-                  }}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-[#f0f0f0] rounded-[6px] text-[18px] transition-colors"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {mentionType === 'user' && mentionQuery !== null && (
-            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[200px] z-20">
-              {members.filter(m => (m.name||m.email).toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 5).map(m => (
-                <button
-                  key={m.uid||m.id}
-                  onClick={() => {
-                    const before = messageText.slice(0, mentionCursor - mentionQuery.length - 1);
-                    const after = messageText.slice(mentionCursor);
-                    setMessageText(before + `@${(m.name||m.email).replace(/\s+/g,'_')} ` + after);
-                    setMentionQuery(null);
-                    setMentionType(null);
-                    textareaRef.current?.focus();
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[#f0f0f0] text-[13px] flex items-center gap-2 transition-colors"
-                >
-                  <UserAvatar user={m} size={16} />
-                  <span className="truncate">{m.name || m.email}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {mentionType === 'issue' && mentionQuery !== null && (
-            <div className="absolute bottom-[100%] left-[24px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-lg py-1 w-[240px] z-20">
-              {recentIssues.filter(iss => iss.issueKey?.toLowerCase().includes(mentionQuery.toLowerCase()) || iss.title?.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 5).map(iss => (
-                <button
-                  key={iss.id}
-                  onClick={() => {
-                    const before = messageText.slice(0, mentionCursor - mentionQuery.length - 1);
-                    const after = messageText.slice(mentionCursor);
-                    setMessageText(before + `#${iss.issueKey} ` + after);
-                    setMentionQuery(null);
-                    setMentionType(null);
-                    textareaRef.current?.focus();
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[#f0f0f0] flex flex-col gap-1 transition-colors"
-                >
-                  <div className="flex items-center gap-2 text-[12px]">
-                    <span className="font-bold text-[#c026d3]">{iss.issueKey}</span>
-                    <span className="text-[#9a9a9a] truncate flex-1">{iss.title}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="bg-[#f9f9f9] rounded-[12px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/5 border border-[#e9e9e9] focus-within:border-[#1f1f1f]/20 transition-all overflow-visible flex flex-col">
-            {attachment && (
-              <div className="px-[12px] pt-[8px] flex items-center gap-2">
-                <div className="relative inline-block">
-                  {attachment.type.startsWith('image/') ? (
-                    <img src={attachment.url} alt="attachment" className="h-[60px] rounded-[6px] object-cover border border-[#e9e9e9]" />
-                  ) : (
-                    <div className="h-[60px] px-4 flex items-center bg-[#f7f7f7] rounded-[6px] border border-[#e9e9e9] text-[12px] font-medium text-[#1f1f1f]">
-                      📎 {attachment.file.name}
-                    </div>
-                  )}
-                  <button 
-                    onClick={() => setAttachment(null)}
-                    className="absolute -top-2 -right-2 bg-white border border-[#e9e9e9] rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              </div>
-            )}
-            <textarea 
-              ref={textareaRef}
-              placeholder={`Повідомлення до ${activeChannel.type === 'channel' ? '#' : ''}${activeChannel.type === 'channel' ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id) : (dms.find(d => d.id === activeChannel.id)?.name || 'користувача')}`}
-              value={messageText}
-              onChange={handleTextChange}
-              onKeyDown={handleKeyDown}
-              className="w-full max-h-[250px] min-h-[44px] p-[12px] px-[16px] resize-none outline-none text-[15px] text-[#1f1f1f] placeholder:text-[#9a9a9a] bg-transparent"
-              rows={1}
-            />
-            <div className="flex items-center justify-between px-[12px] py-[8px] border-t border-[#ebebeb]">
-              <div className="flex items-center gap-[4px]">
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-[6px] rounded-[6px] transition-colors ${showEmojiPicker ? 'bg-[#f0f0f0] text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0]'}`}>
-                  <Smile size={18} />
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                />
-                <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="p-[6px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[6px] transition-colors disabled:opacity-50">
-                  <Paperclip size={18} />
-                </button>
-              </div>
-              <button 
-                onClick={handleSend}
-                disabled={(!messageText.trim() && !attachment) || loading || uploading}
-                className={`p-[6px] px-[10px] rounded-[10px] transition-all flex items-center justify-center ${
-                  messageText.trim() || attachment ? 'bg-[#1f1f1f] text-white hover:bg-[#303030]' : 'text-[#cfcfcf] cursor-not-allowed'
-                }`}
-              >
-                {uploading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Send size={15} className={messageText.trim() || attachment ? 'mr-[4px]' : ''} />
-                    {(messageText.trim() || attachment) && <span className="text-[13px] font-bold">Надіслати</span>}
-                  </>
-                )}
-              </button>
-            </div>
+            <div ref={messagesEndRef} className="h-1" />
           </div>
-        </div>
 
-        {/* Thread Panel */}
-        {activeThreadId && activeThreadParent && (
-          <div className="w-[340px] bg-white rounded-[16px] border border-[#e9e9e9] shadow-sm flex flex-col shrink-0 relative z-20 overflow-hidden">
-          <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9] shrink-0 bg-white">
-            <h3 className="font-bold text-[#1f1f1f] text-[14px]">Гілка відповідей</h3>
-            <button onClick={closeThread} className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f0f0f0] transition-colors"><X size={18} /></button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-[16px] custom-scrollbar flex flex-col gap-[16px]">
-            {/* Parent Message */}
-            <div className="flex gap-[12px]">
-              <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden mt-[2px]">
-                <UserAvatar user={{ name: activeThreadParent.user, avatar: activeThreadParent.avatar }} size={36} />
-              </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-baseline gap-[8px] mb-[2px]">
-                  <span className="font-bold text-[#1f1f1f] text-[15px]">{activeThreadParent.user}</span>
-                  <span className="text-[11px] text-[#9a9a9a]">{activeThreadParent.time}</span>
-                </div>
-                <div className="text-[#333333] text-[15px] leading-[1.46] whitespace-pre-wrap break-words">
-                  <MessageContent text={activeThreadParent.text} members={members} />
-                </div>
-              </div>
-            </div>
+          {/* Input Area */}
+          <div className="p-[16px] shrink-0 bg-[#f7f7f7] relative">
             
-            <div className="flex items-center gap-2 mt-2 mb-1">
-               <div className="h-[1px] flex-1 bg-[#e9e9e9]" />
-               <span className="text-[11px] font-bold text-[#9a9a9a]">{activeThreadParent.replyCount || threadMessages.length} {activeThreadParent.replyCount === 1 || threadMessages.length === 1 ? 'відповідь' : 'відповідей'}</span>
-               <div className="h-[1px] flex-1 bg-[#e9e9e9]" />
-            </div>
-
-            {/* Replies */}
-            {threadMessages.map(msg => (
-              <div key={msg.id} className="flex gap-[12px] hover:bg-[#f0f0f0]/50 -mx-[8px] px-[8px] py-[4px] rounded-[8px] transition-colors group relative">
-                <div className="w-[28px] h-[28px] rounded-[6px] shrink-0 overflow-hidden mt-[2px]">
-                  <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={28} />
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <div className="flex items-baseline gap-[8px] mb-[2px]">
-                    <span className="font-bold text-[#1f1f1f] text-[14px]">{msg.user}</span>
-                    <span className="text-[11px] text-[#9a9a9a]">{msg.time}</span>
-                  </div>
-                  <div className="text-[#333333] text-[14px] leading-[1.46] whitespace-pre-wrap break-words">
-                    <MessageContent text={msg.text} members={members} />
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-2 flex flex-col gap-2">
-                        {msg.attachments.map((att, i) => (
-                          <div key={i} className="max-w-[260px]">
-                            {att.type?.startsWith('image/') ? (
-                              <a href={att.url} target="_blank" rel="noopener">
-                                <img src={att.url} alt={att.name} className="rounded-[8px] border border-[#e9e9e9] max-h-[150px] object-cover hover:opacity-90 transition-opacity" />
-                              </a>
-                            ) : (
-                              <a href={att.url} target="_blank" rel="noopener" className="flex items-center gap-2 p-2 rounded-[8px] border border-[#e9e9e9] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
-                                <Paperclip size={14} className="text-[#9a9a9a]" />
-                                <span className="text-[11px] font-medium text-[#1f1f1f] truncate flex-1">{att.name}</span>
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {msg.senderId === myUid && (
-                  <button
-                    onClick={() => { if (confirm('Видалити відповідь?')) deleteReply(activeThreadId, msg.id); }}
-                    className="opacity-0 group-hover:opacity-100 p-[6px] text-[#616061] hover:text-[#ef4444] hover:bg-red-50 rounded-[4px] transition-colors shrink-0"
+            {/* Mentions Dropdown */}
+            {mentionType && (
+              <div className="absolute bottom-full left-[16px] mb-2 bg-white border border-[#e9e9e9] rounded-[8px] shadow-xl overflow-hidden w-[260px] max-h-[200px] overflow-y-auto z-30">
+                {mentionType === 'user' && members.filter(m => (m.name || m.email).toLowerCase().includes(mentionQuery)).map(m => (
+                  <Button
+                    key={m.id || m.uid}
+                    onClick={() => {
+                      const newText = messageText.slice(0, mentionCursor - mentionQuery.length - 1) + `@${m.name || m.email} ` + messageText.slice(mentionCursor);
+                      setMessageText(newText);
+                      setMentionType(null);
+                      if (textareaRef.current) textareaRef.current.focus();
+                    }}
+                    style="ghost"
+                    color="dark"
+                    size="md"
+                    className="w-full justify-start px-[8px] py-[8px] h-auto gap-2 border-0 border-b border-b-[#f0f0f0] last:border-b-0 rounded-none"
                   >
-                    <Trash2 size={14} />
-                  </button>
+                    <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={24} />
+                    <span className="text-[13px] font-medium text-[#1f1f1f] truncate">{m.name || m.email}</span>
+                  </Button>
+                ))}
+                {mentionType === 'user' && members.filter(m => (m.name || m.email).toLowerCase().includes(mentionQuery)).length === 0 && (
+                  <div className="p-3 text-[12px] text-[#9a9a9a] text-center">Не знайдено</div>
+                )}
+
+                {mentionType === 'issue' && (
+                  <div className="p-3 text-[12px] text-[#9a9a9a] text-center">Задачі в розробці...</div>
                 )}
               </div>
-            ))}
-            <div ref={threadScrollRef} className="h-2" />
-          </div>
+            )}
 
-          <div className="p-[16px] shrink-0">
-            <div className="bg-[#f9f9f9] rounded-[12px] focus-within:ring-2 focus-within:ring-[#1f1f1f]/5 border border-[#e9e9e9] focus-within:border-[#1f1f1f]/20 transition-all flex flex-col">
-              {threadAttachment && (
-                <div className="px-[10px] pt-[8px] flex items-center gap-2">
-                  <div className="relative inline-block">
-                    {threadAttachment.type.startsWith('image/') ? (
-                      <img src={threadAttachment.url} alt="attachment" className="h-[40px] rounded-[4px] object-cover border border-[#e9e9e9]" />
-                    ) : (
-                      <div className="h-[40px] px-3 flex items-center bg-[#f7f7f7] rounded-[4px] border border-[#e9e9e9] text-[10px] font-medium text-[#1f1f1f]">
-                        📎 {threadAttachment.file.name}
-                      </div>
-                    )}
-                    <button 
-                      onClick={() => setThreadAttachment(null)}
-                      className="absolute -top-1 -right-1 bg-white border border-[#e9e9e9] rounded-full p-[2px] text-red-500 hover:bg-red-50 shadow-sm"
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                </div>
-              )}
-              <textarea
-                value={threadText}
-                onChange={e => setThreadText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleThreadSend();
-                  }
-                }}
-                placeholder="Відповісти..."
-                className="w-full max-h-[150px] min-h-[40px] resize-none outline-none text-[14px] text-[#1f1f1f] bg-transparent custom-scrollbar p-[10px]"
-                rows={1}
-              />
-              <div className="flex justify-between items-center p-[6px] border-t border-[#ebebeb]">
-                <div className="flex items-center">
-                  <input 
-                    type="file" 
-                    ref={threadFileInputRef} 
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) setThreadAttachment({ file, url: URL.createObjectURL(file), type: file.type });
-                    }} 
-                    className="hidden" 
-                  />
-                  <button onClick={() => threadFileInputRef.current?.click()} disabled={threadUploading} className="p-[4px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[4px] transition-colors disabled:opacity-50">
-                    <Paperclip size={16} />
-                  </button>
-                </div>
-                <button 
-                  onClick={handleThreadSend}
-                  disabled={(!threadText.trim() && !threadAttachment) || threadUploading}
-                  className={`p-[6px] px-[10px] rounded-[8px] transition-all flex items-center justify-center ${threadText.trim() || threadAttachment ? 'bg-[#1f1f1f] text-white hover:bg-[#303030]' : 'text-[#cfcfcf] cursor-not-allowed'}`}
-                >
-                  {threadUploading ? (
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Send size={14} className={(threadText.trim() || threadAttachment) ? "mr-1" : ""} />
-                      {(threadText.trim() || threadAttachment) && <span className="text-[12px] font-bold">Відповісти</span>}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Channel Info Panel */}
-      {showChannelInfo && activeChannel.type === 'channel' && (
-        <div className="w-[340px] bg-white rounded-[16px] border border-[#e9e9e9] shadow-sm flex flex-col shrink-0 overflow-hidden">
-          <div className="h-[56px] flex items-center justify-between px-[16px] border-b border-[#e9e9e9]">
-            <h4 className="font-bold text-[#1f1f1f] text-[14px]">Деталі</h4>
-            <div className="flex items-center gap-[8px]">
-              <button
-                onClick={() => setMutedChannels(prev => {
-                  const next = new Set(prev);
-                  if (next.has(activeChannel.id)) next.delete(activeChannel.id);
-                  else next.add(activeChannel.id);
-                  return next;
-                })}
-                className={`text-[12px] px-[8px] py-[4px] rounded-[4px] transition-colors ${mutedChannels.has(activeChannel.id) ? 'bg-[#e9e9e9] text-[#1f1f1f]' : 'bg-white text-[#9a9a9a] hover:text-[#1f1f1f]'}`}
-                title={mutedChannels.has(activeChannel.id) ? "Увімкнути сповіщення" : "Вимкнути сповіщення"}
-              >
-                {mutedChannels.has(activeChannel.id) ? '🔕' : '🔔'}
-              </button>
-              <button onClick={() => setShowChannelInfo(false)} className="text-[#9a9a9a] hover:text-[#1f1f1f]">
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-[16px] space-y-[20px]">
-            {/* Channel Name */}
-            <div>
-              <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[4px]">Назва</p>
-              <p className="text-[14px] font-bold text-[#1f1f1f]">{channels.find(c => c.id === activeChannel.id)?.name}</p>
-            </div>
-
-            {/* Channel Description */}
-            <div>
-              <div className="flex items-center justify-between mb-[4px]">
-                <p className="text-[11px] font-bold text-[#9a9a9a] uppercase">Опис</p>
-              </div>
-              {editingDescription ? (
-                <div className="space-y-[8px]">
-                  <textarea
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="Додайте опис каналу..."
-                    className="w-full p-[8px] bg-white border border-[#e9e9e9] rounded-[6px] text-[12px] resize-none focus:border-[#1f1f1f] outline-none"
-                    rows={3}
-                  />
-                  <div className="flex gap-[6px]">
-                    <button
-                      onClick={handleUpdateChannelDescription}
-                      className="flex-1 px-3 py-[6px] bg-[#1f1f1f] text-white text-[11px] font-bold rounded-[4px] hover:bg-[#303030]"
-                    >
-                      Зберегти
-                    </button>
-                    <button
-                      onClick={() => setEditingDescription(false)}
-                      className="flex-1 px-3 py-[6px] bg-[#f0f0f0] text-[#1f1f1f] text-[11px] font-bold rounded-[4px] hover:bg-[#e9e9e9]"
-                    >
-                      Скасувати
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-[13px] text-[#4a4a4a] mb-[8px] min-h-[20px]">
-                    {channels.find(c => c.id === activeChannel.id)?.description || 'Немає опису'}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setEditingDescription(true);
-                      setNewDescription(channels.find(c => c.id === activeChannel.id)?.description || '');
-                    }}
-                    className="text-[11px] text-[#6366f1] hover:underline font-medium"
-                  >
-                    Додати опис
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Pinned Messages */}
-            {messages.filter(m => m.isPinned).length > 0 && (
-              <div>
-                <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Закріплені ({messages.filter(m => m.isPinned).length})</p>
-                <div className="flex flex-col gap-[8px]">
-                  {messages.filter(m => m.isPinned).map(m => (
-                    <div key={m.id} className="p-[8px] bg-white border border-[#e9e9e9] rounded-[6px] hover:bg-[#f9f9f9] cursor-pointer group">
-                      <p className="text-[11px] font-bold text-[#1f1f1f] mb-[2px]">{m.user}</p>
-                      <p className="text-[12px] text-[#4a4a4a] line-clamp-2">{m.text}</p>
+            <div className="bg-white border-[3px] border-[#d0d0d0]/40 focus-within:border-[#d0d0d0]/60 transition-all overflow-visible flex flex-col rounded-[12px]">
+              {attachments.length > 0 && (
+                <div className="px-[12px] pt-[8px] flex flex-wrap gap-2">
+                  {attachments.map((att, idx) => (
+                    <div key={idx} className="relative inline-block">
+                      {att.type.startsWith('image/') ? (
+                        <img src={att.url} alt="attachment" className="h-[60px] rounded-[6px] object-cover border border-[#e9e9e9]" />
+                      ) : (
+                        <div className="h-[60px] px-4 flex items-center bg-white rounded-[6px] border border-[#e9e9e9] text-[12px] font-medium text-[#1f1f1f]">
+                          📎 {att.name}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-2 -right-2 bg-white border border-[#e9e9e9] rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm"
+                      >
+                        <X size={12} />
+                      </button>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Members */}
-            <div>
-              <p className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Члени ({members.length})</p>
-              <div className="flex flex-col gap-[8px] max-h-[300px] overflow-y-auto">
-                {members.map(m => (
-                  <div key={m.id || m.uid} className="flex items-center gap-[8px] p-[8px] rounded-[6px] hover:bg-white/50">
-                    <div className="w-[28px] h-[28px] rounded-[6px] overflow-hidden shrink-0">
-                      <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={28} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-[#1f1f1f] truncate">{m.name || m.email}</p>
-                    </div>
-                  </div>
-                ))}
+              )}
+              <textarea
+                ref={textareaRef}
+                placeholder="Напишіть повідомлення..."
+                value={messageText}
+                onChange={handleTextChange}
+                onKeyDown={handleKeyDown}
+                className="w-full max-h-[250px] min-h-[44px] p-[12px] px-[16px] resize-none outline-none text-[15px] text-[#1f1f1f] placeholder-[#9a9a9a] bg-transparent"
+                rows={1}
+              />
+              <div className="flex items-center justify-between px-[12px] py-[8px] border-t border-[#ebebeb]">
+                <div className="flex items-center gap-[4px]">
+                  <Button onClick={() => setShowEmojiPicker(!showEmojiPicker)} style={showEmojiPicker ? 'secondary' : 'ghost'} color="dark" size="icon" icon={Smile} iconSize={18} className="p-[6px] h-[32px] w-[32px]" />
+                  <input
+                    type="file"
+                    multiple
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} style="ghost" color="dark" size="icon" icon={Paperclip} iconSize={18} className="p-[6px] h-[32px] w-[32px] text-[#9a9a9a] hover:text-[#1f1f1f]" />
+                </div>
+                <Button
+                  onClick={handleSend}
+                  disabled={(!messageText.trim() && attachments.length === 0) || loading || uploading}
+                  loading={uploading}
+                  style={messageText.trim() || attachments.length > 0 ? 'primary' : 'secondary'}
+                  color="dark"
+                  size="md"
+                  icon={Send}
+                  iconSize={15}
+                  className={`p-[6px] px-[10px] rounded-[10px] ${!messageText.trim() && attachments.length === 0 ? 'text-[#cfcfcf]' : ''}`}
+                >
+                  {(messageText.trim() || attachments.length > 0) && <span className="text-[13px] font-bold">Надіслати</span>}
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      )}
       </div>
 
+      {/* Emoji Picker (For Message Input) */}
+      {showEmojiPicker && (
+        <div className="absolute bottom-[120px] left-[340px] z-20 shadow-xl rounded-[8px] overflow-hidden">
+          <EmojiPicker 
+            onEmojiClick={(emojiData) => {
+              setMessageText(prev => prev + emojiData.emoji);
+              setShowEmojiPicker(false);
+            }} 
+            autoFocusSearch={false}
+            searchDisabled
+            skinTonesDisabled
+            width={300}
+            height={350}
+          />
+        </div>
+      )}
+
+      {/* Reaction Emoji Picker */}
+      {reactingMsgId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10" onClick={() => setReactingMsgId(null)}>
+          <div onClick={e => e.stopPropagation()} className="shadow-2xl rounded-[8px] overflow-hidden">
+            <EmojiPicker 
+              onEmojiClick={(emojiData) => {
+                toggleReaction(reactingMsgId, emojiData.emoji);
+                setReactingMsgId(null);
+              }}
+              autoFocusSearch={false}
+              skinTonesDisabled
+              width={320}
+              height={400}
+            />
+          </div>
+        </div>
+      )}
+
+
+      {/* Universal Right Sidebar (Thread or Channel Info) */}
+      {(showChannelInfo || activeThreadId) && (
+        <div className="fixed right-[12px] top-[56px] bottom-[12px] w-[340px] bg-[#f7f7f7] rounded-[24px] overflow-hidden z-40 flex flex-col shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-transparent">
+          
+          {/* Header */}
+          <div className="h-[56px] px-[20px] shrink-0 border-b border-[#e9e9e9] flex items-center justify-between bg-white">
+            <div className="flex items-center gap-2 min-w-0">
+              {activeThreadId ? (
+                <>
+                  <h2 className="text-[15px] font-bold text-[#1f1f1f] truncate">Гілка</h2>
+                  <span className="text-[12px] text-[#9a9a9a] truncate">#{currentChannel?.name || 'DM'}</span>
+                </>
+              ) : (
+                <>
+                  <Hash size={18} className="text-[#1f1f1f] shrink-0" />
+                  <h2 className="text-[15px] font-bold text-[#1f1f1f] truncate">Деталі каналу</h2>
+                </>
+              )}
+            </div>
+            <Button
+              onClick={() => {
+                setShowChannelInfo(false);
+                closeThread();
+              }}
+              style="ghost"
+              color="dark"
+              size="icon"
+              icon={X}
+              iconSize={18}
+              className="p-[6px] h-[32px] w-[32px] text-[#9a9a9a] hover:text-[#1f1f1f]"
+            />
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {activeThreadId && activeThreadParent ? (
+              // ─── THREAD VIEW ─────────────────────────
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div ref={threadScrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-[20px] py-[16px] flex flex-col gap-[16px]">
+                  
+                  {/* Original Message */}
+                  <div className="flex gap-[12px]">
+                    <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden">
+                      <UserAvatar user={{ name: activeThreadParent.user, avatar: activeThreadParent.avatar }} size={36} />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-baseline gap-[8px] mb-[2px]">
+                        <span className="font-bold text-[#1f1f1f] text-[14px]">{activeThreadParent.user}</span>
+                        <span className="text-[10px] text-[#9a9a9a]">{activeThreadParent.time}</span>
+                      </div>
+                      <div className="text-[#333333] text-[14px] leading-[1.46]">
+                        <MessageContent text={activeThreadParent.text} members={members} />
+                        {activeThreadParent.attachments && activeThreadParent.attachments.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-2">
+                            {activeThreadParent.attachments.map((att, i) => (
+                              <div key={i} className="max-w-[260px]">
+                                {att.type?.startsWith('image/') ? (
+                                  <a href={att.url} target="_blank" rel="noopener">
+                                    <img src={att.url} alt={att.name} className="rounded-[8px] border border-[#e9e9e9] max-h-[150px] object-cover hover:opacity-90 transition-opacity" />
+                                  </a>
+                                ) : (
+                                  <a href={att.url} target="_blank" rel="noopener" className="flex items-center gap-2 p-2 rounded-[8px] border border-[#e9e9e9] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+                                    <Paperclip size={14} className="text-[#9a9a9a] shrink-0" />
+                                    <span className="text-[12px] font-medium text-[#1f1f1f] truncate flex-1">{att.name}</span>
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 my-[8px]">
+                    <span className="text-[11px] font-bold text-[#9a9a9a]">{threadMessages.length} відповідей</span>
+                    <div className="flex-1 h-px bg-[#e9e9e9]" />
+                  </div>
+
+                  {/* Replies */}
+                  {threadMessages.map(reply => (
+                    <div key={reply.id} className="flex gap-[12px] group relative">
+                      <div className="w-[36px] h-[36px] rounded-[8px] shrink-0 overflow-hidden">
+                        <UserAvatar user={{ name: reply.user, avatar: reply.avatar }} size={36} />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-baseline gap-[8px] mb-[2px]">
+                          <span className="font-bold text-[#1f1f1f] text-[14px]">{reply.user}</span>
+                          <span className="text-[10px] text-[#9a9a9a]">{reply.time}</span>
+                        </div>
+                        <div className="text-[#333333] text-[14px] leading-[1.46]">
+                          <MessageContent text={reply.text} members={members} />
+                          {reply.attachments && reply.attachments.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-2">
+                              {reply.attachments.map((att, i) => (
+                                <div key={i} className="max-w-[260px]">
+                                  {att.type?.startsWith('image/') ? (
+                                    <a href={att.url} target="_blank" rel="noopener">
+                                      <img src={att.url} alt={att.name} className="rounded-[8px] border border-[#e9e9e9] max-h-[150px] object-cover hover:opacity-90 transition-opacity" />
+                                    </a>
+                                  ) : (
+                                    <a href={att.url} target="_blank" rel="noopener" className="flex items-center gap-2 p-2 rounded-[8px] border border-[#e9e9e9] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+                                      <Paperclip size={14} className="text-[#9a9a9a] shrink-0" />
+                                      <span className="text-[12px] font-medium text-[#1f1f1f] truncate flex-1">{att.name}</span>
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {reply.senderId === myUid && (
+                        <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 bg-white border border-[#e9e9e9] rounded-[6px] shadow-sm flex items-center p-[2px]">
+                          <Button onClick={() => { if(confirm('Видалити відповідь?')) deleteReply(activeThreadId, reply.id); }} style="ghost" color="dark" size="icon" icon={Trash2} iconSize={14} className="p-[4px] h-[22px] w-[22px] text-[#616061] hover:text-[#ef4444]" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                </div>
+
+                {/* Thread Input */}
+                <div className="p-[16px] shrink-0 bg-white border-t border-[#e9e9e9]">
+                  <div className="bg-[#f7f7f7] border border-[#d0d0d0]/60 focus-within:border-[#1f1f1f]/40 transition-all overflow-hidden flex flex-col rounded-[12px]">
+                    {threadAttachments.length > 0 && (
+                       <div className="px-[12px] pt-[8px] flex flex-wrap gap-2">
+                         {threadAttachments.map((att, idx) => (
+                           <div key={idx} className="relative inline-block">
+                             {att.type.startsWith('image/') ? (
+                               <img src={att.url} alt="attachment" className="h-[40px] rounded-[6px] object-cover border border-[#e9e9e9]" />
+                             ) : (
+                               <div className="h-[40px] px-3 flex items-center bg-white rounded-[6px] border border-[#e9e9e9] text-[11px] font-medium text-[#1f1f1f]">
+                                 📎 {att.name}
+                               </div>
+                             )}
+                             <button onClick={() => setThreadAttachments(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white border border-[#e9e9e9] rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm">
+                               <X size={10} />
+                             </button>
+                           </div>
+                         ))}
+                       </div>
+                    )}
+                    <textarea
+                      placeholder="Відповісти..."
+                      value={threadText}
+                      onChange={(e) => setThreadText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleThreadSend();
+                        }
+                      }}
+                      className="w-full min-h-[44px] max-h-[150px] p-[10px] px-[12px] resize-none outline-none text-[14px] text-[#1f1f1f] placeholder-[#9a9a9a] bg-transparent custom-scrollbar"
+                      rows={1}
+                    />
+                    <div className="flex items-center justify-between px-[8px] py-[6px] border-t border-[#ebebeb]">
+                      <div className="flex items-center gap-[2px]">
+                        <input
+                          type="file"
+                          multiple
+                          ref={threadFileInputRef}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (!files.length) return;
+                            const newAtts = files.map(file => ({ file, url: URL.createObjectURL(file), type: file.type, name: file.name, size: file.size }));
+                            setThreadAttachments(prev => [...prev, ...newAtts]);
+                            if (threadFileInputRef.current) threadFileInputRef.current.value = '';
+                          }}
+                          className="hidden"
+                        />
+                        <Button onClick={() => threadFileInputRef.current?.click()} disabled={threadUploading} style="ghost" color="dark" size="icon" icon={Paperclip} iconSize={16} className="p-[6px] h-[28px] w-[28px] text-[#9a9a9a] hover:text-[#1f1f1f]" />
+                      </div>
+                      <Button
+                        onClick={handleThreadSend}
+                        disabled={(!threadText.trim() && threadAttachments.length === 0) || threadUploading}
+                        loading={threadUploading}
+                        style={threadText.trim() || threadAttachments.length > 0 ? 'primary' : 'secondary'}
+                        color="dark"
+                        size="icon"
+                        icon={Send}
+                        iconSize={14}
+                        className="p-[6px] h-[28px] w-[28px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : showChannelInfo && currentChannel ? (
+              // ─── CHANNEL INFO VIEW ─────────────────────────
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-[20px] py-[20px] flex flex-col gap-[24px]">
+                <div>
+                  <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Опис</h3>
+                  <div className="bg-white p-[12px] rounded-[12px] border border-[#e9e9e9]">
+                    <p className="text-[13px] text-[#1f1f1f]">
+                      {currentChannel.description || 'Немає опису. Натисніть "i" у заголовку каналу, щоб додати.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Закріплені ({messages.filter(m => m.isPinned).length})</h3>
+                  <div className="flex flex-col gap-[8px]">
+                    {messages.filter(m => m.isPinned).length === 0 ? (
+                      <p className="text-[12px] text-[#9a9a9a]">Немає закріплених повідомлень.</p>
+                    ) : (
+                      messages.filter(m => m.isPinned).map(m => (
+                        <div key={m.id} className="bg-white p-[10px] rounded-[12px] border border-[#e9e9e9] flex flex-col gap-[4px] cursor-pointer hover:border-[#cfcfcf] transition-colors" onClick={() => {
+                          // Could scroll to message
+                        }}>
+                          <div className="flex items-center gap-[6px]">
+                            <UserAvatar user={{ name: m.user, avatar: m.avatar }} size={16} />
+                            <span className="text-[12px] font-bold text-[#1f1f1f]">{m.user}</span>
+                          </div>
+                          <p className="text-[12px] text-[#333333] line-clamp-2">
+                            {m.text || 'Долучено файл'}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase mb-[8px]">Учасники команди ({members.length})</h3>
+                  <div className="bg-white rounded-[12px] border border-[#e9e9e9] overflow-hidden">
+                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col">
+                      {members.map(m => (
+                        <div key={m.id || m.uid} className="flex items-center gap-[10px] p-[10px] border-b border-[#f0f0f0] last:border-0 hover:bg-[#f7f7f7] transition-colors">
+                          <div className="w-[28px] h-[28px] rounded-full overflow-hidden shrink-0">
+                            <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={28} />
+                          </div>
+                          <span className="text-[13px] font-medium text-[#1f1f1f] truncate">{m.name || m.email}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

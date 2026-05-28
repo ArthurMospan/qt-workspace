@@ -1,40 +1,34 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-
 export function useWeeklyTimeLogs(weekStartDate) {
-  const { activeOrgId, currentUser } = useAppContext();
+  const {
+    activeOrgId,
+    currentUser
+  } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [issuesMap, setIssuesMap] = useState({});
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!activeOrgId || !currentUser || !weekStartDate) {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
       return;
     }
-
     setLoading(true);
-
     const start = new Date(weekStartDate);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 7);
-
-    const q = query(
-      collection(db, 'timeLogs'),
-      where('organizationId', '==', activeOrgId),
-      where('userId', '==', currentUser.id || currentUser.uid),
-      where('loggedAt', '>=', Timestamp.fromDate(start)),
-      where('loggedAt', '<', Timestamp.fromDate(end))
-    );
-
+    const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('userId', '==', currentUser.id || currentUser.uid), where('loggedAt', '>=', Timestamp.fromDate(start)), where('loggedAt', '<', Timestamp.fromDate(end)));
     getDocs(q).then(async snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const data = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       setLogs(data);
-
       const issueIds = [...new Set(data.map(d => d.issueId).filter(Boolean))];
       if (issueIds.length > 0) {
         // Since 'in' query has 10 item limit, we batch it or just fetch them one by one if not too many
@@ -52,14 +46,15 @@ export function useWeeklyTimeLogs(weekStartDate) {
       } else {
         setIssuesMap({});
       }
-
       setLoading(false);
     }).catch(err => {
       console.error('Error fetching time logs', err);
       setLoading(false);
     });
-
   }, [activeOrgId, currentUser, weekStartDate]);
-
-  return { logs, issuesMap, loading };
+  return {
+    logs,
+    issuesMap,
+    loading
+  };
 }
