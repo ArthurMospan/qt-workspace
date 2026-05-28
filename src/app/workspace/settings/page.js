@@ -13,6 +13,14 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Forms/Textarea';
+import { Select } from '@/components/ui/Select';
+import ToggleSwitch from '@/components/ui/Forms/ToggleSwitch';
+import { Alert } from '@/components/ui/Feedback/Alert';
+import Card from '@/components/ui/Layout/Card';
+import { LoadingSpinner } from '@/components/ui/Feedback/LoadingSpinner';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
@@ -57,17 +65,7 @@ const NAV = [
 ];
 
 // ── Primitives ───────────────────────────────────────────────────────
-
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      className={`relative w-[40px] h-[22px] rounded-full transition-colors ${value ? 'bg-[#1f1f1f]' : 'bg-[#e0e0e0]'}`}
-    >
-      <span className={`absolute top-[3px] w-[16px] h-[16px] bg-white rounded-full shadow-sm transition-all ${value ? 'left-[21px]' : 'left-[3px]'}`} />
-    </button>
-  );
-}
+// Toggle removed - using ToggleSwitch from UI Kit
 
 function Row({ label, desc, children, danger = false, topBorder = false }) {
   return (
@@ -93,38 +91,7 @@ function Section({ title, desc, children }) {
   );
 }
 
-function Card({ children, className = '' }) {
-  return (
-    <div className={`bg-[#f7f7f7] rounded-[24px] p-6 mb-5 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-function SaveBtn({ onClick, loading, label = 'Зберегти' }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      className="flex items-center gap-2 px-5 py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-medium hover:bg-[#303030] transition-colors disabled:opacity-50"
-    >
-      {loading && <RefreshCw size={13} className="animate-spin" />}
-      {label}
-    </button>
-  );
-}
-
-function Input({ value, onChange, placeholder, type = 'text', className = '' }) {
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px] px-3 py-[7px] outline-none focus:border-[#1f1f1f] transition-colors ${className}`}
-    />
-  );
-}
+// Note: Card component replaced with UI Kit Card from @/components/ui/Layout/Card
 
 // ── WorkflowItem ─────────────────────────────────────────────────────
 
@@ -166,13 +133,15 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
 
       {/* Label */}
       {editing ? (
-        <input
-          autoFocus
-          value={label}
-          onChange={e => setLabel(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setEditing(false); setLabel(item.label); } }}
-          className="flex-1 text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[6px] px-2 py-[4px] outline-none focus:border-[#1f1f1f]"
-        />
+        <div className="flex-1">
+          <Input
+            autoFocus
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setEditing(false); setLabel(item.label); } }}
+            className="h-[28px] text-[12px]"
+          />
+        </div>
       ) : (
         <span className="flex-1 text-[13px] text-[#1f1f1f]">{item.label}</span>
       )}
@@ -189,24 +158,26 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
       <div className="flex items-center gap-1 shrink-0">
         {editing ? (
           <>
-            <button onClick={save} className="p-[5px] text-[#10b981] hover:bg-green-50 rounded-[5px]"><Check size={12} /></button>
-            <button onClick={() => { 
-              if (item.isNew) { onDelete(item.id); }
-              else { setEditing(false); setLabel(item.label); setColor(item.color); }
-            }}
-              className="p-[5px] text-[#9a9a9a] hover:bg-[#f7f7f7] rounded-[5px]"><X size={12} /></button>
+            <Button onClick={save} style="ghost" color="green" size="icon" icon={Check} iconSize={12} />
+            <Button
+              onClick={() => {
+                if (item.isNew) { onDelete(item.id); }
+                else { setEditing(false); setLabel(item.label); setColor(item.color); }
+              }}
+              style="ghost" color="gray" size="icon" icon={X} iconSize={12}
+            />
           </>
         ) : (
           <>
-            <button onClick={() => setEditing(true)}
-              className="p-[5px] text-[#cfcfcf] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-[5px] opacity-0 group-hover:opacity-100 transition-all">
-              <Edit2 size={11} />
-            </button>
+            <Button onClick={() => setEditing(true)}
+              style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
+              className="opacity-0 group-hover:opacity-100"
+            />
             {canDelete && (
-              <button onClick={() => onDelete(item.id)}
-                className="p-[5px] text-[#cfcfcf] hover:text-red-500 hover:bg-red-50 rounded-[5px] opacity-0 group-hover:opacity-100 transition-all">
-                <Trash2 size={11} />
-              </button>
+              <Button onClick={() => onDelete(item.id)}
+                style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
+                className="opacity-0 group-hover:opacity-100"
+              />
             )}
           </>
         )}
@@ -447,9 +418,9 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'profile': return (
         <Section title="Профіль" desc="Ваше ім'я відображається у задачах та коментарях">
-          <Card>
+          <Card variant="white" padding="lg">
             <Row label="Ім'я" desc="Показується в задачах і чаті">
-              <Input value={displayName} onChange={setDisplayName} className="w-[200px]" />
+              <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-[200px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-[#9a9a9a]">{currentUser?.email}</span>
@@ -460,14 +431,16 @@ export default function SettingsPage() {
               </span>
             </Row>
           </Card>
-          <SaveBtn onClick={saveProfile} loading={profileSaving} label="Зберегти профіль" />
+          <Button onClick={saveProfile} loading={profileSaving} style="primary" color="blue" size="lg">
+            {profileSaving ? 'Збереження...' : 'Зберегти профіль'}
+          </Button>
         </Section>
       );
 
       // ──────────────────────────────────────────────────────────────
       case 'notifications': return (
         <Section title="Сповіщення" desc="Налаштуй які події надсилають тобі сповіщення">
-          <Card>
+          <Card variant="white" padding="lg">
             {[
               { key: 'assigned',      label: 'Задачу призначено мені',   desc: 'Хтось призначив задачу на тебе' },
               { key: 'commented',     label: 'Новий коментар',           desc: 'В задачі де ти виконавець або автор' },
@@ -476,54 +449,58 @@ export default function SettingsPage() {
               { key: 'mentioned',     label: 'Згадування в коментарях',  desc: 'Хтось написав @ваше-ім\'я' },
             ].map(n => (
               <Row key={n.key} label={n.label} desc={n.desc}>
-                <Toggle value={notif[n.key]} onChange={v => setNotif(p => ({ ...p, [n.key]: v }))} />
+                <ToggleSwitch checked={notif[n.key]} onChange={v => setNotif(p => ({ ...p, [n.key]: v }))} size="sm" />
               </Row>
             ))}
           </Card>
-          <Card>
+          <Card variant="white" padding="lg">
             <Row label="Push-сповіщення у браузері" desc="Отримувати сповіщення навіть коли вкладка закрита">
-              <button
+              <Button
                 onClick={async () => {
                   const result = await Notification.requestPermission();
                   showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
                 }}
-                className="text-[12px] font-medium text-[#1f1f1f] underline underline-offset-2 hover:text-[#4a4a4a]"
+                style="secondary" color="blue" size="md"
               >
                 {typeof window !== 'undefined' && window.Notification?.permission === 'granted'
                   ? 'Увімкнено'
                   : 'Увімкнути'}
-              </button>
+              </Button>
             </Row>
           </Card>
-          <SaveBtn onClick={saveNotifications} loading={notifSaving} />
+          <Button onClick={saveNotifications} loading={notifSaving} style="primary" color="blue" size="lg">
+            {notifSaving ? 'Збереження...' : 'Зберегти'}
+          </Button>
         </Section>
       );
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': return (
         <Section title="Воркспейс" desc="Загальні налаштування вашої організації">
-          <Card>
+          <Card variant="white" padding="lg">
             <Row label="Назва організації" desc="Видима всім у вашому воркспейсі">
-              <Input value={orgName} onChange={setOrgName} className="w-[200px]" />
+              <Input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-[200px]" />
             </Row>
             <Row label="URL Логотипу" desc="Вставте посилання на зображення для вашої організації">
-              <Input value={orgLogo} onChange={setOrgLogo} className="w-[300px]" placeholder="https://example.com/logo.png" />
+              <Input value={orgLogo} onChange={e => setOrgLogo(e.target.value)} className="w-[300px]" placeholder="https://example.com/logo.png" />
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
                 <code className="text-[12px] bg-[#f7f7f7] border border-[#e9e9e9] px-2 py-1 rounded-[6px] text-[#9a9a9a] font-mono">
                   {activeOrgId || 'quickteam'}
                 </code>
-                <button
+                <Button
                   onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
-                  className="text-[#cfcfcf] hover:text-[#1f1f1f] transition-colors"
-                >
-                  <Copy size={12} />
-                </button>
+                  style="ghost" color="blue" size="sm"
+                  icon={Copy}
+                  iconSize={12}
+                />
               </div>
             </Row>
           </Card>
-          <SaveBtn onClick={saveWorkspace} loading={workspaceSaving} />
+          <Button onClick={saveWorkspace} loading={workspaceSaving} style="primary" color="blue" size="lg">
+            {workspaceSaving ? 'Збереження...' : 'Зберегти'}
+          </Button>
         </Section>
       );
 
@@ -532,7 +509,7 @@ export default function SettingsPage() {
         <Section title="Команда" desc={`${members.length} учасник${members.length === 1 ? '' : 'ів'} у воркспейсі`}>
 
           {/* Members list */}
-          <Card>
+          <Card variant="white" padding="lg">
             {members.length === 0 && (
               <div className="py-8 text-center text-[13px] text-[#cfcfcf]">Немає учасників</div>
             )}
@@ -568,13 +545,13 @@ export default function SettingsPage() {
                     />
                   </div>
                   {isAdmin && !isMe && m.role !== 'owner' && (
-                    <button
+                    <Button
                       onClick={() => handleRemoveMember(uid)}
-                      className="p-[5px] text-[#cfcfcf] hover:text-red-500 hover:bg-red-50 rounded-[6px] transition-all"
+                      style="ghost" color="red" size="sm"
+                      icon={X}
+                      iconSize={13}
                       title="Видалити"
-                    >
-                      <X size={13} />
-                    </button>
+                    />
                   )}
                 </div>
               );
@@ -583,16 +560,16 @@ export default function SettingsPage() {
 
           {/* Invite */}
           {isAdmin && (
-            <div className="mb-3">
-              <p className="text-[12px] font-medium text-[#1f1f1f] mb-2">Запросити учасника</p>
+            <Card variant="white" padding="lg" className="mb-3">
+              <p className="text-[12px] font-medium text-[#1f1f1f] mb-3">Запросити учасника</p>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="email"
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleInvite(); }}
                   placeholder="email@company.com"
-                  className="flex-1 text-[13px] bg-white border border-[#e9e9e9] rounded-[10px] px-3 py-[8px] outline-none focus:border-[#1f1f1f] transition-colors"
+                  className="flex-1 h-[36px]"
                 />
                 <div className="w-[100px]">
                   <Select
@@ -604,20 +581,22 @@ export default function SettingsPage() {
                     ]}
                   />
                 </div>
-                <button
+                <Button
                   onClick={handleInvite}
                   disabled={inviting || !inviteEmail.trim()}
-                  className="flex items-center gap-2 px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-medium hover:bg-[#303030] transition-colors disabled:opacity-50 shrink-0"
+                  loading={inviting}
+                  style="primary" color="blue" size="lg"
+                  icon={Mail}
+                  iconSize={12}
                 >
-                  {inviting ? <RefreshCw size={12} className="animate-spin" /> : <Mail size={12} />}
                   Запросити
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Roles guide */}
-          <Card className="bg-[#fafafa]">
+          <Card variant="gray" padding="lg">
             <div className="py-[6px]">
               <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-3">Ролі та доступ</p>
               {[
@@ -751,13 +730,13 @@ export default function SettingsPage() {
 
               <div className="px-6 py-4 bg-[#fcfcfc] border-t border-[#e9e9e9] flex justify-end">
                 {isPro ? (
-                  <button onClick={() => handleUpgradePlan('free')} disabled={upgrading} className="px-5 py-2 bg-white border border-[#e9e9e9] text-[#1f1f1f] rounded-[10px] text-[13px] font-bold hover:bg-[#f7f7f7] transition-all disabled:opacity-50">
+                  <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" color="gray" size="lg">
                     {upgrading ? 'Завантаження...' : 'Скасувати підписку'}
-                  </button>
+                  </Button>
                 ) : (
-                  <button onClick={() => handleUpgradePlan('pro')} disabled={upgrading} className="px-5 py-2 bg-[#6366f1] text-white rounded-[10px] text-[13px] font-bold shadow-md hover:bg-[#4f46e5] hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50">
+                  <Button onClick={() => handleUpgradePlan('pro')} disabled={upgrading} loading={upgrading} style="primary" color="blue" size="lg">
                     {upgrading ? 'Оновлення...' : 'Оновити до PRO'}
-                  </button>
+                  </Button>
                 )}
               </div>
             </Card>
@@ -771,7 +750,7 @@ export default function SettingsPage() {
 
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+              <LoadingSpinner size="md" />
             </div>
           ) : (
             <>
@@ -785,12 +764,14 @@ export default function SettingsPage() {
                       canDelete={i > 0 && i < statuses.length - 1}
                     />
                   ))}
-                  <button
+                  <Button
                     onClick={() => setStatuses(p => [...p, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', isNew: true }])}
-                    className="flex items-center gap-2 py-3 text-[12px] font-medium text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+                    style="ghost" color="gray" size="md"
+                    icon={Plus} iconSize={13}
+                    className="w-full justify-start py-3"
                   >
-                    <Plus size={13} /> Додати статус
-                  </button>
+                    Додати статус
+                  </Button>
                 </Card>
               </div>
 
@@ -801,12 +782,14 @@ export default function SettingsPage() {
                   {types.map(t => (
                     <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} />
                   ))}
-                  <button
+                  <Button
                     onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
-                    className="flex items-center gap-2 py-3 text-[12px] font-medium text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+                    style="ghost" color="gray" size="md"
+                    icon={Plus} iconSize={13}
+                    className="w-full justify-start py-3"
                   >
-                    <Plus size={13} /> Додати тип
-                  </button>
+                    Додати тип
+                  </Button>
                 </Card>
               </div>
 
@@ -830,18 +813,22 @@ export default function SettingsPage() {
                   {labels.map(l => (
                     <WorkflowItem key={l.id} item={l} onSave={lbA.onSave} onDelete={lbA.onDelete} />
                   ))}
-                  <button
+                  <Button
                     onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#3b82f6', isNew: true }])}
-                    className="flex items-center gap-2 py-3 text-[12px] font-medium text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+                    style="ghost" color="gray" size="md"
+                    icon={Plus} iconSize={13}
+                    className="w-full justify-start py-3"
                   >
-                    <Plus size={13} /> Додати мітку
-                  </button>
+                    Додати мітку
+                  </Button>
                 </Card>
               </div>
 
               <div className="flex items-center gap-3">
-                <SaveBtn onClick={saveWorkflow} loading={wfSaving} label="Зберегти workflow" />
-                <button
+                <Button onClick={saveWorkflow} loading={wfSaving} style="primary" color="blue" size="lg">
+                  {wfSaving ? 'Збереження...' : 'Зберегти workflow'}
+                </Button>
+                <Button
                   onClick={() => {
                     setStatuses(DEFAULT_STATUSES);
                     setTypes(DEFAULT_TYPES);
@@ -849,10 +836,10 @@ export default function SettingsPage() {
                     setLabels(DEFAULT_LABELS);
                     showToast('Скинуто до стандартних значень');
                   }}
-                  className="text-[12px] text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+                  style="ghost" color="gray" size="md"
                 >
                   Скинути до стандартних
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -862,25 +849,27 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'danger': return (
         <Section title="Небезпечна зона" desc="Незворотні дії. Виконуйте обережно.">
-          <Card>
+          <Card variant="white" padding="lg">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
-              <button
+              <Button
                 onClick={() => { if (confirm('Вийти з акаунта?')) signOut(); }}
-                className="flex items-center gap-2 text-[12px] font-medium text-[#1f1f1f] hover:text-red-500 transition-colors"
+                style="ghost" color="red" size="md"
+                icon={LogOut} iconSize={13}
               >
-                <LogOut size={13} /> Вийти
-              </button>
+                Вийти
+              </Button>
             </Row>
             <Row label="Експортувати дані" desc="Завантажити всі задачі та файли в ZIP-архів">
-              <button
+              <Button
                 onClick={() => showToast('Функція в розробці')}
-                className="flex items-center gap-2 text-[12px] font-medium text-[#1f1f1f] hover:text-[#4a4a4a] transition-colors"
+                style="ghost" color="gray" size="md"
+                icon={Download} iconSize={13}
               >
-                <Download size={13} /> Експортувати
-              </button>
+                Експортувати
+              </Button>
             </Row>
             <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень" danger>
-              <button
+              <Button
                 onClick={async () => {
                   if (!confirm('Скинути всі workflow налаштування?')) return;
                   setStatuses(DEFAULT_STATUSES);
@@ -889,22 +878,24 @@ export default function SettingsPage() {
                   setLabels(DEFAULT_LABELS);
                   await saveWorkflow();
                 }}
-                className="flex items-center gap-2 text-[12px] font-medium text-red-500 hover:text-red-700 transition-colors"
+                style="ghost" color="red" size="md"
+                icon={RefreshCw} iconSize={13}
               >
-                <RefreshCw size={13} /> Скинути
-              </button>
+                Скинути
+              </Button>
             </Row>
             {isOwner && (
               <Row label="Видалити воркспейс" desc="Видалить усі проєкти, задачі та дані команди — незворотно" danger>
-                <button
+                <Button
                   onClick={() => {
                     const typed = prompt('Введіть DELETE для підтвердження');
                     if (typed === 'DELETE') showToast('Функція недоступна в demo-режимі', 'error');
                   }}
-                  className="flex items-center gap-2 text-[12px] font-medium text-red-600 bg-red-50 px-3 py-[5px] rounded-[10px] hover:bg-red-100 transition-colors"
+                  style="primary" color="red" size="md"
+                  icon={Trash2} iconSize={12}
                 >
-                  <Trash2 size={12} /> Видалити воркспейс
-                </button>
+                  Видалити воркспейс
+                </Button>
               </Row>
             )}
           </Card>
@@ -927,18 +918,20 @@ export default function SettingsPage() {
           Ви впевнені? Якщо ви відключите інтеграцію, ви більше не зможете інтегрувати проєкти з клієнтським порталом. Ваші клієнти втратять доступ до оновлень у реальному часі.
         </p>
         <div className="flex gap-3">
-          <button
+          <Button
             onClick={() => setShowDisableConfirm(false)}
-            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-bold text-[#1f1f1f] bg-[#f7f7f7] hover:bg-[#e9e9e9] transition-colors"
+            style="secondary" color="gray" size="lg"
+            className="flex-1"
           >
             Скасувати
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => confirmSaveIntegration(false)}
-            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+            style="primary" color="red" size="lg"
+            className="flex-1"
           >
             Відключити
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -962,20 +955,17 @@ export default function SettingsPage() {
                 const Icon   = nav.icon;
                 const active = activeSection === nav.id;
                 return (
-                  <button
+                  <Button
                     key={nav.id}
                     onClick={() => setActiveSection(nav.id)}
-                    className={`flex items-center gap-[10px] w-full px-3 py-[8px] rounded-[10px] text-[13px] font-medium transition-all text-left ${
-                      active
-                        ? 'bg-[#f7f7f7] text-[#1f1f1f]'
-                        : nav.danger
-                          ? 'text-red-500 hover:bg-red-50'
-                          : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7]'
-                    }`}
+                    style={active ? 'secondary' : nav.danger ? 'ghost' : 'ghost'}
+                    color={nav.danger ? 'red' : 'gray'}
+                    size="md"
+                    icon={Icon} iconSize={15}
+                    className={`w-full justify-start ${active ? 'bg-[#f7f7f7] text-[#1f1f1f]' : ''}`}
                   >
-                    <Icon size={15} strokeWidth={2} className={active ? 'text-[#1f1f1f]' : nav.danger ? 'text-red-400' : 'text-[#cfcfcf]'} />
                     {nav.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
