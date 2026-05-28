@@ -6,6 +6,7 @@ import { useAppContext }  from '@/lib/context/AppContext';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
 import PageHeader from '@/components/workspace/PageHeader';
+import { Input, Textarea, Button, Alert, LoadingSpinner, Card, EmptyState } from '@/components/ui';
 import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send, LayoutGrid, Users, BarChart2 } from 'lucide-react';
 
 const TABS = (projectId) => [
@@ -89,20 +90,22 @@ export default function PortalPage({ params }) {
 
           {stagesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+              <LoadingSpinner size="md" />
             </div>
           ) : materials.length === 0 ? (
-            <div className="bg-white rounded-[14px] border border-[#e9e9e9] py-12 text-center">
-              <ImageIcon size={28} className="text-[#e9e9e9] mx-auto mb-3" />
-              <p className="text-[13px] text-[#cfcfcf]">Матеріалів поки немає</p>
-            </div>
+            <Card variant="white" padding="lg">
+              <EmptyState
+                icon={ImageIcon}
+                title="Матеріалів поки немає"
+              />
+            </Card>
           ) : (
             <div className="flex flex-col gap-3">
               {stages.map(stage => {
                 const stageMats = stage.materials || [];
                 if (stageMats.length === 0) return null;
                 return (
-                  <div key={stage.id} className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+                  <Card key={stage.id} variant="white" padding="none" className="overflow-hidden">
                     <div className="px-5 py-3 border-b border-[#f0f0f0] flex items-center gap-2">
                       <FileCheck size={13} className="text-[#9a9a9a]" />
                       <p className="text-[12px] font-bold text-[#1f1f1f]">{stage.title || stage.name || 'Без назви'}</p>
@@ -143,7 +146,7 @@ export default function PortalPage({ params }) {
                         </div>
                       );
                     })}
-                  </div>
+                  </Card>
                 );
               })}
             </div>
@@ -151,7 +154,7 @@ export default function PortalPage({ params }) {
         </div>
 
         {/* ── Chat ──────────────────────────────────────────────────── */}
-        <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden sticky top-0">
+        <Card variant="white" padding="none" className="overflow-hidden sticky top-0">
           <div className="px-5 py-4 border-b border-[#f0f0f0] flex items-center gap-2">
             <MessageSquare size={14} className="text-[#9a9a9a]" />
             <h3 className="text-[13px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
@@ -160,12 +163,14 @@ export default function PortalPage({ params }) {
           <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-[#f7f7f7]">
             {chatLoading ? (
               <div className="flex items-center justify-center py-10">
-                <div className="w-5 h-5 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+                <LoadingSpinner size="sm" />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center py-10">
-                <MessageSquare size={24} className="text-[#e9e9e9] mb-2" />
-                <p className="text-[12px] text-[#cfcfcf]">Повідомлень поки немає</p>
+                <EmptyState
+                  icon={MessageSquare}
+                  description="Повідомлень поки немає"
+                />
               </div>
             ) : (
               messages.map((msg, i) => (
@@ -182,23 +187,26 @@ export default function PortalPage({ params }) {
 
           {/* Reply input */}
           <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f7f7f7] flex gap-2">
-            <input
+            <Input
               type="text"
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Відповісти клієнту..."
               disabled={sending}
-              className="flex-1 text-[12px] bg-white rounded-[8px] border border-[#e9e9e9] px-3 py-[7px] outline-none focus:border-[#1f1f1f] transition-colors"
+              className="flex-1"
             />
-            <button
+            <Button
               onClick={handleSend}
               disabled={!replyText.trim() || sending}
-              className="p-[8px] bg-[#1f1f1f] text-white rounded-[8px] hover:bg-[#303030] disabled:opacity-40 transition-all flex items-center justify-center">
+              style="primary"
+              color="dark"
+              size="icon"
+            >
               <Send size={13} />
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
       </div>
     </div>
