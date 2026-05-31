@@ -12,7 +12,7 @@ import { db } from '@/lib/firebase';
 const AppContext = createContext(null);
 
 // ─── Inner provider (has access to OrgContext) ────────────────────────────
-function AppProviderInner({ user, authLoading, signInWithGoogle, signOut, children }) {
+function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail, signOut, children }) {
   const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, noOrg, switchOrg, setActiveOrgId } = useOrg();
   const { projects, loading: projectsLoading } = useProjects(user?.id, activeOrgId);
 
@@ -63,6 +63,7 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signOut, childr
     projectsLoading,
     orgLoading,
     signInWithGoogle,
+    signInWithEmail,
     signOut,
     currentUser: user,
     projects,
@@ -81,7 +82,7 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signOut, childr
 
 // ─── Outer provider: sets up auth, wraps OrgProvider ─────────────────────
 export function AppProvider({ children }) {
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading: authLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
 
   return (
     <OrgProvider user={user}>
@@ -89,6 +90,7 @@ export function AppProvider({ children }) {
         user={user}
         authLoading={authLoading}
         signInWithGoogle={signInWithGoogle}
+        signInWithEmail={signInWithEmail}
         signOut={signOut}
       >
         {children}
@@ -106,6 +108,7 @@ export const useAppContext = () => {
       projectsLoading: true,
       orgLoading: true,
       signInWithGoogle: async () => {},
+      signInWithEmail: async () => {},
       signOut: async () => {},
       currentUser: null,
       projects: [],

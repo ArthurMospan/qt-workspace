@@ -11,12 +11,35 @@ import AuthLayout from '@/components/AuthLayout';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithGoogle, currentUser, authLoading } = useAppContext();
+  const { signInWithGoogle, signInWithEmail, currentUser, authLoading } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleDemoSignIn = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithEmail('demo@quickteam.me', 'demo123456');
+      sessionStorage.setItem('just_logged_in', 'true');
+      router.replace('/workspace');
+    } catch (err) {
+      console.error('[Demo Login] Error:', err);
+      setError('Помилка демо-входу. Будь ласка, переконайтеся, що ввімкнено Email/Password у консолі Firebase.');
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!authLoading && currentUser) router.replace('/workspace');
+    if (!authLoading && currentUser) {
+      router.replace('/workspace');
+      return;
+    }
+    if (!authLoading && !currentUser && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('demo') === '1' || params.get('auth') === 'demo') {
+        handleDemoSignIn();
+      }
+    }
   }, [currentUser, authLoading, router]);
 
   const handleSignIn = async () => {
@@ -58,7 +81,7 @@ export default function LoginPage() {
         <button
           onClick={handleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white text-[#1f1f1f] py-[14px] px-6 rounded-[16px] text-[15px] font-bold hover:bg-[#e9e9e9] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl"
+          className="w-full flex items-center justify-center gap-3 bg-white text-[#1f1f1f] py-[14px] px-6 rounded-[16px] text-[15px] font-bold hover:bg-[#e9e9e9] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl mb-3"
         >
           {loading ? (
             <div className="w-[20px] h-[20px] border-[2px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
@@ -73,6 +96,17 @@ export default function LoginPage() {
               Увійти через Google
             </>
           )}
+        </button>
+
+        {/* Demo Sign-in Button */}
+        <button
+          onClick={handleDemoSignIn}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-white/10 text-white border border-white/20 py-[12px] px-6 rounded-[16px] text-[14px] font-semibold active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all"
+        >
+          {loading ? (
+            <div className="w-[18px] h-[18px] border-[2px] border-white/20 border-t-white rounded-full animate-spin" />
+          ) : 'Увійти як Демо-користувач'}
         </button>
 
         {error && (
