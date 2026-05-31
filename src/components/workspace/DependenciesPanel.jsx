@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { Link2, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useSearch } from '@/lib/hooks/useSearch';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 const LINK_TYPES = [
   { value: 'blocks', label: '🚫 блокує', color: '#dc2626' },
@@ -66,13 +68,7 @@ export default function DependenciesPanel({
           <Link2 size={12} className="inline mr-[4px]" />
           Залежності
         </h3>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="p-[4px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[6px] transition-colors"
-          title="Додати залежність"
-        >
-          <Plus size={14} />
-        </button>
+        <Button style="secondary" size="icon" icon={Plus} onClick={() => setShowAddForm(!showAddForm)} title="Додати залежність" />
       </div>
 
       {/* Blocker Warning */}
@@ -87,7 +83,7 @@ export default function DependenciesPanel({
 
       {/* Add Link Form */}
       {showAddForm && (
-        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f7f7f7] rounded-[12px] border border-[#e9e9e9]">
+        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f4f4f5] rounded-[12px] border border-[#e9e9e9]">
           <div>
             <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
               Тип зв'язку
@@ -109,12 +105,10 @@ export default function DependenciesPanel({
             <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
               Пошук задачи
             </label>
-            <input
-              type="text"
+            <Input
               value={searchQuery}
               onChange={e => handleSearchChange(e.target.value)}
               placeholder="ID або назва..."
-              className="w-full px-[8px] py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[12px] text-[#1f1f1f] focus:border-[#1f1f1f]"
             />
           </div>
 
@@ -141,18 +135,12 @@ export default function DependenciesPanel({
           )}
 
           <div className="flex gap-[8px]">
-            <button
-              onClick={() => { setShowAddForm(false); setSearchQuery(''); }}
-              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-[#9a9a9a] bg-white border border-[#e9e9e9] rounded-[8px] hover:bg-[#f0f0f0] transition-colors"
-            >
+            <Button style="secondary" size="md" onClick={() => { setShowAddForm(false); setSearchQuery(''); }} className="flex-1">
               Скасувати
-            </button>
-            <button
-              disabled={!searchQuery}
-              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-white bg-[#1f1f1f] rounded-[8px] hover:bg-[#303030] disabled:opacity-40 transition-colors"
-            >
+            </Button>
+            <Button style="primary" size="md" disabled={!searchQuery} className="flex-1">
               Додати
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -171,7 +159,7 @@ export default function DependenciesPanel({
             return (
               <div
                 key={link.id}
-                className="flex items-center gap-[8px] p-[8px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px]"
+                className="flex items-center gap-[8px] p-[8px] bg-[#f4f4f5] border border-[#e9e9e9] rounded-[8px]"
               >
                 <span
                   className="text-[10px] font-bold px-[6px] py-[2px] rounded-[6px] shrink-0 whitespace-nowrap"
@@ -193,13 +181,7 @@ export default function DependenciesPanel({
                   <p className="text-[10px] text-[#cfcfcf]">Задачу видалено</p>
                 )}
 
-                <button
-                  onClick={() => onRemoveLink(link.id)}
-                  className="p-[4px] text-[#cfcfcf] hover:text-red-500 transition-colors shrink-0"
-                  title="Видалити"
-                >
-                  <Trash2 size={12} />
-                </button>
+                <Button style="secondary" color="red" size="icon" icon={Trash2} onClick={() => onRemoveLink(link.id)} title="Видалити" />
               </div>
             );
           })}

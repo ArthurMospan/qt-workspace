@@ -27,8 +27,8 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
             { id: 'materials', label: 'Матеріали',     icon: ImageIcon },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)}
-              className={`flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold transition-all ${
-                tab === id ? 'bg-[#1f1f1f] text-white' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7]'
+              className={`flex items-center gap-[5px] px-3 py-[5px] rounded-[8px] text-[11px] font-semibold transition-all ${
+                tab === id ? 'bg-[#1f1f1f] text-white' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5]'
               }`}>
               <Icon size={11} /> {label}
             </button>
@@ -73,7 +73,7 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
                     <span className="text-[9px] text-[#cfcfcf]">{dateStr} {time}</span>
                   </div>
                   {msg.text && (
-                    <p className="text-[12px] text-[#1f1f1f] bg-[#f7f7f7] rounded-[8px] px-2 py-1 leading-relaxed break-words">
+                    <p className="text-[12px] text-[#1f1f1f] bg-[#f4f4f5] rounded-[8px] px-2 py-1 leading-relaxed break-words">
                       {msg.text}
                     </p>
                   )}
@@ -107,7 +107,7 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
                   <img
                     src={m.url || m.imageUrl || m.fileUrl}
                     alt={m.name || m.title || 'Матеріал'}
-                    className="w-full h-[120px] object-cover bg-[#f7f7f7]"
+                    className="w-full h-[120px] object-cover bg-[#f4f4f5]"
                     onError={e => { e.target.style.display='none'; }}
                   />
                 )}

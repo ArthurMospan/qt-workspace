@@ -6,13 +6,18 @@ import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import Toast from '@/components/Toast';
+import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
+import { useState } from 'react';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
-  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut } = useAppContext();
+  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut, allOrgs } = useAppContext();
+  const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
 
   const pathname = usePathname();
   const isChat = pathname?.startsWith('/workspace/chat');
+  const isSettings = pathname?.startsWith('/workspace/settings');
+  const hideHeader = isSettings;
 
   useEffect(() => {
     if (!authLoading && !currentUser) router.replace('/login');
@@ -36,10 +41,26 @@ export default function WorkspaceLayout({ children }) {
     }
   }, [noOrg, orgLoading, authLoading, router]);
 
+  // 4. Intercept for full-screen Org Selector
+  useEffect(() => {
+    if (authLoading || orgLoading || !currentUser || noOrg) return;
+    
+    if (allOrgs?.length > 1) {
+      const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
+      if (justLoggedIn) {
+        setNeedsOrgSelection(true);
+      } else {
+        setNeedsOrgSelection(false);
+      }
+    } else {
+      setNeedsOrgSelection(false);
+    }
+  }, [authLoading, orgLoading, currentUser, noOrg, allOrgs]);
+
   // 1. Auth loading
   if (authLoading || orgLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-white">
+      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
         <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
@@ -51,7 +72,7 @@ export default function WorkspaceLayout({ children }) {
   // 3. Authenticated but not in any org → redirect immediately to onboarding
   if (noOrg) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-white">
+      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
         <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
@@ -62,7 +83,7 @@ export default function WorkspaceLayout({ children }) {
   const isClientOnly = orgRole === 'client';
   if (isClientOnly) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#f7f7f7] p-8 text-center">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#f4f4f5] p-8 text-center">
         <div className="w-[64px] h-[64px] bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </div>
@@ -78,6 +99,11 @@ export default function WorkspaceLayout({ children }) {
     );
   }
 
+  // 5. Needs org selection (Full screen Windows style login)
+  if (needsOrgSelection) {
+    return <OrgSwitcherScreen />; // No onClose provided, meaning they MUST select an org or create one
+  }
+
   return (
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel */}
@@ -87,11 +113,11 @@ export default function WorkspaceLayout({ children }) {
         </div>
       </div>
 
-      {/* Right column: header + content floating panel */}
+      {/* Right column: absolute header + content floating panel */}
       <div className="flex flex-col flex-1 overflow-hidden w-full p-[12px] pl-[6px]">
-        <div className="flex flex-col flex-1 bg-white rounded-[24px] overflow-hidden border border-[#f0f0f0] shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-          {!isChat && (
-            <div className="print:hidden">
+        <div className="flex flex-col flex-1 bg-white rounded-[24px] overflow-hidden relative">
+          {!hideHeader && (
+            <div className="print:hidden absolute top-0 left-0 right-0 z-30">
               <WorkspaceHeader />
             </div>
           )}

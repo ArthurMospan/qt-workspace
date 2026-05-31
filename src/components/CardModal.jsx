@@ -5,25 +5,22 @@ import { X, Trash2, CheckSquare, Square, Plus, Clock, User } from 'lucide-react'
 import { useAppContext } from '@/lib/context/AppContext';
 import UserAvatar from './UserAvatar';
 import { Select } from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
 
-const STATUSES = [
-  { id: 'todo',        label: 'To Do' },
-  { id: 'in-progress', label: 'В роботі' },
-  { id: 'review',      label: 'Review' },
-  { id: 'done',        label: 'Готово' },
-];
-
-const PRIORITIES = [
-  { id: 'low',      label: 'Низький',   color: '#9a9a9a' },
-  { id: 'medium',   label: 'Середній',  color: '#eab308' },
-  { id: 'high',     label: 'Високий',   color: '#f97316' },
-  { id: 'critical', label: 'Критичний', color: '#ef4444' },
-];
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 export default function CardModal({ task, members, onClose, onUpdate, onDelete }) {
-  const { currentUser } = useAppContext();
+  const { currentUser, projects } = useAppContext();
+  const { statuses: workflowStatuses = [], priorities = [] } = useWorkflowConfig();
+
+  const project = projects?.find(p => p.id === task?.projectId);
+  const activeHiddenCols = project?.hiddenColumns || [];
+  const statuses = workflowStatuses.filter(s => !activeHiddenCols.includes(s.id));
   const [subtaskInput, setSubtaskInput] = useState('');
   const [showSubInput, setShowSubInput] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [localTitle, setLocalTitle] = useState(task?.title || '');
+  const [localDesc, setLocalDesc] = useState(task?.description || '');
 
   if (!task) return null;
 
@@ -64,7 +61,7 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
       onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
 
-      <div className="relative bg-white rounded-[20px] shadow-2xl w-full max-w-[680px] max-h-[80vh] overflow-hidden flex flex-col"
+      <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[680px] max-h-[80vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
@@ -73,10 +70,11 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
             <div className="flex-1 min-w-0">
               {/* Editable title */}
               <textarea
-                defaultValue={task.title}
+                value={localTitle}
+                onChange={e => setLocalTitle(e.target.value)}
                 onBlur={e => { if (e.target.value.trim() !== task.title) update({ title: e.target.value.trim() }); }}
                 rows={1}
-                className="w-full text-[18px] font-bold text-[#1f1f1f] resize-none bg-transparent focus:bg-[#f7f7f7] rounded-[8px] px-2 py-1 -mx-2 transition-colors"
+                className="w-full text-[18px] font-bold text-[#1f1f1f] resize-none bg-transparent focus:bg-[#f4f4f5] rounded-[8px] px-2 py-1 -mx-2 transition-colors"
                 style={{ minHeight: 32, fieldSizing: 'content' }}
               />
               <div className="flex items-center gap-2 mt-2 px-2">
@@ -85,7 +83,7 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
                   <Select
                     value={task.status}
                     onChange={val => update({ status: val })}
-                    options={STATUSES.map(s => ({ value: s.id, label: s.label }))}
+                    options={statuses.map(s => ({ value: s.id, label: s.label }))}
                   />
                 </div>
                 {/* Priority pill */}
@@ -93,14 +91,12 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
                   <Select
                     value={task.priority || 'low'}
                     onChange={val => update({ priority: val })}
-                    options={PRIORITIES.map(p => ({ value: p.id, label: p.label, dotColor: p.color }))}
+                    options={priorities.map(p => ({ value: p.id, label: p.label, dotColor: p.color }))}
                   />
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors shrink-0 mt-1">
-              <X size={18} />
-            </button>
+            <Button style="secondary" size="icon" icon={X} onClick={onClose} className="mt-1" />
           </div>
         </div>
 
@@ -112,11 +108,12 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
             <div>
               <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-2">Опис</label>
               <textarea
-                defaultValue={task.description || ''}
+                value={localDesc}
+                onChange={e => setLocalDesc(e.target.value)}
                 onBlur={e => { if (e.target.value !== (task.description || '')) update({ description: e.target.value }); }}
                 placeholder="Додай опис..."
                 rows={3}
-                className="w-full px-3 py-2 bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-transparent focus:border-[#e9e9e9] resize-none transition-colors"
+                className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[10px] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-transparent focus:border-[#e9e9e9] resize-none transition-colors"
               />
             </div>
 
@@ -155,12 +152,11 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
                       onChange={e => setSubtaskInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') addSubtask(); if (e.key === 'Escape') setShowSubInput(false); }}
                       placeholder="Пункт чеклиста..."
-                      className="flex-1 px-3 py-[7px] bg-[#f7f7f7] rounded-[8px] text-[12px] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-[#1f1f1f]"
+                      className="flex-1 px-3 py-[7px] bg-[#f4f4f5] rounded-[8px] text-[12px] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-[#1f1f1f]"
                     />
-                    <button onClick={addSubtask}
-                      className="px-3 py-[7px] bg-[#1f1f1f] text-white rounded-[8px] text-[11px] font-bold">
+                    <Button style="primary" size="md" onClick={addSubtask}>
                       OK
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -168,7 +164,7 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
           </div>
 
           {/* Right — sidebar actions */}
-          <div className="w-[200px] shrink-0 bg-[#f7f7f7] px-4 py-5 flex flex-col gap-4 border-l border-[#f0f0f0]">
+          <div className="w-[200px] shrink-0 bg-[#f4f4f5] px-4 py-5 flex flex-col gap-4 border-l border-[#f0f0f0]">
             {/* Assignees */}
             <div>
               <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Виконавці</p>
@@ -205,21 +201,48 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
             {/* Checklist */}
             <div>
               <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Дії</p>
-              <button onClick={() => setShowSubInput(true)}
-                className="w-full flex items-center gap-2 px-2 py-[6px] bg-white rounded-[8px] text-[11px] font-medium text-[#1f1f1f] hover:bg-[#e9e9e9] transition-colors border border-[#e9e9e9]">
-                <CheckSquare size={12} /> Чеклист
-              </button>
+              <Button style="secondary" size="md" className="w-full justify-start" icon={CheckSquare} onClick={() => setShowSubInput(true)}>
+                Чеклист
+              </Button>
             </div>
 
             {/* Delete */}
             <div className="mt-auto">
-              <button onClick={() => { onDelete(task.id); onClose(); }}
-                className="w-full flex items-center gap-2 px-2 py-[6px] bg-white rounded-[8px] text-[11px] font-medium text-red-500 hover:bg-red-50 transition-colors border border-[#e9e9e9]">
-                <Trash2 size={12} /> Видалити
-              </button>
+              <Button
+                style="secondary" color="red" size="md"
+                className="w-full justify-start"
+                icon={Trash2}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Видалити
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Delete confirmation overlay */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 rounded-[24px]">
+            <div className="bg-white rounded-[16px] shadow-xl p-6 mx-4 w-full max-w-[320px] flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-[15px] font-bold text-[#1f1f1f]">Видалити задачу?</p>
+                <p className="text-[13px] text-[#9a9a9a]">Цю дію неможливо скасувати. Задача буде видалена назавжди.</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button style="secondary" color="dark" size="md" onClick={() => setShowDeleteConfirm(false)}>
+                  Скасувати
+                </Button>
+                <Button
+                  style="primary" color="red" size="md"
+                  icon={Trash2}
+                  onClick={() => { onDelete(task.id); onClose(); }}
+                >
+                  Видалити
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

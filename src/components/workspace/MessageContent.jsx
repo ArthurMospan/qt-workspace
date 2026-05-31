@@ -1,8 +1,27 @@
 import React from 'react';
 import HoverCard from './HoverCard';
 
-export default function MessageContent({ text, members }) {
+export default function MessageContent({ text, members, searchTerm }) {
   if (!text) return null;
+
+  const highlightText = (content) => {
+    if (!searchTerm) return content;
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = content.split(regex);
+    return (
+      <>
+        {parts.map((p, i) =>
+          regex.test(p) ? (
+            <mark key={i} className="bg-yellow-200/60 text-black px-0.5 rounded font-medium">
+              {p}
+            </mark>
+          ) : (
+            p
+          )
+        )}
+      </>
+    );
+  };
 
   // We split by lines first
   const lines = text.split('\n');
@@ -17,7 +36,7 @@ export default function MessageContent({ text, members }) {
         }
         if (line.startsWith('📎 ')) {
           return (
-             <div key={idx} className="h-[40px] px-3 mt-1 inline-flex items-center bg-[#f7f7f7] rounded-[6px] border border-[#e9e9e9] text-[12px] font-medium text-[#1f1f1f]">
+             <div key={idx} className="h-[40px] px-3 mt-1 inline-flex items-center bg-[#f4f4f5] rounded-[6px] border border-[#e9e9e9] text-[12px] font-medium text-[#1f1f1f]">
                {line}
              </div>
           );
@@ -83,7 +102,7 @@ export default function MessageContent({ text, members }) {
                 );
               }
 
-              return <span key={pIdx}>{part}</span>;
+              return <span key={pIdx}>{highlightText(part)}</span>;
             })}
           </div>
         );

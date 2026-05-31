@@ -1,170 +1,109 @@
 import React from 'react';
-import { colors } from '@/lib/design/tokens';
 
-// UI Kit Button Component - ENHANCED with color variants
-// Strict rules enforced:
-// - Primary buttons: 36px (h-9)
-// - Action buttons: 32px (h-8)
-// - Small buttons: 28px (h-7)
-// - Multiple color variants (primary/secondary/ghost in 8 colors)
-// - Icons paired with text when possible
+// ─── UI Kit: Master Button Component ─────────────────────────────────────────
+// Single source of truth for ALL buttons in the project.
+//
+// SIZE RULES (strict):
+//   size="lg"  → 36px (h-9)  — Primary CTA, default when no size specified
+//   size="md"  → 32px (h-8)  — Action buttons (edit, archive, secondary)
+//   size="sm"  → 28px (h-7)  — Small/compact contexts
+//   size="icon"→ 32×32px     — Icon-only button (no text)
+//
+// STYLE RULES (strict):
+//   style="primary"   → dark background (#1f1f1f), white text
+//   style="secondary" → light background (#f5f5f5), dark text
+//   style="ghost"     → transparent bg, dark border + text
+//
+// COLOR EXCEPTIONS (only when explicitly needed):
+//   color="red"   → red tones (delete/danger actions only)
+//   color="dark"  → default (same as no color specified)
 
-const getColorClasses = (style, color) => {
-  const colorConfig = {
-    primary: colors.buttonPrimary,
-    secondary: colors.buttonSecondary,
-    ghost: colors.buttonGhost,
-  }[style];
-
-  if (!colorConfig || !colorConfig[color]) {
-    return 'bg-[#1f1f1f] text-white hover:bg-[#303030]'; // Fallback
-  }
-
-  const conf = colorConfig[color];
-  const bgHover = style === 'primary' ? conf.hover : style === 'secondary' ? conf.hover : conf.hover;
-  const borderStyle = style === 'ghost' ? `border-2 border-[${conf.border}]` : '';
-
-  return `bg-[${conf.bg}] text-[${conf.text}] hover:bg-[${bgHover}] ${borderStyle}`;
-};
-
-// Strict button heights enforced - no arbitrary sizes
 const SIZES = {
-  sm: 'h-[28px] px-[12px] text-[12px] rounded-[8px]',   // Small action buttons (h-7)
-  md: 'h-[32px] px-[16px] text-[13px] rounded-[10px]',  // Action buttons (h-8)
-  lg: 'h-[36px] px-[20px] text-[14px] rounded-[10px]',  // Primary buttons (h-9) DEFAULT
-  icon: 'w-[32px] h-[32px] rounded-[10px] p-0 flex items-center justify-center' // Icon-only
+  sm:   'h-[28px] px-[12px] text-[12px] rounded-[10px]',
+  md:   'h-[32px] px-[16px] text-[13px] rounded-[10px]',
+  lg:   'h-[36px] px-[18px] text-[13px] rounded-[10px]',
+  icon: 'w-[32px] h-[32px] rounded-[10px] p-0',
+  'icon-lg': 'w-[36px] h-[36px] rounded-[10px] p-0',
+  'icon-sm': 'w-[28px] h-[28px] rounded-[10px] p-0',
 };
 
-// Style: primary (dark), secondary (light), ghost (outline)
-// Color: blue, green, red, orange, purple, pink, teal, yellow
-// Usage: <Button style="primary" color="blue" size="lg">Click me</Button>
+const STYLES = {
+  primary: {
+    dark: 'bg-[#1f1f1f] text-white hover:bg-[#303030]',
+    red:  'bg-[#ef4444] text-white hover:bg-[#dc2626]',
+  },
+  secondary: {
+    dark: 'bg-[#f5f5f5] text-[#1f1f1f] hover:bg-[#ebebeb]',
+    red:  'bg-[#f5f5f5] text-[#ef4444] hover:bg-[#ebebeb]',
+  },
+  outline: {
+    dark: 'bg-transparent text-[#1f1f1f] border-2 border-[#1f1f1f] hover:bg-[#f4f4f5]',
+    red:  'bg-transparent text-[#ef4444] border-2 border-[#ef4444] hover:bg-[#fee2e2]',
+  },
+  ghost: {
+    dark: 'bg-transparent text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0]',
+    red:  'bg-transparent text-[#ef4444] hover:bg-[#fee2e2]',
+  },
+};
 
 export function Button({
   children,
-  variant = 'primary',
-  style = 'primary',        // 'primary', 'secondary', 'ghost'
-  color = 'dark',           // 'blue', 'green', 'red', 'orange', 'purple', 'pink', 'teal', 'yellow', or 'dark'/'gray' for legacy
-  size = 'lg',              // 'sm', 'md', 'lg', 'icon'
-  className = '',
+  style    = 'primary',  // 'primary' | 'secondary' | 'outline' | 'ghost'
+  color    = 'dark',     // 'dark' | 'red'
+  size     = 'lg',       // 'sm' | 'md' | 'lg' | 'icon'
   icon: Icon,
   iconSize,
-  disabled,
+  disabled  = false,
+  loading   = false,
   onClick,
-  type = 'button',
-  loading = false,
+  type      = 'button',
+  className = '',
+  // Legacy prop support
+  variant,
   ...props
 }) {
-  const baseClasses = 'inline-flex items-center justify-center gap-[6px] font-bold transition-all focus:outline-none focus:ring-2 focus:ring-[#1f1f1f] focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+  // Legacy variant prop support
+  const effectiveStyle = variant || style;
+  // Validate color — only 'dark' and 'red' are supported
+  const effectiveColor = color === 'red' ? 'red' : 'dark';
 
-  // Handle legacy variant prop for backward compatibility
-  let effectiveStyle = style;
-  if (variant === 'primary' && !style) effectiveStyle = 'primary';
-  if (variant === 'secondary' && !style) effectiveStyle = 'secondary';
-  if (variant === 'ghost' && !style) effectiveStyle = 'ghost';
+  const baseClasses =
+    'inline-flex items-center justify-center gap-[6px] font-bold leading-none transition-colors ' +
+    'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0';
 
-  // Map legacy variant names to color names
-  let effectiveColor = color;
-  if (color === 'dark') effectiveColor = 'dark'; // Default primary dark
-
-  // Get color classes inline (since dynamic classes don't work well in Tailwind)
-  let variantClasses = '';
-  if (effectiveStyle === 'primary') {
-    const conf = colors.buttonPrimary[effectiveColor] || { bg: '#1f1f1f', text: '#ffffff', hover: '#303030' };
-    variantClasses = `transition-all shadow-sm`;
-    variantClasses = `${variantClasses}`; // Will use inline styles below
-  } else if (effectiveStyle === 'secondary') {
-    const conf = colors.buttonSecondary[effectiveColor] || { bg: '#f5f5f5', text: '#1f1f1f', hover: '#e9e9e9' };
-    variantClasses = `transition-all`;
-  } else if (effectiveStyle === 'ghost') {
-    variantClasses = `transition-all border-2`;
-  } else {
-    // Fallback for backward compat
-    variantClasses = 'bg-[#1f1f1f] text-white hover:bg-[#303030] shadow-sm transition-all';
-  }
-
-  const sizeClasses = SIZES[size] || SIZES.lg;
+  const sizeClass  = SIZES[size] ?? SIZES.lg;
+  const styleClass = STYLES[effectiveStyle]?.[effectiveColor] ?? STYLES.primary.dark;
   const defaultIconSize = size === 'lg' ? 16 : size === 'sm' ? 12 : 14;
-  const finalIconSize = iconSize || defaultIconSize;
-
-  // Generate inline styles for button colors (since Tailwind doesn't support dynamic values)
-  let buttonStyle = {};
-
-  // Handle legacy color names
-  let finalColor = effectiveColor;
-  if (effectiveColor === 'dark' || effectiveColor === 'gray') {
-    finalColor = 'blue'; // Default to blue for legacy dark/gray
-  }
-
-  if (effectiveStyle === 'primary') {
-    const conf = colors.buttonPrimary[finalColor];
-    if (conf) {
-      buttonStyle = {
-        backgroundColor: conf.bg,
-        color: conf.text,
-      };
-    } else {
-      // Fallback to dark primary
-      buttonStyle = {
-        backgroundColor: '#1f1f1f',
-        color: '#ffffff',
-      };
-    }
-  } else if (effectiveStyle === 'secondary') {
-    const conf = colors.buttonSecondary[finalColor];
-    if (conf) {
-      buttonStyle = {
-        backgroundColor: conf.bg,
-        color: conf.text,
-      };
-    } else {
-      // Fallback to light secondary
-      buttonStyle = {
-        backgroundColor: '#f5f5f5',
-        color: '#1f1f1f',
-      };
-    }
-  } else if (effectiveStyle === 'ghost') {
-    const conf = colors.buttonGhost[finalColor];
-    if (conf) {
-      buttonStyle = {
-        backgroundColor: conf.bg,
-        color: conf.text,
-        border: `2px solid ${conf.border}`,
-      };
-    } else {
-      // Fallback to transparent ghost
-      buttonStyle = {
-        backgroundColor: 'transparent',
-        color: '#1f1f1f',
-        border: '2px solid #1f1f1f',
-      };
-    }
-  } else {
-    // Fallback for unknown style
-    buttonStyle = {
-      backgroundColor: '#1f1f1f',
-      color: '#ffffff',
-    };
-  }
+  const finalIconSize = iconSize ?? defaultIconSize;
 
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      style={buttonStyle}
-      className={`${baseClasses} ${sizeClasses} ${variantClasses} ${className}`}
+      className={`${baseClasses} ${sizeClass} ${styleClass} ${className}`}
       {...props}
     >
       {loading ? (
-        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <svg
+          className="animate-spin h-4 w-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
       ) : (
         <>
           {Icon && <Icon size={finalIconSize} />}
-          {children && <span className={size === 'icon' ? 'sr-only' : ''}>{children}</span>}
+          {children && (
+            <span className={size.startsWith('icon') ? 'sr-only' : ''}>{children}</span>
+          )}
         </>
       )}
     </button>

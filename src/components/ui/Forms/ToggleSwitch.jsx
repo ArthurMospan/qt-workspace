@@ -9,12 +9,12 @@ export default function ToggleSwitch({
   className = '',
 }) {
   const sizeMap = {
-    sm: { width: '44px', height: '24px', dotSize: '20px', translateX: '20px' },
-    md: { width: '56px', height: '32px', dotSize: '28px', translateX: '24px' },
-    lg: { width: '64px', height: '36px', dotSize: '32px', translateX: '28px' },
+    sm: { width: '36px', height: '20px', dotSize: '16px', translateX: 16 },
+    md: { width: '44px', height: '24px', dotSize: '20px', translateX: 20 },
+    lg: { width: '56px', height: '32px', dotSize: '28px', translateX: 24 },
   };
 
-  const size_config = sizeMap[size];
+  const size_config = sizeMap[size] || sizeMap.md;
 
   const containerStyle = {
     width: size_config.width,
@@ -24,8 +24,8 @@ export default function ToggleSwitch({
   const dotStyle = {
     width: size_config.dotSize,
     height: size_config.dotSize,
-    transform: checked ? `translateX(${size_config.translateX}px)` : 'translateX(2px)',
-    transition: 'transform 200ms ease-in-out, background-color 200ms ease-in-out',
+    transform: checked ? `translateX(${size_config.translateX}px)` : 'translateX(0px)',
+    transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms ease-in-out',
   };
 
   return (
@@ -38,16 +38,16 @@ export default function ToggleSwitch({
         onClick={() => !disabled && onChange?.(!checked)}
         style={containerStyle}
         className={`
-          relative inline-flex flex-shrink-0 rounded-full border-2 border-transparent
-          transition-colors
+          relative inline-flex flex-shrink-0 rounded-full p-0
+          transition-colors duration-200
           ${checked ? 'bg-[#1f1f1f]' : 'bg-[#e9e9e9]'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}
-          focus:outline-none focus:ring-2 focus:ring-[#1f1f1f] focus:ring-offset-1
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          focus:outline-none focus:ring-2 focus:ring-[#1f1f1f]/20 focus:ring-offset-0
         `}
       >
         <div
           style={dotStyle}
-          className="absolute top-[2px] left-[2px] bg-white rounded-full shadow-sm"
+          className="absolute top-[2px] left-[2px] bg-white rounded-full"
         />
       </button>
       {label && (

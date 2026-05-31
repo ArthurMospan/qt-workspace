@@ -2,12 +2,13 @@
 // src/components/TaskCard.jsx — Clean, minimalist kanban card (Linear style)
 import { Clock, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
 const PRIORITY_CONFIG = {
   critical: { label: 'Критичний', color: '#ef4444', bg: '#fef2f2' },
   high:     { label: 'Високий',   color: '#f97316', bg: '#fff7ed' },
   medium:   { label: 'Середній',  color: '#eab308', bg: '#fefce8' },
-  low:      { label: 'Низький',   color: '#9a9a9a', bg: '#f7f7f7' },
+  low:      { label: 'Низький',   color: '#9a9a9a', bg: '#f4f4f5' },
 };
 
 const TYPE_CONFIG = {
@@ -31,16 +32,16 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
   const subtotalDone = task.subtasks?.filter(s => s.done)?.length ?? 0;
   const subtotalAll = task.subtasks?.length ?? 0;
 
-  const formatDate = (d) => d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+  const { formatDate } = useLocalization();
 
   return (
     <div
       onClick={onClick}
       className={`
         bg-white rounded-[16px] p-[16px] cursor-pointer
-        border border-transparent hover:border-[#1f1f1f]/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]
-        transition-all duration-200 select-none shadow-[0_1px_3px_rgba(0,0,0,0.02),0_1px_2px_rgba(0,0,0,0.04)]
-        ${isDragging ? 'opacity-80 rotate-2 shadow-xl border-[#1f1f1f]/20 scale-105 z-50' : ''}
+        border border-[#f0f0f0] hover:border-[#cfcfcf] hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#1f1f1f]/5
+        transition-all duration-200 select-none
+        ${isDragging ? 'opacity-80 rotate-2 border-[#1f1f1f]/20 scale-105 z-50' : ''}
       `}
     >
       {/* Type & Priority Header */}
@@ -82,7 +83,7 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
       <div className="flex items-center justify-between mt-auto pt-[4px]">
         <div className="flex items-center gap-[12px]">
           {dueDate && (
-            <div className={`flex items-center gap-[6px] text-[11px] font-bold ${isOverdue ? 'text-red-500 bg-red-50 px-2 py-1 rounded-md' : 'text-[#9a9a9a]'}`}>
+            <div className={`flex items-center gap-[6px] text-[11px] font-bold ${isOverdue ? 'text-red-500 bg-red-50 px-2 py-1 rounded-[6px]' : 'text-[#9a9a9a]'}`}>
               <Clock size={12} strokeWidth={isOverdue ? 2.5 : 2} />
               {formatDate(dueDate)}
             </div>
@@ -99,7 +100,7 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
         {assignees.length > 0 && (
           <div className="flex -space-x-[8px]">
             {assignees.slice(0, 3).map(m => (
-              <UserAvatar key={m.uid || m.id} user={m} size={24} className="ring-2 ring-white shadow-sm" />
+              <UserAvatar key={m.uid || m.id} user={m} size={24} className="ring-2 ring-white" />
             ))}
           </div>
         )}

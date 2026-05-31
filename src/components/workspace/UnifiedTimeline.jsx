@@ -7,6 +7,7 @@ import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import Button from '@/components/ui/Button';
 
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
@@ -35,6 +36,72 @@ export default function UnifiedTimeline({ issueId, projectId }) {
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  const [mentionState, setMentionState] = useState({
+    active: false,
+    query: '',
+    startIndex: -1,
+    cursorIndex: -1,
+    selectedIndex: 0
+  });
+
+  const filteredMembers = useMemo(() => {
+    if (!mentionState.active) return [];
+    const q = mentionState.query.toLowerCase();
+    return members.filter(m => m.name?.toLowerCase().includes(q));
+  }, [mentionState.active, mentionState.query, members]);
+
+  const checkMentions = (text, cursorPosition) => {
+    const lastAtIdx = text.lastIndexOf('@', cursorPosition - 1);
+    if (lastAtIdx === -1) {
+      setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+      return;
+    }
+    const textBetween = text.slice(lastAtIdx, cursorPosition);
+    if (/\s/.test(textBetween)) {
+      setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+      return;
+    }
+    const queryStr = textBetween.slice(1);
+    setMentionState({
+      active: true,
+      query: queryStr,
+      startIndex: lastAtIdx,
+      cursorIndex: cursorPosition,
+      selectedIndex: 0
+    });
+  };
+
+  const selectMention = (member) => {
+    const textBefore = input.slice(0, mentionState.startIndex);
+    const textAfter = input.slice(mentionState.cursorIndex);
+    const mentionText = `@${member.name} `;
+    const nextInput = textBefore + mentionText + textAfter;
+    setInput(nextInput);
+    
+    setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const cursorPosition = textBefore.length + mentionText.length;
+        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+      }
+    }, 0);
+  };
+
+  useEffect(() => {
+    if (!mentionState.active) return;
+    const handleOutsideClick = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) {
+        setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [mentionState.active]);
 
   // Combine and sort
   const timeline = useMemo(() => {
@@ -115,8 +182,8 @@ export default function UnifiedTimeline({ issueId, projectId }) {
                   )}
                   <div className={`px-[12px] py-[9px] text-[13px] leading-[20px] break-words whitespace-pre-wrap ${
                     isMe
-                      ? 'bg-[#1f1f1f] text-white rounded-[14px] rounded-br-[4px]'
-                      : 'bg-white text-[#1f1f1f] rounded-[14px] rounded-bl-[4px]'
+                      ? 'bg-[#1f1f1f] text-white rounded-[12px] rounded-br-[4px]'
+                      : 'bg-white text-[#1f1f1f] rounded-[12px] rounded-bl-[4px]'
                   }`}>
                     {item.text}
                   </div>
@@ -163,8 +230,29 @@ export default function UnifiedTimeline({ issueId, projectId }) {
       </div>
 
       {/* Input Area — main accent */}
-      <div className="px-3 pb-3 shrink-0">
-        <div className={`flex items-end gap-2 bg-white rounded-[14px] px-3 py-2 transition-all border ${input ? 'border-[#d9d9d9]' : 'border-transparent'}`}>
+      <div className="px-3 pb-3 shrink-0 relative">
+        {/* Autocomplete Mentions Dropdown */}
+        {mentionState.active && filteredMembers.length > 0 && (
+          <div className="absolute bottom-[100%] left-3 right-3 mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-[60] overflow-hidden max-h-[160px] overflow-y-auto">
+            {filteredMembers.map((member, index) => {
+              const isSelected = index === mentionState.selectedIndex;
+              return (
+                <button
+                  key={member.id || member.uid}
+                  onClick={() => selectMention(member)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+                    isSelected ? 'bg-[#f4f4f5] text-[#1f1f1f] font-bold' : 'text-[#4b5563] hover:bg-[#fafafa]'
+                  }`}
+                >
+                  <UserAvatar user={member} size={20} />
+                  <span>{member.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className={`flex items-end gap-2 bg-white rounded-[10px] px-3 py-2 transition-all border ${input ? 'border-[#d9d9d9]' : 'border-transparent'}`}>
           <div className="shrink-0 mt-[2px]">
             <UserAvatar
               user={{ id: currentUser?.uid || currentUser?.id, name: currentUser?.name, avatar: currentUser?.avatar }}
@@ -177,11 +265,49 @@ export default function UnifiedTimeline({ issueId, projectId }) {
             value={input}
             onChange={e => {
               setInput(e.target.value);
+              checkMentions(e.target.value, e.target.selectionStart);
               // Auto-grow
               e.target.style.height = 'auto';
               e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
             }}
+            onClick={e => {
+              checkMentions(e.target.value, e.target.selectionStart);
+            }}
+            onKeyUp={e => {
+              if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Enter' && e.key !== 'Escape') {
+                checkMentions(e.target.value, e.target.selectionStart);
+              }
+            }}
             onKeyDown={e => {
+              if (mentionState.active && filteredMembers.length > 0) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setMentionState(prev => ({
+                    ...prev,
+                    selectedIndex: (prev.selectedIndex + 1) % filteredMembers.length
+                  }));
+                  return;
+                }
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setMentionState(prev => ({
+                    ...prev,
+                    selectedIndex: (prev.selectedIndex - 1 + filteredMembers.length) % filteredMembers.length
+                  }));
+                  return;
+                }
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  selectMention(filteredMembers[mentionState.selectedIndex]);
+                  return;
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setMentionState(prev => ({ ...prev, active: false }));
+                  return;
+                }
+              }
+
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
@@ -191,13 +317,15 @@ export default function UnifiedTimeline({ issueId, projectId }) {
             className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1f1f1f] placeholder:text-[#cfcfcf] font-normal resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
             style={{ height: '28px' }}
           />
-          <button
-            onClick={handleSend}
+          <Button
+            style="primary"
+            size="icon"
             disabled={!input.trim() || sending}
-            className="w-[30px] h-[30px] bg-[#1f1f1f] disabled:bg-[#ebebeb] disabled:text-[#cfcfcf] rounded-[8px] flex items-center justify-center text-white shrink-0 hover:bg-[#303030] active:scale-95 transition-all mb-[1px]"
-          >
-            <Send size={13} className="ml-[1px]" />
-          </button>
+            loading={sending}
+            onClick={handleSend}
+            className="mb-[1px]"
+            icon={Send}
+          />
         </div>
         <p className="text-[10px] text-[#cfcfcf] text-center mt-1">Enter — надіслати · Shift+Enter — новий рядок</p>
       </div>

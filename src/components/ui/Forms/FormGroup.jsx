@@ -10,13 +10,16 @@ export default function FormGroup({
   className = '',
 }) {
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex flex-col gap-[6px] ${className}`}>
       {label && (
-        <Label required={required} error={error}>
+        <Label required={required}>
           {label}
         </Label>
       )}
       {children}
+      {error && (
+        <span className="text-[11px] text-red-500 mt-[2px] block">{error}</span>
+      )}
     </div>
   );
 }

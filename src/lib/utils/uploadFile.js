@@ -1,44 +1,32 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 
 /**
- * Uploads a file to Firebase Storage.
+ * Uploads a file to Cloudinary (replacing failing Firebase Storage).
  * @param {File} file - The file to upload
- * @param {string} path - The path in storage (e.g. `organizations/orgId/attachments/fileName`)
+ * @param {string} path - The path prefix/folder (e.g. `organizations/orgId/attachments`)
  * @param {Function} onProgress - Optional callback for upload progress (0 to 100)
  * @returns {Promise<Object>} Object containing file metadata (name, url, size, type)
  */
 export async function uploadFile(file, path, onProgress = null) {
   if (!file) throw new Error('No file provided');
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const uniqueName = `${Date.now()}_${safeName}`;
-  const fullPath = `${path}/${uniqueName}`;
-  
-  const storageRef = ref(storage, fullPath);
-  const uploadTask = uploadBytesResumable(storageRef, file);
+  // Convert the storage path/prefix to a Cloudinary folder structure
+  const folder = path ? `quickteam/${path.replace(/^\/+|\/+$/g, '')}` : 'quickteam/attachments';
 
-  return new Promise((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        if (onProgress) {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress(progress);
-        }
-      },
-      (error) => {
-        reject(error);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        resolve({
-          name: file.name,
-          url: downloadURL,
-          size: file.size,
-          type: file.type
-        });
-      }
-    );
-  });
+  try {
+    if (onProgress) onProgress(20);
+    const { downloadUrl } = await uploadFileToCloudinary(file, folder);
+    if (onProgress) onProgress(100);
+
+    return {
+      name: file.name,
+      url: downloadUrl,
+      size: file.size,
+      type: file.type
+    };
+  } catch (error) {
+    console.error('Error in uploadFile helper via Cloudinary:', error);
+    throw error;
+  }
 }
+

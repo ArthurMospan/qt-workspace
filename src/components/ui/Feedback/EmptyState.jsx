@@ -1,5 +1,5 @@
+'use client';
 import React from 'react';
-import { colors, sizing, typography, transitions } from '@/lib/design/tokens';
 import { Button } from '../Button';
 
 export function EmptyState({
@@ -11,57 +11,31 @@ export function EmptyState({
   className = '',
 }) {
   return (
-    <div
-      className={`flex flex-col items-center justify-center text-center gap-4 py-16 px-6 ${className}`}
-      style={{
-        transitionDuration: transitions.default,
-      }}
-    >
-      {/* Icon */}
+    <div className={`flex flex-col items-center justify-center text-center py-16 px-6 ${className}`}>
+      {/* Premium Circular Icon Wrapper */}
       {IconComponent && (
-        <div
-          className="flex-shrink-0"
-          style={{
-            color: colors.text.muted,
-            opacity: 0.6,
-          }}
-        >
-          <IconComponent size={48} />
+        <div className="w-[64px] h-[64px] bg-[#f4f4f5] rounded-full flex items-center justify-center mb-[18px] text-[#cfcfcf]">
+          <IconComponent size={32} />
         </div>
       )}
 
       {/* Title */}
       {title && (
-        <h3
-          className="font-bold"
-          style={{
-            color: colors.text.primary,
-            fontSize: typography.sizes.h2.size,
-            fontWeight: typography.sizes.h2.weight,
-          }}
-        >
+        <h4 className="text-[16px] font-bold text-[#1f1f1f] mb-[6px]">
           {title}
-        </h3>
+        </h4>
       )}
 
       {/* Description */}
       {description && (
-        <p
-          className="max-w-sm"
-          style={{
-            color: colors.text.muted,
-            fontSize: typography.sizes.sm.size,
-            fontWeight: typography.sizes.sm.weight,
-            lineHeight: '1.5',
-          }}
-        >
+        <p className="text-[#9a9a9a] text-[13px] max-w-[280px] px-4 leading-relaxed">
           {description}
         </p>
       )}
 
       {/* Action Button */}
-      {action && (
-        <div className="mt-4">
+      {action && onAction && (
+        <div className="mt-5">
           <Button
             style="secondary"
             color="blue"

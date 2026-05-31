@@ -54,7 +54,7 @@ export default function ReportsPage({ params }) {
   const maxCount = Math.max(...byStatus.map(s => s.count), 1);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
+    <div className="flex-1 overflow-y-auto bg-[#f4f4f5]">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 bg-white border-b border-[#e9e9e9]">
         <div className="flex items-center gap-3">

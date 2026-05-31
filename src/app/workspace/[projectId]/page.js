@@ -12,15 +12,19 @@ import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import BacklogTab from '@/components/workspace/BacklogTab';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import PageHeader from '@/components/workspace/PageHeader';
+import { PageHeader } from '@/components/ui';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { LayoutGrid, BarChart2, Plus, Users, MessageSquare } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, Filter, Layers } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
+import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { can } from '@/lib/utils/can';
 
 const TABS = (projectId) => [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
+  { id: 'backlog',    label: 'Беклог',    icon: Layers },
   { id: 'team',       label: 'Команда',   icon: Users },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
 ];
@@ -44,17 +48,32 @@ export default function BoardPage({ params }) {
   const [activeTab, setActiveTab] = useState('board');
   const [boardSprintFilter, setBoardSprintFilter] = useState('all');
   const [boardSwimlane, setBoardSwimlane] = useState('none');
+  const [boardAssigneeFilter, setBoardAssigneeFilter] = useState('all');
+  const [boardPriorityFilter, setBoardPriorityFilter] = useState('all');
+  const [boardTypeFilter, setBoardTypeFilter] = useState('all');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   const activeSprints = sprints.filter(s => s.status === 'active');
   const boardIssues = issues.filter(i => {
-    if (boardSprintFilter === 'all') return true;
-    if (boardSprintFilter === 'active') {
-      if (activeSprints.length === 0) return true; // if no active sprint, show all
-      return activeSprints.some(s => s.id === i.sprintId);
+    // Sprint
+    if (boardSprintFilter !== 'all') {
+      if (boardSprintFilter === 'active') {
+        if (activeSprints.length > 0 && !activeSprints.some(s => s.id === i.sprintId)) return false;
+      } else {
+        if (i.sprintId !== boardSprintFilter) return false;
+      }
     }
-    return i.sprintId === boardSprintFilter;
+    // Assignee
+    if (boardAssigneeFilter !== 'all') {
+      if (!i.assigneeIds || !i.assigneeIds.includes(boardAssigneeFilter)) return false;
+    }
+    // Priority
+    if (boardPriorityFilter !== 'all' && i.priority !== boardPriorityFilter) return false;
+    // Type
+    if (boardTypeFilter !== 'all' && i.type !== boardTypeFilter) return false;
+
+    return true;
   });
 
   const actor = {
@@ -123,23 +142,25 @@ export default function BoardPage({ params }) {
     }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
+  const isBoard = activeTab === 'board';
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+    <div className={`flex-1 h-full bg-transparent ${isBoard ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
+      <div className={`w-full flex flex-col gap-2 px-[24px] md:px-[32px] pt-[56px] ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
 
       {/* ── PageHeader ── */}
       <PageHeader
-        variant="alt"
+        variant="main"
         title={project?.name}
         tabs={TABS(projectId)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onConfig={can(orgRole, 'edit:board_columns') ? () => setShowConfigModal(true) : undefined}
         actions={
           <>
             {isShared && (
               <Link
                 href={`/workspace/${projectId}/portal`}
-                className={`relative flex items-center gap-[6px] px-[14px] py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-[#f7f7f7] text-[#9a9a9a] hover:text-[#6366f1] hover:bg-[#6366f1]/8`}
+                className={`relative flex items-center gap-[6px] px-[14px] py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-[#f4f4f5] text-[#9a9a9a] hover:text-[#6366f1] hover:bg-[#6366f1]/8`}
               >
                 <MessageSquare size={13} />
                 QuickTeam+
@@ -148,14 +169,86 @@ export default function BoardPage({ params }) {
                 )}
               </Link>
             )}
-            <button
+            {can(orgRole, 'edit:board_columns') && (
+              <Button
+                onClick={() => setShowConfigModal(true)}
+                icon={Settings2}
+                size="icon-lg"
+                style="secondary"
+                title="Налаштування дошки"
+              />
+            )}
+            <Button
               onClick={() => setShowCreateTaskModal(true)}
-              className="flex items-center gap-[6px] px-[14px] py-[7px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-bold hover:bg-[#303030] transition-colors"
+              style="primary"
+              size="lg"
+              icon={Plus}
             >
-              <Plus size={14} />
               Створити задачу
-            </button>
+            </Button>
           </>
+        }
+        filters={
+          activeTab === 'board' ? (
+            <FilterBar>
+              <Select
+                value={boardSprintFilter}
+                  onChange={setBoardSprintFilter}
+                  options={[
+                    { value: 'all', label: 'Всі спринти' },
+                    { value: 'active', label: 'Активний спринт' },
+                    ...sprints.map(s => ({ value: s.id, label: s.name }))
+                  ]}
+                  variant="ghost"
+                />
+                <Select
+                  value={boardSwimlane}
+                  onChange={setBoardSwimlane}
+                  options={[
+                    { value: 'none', label: 'Без групування' },
+                    { value: 'assignee', label: 'За виконавцем' },
+                    { value: 'epic', label: 'За епіком' },
+                    { value: 'priority', label: 'За пріоритетом' }
+                  ]}
+                  variant="ghost"
+                  icon={LayoutGrid}
+                />
+                <Select
+                  value={boardAssigneeFilter}
+                  onChange={setBoardAssigneeFilter}
+                  options={[
+                    { value: 'all', label: 'Всі виконавці' },
+                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                  ]}
+                  variant="ghost"
+                  icon={Users}
+                />
+                <Select
+                  value={boardPriorityFilter}
+                  onChange={setBoardPriorityFilter}
+                  options={[
+                    { value: 'all', label: 'Всі пріоритети' },
+                    { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                    { value: 'high', label: 'High', dotColor: '#f97316' },
+                    { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                    { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+                  ]}
+                  variant="ghost"
+                />
+                <Select
+                  value={boardTypeFilter}
+                  onChange={setBoardTypeFilter}
+                  options={[
+                    { value: 'all', label: 'Всі типи' },
+                    { value: 'epic', label: 'Epic' },
+                    { value: 'feature', label: 'Feature' },
+                    { value: 'task', label: 'Task' },
+                    { value: 'bug', label: 'Bug' },
+                  ]}
+                  variant="ghost"
+                />
+              </FilterBar>
+          ) : null
         }
       />
 
@@ -166,10 +259,8 @@ export default function BoardPage({ params }) {
             <div className="w-7 h-7 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden px-[20px] pt-[16px] pb-[20px] flex flex-col bg-white">
+          <div className="flex-1 min-h-[500px] flex flex-col">
 
-
-            <div className="flex-1 min-h-0 overflow-hidden">
               <AgileBoard
                 issues={boardIssues}
                 members={members}
@@ -180,7 +271,6 @@ export default function BoardPage({ params }) {
                 onAddIssue={handleAddIssue}
                 onMoveIssue={handleMoveIssue}
               />
-            </div>
           </div>
         )
       )}
@@ -199,7 +289,13 @@ export default function BoardPage({ params }) {
         epics={issues.filter(i => i.type === 'epic')}
         sprints={sprints}
       />
-
+      {activeTab === 'backlog' && (
+        <BacklogTab
+          projectId={projectId}
+          project={project}
+          currentUser={currentUser}
+        />
+      )}
       {activeTab === 'analytics' && (
         <AnalyticsTab
           issues={issues}
@@ -212,6 +308,7 @@ export default function BoardPage({ params }) {
       {activeTab === 'team' && (
         <ProjectTeamTab members={members} />
       )}
+      </div>
     </div>
   );
 }

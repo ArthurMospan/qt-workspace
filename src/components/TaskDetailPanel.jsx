@@ -8,33 +8,21 @@ import { X, Trash2, Clock, CheckSquare, Square, Plus, Send } from 'lucide-react'
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { Select } from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import Tabs from '@/components/ui/Tabs';
 
-const PRIORITY_CONFIG = {
-  critical: { label: 'Критичний', color: '#ef4444' },
-  high:     { label: 'Високий',   color: '#f97316' },
-  medium:   { label: 'Середній',  color: '#eab308' },
-  low:      { label: 'Низький',   color: '#9a9a9a' },
-};
 
-const TYPE_CONFIG = {
-  task:    { label: 'Задача', color: '#6366f1' },
-  bug:     { label: 'Баг',    color: '#ef4444' },
-  feature: { label: 'Фіча',  color: '#10b981' },
-  request: { label: 'Запит', color: '#f97316' },
-};
-
-const DEFAULT_STATUSES = [
-  { id: 'todo',        label: 'Backlog' },
-  { id: 'in-progress', label: 'В роботі' },
-  { id: 'review',      label: 'Перевірка' },
-  { id: 'done',        label: 'Готово' },
-];
 
 export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpdate, onDelete }) {
-  const { currentUser } = useAppContext();
+  const { currentUser, projects } = useAppContext();
   const { messages, sendMessage } = useTaskChat(task?.id);
-  const { labels: availableLabels = [] } = useWorkflowConfig();
-  const statuses = stages?.length ? stages : DEFAULT_STATUSES;
+  const { labels: availableLabels = [], statuses: workflowStatuses = [], types = [], priorities = [] } = useWorkflowConfig();
+  
+  const project = projects?.find(p => p.id === task?.projectId);
+  const activeHiddenCols = project?.hiddenColumns || [];
+  const baseStatuses = workflowStatuses.length ? workflowStatuses : (stages?.length ? stages : []);
+  const statuses = baseStatuses.filter(s => !activeHiddenCols.includes(s.id));
 
   const [tab, setTab] = useState('details'); // 'details' | 'chat'
   const [chatInput, setChatInput] = useState('');
@@ -86,8 +74,11 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
     setChatInput('');
   };
 
-  const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.low;
-  const type = TYPE_CONFIG[task.type] || TYPE_CONFIG.task;
+  const priObj = priorities.find(p => p.id === task.priority) || priorities[0];
+  const priority = { label: priObj ? priObj.label : 'Середній', color: priObj ? priObj.color : '#eab308' };
+  
+  const typeObj = types.find(t => t.id === task.type) || types[0];
+  const type = { label: typeObj ? typeObj.label : 'Задача', color: typeObj ? typeObj.color : '#6366f1' };
   const subtotalDone = task.subtasks?.filter(s => s.done)?.length ?? 0;
   const subtotalAll = task.subtasks?.length ?? 0;
 
@@ -106,13 +97,15 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#e9e9e9] shrink-0">
-        {[['details', 'Деталі'], ['chat', `Чат ${messages.length > 0 ? `(${messages.length})` : ''}`]].map(([t, l]) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-[12px] font-semibold transition-colors ${tab === t ? 'text-[#1f1f1f] border-b-2 border-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}>
-            {l}
-          </button>
-        ))}
+      <div className="px-5 pt-3 shrink-0">
+        <Tabs
+          tabs={[
+            { id: 'details', label: 'Деталі' },
+            { id: 'chat', label: `Чат${messages.length > 0 ? ` (${messages.length})` : ''}` },
+          ]}
+          activeTab={tab}
+          onTabChange={setTab}
+        />
       </div>
 
       {/* Content */}
@@ -134,7 +127,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
                 type="date"
                 value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
                 onChange={e => onUpdate(task.id, { dueDate: e.target.value ? new Date(e.target.value) : null })}
-                className={`w-full px-3 py-2 bg-[#f7f7f7] rounded-[12px] text-[13px] border transition-colors ${isOverdue ? 'border-red-200 text-red-600' : 'border-[#e9e9e9] text-[#1f1f1f]'} focus:border-[#1f1f1f]`}
+                className={`w-full px-3 py-2 bg-[#f4f4f5] rounded-[12px] text-[13px] border transition-colors ${isOverdue ? 'border-red-200 text-red-600' : 'border-[#e9e9e9] text-[#1f1f1f]'} focus:border-[#1f1f1f]`}
               />
             </Field>
 
@@ -181,7 +174,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
                 })}
                 <button
                   onClick={() => setShowLabelDropdown(v => !v)}
-                  className="flex items-center gap-1 px-[8px] py-[4px] rounded-full text-[11px] font-bold bg-[#f7f7f7] text-[#9a9a9a] border border-dashed border-[#cfcfcf] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
+                  className="flex items-center gap-1 px-[8px] py-[4px] rounded-full text-[11px] font-bold bg-[#f4f4f5] text-[#9a9a9a] border border-dashed border-[#cfcfcf] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
                 >
                   <Plus size={10} /> Додати мітку
                 </button>
@@ -199,7 +192,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
                           <button
                             key={l.id}
                             onClick={() => { toggleLabel(l.id); setShowLabelDropdown(false); }}
-                            className={`w-full text-left px-4 py-2 text-[12px] hover:bg-[#f7f7f7] transition-colors flex items-center justify-between ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
+                            className={`w-full text-left px-4 py-2 text-[12px] hover:bg-[#f4f4f5] transition-colors flex items-center justify-between ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
                           >
                             <span className="flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
@@ -229,15 +222,14 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
 
                 {showSubtaskInput ? (
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       autoFocus
                       value={subtaskInput}
                       onChange={e => setSubtaskInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') addSubtask(); if (e.key === 'Escape') setShowSubtaskInput(false); }}
                       placeholder="Назва підзадачі..."
-                      className="flex-1 px-3 py-[7px] bg-[#f7f7f7] rounded-[12px] text-[12px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f]"
                     />
-                    <button onClick={addSubtask} className="px-3 py-[7px] bg-[#1f1f1f] text-white rounded-[12px] text-[11px] font-bold">OK</button>
+                    <Button style="primary" size="sm" onClick={addSubtask}>OK</Button>
                   </div>
                 ) : (
                   <button onClick={() => setShowSubtaskInput(true)} className="flex items-center gap-2 text-[12px] text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors w-fit">
@@ -262,7 +254,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
                     <UserAvatar user={{ name: msg.senderName, photoURL: msg.senderPhoto }} size={28} />
                     <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                       {!isMe && <p className="text-[10px] text-[#9a9a9a] font-medium">{msg.senderName}</p>}
-                      <div className={`px-3 py-2 rounded-[12px] text-[13px] ${isMe ? 'bg-[#1f1f1f] text-white' : 'bg-[#f7f7f7] text-[#1f1f1f]'}`}>
+                      <div className={`px-3 py-2 rounded-[12px] text-[13px] ${isMe ? 'bg-[#1f1f1f] text-white' : 'bg-[#f4f4f5] text-[#1f1f1f]'}`}>
                         {msg.text}
                       </div>
                     </div>
@@ -271,17 +263,21 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
               })}
             </div>
             <div className="p-4 border-t border-[#e9e9e9] flex gap-2 shrink-0">
-              <input
+              <Input
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                 placeholder="Повідомлення..."
-                className="flex-1 px-4 py-[10px] bg-[#f7f7f7] rounded-[12px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors"
               />
-              <button onClick={handleSendMessage} disabled={!chatInput.trim()}
-                className="px-4 py-[10px] bg-[#1f1f1f] text-white rounded-[12px] disabled:opacity-30 hover:bg-[#303030] transition-all">
-                <Send size={14} />
-              </button>
+              <Button
+                style="primary"
+                size="icon"
+                icon={Send}
+                disabled={!chatInput.trim()}
+                onClick={handleSendMessage}
+              >
+                Надіслати
+              </Button>
             </div>
           </div>
         )}
@@ -296,14 +292,12 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
               <p className="text-[13px] text-[#9a9a9a]">Ця дія не може бути скасована.</p>
             </div>
             <div className="flex gap-[12px] justify-end">
-              <button onClick={() => setShowDeleteConfirm(false)}
-                className="px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold text-[#9a9a9a] bg-[#f7f7f7] hover:bg-[#f0f0f0] transition-colors">
+              <Button style="secondary" size="md" onClick={() => setShowDeleteConfirm(false)}>
                 Скасувати
-              </button>
-              <button onClick={() => { onDelete(task.id); setShowDeleteConfirm(false); }}
-                className="px-[16px] h-[32px] rounded-[10px] text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">
+              </Button>
+              <Button style="primary" color="red" size="md" onClick={() => { onDelete(task.id); setShowDeleteConfirm(false); }}>
                 Видалити
-              </button>
+              </Button>
             </div>
           </div>
         </div>

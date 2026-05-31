@@ -48,12 +48,14 @@ export function useOrganization() {
           id: m.userId,
           role: m.role,
           joinedAt: m.joinedAt,
-          hourlyRate: m.hourlyRate || 0
+          hourlyRate: m.hourlyRate || 0,
+          positionId: m.positionId || ''
         } : {
           id: m.userId,
           name: m.userId,
           role: m.role,
-          hourlyRate: m.hourlyRate || 0
+          hourlyRate: m.hourlyRate || 0,
+          positionId: m.positionId || ''
         };
       }));
       setMembers(profiles.filter(Boolean));
@@ -156,6 +158,15 @@ export function useOrganization() {
     });
   }, [activeOrgId]);
 
+  // Change position
+  const setMemberPosition = useCallback(async (uid, positionId) => {
+    if (!activeOrgId) return;
+    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
+    await updateDoc(membershipRef, {
+      positionId: positionId || ''
+    });
+  }, [activeOrgId]);
+
   // Remove member
   const removeMember = useCallback(async uid => {
     if (!activeOrgId) return;
@@ -170,6 +181,7 @@ export function useOrganization() {
     inviteMember,
     changeMemberRole,
     setMemberRate,
+    setMemberPosition,
     removeMember
   };
 }

@@ -4,15 +4,12 @@ import { useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Plus, X } from 'lucide-react';
 import UserAvatar from './UserAvatar';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
-const COLUMNS = [
-  { id: 'todo',        label: 'To Do',      color: '#9a9a9a' },
-  { id: 'in-progress', label: 'В роботі',  color: '#6366f1' },
-  { id: 'review',      label: 'Review',    color: '#f97316' },
-  { id: 'done',        label: 'Готово',    color: '#10b981' },
-];
-
-const PRIORITY_DOT = {
+// Fallback colors for priority — support both 'blocker'/'critical' naming
+const PRIORITY_FALLBACK = {
+  blocker:  '#ef4444',
   critical: '#ef4444',
   high:     '#f97316',
   medium:   '#eab308',
@@ -20,6 +17,7 @@ const PRIORITY_DOT = {
 };
 
 function Card({ task, members, index, onClick }) {
+  const { formatDate } = useLocalization();
   const assignees = (task.assignees || [])
     .map(uid => members.find(m => (m.id || m.uid) === uid))
     .filter(Boolean);
@@ -37,13 +35,13 @@ function Card({ task, members, index, onClick }) {
           {...provided.dragHandleProps}
           onClick={onClick}
           className={`bg-white rounded-[10px] border border-[#e9e9e9] px-3 py-[10px] cursor-pointer
-            hover:border-[#cfcfcf] hover:shadow-sm transition-all select-none
-            ${snapshot.isDragging ? 'shadow-lg rotate-[1deg] opacity-90' : ''}`}
+            hover:border-[#cfcfcf] hover:ring-4 hover:ring-[#1f1f1f]/5 transition-all select-none
+            ${snapshot.isDragging ? 'rotate-[1deg] opacity-90' : ''}`}
         >
           {/* Priority dot + title */}
           <div className="flex items-start gap-2">
             <span className="mt-[6px] w-[7px] h-[7px] rounded-full shrink-0"
-              style={{ background: PRIORITY_DOT[task.priority] || '#e9e9e9' }} />
+              style={{ background: PRIORITY_FALLBACK[task.priority] || '#e9e9e9' }} />
             <p className="text-[13px] font-semibold text-[#1f1f1f] leading-snug line-clamp-3 flex-1">
               {task.title}
             </p>
@@ -54,9 +52,9 @@ function Card({ task, members, index, onClick }) {
             <div className="flex items-center justify-between mt-[8px]">
               {due ? (
                 <span className={`text-[10px] font-semibold px-[6px] py-[2px] rounded-full ${
-                  overdue ? 'bg-red-50 text-red-500' : 'bg-[#f7f7f7] text-[#9a9a9a]'
+                  overdue ? 'bg-red-50 text-red-500' : 'bg-[#f4f4f5] text-[#9a9a9a]'
                 }`}>
-                  {due.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}
+                  {formatDate(due)}
                 </span>
               ) : <div />}
 
@@ -95,7 +93,7 @@ function Column({ col, tasks, members, onCardClick, onAddCard }) {
   };
 
   return (
-    <div className="flex flex-col w-[272px] shrink-0 bg-[#f1f2f4] rounded-[14px] p-3 max-h-full">
+    <div className="flex flex-col w-[272px] shrink-0 bg-[#f1f2f4] rounded-[12px] p-3 max-h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -164,6 +162,17 @@ function Column({ col, tasks, members, onCardClick, onAddCard }) {
 }
 
 export default function Board({ tasks, members, onCardClick, onAddCard, onMoveCard }) {
+  // Use workflow config for dynamic columns; fallback to 4 defaults if config not loaded yet
+  const { statuses = [] } = useWorkflowConfig();
+  const columns = statuses.length > 0
+    ? statuses.map(s => ({ id: s.id, label: s.label, color: s.color || '#9a9a9a' }))
+    : [
+        { id: 'todo',        label: 'To Do',   color: '#9a9a9a' },
+        { id: 'in-progress', label: 'В роботі', color: '#6366f1' },
+        { id: 'review',      label: 'Review',  color: '#f97316' },
+        { id: 'done',        label: 'Готово',  color: '#10b981' },
+      ];
+
   const onDragEnd = ({ draggableId, destination }) => {
     if (!destination) return;
     onMoveCard(draggableId, destination.droppableId, destination.index);
@@ -172,11 +181,11 @@ export default function Board({ tasks, members, onCardClick, onAddCard, onMoveCa
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="flex gap-[12px] h-full overflow-x-auto pb-3">
-        {COLUMNS.map(col => (
+        {columns.map(col => (
           <Column
             key={col.id}
             col={col}
-            tasks={tasks.filter(t => t.status === col.id)}
+            tasks={tasks.filter(t => t.status === col.id || t.columnId === col.id)}
             members={members}
             onCardClick={onCardClick}
             onAddCard={onAddCard}

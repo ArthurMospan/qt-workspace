@@ -29,6 +29,9 @@ export default function TaskDetailPage({ params }) {
     const unsub = onSnapshot(doc(db, 'tasks', taskId), snap => {
       setTask(snap.exists() ? { id: snap.id, ...snap.data() } : null);
       setLoading(false);
+    }, (err) => {
+      console.warn('[TaskDetailPage] error loading task:', err.message);
+      setLoading(false);
     });
     return () => unsub();
   }, [taskId]);

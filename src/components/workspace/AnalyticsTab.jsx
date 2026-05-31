@@ -1,12 +1,14 @@
 'use client';
 // src/components/workspace/AnalyticsTab.jsx — Real reports: velocity, burndown, assignee stats, overdue
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import UserAvatar from '@/components/UserAvatar';
 import {
   Clock, CheckCircle2, AlertCircle, TrendingUp, TrendingDown,
-  Users, Target, Zap, BarChart2, Calendar, AlertTriangle,
+  Users, Target, Zap, BarChart2, Calendar, AlertTriangle
 } from 'lucide-react';
+import { Select } from '@/components/ui/Select';
+import FilterBar from '@/components/ui/FilterBar';
 
 const COL_ORDER  = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COL_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
@@ -24,7 +26,7 @@ function fmtDate(ts) {
 
 function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', trend }) {
   return (
-    <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+    <div className="bg-[#f4f4f5] rounded-[24px] p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ background: color + '18' }}>
           <Icon size={16} style={{ color }} />
@@ -49,19 +51,28 @@ function SectionTitle({ children }) {
 
 export default function AnalyticsTab({ issues, members, project, projectId }) {
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
+  const [filters, setFilters] = useState({ priority: 'all', type: 'all' });
+
+  const filteredIssues = useMemo(() => {
+    return issues.filter(i => {
+      if (filters.priority !== 'all' && i.priority !== filters.priority) return false;
+      if (filters.type !== 'all' && i.type !== filters.type) return false;
+      return true;
+    });
+  }, [issues, filters]);
 
   const stats = useMemo(() => {
     const now     = Date.now();
-    const total   = issues.length;
-    const done    = issues.filter(i => i.columnId === 'done').length;
-    const inProg  = issues.filter(i => i.columnId === 'in-progress').length;
-    const blocked = issues.filter(i => i.priority === 'blocker').length;
-    const overdue = issues.filter(i => {
+    const total   = filteredIssues.length;
+    const done    = filteredIssues.filter(i => i.columnId === 'done').length;
+    const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
+    const blocked = filteredIssues.filter(i => i.priority === 'blocker').length;
+    const overdue = filteredIssues.filter(i => {
       const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
       return due && due.getTime() < now && i.columnId !== 'done';
     });
-    const noAssignee = issues.filter(i => !i.assigneeIds?.length && i.columnId !== 'done');
-    const unestimated = issues.filter(i => !i.estimateMinutes && i.columnId !== 'backlog' && i.columnId !== 'done');
+    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && i.columnId !== 'done');
+    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && i.columnId !== 'backlog' && i.columnId !== 'done');
     const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
     // Budget
@@ -72,7 +83,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
     // Velocity: done tasks in last 7 days
     const weekAgo = now - 7 * 24 * 3600 * 1000;
-    const recentDone = issues.filter(i => {
+    const recentDone = filteredIssues.filter(i => {
       if (i.columnId !== 'done') return false;
       const t = i.updatedAt?.toMillis?.() ?? 0;
       return t > weekAgo;
@@ -80,19 +91,19 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
     // By status distribution
     const byStatus = COL_ORDER.map(col => ({
-      col, count: issues.filter(i => i.columnId === col).length,
+      col, count: filteredIssues.filter(i => i.columnId === col).length,
       label: COL_LABEL[col], color: COL_COLOR[col],
     })).filter(s => s.count > 0);
 
     // By priority
     const byPriority = ['blocker','high','medium','low'].map(p => ({
-      p, count: issues.filter(i => i.priority === p && i.columnId !== 'done').length,
+      p, count: filteredIssues.filter(i => i.priority === p && i.columnId !== 'done').length,
     })).filter(s => s.count > 0);
 
     // Per-member stats
     const memberStats = members.map(m => {
       const uid    = m.id || m.uid;
-      const mine   = issues.filter(i => i.assigneeIds?.includes(uid));
+      const mine   = filteredIssues.filter(i => i.assigneeIds?.includes(uid));
       const mDone  = mine.filter(i => i.columnId === 'done').length;
       const mOpen  = mine.filter(i => i.columnId !== 'done').length;
       const mOverdue = mine.filter(i => {
@@ -108,13 +119,41 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
       completionPct, budget, spentHours, burnPct, remainH, recentDone,
       byStatus, byPriority, memberStats,
     };
-  }, [issues, members, project, totalMinutes, byUser]);
+  }, [filteredIssues, members, project, totalMinutes, byUser]);
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
 
   return (
     <div className="flex-1 overflow-y-auto bg-white">
       <div className="w-full px-[20px] pt-[16px] pb-[20px] flex flex-col gap-5">
+
+        {/* ── Filters ─────────────────────────────────────────────── */}
+        <FilterBar>
+          <Select
+            variant="ghost"
+            value={filters.priority}
+            onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
+            options={[
+              { value: 'all', label: 'Всі пріоритети' },
+              { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+              { value: 'high', label: 'High', dotColor: '#f97316' },
+              { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+              { value: 'low', label: 'Low', dotColor: '#3b82f6' }
+            ]}
+          />
+          <Select
+            variant="ghost"
+            value={filters.type}
+            onChange={(val) => setFilters(f => ({ ...f, type: val }))}
+            options={[
+              { value: 'all', label: 'Всі типи' },
+              { value: 'epic', label: 'Epic' },
+              { value: 'feature', label: 'Feature' },
+              { value: 'task', label: 'Task' },
+              { value: 'bug', label: 'Bug' }
+            ]}
+          />
+        </FilterBar>
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -134,7 +173,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Бюджет часу</SectionTitle>
               <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
@@ -169,7 +208,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <SectionTitle>Задачі по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-[#cfcfcf] py-4">Задач немає</p>
@@ -188,7 +227,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
             )}
           </div>
 
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
               <p className="text-[12px] text-[#cfcfcf] py-4">Немає відкритих задач</p>
@@ -217,7 +256,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="text-red-500" />
               <SectionTitle>Прострочені задачі ({stats.overdue.length})</SectionTitle>
@@ -255,7 +294,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -295,7 +334,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Warnings ─────────────────────────────────────────────── */}
         {(stats.noAssignee.length > 0 || stats.unestimated.length > 0 || stats.blocked > 0) && (
-          <div className="bg-[#f7f7f7] rounded-[24px] p-5">
+          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blocked > 0 && (

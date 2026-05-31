@@ -34,7 +34,7 @@ export default function MarkdownViewer({ content, className = '' }) {
               <table className="w-full border-collapse border border-[#e9e9e9]" {...props} />
             </div>
           ),
-          th: ({node, ...props}) => <th className="border border-[#e9e9e9] px-4 py-2 bg-[#f7f7f7] font-bold" {...props} />,
+          th: ({node, ...props}) => <th className="border border-[#e9e9e9] px-4 py-2 bg-[#f4f4f5] font-bold" {...props} />,
           td: ({node, ...props}) => <td className="border border-[#e9e9e9] px-4 py-2" {...props} />,
           input: ({node, type, checked, ...props}) => {
             if (type === 'checkbox') {

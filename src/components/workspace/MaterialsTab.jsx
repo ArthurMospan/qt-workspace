@@ -12,6 +12,8 @@ import {
   collection, addDoc, deleteDoc, doc, query, where, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { useEffect } from 'react';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 const FILE_ICONS = {
   image:    FileImage,
@@ -91,7 +93,7 @@ export default function MaterialsTab({ projectId }) {
   const types = [...new Set(files.map(f => f.type))];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f7f7f7]">
+    <div className="flex-1 overflow-y-auto bg-[#f4f4f5]">
       <div className="max-w-[860px] mx-auto px-6 py-5">
 
         {/* Header */}
@@ -100,59 +102,51 @@ export default function MaterialsTab({ projectId }) {
             <h2 className="text-[16px] font-bold text-[#1f1f1f]">Матеріали проєкту</h2>
             <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Внутрішні файли, посилання та документи команди</p>
           </div>
-          <button
-            onClick={() => setShowAdd(v => !v)}
-            className="flex items-center gap-2 px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[10px] text-[12px] font-semibold hover:bg-[#303030] transition-colors"
-          >
-            <Plus size={13} /> Додати матеріал
-          </button>
+          <Button style="primary" size="md" icon={Plus} onClick={() => setShowAdd(v => !v)}>
+            Додати матеріал
+          </Button>
         </div>
 
         {/* Add form */}
         {showAdd && (
-          <div className="bg-white border border-[#e9e9e9] rounded-[14px] p-5 mb-5">
+          <div className="bg-white border border-[#e9e9e9] rounded-[16px] p-5 mb-5">
             <p className="text-[13px] font-semibold text-[#1f1f1f] mb-3">Новий матеріал</p>
             <div className="flex flex-col gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">URL або посилання</label>
-                <input
+                <Input
                   autoFocus
                   value={addUrl}
                   onChange={e => setAddUrl(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
                   placeholder="https://..."
-                  className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">Назва</label>
-                  <input
+                  <Input
                     value={addName}
                     onChange={e => setAddName(e.target.value)}
                     placeholder="Опціонально"
-                    className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
                   />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-1 block">Нотатка</label>
-                  <input
+                  <Input
                     value={addNote}
                     onChange={e => setAddNote(e.target.value)}
                     placeholder="Опціонально"
-                    className="w-full text-[13px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[8px] px-3 py-[8px] outline-none focus:border-[#1f1f1f]"
                   />
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={handleAdd} disabled={saving || (!addUrl.trim() && !addName.trim())}
-                  className="px-4 py-[8px] bg-[#1f1f1f] text-white rounded-[8px] text-[12px] font-semibold hover:bg-[#303030] transition-colors disabled:opacity-50">
+                <Button style="primary" size="md" disabled={saving || (!addUrl.trim() && !addName.trim())} loading={saving} onClick={handleAdd}>
                   {saving ? 'Збереження...' : 'Додати'}
-                </button>
-                <button onClick={() => { setShowAdd(false); setAddUrl(''); setAddName(''); setAddNote(''); }}
-                  className="px-4 py-[8px] text-[#9a9a9a] hover:text-[#1f1f1f] text-[12px] transition-colors">
+                </Button>
+                <Button style="secondary" size="md" onClick={() => { setShowAdd(false); setAddUrl(''); setAddName(''); setAddNote(''); }}>
                   Скасувати
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -186,14 +180,14 @@ export default function MaterialsTab({ projectId }) {
             <p className="text-[12px] text-[#e0e0e0]">Додайте посилання на файли, документи або дизайни</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#e9e9e9] rounded-[14px] overflow-hidden">
+          <div className="bg-white border border-[#e9e9e9] rounded-[16px] overflow-hidden">
             {filtered.map((file, i) => {
               const Icon = FILE_ICONS[file.type] || FILE_ICONS.other;
               return (
                 <div key={file.id}
                   className={`flex items-center gap-4 px-5 py-[14px] group hover:bg-[#fafafa] transition-colors ${i < filtered.length - 1 ? 'border-b border-[#f0f0f0]' : ''}`}>
                   {/* Preview */}
-                  <div className="w-[40px] h-[40px] bg-[#f7f7f7] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center border border-[#e9e9e9]">
+                  <div className="w-[40px] h-[40px] bg-[#f4f4f5] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center border border-[#e9e9e9]">
                     {file.type === 'image' && file.url ? (
                       <img src={file.url} alt="" className="w-full h-full object-cover"
                         onError={e => { e.target.style.display='none'; }} />

@@ -1,6 +1,7 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -11,24 +12,38 @@ import {
   Palette, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle,
-  Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard
+  Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
+  Globe, Tag as TagIcon, Briefcase
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Forms/Textarea';
-import { Select } from '@/components/ui/Select';
-import ToggleSwitch from '@/components/ui/Forms/ToggleSwitch';
-import { Alert } from '@/components/ui/Feedback/Alert';
-import Card from '@/components/ui/Layout/Card';
-import { LoadingSpinner } from '@/components/ui/Feedback/LoadingSpinner';
+import { 
+  Button, 
+  Input, 
+  Textarea, 
+  Select, 
+  ToggleSwitch, 
+  Alert, 
+  Card, 
+  LoadingSpinner, 
+  SidebarLayout, 
+  InnerNavigation, 
+  PageHeader 
+} from '@/components/ui';
+import ImageUpload from '@/components/ui/ImageUpload';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
+const ROLE_LABELS = {
+  owner: 'Власник',
+  admin: 'Адміністратор',
+  member: 'Учасник',
+  client: 'Клієнт',
+};
+
 const DEFAULT_STATUSES = [
-  { id: 'todo',        label: 'To Do',       color: '#6366f1' },
-  { id: 'in-progress', label: 'In Progress', color: '#0891b2' },
-  { id: 'done',        label: 'Done',        color: '#10b981' },
+  { id: 'todo',            label: 'To Do',           color: '#6366f1' },
+  { id: 'in-progress',     label: 'In Progress',     color: '#0891b2' },
+  { id: 'done',            label: 'Done',            color: '#10b981' },
 ];
 const DEFAULT_TYPES = [
   { id: 'epic',    label: 'Epic',    color: '#8b5cf6' },
@@ -47,6 +62,12 @@ const DEFAULT_LABELS = [
   { id: 'frontend', label: 'Frontend', color: '#3b82f6' },
   { id: 'design',   label: 'Design',   color: '#db2777' },
 ];
+const DEFAULT_POSITIONS = [
+  { id: 'dev',      label: 'Розробник', hourlyRate: 30 },
+  { id: 'designer', label: 'Дизайнер',   hourlyRate: 35 },
+  { id: 'pm',       label: 'PM',         hourlyRate: 40 },
+  { id: 'qa',       label: 'QA',         hourlyRate: 25 },
+];
 const COLOR_PALETTE = [
   '#dc2626','#f97316','#eab308','#22c55e','#10b981',
   '#0891b2','#6366f1','#8b5cf6','#db2777','#1f1f1f',
@@ -56,20 +77,25 @@ const COLOR_PALETTE = [
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
-  { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Воркспейс', adminOnly: true },
-  { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Воркспейс' },
-  { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Воркспейс', adminOnly: true },
-  { id: 'integrations',  label: 'Інтеграції',       icon: PlugZap,       group: 'Воркспейс', adminOnly: true },
-  { id: 'workflow',      label: 'Статуси та типи',  icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
+  { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
+  { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
+  { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Організація' },
+  { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
+  { id: 'integrations',  label: 'Інтеграції',       icon: PlugZap,       group: 'Організація', adminOnly: true },
+  { id: 'statuses',      label: 'Статуси задач',    icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
+  { id: 'types',         label: 'Типи задач',       icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
+  { id: 'priorities',    label: 'Пріоритети',       icon: AlertTriangle, group: 'Налаштування процесів', adminOnly: true },
+  { id: 'labels',        label: 'Мітки',            icon: Palette,       group: 'Налаштування процесів', adminOnly: true },
+  { id: 'positions',     label: 'Посади та ставки', icon: Briefcase,     group: 'Налаштування процесів', adminOnly: true },
   { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: true, adminOnly: true },
 ];
 
 // ── Primitives ───────────────────────────────────────────────────────
 // Toggle removed - using ToggleSwitch from UI Kit
 
-function Row({ label, desc, children, danger = false, topBorder = false }) {
+function Row({ label, desc, children, danger = false }) {
   return (
-    <div className={`flex items-center justify-between gap-6 py-[14px] ${topBorder ? 'border-t border-[#f0f0f0]' : 'border-b border-[#f0f0f0]'} last:border-b-0 first:border-t-0`}>
+    <div className="flex items-center justify-between gap-6 py-[12px]">
       <div className="min-w-0 flex-1">
         <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{label}</p>
         {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-[#9a9a9a]'}`}>{desc}</p>}
@@ -81,12 +107,14 @@ function Row({ label, desc, children, danger = false, topBorder = false }) {
 
 function Section({ title, desc, children }) {
   return (
-    <div>
-      <div className="mb-5">
-        <h2 className="text-[18px] font-semibold text-[#1f1f1f] tracking-tight">{title}</h2>
-        {desc && <p className="text-[13px] text-[#9a9a9a] mt-[3px]">{desc}</p>}
+    <div className="flex flex-col">
+      <div className="mb-6">
+        <h2 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{title}</h2>
+        {desc && <p className="text-[13px] text-[#9a9a9a] mt-[4px]">{desc}</p>}
       </div>
-      {children}
+      <div className="flex flex-col gap-[24px]">
+        {children}
+      </div>
     </div>
   );
 }
@@ -95,7 +123,22 @@ function Section({ title, desc, children }) {
 
 // ── WorkflowItem ─────────────────────────────────────────────────────
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
+function hexToRgba(hex, alpha) {
+  if (!hex) return 'transparent';
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.substring(1, 3), 16);
+    g = parseInt(hex.substring(3, 5), 16);
+    b = parseInt(hex.substring(5, 7), 16);
+  }
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status' }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -105,13 +148,16 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
     if (label.trim()) {
       const { isNew, ...rest } = item;
       onSave({ ...rest, label: label.trim(), color });
+      setEditing(false);
+      setShowPalette(false);
+    } else {
+      if (item.isNew) onDelete(item.id);
+      else { setEditing(false); setLabel(item.label); }
     }
-    setEditing(false);
-    setShowPalette(false);
   };
 
   return (
-    <div className="flex items-center gap-3 py-[11px] border-b border-[#f0f0f0] last:border-0 group">
+    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group">
       {/* Color */}
       <div className="relative shrink-0">
         <button
@@ -122,7 +168,16 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
         {showPalette && (
           <div className="absolute left-0 top-[22px] z-20 bg-white border border-[#e9e9e9] rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
             {COLOR_PALETTE.map(c => (
-              <button key={c} onClick={() => { setColor(c); setShowPalette(false); }}
+              <button 
+                key={c} 
+                onClick={() => { 
+                  setColor(c); 
+                  setShowPalette(false); 
+                  if (!editing) {
+                    const { isNew, ...rest } = item;
+                    onSave({ ...rest, label: label.trim(), color: c });
+                  }
+                }}
                 className="w-[18px] h-[18px] rounded-full transition-transform hover:scale-110"
                 style={{ background: c, outline: c === color ? '2px solid #1f1f1f' : 'none', outlineOffset: 2 }}
               />
@@ -138,24 +193,35 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
             autoFocus
             value={label}
             onChange={e => setLabel(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setEditing(false); setLabel(item.label); } }}
+            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { if (item.isNew) onDelete(item.id); else { setEditing(false); setLabel(item.label); } } }}
             className="h-[28px] text-[12px]"
           />
         </div>
       ) : (
-        <span className="flex-1 text-[13px] text-[#1f1f1f]">{item.label}</span>
+        <span className="flex-1 text-[13px] font-semibold text-[#1f1f1f]">{item.label}</span>
       )}
 
       {/* Badge preview */}
       {!editing && (
-        <span className="text-[10px] font-semibold px-[8px] py-[2px] rounded-full shrink-0"
-          style={{ background: color + '18', color }}>
-          {item.label}
+        <span 
+          className={`inline-flex items-center shrink-0 text-[11px] font-medium backdrop-blur-[2px] transition-all ${
+            variant === 'priority' ? 'gap-[6px] px-[8px] py-[3px] rounded-[6px]' :
+            variant === 'label' ? 'gap-1.5 px-[10px] py-[3px] rounded-[6px]' :
+            'px-[10px] py-[3px] rounded-[6px]'
+          }`}
+          style={{ 
+            background: hexToRgba(color, 0.08), 
+            color: color
+          }}
+        >
+          {variant === 'priority' && <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: color }} />}
+          {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
+          {label}
         </span>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
             <Button onClick={save} style="ghost" color="green" size="icon" icon={Check} iconSize={12} />
@@ -173,12 +239,90 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
               style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
               className="opacity-0 group-hover:opacity-100"
             />
-            {canDelete && (
+            {canDelete ? (
               <Button onClick={() => onDelete(item.id)}
                 style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
                 className="opacity-0 group-hover:opacity-100"
               />
+            ) : (
+              <div className="w-[28px]" />
             )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PositionItem({ item, onSave, onDelete }) {
+  const [editing, setEditing] = useState(item.isNew || false);
+  const [label, setLabel] = useState(item.label);
+  const [hourlyRate, setHourlyRate] = useState(item.hourlyRate || 0);
+
+  const save = () => {
+    if (label.trim()) {
+      const { isNew, ...rest } = item;
+      onSave({ ...rest, label: label.trim(), hourlyRate: Number(hourlyRate) || 0 });
+      setEditing(false);
+    } else {
+      if (item.isNew) onDelete(item.id);
+      else { setEditing(false); setLabel(item.label); setHourlyRate(item.hourlyRate); }
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group">
+      {editing ? (
+        <div className="flex flex-1 items-center gap-3">
+          <Input
+            autoFocus
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            placeholder="Назва посади"
+            className="h-[28px] text-[12px] flex-1"
+          />
+          <div className="w-[120px] flex items-center gap-1">
+            <span className="text-[12px] text-[#9a9a9a]">$</span>
+            <Input
+              type="number"
+              value={hourlyRate}
+              onChange={e => setHourlyRate(e.target.value)}
+              placeholder="Ставка"
+              className="h-[28px] text-[12px] w-[50px] text-right"
+            />
+            <span className="text-[11px] text-[#9a9a9a]">/год</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-between">
+          <span className="text-[13px] font-semibold text-[#1f1f1f]">{item.label}</span>
+          <span className="text-[12px] font-medium text-[#9a9a9a]">${item.hourlyRate || 0}/год</span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
+        {editing ? (
+          <>
+            <Button onClick={save} style="ghost" color="green" size="icon" icon={Check} iconSize={12} />
+            <Button
+              onClick={() => {
+                if (item.isNew) { onDelete(item.id); }
+                else { setEditing(false); setLabel(item.label); setHourlyRate(item.hourlyRate); }
+              }}
+              style="ghost" color="gray" size="icon" icon={X} iconSize={12}
+            />
+          </>
+        ) : (
+          <>
+            <Button onClick={() => setEditing(true)}
+              style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
+              className="opacity-0 group-hover:opacity-100"
+            />
+            <Button onClick={() => onDelete(item.id)}
+              style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
+              className="opacity-0 group-hover:opacity-100"
+            />
           </>
         )}
       </div>
@@ -189,9 +333,10 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true }) {
 // ── MAIN PAGE ────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { currentUser, signOut, activeOrgId } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
-  const { org, members, inviteMember, changeMemberRole, removeMember } = useOrganization();
+  const { org, members, inviteMember, changeMemberRole, removeMember, setMemberPosition } = useOrganization();
 
   // Role resolution
   const myMemberInfo = members.find(m => m.id === (currentUser?.uid || currentUser?.id));
@@ -206,11 +351,17 @@ export default function SettingsPage() {
   const [types,      setTypes]      = useState(DEFAULT_TYPES);
   const [priorities, setPriorities] = useState(DEFAULT_PRIORITIES);
   const [labels,     setLabels]     = useState(DEFAULT_LABELS);
+  const [positions,  setPositions]  = useState([]);
   const [wfLoading,  setWfLoading]  = useState(true);
   const [wfSaving,   setWfSaving]   = useState(false);
 
   // ── Profile ──
   const [displayName,   setDisplayName]   = useState('');
+  const [bio,           setBio]           = useState('');
+  const [telegram,      setTelegram]      = useState('');
+  const [phone,         setPhone]         = useState('');
+  const [location,      setLocation]      = useState('');
+  const [skillsInput,   setSkillsInput]   = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
 
   // ── Workspace ──
@@ -235,14 +386,36 @@ export default function SettingsPage() {
   });
   const [notifSaving, setNotifSaving] = useState(false);
 
+  // ── Localization ──
+  const [dateFormat, setDateFormat] = useState('DD.MM.YYYY');
+  const [firstDayOfWeek, setFirstDayOfWeek] = useState('Monday');
+  const [timeFormat, setTimeFormat] = useState('24h');
+  const [timezone, setTimezone] = useState('Europe/Kyiv');
+  const [language, setLanguage] = useState('ua');
+  const [locSaving, setLocSaving] = useState(false);
+
   // ── Team invite ──
   const [inviting,    setInviting]    = useState(false);
   const [inviteRole,  setInviteRole]  = useState('member');
 
   // Sync from Firestore (initial only)
   useEffect(() => {
-    if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
-  }, [currentUser?.name]); // eslint-disable-line
+    if (currentUser) {
+      if (currentUser.name && !displayName) setDisplayName(currentUser.name);
+      setBio(currentUser.bio || '');
+      setTelegram(currentUser.telegram || '');
+      setPhone(currentUser.phone || '');
+      setLocation(currentUser.location || '');
+      setSkillsInput(Array.isArray(currentUser.skills) ? currentUser.skills.join(', ') : '');
+      if (currentUser.localization) {
+        setDateFormat(currentUser.localization.dateFormat || 'DD.MM.YYYY');
+        setFirstDayOfWeek(currentUser.localization.firstDayOfWeek || 'Monday');
+        setTimeFormat(currentUser.localization.timeFormat || '24h');
+        setTimezone(currentUser.localization.timezone || 'Europe/Kyiv');
+        setLanguage(currentUser.localization.language || 'ua');
+      }
+    }
+  }, [currentUser]); // eslint-disable-line
 
   useEffect(() => {
     if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
@@ -251,14 +424,7 @@ export default function SettingsPage() {
   }, [currentUser?.name, org?.name, org?.logo]); // eslint-disable-line
 
   // ── Breadcrumbs ──
-  useEffect(() => {
-    useWorkspaceStore.setState({
-      breadcrumbs: [
-        { label: 'Налаштування', href: null },
-      ]
-    });
-    return () => useWorkspaceStore.setState({ breadcrumbs: [] });
-  }, []);
+  // Removed breadcrumbs to avoid duplicate 'Налаштування' in WorkspaceHeader
   useEffect(() => {
     const load = async () => {
       if (!activeOrgId) return;
@@ -270,6 +436,10 @@ export default function SettingsPage() {
           if (d.types !== undefined)      setTypes(d.types);
           if (d.priorities !== undefined) setPriorities(d.priorities);
           if (d.labels !== undefined)     setLabels(d.labels);
+          if (d.positions !== undefined)  setPositions(d.positions);
+          else                            setPositions(DEFAULT_POSITIONS);
+        } else {
+          setPositions(DEFAULT_POSITIONS);
         }
         const intSnap = await getDoc(doc(db, 'organizations', activeOrgId, 'settings', 'integrations'));
         if (intSnap.exists()) {
@@ -304,10 +474,46 @@ export default function SettingsPage() {
     if (!uid) return;
     setProfileSaving(true);
     try {
-      await updateDoc(doc(db, 'users', uid), { name: displayName.trim(), updatedAt: serverTimestamp() });
+      const skillsArray = skillsInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      await updateDoc(doc(db, 'users', uid), {
+        name: displayName.trim(),
+        bio: bio.trim(),
+        telegram: telegram.trim(),
+        phone: phone.trim(),
+        location: location.trim(),
+        skills: skillsArray,
+        updatedAt: serverTimestamp(),
+      });
       showToast('Профіль збережено');
-    } catch { showToast('Помилка збереження', 'error'); }
+    } catch (e) {
+      console.error('Error saving profile:', e);
+      showToast('Помилка збереження', 'error');
+    }
     setProfileSaving(false);
+  };
+
+  const saveLocalization = async () => {
+    const uid = currentUser?.uid || currentUser?.id;
+    if (!uid) return;
+    setLocSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        localization: {
+          dateFormat,
+          firstDayOfWeek,
+          timeFormat,
+          timezone,
+          language,
+        },
+        updatedAt: serverTimestamp()
+      });
+      showToast('Параметри локалізації збережено');
+    } catch { showToast('Помилка збереження', 'error'); }
+    setLocSaving(false);
   };
 
   const saveWorkspace = async () => {
@@ -328,11 +534,19 @@ export default function SettingsPage() {
     if (!activeOrgId) return;
     setWfSaving(true);
     try {
+      const clean = arr => arr.map(({ isNew, ...rest }) => rest);
       await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'), {
-        statuses, types, priorities, labels, updatedAt: serverTimestamp(),
-      });
-      showToast('Workflow збережено');
-    } catch { showToast('Помилка збереження', 'error'); }
+        statuses: clean(statuses),
+        types: clean(types),
+        priorities: clean(priorities),
+        labels: clean(labels),
+        positions: clean(positions)
+      }, { merge: true });
+      showToast('Налаштування збережено');
+    } catch (e) { 
+      console.error('Workflow Save Error:', e);
+      showToast(e.message || 'Помилка збереження', 'error'); 
+    }
     setWfSaving(false);
   };
 
@@ -390,10 +604,66 @@ export default function SettingsPage() {
     catch { showToast('Помилка', 'error'); }
   };
 
+  const handlePositionChange = async (uid, positionId) => {
+    try { await setMemberPosition(uid, positionId); showToast('Посаду змінено'); }
+    catch { showToast('Помилка', 'error'); }
+  };
+
+  const handleTransferOwnership = async (targetUid) => {
+    if (!confirm('Ви дійсно хочете передати права власника цій особі? Ви втратите статус власника та станете адміністратором.')) return;
+    try {
+      const orgRef = doc(db, 'organizations', activeOrgId);
+      const orgSnap = await getDoc(orgRef);
+      const orgData = orgSnap.data();
+      
+      const uid = currentUser?.id || currentUser?.uid;
+      const updatedMembers = orgData.members.map(m => {
+        if (m.uid === uid) return { ...m, role: 'admin' };
+        if (m.uid === targetUid) return { ...m, role: 'owner' };
+        return m;
+      });
+      
+      await updateDoc(orgRef, {
+        ownerId: targetUid,
+        members: updatedMembers
+      });
+      showToast('Права власника успішно передано');
+    } catch (e) {
+      showToast('Помилка передачі прав', 'error');
+    }
+  };
+
   const handleRemoveMember = async (uid) => {
     if (!confirm('Видалити учасника з команди?')) return;
     try { await removeMember(uid); showToast('Учасника видалено'); }
     catch { showToast('Помилка', 'error'); }
+  };
+
+  const handleDeleteOrg = async (type) => {
+    if (!activeOrgId) return;
+    try {
+      if (type === 'hard') {
+        const typed = prompt('Введіть DELETE для повного та безповоротного видалення організації');
+        if (typed !== 'DELETE') return;
+        await deleteDoc(doc(db, 'organizations', activeOrgId));
+        showToast('Організацію повністю видалено');
+        setTimeout(() => window.location.href = '/workspace', 1000);
+      } else if (type === 'soft') {
+        const typed = prompt('Введіть 30 для видалення організації через 30 днів (ви зможете її відновити)');
+        if (typed !== '30') return;
+        
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 30);
+        
+        await updateDoc(doc(db, 'organizations', activeOrgId), {
+          status: 'pending_deletion',
+          deleteAt: futureDate.toISOString()
+        });
+        showToast('Організацію заплановано до видалення');
+      }
+    } catch (e) {
+      showToast('Помилка видалення', 'error');
+    }
   };
 
   const handleUpgradePlan = async (newPlan = 'pro') => {
@@ -409,6 +679,7 @@ export default function SettingsPage() {
   const tpA = makeUpdater(setTypes);
   const prA = makeUpdater(setPriorities);
   const lbA = makeUpdater(setLabels);
+  const posA = makeUpdater(setPositions);
 
   // ── Section renderer ─────────────────────────────────────────────
 
@@ -417,7 +688,7 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'profile': return (
-        <Section title="Профіль" desc="Ваше ім'я відображається у задачах та коментарях">
+        <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, задачах та чаті">
           <Card variant="white" padding="lg">
             <Row label="Ім'я" desc="Показується в задачах і чаті">
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-[200px]" />
@@ -427,13 +698,32 @@ export default function SettingsPage() {
             </Row>
             <Row label="Роль">
               <span className="text-[11px] font-semibold px-[8px] py-[3px] bg-[#f0f0f0] text-[#4a4a4a] rounded-full">
-                {currentUser?.role || 'Member'}
+                {ROLE_LABELS[myRole] || myRole}
               </span>
             </Row>
+            <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
+              <Input value={telegram} onChange={e => setTelegram(e.target.value)} placeholder="username" className="w-[200px]" />
+            </Row>
+            <Row label="Телефон" desc="Контактний номер">
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+380..." className="w-[200px]" />
+            </Row>
+            <Row label="Локація" desc="Місто, країна">
+              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Київ, Україна" className="w-[200px]" />
+            </Row>
+            <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
+              <Input value={skillsInput} onChange={e => setSkillsInput(e.target.value)} placeholder="React, Node.js, Design" className="w-[300px]" />
+            </Row>
+            <div className="flex flex-col gap-2 py-[12px] border-t border-[#f4f4f5] mt-2">
+              <label className="text-[13px] font-medium text-[#1f1f1f]">Про себе</label>
+              <p className="text-[12px] text-[#9a9a9a] -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
+              <Textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                placeholder="Розкажіть трохи про себе..."
+                className="w-full mt-1 text-[13px] h-[80px]"
+              />
+            </div>
           </Card>
-          <Button onClick={saveProfile} loading={profileSaving} style="primary" color="blue" size="lg">
-            {profileSaving ? 'Збереження...' : 'Зберегти профіль'}
-          </Button>
         </Section>
       );
 
@@ -468,25 +758,88 @@ export default function SettingsPage() {
               </Button>
             </Row>
           </Card>
-          <Button onClick={saveNotifications} loading={notifSaving} style="primary" color="blue" size="lg">
-            {notifSaving ? 'Збереження...' : 'Зберегти'}
-          </Button>
+        </Section>
+      );
+
+      // ──────────────────────────────────────────────────────────────
+      case 'localization': return (
+        <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону">
+          <Card variant="white" padding="lg">
+            <Row label="Мова інтерфейсу" desc="Виберіть мову відображення">
+              <Select
+                value={language}
+                onChange={setLanguage}
+                options={[
+                  { value: 'ua', label: 'Українська' },
+                  { value: 'en', label: 'English (В розробці)' }
+                ]}
+                className="w-[240px]"
+              />
+            </Row>
+            <Row label="Формат дати" desc="Оберіть зручний формат представлення дати">
+              <Select
+                value={dateFormat}
+                onChange={setDateFormat}
+                options={[
+                  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (13.05.2026)' },
+                  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2026-05-13)' },
+                  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (05/13/2026)' }
+                ]}
+                className="w-[240px]"
+              />
+            </Row>
+            <Row label="Перший день тижня" desc="Перший день тижня в сітці календаря (DatePicker)">
+              <Select
+                value={firstDayOfWeek}
+                onChange={setFirstDayOfWeek}
+                options={[
+                  { value: 'Monday', label: 'Понеділок' },
+                  { value: 'Sunday', label: 'Неділя' }
+                ]}
+                className="w-[240px]"
+              />
+            </Row>
+            <Row label="Формат часу" desc="Виберіть між 24-годинним або 12-годинним форматом відображення">
+              <Select
+                value={timeFormat}
+                onChange={setTimeFormat}
+                options={[
+                  { value: '24h', label: '24-годинний (14:30)' },
+                  { value: '12h', label: '12-годинний (2:30 PM)' }
+                ]}
+                className="w-[240px]"
+              />
+            </Row>
+            <Row label="Часовий пояс" desc="Поточний регіональний час для планування">
+              <Select
+                value={timezone}
+                onChange={setTimezone}
+                options={[
+                  { value: 'Europe/Kyiv', label: 'Europe/Kyiv (GMT+3)' },
+                  { value: 'UTC', label: 'UTC (GMT+0)' },
+                  { value: 'America/New_York', label: 'America/New_York (GMT-4)' },
+                  { value: 'Europe/London', label: 'Europe/London (GMT+1)' }
+                ]}
+                className="w-[240px]"
+              />
+            </Row>
+          </Card>
         </Section>
       );
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': return (
-        <Section title="Воркспейс" desc="Загальні налаштування вашої організації">
+        <Section title="Загальні" desc="Загальні налаштування вашої організації">
           <Card variant="white" padding="lg">
-            <Row label="Назва організації" desc="Видима всім у вашому воркспейсі">
+            <Row label="Назва організації" desc="Видима всім у вашій організації">
               <Input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-[200px]" />
             </Row>
-            <Row label="URL Логотипу" desc="Вставте посилання на зображення для вашої організації">
-              <Input value={orgLogo} onChange={e => setOrgLogo(e.target.value)} className="w-[300px]" placeholder="https://example.com/logo.png" />
+            <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
+              <ImageUpload value={orgLogo} onChange={setOrgLogo} theme="light" showLabel={false} />
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
-                <code className="text-[12px] bg-[#f7f7f7] border border-[#e9e9e9] px-2 py-1 rounded-[6px] text-[#9a9a9a] font-mono">
+                <code className="text-[12px] bg-[#f4f4f5] border border-[#e9e9e9] px-2 py-1 rounded-[6px] text-[#9a9a9a] font-mono">
                   {activeOrgId || 'quickteam'}
                 </code>
                 <Button
@@ -498,121 +851,10 @@ export default function SettingsPage() {
               </div>
             </Row>
           </Card>
-          <Button onClick={saveWorkspace} loading={workspaceSaving} style="primary" color="blue" size="lg">
-            {workspaceSaving ? 'Збереження...' : 'Зберегти'}
-          </Button>
         </Section>
       );
 
-      // ──────────────────────────────────────────────────────────────
-      case 'team': return (
-        <Section title="Команда" desc={`${members.length} учасник${members.length === 1 ? '' : 'ів'} у воркспейсі`}>
 
-          {/* Members list */}
-          <Card variant="white" padding="lg">
-            {members.length === 0 && (
-              <div className="py-8 text-center text-[13px] text-[#cfcfcf]">Немає учасників</div>
-            )}
-            {members.map(m => {
-              const uid    = m.id || m.uid;
-              const isMe   = uid === (currentUser?.id || currentUser?.uid);
-              const initials = (m.name || m.email || '?')[0]?.toUpperCase();
-              return (
-                <div key={uid} className="flex items-center gap-3 py-[12px] border-b border-[#f0f0f0] last:border-0">
-                  <div className="w-8 h-8 rounded-full bg-[#1f1f1f] flex items-center justify-center text-white text-[12px] font-semibold shrink-0">
-                    {m.avatar
-                      ? <img src={m.avatar} alt="" className="w-full h-full object-cover rounded-full" />
-                      : initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-[#1f1f1f] truncate">
-                      {m.name || m.email}
-                      {isMe && <span className="ml-1 text-[10px] text-[#9a9a9a] font-normal">(ви)</span>}
-                    </p>
-                    <p className="text-[11px] text-[#9a9a9a] truncate">{m.email}</p>
-                  </div>
-                  <div className="w-[120px]">
-                    <Select
-                      value={m.role || 'member'}
-                      onChange={val => handleRoleChange(uid, val)}
-                      disabled={!isAdmin || isMe || m.role === 'owner'}
-                      options={[
-                        { value: 'owner', label: 'WorkspaceAdmin' },
-                        { value: 'admin', label: 'Admin' },
-                        { value: 'member', label: 'Member' }
-                      ]}
-                      className="text-[11px]"
-                    />
-                  </div>
-                  {isAdmin && !isMe && m.role !== 'owner' && (
-                    <Button
-                      onClick={() => handleRemoveMember(uid)}
-                      style="ghost" color="red" size="sm"
-                      icon={X}
-                      iconSize={13}
-                      title="Видалити"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </Card>
-
-          {/* Invite */}
-          {isAdmin && (
-            <Card variant="white" padding="lg" className="mb-3">
-              <p className="text-[12px] font-medium text-[#1f1f1f] mb-3">Запросити учасника</p>
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={e => setInviteEmail(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleInvite(); }}
-                  placeholder="email@company.com"
-                  className="flex-1 h-[36px]"
-                />
-                <div className="w-[100px]">
-                  <Select
-                    value={inviteRole}
-                    onChange={val => setInviteRole(val)}
-                    options={[
-                      { value: 'member', label: 'Member' },
-                      { value: 'admin', label: 'Admin' }
-                    ]}
-                  />
-                </div>
-                <Button
-                  onClick={handleInvite}
-                  disabled={inviting || !inviteEmail.trim()}
-                  loading={inviting}
-                  style="primary" color="blue" size="lg"
-                  icon={Mail}
-                  iconSize={12}
-                >
-                  Запросити
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Roles guide */}
-          <Card variant="gray" padding="lg">
-            <div className="py-[6px]">
-              <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-3">Ролі та доступ</p>
-              {[
-                { role: 'WorkspaceAdmin',  desc: 'Повний доступ, включаючи видалення воркспейсу' },
-                { role: 'Admin',  desc: 'Керує проєктами, командою та налаштуваннями' },
-                { role: 'Member', desc: 'Створює і редагує задачі, не може керувати командою' },
-              ].map(r => (
-                <div key={r.role} className="flex items-baseline gap-3 py-[5px]">
-                  <span className="text-[11px] font-semibold text-[#1f1f1f] w-[100px] shrink-0">{r.role}</span>
-                  <span className="text-[12px] text-[#9a9a9a]">{r.desc}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Section>
-      );
 
       // ──────────────────────────────────────────────────────────────
       case 'integrations': return (
@@ -684,7 +926,7 @@ export default function SettingsPage() {
         const projectsPercent = isPro ? 100 : Math.min(100, (projectsCount / projectLimit) * 100);
 
         return (
-          <Section title="Тарифний план" desc="Управління підпискою та лімітами воркспейсу">
+          <Section title="Тарифний план" desc="Управління підпискою та лімітами організації">
             <Card className={`border-${isPro ? '[#eab308]/40' : '[#6366f1]/20'} shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
               <div className={`bg-gradient-to-r ${isPro ? 'from-[#fefce8] to-[#fffbeb]' : 'from-[#eef2ff] to-white'} px-6 py-6 border-b border-[#e9e9e9]`}>
                 <div className="flex items-center justify-between">
@@ -745,110 +987,139 @@ export default function SettingsPage() {
       }
 
       // ──────────────────────────────────────────────────────────────
-      case 'workflow': return (
-        <Section title="Workflow" desc="Статуси, типи та пріоритети задач — застосовуються до всіх проєктів">
-
+      case 'statuses': return (
+        <Section title="Статуси задач" desc="Статуси задач — застосовуються до всіх проєктів">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <>
-              {/* Statuses */}
-              <div className="mb-2">
-                <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-2">Статуси</p>
-                <Card>
-                  {statuses.map((s, i) => (
-                    <WorkflowItem key={s.id} item={s}
-                      onSave={stA.onSave} onDelete={stA.onDelete}
-                      canDelete={i > 0 && i < statuses.length - 1}
-                    />
-                  ))}
-                  <Button
-                    onClick={() => setStatuses(p => [...p, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', isNew: true }])}
-                    style="ghost" color="gray" size="md"
-                    icon={Plus} iconSize={13}
-                    className="w-full justify-start py-3"
-                  >
-                    Додати статус
-                  </Button>
-                </Card>
-              </div>
+            <Card>
+              {statuses.map((s, i) => (
+                <WorkflowItem key={s.id} item={s}
+                  onSave={stA.onSave} onDelete={stA.onDelete}
+                  canDelete={i > 0 && i < statuses.length - 1}
+                  variant="status"
+                />
+              ))}
+              <Button
+                onClick={() => {
+                  setStatuses(p => {
+                    const newStatuses = [...p];
+                    newStatuses.splice(newStatuses.length - 1, 0, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', emoji: '📌', isNew: true });
+                    return newStatuses;
+                  });
+                }}
+                style="ghost" color="gray" size="md"
+                icon={Plus} iconSize={13}
+                className="w-full justify-start py-3 mt-2"
+              >
+                Додати статус
+              </Button>
+            </Card>
+          )}
+        </Section>
+      );
 
-              {/* Types */}
-              <div className="mb-2">
-                <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-2">Типи задач</p>
-                <Card>
-                  {types.map(t => (
-                    <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} />
-                  ))}
-                  <Button
-                    onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
-                    style="ghost" color="gray" size="md"
-                    icon={Plus} iconSize={13}
-                    className="w-full justify-start py-3"
-                  >
-                    Додати тип
-                  </Button>
-                </Card>
-              </div>
+      case 'types': return (
+        <Section title="Типи задач" desc="Типи задач — застосовуються до всіх проєктів">
+          {wfLoading ? (
+            <div className="py-12 flex items-center justify-center">
+              <LoadingSpinner size="md" />
+            </div>
+          ) : (
+            <Card>
+              {types.map(t => (
+                <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} variant="type" />
+              ))}
+              <Button
+                onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', emoji: '📄', isNew: true }])}
+                style="ghost" color="gray" size="md"
+                icon={Plus} iconSize={13}
+                className="w-full justify-start py-3 mt-2"
+              >
+                Додати тип
+              </Button>
+            </Card>
+          )}
+        </Section>
+      );
 
-              {/* Priorities */}
-              <div className="mb-4">
-                <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-2">Пріоритети</p>
-                <Card>
-                  {priorities.map((p, i) => (
-                    <WorkflowItem key={p.id} item={p}
-                      onSave={prA.onSave} onDelete={prA.onDelete}
-                      canDelete={i > 0 && i < priorities.length - 1}
-                    />
-                  ))}
-                </Card>
-              </div>
+      case 'priorities': return (
+        <Section title="Пріоритети задач" desc="Пріоритети задач — застосовуються до всіх проєктів">
+          {wfLoading ? (
+            <div className="py-12 flex items-center justify-center">
+              <LoadingSpinner size="md" />
+            </div>
+          ) : (
+            <Card>
+              {priorities.map(pItem => (
+                <WorkflowItem key={pItem.id} item={pItem} onSave={prA.onSave} onDelete={prA.onDelete} variant="priority" />
+              ))}
+              <Button
+                onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', emoji: '🔥', isNew: true }])}
+                style="ghost" color="gray" size="md"
+                icon={Plus} iconSize={13}
+                className="w-full justify-start py-3 mt-2"
+              >
+                Додати пріоритет
+              </Button>
+            </Card>
+          )}
+        </Section>
+      );
 
-              {/* Labels */}
-              <div className="mb-4">
-                <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wider mb-2">Мітки (Теги)</p>
-                <Card>
-                  {labels.map(l => (
-                    <WorkflowItem key={l.id} item={l} onSave={lbA.onSave} onDelete={lbA.onDelete} />
-                  ))}
-                  <Button
-                    onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#3b82f6', isNew: true }])}
-                    style="ghost" color="gray" size="md"
-                    icon={Plus} iconSize={13}
-                    className="w-full justify-start py-3"
-                  >
-                    Додати мітку
-                  </Button>
-                </Card>
-              </div>
+      case 'labels': return (
+        <Section title="Мітки задач" desc="Глобальні мітки для маркування задач">
+          {wfLoading ? (
+            <div className="py-12 flex items-center justify-center">
+              <LoadingSpinner size="md" />
+            </div>
+          ) : (
+            <Card>
+              {labels.map(l => (
+                <WorkflowItem key={l.id} item={l} onSave={lbA.onSave} onDelete={lbA.onDelete} variant="label" />
+              ))}
+              <Button
+                onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#db2777', isNew: true }])}
+                style="ghost" color="gray" size="md"
+                icon={Plus} iconSize={13}
+                className="w-full justify-start py-3 mt-2"
+              >
+                Додати мітку
+              </Button>
+            </Card>
+          )}
+        </Section>
+      );
 
-              <div className="flex items-center gap-3">
-                <Button onClick={saveWorkflow} loading={wfSaving} style="primary" color="blue" size="lg">
-                  {wfSaving ? 'Збереження...' : 'Зберегти workflow'}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setStatuses(DEFAULT_STATUSES);
-                    setTypes(DEFAULT_TYPES);
-                    setPriorities(DEFAULT_PRIORITIES);
-                    setLabels(DEFAULT_LABELS);
-                    showToast('Скинуто до стандартних значень');
-                  }}
-                  style="ghost" color="gray" size="md"
-                >
-                  Скинути до стандартних
-                </Button>
-              </div>
-            </>
+      case 'positions': return (
+        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців">
+          {wfLoading ? (
+            <div className="py-12 flex items-center justify-center">
+              <LoadingSpinner size="md" />
+            </div>
+          ) : (
+            <Card>
+              {positions.map(p => (
+                <PositionItem key={p.id} item={p} onSave={posA.onSave} onDelete={posA.onDelete} />
+              ))}
+              <Button
+                onClick={() => setPositions(p => [...p, { id: `pos-${Date.now()}`, label: 'Нова посада', hourlyRate: 0, isNew: true }])}
+                style="ghost" color="gray" size="md"
+                icon={Plus} iconSize={13}
+                className="w-full justify-start py-3 mt-2"
+              >
+                Додати посаду
+              </Button>
+            </Card>
           )}
         </Section>
       );
 
       // ──────────────────────────────────────────────────────────────
       case 'danger': return (
-        <Section title="Небезпечна зона" desc="Незворотні дії. Виконуйте обережно.">
+        <Section title="Видалення даних" desc="Незворотні дії. Виконуйте обережно.">
           <Card variant="white" padding="lg">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
@@ -885,18 +1156,25 @@ export default function SettingsPage() {
               </Button>
             </Row>
             {isOwner && (
-              <Row label="Видалити воркспейс" desc="Видалить усі проєкти, задачі та дані команди — незворотно" danger>
-                <Button
-                  onClick={() => {
-                    const typed = prompt('Введіть DELETE для підтвердження');
-                    if (typed === 'DELETE') showToast('Функція недоступна в demo-режимі', 'error');
-                  }}
-                  style="primary" color="red" size="md"
-                  icon={Trash2} iconSize={12}
-                >
-                  Видалити воркспейс
-                </Button>
-              </Row>
+              <>
+                <Row label="Видалити організацію (через 30 днів)" desc="Організація буде схована і повністю видалиться через 30 днів" danger>
+                  <Button
+                    onClick={() => handleDeleteOrg('soft')}
+                    style="secondary" color="red" size="md"
+                  >
+                    Видалити через 30 днів
+                  </Button>
+                </Row>
+                <Row label="Видалити організацію негайно" desc="Повне і миттєве видалення організації і всіх даних без можливості відновлення" danger>
+                  <Button
+                    onClick={() => handleDeleteOrg('hard')}
+                    style="primary" color="red" size="md"
+                    icon={Trash2} iconSize={12}
+                  >
+                    Видалити негайно
+                  </Button>
+                </Row>
+              </>
             )}
           </Card>
         </Section>
@@ -937,50 +1215,78 @@ export default function SettingsPage() {
     </div>
   );
 
-  // ── Nav groups ───────────────────────────────────────────────────
-  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin);
-  const groups = [...new Set(allowedNav.map(n => n.group))];
+  // ── Sticky Save Action ───────────────────────────────────────────
+  const getSaveAction = () => {
+    switch (activeSection) {
+      case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
+      case 'notifications': return { handler: saveNotifications, loading: notifSaving, label: 'Зберегти сповіщення' };
+      case 'localization': return { handler: saveLocalization, loading: locSaving, label: 'Зберегти локалізацію' };
+      case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
+      case 'statuses':
+      case 'types':
+      case 'priorities':
+      case 'labels':
+      case 'positions':
+        return { handler: saveWorkflow, loading: wfSaving, label: 'Зберегти зміни' };
+      default: return null;
+    }
+  };
+  const saveAction = getSaveAction();
 
   // ── Layout ───────────────────────────────────────────────────
+  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin);
+
+  const handleNavChange = (id) => {
+    if (id === 'team') {
+      router.push('/workspace/team');
+    } else {
+      setActiveSection(id);
+    }
+  };
+
+  const sidebarContent = (
+    <InnerNavigation
+      items={allowedNav}
+      activeId={activeSection}
+      onChange={handleNavChange}
+    />
+  );
+
   return (
-    <div className="flex-1 flex overflow-hidden bg-white">
-
-      {/* Sidebar */}
-      <aside className="w-[220px] shrink-0 overflow-y-auto px-[12px] pt-[24px] pb-[32px] border-r border-[#f7f7f7]">
-        {groups.map(group => (
-          <div key={group} className="mb-[20px]">
-            <p className="px-3 pb-[6px] text-[10px] font-bold text-[#cfcfcf] uppercase tracking-widest">{group}</p>
-            <div className="flex flex-col gap-[1px]">
-              {allowedNav.filter(n => n.group === group).map(nav => {
-                const Icon   = nav.icon;
-                const active = activeSection === nav.id;
-                return (
-                  <Button
-                    key={nav.id}
-                    onClick={() => setActiveSection(nav.id)}
-                    style={active ? 'secondary' : nav.danger ? 'ghost' : 'ghost'}
-                    color={nav.danger ? 'red' : 'gray'}
-                    size="md"
-                    icon={Icon} iconSize={15}
-                    className={`w-full justify-start ${active ? 'bg-[#f7f7f7] text-[#1f1f1f]' : ''}`}
-                  >
-                    {nav.label}
-                  </Button>
-                );
-              })}
-            </div>
+    <SidebarLayout sidebar={sidebarContent}>
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-white relative">
+        <div className="max-w-[700px] mx-auto px-[32px] py-[48px] min-h-full flex flex-col">
+          <div className="flex-1 pb-[100px]">
+            {renderSection()}
           </div>
-        ))}
-      </aside>
-
-      {/* Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="w-full px-[32px] pt-[24px] pb-16 max-w-[900px]">
-          {renderSection()}
         </div>
       </main>
 
+      {/* Sticky Save Footer */}
+      {saveAction && (
+        <div className="absolute bottom-[24px] left-1/2 -translate-x-1/2 bg-[#f4f4f5] shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-full p-[8px] flex items-center gap-[8px] border border-[#e9e9e9] z-50">
+          {['statuses', 'types', 'priorities', 'labels', 'positions'].includes(activeSection) && (
+            <Button 
+              onClick={() => {
+                if (!confirm('Скинути налаштування цієї секції до стандартних?')) return;
+                if (activeSection === 'statuses') setStatuses(DEFAULT_STATUSES);
+                if (activeSection === 'types') setTypes(DEFAULT_TYPES);
+                if (activeSection === 'priorities') setPriorities(DEFAULT_PRIORITIES);
+                if (activeSection === 'labels') setLabels(DEFAULT_LABELS);
+                if (activeSection === 'positions') setPositions(DEFAULT_POSITIONS);
+              }} 
+              style="ghost" color="gray" size="md" className="rounded-full px-[16px]"
+            >
+              Скинути
+            </Button>
+          )}
+          <Button onClick={saveAction.handler} loading={saveAction.loading} style="primary" color="dark" size="md" className="rounded-full px-[32px]">
+            {saveAction.loading ? 'Збереження...' : saveAction.label}
+          </Button>
+        </div>
+      )}
+
       {disableIntegrationModal}
-    </div>
+    </SidebarLayout>
   );
 }

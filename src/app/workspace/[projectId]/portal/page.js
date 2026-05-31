@@ -5,8 +5,7 @@ import { use, useState } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { usePortalChat } from '@/lib/hooks/usePortalIntegration';
-import PageHeader from '@/components/workspace/PageHeader';
-import { Input, Textarea, Button, Alert, LoadingSpinner, Card, EmptyState } from '@/components/ui';
+import { Input, Textarea, Button, Alert, LoadingSpinner, Card, EmptyState, PageHeader } from '@/components/ui';
 import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send, LayoutGrid, Users, BarChart2 } from 'lucide-react';
 
 const TABS = (projectId) => [
@@ -58,7 +57,7 @@ export default function PortalPage({ params }) {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#f4f4f5] pt-[56px]">
       {/* Shared project tab bar — Portal tab highlighted */}
       <PageHeader
         variant="alt"
@@ -116,9 +115,9 @@ export default function PortalPage({ params }) {
                       const cfg = STATUS_CFG[statusKey] || STATUS_CFG.undefined;
                       const StatusIcon = cfg.Icon;
                       return (
-                        <div key={mat.id || mat.url} className="flex items-center gap-4 px-5 py-4 border-b border-[#f7f7f7] last:border-0 hover:bg-[#fafafa] transition-colors">
+                        <div key={mat.id || mat.url} className="flex items-center gap-4 px-5 py-4 border-b border-[#f4f4f5] last:border-0 hover:bg-[#fafafa] transition-colors">
                           {/* Preview */}
-                          <div className="w-[48px] h-[48px] bg-[#f7f7f7] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
+                          <div className="w-[48px] h-[48px] bg-[#f4f4f5] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
                             {mat.url && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(mat.url) ? (
                               <img src={mat.url} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
                             ) : (
@@ -160,7 +159,7 @@ export default function PortalPage({ params }) {
             <h3 className="text-[13px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
           </div>
 
-          <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-[#f7f7f7]">
+          <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-[#f4f4f5]">
             {chatLoading ? (
               <div className="flex items-center justify-center py-10">
                 <LoadingSpinner size="sm" />
@@ -186,7 +185,7 @@ export default function PortalPage({ params }) {
           </div>
 
           {/* Reply input */}
-          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f7f7f7] flex gap-2">
+          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f4f4f5] flex gap-2">
             <Input
               type="text"
               value={replyText}

@@ -5,32 +5,42 @@ import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/UserAvatar';
 import { Calendar } from 'lucide-react';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import Tag from '@/components/ui/DataDisplay/Tag';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
-const PRIORITY = {
-  blocker: { label: 'BLOCKER', dot: '#ef4444', glow: 'rgba(239,68,68,0.13)',  text: '#dc2626', bg: '#fef2f2' },
-  high:    { label: 'HIGH',    dot: '#f97316', glow: 'rgba(249,115,22,0.10)', text: '#ea580c', bg: '#fff7ed' },
-  medium:  { label: 'MEDIUM',  dot: '#eab308', glow: 'rgba(234,179,8,0.07)',  text: '#ca8a04', bg: '#fefce8' },
-  low:     { label: 'LOW',     dot: '#d1d5db', glow: 'transparent',           text: '#9a9a9a', bg: '#f7f7f7' },
-};
-
-const TYPE_LABEL = { epic: 'EPIC', feature: 'FEATURE', task: 'TASK', bug: 'BUG' };
-
-function fmtDate(raw) {
-  if (!raw) return null;
-  const d = raw?.toDate ? raw.toDate() : new Date(raw);
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-}
-function fmtShort(raw) {
-  if (!raw) return null;
-  const d = raw?.toDate ? raw.toDate() : new Date(raw);
-  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+function hexToRgba(hex, alpha) {
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.substring(1, 3), 16);
+    g = parseInt(hex.substring(3, 5), 16);
+    b = parseInt(hex.substring(5, 7), 16);
+  }
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export default function IssueCard({ issue, issues = [], members = [], labels = [], index, projectId, projectName, isTimerActive }) {
+
+
+export default function IssueCard({ issue, issues = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive }) {
   const router   = useRouter();
+  const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
-  const pri      = PRIORITY[issue.priority] || PRIORITY.medium;
-  const typeLabel = TYPE_LABEL[issue.type] || 'TASK';
+  const { types, priorities } = useWorkflowConfig();
+  
+  const typeObj = types.find(t => t.id === issue.type) || types[0];
+  const typeLabel = typeObj ? typeObj.label : 'Task';
+  
+  const priObj = priorities.find(p => p.id === issue.priority) || priorities[0];
+  const pri = {
+    label: priObj ? priObj.label.toUpperCase() : 'MEDIUM',
+    dot: priObj ? priObj.color : '#eab308',
+    glow: priObj ? hexToRgba(priObj.color, 0.05) : 'transparent',
+    bg: priObj ? hexToRgba(priObj.color, 0.01) : '#fefce8'
+  };
 
   const assignees = (issue.assigneeIds || [])
     .map(uid => members.find(m => (m.id || m.uid) === uid))
@@ -44,146 +54,199 @@ export default function IssueCard({ issue, issues = [], members = [], labels = [
   const subAll  = (issue.subtasks || []).length;
   const subDone = (issue.subtasks || []).filter(s => s.done).length;
 
-  return (
-    <Draggable draggableId={issue.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onDragStart={() => { isDraggingRef.current = true; }}
-          onDragEnd={() => { isDraggingRef.current = false; }}
-          onClick={() => { if (!isDraggingRef.current) router.push(`/workspace/${projectId}/issue/${issue.id}`); }}
-          className="relative overflow-hidden rounded-[24px] bg-white cursor-pointer select-none transition-all"
-          style={{
-            border: snapshot.isDragging ? '1.5px solid #6366f1' : '1.5px solid #efefef',
-            boxShadow: snapshot.isDragging
-              ? '0 18px 44px rgba(0,0,0,0.14)'
-              : isTimerActive
-                ? '0 0 0 2px rgba(99,102,241,0.35), 0 2px 6px rgba(0,0,0,0.04)'
-                : '0 1px 4px rgba(0,0,0,0.04)',
-            transform: snapshot.isDragging ? 'rotate(1.5deg) scale(1.02)' : 'none',
-          }}
-        >
-          {/* ── Priority glow blob ─────────────────────────── */}
-          {pri.glow !== 'transparent' && (
+  const isDraggable = typeof index === 'number';
+
+  // Generate dynamic, readable project prefix instead of generic WS-
+  const getDisplayKey = () => {
+    if (issue.issueKey && !issue.issueKey.startsWith('WS-')) {
+      return issue.issueKey;
+    }
+    const pName = projectName || projectId || 'WS';
+    const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
+    let prefix = cleanProj.slice(0, 3).toUpperCase();
+    if (prefix.length < 2) {
+      prefix = pName.slice(0, 2).toUpperCase();
+    }
+    const numPart = issue.issueKey?.split('-')[1] || issue.id?.slice(0, 4) || '101';
+    return `${prefix}-${numPart}`;
+  };
+
+  const displayKey = getDisplayKey();
+
+  const renderCardContent = (provided = {}, isDragging = false) => {
+    const msgCount = issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
+
+    return (
+      <div
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        onDragStart={() => { isDraggingRef.current = true; }}
+        onDragEnd={() => { isDraggingRef.current = false; }}
+        onClick={() => { if (!isDraggingRef.current) router.push(`/workspace/${projectId}/issue/${issue.id}`); }}
+        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''}`}
+        style={{
+          ...provided.draggableProps?.style,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: isDragging ? '#e4e4e7' : '#ffffff',
+          boxShadow: isDragging ? '0 16px 16px -10px rgba(0, 0, 0, 0.16), 0 4px 4px -2px rgba(0, 0, 0, 0.08)' : 'none',
+          transform: isDragging && provided.draggableProps?.style?.transform 
+            ? `${provided.draggableProps.style.transform} scale(1.015)` 
+            : provided.draggableProps?.style?.transform,
+          transition: isDragging 
+            ? provided.draggableProps?.style?.transition 
+            : `${provided.draggableProps?.style?.transition || ''}, ring 0.2s ease`.replace(/^,\s*/, ''),
+        }}
+      >
+        {/* ── Priority glow blob ─────────────────────────── */}
+        {pri.glow !== 'transparent' && (
+          <>
+            {/* Resting state: bottom-right */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-[24px]"
+              className="pointer-events-none absolute inset-0 rounded-[16px] transition-opacity duration-300 opacity-100 group-hover:opacity-0"
               style={{
-                background: `radial-gradient(ellipse at 88% 5%, ${pri.glow} 0%, transparent 62%)`,
+                background: `radial-gradient(ellipse at 90% 100%, ${pri.glow} 0%, transparent 45%)`,
               }}
             />
+            {/* Hover state: top-right */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-[16px] transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+              style={{
+                background: `radial-gradient(ellipse at 88% 5%, ${pri.glow} 0%, transparent 45%)`,
+              }}
+            />
+          </>
+        )}
+
+        <div className="relative z-10 p-[14px] flex flex-col flex-1">
+          {/* Row 1: Code + Project (merged, original mono bold font, separated by •) + Priority */}
+          <div className="flex items-center gap-[8px] mb-[10px] flex-wrap">
+            <span className="font-mono text-[#c5c5c5] font-bold text-[10px] tracking-wider select-none truncate max-w-[180px]">
+              {displayKey}{projectName ? ` • ${projectName.toUpperCase()}` : ''}
+            </span>
+
+            {isTimerActive && (
+              <span className="w-[5px] h-[5px] bg-[#6366f1] rounded-full animate-pulse ml-1 shrink-0" />
+            )}
+
+            <div className="ml-auto flex items-center justify-center w-[18px] h-[18px] rounded-full shrink-0"
+              style={{ background: pri.bg }} title={`Пріоритет: ${pri.label}`}>
+              <span className="w-[8px] h-[8px] rounded-full" style={{ background: pri.dot }} />
+            </div>
+          </div>
+
+          {/* Row 2: Title */}
+          <p className="text-[13px] font-bold text-[#1a1a1a] leading-[1.35] line-clamp-3 mb-[12px]">
+            {issue.title}
+          </p>
+
+          {/* Row 3: Visual Checklist subtasks indicator (flat, 2.5px dashes, text first) */}
+          {subAll > 0 && (
+            <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-[#555555] font-medium">
+              <span className="shrink-0">
+                <strong className="text-[#1a1a1a] font-semibold">{subDone}/{subAll}</strong> підзадач
+              </span>
+              <div className="flex items-center gap-[3px] shrink-0">
+                {Array.from({ length: subAll }).map((_, idx) => (
+                  <div 
+                    key={idx}
+                    className={`h-[2.5px] w-[12px] rounded-full transition-all duration-300 ${
+                      idx < subDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
           )}
 
-          <div className="relative z-10 p-[14px]">
-
-            {/* Row 1: type tag + priority pill */}
-            <div className="flex items-center gap-[6px] mb-[10px] flex-wrap">
-              <span className="text-[9px] font-bold text-[#9a9a9a] bg-[#f5f5f5] px-[7px] py-[3px] rounded-[5px] tracking-widest uppercase">
+          {/* Row 4: Sprint + Type + Labels (Using strict UI Kit Tag atom styling) */}
+          <div className="flex flex-wrap gap-[6px] mb-[12px] items-center">
+            {typeObj && (
+              <span 
+                className="text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 backdrop-blur-[2px]"
+                style={{
+                  background: hexToRgba(typeObj.color || '#9a9a9a', 0.08),
+                  color: typeObj.color || '#404040'
+                }}
+              >
                 {typeLabel}
               </span>
-              {projectName && (
-                <span className="text-[9px] font-bold text-[#6366f1] bg-[#e0e7ff] px-[7px] py-[3px] rounded-[5px] truncate max-w-[120px]">
-                  {projectName}
-                </span>
-              )}
-              {isTimerActive && (
-                <span className="w-[5px] h-[5px] bg-[#6366f1] rounded-full animate-pulse" />
-              )}
-              <div className="ml-auto flex items-center justify-center w-[18px] h-[18px] rounded-full"
-                style={{ background: pri.bg }} title={`Пріоритет: ${pri.label}`}>
-                <span className="w-[8px] h-[8px] rounded-full" style={{ background: pri.dot }} />
-              </div>
-            </div>
+            )}
 
-            {/* Title */}
-            <p className="text-[13px] font-bold text-[#1a1a1a] leading-[1.35] line-clamp-2 mb-[10px]">
-              {issue.title}
-            </p>
+            {/* Sprint: Standard gray badge without emoji */}
+            {issue.sprintId && (
+              <span className="inline-flex items-center px-[6px] py-[1.5px] bg-[#f0f0f0] text-[#555555] rounded-[4px] text-[10px] font-medium shrink-0">
+                {sprints.find(s => s.id === issue.sprintId)?.name || 'Спринт'}
+              </span>
+            )}
 
             {/* Labels */}
-            {issue.labelIds && issue.labelIds.length > 0 && (
-              <div className="flex flex-wrap gap-[4px] mb-[10px]">
-                {issue.labelIds.map(id => {
-                  const l = labels.find(lbl => lbl.id === id);
-                  if (!l) return null;
-                  return (
-                    <span key={id} className="text-[9px] font-bold px-[6px] py-[2px] rounded-[4px]"
-                      style={{ background: l.color + '1a', color: l.color }}>
-                      {l.label}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            {issue.labelIds && issue.labelIds.map(id => {
+              const l = labels.find(lbl => lbl.id === id);
+              if (!l) return null;
+              return (
+                <Tag
+                  key={id}
+                  label={l.label}
+                  color={l.color}
+                  size="small"
+                  className="shrink-0"
+                />
+              );
+            })}
+          </div>
 
-            {/* Parent Epic Badge */}
-            {issue.parentEpicId && (
-              <div className="mb-[10px]">
-                <span className="inline-flex items-center gap-[4px] px-[6px] py-[2px] bg-[#8b5cf61a] text-[#8b5cf6] rounded-[4px] text-[9px] font-bold">
-                  ⚡ {issues.find(i => i.id === issue.parentEpicId)?.title || 'Епік'}
-                </span>
-              </div>
-            )}
+          {/* Row 5: Due date (thinner medium weight, lighter text, thinner stroke width) */}
+          {due && (
+            <div className={`flex items-center gap-[5px] mb-[12px] text-[11px] font-medium ${
+              isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
+            }`}>
+              <Calendar size={11} strokeWidth={1.8} className="shrink-0" />
+              <span>{formatDate(due)}</span>
+              {isOverdue && <span className="font-semibold">• Overdue</span>}
+            </div>
+          )}
 
-            {/* Subtasks bar */}
-            {subAll > 0 && (
-              <div className="mb-[10px]">
-                <div className="h-[3px] bg-[#f0f0f0] rounded-full overflow-hidden mb-[3px]">
-                  <div className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${(subDone / subAll) * 100}%`,
-                      background: subDone === subAll ? '#10b981' : '#6366f1',
-                    }} />
-                </div>
-                <p className="text-[9px] text-[#cfcfcf] font-medium">{subDone}/{subAll} підзадач</p>
-              </div>
-            )}
-
-            {/* Due date */}
-            {due && (
-              <div className={`flex items-center gap-[5px] mb-[12px] text-[11px] font-semibold ${
-                isOverdue ? 'text-[#ef4444]' : 'text-[#9a9a9a]'
-              }`}>
-                <Calendar size={11} strokeWidth={2.5} />
-                <span>{fmtDate(due)}</span>
-                {isOverdue && <span className="font-bold">• Overdue</span>}
-              </div>
-            )}
-            
-            {/* Story Points */}
-            {issue.storyPoints > 0 && (
-              <div className="flex items-center gap-[4px] mb-[12px] px-2 py-[2px] bg-[#f5f5f5] rounded-md text-[10px] font-bold text-[#1f1f1f] w-fit">
-                <span>{issue.storyPoints} SP</span>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="border-t border-[#f5f5f5] pt-[10px] flex items-center justify-between gap-2">
-              <div className="flex items-center gap-[6px] min-w-0">
-                {first ? (
-                  <>
-                    <UserAvatar user={first} size={18} />
-                    <span className="text-[11px] text-[#9a9a9a] font-medium truncate max-w-[80px]">
-                      {first.name || first.email?.split('@')[0]}
-                    </span>
-                    {assignees.length > 1 && (
-                      <span className="text-[10px] text-[#cfcfcf]">+{assignees.length - 1}</span>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-[11px] text-[#cfcfcf] italic">Unassigned</span>
-                )}
-              </div>
-              <span className="text-[10px] text-[#cfcfcf] font-mono shrink-0">
-                {issue.issueKey || fmtShort(issue.createdAt)}
-              </span>
+          {/* Row 6: Footer with overlapping assignees and flat modern indigo chat indicator */}
+          <div className="border-t border-[#f5f5f5] pt-[10px] flex items-center justify-between gap-2 mt-auto">
+            <div className="flex -space-x-[8px] overflow-visible">
+              {assignees.length > 0 ? (
+                assignees.map((m, idx) => (
+                  <div key={idx} title={m.name || m.email?.split('@')[0]} className="relative group/avatar">
+                    <UserAvatar user={m} size={22} className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
+                  </div>
+                ))
+              ) : (
+                <span className="text-[11px] text-[#cfcfcf] italic">Unassigned</span>
+              )}
             </div>
 
+            {/* Chat count indicator: totally flat, no background, no border, no shadow */}
+            {msgCount > 0 && (
+              <div className="flex items-center gap-[4px] text-[#4f46e5] text-[11px] font-bold select-none shrink-0" title={`${msgCount} повідомлень в чаті`}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-[#4f46e5]/10">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="font-mono">{msgCount}</span>
+              </div>
+            )}
           </div>
+
         </div>
-      )}
-    </Draggable>
-  );
+      </div>
+    );
+  };
+
+  if (isDraggable) {
+    return (
+      <Draggable draggableId={issue.id} index={index}>
+        {(provided, snapshot) => renderCardContent(provided, snapshot.isDragging)}
+      </Draggable>
+    );
+  }
+
+  return renderCardContent();
 }

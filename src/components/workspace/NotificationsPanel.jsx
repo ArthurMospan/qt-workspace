@@ -5,6 +5,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { Bell, Check, MessageSquare, GitPullRequest, UserCheck, AlertCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,       color: '#6366f1', label: 'Призначено' },
@@ -13,20 +14,21 @@ const TYPE_CFG = {
   mentioned:      { icon: AlertCircle,     color: '#f97316', label: 'Згадка' },
 };
 
-function timeAgo(ts) {
+function timeAgo(ts, formatDate) {
   if (!ts) return '';
   const d = ts?.toDate ? ts.toDate() : new Date(ts);
   const diff = Date.now() - d.getTime();
   if (diff < 60000)    return 'щойно';
   if (diff < 3600000)  return `${Math.floor(diff / 60000)} хв`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)} год`;
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+  return formatDate ? formatDate(d) : d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
 export default function NotificationsPanel({ collapsed }) {
   const { currentUser } = useAppContext();
   const uid = currentUser?.id || currentUser?.uid;
   const { notifications, unreadCount, markAllRead, markRead } = useNotifications(uid);
+  const { formatDate } = useLocalization();
   const [open, setOpen] = useState(false);
   const panelRef = useRef(null);
   const router   = useRouter();
@@ -78,7 +80,7 @@ export default function NotificationsPanel({ collapsed }) {
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button onClick={markAllRead}
-                  className="flex items-center gap-1 text-[10px] text-[#9a9a9a] hover:text-[#1f1f1f] px-2 py-1 rounded-[6px] hover:bg-[#f7f7f7] transition-all">
+                  className="flex items-center gap-1 text-[10px] text-[#9a9a9a] hover:text-[#1f1f1f] px-2 py-1 rounded-[6px] hover:bg-[#f4f4f5] transition-all">
                   <Check size={11} /> Всі прочитані
                 </button>
               )}
@@ -101,7 +103,7 @@ export default function NotificationsPanel({ collapsed }) {
                 const Icon = cfg.icon;
                 return (
                   <button key={n.id} onClick={() => handleClick(n)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f7f7f7] transition-colors border-b border-[#f7f7f7] last:border-0 ${
+                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f4f4f5] transition-colors border-b border-[#f4f4f5] last:border-0 ${
                       !n.read ? 'bg-[#f5f7ff]' : ''
                     }`}
                   >
@@ -116,7 +118,7 @@ export default function NotificationsPanel({ collapsed }) {
                       {n.body && (
                         <p className="text-[11px] text-[#9a9a9a] mt-[2px] line-clamp-2">{n.body}</p>
                       )}
-                      <p className="text-[10px] text-[#cfcfcf] mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-[10px] text-[#cfcfcf] mt-1">{timeAgo(n.createdAt, formatDate)}</p>
                     </div>
                     {!n.read && (
                       <span className="w-[6px] h-[6px] bg-[#6366f1] rounded-full shrink-0 mt-[7px]" />

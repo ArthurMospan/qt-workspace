@@ -76,7 +76,7 @@ export default function SplitButton({
 
       {/* Dropdown Menu */}
       {isOpen && items.length > 0 && (
-        <div className="absolute z-50 top-full mt-1 left-0 w-max min-w-[160px] bg-white border border-[#f0f0f0] rounded-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 left-0 w-max min-w-[160px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
           <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
             {items.map((item, idx) => (
               <button
@@ -86,7 +86,7 @@ export default function SplitButton({
                   item.action?.();
                   setIsOpen(false);
                 }}
-                className="w-full px-[12px] h-[36px] text-[13px] font-medium hover:bg-[#f7f7f7] transition-colors text-left text-[#1f1f1f]"
+                className="w-full px-[12px] h-[36px] text-[13px] font-medium hover:bg-[#f4f4f5] transition-colors text-left text-[#1f1f1f]"
               >
                 {item.label}
               </button>

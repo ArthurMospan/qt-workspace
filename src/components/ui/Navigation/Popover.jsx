@@ -110,7 +110,7 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
             position: 'absolute',
             backgroundColor: colors.surface,
             border: `1px solid ${colors.border.light}`,
-            borderRadius: sizing.radius.lg,
+            borderRadius: sizing.radius.xl,
             boxShadow: shadows.xl,
             zIndex: zIndex.modal,
             minWidth: '240px',

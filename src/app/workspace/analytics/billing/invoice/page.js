@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { Printer, ArrowLeft } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 
 function fmtTime(minutes) {
   if (!minutes) return '0:00';
@@ -27,6 +29,17 @@ function InvoiceContent() {
   const [project, setProject] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [positions, setPositions] = useState([]);
+
+  useEffect(() => {
+    if (!activeOrgId) return;
+    const ref = doc(db, 'organizations', activeOrgId, 'settings', 'workflow');
+    getDoc(ref).then(snap => {
+      if (snap.exists() && snap.data().positions) {
+        setPositions(snap.data().positions);
+      }
+    }).catch(console.error);
+  }, [activeOrgId]);
 
   useEffect(() => {
     if (!activeOrgId || !projectId || !startParam || !endParam) return;
@@ -74,13 +87,17 @@ function InvoiceContent() {
       const uId = log.userId;
       
       const member = members.find(m => (m.id || m.uid) === uId);
-      const rate = member?.hourlyRate || 0;
+      let rate = member?.hourlyRate || 0;
+      if (member?.positionId && !rate) {
+        const pos = positions.find(p => p.id === member.positionId);
+        if (pos) rate = pos.hourlyRate || 0;
+      }
       const cost = (mins / 60) * rate;
 
       totalMinutes += mins;
       totalCost += cost;
 
-      if (!byUser[uId]) byUser[uId] = { mins: 0, cost: 0, user: member };
+      if (!byUser[uId]) byUser[uId] = { mins: 0, cost: 0, user: member, resolvedRate: rate };
       byUser[uId].mins += mins;
       byUser[uId].cost += cost;
     });
@@ -90,7 +107,7 @@ function InvoiceContent() {
       totalMinutes,
       items: Object.values(byUser).sort((a, b) => b.cost - a.cost)
     };
-  }, [logs, members]);
+  }, [logs, members, positions]);
 
   const handlePrint = () => {
     window.print();
@@ -99,7 +116,7 @@ function InvoiceContent() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-20">
-        <div className="w-8 h-8 border-4 border-[#e9e9e9] border-t-[#6366f1] rounded-full animate-spin"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -112,18 +129,12 @@ function InvoiceContent() {
       
       {/* Floating Toolbar (Hidden on print) */}
       <div className="fixed top-6 right-8 flex gap-3 print:hidden z-50">
-        <button 
-          onClick={() => router.back()}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e9e9e9] rounded-[8px] text-[13px] font-bold text-[#1f1f1f] hover:bg-[#f7f7f7] shadow-sm"
-        >
-          <ArrowLeft size={16} /> Назад
-        </button>
-        <button 
-          onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] text-white rounded-[8px] text-[13px] font-bold hover:bg-[#4f46e5] shadow-sm"
-        >
-          <Printer size={16} /> Друкувати PDF
-        </button>
+        <Button onClick={() => router.back()} style="secondary" size="md" icon={ArrowLeft}>
+          Назад
+        </Button>
+        <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>
+          Друкувати PDF
+        </Button>
       </div>
 
       {/* A4 Document Container */}
@@ -178,10 +189,12 @@ function InvoiceContent() {
                 <tr key={item.user?.uid || Math.random()}>
                   <td className="py-4">
                     <p className="text-[14px] font-bold text-[#1f1f1f]">{item.user?.name || item.user?.email || 'Невідомий спеціаліст'}</p>
-                    <p className="text-[12px] text-[#9a9a9a]">{item.user?.role || 'Розробка'}</p>
+                    <p className="text-[12px] text-[#9a9a9a]">
+                      {positions.find(p => p.id === item.user?.positionId)?.label || item.user?.role || 'Розробка'}
+                    </p>
                   </td>
                   <td className="py-4 text-right text-[14px] text-[#4a4a4a]">{fmtTime(item.mins)}</td>
-                  <td className="py-4 text-right text-[14px] text-[#4a4a4a]">${item.user?.hourlyRate || 0}/год</td>
+                  <td className="py-4 text-right text-[14px] text-[#4a4a4a]">${item.resolvedRate || 0}/год</td>
                   <td className="py-4 text-right text-[14px] font-bold text-[#1f1f1f]">${item.cost.toFixed(2)}</td>
                 </tr>
               ))}

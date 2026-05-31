@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useAuth.js — Auth hook (copied & adapted from qt/)
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithRedirect, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
 export function useAuth() {
@@ -80,7 +80,7 @@ export function useAuth() {
   }, []);
   const signInWithGoogle = async () => {
     try {
-      return await signInWithRedirect(auth, googleProvider);
+      return await signInWithPopup(auth, googleProvider);
     } catch (error) {
       if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(error.code)) {
         const e = new Error('POPUP_BLOCKED');

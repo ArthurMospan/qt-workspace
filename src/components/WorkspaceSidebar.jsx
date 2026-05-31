@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
+import { Counter } from '@/components/ui';
 import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
@@ -13,12 +14,14 @@ import {
   Zap
 } from 'lucide-react';
 
+import { can } from '@/lib/utils/can';
+
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
 
 export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
-  const { projects, activeOrg, allOrgs } = useAppContext();
+  const { projects, activeOrg, allOrgs, orgRole } = useAppContext();
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
 
@@ -93,9 +96,12 @@ export default function WorkspaceSidebar() {
               className={`flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all ${
                 active ? 'bg-[#333333] text-white' : 'text-[#9a9a9a] hover:text-white hover:bg-white/[0.04]'
               }`}>
-              <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px]'}`}>
+              <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                 <Icon size={20} className="shrink-0" />
                 {!collapsed && <span className="text-[14px] font-medium">{label}</span>}
+                {!collapsed && label === 'Чат' && (
+                  <Counter value={3} size="sm" status="info" className="ml-auto" dark />
+                )}
               </div>
             </Link>
           );
@@ -108,12 +114,14 @@ export default function WorkspaceSidebar() {
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {!collapsed && (
           <div className="flex items-center justify-between px-[16px] mb-[16px]">
-            <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">ПРОЄКТИ</p>
-            <button
-              onClick={() => router.push('/workspace?new=1')}
-              className="text-[#9a9a9a] hover:text-white transition-colors" title="Новий проєкт">
-              <Plus size={16} />
-            </button>
+            <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider">ПРОЄКТИ</p>
+            {can(orgRole, 'create:project') && (
+              <button
+                onClick={() => router.push('/workspace?new=1')}
+                className="text-[#666666] hover:text-white transition-colors" title="Новий проєкт">
+                <Plus size={16} />
+              </button>
+            )}
           </div>
         )}
         <div className="flex flex-col gap-[4px]">
@@ -124,11 +132,14 @@ export default function WorkspaceSidebar() {
               return (
                 <Link key={p.id} href={`/workspace/${p.id}`} title={collapsed ? p.name : undefined}
                   className={`flex items-center mx-[8px] h-[32px] rounded-[8px] transition-all ${
-                    active ? 'bg-[#333333] text-white' : 'text-[#9a9a9a] hover:text-white hover:bg-white/[0.04]'
+                    active ? 'bg-[#333333] text-white' : 'text-[#777777] hover:text-white hover:bg-white/[0.04]'
                   }`}>
-                  <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px]'}`}>
+                  <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                     <Folder size={16} className="shrink-0" />
                     {!collapsed && <span className="text-[13px] font-medium truncate">{p.name}</span>}
+                    {!collapsed && (p.status === 'active' || p.id === projects[0]?.id) && (
+                      <Counter variant="dot" size="sm" status="info" className="ml-auto" dark />
+                    )}
                   </div>
                 </Link>
               );

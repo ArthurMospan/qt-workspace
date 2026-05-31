@@ -1,5 +1,5 @@
+'use client';
 import React, { useCallback } from 'react';
-import { colors, sizing, spacing } from '@/lib/design/tokens';
 
 /**
  * Stepper Component
@@ -13,14 +13,6 @@ import { colors, sizing, spacing } from '@/lib/design/tokens';
  * @param {number} props.currentStep - Current active step (0-indexed)
  * @param {Function} [props.onStepClick] - Callback when clicking a step: (stepIndex) => void
  * @param {string} [props.className] - Additional CSS classes to apply
- *
- * @example
- * const [step, setStep] = useState(0);
- * <Stepper
- *   steps={['Personal Info', 'Address', 'Confirmation']}
- *   currentStep={step}
- *   onStepClick={setStep}
- * />
  */
 export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, className = '' }) {
   if (!steps || steps.length === 0) {
@@ -29,7 +21,8 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
 
   const handleStepClick = useCallback(
     (index) => {
-      if (index !== currentStep) {
+      // Allow clicking previously completed steps or next step for flexibility
+      if (index !== currentStep && onStepClick) {
         onStepClick(index);
       }
     },
@@ -42,143 +35,78 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
     return 'pending';
   };
 
-  const stepCircleSize = 40;
-  const stepLineHeight = 2;
-
   return (
-    <div className={`flex items-center justify-center gap-[${spacing.xs}] ${className}`}>
-      <ol className="flex items-center w-full gap-[12px]">
+    <div className={`w-full overflow-x-auto py-2 custom-scrollbar ${className}`}>
+      <ol className="flex items-center w-full min-w-[500px] justify-between gap-1">
         {steps.map((step, index) => {
           const status = getStepStatus(index);
           const isLast = index === steps.length - 1;
-          const isClickable = index !== currentStep;
-
-          // Determine colors based on status
-          let circleColor = colors.text.inactive; // pending
-          let circleTextColor = colors.text.muted;
-          let circleBorder = `2px solid ${colors.border.primary}`;
-
-          if (status === 'completed') {
-            circleColor = colors.status.success;
-            circleTextColor = colors.surface;
-            circleBorder = `2px solid ${colors.status.success}`;
-          } else if (status === 'active') {
-            circleColor = colors.dark;
-            circleTextColor = colors.surface;
-            circleBorder = `2px solid ${colors.dark}`;
-          } else if (status === 'pending') {
-            circleColor = colors.surface;
-            circleTextColor = colors.text.muted;
-            circleBorder = `2px solid ${colors.border.primary}`;
-          }
+          const isClickable = onStepClick && index !== currentStep;
 
           return (
-            <li key={index} className="flex items-center flex-1">
-              {/* Step Circle */}
-              <button
-                onClick={() => handleStepClick(index)}
-                disabled={!isClickable}
-                style={{
-                  width: stepCircleSize,
-                  height: stepCircleSize,
-                  minWidth: stepCircleSize,
-                  minHeight: stepCircleSize,
-                  borderRadius: '50%',
-                  backgroundColor: circleColor,
-                  border: circleBorder,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: circleTextColor,
-                  cursor: isClickable ? 'pointer' : 'default',
-                  transition: 'all 200ms ease-in-out',
-                  position: 'relative',
-                  zIndex: 2,
-                }}
-                onMouseEnter={(e) => {
-                  if (isClickable && status !== 'completed') {
-                    e.currentTarget.style.opacity = '0.8';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (isClickable) {
-                    e.currentTarget.style.opacity = '1';
-                  }
-                }}
-                aria-label={`Step ${index + 1}: ${step}`}
-                aria-current={status === 'active' ? 'step' : undefined}
+            <React.Fragment key={index}>
+              {/* Step item */}
+              <li 
+                onClick={() => isClickable && handleStepClick(index)}
+                className={`flex items-center gap-3 shrink-0 select-none ${isClickable ? 'cursor-pointer group' : 'cursor-default'}`}
               >
-                {status === 'completed' ? (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.5 4L6 11.5L2.5 8"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  index + 1
-                )}
-              </button>
+                {/* Circle */}
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300 shrink-0 ${
+                    status === 'completed' 
+                      ? 'bg-[#10b981] text-white shadow-sm' 
+                      : status === 'active'
+                        ? 'bg-[#1f1f1f] text-white shadow-sm ring-4 ring-[#1f1f1f]/10 scale-105'
+                        : 'bg-white text-[#9a9a9a] border border-[#e9e9e9] group-hover:border-[#d0d0d0] group-hover:text-[#666666]'
+                  }`}
+                >
+                  {status === 'completed' ? (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M13.5 4L6 11.5L2.5 8"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </div>
+
+                {/* Step Label */}
+                <span 
+                  className={`text-[13px] font-semibold transition-colors duration-300 ${
+                    status === 'active' 
+                      ? 'text-[#1f1f1f]' 
+                      : status === 'completed'
+                        ? 'text-[#10b981]'
+                        : 'text-[#9a9a9a] group-hover:text-[#666666]'
+                  }`}
+                >
+                  {step}
+                </span>
+              </li>
 
               {/* Connecting Line */}
               {!isLast && (
-                <div
-                  style={{
-                    flex: 1,
-                    height: stepLineHeight,
-                    backgroundColor:
-                      status === 'completed' ? colors.status.success : colors.border.primary,
-                    marginLeft: spacing.sm,
-                    transition: 'background-color 200ms ease-in-out',
-                  }}
-                />
+                <li className="flex-1 mx-3 h-[2px] min-w-[30px] rounded-full overflow-hidden bg-[#e9e9e9] shrink">
+                  <div 
+                    className="h-full bg-[#10b981] transition-all duration-500 ease-in-out rounded-full"
+                    style={{ 
+                      width: status === 'completed' ? '100%' : '0%' 
+                    }}
+                  />
+                </li>
               )}
-
-              {/* Step Label */}
-              <div
-                style={{
-                  marginLeft: spacing.sm,
-                  minWidth: 0,
-                  cursor: isClickable ? 'pointer' : 'default',
-                  transition: 'opacity 200ms ease-in-out',
-                }}
-                onClick={() => handleStepClick(index)}
-                onMouseEnter={(e) => {
-                  if (isClickable) {
-                    e.currentTarget.style.opacity = '0.7';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (isClickable) {
-                    e.currentTarget.style.opacity = '1';
-                  }
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: status === 'active' ? colors.dark : colors.text.muted,
-                    textOverflow: 'ellipsis',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {step}
-                </div>
-              </div>
-            </li>
+            </React.Fragment>
           );
         })}
       </ol>

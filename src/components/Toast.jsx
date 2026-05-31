@@ -14,7 +14,7 @@ export default function Toast() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none">
-      <div className="flex items-center gap-3 bg-[#1f1f1f] text-white px-5 py-3 rounded-[14px] shadow-xl text-[13px] font-medium pointer-events-auto"
+      <div className="flex items-center gap-3 bg-[#1f1f1f] text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto"
         style={{ animation: 'slideUp 0.2s ease' }}>
         {isError
           ? <AlertCircle size={15} className="text-red-400 shrink-0" />

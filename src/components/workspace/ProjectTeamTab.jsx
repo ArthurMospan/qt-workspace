@@ -7,7 +7,7 @@ export default function ProjectTeamTab({ members = [] }) {
   if (members.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white">
-        <div className="w-[48px] h-[48px] rounded-full bg-[#f7f7f7] flex items-center justify-center mb-4">
+        <div className="w-[48px] h-[48px] rounded-full bg-[#f4f4f5] flex items-center justify-center mb-4">
           <span className="text-[#9a9a9a] text-[20px]">👥</span>
         </div>
         <p className="text-[13px] text-[#9a9a9a] font-medium text-center">
@@ -24,7 +24,7 @@ export default function ProjectTeamTab({ members = [] }) {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {members.map(member => (
-            <div key={member.id || member.uid} className="bg-[#f7f7f7] rounded-[24px] p-5 flex items-center gap-4 cursor-default hover:bg-[#f0f0f0] transition-all duration-200">
+            <div key={member.id || member.uid} className="bg-[#f4f4f5] rounded-[24px] p-5 flex items-center gap-4 cursor-default hover:bg-[#f0f0f0] transition-all duration-200">
               <UserAvatar 
                 user={member} 
                 size={48} 

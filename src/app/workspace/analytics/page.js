@@ -15,7 +15,9 @@ import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
-import { Button, LoadingSpinner, EmptyState, Alert, Card } from '@/components/ui';
+import { Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader } from '@/components/ui';
+import { Select, MultiSelect } from '@/components/ui/Select';
+import FilterBar from '@/components/ui/FilterBar';
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
   if (!min) return '0г';
@@ -35,7 +37,7 @@ const COL_LABEL = {
 // ── Sub-components ───────────────────────────────────────────────────
 function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', onClick }) {
   const inner = (
-    <div className="bg-[#f7f7f7] border border-transparent rounded-[24px] p-5 group-hover:bg-[#f0f0f0] transition-colors">
+    <div className="bg-[#f4f4f5] border border-transparent rounded-[24px] p-5 group-hover:bg-[#f0f0f0] transition-colors">
       <div className="w-9 h-9 rounded-[12px] flex items-center justify-center mb-3" style={{ background: color + '15' }}>
         <Icon size={16} style={{ color }} />
       </div>
@@ -163,11 +165,11 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
   return (
     <div className="flex-1 overflow-y-auto bg-transparent">
-      <div className="w-full px-[32px] pb-16">
+      <div className="w-full pb-16">
 
         {/* Period filter */}
         <div className="flex justify-end mb-4">
-          <div className="flex items-center gap-1 bg-[#f7f7f7] border border-transparent rounded-[12px] p-[3px]">
+          <div className="flex items-center gap-1 bg-[#f4f4f5] border border-transparent rounded-[12px] p-[3px]">
             {[7, 14, 30, 90].map(d => (
               <Button key={d} onClick={() => setPeriod(d)}
                 variant={period === d ? 'primary' : 'secondary'}
@@ -400,6 +402,39 @@ export default function WorkspaceAnalyticsPage() {
 
   const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(p => p.id));
 
+  const [projectFilters, setProjectFilters] = useState([]);
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const filteredIssues = useMemo(() => {
+    return issues.filter(i => {
+      if (projectFilters.length > 0 && !projectFilters.includes(i.projectId)) return false;
+      if (assigneeFilter !== 'all') {
+        if (assigneeFilter === 'unassigned') {
+          if (i.assigneeIds && i.assigneeIds.length > 0) return false;
+        } else {
+          if (!i.assigneeIds || !i.assigneeIds.includes(assigneeFilter)) return false;
+        }
+      }
+      if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+      if (typeFilter !== 'all' && i.type !== typeFilter) return false;
+      return true;
+    });
+  }, [issues, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+
+  const filteredIssueIds = useMemo(() => new Set(filteredIssues.map(i => i.id)), [filteredIssues]);
+
+  const filteredTimeLogs = useMemo(() => {
+    return timeLogs.filter(log => {
+      if (projectFilters.length > 0 && !projectFilters.includes(log.projectId)) return false;
+      if (assigneeFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all') {
+        if (!filteredIssueIds.has(log.issueId)) return false;
+      }
+      return true;
+    });
+  }, [timeLogs, projectFilters, assigneeFilter, priorityFilter, typeFilter, filteredIssueIds]);
+
   const TABS = [
     { id: 'overview', label: 'Огляд',   icon: BarChart2 },
     { id: 'timesheet', label: 'Таймшит', icon: Clock },
@@ -411,41 +446,82 @@ export default function WorkspaceAnalyticsPage() {
   // For BillingTab — flatten all issues + pick the first project (or let user pick)
   const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = projects.find(p => p.id === billingProjectId) || projects[0];
-  const billingIssues  = issues.filter(i => i.projectId === (billingProject?.id));
+  const billingIssues  = filteredIssues.filter(i => i.projectId === (billingProject?.id));
 
   return (
-    <div className="flex-1 overflow-hidden flex flex-col bg-transparent">
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
 
-      {/* Page header */}
-      <div className="px-[32px] shrink-0 mb-[24px]">
-        <div className="pt-0 mb-[20px]">
-          <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate">Аналітика</h1>
-          <p className="text-[13px] font-medium text-[#9a9a9a] mt-[4px]">Усі проєкти · {projects.filter(p => p.status !== 'archived').length} активних</p>
-        </div>
+        <PageHeader
+          variant="main"
+          title={
+            <div className="flex items-baseline gap-3">
+              Аналітика
+              <span className="text-[14px] font-medium text-[#9a9a9a] font-normal tracking-normal">
+                Усі проєкти · {projects.filter(p => p.status !== 'archived').length} активних
+              </span>
+            </div>
+          }
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          filters={
+            activeTab !== 'billing' ? (
+              <FilterBar>
+                <MultiSelect
+                  value={projectFilters}
+                    onChange={setProjectFilters}
+                    options={projects.map(p => ({ value: p.id, label: p.name }))}
+                    placeholder="Всі проєкти"
+                    searchPlaceholder="Пошук проєкту..."
+                    className="w-[200px]"
+                    variant="ghost"
+                  />
+                  <Select
+                    value={assigneeFilter}
+                    onChange={setAssigneeFilter}
+                    options={[
+                      { value: 'all', label: 'Всі виконавці' },
+                      { value: 'unassigned', label: 'Без виконавця' },
+                      ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                    ]}
+                    variant="ghost"
+                  />
+                  <Select
+                    value={priorityFilter}
+                    onChange={setPriorityFilter}
+                    options={[
+                      { value: 'all', label: 'Всі пріоритети' },
+                      { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                      { value: 'high', label: 'High', dotColor: '#f97316' },
+                      { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                      { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+                    ]}
+                    variant="ghost"
+                  />
+                  <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    options={[
+                      { value: 'all', label: 'Всі типи' },
+                      { value: 'epic', label: 'Epic' },
+                      { value: 'feature', label: 'Feature' },
+                      { value: 'task', label: 'Task' },
+                      { value: 'bug', label: 'Bug' },
+                    ]}
+                    variant="ghost"
+                  />
+                </FilterBar>
+            ) : null
+          }
+        />
 
-        {/* Tabs */}
-        <div className="inline-flex items-center bg-[#f7f7f7] rounded-[12px] p-[4px] gap-[2px]">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <Button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              variant={activeTab === id ? 'primary' : 'secondary'}
-              color={activeTab === id && id === 'billing' ? 'green' : activeTab === id ? 'dark' : 'gray'}
-              size="md"
-              icon={Icon}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
+        {/* Content */}
       {activeTab === 'overview' && (
         <AnalyticsContent
           projects={projects}
-          issues={issues}
-          timeLogs={timeLogs}
+          issues={filteredIssues}
+          timeLogs={filteredTimeLogs}
           members={members}
           loading={loading}
           onTabChange={setActiveTab}
@@ -457,11 +533,11 @@ export default function WorkspaceAnalyticsPage() {
       )}
 
       {activeTab === 'velocity' && (
-        <VelocityTab issues={issues} projects={projects} />
+        <VelocityTab issues={filteredIssues} projects={projects} />
       )}
 
       {activeTab === 'workload' && (
-        <WorkloadTab members={members} issues={issues} timeLogs={timeLogs} />
+        <WorkloadTab members={members} issues={filteredIssues} timeLogs={filteredTimeLogs} />
       )}
 
       {activeTab === 'billing' && canSeeBilling && (
@@ -497,6 +573,7 @@ export default function WorkspaceAnalyticsPage() {
           />
         </div>
       )}
+      </div>
     </div>
   );
 }

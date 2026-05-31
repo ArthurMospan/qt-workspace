@@ -79,7 +79,7 @@ export default function ClientProjectViewer({ projectId, stageId, stages }) {
         ) : (
           <div className="flex flex-col gap-[8px]">
             {materials.map(m => (
-              <div key={m.id} className="flex items-start gap-[10px] bg-white/[0.04] border border-white/[0.06] rounded-[11px] px-[12px] py-[10px]">
+              <div key={m.id} className="flex items-start gap-[10px] bg-white/[0.04] border border-white/[0.06] rounded-[12px] px-[12px] py-[10px]">
                 <span className="text-[16px] shrink-0 mt-[1px]">{ICONS[m.type] || '📄'}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-[12px] font-semibold truncate">{m.title || m.type}</p>

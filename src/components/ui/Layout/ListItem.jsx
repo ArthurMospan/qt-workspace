@@ -21,7 +21,7 @@ export default function ListItem({
       className={`
         flex items-center gap-[12px] px-[16px]
         ${heightMap[height]}
-        ${onClick ? 'cursor-pointer hover:bg-[#f7f7f7]' : ''}
+        ${onClick ? 'cursor-pointer hover:bg-[#f4f4f5]' : ''}
         ${divider ? 'border-b border-[#e9e9e9]' : ''}
         transition-colors duration-200
         ${className}

@@ -1,6 +1,8 @@
 'use client';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Bug, Star, CheckSquare } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 const PRIORITY_CFG = {
   blocker: { c: '#dc2626', i: AlertOctagon },
@@ -19,6 +21,23 @@ const TYPE_CFG = {
 export default function SearchModal({ isOpen, results, loading, query, onClose, projects }) {
   const router = useRouter();
 
+  // Add click-outside listener to close the dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleMouseDown = (e) => {
+      // If clicking inside the search input or the dropdown itself, do nothing
+      // We assume the dropdown has id="search-dropdown" and input is elsewhere
+      const isDropdown = e.target.closest('#search-dropdown');
+      const isInput = e.target.closest('input[type="text"]');
+      if (!isDropdown && !isInput) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleResultClick = (issueId, projectId) => {
@@ -27,20 +46,14 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/20 backdrop-blur-sm pt-[80px]">
-      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[560px] max-h-[70vh] overflow-hidden flex flex-col">
+    <div id="search-dropdown" className="absolute top-[calc(100%+8px)] left-[16px] z-50 flex items-start">
+      <div className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-[480px] max-h-[480px] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-[24px] py-[16px] border-b border-[#e9e9e9] shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
           <div>
-            <h2 className="text-[16px] font-bold text-[#1f1f1f]">Результати пошуку</h2>
-            {query && <p className="text-[12px] text-[#9a9a9a] mt-[2px]">По запиту: "{query}"</p>}
+            <h2 className="text-[13px] font-bold text-[#1f1f1f]">Результати пошуку</h2>
+            {query && <p className="text-[11px] text-[#9a9a9a] mt-[2px]">Запит: "{query}"</p>}
           </div>
-          <button
-            onClick={onClose}
-            className="p-[8px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-[8px] transition-all"
-          >
-            <X size={18} />
-          </button>
         </div>
 
         {/* Results */}
@@ -62,11 +75,9 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#e9e9e9]">
+            <div className="divide-y divide-[#f0f0f0]">
               {results.map(issue => {
-                const prio = PRIORITY_CFG[issue.priority] || PRIORITY_CFG.medium;
                 const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
-                const PrioIcon = prio.i;
                 const TypeIcon = type.i;
                 const project = projects?.find(p => p.id === issue.projectId);
 
@@ -74,56 +85,45 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                   <button
                     key={issue.id}
                     onClick={() => handleResultClick(issue.id, issue.projectId)}
-                    className="w-full flex items-start gap-[12px] px-[24px] py-[16px] hover:bg-[#f7f7f7] transition-colors text-left"
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#f4f4f5] transition-colors text-left group"
                   >
-                    {/* Left: Type + Priority */}
-                    <div className="flex flex-col gap-[4px] shrink-0 mt-[2px]">
-                      <TypeIcon size={16} style={{ color: type.c }} />
-                      <PrioIcon size={12} style={{ color: prio.c }} />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-[8px] mb-[4px]">
-                        <code className="text-[11px] font-bold text-[#9a9a9a]">
-                          {issue.issueKey || `WS-${issue.id.slice(0, 8)}`}
-                        </code>
-                        <h3 className="text-[13px] font-bold text-[#1f1f1f] truncate flex-1">
-                          {issue.title}
-                        </h3>
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                      {/* Left: Type Icon */}
+                      <div className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm">
+                        <TypeIcon size={12} style={{ color: type.c }} />
                       </div>
 
-                      {issue.description && (
-                        <p className="text-[12px] text-[#9a9a9a] line-clamp-2 mb-[6px]">
-                          {issue.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-[8px] flex-wrap">
-                        {project && (
-                          <span className="text-[10px] font-medium px-[6px] py-[2px] bg-[#f0f0f0] rounded-[6px] text-[#9a9a9a]">
-                            {project.name}
-                          </span>
-                        )}
-                        <span className="text-[10px] text-[#cfcfcf]">
-                          {issue.columnId || 'backlog'}
+                      {/* Content: ID + Title */}
+                      <div className="flex items-baseline gap-2 min-w-0 flex-1">
+                        <code className="text-[11px] font-semibold text-[#9a9a9a] shrink-0">
+                          {issue.issueKey || `WS-${issue.id.slice(0, 5)}`}
+                        </code>
+                        <span className="text-[13px] font-semibold text-[#1f1f1f] truncate group-hover:text-[#6366f1] transition-colors">
+                          {issue.title}
                         </span>
                       </div>
                     </div>
 
-                    {/* Right: Assignees preview */}
-                    {issue.assigneeIds?.length > 0 && (
-                      <div className="flex -space-x-1 shrink-0">
-                        {issue.assigneeIds.slice(0, 2).map(uid => (
-                          <div
-                            key={uid}
-                            className="w-[24px] h-[24px] rounded-full bg-[#e9e9e9] ring-1 ring-white flex items-center justify-center text-[8px] font-bold text-[#9a9a9a]"
-                          >
-                            {uid.slice(0, 1).toUpperCase()}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {/* Right: Project badge + Assignees */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {issue.assigneeIds?.length > 0 && (
+                        <div className="flex -space-x-1">
+                          {issue.assigneeIds.slice(0, 2).map(uid => (
+                            <div
+                              key={uid}
+                              className="w-[18px] h-[18px] rounded-full bg-[#e9e9e9] ring-2 ring-white flex items-center justify-center text-[7px] font-bold text-[#9a9a9a]"
+                            >
+                              {uid.slice(0, 1).toUpperCase()}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {project && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 bg-[#f5f5f5] text-[#9a9a9a] rounded-full group-hover:bg-[#ebebeb] transition-colors">
+                          {project.name}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}

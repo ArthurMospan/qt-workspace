@@ -12,16 +12,16 @@ export function useAllMyTasks(userId) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!userId || !activeOrgId) {
+    if (!activeOrgId) {
       queueMicrotask(() => setLoading(false));
       return;
     }
-    const q = query(collection(db, 'issues'), where('assigneeIds', 'array-contains', userId));
+    const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId));
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })).filter(d => d.organizationId === activeOrgId);
+      }));
       docs.sort((a, b) => {
         const aTime = a.dueDate?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
         const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;

@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { Select } from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import { PageHeader } from '@/components/ui';
 
 const NOW = Date.now();
 
@@ -24,7 +26,7 @@ function RoleBadge({ role }) {
   const cfg = ROLES[role] || ROLES.member;
   const Icon = cfg.icon;
   return (
-    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-[20px]"
+    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-[6px]"
       style={{ color: cfg.color, background: cfg.color + '18' }}>
       <Icon size={9} />{cfg.label}
     </span>
@@ -72,7 +74,7 @@ export default function MemberDetailPage({ params }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f7f7f7]">
+      <div className="flex-1 flex items-center justify-center bg-[#f4f4f5]">
         <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
@@ -80,11 +82,11 @@ export default function MemberDetailPage({ params }) {
 
   if (!member) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#f7f7f7]">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#f4f4f5]">
         <h2 className="text-[16px] font-bold text-[#1f1f1f] mb-2">Учасника не знайдено</h2>
-        <button onClick={() => router.push('/workspace/team')} className="text-[#6366f1] text-[13px] hover:underline">
+        <Button style="ghost" color="blue" size="md" onClick={() => router.push('/workspace/team')}>
           Повернутися до команди
-        </button>
+        </Button>
       </div>
     );
   }
@@ -110,19 +112,20 @@ export default function MemberDetailPage({ params }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden">
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
+      
+        <PageHeader variant="main" title="Профіль учасника" />
 
-
-      <div className="flex-1 overflow-y-auto px-[32px] py-8">
-        <div className="max-w-[800px] mx-auto grid grid-cols-1 md:grid-cols-[1fr_340px] gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-8">
           
           {/* Main Info Column */}
           <div className="flex flex-col gap-8">
-            <div className="flex items-center gap-6 p-6 rounded-[20px] bg-[#f7f7f7] border border-[#e9e9e9]">
+            <div className="flex items-center gap-6 p-6 rounded-[16px] bg-[#f4f4f5] border border-[#e9e9e9]">
               <div className="relative shrink-0">
                 <UserAvatar user={member} size={80} className="text-[28px] shadow-sm" />
                 {member.lastActive && (NOW - new Date(member.lastActive).getTime() < 120000) && (
-                  <span className="absolute bottom-1 right-1 w-[18px] h-[18px] bg-[#10b981] rounded-full ring-4 ring-[#f7f7f7]" />
+                  <span className="absolute bottom-1 right-1 w-[18px] h-[18px] bg-[#10b981] rounded-full ring-4 ring-[#f4f4f5]" />
                 )}
               </div>
               <div>
@@ -183,7 +186,7 @@ export default function MemberDetailPage({ params }) {
           {/* Right Column: Management */}
           {isOwner && (
             <div className="flex flex-col gap-6">
-              <div className="bg-white p-6 rounded-[20px] border border-[#e9e9e9] shadow-sm">
+              <div className="bg-white p-6 rounded-[16px] border border-[#e9e9e9] shadow-sm">
                 <h4 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wider mb-5 flex items-center gap-2">
                   <Shield size={14} className="text-[#f97316]" /> Керування доступом
                 </h4>
@@ -201,7 +204,7 @@ export default function MemberDetailPage({ params }) {
                         showToast('Помилка оновлення', 'error');
                       }
                     }}
-                    className="w-full px-4 py-[12px] bg-[#f7f7f7] border border-[#e9e9e9] rounded-[14px] text-[14px] font-semibold text-[#1f1f1f] focus:border-[#1f1f1f] outline-none transition-colors"
+                    className="w-full px-4 py-[12px] bg-[#f4f4f5] border border-[#e9e9e9] rounded-[10px] text-[14px] font-semibold text-[#1f1f1f] focus:border-[#1f1f1f] outline-none transition-colors"
                   />
                 </div>
                 
@@ -221,10 +224,9 @@ export default function MemberDetailPage({ params }) {
                     </div>
 
                     <div className="pt-5 border-t border-[#f0f0f0]">
-                      <button onClick={handleRemove}
-                        className="w-full flex items-center justify-center gap-2 px-[20px] py-[12px] bg-red-50 text-red-500 rounded-[14px] text-[13px] font-bold hover:bg-red-100 transition-colors border border-red-100">
-                        <Trash2 size={16} /> Видалити з команди
-                      </button>
+                      <Button onClick={handleRemove} style="secondary" color="red" size="lg" className="w-full" icon={Trash2}>
+                        Видалити з команди
+                      </Button>
                     </div>
                   </>
                 )}

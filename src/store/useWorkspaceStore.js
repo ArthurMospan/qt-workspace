@@ -59,6 +59,10 @@ const useWorkspaceStore = create((set, get) => ({
   // ── Chat search (synced between header and chat page) ─────────────
   chatSearch: '',
   setChatSearch: (q) => set({ chatSearch: q }),
+
+  // ── Chat online users (synced from chat page to header) ───────────
+  chatOnlineUsers: [],
+  setChatOnlineUsers: (users) => set({ chatOnlineUsers: users }),
 }));
 
 export default useWorkspaceStore;

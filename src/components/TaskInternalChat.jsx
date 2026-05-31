@@ -67,7 +67,7 @@ export default function TaskInternalChat({ taskId }) {
                     <button onClick={() => deleteComment(comment.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all text-[10px]">✕</button>
                   )}
                 </div>
-                <div className={`px-[11px] py-[7px] rounded-[11px] text-[12px] leading-relaxed break-words ${
+                <div className={`px-[11px] py-[7px] rounded-[12px] text-[12px] leading-relaxed break-words ${
                   isMe ? 'bg-blue-600/25 text-white rounded-tr-[3px]' : 'bg-white/[0.06] text-white/80 rounded-tl-[3px]'
                 }`}>
                   {comment.text}
@@ -82,7 +82,7 @@ export default function TaskInternalChat({ taskId }) {
       {/* Input */}
       <form onSubmit={handleSend} className="flex gap-[8px] mt-[12px]">
         <UserAvatar user={currentUser} className="w-[28px] h-[28px] shrink-0" />
-        <div className="flex-1 flex items-center gap-[8px] bg-white/[0.05] border border-white/[0.08] rounded-[11px] px-[11px] py-[7px]">
+        <div className="flex-1 flex items-center gap-[8px] bg-white/[0.05] border border-white/[0.08] rounded-[10px] px-[11px] py-[7px]">
           <input
             value={text}
             onChange={e => setText(e.target.value)}

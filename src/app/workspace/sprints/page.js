@@ -10,10 +10,12 @@ import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import IssueCard from '@/components/workspace/IssueCard';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import PageHeader from '@/components/workspace/PageHeader';
+import { PageHeader } from '@/components/ui';
 import { can } from '@/lib/utils/can';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 import { 
   Plus, Play, Check, Trash2, Edit2, Calendar, 
   ChevronDown, ChevronRight, ChevronUp, Zap, 
@@ -21,6 +23,9 @@ import {
   Star, Bug, CheckSquare, Filter
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
+import FilterBar from '@/components/ui/FilterBar';
+import Surface from '@/components/ui/Surface';
+import Button from '@/components/ui/Button';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
@@ -66,7 +71,7 @@ function SprintEditModal({ sprint, onClose, onSave }) {
               required
               value={name} 
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-[#f7f7f7] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
             />
           </div>
           <div>
@@ -75,7 +80,7 @@ function SprintEditModal({ sprint, onClose, onSave }) {
               value={goal} 
               onChange={e => setGoal(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 bg-[#f7f7f7] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f] resize-none"
+              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f] resize-none"
             />
           </div>
           <div className="flex gap-4">
@@ -85,7 +90,7 @@ function SprintEditModal({ sprint, onClose, onSave }) {
                 type="date" 
                 value={startDate} 
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f7f7f7] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
               />
             </div>
             <div className="flex-1">
@@ -94,24 +99,94 @@ function SprintEditModal({ sprint, onClose, onSave }) {
                 type="date" 
                 value={endDate} 
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f7f7f7] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
               />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-2">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="px-4 py-2 text-[13px] font-bold text-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
-            >
+            <Button style="secondary" size="md" onClick={onClose} type="button">
               Скасувати
-            </button>
-            <button 
-              type="submit"
-              className="px-5 py-2 bg-[#1f1f1f] text-white rounded-xl text-[13px] font-bold hover:bg-[#303030] transition-all"
-            >
+            </Button>
+            <Button style="primary" size="md" type="submit">
               Зберегти
-            </button>
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SprintCreateModal({ onClose, onSave }) {
+  const [name, setName] = useState('');
+  const [goal, setGoal] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      name,
+      goal,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-[24px] shadow-xl w-[480px] p-6 max-w-[90%] border border-[#efefef]">
+        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-4">Створити спринт</h3>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Назва спринта</label>
+            <input 
+              type="text" 
+              required
+              placeholder="Наприклад: Спринт 1"
+              value={name} 
+              onChange={e => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Ціль спринта</label>
+            <textarea 
+              value={goal} 
+              placeholder="Опишіть ціль цього спринта..."
+              onChange={e => setGoal(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f] resize-none"
+            />
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата початку</label>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата завершення</label>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={e => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-2">
+            <Button style="secondary" size="md" onClick={onClose} type="button">
+              Скасувати
+            </Button>
+            <Button style="primary" size="md" type="submit">
+              Створити
+            </Button>
           </div>
         </form>
       </div>
@@ -124,6 +199,7 @@ export default function GlobalSprintsPage() {
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
   const { labels } = useWorkflowConfig();
+  const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
 
   // No breadcrumbs for main pages
@@ -131,12 +207,15 @@ export default function GlobalSprintsPage() {
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
   }, []);
 
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'planning'
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
   const [editingSprint, setEditingSprint] = useState(null);
   const [activeIssue, setActiveIssue] = useState(null);
   const [sectionExpansion, setSectionExpansion] = useState({});
   const [projectFilters, setProjectFilters] = useState([]);
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
 
@@ -153,42 +232,26 @@ export default function GlobalSprintsPage() {
 
     const issueId = draggableId;
 
-    if (activeTab === 'active') {
-      try {
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('@/lib/firebase');
-        
-        await updateDoc(doc(db, 'issues', issueId), {
-          columnId: destination.droppableId,
-          status: destination.droppableId,
-          updatedAt: serverTimestamp()
-        });
-        showToast('Статус оновлено ✓');
-      } catch (err) {
-        console.error(err);
-        showToast('Помилка оновлення статусу');
-      }
-    } else {
-      try {
-        const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId;
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('@/lib/firebase');
-        
-        await updateDoc(doc(db, 'issues', issueId), {
-          sprintId: targetSprintId,
-          updatedAt: serverTimestamp()
-        });
-        showToast('Спринт оновлено ✓');
-      } catch (err) {
-        console.error(err);
-        showToast('Помилка оновлення спринта');
-      }
+    try {
+      const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId;
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      
+      await updateDoc(doc(db, 'issues', issueId), {
+        sprintId: targetSprintId,
+        updatedAt: serverTimestamp()
+      });
+      showToast('Спринт оновлено ✓');
+    } catch (err) {
+      console.error(err);
+      showToast('Помилка оновлення спринта');
     }
   };
 
-  const handleCreateSprint = async () => {
+  const handleCreateSprint = async (sprintData) => {
     try {
-      await createSprint({});
+      await createSprint(sprintData);
+      setShowCreateSprintModal(false);
       showToast('Спринт створено ✓');
     } catch (e) {
       console.error(e);
@@ -204,6 +267,15 @@ export default function GlobalSprintsPage() {
   // Filter & Sort issues
   const filteredIssues = issues.filter(i => {
     if (projectFilters.length > 0 && !projectFilters.includes(i.projectId)) return false;
+    if (assigneeFilter !== 'all') {
+      if (assigneeFilter === 'unassigned') {
+        if (i.assigneeIds && i.assigneeIds.length > 0) return false;
+      } else {
+        if (!i.assigneeIds || !i.assigneeIds.includes(assigneeFilter)) return false;
+      }
+    }
+    if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+    if (typeFilter !== 'all' && i.type !== typeFilter) return false;
     return true;
   });
 
@@ -228,20 +300,18 @@ export default function GlobalSprintsPage() {
   const plannedSprintList = (sprints || []).filter(s => s.status === 'planned');
   const completedSprintList = (sprints || []).filter(s => s.status === 'completed');
 
-  const activeSprintIds = new Set(activeSprintList.map(s => s.id));
   const sprintMap = (sprints || []).reduce((acc, s) => {
     acc[s.id] = s;
     return acc;
   }, {});
 
-  const activeBoardIssues = filteredIssues.filter(i => i.sprintId && activeSprintIds.has(i.sprintId));
   const backlogIssues = filteredIssues.filter(i => !i.sprintId || !sprintMap[i.sprintId]);
 
   const formatSprintDates = (startDate, endDate) => {
     if (!startDate || !endDate) return null;
     const start = startDate.toDate ? startDate.toDate() : new Date(startDate);
     const end = endDate.toDate ? endDate.toDate() : new Date(endDate);
-    return `${start.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    return `${formatDate(start)} - ${formatDate(end)}`;
   };
 
   const toggleSection = (id) => {
@@ -268,131 +338,60 @@ export default function GlobalSprintsPage() {
     return (
       <Droppable droppableId={droppableId}>
         {(provided, snapshot) => (
-          <div className="overflow-x-auto min-h-[60px]" ref={provided.innerRef} {...provided.droppableProps}>
-            <table className="w-full relative border-separate border-spacing-y-2 px-4 pb-4 bg-transparent table-fixed">
-              <thead>
-                <tr>
-                  <th onClick={() => toggleSort('issueKey')} className="w-[90px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                    ID <SortIcon k="issueKey" />
-                  </th>
-                  <th onClick={() => toggleSort('title')} className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                    Назва <SortIcon k="title" />
-                  </th>
-                  {!isBacklogCol && (
-                    <>
-                      <th onClick={() => toggleSort('projectId')} className="w-[140px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                        Проєкт <SortIcon k="projectId" />
-                      </th>
-                      <th onClick={() => toggleSort('type')} className="w-[90px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                        Тип <SortIcon k="type" />
-                      </th>
-                      <th onClick={() => toggleSort('columnId')} className="w-[110px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                        Статус <SortIcon k="columnId" />
-                      </th>
-                    </>
+          <div 
+            className="flex flex-col gap-[8px] px-4 pb-4 pt-1 min-h-[60px]" 
+            ref={provided.innerRef} 
+            {...provided.droppableProps}
+          >
+            {sorted.map((issue, index) => {
+              const pName = projects.find(p => p.id === issue.projectId)?.name || '';
+              if (isBacklogCol) {
+                return (
+                  <IssueCard
+                    key={issue.id}
+                    issue={issue}
+                    issues={issueList}
+                    sprints={sprints}
+                    members={members}
+                    labels={labels}
+                    index={index}
+                    projectId={issue.projectId}
+                    projectName={pName}
+                  />
+                );
+              }
+              return (
+                <Draggable key={issue.id} draggableId={issue.id} index={index}>
+                  {(draggableProvided, draggableSnapshot) => (
+                    <div
+                      ref={draggableProvided.innerRef}
+                      {...draggableProvided.draggableProps}
+                      {...draggableProvided.dragHandleProps}
+                      style={{
+                        ...draggableProvided.draggableProps.style,
+                        opacity: draggableSnapshot.isDragging ? 0.8 : 1,
+                      }}
+                    >
+                      <TaskRow
+                        issue={issue}
+                        members={members}
+                        labels={labels}
+                        sprints={sprints}
+                        projectId={issue.projectId}
+                        projectName={pName}
+                        onClick={() => setActiveIssue(issue)}
+                      />
+                    </div>
                   )}
-                  <th onClick={() => toggleSort('priority')} className="w-[100px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                    Пріоритет <SortIcon k="priority" />
-                  </th>
-                  {!isBacklogCol && (
-                    <th className="w-[100px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 select-none">
-                      Виконавці
-                    </th>
-                  )}
-                  <th onClick={() => toggleSort('storyPoints')} className="w-[60px] text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-3 py-2 cursor-pointer hover:text-[#1f1f1f] select-none">
-                    SP <SortIcon k="storyPoints" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((issue, index) => {
-                  const pri = PRIORITY_CFG[issue.priority] || PRIORITY_CFG.medium;
-                  const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
-                  const PrioIcon = pri.i;
-                  const TypeIcon = type.i;
-                  const assignees = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
-                  const pName = projects.find(p => p.id === issue.projectId)?.name || '—';
-
-                  return (
-                    <Draggable key={issue.id} draggableId={issue.id} index={index}>
-                      {(provided, snapshot) => (
-                        <tr
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          onClick={() => setActiveIssue(issue)}
-                          className={`bg-white hover:bg-white/95 hover:translate-y-[-1px] cursor-pointer transition-all shadow-[0_1px_4px_rgba(0,0,0,0.02)] group ${
-                            snapshot.isDragging ? 'bg-[#f0f4ff] scale-[1.01] border-2 border-indigo-500 z-[100]' : ''
-                          }`}
-                        >
-                          <td className="px-3 py-2.5 first:rounded-l-[12px] border-y border-l border-[#efefef]">
-                            <span className="font-mono text-[11px] font-bold text-[#9a9a9a] group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
-                          </td>
-                          <td className="px-3 py-2.5 border-y border-[#efefef] truncate">
-                            <div className="flex flex-col min-w-0">
-                              <p className="text-[12px] font-semibold text-[#1f1f1f] truncate">{issue.title}</p>
-                              {isBacklogCol && (
-                                <span className="text-[9px] font-medium text-[#6366f1] truncate mt-0.5 max-w-[120px]">
-                                  {pName}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          {!isBacklogCol && (
-                            <>
-                              <td className="px-3 py-2.5 border-y border-[#efefef] truncate">
-                                <span className="text-[10px] font-bold text-[#6366f1] bg-[#e0e7ff] px-2 py-0.5 rounded truncate max-w-[120px] inline-block">
-                                  {pName}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2.5 border-y border-[#efefef]">
-                                <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: type.c }}>
-                                  <TypeIcon size={11} /> {issue.type}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2.5 border-y border-[#efefef]">
-                                <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
-                              </td>
-                            </>
-                          )}
-                          <td className="px-3 py-2.5 border-y border-[#efefef]">
-                            <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: pri.c }}>
-                              <PrioIcon size={11} /> {issue.priority}
-                            </span>
-                          </td>
-                          {!isBacklogCol && (
-                            <td className="px-3 py-2.5 border-y border-[#efefef]">
-                              <div className="flex -space-x-1">
-                                {assignees.slice(0, 3).map(m => (
-                                  <img 
-                                    key={m.id || m.uid} 
-                                    src={m.avatar || m.photoURL || `https://ui-avatars.com/api/?name=${m.name}&size=20`}
-                                    alt={m.name} 
-                                    title={m.name}
-                                    className="w-[20px] h-[20px] rounded-full ring-[1.5px] ring-white object-cover" 
-                                  />
-                                ))}
-                              </div>
-                            </td>
-                          )}
-                          <td className="px-3 py-2.5 last:rounded-r-[12px] border-y border-r border-[#efefef] text-[11px] text-[#9a9a9a]">
-                            {issue.storyPoints > 0 ? `${issue.storyPoints} SP` : '—'}
-                          </td>
-                        </tr>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {issueList.length === 0 && (
-                  <tr>
-                    <td colSpan={isBacklogCol ? 4 : 8} className="px-3 py-8 text-center text-[12px] text-[#cfcfcf]">
-                      Задач не знайдено в цьому списку
-                    </td>
-                  </tr>
-                )}
-                {provided.placeholder}
-              </tbody>
-            </table>
+                </Draggable>
+              );
+            })}
+            {issueList.length === 0 && (
+              <div className="py-8 text-center text-[12px] text-[#cfcfcf]">
+                Задач не знайдено в цьому списку
+              </div>
+            )}
+            {provided.placeholder}
           </div>
         )}
       </Droppable>
@@ -400,151 +399,83 @@ export default function GlobalSprintsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f7f7f7]">
+    <div className="flex-1 h-full overflow-hidden bg-transparent">
+      <div className="w-full h-full px-[24px] md:px-[32px] pt-[56px] pb-[24px] flex flex-col gap-2">
       
-      {/* ── PageHeader ── */}
       <PageHeader
         variant="main"
         title="Спринти"
-        className="px-[32px]"
-        tabs={[
-          { id: 'active', label: 'Активна дошка' },
-          { id: 'planning', label: 'Планування' }
-        ]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         actions={
           <>
-            {activeTab === 'planning' && isManager && (
-              <button
-                onClick={handleCreateSprint}
-                className="flex items-center justify-center gap-[6px] px-[20px] h-[36px] bg-white border border-[#efefef] text-[#1f1f1f] rounded-[10px] text-[14px] font-bold hover:bg-[#f7f7f7] transition-all shadow-sm"
+            {isManager && (
+              <Button
+                style="primary"
+                size="lg"
+                icon={Plus}
+                onClick={() => setShowCreateSprintModal(true)}
               >
-                <Plus size={16} /> Створити спринт
-              </button>
+                Створити спринт
+              </Button>
             )}
-            <button
-              onClick={() => setShowCreateTaskModal(true)}
-              className="flex items-center justify-center gap-[6px] px-[20px] h-[36px] bg-[#1f1f1f] text-white rounded-[10px] text-[14px] font-bold hover:bg-[#303030] transition-colors"
-            >
-              <Plus size={16} /> Створити задачу
-            </button>
           </>
         }
         filters={
-          activeTab === 'planning' ? (
-            <div className="flex items-center gap-2 text-[13px] text-[#9a9a9a] font-semibold ml-auto">
-              <Filter size={14} className="text-[#9a9a9a]" />
-              <MultiSelect
-                value={projectFilters}
+          <FilterBar>
+            <MultiSelect
+              value={projectFilters}
                 onChange={setProjectFilters}
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
                 className="w-[200px]"
+                variant="ghost"
               />
-            </div>
-          ) : null
+              <Select
+                value={assigneeFilter}
+                onChange={setAssigneeFilter}
+                options={[
+                  { value: 'all', label: 'Всі виконавці' },
+                  { value: 'unassigned', label: 'Без виконавця' },
+                  ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                ]}
+                variant="ghost"
+              />
+              <Select
+                value={priorityFilter}
+                onChange={setPriorityFilter}
+                options={[
+                  { value: 'all', label: 'Всі пріоритети' },
+                  { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                  { value: 'high', label: 'High', dotColor: '#f97316' },
+                  { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                  { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+                ]}
+                variant="ghost"
+              />
+              <Select
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[
+                  { value: 'all', label: 'Всі типи' },
+                  { value: 'epic', label: 'Epic' },
+                  { value: 'feature', label: 'Feature' },
+                  { value: 'task', label: 'Task' },
+                  { value: 'bug', label: 'Bug' },
+                ]}
+                variant="ghost"
+              />
+            </FilterBar>
         }
       />
 
       {/* ── Content area ── */}
       {loading ? (
-        <div className="flex-1 flex items-center justify-center bg-white">
+        <div className="flex-1 flex items-center justify-center bg-transparent">
           <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-        </div>
-      ) : activeTab === 'active' ? (
-        /* ACTIVE BOARD TAB */
-        <div className="flex-1 overflow-hidden px-[20px] pt-[16px] pb-[20px] flex flex-col bg-white">
-          {activeSprintList.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <AlertCircle size={32} className="text-[#9a9a9a] mb-2" />
-              <h3 className="text-[16px] font-bold text-[#1f1f1f]">Немає активних спринтів</h3>
-              <p className="text-[13px] text-[#9a9a9a] max-w-[320px] mt-1">
-                Перейдіть на вкладку «Планування», щоб створити та почати спринт для вашої команди.
-              </p>
-              <button 
-                onClick={() => setActiveTab('planning')}
-                className="mt-4 px-4 py-2 bg-[#1f1f1f] text-white font-bold text-[12px] rounded-xl hover:bg-[#303030] transition-all"
-              >
-                До планування
-              </button>
-            </div>
-          ) : (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <div className="flex flex-col h-full min-h-0">
-                <div className="flex items-center gap-2 mb-3 bg-[#f7f7f7] rounded-[14px] px-4 py-2 border border-[#efefef] w-fit">
-                  <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Активні спринти:</span>
-                  {activeSprintList.map(s => (
-                    <span key={s.id} className="text-[11px] font-bold text-[#1f1f1f] bg-white px-2 py-0.5 rounded shadow-sm border border-[#efefef]">
-                      {s.name}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-4 h-full overflow-x-auto pb-2 pr-1">
-                  {COLUMNS.map(col => {
-                    const colIssues = activeBoardIssues.filter(i => {
-                      const cId = i.columnId || i.status || 'todo';
-                      if (col.id === 'todo')        return ['todo', 'backlog'].includes(cId);
-                      if (col.id === 'in-progress') return ['in-progress', 'code-review', 'qa', 'client-approval'].includes(cId);
-                      if (col.id === 'done')        return cId === 'done';
-                      return false;
-                    });
-
-                    return (
-                      <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] rounded-[24px] overflow-hidden" style={{ height: 'calc(100vh - 210px)' }}>
-                        <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-                          <div className="flex items-center gap-[8px]">
-                            <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full">
-                              {colIssues.length}
-                            </span>
-                          </div>
-                        </div>
-
-                        <Droppable droppableId={col.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`flex-1 overflow-y-auto px-[8px] flex flex-col gap-[8px] transition-colors ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
-                            >
-                              {colIssues.length === 0 ? (
-                                <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
-                                  Немає задач
-                                </div>
-                              ) : (
-                                colIssues.map((issue, index) => {
-                                  const pName = projects.find(p => p.id === issue.projectId)?.name;
-                                  return (
-                                    <IssueCard
-                                      key={issue.id}
-                                      issue={issue}
-                                      members={members}
-                                      labels={labels}
-                                      index={index}
-                                      projectId={issue.projectId}
-                                      projectName={pName}
-                                    />
-                                  );
-                                })
-                              )}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </DragDropContext>
-          )}
         </div>
       ) : (
         /* PLANNING TAB */
-        <div className="flex-1 flex flex-col min-h-0 bg-white px-[20px] pt-[16px] pb-[20px] overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-[600px]">
           
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex-1 flex flex-row gap-6 min-h-0 items-stretch">
@@ -554,10 +485,9 @@ export default function GlobalSprintsPage() {
                 {sprints.map(sprint => {
                   const sprintIssues = filteredIssues.filter(i => i.sprintId === sprint.id);
                   const isExpanded = isSectionExpanded(sprint.id, sprint.status !== 'completed');
-                  const totalSP = sprintIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0);
 
                   return (
-                    <div key={sprint.id} className="bg-[#f7f7f7] rounded-[24px] border border-transparent shadow-none overflow-hidden shrink-0">
+                    <div key={sprint.id} className="bg-[#f4f4f5] rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
                       <div className="px-5 py-4 flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 cursor-pointer" onClick={() => toggleSection(sprint.id)}>
                           {isExpanded ? <ChevronDown size={16} className="text-[#9a9a9a]" /> : <ChevronRight size={16} className="text-[#9a9a9a]" />}
@@ -566,7 +496,6 @@ export default function GlobalSprintsPage() {
                           {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
                           {sprint.status === 'completed' && <Badge label="Завершено" color="#cbd5e1" />}
                           <span className="text-[11px] text-[#9a9a9a] shrink-0">{sprintIssues.length} задач</span>
-                          {totalSP > 0 && <span className="text-[11px] text-[#6366f1] shrink-0">({totalSP} SP)</span>}
                           {sprint.startDate && (
                             <span className="text-[11px] text-[#9a9a9a] hidden sm:inline ml-2">
                               {formatSprintDates(sprint.startDate, sprint.endDate)}
@@ -577,22 +506,43 @@ export default function GlobalSprintsPage() {
                         {isManager && (
                           <div className="flex items-center gap-2">
                             {sprint.status === 'planned' && (
-                              <button onClick={() => startSprint(sprint.id)} className="flex items-center gap-1 text-[11px] font-bold bg-[#1f1f1f] text-white px-3 py-1.5 rounded-[10px] hover:bg-[#303030] transition-colors">
-                                <Play size={10} /> Почати спринт
-                              </button>
+                              <Button
+                                style="primary"
+                                size="sm"
+                                icon={Play}
+                                onClick={() => startSprint(sprint.id)}
+                              >
+                                Почати спринт
+                              </Button>
                             )}
                             {sprint.status === 'active' && (
-                              <button onClick={() => completeSprint(sprint.id)} className="flex items-center gap-1 text-[11px] font-bold bg-[#10b981] text-white px-3 py-1.5 rounded-[10px] hover:bg-[#059669] transition-colors">
-                                <Check size={10} /> Завершити спринт
-                              </button>
+                              <Button
+                                style="primary"
+                                size="sm"
+                                icon={Check}
+                                onClick={() => completeSprint(sprint.id)}
+                              >
+                                Завершити
+                              </Button>
                             )}
-                            <button onClick={() => setEditingSprint(sprint)} className="p-1.5 text-[#9a9a9a] hover:text-[#1f1f1f] rounded-[10px] hover:bg-white transition-colors" title="Редагувати">
-                              <Edit2 size={12} />
-                            </button>
+                            <Button
+                              style="secondary"
+                              size="icon"
+                              icon={Edit2}
+                              onClick={() => setEditingSprint(sprint)}
+                            >
+                              Редагувати
+                            </Button>
                             {sprint.status !== 'active' && (
-                              <button onClick={() => { if(confirm('Видалити спринт?')) deleteSprint(sprint.id); }} className="p-1.5 text-[#9a9a9a] hover:text-red-500 rounded-[10px] hover:bg-white transition-colors" title="Видалити">
-                                <Trash2 size={12} />
-                              </button>
+                              <Button
+                                style="secondary"
+                                size="icon"
+                                color="red"
+                                icon={Trash2}
+                                onClick={() => { if(confirm('Видалити спринт?')) deleteSprint(sprint.id); }}
+                              >
+                                Видалити
+                              </Button>
                             )}
                           </div>
                         )}
@@ -609,24 +559,31 @@ export default function GlobalSprintsPage() {
                   );
                 })}
                 {sprints.length === 0 && (
-                  <div className="py-12 text-center text-[13px] text-[#cfcfcf] bg-[#f7f7f7] rounded-[24px]">
+                  <div className="py-12 text-center text-[13px] text-[#cfcfcf] bg-[#f4f4f5] rounded-[16px]">
                     Немає запланованих або активних спринтів. Створіть новий спринт, щоб розпочати планування.
                   </div>
                 )}
               </div>
 
-              {/* Right Column: Backlog (35%) */}
-              <div className="w-[35%] min-w-[320px] bg-[#f7f7f7] rounded-[24px] overflow-hidden flex flex-col min-h-0 border border-[#efefef]">
-                <div className="px-5 py-4 flex items-center justify-between shrink-0 border-b border-[#efefef] bg-white/50 backdrop-blur-sm">
+              {/* Right Column: Backlog (28%) */}
+              <Surface variant="panel" padding="none" className="w-[28%] min-w-[280px] overflow-hidden flex flex-col min-h-0">
+                <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>
                     <span className="text-[11px] font-bold text-[#9a9a9a] bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} задач</span>
                   </div>
+                  <button
+                    onClick={() => setShowCreateTaskModal(true)}
+                    className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                    title="Додати задачу в беклог"
+                  >
+                    <Plus size={16} />
+                  </button>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                   <IssueTable issueList={backlogIssues} droppableId="backlog" isBacklogCol={true} />
                 </div>
-              </div>
+              </Surface>
 
             </div>
           </DragDropContext>
@@ -651,6 +608,14 @@ export default function GlobalSprintsPage() {
         />
       )}
 
+      {/* Create Sprint Modal */}
+      {showCreateSprintModal && (
+        <SprintCreateModal
+          onClose={() => setShowCreateSprintModal(false)}
+          onSave={handleCreateSprint}
+        />
+      )}
+
       {/* Create Task Modal */}
       <CreateTaskModal
         isOpen={showCreateTaskModal}
@@ -659,11 +624,12 @@ export default function GlobalSprintsPage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+          const { addDoc, collection, serverTimestamp, doc, runTransaction } = await import('firebase/firestore');
           const { db } = await import('@/lib/firebase');
           
-          await addDoc(collection(db, 'issues'), {
-            issueKey: `WS-${Date.now()}`,
+          const tempKey = `WS-${Date.now()}`;
+          const newIssueRef = await addDoc(collection(db, 'issues'), {
+            issueKey: tempKey,
             organizationId: activeOrgId,
             projectId: formData.projectId,
             title: formData.title,
@@ -679,6 +645,33 @@ export default function GlobalSprintsPage() {
             createdAt: serverTimestamp(),
             createdBy: currentUser?.uid || currentUser?.id
           });
+
+          // Run background transaction to get sequential key
+          const projectRef = doc(db, 'projects', formData.projectId);
+          runTransaction(db, async tx => {
+            const projectSnap = await tx.get(projectRef);
+            if (!projectSnap.exists()) return;
+            const projectData = projectSnap.data();
+            const current = projectData.issueCounter ?? 0;
+            const next = current + 1;
+            
+            const pName = projectData.name || 'WS';
+            const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
+            let prefix = cleanProj.slice(0, 3).toUpperCase();
+            if (prefix.length < 2) {
+              prefix = pName.slice(0, 2).toUpperCase();
+            }
+            if (!prefix) prefix = 'WS';
+
+            tx.update(projectRef, {
+              issueCounter: next,
+              updatedAt: serverTimestamp()
+            });
+            tx.update(doc(db, 'issues', newIssueRef.id), {
+              issueKey: `${prefix}-${next}`
+            });
+          }).catch(err => console.warn('[sprints] issueCounter update failed:', err));
+
           showToast('Задачу створено ✓');
         }}
         projects={projects}
@@ -694,6 +687,7 @@ export default function GlobalSprintsPage() {
           onClose={() => setActiveIssue(null)} 
         />
       )}
+      </div>
     </div>
   );
 }

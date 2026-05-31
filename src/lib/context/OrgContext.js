@@ -78,18 +78,7 @@ export function OrgProvider({ user, children }) {
           orgs = orgSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
 
-        if (orgs.length === 0) {
-          // Fallback: check legacy org doc if migration hasn't run yet
-          const legacyId = process.env.NEXT_PUBLIC_ORG_ID || 'quickteam';
-          const legacySnap = await getDoc(doc(db, 'organizations', legacyId));
-          if (legacySnap.exists()) {
-            const data = legacySnap.data();
-            const membership = (data.members || []).find(m => m.uid === uid);
-            if (membership) {
-              orgs = [{ id: legacySnap.id, ...data }];
-            }
-          }
-        }
+        // Legacy fallback removed to enforce strict multi-tenancy
 
         setAllOrgs(orgs);
 
@@ -152,8 +141,16 @@ export function OrgProvider({ user, children }) {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() };
         setActiveOrg(data);
-        setAllOrgs(prev => prev.map(o => o.id === snap.id ? data : o));
+        setAllOrgs(prev => {
+          const exists = prev.find(o => o.id === snap.id);
+          if (exists) {
+            return prev.map(o => o.id === snap.id ? data : o);
+          }
+          return [...prev, data];
+        });
       }
+    }, (err) => {
+      console.warn('[OrgContext] org sync permission error (expected during logout):', err.message);
     });
 
     // Sync role from orgMemberships
@@ -164,6 +161,8 @@ export function OrgProvider({ user, children }) {
         if (snap.exists()) {
           setOrgRole(snap.data().role);
         }
+      }, (err) => {
+        console.warn('[OrgContext] membership sync permission error (expected during logout):', err.message);
       });
     }
 

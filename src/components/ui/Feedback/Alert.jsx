@@ -49,6 +49,7 @@ const variantConfig = {
 export function Alert({
   variant = 'info',
   title,
+  description,
   children,
   onClose,
   className = '',
@@ -58,7 +59,7 @@ export function Alert({
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-lg p-4 min-h-9 border-l-4 transition-all ${className}`}
+      className={`flex items-start gap-3 rounded-[8px] p-4 min-h-9 border-l-4 transition-all ${className}`}
       style={{
         backgroundColor: config.bg,
         borderColor: config.border,
@@ -81,12 +82,12 @@ export function Alert({
             {title}
           </div>
         )}
-        {children && (
+        {(children || description) && (
           <div
             className="text-sm mt-1"
             style={{ color: config.text, fontSize: typography.sizes.sm.size }}
           >
-            {children}
+            {children || description}
           </div>
         )}
       </div>

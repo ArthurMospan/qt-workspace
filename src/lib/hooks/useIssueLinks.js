@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useIssueLinks.js — Issue dependency/relationship links
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 
@@ -113,14 +113,36 @@ export function useIssueLinks(issueId) {
       targetIssueId: sourceId,
       relationType: inverseType
     });
-  }, []);
+  }, [activeOrgId]);
 
   // -------------------------------------------------------------------------
   // removeLink — deletes a single link document
   // -------------------------------------------------------------------------
   const removeLink = useCallback(async linkId => {
-    await deleteDoc(doc(db, 'issueLinks', linkId));
-  }, []);
+    try {
+      const linkSnap = await getDoc(doc(db, 'issueLinks', linkId));
+      if (linkSnap.exists()) {
+        const { sourceIssueId, targetIssueId } = linkSnap.data();
+        const q = query(
+          collection(db, 'issueLinks'),
+          where('organizationId', '==', activeOrgId),
+          where('sourceIssueId', 'in', [sourceIssueId, targetIssueId]),
+          where('targetIssueId', 'in', [sourceIssueId, targetIssueId])
+        );
+        const snap = await getDocs(q);
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => {
+          batch.delete(d.ref);
+        });
+        await batch.commit();
+      } else {
+        await deleteDoc(doc(db, 'issueLinks', linkId));
+      }
+    } catch (e) {
+      console.error('[useIssueLinks] removeLink error', e);
+      await deleteDoc(doc(db, 'issueLinks', linkId));
+    }
+  }, [activeOrgId]);
 
   // -------------------------------------------------------------------------
   // hasBlocker — returns true if any open issue is blocking this one

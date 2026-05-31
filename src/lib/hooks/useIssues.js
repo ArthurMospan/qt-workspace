@@ -112,13 +112,25 @@ export function useIssues(projectId) {
     runTransaction(db, async tx => {
       const projectSnap = await tx.get(projectRef);
       if (!projectSnap.exists()) return;
-      const current = projectSnap.data().issueCounter ?? 0;
+      const projectData = projectSnap.data();
+      const current = projectData.issueCounter ?? 0;
       const next = current + 1;
+      
+      // Calculate project prefix dynamically: first 3 letters of name, capitalized, e.g. "QT" or "PRO"
+      const pName = projectData.name || 'WS';
+      const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
+      let prefix = cleanProj.slice(0, 3).toUpperCase();
+      if (prefix.length < 2) {
+        prefix = pName.slice(0, 2).toUpperCase();
+      }
+      if (!prefix) prefix = 'WS';
+
       tx.update(projectRef, {
-        issueCounter: next
+        issueCounter: next,
+        updatedAt: serverTimestamp()
       });
       tx.update(doc(db, 'issues', newIssueRef.id), {
-        issueKey: `WS-${next}`
+        issueKey: `${prefix}-${next}`
       });
     }).catch(err => console.warn('[useIssues] issueCounter update failed (key stays temp):', err));
 
@@ -152,6 +164,11 @@ export function useIssues(projectId) {
       updatedAt: serverTimestamp()
     });
 
+    // Touch parent project
+    await updateDoc(doc(db, 'projects', projectId), {
+      updatedAt: serverTimestamp()
+    }).catch(() => {});
+
     // Write audit for notable field changes
     const auditFields = ['status', 'priority', 'title', 'columnId', 'assigneeIds'];
     for (const field of auditFields) {
@@ -167,14 +184,17 @@ export function useIssues(projectId) {
         });
       }
     }
-  }, [issues]);
+  }, [issues, projectId]);
 
   // -------------------------------------------------------------------------
   // deleteIssue
   // -------------------------------------------------------------------------
   const deleteIssue = useCallback(async issueId => {
     await deleteDoc(doc(db, 'issues', issueId));
-  }, []);
+    await updateDoc(doc(db, 'projects', projectId), {
+      updatedAt: serverTimestamp()
+    }).catch(() => {});
+  }, [projectId]);
 
   // -------------------------------------------------------------------------
   // moveIssue — batch reorder + columnId/status update + audit
@@ -222,6 +242,12 @@ export function useIssues(projectId) {
       order: Math.max(0, newOrder),
       updatedAt: serverTimestamp()
     });
+
+    // Touch parent project in the same batch
+    batch.update(doc(db, 'projects', projectId), {
+      updatedAt: serverTimestamp()
+    });
+
     await batch.commit();
 
     // Audit

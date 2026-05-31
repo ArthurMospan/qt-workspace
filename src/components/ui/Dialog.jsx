@@ -50,7 +50,7 @@ export default function Dialog({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f7f7f7] rounded-md transition-colors"
+                className="p-1 text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] rounded-[8px] transition-colors"
                 aria-label="Close"
               >
                 <X size={20} />

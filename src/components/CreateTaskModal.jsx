@@ -1,38 +1,20 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { X, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
-const PRIORITIES = [
-  { value: 'low',      label: 'Низький' },
-  { value: 'medium',   label: 'Середній' },
-  { value: 'high',     label: 'Високий' },
-  { value: 'critical', label: 'Критичний' },
-];
 
-const TYPES = [
-  { value: 'task',    label: 'Задача' },
-  { value: 'bug',     label: 'Баг' },
-  { value: 'feature', label: 'Фіча' },
-  { value: 'request', label: 'Запит' },
-];
 
-const DEFAULT_STATUSES = [
-  { id: 'todo',        label: 'Backlog' },
-  { id: 'in-progress', label: 'В роботі' },
-  { id: 'review',      label: 'Перевірка' },
-  { id: 'done',        label: 'Готово' },
-];
-
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, sprints = [] }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, sprints = [], initialStatus = null, epics = [] }) {
   const { currentUser } = useAppContext();
-  const { labels: availableLabels = [] } = useWorkflowConfig();
-  const statuses = stages?.length ? stages : DEFAULT_STATUSES;
+  const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'todo',
@@ -44,6 +26,28 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const selectedProject = projects?.find(p => p.id === form.projectId);
+  const activeHiddenCols = selectedProject?.hiddenColumns || [];
+  const visibleStatuses = statuses.filter(s => !activeHiddenCols.includes(s.id));
+
+  useEffect(() => {
+    if (isOpen) {
+      setForm(f => ({
+        ...f,
+        status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
+      }));
+    }
+  }, [isOpen, initialStatus]);
+
+  useEffect(() => {
+    if (isOpen && form.status) {
+      const isValid = visibleStatuses.some(s => s.id === form.status);
+      if (!isValid && visibleStatuses.length > 0) {
+        setForm(f => ({ ...f, status: visibleStatuses[0].id }));
+      }
+    }
+  }, [form.projectId, isOpen]); // intentionally left visibleStatuses out to prevent infinite re-renders
 
   if (!isOpen) return null;
 
@@ -95,7 +99,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e9e9e9]">
           <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова задача</h2>
-          <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors">
+          <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors p-1 rounded-[8px] hover:bg-[#f4f4f5]">
             <X size={18} />
           </button>
         </div>
@@ -104,12 +108,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Title */}
           <div>
             <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Назва *</label>
-            <input
+            <Input
               autoFocus
               value={form.title}
               onChange={e => set('title', e.target.value)}
               placeholder="Що потрібно зробити?"
-              className="w-full px-4 py-3 bg-[#f7f7f7] rounded-[12px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
             />
           </div>
 
@@ -160,7 +163,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.type}
                 onChange={val => set('type', val)}
-                options={TYPES}
+                options={types.map(t => ({ value: t.id, label: t.label }))}
               />
             </div>
             <div>
@@ -168,7 +171,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.priority}
                 onChange={val => set('priority', val)}
-                options={PRIORITIES}
+                options={priorities.map(p => ({ value: p.id, label: p.label }))}
               />
             </div>
           </div>
@@ -180,41 +183,41 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.status}
                 onChange={val => set('status', val)}
-                options={statuses.map(s => ({ value: s.id, label: s.label }))}
+                options={visibleStatuses.map(s => ({ value: s.id, label: s.label }))}
               />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Дедлайн</label>
-              <input
+              <Input
                 type="date"
                 value={form.dueDate}
                 onChange={e => set('dueDate', e.target.value)}
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm cursor-pointer"
               />
             </div>
           </div>
 
           {/* Row: Epic + Estimate */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Епік (Батьківська)</label>
-              <Select
-                value={form.parentEpicId}
-                onChange={val => set('parentEpicId', val)}
-                options={[
-                  { value: '', label: 'Без епіка' },
-                  ...(typeof epics !== 'undefined' ? epics : []).map(e => ({ value: e.id, label: e.title }))
-                ]}
-              />
-            </div>
-            <div>
+            {epics.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Епік (Батьківська)</label>
+                <Select
+                  value={form.parentEpicId}
+                  onChange={val => set('parentEpicId', val)}
+                  options={[
+                    { value: '', label: 'Без епіка' },
+                    ...epics.map(e => ({ value: e.id, label: e.title || e.issueKey || e.id }))
+                  ]}
+                />
+              </div>
+            )}
+            <div className={epics.length > 0 ? '' : 'col-span-2'}>
               <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Оцінка (год)</label>
-              <input
+              <Input
                 type="number" min="0" step="0.5"
                 value={form.estimateHours}
                 onChange={e => set('estimateHours', e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-[10px] bg-[#f7f7f7] rounded-[10px] text-[13px] text-[#1f1f1f] border border-[#e9e9e9] focus:bg-white focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
               />
             </div>
           </div>
@@ -232,7 +235,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       key={uid}
                       type="button"
                       onClick={() => toggleAssignee(uid)}
-                      className={`flex items-center gap-2 px-3 py-[6px] rounded-[20px] text-[12px] font-medium border transition-all ${
+                      className={`flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${
                         selected
                           ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
                           : 'bg-white text-[#1f1f1f] border-[#e9e9e9] hover:border-[#9a9a9a]'
@@ -259,7 +262,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       key={l.id}
                       type="button"
                       onClick={() => toggleLabel(l.id)}
-                      className={`flex items-center gap-[6px] px-[10px] py-[5px] rounded-[20px] text-[11px] font-bold border transition-all ${
+                      className={`flex items-center gap-[6px] px-[10px] py-[5px] rounded-[8px] text-[11px] font-bold border transition-all ${
                         selected
                           ? 'border-transparent'
                           : 'border-[#e9e9e9] bg-white opacity-60 hover:opacity-100'
@@ -267,7 +270,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       style={selected ? { background: l.color + '18', color: l.color } : { color: '#9a9a9a' }}
                     >
                       {selected && <CheckSquare size={12} />}
-                      <span className="w-[6px] h-[6px] rounded-[20px] shrink-0" style={{ background: l.color }} />
+                      <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: l.color }} />
                       {l.label}
                     </button>
                   );
@@ -281,13 +284,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           )}
 
           {/* Submit */}
-          <button
+          <Button
             type="submit"
+            style="primary"
+            size="lg"
             disabled={!form.title.trim() || loading}
-            className="w-full py-[14px] bg-[#1f1f1f] text-white rounded-[12px] text-[14px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-2 shadow-md hover:shadow-lg"
+            loading={loading}
+            className="w-full mt-2"
           >
             {loading ? 'Створення...' : 'Створити задачу'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

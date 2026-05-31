@@ -1,49 +1,9 @@
+'use client';
 import React, { useEffect, useState } from 'react';
-import { colors, sizing, typography, transitions, zIndex } from '@/lib/design/tokens';
-import {
-  AlertCircle,
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-  Loader2,
-  X,
-} from 'lucide-react';
-
-const variantConfig = {
-  info: {
-    bg: colors.statusBg.info,
-    text: '#1e40af',
-    icon: AlertCircle,
-    iconColor: colors.status.info,
-  },
-  success: {
-    bg: colors.statusBg.success,
-    text: '#065f46',
-    icon: CheckCircle,
-    iconColor: colors.status.success,
-  },
-  warning: {
-    bg: colors.statusBg.warning,
-    text: '#92400e',
-    icon: AlertTriangle,
-    iconColor: colors.status.warning,
-  },
-  error: {
-    bg: colors.statusBg.error,
-    text: '#7f1d1d',
-    icon: XCircle,
-    iconColor: colors.status.error,
-  },
-  loading: {
-    bg: colors.statusBg.info,
-    text: '#1e40af',
-    icon: Loader2,
-    iconColor: colors.status.info,
-  },
-};
+import { CheckCircle, X, AlertCircle, AlertTriangle, Info, Loader2 } from 'lucide-react';
 
 export function Toast({
-  variant = 'info',
+  variant = 'info', // success, error, warning, info, loading
   message,
   action,
   onAction,
@@ -51,8 +11,6 @@ export function Toast({
   onClose,
 }) {
   const [isVisible, setIsVisible] = useState(true);
-  const config = variantConfig[variant] || variantConfig.info;
-  const IconComponent = config.icon;
 
   useEffect(() => {
     if (autoClose && variant !== 'loading') {
@@ -60,89 +18,61 @@ export function Toast({
         setIsVisible(false);
         onClose?.();
       }, autoClose);
-
       return () => clearTimeout(timer);
     }
   }, [autoClose, variant, onClose]);
 
-  if (!isVisible) {
-    return null;
-  }
+  if (!isVisible) return null;
+
+  const isError = variant === 'error' || variant === 'danger';
+  const isWarning = variant === 'warning';
+  const isLoading = variant === 'loading';
+  const isSuccess = variant === 'success';
 
   return (
-    <div
-      className="fixed bottom-6 right-6 flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg border border-solid animate-slideInRight"
-      style={{
-        backgroundColor: colors.surface,
-        borderColor: config.bg,
-        borderWidth: '1px',
-        zIndex: zIndex.notification,
-        animation: `slideInRight ${transitions.default} ${transitions.timing}`,
-        maxWidth: '360px',
-      }}
-    >
-      {/* Icon */}
-      {variant === 'loading' ? (
-        <IconComponent
-          size={sizing.icon.md}
-          style={{
-            color: config.iconColor,
-            flexShrink: 0,
-            animation: 'spin 1s linear infinite',
-          }}
-        />
-      ) : (
-        <IconComponent
-          size={sizing.icon.md}
-          style={{ color: config.iconColor, flexShrink: 0 }}
-        />
-      )}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none flex flex-col items-center">
+      <div 
+        className="flex items-center gap-3 bg-[#1f1f1f] text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
+        style={{ animation: 'toastSlideUp 0.2s ease-out' }}
+      >
+        {isSuccess && <CheckCircle size={15} className="text-green-400 shrink-0" />}
+        {isError && <AlertCircle size={15} className="text-red-400 shrink-0" />}
+        {isWarning && <AlertTriangle size={15} className="text-yellow-400 shrink-0" />}
+        {!isSuccess && !isError && !isWarning && !isLoading && <Info size={15} className="text-blue-400 shrink-0" />}
+        {isLoading && <Loader2 size={15} className="text-blue-400 shrink-0 animate-spin" />}
+        
+        <span>{message}</span>
 
-      {/* Message */}
-      <div className="flex-1">
-        <p
-          className="text-sm"
-          style={{ color: config.text, fontSize: typography.sizes.sm.size }}
-        >
-          {message}
-        </p>
-      </div>
+        {action && onAction && (
+          <button 
+            onClick={() => {
+              onAction();
+              setIsVisible(false);
+              onClose?.();
+            }}
+            className="text-blue-400 hover:text-blue-300 font-bold ml-2 text-[11px] transition-colors"
+          >
+            {action}
+          </button>
+        )}
 
-      {/* Action Button */}
-      {action && (
-        <button
+        <button 
           onClick={() => {
-            onAction?.();
             setIsVisible(false);
             onClose?.();
-          }}
-          className="px-3 py-1 rounded text-sm font-bold whitespace-nowrap hover:opacity-80 transition-opacity focus:outline-none focus:ring-2"
-          style={{
-            color: config.iconColor,
-            backgroundColor: config.bg,
-            fontSize: typography.sizes.xs.size,
-            transitionDuration: transitions.default,
-          }}
+          }} 
+          className="text-white/40 hover:text-white/80 ml-1 transition-colors"
         >
-          {action}
+          <X size={13} />
         </button>
-      )}
+      </div>
 
-      {/* Close Button */}
-      <button
-        onClick={() => {
-          setIsVisible(false);
-          onClose?.();
-        }}
-        className="flex-shrink-0 p-1 hover:opacity-70 transition-opacity focus:outline-none focus:ring-2"
-        style={{
-          color: colors.text.muted,
-          transitionDuration: transitions.default,
-        }}
-        aria-label="Close toast"
-      >
-        <X size={16} />
-      </button>
+      <style>{`
+        @keyframes toastSlideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -116,7 +116,7 @@ export function Dropdown({ items = [], trigger, variant = 'secondary', className
             minWidth: '200px',
             backgroundColor: colors.surface,
             border: `1px solid ${colors.border.light}`,
-            borderRadius: sizing.radius.lg,
+            borderRadius: sizing.radius.xl,
             boxShadow: shadows.xl,
             zIndex: zIndex.dropdown,
             overflow: 'hidden',

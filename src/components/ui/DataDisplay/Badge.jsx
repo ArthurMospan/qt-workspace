@@ -7,22 +7,22 @@ export default function Badge({
   className = '',
 }) {
   const variants = {
-    default: 'bg-[#efefef] text-[#1f1f1f]',
-    success: 'bg-[#ecfdf5] text-[#10b981]',
-    warning: 'bg-[#fefce8] text-[#eab308]',
-    danger: 'bg-[#fef2f2] text-[#ef4444]',
-    error: 'bg-[#fff7ed] text-[#f97316]',
-    info: 'bg-[#eef2ff] text-[#6366f1]',
+    default: 'bg-[#1f1f1f]/5 text-[#404040]',
+    success: 'bg-[#10b981]/8 text-[#047857]',
+    warning: 'bg-[#fbbf24]/8 text-[#b45309]',
+    danger: 'bg-[#ef4444]/8 text-[#b91c1c]',
+    error: 'bg-[#f97316]/8 text-[#c2410c]',
+    info: 'bg-[#6366f1]/8 text-[#4338ca]',
   };
 
   const sizes = {
-    sm: 'px-[8px] py-[2px] rounded-[5px] text-[9px] font-bold',
-    md: 'px-[10px] py-[3px] rounded-[6px] text-[11px] font-bold',
-    lg: 'px-[12px] py-[4px] rounded-[8px] text-[12px] font-bold',
+    sm: 'px-[8px] py-[2px] rounded-[6px] text-[9px] font-medium',
+    md: 'px-[10px] py-[3px] rounded-[6px] text-[11px] font-medium',
+    lg: 'px-[12px] py-[4px] rounded-[8px] text-[12px] font-medium',
   };
 
   return (
-    <span className={`inline-flex items-center ${variants[variant]} ${sizes[size]} ${className}`}>
+    <span className={`inline-flex items-center backdrop-blur-[2px] ${variants[variant]} ${sizes[size]} ${className}`}>
       {children}
     </span>
   );

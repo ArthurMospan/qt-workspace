@@ -1,12 +1,10 @@
 'use client';
 import React, { forwardRef, useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
 // Utility: Get days in month
 const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-
-// Utility: Get first day of week (0=Sunday, 6=Saturday)
-const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
 // Utility: Format date to YYYY-MM-DD
 const formatDate = (date) => {
@@ -24,7 +22,6 @@ const parseDate = (dateStr) => {
   return new Date(year, month - 1, day);
 };
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export const DatePicker = forwardRef(({
@@ -40,6 +37,8 @@ export const DatePicker = forwardRef(({
   onDateRangeChange,
   ...props
 }, ref) => {
+  const { formatDate: formatLocal, getWeekdays, getFirstDayOffset } = useLocalization();
+  const WEEKDAYS = getWeekdays();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(value ? parseDate(value) : null);
@@ -80,13 +79,13 @@ export const DatePicker = forwardRef(({
   };
 
   const daysInMonth = getDaysInMonth(currentMonth);
-  const firstDay = getFirstDayOfMonth(currentMonth);
+  const firstDay = getFirstDayOffset(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const displayValue = mode === 'single' ?
-    (selectedDate ? formatDate(selectedDate) : '') :
-    (rangeStart && rangeEnd ? `${formatDate(rangeStart)} - ${formatDate(rangeEnd)}` :
-     rangeStart ? formatDate(rangeStart) : '');
+    (selectedDate ? formatLocal(selectedDate) : '') :
+    (rangeStart && rangeEnd ? `${formatLocal(rangeStart)} - ${formatLocal(rangeEnd)}` :
+     rangeStart ? formatLocal(rangeStart) : '');
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -105,9 +104,9 @@ export const DatePicker = forwardRef(({
           readOnly
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`
-            h-[36px] w-full bg-[#f7f7f7] border border-[#e9e9e9] rounded-[10px]
+            h-[36px] w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
             text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
-            transition-colors placeholder:text-[#cfcfcf]
+            transition-colors placeholder:text-[#a3a3a3]
             pl-[36px] pr-[12px] cursor-pointer
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
@@ -138,7 +137,7 @@ export const DatePicker = forwardRef(({
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-              className="p-1 hover:bg-[#f7f7f7] rounded-[6px] transition-colors"
+              className="p-1 hover:bg-[#f4f4f5] rounded-[6px] transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
@@ -147,7 +146,7 @@ export const DatePicker = forwardRef(({
             </h3>
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-              className="p-1 hover:bg-[#f7f7f7] rounded-[6px] transition-colors"
+              className="p-1 hover:bg-[#f4f4f5] rounded-[6px] transition-colors"
             >
               <ChevronRight size={18} />
             </button>
@@ -184,7 +183,7 @@ export const DatePicker = forwardRef(({
                       ? 'bg-[#1f1f1f] text-white'
                       : isInRange
                       ? 'bg-[#e9e9e9] text-[#1f1f1f]'
-                      : 'text-[#1f1f1f] hover:bg-[#f7f7f7]'
+                      : 'text-[#1f1f1f] hover:bg-[#f4f4f5]'
                     }
                   `}
                 >
@@ -240,7 +239,6 @@ export const DatePicker = forwardRef(({
         </div>
       )}
 
-      {error && <span className="text-[11px] text-red-500 mt-1 block px-1">{error}</span>}
     </div>
   );
 });

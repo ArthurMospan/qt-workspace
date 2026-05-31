@@ -16,16 +16,16 @@ export const Textarea = forwardRef(({
         rows={rows}
         placeholder={placeholder}
         className={`
-          w-full bg-[#f7f7f7] border border-transparent rounded-[12px]
+          w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
           text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
-          transition-colors placeholder:text-[#cfcfcf] resize-none
+          transition-colors placeholder:text-[#a3a3a3] resize-none
+          disabled:opacity-50 disabled:cursor-not-allowed
           px-[12px] py-[10px]
           ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
           ${className}
         `}
         {...props}
       />
-      {error && <span className="text-[11px] text-red-500 mt-1 block px-1">{error}</span>}
     </div>
   );
 });

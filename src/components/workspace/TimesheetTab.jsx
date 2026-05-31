@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Plus } from 'lucide-react';
 import { useWeeklyTimeLogs } from '@/lib/hooks/useWeeklyTimeLogs';
+import Button from '@/components/ui/Button';
 
 function fmtTime(minutes) {
   if (!minutes) return '-';
@@ -74,16 +75,16 @@ export default function TimesheetTab() {
       <div className="h-[60px] shrink-0 flex items-center justify-between px-[32px] pt-4">
         <div></div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-[#f7f7f7] rounded-[10px] p-1 border border-[#e9e9e9]">
-            <button onClick={handlePrevWeek} className="p-1 hover:bg-white rounded-[6px] transition-colors"><ChevronLeft size={18} /></button>
+          <div className="flex items-center gap-2 bg-[#f4f4f5] rounded-[10px] p-1 border border-[#e9e9e9]">
+            <Button style="secondary" size="icon" icon={ChevronLeft} onClick={handlePrevWeek} />
             <span className="text-[13px] font-bold text-[#1f1f1f] px-2 min-w-[120px] text-center">
               {currentWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - {new Date(currentWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}
             </span>
-            <button onClick={handleNextWeek} className="p-1 hover:bg-white rounded-[6px] transition-colors"><ChevronRight size={18} /></button>
+            <Button style="secondary" size="icon" icon={ChevronRight} onClick={handleNextWeek} />
           </div>
-          <button className="flex items-center gap-[6px] px-[16px] py-[8px] rounded-[10px] text-[13px] font-bold bg-[#1f1f1f] text-white hover:bg-[#303030] transition-all shadow-sm">
-            <Plus size={16} /> Логувати час
-          </button>
+          <Button style="primary" size="md" icon={Plus}>
+            Логувати час
+          </Button>
         </div>
       </div>
 
@@ -94,7 +95,7 @@ export default function TimesheetTab() {
             <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="bg-[#f7f7f7] border-none rounded-[24px] overflow-hidden">
+          <div className="bg-[#f4f4f5] border-none rounded-[24px] overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">

@@ -63,9 +63,6 @@ export function LoadingSpinner({
           strokeDasharray={circumference * 0.25}
           strokeDashoffset={0}
           strokeLinecap="round"
-          style={{
-            animation: 'spin 1s linear infinite',
-          }}
         />
       </svg>
 

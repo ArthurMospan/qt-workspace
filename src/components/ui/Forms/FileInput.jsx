@@ -47,14 +47,14 @@ export const FileInput = forwardRef(({
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
         className={`
-          h-[36px] w-full bg-[#f7f7f7] border border-dashed border-[#e9e9e9] rounded-[12px]
-          text-[13px] text-[#1f1f1f] transition-colors flex items-center justify-center gap-2
+          h-[36px] w-full bg-[#f4f4f5] border border-dashed border-[#e9e9e9] rounded-[10px]
+          text-[13px] text-[#666666] transition-colors flex items-center justify-center gap-2
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-[#f0f0f0]'}
           ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
         `}
       >
-        <Upload size={14} />
-        <span>Загрузить файл</span>
+        <Upload size={14} className="text-[#9a9a9a]" />
+        <span>Завантажити файл</span>
       </button>
 
       {files.length > 0 && (
@@ -62,7 +62,7 @@ export const FileInput = forwardRef(({
           {files.map((file, i) => (
             <div
               key={i}
-              className="flex items-center justify-between bg-[#f7f7f7] px-3 py-2 rounded-[8px] text-[12px]"
+              className="flex items-center justify-between bg-[#f4f4f5] px-3 py-2 rounded-[8px] text-[12px]"
             >
               <span className="text-[#1f1f1f] truncate">
                 {typeof file === 'string' ? file : file.name}
@@ -78,7 +78,6 @@ export const FileInput = forwardRef(({
         </div>
       )}
 
-      {error && <span className="text-[11px] text-red-500 mt-1 block px-1">{error}</span>}
     </div>
   );
 });

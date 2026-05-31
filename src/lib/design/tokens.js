@@ -5,7 +5,8 @@
 export const colors = {
   // Core/semantic colors
   dark: '#1f1f1f',        // Primary dark (buttons, text, sidebar)
-  light: '#f7f7f7',       // Secondary background (hover states, surfaces)
+  light: '#f4f4f5',       // Global canvas/surface background (Zinc-grey)
+  elementLight: '#f4f4f5', // Previous element light grey (interactive components)
   surface: '#ffffff',     // White surfaces (cards, modals, content bg)
   border: {
     primary: '#e9e9e9',
@@ -80,7 +81,7 @@ export const colors = {
 
   // Button color variants - Ghost style (transparent)
   buttonGhost: {
-    dark: { bg: 'transparent', text: '#1f1f1f', border: '#1f1f1f', hover: '#f7f7f7' },
+    dark: { bg: 'transparent', text: '#1f1f1f', border: '#1f1f1f', hover: '#f4f4f5' },
     blue: { bg: 'transparent', text: '#3b82f6', border: '#3b82f6', hover: '#dbeafe' },
     green: { bg: 'transparent', text: '#10b981', border: '#10b981', hover: '#ecfdf5' },
     red: { bg: 'transparent', text: '#ef4444', border: '#ef4444', hover: '#fee2e2' },

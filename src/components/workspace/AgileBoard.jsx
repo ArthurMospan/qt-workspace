@@ -2,10 +2,11 @@
 // src/components/workspace/AgileBoard.jsx — 7-column kanban with DnD and Swimlanes
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from './IssueCard';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { DEFAULT_COLUMNS } from './BoardConfigModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import Button from '@/components/ui/Button';
 
 function InlineAddForm({ onAdd, onCancel }) {
   const [title, setTitle] = useState('');
@@ -32,25 +33,42 @@ function InlineAddForm({ onAdd, onCancel }) {
         className="w-full px-3 py-2 bg-white rounded-[12px] border border-[#e9e9e9] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] resize-none focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
       />
       <div className="flex gap-2 mt-[6px]">
-        <button onClick={submit}
-          className="px-3 py-[5px] bg-[#1f1f1f] text-white rounded-[8px] text-[11px] font-bold hover:bg-[#303030] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+        <Button style="primary" size="sm" onClick={submit}>
           Додати
-        </button>
-        <button onClick={() => { onCancel(); setTitle(''); }}
-          className="px-3 py-[5px] text-[#9a9a9a] hover:text-[#1f1f1f] text-[11px] transition-colors">
+        </Button>
+        <Button style="secondary" size="sm" onClick={() => { onCancel(); setTitle(''); }}>
           Скасувати
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
 
-export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none' }) {
+export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false }) {
   const [mounted, setMounted] = useState(false);
-  const columns = project?.boardColumns?.length ? project.boardColumns : DEFAULT_COLUMNS;
-  const { labels } = useWorkflowConfig();
+  const { statuses: globalStatuses, labels } = useWorkflowConfig();
+  
+  const activeHiddenCols = project ? (project.hiddenColumns || []) : hiddenColumns;
+  const visibleColumns = globalStatuses.filter(s => !activeHiddenCols.includes(s.id));
+  const hiddenColIds = activeHiddenCols.filter(id => globalStatuses.some(s => s.id === id));
+  
+  const columns = [...visibleColumns];
+  if (showHiddenLane && hiddenColIds.length > 0) {
+    columns.push({
+      id: '__hidden__',
+      label: 'Приховані',
+      color: '#cfcfcf',
+      isHiddenContainer: true,
+      colIds: hiddenColIds
+    });
+  }
   
   const [activeAddColId, setActiveAddColId] = useState(null);
+  const [collapsedCols, setCollapsedCols] = useState(['__hidden__']);
+
+  const toggleColumnCollapse = (id) => {
+    setCollapsedCols(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -66,6 +84,8 @@ export default function AgileBoard({ issues, members, projectId, project, active
     const destColId = destParts.length > 1 ? destParts[1] : destination.droppableId;
     const destLaneId = destParts.length > 1 ? destParts[0] : null;
     const sourceLaneId = sourceParts.length > 1 ? sourceParts[0] : null;
+
+    if (destColId === '__hidden__') return; // Cannot drop into the combined hidden container
 
     let updateFields = null;
     if (destLaneId !== sourceLaneId) {
@@ -157,21 +177,46 @@ export default function AgileBoard({ issues, members, projectId, project, active
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
           <div className="flex gap-4 pb-2 shrink-0 pr-2">
-            {columns.map(col => (
-              <div key={col.id} className="flex items-center justify-between w-[280px] shrink-0 px-4 pt-2 pb-1 rounded-t-[14px]">
-                <div className="flex items-center gap-[8px]">
-                  <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                  <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
+            {columns.map(col => {
+              const isCollapsed = collapsedCols.includes(col.id);
+              if (isCollapsed) {
+                return (
+                  <div key={col.id} className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-[#f4f4f5] rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
+                    <button className="text-[#9a9a9a] mb-4">
+                      <ChevronRight size={16} />
+                    </button>
+                    <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
+                    <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                  </div>
+                );
+              }
+              return (
+                <div key={col.id} className="flex items-center justify-between w-[280px] shrink-0 px-4 pt-2 pb-1 rounded-t-[12px]">
+                  <div className="flex items-center gap-[6px]">
+                    <button
+                      onClick={() => toggleColumnCollapse(col.id)}
+                      className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                      title="Згорнути колонку"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
+                    <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {!col.isHiddenContainer && (
+                      <button
+                        onClick={() => setActiveAddColId(col.id)}
+                        className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                        title="Додати задачу"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => setActiveAddColId(col.id)}
-                  className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                  title="Додати задачу"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -190,47 +235,85 @@ export default function AgileBoard({ issues, members, projectId, project, active
               <div className="flex gap-4">
                 {columns.map(col => {
                   const colIssues = lane.issues
-                    .filter(i => i.columnId === col.id)
+                    .filter(i => {
+                      if (col.isHiddenContainer) return col.colIds.includes(i.columnId);
+                      return i.columnId === col.id;
+                    })
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
                   
                   const dropId = swimlanes.length > 1 ? `${lane.id}::${col.id}` : col.id;
 
+                  const isCollapsed = collapsedCols.includes(col.id);
+
+                  if (isCollapsed) {
+                    return (
+                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100vh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
+                        {swimlanes.length === 1 && (
+                          <>
+                            <button className="text-[#9a9a9a] mb-4">
+                              <ChevronRight size={16} />
+                            </button>
+                            <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
+                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                              {colIssues.length}
+                            </span>
+                          </>
+                        )}
+                        {swimlanes.length > 1 && (
+                          <div className="flex-1 border-2 border-dashed border-[#e9e9e9]/50 rounded-[12px] m-1" />
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div key={col.id} className={`flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] ${swimlanes.length === 1 ? 'rounded-[24px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100vh - 160px)' }}>
+                    <div key={col.id} className={`flex flex-col w-[280px] shrink-0 bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100vh - 160px)' }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-                          <div className="flex items-center gap-[8px]">
+                          <div className="flex items-center gap-[6px]">
+                            <button
+                              onClick={() => toggleColumnCollapse(col.id)}
+                              className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                              title="Згорнути колонку"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
                             <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full">
+                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
                               {colIssues.length}
                             </span>
                           </div>
-                          <button
-                            onClick={() => setActiveAddColId(col.id)}
-                            className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                            title="Додати задачу"
-                          >
-                            <Plus size={16} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {!col.isHiddenContainer && (
+                              <button
+                                onClick={() => setActiveAddColId(col.id)}
+                                className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                                title="Додати задачу"
+                              >
+                                <Plus size={16} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
 
-                      {activeAddColId === col.id && (
+                      {activeAddColId === col.id && !col.isHiddenContainer && (
                         <InlineAddForm
                           onAdd={(title) => { onAddIssue(col.id, title, lane.id); setActiveAddColId(null); }}
                           onCancel={() => setActiveAddColId(null)}
                         />
                       )}
 
-                      <Droppable droppableId={dropId}>
+                      <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 px-[8px] pb-[8px] flex flex-col gap-[8px] transition-colors ${swimlanes.length === 1 ? 'rounded-b-[14px]' : 'rounded-[12px]'} ${
+                            className={`flex-1 p-[8px] flex flex-col gap-[8px] transition-colors ${swimlanes.length === 1 ? 'rounded-b-[16px]' : 'rounded-[12px]'} ${
                               snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                             }`}
                           >

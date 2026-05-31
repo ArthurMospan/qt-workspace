@@ -48,7 +48,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
       <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Час</p>
 
       {/* Stats */}
-      <div className="bg-[#f7f7f7] rounded-[10px] px-3 py-2 mb-2">
+      <div className="bg-[#f4f4f5] rounded-[10px] px-3 py-2 mb-2">
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-[#9a9a9a]">Витрачено</span>
           <span className="font-bold text-[#1f1f1f]">{spentFormatted}</span>
@@ -102,7 +102,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
 
       {/* Manual log */}
       <button onClick={() => setShowLogModal(true)}
-        className="flex items-center gap-2 w-full px-3 py-2 bg-white text-[#1f1f1f] rounded-[10px] text-[12px] font-medium hover:bg-[#f7f7f7] transition-colors border border-[#e9e9e9]">
+        className="flex items-center gap-2 w-full px-3 py-2 bg-white text-[#1f1f1f] rounded-[10px] text-[12px] font-medium hover:bg-[#f4f4f5] transition-colors border border-[#e9e9e9]">
         <Plus size={12} /> Додати час вручну
       </button>
 
@@ -125,14 +125,14 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
                 <input type="number" min="0" max="24" value={logForm.hours}
                   onChange={e => setLogForm(f => ({ ...f, hours: e.target.value }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-[#f7f7f7] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
+                  className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
               </div>
               <div className="flex-1">
                 <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Хвилин</label>
                 <input type="number" min="0" max="59" value={logForm.minutes}
                   onChange={e => setLogForm(f => ({ ...f, minutes: e.target.value }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-[#f7f7f7] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
+                  className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
               </div>
             </div>
 
@@ -142,7 +142,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
                 onChange={e => setLogForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Описати виконану роботу..."
                 rows={2}
-                className="w-full px-3 py-2 bg-[#f7f7f7] rounded-[8px] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors resize-none" />
+                className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors resize-none" />
             </div>
 
             <button onClick={handleManualLog}

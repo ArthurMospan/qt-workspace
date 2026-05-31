@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { Plus, X, Zap } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function EpicsPanel({
   issue,
@@ -49,13 +51,7 @@ export default function EpicsPanel({
           Епік
         </h3>
         {!parentEpic && (
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="p-[4px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0] rounded-[6px] transition-colors"
-            title="Прив'язати до епіка"
-          >
-            <Plus size={14} />
-          </button>
+          <Button style="secondary" size="icon" icon={Plus} onClick={() => setShowCreate(!showCreate)} />
         )}
       </div>
 
@@ -73,13 +69,7 @@ export default function EpicsPanel({
               </code>
             )}
           </div>
-          <button
-            onClick={handleRemoveEpic}
-            className="p-[4px] ml-[8px] text-[#9a9a9a] hover:text-red-500 transition-colors shrink-0"
-            title="Видалити"
-          >
-            <X size={14} />
-          </button>
+          <Button style="secondary" color="red" size="icon" icon={X} onClick={handleRemoveEpic} className="ml-[8px]" />
         </div>
       )}
 
@@ -90,13 +80,12 @@ export default function EpicsPanel({
 
       {/* Create/Select Form */}
       {!parentEpic && showCreate && (
-        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f7f7f7] rounded-[12px] border border-[#e9e9e9]">
+        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f4f4f5] rounded-[12px] border border-[#e9e9e9]">
           <div>
             <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
               Новий епік
             </label>
-            <input
-              type="text"
+            <Input
               value={newEpicTitle}
               onChange={e => setNewEpicTitle(e.target.value)}
               placeholder="Назва епіка..."
@@ -104,7 +93,6 @@ export default function EpicsPanel({
                 if (e.key === 'Enter') handleCreateEpic();
                 if (e.key === 'Escape') setShowCreate(false);
               }}
-              className="w-full px-[8px] py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[12px] text-[#1f1f1f] focus:border-[#1f1f1f]"
               autoFocus
             />
           </div>
@@ -135,19 +123,12 @@ export default function EpicsPanel({
           )}
 
           <div className="flex gap-[8px]">
-            <button
-              onClick={() => { setShowCreate(false); setNewEpicTitle(''); }}
-              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-[#9a9a9a] bg-white border border-[#e9e9e9] rounded-[8px] hover:bg-[#f0f0f0] transition-colors"
-            >
+            <Button style="secondary" size="md" onClick={() => { setShowCreate(false); setNewEpicTitle(''); }} className="flex-1">
               Скасувати
-            </button>
-            <button
-              onClick={handleCreateEpic}
-              disabled={!newEpicTitle.trim() || creating}
-              className="flex-1 px-[12px] py-[6px] text-[11px] font-bold text-white bg-[#8b5cf6] rounded-[8px] hover:bg-[#7c3aed] disabled:opacity-40 transition-colors"
-            >
-              {creating ? '...' : 'Створити'}
-            </button>
+            </Button>
+            <Button style="primary" size="md" disabled={!newEpicTitle.trim() || creating} loading={creating} onClick={handleCreateEpic} className="flex-1">
+              Створити
+            </Button>
           </div>
         </div>
       )}

@@ -3,6 +3,9 @@ import { useState, useCallback, useMemo } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let globalIssuesCache = {};
+
 export function useSearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,16 +19,27 @@ export function useSearch() {
     setLoading(true);
     try {
       const q = queryText.toLowerCase();
+      let issues = [];
+      const now = Date.now();
 
-      // Fetch all issues for the org (we'll filter client-side)
-      const issuesQuery = query(
-        collection(db, 'issues'),
-        where('organizationId', '==', orgId),
-        limit(500) // Cap to prevent huge loads
-      );
-
-      const snap = await getDocs(issuesQuery);
-      const issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (globalIssuesCache[orgId] && (now - globalIssuesCache[orgId].timestamp < CACHE_TTL)) {
+        issues = globalIssuesCache[orgId].issues;
+      } else {
+        // Fetch all issues for the org
+        const issuesQuery = query(
+          collection(db, 'issues'),
+          where('organizationId', '==', orgId),
+          limit(500) // Cap to prevent huge loads
+        );
+        const snap = await getDocs(issuesQuery);
+        issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Update cache
+        globalIssuesCache[orgId] = {
+          issues,
+          timestamp: now,
+        };
+      }
 
       // Client-side filtering - search across multiple fields
       const filtered = issues.filter(issue => {

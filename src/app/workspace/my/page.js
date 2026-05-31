@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -10,19 +11,19 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from '@/components/workspace/IssueCard';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import PageHeader from '@/components/workspace/PageHeader';
-import { Plus, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
+import { Plus, ChevronDown, ChevronRight, ChevronLeft, Calendar, Settings2, X, EyeOff, Eye, LayoutGrid, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
+import Tabs from '@/components/ui/Tabs';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Layout/Card';
+import Surface from '@/components/ui/Surface';
+import FilterBar from '@/components/ui/FilterBar';
 
-const COLUMNS = [
-  { id: 'todo',        label: 'To Do',       color: '#6366f1' },
-  { id: 'in-progress', label: 'In Progress', color: '#0891b2' },
-  { id: 'done',        label: 'Done',        color: '#10b981' },
-];
+
 
 function fmtDate(raw) {
   if (!raw) return null;
@@ -30,13 +31,23 @@ function fmtDate(raw) {
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
-function filterTasks(tasks, filters) {
-  const { projects, priority, type } = filters;
+function filterTasks(tasks, filters, sprintMap) {
+  const { projects, priority, type, sprint } = filters;
 
   return tasks.filter(t => {
     if (projects && projects.length > 0 && !projects.includes(t.projectId)) return false;
     if (priority !== 'all' && t.priority !== priority) return false;
     if (type !== 'all' && t.type !== type) return false;
+    if (sprint !== 'all') {
+      if (sprint === 'none') {
+        if (t.sprintId) return false;
+      } else if (sprint === 'active') {
+        const s = sprintMap[t.sprintId];
+        if (!s || s.status !== 'active') return false;
+      } else {
+        if (t.sprintId !== sprint) return false;
+      }
+    }
     return true;
   });
 }
@@ -49,6 +60,7 @@ export default function MyTasksPage() {
   const uid = currentUser?.uid || currentUser?.id;
   const { tasks, loading, updateTask } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
+  const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
   
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'sprints'
@@ -56,13 +68,38 @@ export default function MyTasksPage() {
   const [filters, setFilters] = useState({
     projects: [],
     priority: 'all',
-    type: 'all'
+    type: 'all',
+    sprint: 'all'
   });
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [createTaskStatus, setCreateTaskStatus] = useState(null);
+  const [collapsedCols, setCollapsedCols] = useState(['__hidden__']);
+  const { statuses } = useWorkflowConfig();
+
+  const toggleColumnCollapse = (id) => {
+    setCollapsedCols(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+  };
+
+  const [hiddenColumns, setHiddenColumns] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { return JSON.parse(localStorage.getItem('qt_my_tasks_hidden')) || []; } catch(e){}
+    }
+    return [];
+  });
+
+  const toggleHiddenColumn = (id) => {
+    setHiddenColumns(prev => {
+      const next = prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id];
+      localStorage.setItem('qt_my_tasks_hidden', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const onDragEnd = async ({ draggableId, source, destination }) => {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    if (destination.droppableId === '__hidden__') return; // cannot drop into the combined container
     
     try {
       await updateTask(draggableId, { 
@@ -76,13 +113,13 @@ export default function MyTasksPage() {
     }
   };
 
-  const filtered = filterTasks(tasks, filters);
-
   // Group sprints by status
   const sprintMap = (sprints || []).reduce((acc, s) => {
     acc[s.id] = s;
     return acc;
   }, {});
+
+  const filtered = filterTasks(tasks, filters, sprintMap);
 
   const activeSprintsList = (sprints || []).filter(s => s.status === 'active');
   const plannedSprintsList = (sprints || []).filter(s => s.status === 'planned');
@@ -92,7 +129,7 @@ export default function MyTasksPage() {
     if (!startDate || !endDate) return null;
     const start = startDate.toDate ? startDate.toDate() : new Date(startDate);
     const end = endDate.toDate ? endDate.toDate() : new Date(endDate);
-    return `${start.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    return `${formatDate(start)} - ${formatDate(end)}`;
   };
 
   const activeSprintSections = activeSprintsList.map(sprint => ({
@@ -160,68 +197,94 @@ export default function MyTasksPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
-      <PageHeader
-        variant="main"
-        title="Мої задачі"
-        className="px-[32px]"
-        tabs={[
-          { id: 'kanban', label: 'Дошка' },
-          { id: 'sprints', label: 'Спринти' }
-        ]}
-        activeTab={viewMode}
-        onTabChange={setViewMode}
-        actions={
-          <Button
-            onClick={() => setShowCreateTaskModal(true)}
-            icon={Plus}
-            size="lg"
-            style="primary"
-            color="dark"
-          >
-            Створити задачу
-          </Button>
-        }
-        filters={
-          <>
-            <MultiSelect
-              value={filters.projects}
-              onChange={(val) => setFilters(f => ({ ...f, projects: val }))}
-              options={projects.map(p => ({ value: p.id, label: p.name }))}
-              placeholder="Всі проєкти"
-              searchPlaceholder="Пошук проєкту..."
-              className="w-[180px]"
-            />
-            <Select
-              value={filters.priority}
-              onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
-              options={[
-                { value: 'all', label: 'Будь-який пріоритет' },
-                { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                { value: 'high', label: 'High', dotColor: '#f97316' },
-                { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                { value: 'low', label: 'Low', dotColor: '#3b82f6' }
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
+        <PageHeader
+          variant="main"
+          title="Мої задачі"
+          actions={
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowSettingsModal(true)}
+                icon={Settings2}
+                size="icon-lg"
+                style="secondary"
+                title="Налаштування дошки"
+              />
+              <Button
+                onClick={() => { setCreateTaskStatus(null); setShowCreateTaskModal(true); }}
+                icon={Plus}
+                size="lg"
+                style="primary"
+                color="dark"
+              >
+                Створити задачу
+              </Button>
+            </div>
+          }
+          filters={
+            <div className="flex items-center justify-between w-full">
+              <FilterBar>
+                <MultiSelect
+                  variant="ghost"
+                  value={filters.projects}
+                onChange={(val) => setFilters(f => ({ ...f, projects: val }))}
+                options={projects.map(p => ({ value: p.id, label: p.name }))}
+                placeholder="Всі проєкти"
+                searchPlaceholder="Пошук проєкту..."
+              />
+              <Select
+                variant="ghost"
+                value={filters.priority}
+                onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
+                options={[
+                  { value: 'all', label: 'Всі пріоритети' },
+                  { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                  { value: 'high', label: 'High', dotColor: '#f97316' },
+                  { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                  { value: 'low', label: 'Low', dotColor: '#3b82f6' }
+                ]}
+              />
+              <Select
+                variant="ghost"
+                value={filters.type}
+                onChange={(val) => setFilters(f => ({ ...f, type: val }))}
+                options={[
+                  { value: 'all', label: 'Всі типи' },
+                  { value: 'epic', label: 'Epic' },
+                  { value: 'feature', label: 'Feature' },
+                  { value: 'task', label: 'Task' },
+                  { value: 'bug', label: 'Bug' }
+                ]}
+              />
+              <Select
+                variant="ghost"
+                value={filters.sprint}
+                onChange={(val) => setFilters(f => ({ ...f, sprint: val }))}
+                options={[
+                  { value: 'all', label: 'Всі спринти' },
+                  { value: 'active', label: 'Тільки активні' },
+                  { value: 'none', label: 'Без спринта (Беклог)' },
+                  ...(sprints || []).map(s => ({ value: s.id, label: s.name }))
+                ]}
+              />
+            </FilterBar>
+            
+            <Tabs
+              tabs={[
+                { id: 'kanban', icon: Kanban },
+                { id: 'list', icon: List }
               ]}
-              className="w-[180px]"
+              activeTab={viewMode}
+              onTabChange={setViewMode}
+              className="ml-auto"
             />
-            <Select
-              value={filters.type}
-              onChange={(val) => setFilters(f => ({ ...f, type: val }))}
-              options={[
-                { value: 'all', label: 'Будь-який тип' },
-                { value: 'epic', label: 'Epic' },
-                { value: 'feature', label: 'Feature' },
-                { value: 'task', label: 'Task' },
-                { value: 'bug', label: 'Bug' }
-              ]}
-              className="w-[160px]"
-            />
-          </>
-        }
-      />
+          </div>
+          }
+        />
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto px-[32px] pb-[32px]">
+        {/* Main Content Area */}
+        <div>
         {loading || sprintsLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="md" />
@@ -229,201 +292,181 @@ export default function MyTasksPage() {
         ) : viewMode === 'kanban' ? (
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 h-full overflow-x-auto pb-2 pr-1">
-              {COLUMNS.map(col => {
-                const colIssues = filtered.filter(i => {
-                  const cId = i.columnId || i.status || 'todo';
-                  if (col.id === 'todo')        return ['todo', 'backlog'].includes(cId);
-                  if (col.id === 'in-progress') return ['in-progress', 'code-review', 'qa', 'client-approval'].includes(cId);
-                  if (col.id === 'done')        return cId === 'done';
-                  return false;
-                });
+              {(() => {
+                 const visibleColumns = statuses.filter(s => !hiddenColumns.includes(s.id));
+                 const hiddenColIds = hiddenColumns.filter(id => statuses.some(s => s.id === id));
+                 const renderCols = [...visibleColumns];
+                 if (hiddenColIds.length > 0) {
+                   renderCols.push({ id: '__hidden__', label: 'Приховані колонки', color: '#cfcfcf', isHiddenContainer: true, colIds: hiddenColIds });
+                 }
+                 
+                 return renderCols.map(col => {
+                    const colIssues = filtered.filter(i => {
+                       const cId = i.columnId || i.status || statuses[0]?.id;
+                       if (col.isHiddenContainer) return col.colIds.includes(cId);
+                       return cId === col.id;
+                    }).sort((a,b) => (a.order ?? 0) - (b.order ?? 0));
+                    const isCollapsed = collapsedCols.includes(col.id);
 
-                return (
-                  <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f7f7f7] rounded-[24px] overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
-                    <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-                      <div className="flex items-center gap-[8px]">
-                        <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                        <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                        <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full">
-                          {colIssues.length}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Droppable droppableId={col.id}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`flex-1 overflow-y-auto px-[8px] flex flex-col gap-[8px] transition-colors ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
-                        >
-                          {colIssues.length === 0 ? (
-                            <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
-                              Немає задач
-                            </div>
-                          ) : (
-                            colIssues.map((issue, index) => {
-                              const pName = projects.find(p => p.id === issue.projectId)?.name;
-                              return (
-                                <IssueCard
-                                  key={issue.id}
-                                  issue={issue}
-                                  members={members}
-                                  labels={labels}
-                                  index={index}
-                                  projectId={issue.projectId}
-                                  projectName={pName}
-                                />
-                              );
-                            })
-                          )}
-                          {provided.placeholder}
+                    if (isCollapsed) {
+                      return (
+                        <div key={col.id} className="flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] rounded-[16px] overflow-hidden items-center py-4 cursor-pointer hover:bg-[#f0f0f2] transition-colors" style={{ height: 'calc(100vh - 180px)' }} onClick={() => toggleColumnCollapse(col.id)}>
+                          <button className="text-[#9a9a9a] mb-4">
+                            <ChevronRight size={16} />
+                          </button>
+                          <div className="flex-1 flex flex-col items-center gap-4">
+                            <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ background: col.color }} />
+                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                              {colIssues.length}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </Droppable>
-                  </div>
-                );
-              })}
+                      );
+                    }
+                    
+                    return (
+                      <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100vh - 180px)' }}>
+                        <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
+                          <div className="flex items-center gap-[6px]">
+                            <button
+                              onClick={() => toggleColumnCollapse(col.id)}
+                              className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                              title="Згорнути колонку"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
+                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
+                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                              {colIssues.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!col.isHiddenContainer && (
+                              <button
+                                onClick={() => { setCreateTaskStatus(col.id); setShowCreateTaskModal(true); }}
+                                className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                                title="Додати задачу"
+                              >
+                                <Plus size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <Droppable droppableId={col.id} isDropDisabled={col.isHiddenContainer}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className={`flex-1 overflow-y-auto p-[8px] flex flex-col gap-[8px] transition-colors custom-scrollbar ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
+                            >
+                              {colIssues.length === 0 ? (
+                                <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
+                                  Немає задач
+                                </div>
+                              ) : (
+                                colIssues.map((issue, index) => {
+                                  const pName = projects.find(p => p.id === issue.projectId)?.name;
+                                  return (
+                                    <IssueCard
+                                      key={issue.id}
+                                      issue={issue}
+                                      issues={tasks}
+                                      sprints={sprints}
+                                      members={members}
+                                      labels={labels}
+                                      index={index}
+                                      projectId={issue.projectId}
+                                      projectName={pName}
+                                    />
+                                  );
+                                })
+                              )}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </div>
+                    );
+                 });
+              })()}
             </div>
           </DragDropContext>
         ) : (
-          <div className="flex flex-col max-w-[1200px]">
-            {sprintSections.map(section => {
-              const isExpanded = isSectionExpanded(section);
-              return (
-                <Card key={section.id} variant="gray" padding="lg" className="mb-6">
-                  <div 
-                    onClick={() => toggleSection(section.id)}
-                    className="flex items-center justify-between cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-[12px] min-w-0">
-                      {isExpanded ? <ChevronDown size={20} className="text-[#9a9a9a] shrink-0" /> : <ChevronRight size={20} className="text-[#9a9a9a] shrink-0" />}
-                      <h3 className="text-[16px] font-bold text-[#1f1f1f] truncate">{section.title}</h3>
-                      <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[8px] py-[2px] rounded-full shrink-0">
-                        {section.issues.length}
-                      </span>
-                      {section.badgeText && (
-                        <span className={`text-[10px] font-bold px-[8px] py-[2px] rounded-md shrink-0 uppercase tracking-wider ${section.badgeColor}`}>
-                          {section.badgeText}
-                        </span>
-                      )}
-                      {section.dates && (
-                        <span className="text-[12px] font-medium text-[#9a9a9a] hidden sm:inline ml-2">
-                          ({section.dates})
-                        </span>
-                      )}
-                    </div>
-                    {section.goal && !isExpanded && (
-                      <p className="text-[12px] text-[#9a9a9a] italic truncate max-w-[200px] hidden md:block">
-                        {section.goal}
-                      </p>
-                    )}
+          <div className="flex flex-col gap-6 w-full">
+            {(() => {
+              const visibleStatuses = statuses.filter(s => !hiddenColumns.includes(s.id));
+              const hasAnyTasks = filtered.length > 0;
+              
+              if (!hasAnyTasks) {
+                return (
+                  <div className="text-center py-12 text-[13px] text-[#cfcfcf] bg-[#f4f4f5] rounded-[16px]">
+                    Задач не знайдено
                   </div>
+                );
+              }
 
-                  {isExpanded && (
-                    <div className="mt-4 flex flex-col gap-2">
-                      {section.goal && (
-                        <p className="text-[12px] text-[#9a9a9a] italic mb-2">
-                          Ціль: {section.goal}
-                        </p>
-                      )}
-                      {section.issues.length === 0 ? (
-                        <div className="text-center py-6 text-[13px] text-[#cfcfcf]">
-                          Немає задач
-                        </div>
-                      ) : (
-                        section.issues.map(issue => {
-                          const pName = projects.find(p => p.id === issue.projectId)?.name;
-                          return (
-                            <div 
-                              key={issue.id} 
-                              onClick={() => router.push(`/workspace/${issue.projectId}/issue/${issue.id}`)}
-                              className="bg-white border border-[#efefef] hover:border-[#dfdfdf] rounded-[18px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.02)] cursor-pointer"
-                            >
-                              <div className="flex items-start gap-[12px] min-w-0 flex-1">
-                                <div className="flex flex-col gap-1 min-w-0">
-                                  <div className="flex items-center gap-[8px] flex-wrap">
-                                    <span className="text-[10px] font-bold text-[#9a9a9a] bg-[#f5f5f5] px-2 py-0.5 rounded tracking-wide">
-                                      {issue.issueKey || 'TASK'}
-                                    </span>
-                                    {pName && (
-                                      <span className="text-[10px] font-bold text-[#6366f1] bg-[#e0e7ff] px-2 py-0.5 rounded truncate max-w-[150px]">
-                                        {pName}
-                                      </span>
-                                    )}
-                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                                      issue.priority === 'blocker' || issue.priority === 'high' 
-                                        ? 'bg-red-50 text-red-600 border border-red-100' 
-                                        : issue.priority === 'medium'
-                                        ? 'bg-yellow-50 text-yellow-600 border border-yellow-100'
-                                        : 'bg-blue-50 text-blue-600 border border-blue-100'
-                                    }`}>
-                                      {issue.priority}
-                                    </span>
-                                  </div>
-                                  <h4 className="text-[14px] font-bold text-[#1a1a1a] mt-1 truncate">
-                                    {issue.title}
-                                  </h4>
-                                </div>
-                              </div>
+              return visibleStatuses.map(status => {
+                const statusIssues = filtered.filter(i => {
+                  const cId = i.columnId || i.status || statuses[0]?.id;
+                  return cId === status.id;
+                });
 
-                              <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end" onClick={e => e.stopPropagation()}>
-                                {issue.dueDate && (
-                                  <div className="flex items-center gap-1 text-[11px] font-semibold text-[#9a9a9a]">
-                                    <Calendar size={13} />
-                                    <span>{fmtDate(issue.dueDate)}</span>
-                                  </div>
-                                )}
-                                
-                                <div className="w-[140px]">
-                                  <Select
-                                    value={issue.columnId || issue.status || 'todo'}
-                                    onChange={async (newVal) => {
-                                      try {
-                                        await updateTask(issue.id, { 
-                                          columnId: newVal, 
-                                          status: newVal 
-                                        });
-                                        showToast('Статус оновлено ✓');
-                                      } catch (e) {
-                                        console.error(e);
-                                        showToast('Помилка оновлення');
-                                      }
-                                    }}
-                                    options={[
-                                      { value: 'todo', label: 'To Do', dotColor: '#6366f1' },
-                                      { value: 'in-progress', label: 'In Progress', dotColor: '#0891b2' },
-                                      { value: 'done', label: 'Done', dotColor: '#10b981' }
-                                    ]}
-                                    buttonClassName="bg-[#f7f7f7] hover:bg-[#ebebeb] rounded-[10px] px-[12px] py-[8px]"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
+                if (statusIssues.length === 0) return null;
+
+                return (
+                  <Surface key={status.id} variant="panel" padding="lg" className="w-full">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 pb-2 border-b border-[#e9e9e9] mb-4 select-none">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: status.color }} />
+                      <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{status.label}</h3>
+                      <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/80 px-[6px] py-[2px] rounded-full ml-1">
+                        {statusIssues.length}
+                      </span>
                     </div>
-                  )}
-                </Card>
-              );
-            })}
+
+                    {/* Task rows */}
+                    <div className="flex flex-col gap-2">
+                      {statusIssues.map(issue => {
+                        const pName = projects.find(p => p.id === issue.projectId)?.name;
+                        return (
+                          <TaskRow
+                            key={issue.id}
+                            issue={issue}
+                            members={members}
+                            labels={labels}
+                            sprints={sprints}
+                            projectId={issue.projectId}
+                            projectName={pName}
+                          />
+                        );
+                      })}
+                    </div>
+                  </Surface>
+                );
+              });
+            })()}
           </div>
         )}
+        </div>
       </div>
 
       <CreateTaskModal
         isOpen={showCreateTaskModal}
-        onClose={() => setShowCreateTaskModal(false)}
+        onClose={() => { setShowCreateTaskModal(false); setCreateTaskStatus(null); }}
+        initialStatus={createTaskStatus}
         onSubmit={async (formData) => {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+          const { addDoc, collection, serverTimestamp, doc, runTransaction } = await import('firebase/firestore');
           const { db } = await import('@/lib/firebase');
           
-          await addDoc(collection(db, 'issues'), {
-            issueKey: `WS-${Date.now()}`,
+          const tempKey = `WS-${Date.now()}`;
+          const newIssueRef = await addDoc(collection(db, 'issues'), {
+            issueKey: tempKey,
             organizationId: activeOrgId,
             projectId: formData.projectId,
             title: formData.title,
@@ -439,6 +482,33 @@ export default function MyTasksPage() {
             createdAt: serverTimestamp(),
             createdBy: uid
           });
+
+          // Run background transaction to get sequential key
+          const projectRef = doc(db, 'projects', formData.projectId);
+          runTransaction(db, async tx => {
+            const projectSnap = await tx.get(projectRef);
+            if (!projectSnap.exists()) return;
+            const projectData = projectSnap.data();
+            const current = projectData.issueCounter ?? 0;
+            const next = current + 1;
+            
+            const pName = projectData.name || 'WS';
+            const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
+            let prefix = cleanProj.slice(0, 3).toUpperCase();
+            if (prefix.length < 2) {
+              prefix = pName.slice(0, 2).toUpperCase();
+            }
+            if (!prefix) prefix = 'WS';
+
+            tx.update(projectRef, {
+              issueCounter: next,
+              updatedAt: serverTimestamp()
+            });
+            tx.update(doc(db, 'issues', newIssueRef.id), {
+              issueKey: `${prefix}-${next}`
+            });
+          }).catch(err => console.warn('[myTasks] issueCounter update failed:', err));
+
           showToast('Задачу створено ✓');
         }}
         projects={projects}
@@ -446,6 +516,66 @@ export default function MyTasksPage() {
         teamMembers={members}
         sprints={sprints}
       />
+
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[480px] overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9]">
+              <h2 className="text-[16px] font-bold text-[#1f1f1f]">Налаштування дошки</h2>
+              <Button style="secondary" size="icon" icon={X} onClick={() => setShowSettingsModal(false)}>
+                Закрити
+              </Button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+              <div>
+                <h3 className="text-[14px] font-bold text-[#1f1f1f] mb-2">Видимість колонок</h3>
+                <p className="text-[13px] text-[#9a9a9a] mb-4">
+                  Оберіть, які колонки ви хочете приховати з вашої особистої дошки. 
+                  Задачі з прихованих колонок будуть зібрані в одну загальну колонку праворуч.
+                </p>
+
+                <div className="flex flex-col gap-2">
+                  {statuses.map((status) => {
+                    const isHidden = hiddenColumns.includes(status.id);
+                    return (
+                      <div 
+                        key={status.id} 
+                        onClick={() => toggleHiddenColumn(status.id)}
+                        className={`flex items-center justify-between border rounded-[12px] p-3 cursor-pointer transition-colors ${
+                          isHidden ? 'bg-[#f4f4f5] border-[#e9e9e9] opacity-60' : 'bg-white border-[#cfcfcf] hover:border-[#1f1f1f]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full" style={{ background: status.color }} />
+                          <span className={`text-[14px] font-semibold ${isHidden ? 'text-[#9a9a9a]' : 'text-[#1f1f1f]'}`}>
+                            {status.emoji} {status.label}
+                          </span>
+                        </div>
+                        <div className="text-[#9a9a9a]">
+                          {isHidden ? <EyeOff size={18} /> : <Eye size={18} className="text-[#10b981]" />}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f4f4f5]">
+              <Button 
+                style="primary"
+                size="md"
+                onClick={() => setShowSettingsModal(false)} 
+              >
+                Готово
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

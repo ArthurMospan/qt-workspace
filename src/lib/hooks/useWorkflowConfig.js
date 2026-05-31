@@ -99,6 +99,23 @@ export const DEFAULT_LABELS = [{
   label: 'Design',
   color: '#db2777'
 }];
+export const DEFAULT_POSITIONS = [{
+  id: 'dev',
+  label: 'Розробник',
+  hourlyRate: 30
+}, {
+  id: 'designer',
+  label: 'Дизайнер',
+  hourlyRate: 35
+}, {
+  id: 'pm',
+  label: 'PM',
+  hourlyRate: 40
+}, {
+  id: 'qa',
+  label: 'QA',
+  hourlyRate: 25
+}];
 export function useWorkflowConfig() {
   const {
     activeOrgId
@@ -107,6 +124,7 @@ export function useWorkflowConfig() {
   const [types, setTypes] = useState(DEFAULT_TYPES);
   const [priorities, setPriorities] = useState(DEFAULT_PRIORITIES);
   const [labels, setLabels] = useState(DEFAULT_LABELS);
+  const [positions, setPositions] = useState(DEFAULT_POSITIONS);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!activeOrgId) {
@@ -121,6 +139,7 @@ export function useWorkflowConfig() {
         if (d.types !== undefined) setTypes(d.types);
         if (d.priorities !== undefined) setPriorities(d.priorities);
         if (d.labels !== undefined) setLabels(d.labels);
+        if (d.positions !== undefined) setPositions(d.positions);
       }
       setLoading(false);
     }, () => setLoading(false));
@@ -131,6 +150,7 @@ export function useWorkflowConfig() {
     types,
     priorities,
     labels,
+    positions,
     loading
   };
 }
