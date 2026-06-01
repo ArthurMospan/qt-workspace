@@ -76,18 +76,33 @@ export function useSprints() {
     await batch.commit();
   }, []);
   const startSprint = useCallback(async sprintId => {
-    await updateDoc(doc(db, 'sprints', sprintId), {
+    const batch = writeBatch(db);
+    // Find active sprints and mark them as planned (or leave them, but the requirement says "може бути лише один")
+    sprints.filter(s => s.status === 'active').forEach(s => {
+      batch.update(doc(db, 'sprints', s.id), { status: 'completed' });
+    });
+    batch.update(doc(db, 'sprints', sprintId), {
       status: 'active',
       startedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-  }, []);
-  const completeSprint = useCallback(async sprintId => {
-    await updateDoc(doc(db, 'sprints', sprintId), {
+    await batch.commit();
+  }, [sprints]);
+  const completeSprint = useCallback(async (sprintId, moveToSprintId = null, incompleteIssueIds = []) => {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'sprints', sprintId), {
       status: 'completed',
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    // Move incomplete issues
+    incompleteIssueIds.forEach(issueId => {
+      batch.update(doc(db, 'issues', issueId), {
+        sprintId: moveToSprintId,
+        updatedAt: serverTimestamp()
+      });
+    });
+    await batch.commit();
   }, []);
   return {
     sprints,

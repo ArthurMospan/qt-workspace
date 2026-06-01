@@ -453,7 +453,7 @@ function InputsSection() {
 
       <PreviewBlock title="Textarea" description="Багаторядкові текстові області. Кольори: фон #f4f4f5, фокус-рамка #1f1f1f. Скруглення: 10px. Зміна розміру (resize) вимкнена за замовчуванням." fullWidth>
         <div className="max-w-[500px] flex flex-col gap-[10px]">
-          <Textarea placeholder="Опис задачі або проєкту..." rows={3} />
+          <Textarea placeholder="Опис завдання або проєкту..." rows={3} />
           <Textarea placeholder="Великий опис..." rows={6} />
         </div>
       </PreviewBlock>
@@ -592,7 +592,7 @@ function SurfacesSection() {
                 Level 2: White Card (rounded-[12px])
               </span>
               <p className="text-[13px] text-[#1f1f1f] font-semibold mt-[12px]">Біла плаваюча картка</p>
-              <p className="text-[12px] text-[#9a9a9a] mt-[4px]">Без рамки та без тіней. Чиста біла поверхня для розміщення окремих задач, деталей або списків.</p>
+              <p className="text-[12px] text-[#9a9a9a] mt-[4px]">Без рамки та без тіней. Чиста біла поверхня для розміщення окремих завдань, деталей або списків.</p>
             </Surface>
 
             {/* Level 2: Surface Inset */}
@@ -650,7 +650,7 @@ function BadgesSection() {
       </PreviewBlock>
 
       {/* ─── PriorityBadge Component (Priority Indicators) ─── */}
-      <PreviewBlock title="PriorityBadge Component (Priority Indicators)" description="Спеціалізований бейдж пріоритету задачі. Автоматично підбирає колір, іконку та текст.">
+      <PreviewBlock title="PriorityBadge Component (Priority Indicators)" description="Спеціалізований бейдж пріоритету завдання. Автоматично підбирає колір, іконку та текст.">
         <div className="flex items-center gap-[8px]">
           <PriorityBadge priority="low" />
           <PriorityBadge priority="medium" />
@@ -822,10 +822,10 @@ function ProgressSection() {
           <div>
             <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">KpiCard (Колоризовані показники аналітики)</h4>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-              <KpiCard label="Всі задачі" value="89 / 124" sub="71% прогресу" color="#10b981" icon={Target} trend={12} />
-              <KpiCard label="Velocity (7д)" value="14" sub="задач за тиждень" color="#6366f1" icon={Zap} trend={-5} />
+              <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" color="#10b981" icon={Target} trend={12} />
+              <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" color="#6366f1" icon={Zap} trend={-5} />
               <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" color="#0891b2" icon={Clock} />
-              <KpiCard label="Команда" value="8" sub="учасників із задачами" color="#eab308" icon={Users} />
+              <KpiCard label="Команда" value="8" sub="учасників із завданнями" color="#eab308" icon={Users} />
             </div>
           </div>
 
@@ -833,7 +833,7 @@ function ProgressSection() {
             <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">Stat (Простий текстовий показник)</h4>
             <div className="flex items-center gap-8 flex-wrap">
               <Stat label="Активні користувачі" number="120" trend="up" trendValue={8.2} icon={Users} />
-              <Stat label="Прострочено задач" number="3" trend="down" trendValue={15.4} icon={AlertCircle} />
+              <Stat label="Прострочено завдань" number="3" trend="down" trendValue={15.4} icon={AlertCircle} />
               <Stat label="Середній час релізу" number="4.2 дн" icon={Clock} />
             </div>
           </div>
@@ -999,7 +999,7 @@ function HeadersSection() {
         <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
           <TopHeader 
             mode="search" 
-            searchPlaceholder="Пошук по моїх задачах..." 
+            searchPlaceholder="Пошук по моїх завданнях..." 
             unreadCount={0} 
           />
         </div>
@@ -1015,7 +1015,7 @@ function HeadersSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="4) Хлібні крихти детального перегляду (Breadcrumbs Mode)" description="Відображення повного ієрархічного шляху до конкретної задачі." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
+      <PreviewBlock title="4) Хлібні крихти детального перегляду (Breadcrumbs Mode)" description="Відображення повного ієрархічного шляху до конкретної завдання." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
           <TopHeader 
             mode="breadcrumbs" 
@@ -1055,15 +1055,15 @@ function PageHeadersSection() {
   return (
     <div className="flex flex-col gap-[32px]">
       {/* Варіант 1: Повний (Заголовок + Дії + Таби + Фільтри + Switcher) */}
-      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої задачі)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
+      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
             variant="main"
-            title="Мої задачі"
+            title="Мої завдання"
             actions={
               <div className="flex gap-2">
                 <Button onClick={() => alert('Налаштування')} icon={Settings2} size="icon-lg" style="secondary" title="Налаштування" />
-                <Button onClick={() => alert('Створити')} icon={Plus} size="lg" style="primary" color="dark">Створити задачу</Button>
+                <Button onClick={() => alert('Створити')} icon={Plus} size="lg" style="primary" color="dark">Створити завдання</Button>
               </div>
             }
             filters={
@@ -1227,8 +1227,8 @@ function FeedbackSection() {
               icon={CheckSquare}
               title="Задач не знайдено"
               description="Спробуйте змінити параметри пошуку або фільтрації."
-              action="Створити задачу"
-              onAction={() => alert('Створення задачі...')}
+              action="Створити завдання"
+              onAction={() => alert('Створення завдання...')}
             />
           </div>
         </div>
@@ -1335,7 +1335,7 @@ function TaskCRMSection() {
             isLarge
             lastAction={{
               actor: 'Артур Моспан',
-              action: 'оновив задачу',
+              action: 'оновив завдання',
               issueKey: 'QT-104',
               title: 'Редизайн сторінки авторизації',
               time: '15 хв тому'
@@ -1350,7 +1350,7 @@ function TaskCRMSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Task Card (Kanban)" description="Основна картка задачі для канбан дошки." fullWidth>
+      <PreviewBlock title="Task Card (Kanban)" description="Основна картка завдання для канбан дошки." fullWidth>
         <div className="bg-[#f4f4f5] p-6 rounded-[16px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
           <TaskCard
             issue={task1}
@@ -1390,7 +1390,7 @@ function TaskCRMSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Task Row (List View)" description="Компактне відображення задачі у вигляді рядка для списків." fullWidth>
+      <PreviewBlock title="Task Row (List View)" description="Компактне відображення завдання у вигляді рядка для списків." fullWidth>
         <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
           <TaskRow
             issue={task1}
@@ -1597,7 +1597,7 @@ function TaskAttributesSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Task Attributes Panel Layout" description="Панель властивостей задачі. Використовує flex-wrap для запобігання обрізанню випадних списків, розбиває параметри на первинні та другорядні з анімованим згортанням." fullWidth>
+      <PreviewBlock title="Task Attributes Panel Layout" description="Панель властивостей завдання. Використовує flex-wrap для запобігання обрізанню випадних списків, розбиває параметри на первинні та другорядні з анімованим згортанням." fullWidth>
         <TaskAttributesPanel
           primaryChildren={
             <>
@@ -1676,9 +1676,9 @@ function NavMenuSection() {
             />
           </div>
           {/* Right panel - Gray Content Zone */}
-          <div className="flex-1 bg-[#f5f5f5] rounded-[16px] border border-[#e9e9e9] flex flex-col items-center justify-center text-center p-6">
+          <div className="flex-1 bg-[#f4f4f5] rounded-[16px] flex flex-col items-center justify-center text-center p-6">
             <span className="text-[#9a9a9a] font-bold text-[13px] uppercase tracking-wider block mb-2">Контент зона (Content Area)</span>
-            <p className="text-[#b1b1b1] text-[12px] max-w-[280px] leading-relaxed">Ця зона праворуч має сірий колір фону (#f5f5f5) та містить основні робочі форми або списки налаштувань.</p>
+            <p className="text-[#b1b1b1] text-[12px] max-w-[280px] leading-relaxed">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>
           </div>
         </div>
       </PreviewBlock>
@@ -1705,7 +1705,7 @@ function EmptyStatesSection() {
         <div className="bg-[#f4f4f5] rounded-[16px] p-[24px] flex items-center justify-center w-full">
           <EmptyState
             icon={CheckSquare}
-            title="Немає задач"
+            title="Немає завдань"
           />
         </div>
       </PreviewBlock>

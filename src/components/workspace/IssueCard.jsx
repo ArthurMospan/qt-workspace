@@ -4,7 +4,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/UserAvatar';
-import { Calendar } from 'lucide-react';
+import { Calendar, Lock } from 'lucide-react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -25,7 +25,7 @@ function hexToRgba(hex, alpha) {
 
 
 
-export default function IssueCard({ issue, issues = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive }) {
+export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive }) {
   const router   = useRouter();
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
@@ -72,6 +72,12 @@ export default function IssueCard({ issue, issues = [], members = [], labels = [
   };
 
   const displayKey = getDisplayKey();
+
+  const isBlocked = issueLinks.some(l => 
+    l.targetIssueId === issue.id && 
+    l.relationType === 'blocks' && 
+    issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+  );
 
   const renderCardContent = (provided = {}, isDragging = false) => {
     const msgCount = issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
@@ -147,7 +153,7 @@ export default function IssueCard({ issue, issues = [], members = [], labels = [
           {subAll > 0 && (
             <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-[#555555] font-medium">
               <span className="shrink-0">
-                <strong className="text-[#1a1a1a] font-semibold">{subDone}/{subAll}</strong> підзадач
+                <strong className="text-[#1a1a1a] font-semibold">{subDone}/{subAll}</strong> підзавдань
               </span>
               <div className="flex items-center gap-[3px] shrink-0">
                 {Array.from({ length: subAll }).map((_, idx) => (
@@ -173,6 +179,16 @@ export default function IssueCard({ issue, issues = [], members = [], labels = [
                 }}
               >
                 {typeLabel}
+              </span>
+            )}
+
+            {isBlocked && (
+              <span 
+                className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
+                title="Заблоковано іншою завданням"
+              >
+                <Lock size={10} />
+                Blocked
               </span>
             )}
 

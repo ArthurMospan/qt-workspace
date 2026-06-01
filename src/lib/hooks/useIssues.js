@@ -38,6 +38,7 @@ export function useIssues(projectId) {
     activeOrgId
   } = useAppContext();
   const [issues, setIssues] = useState([]);
+  const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!projectId || !activeOrgId) {
@@ -67,7 +68,13 @@ export function useIssues(projectId) {
       console.error('[useIssues] onSnapshot error', err);
       setLoading(false);
     });
-    return () => unsub();
+
+    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
+    const unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
+      setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsub(); unsubLinks(); };
   }, [projectId, activeOrgId]);
 
   // -------------------------------------------------------------------------
@@ -215,7 +222,7 @@ export function useIssues(projectId) {
     if (newColumnId === 'done') {
       const hasOpenSubtasks = issue.subtasks?.some(s => !s.done);
       if (hasOpenSubtasks) {
-        throw new Error('Є незакриті підзадачі');
+        throw new Error('Є незакриті підзавдання');
       }
     }
     const oldColumnId = issue.columnId;
@@ -240,6 +247,7 @@ export function useIssues(projectId) {
       columnId: newColumnId,
       status: newColumnId,
       order: Math.max(0, newOrder),
+      subtasks: issue.subtasks || [],
       updatedAt: serverTimestamp()
     });
 
@@ -273,6 +281,7 @@ export function useIssues(projectId) {
   }, [issues]);
   return {
     issues,
+    issueLinks,
     loading,
     createIssue,
     updateIssue,

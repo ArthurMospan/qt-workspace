@@ -10,11 +10,12 @@ import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import {
   AlertOctagon, ArrowUp, Minus, ArrowDown,
   Zap, Bug, Star, CheckSquare,
-  ChevronUp, ChevronDown as ChevronDn, Filter, Plus, Trash2, Play, Check
+  ChevronUp, ChevronDown as ChevronDn, Filter, Plus, Trash2, Play, Check, Lock
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Button from '@/components/ui/Button';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
@@ -31,7 +32,7 @@ function SortIcon({ k, sortKey, sortDir }) {
 }
 
 export default function BacklogTab({ projectId, project, currentUser }) {
-  const { issues, loading: issuesLoading, updateIssue, deleteIssue } = useIssues(projectId);
+  const { issues, issueLinks, loading: issuesLoading, updateIssue, deleteIssue } = useIssues(projectId);
   const { sprints, loading: sprintsLoading, createSprint, startSprint, completeSprint, deleteSprint } = useSprints(projectId);
   const { showToast } = useWorkspaceStore();
   const loading = issuesLoading || sprintsLoading;
@@ -113,6 +114,15 @@ export default function BacklogTab({ projectId, project, currentUser }) {
     }
   };
 
+  const handleDragEnd = async (result) => {
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    
+    const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId.replace('sprint-', '');
+    await updateIssue(draggableId, { sprintId: targetSprintId }, currentUser?.id || currentUser?.uid, currentUser?.name);
+  };
+
   const activeOrPlannedSprints = sprints.filter(s => s.status === 'active' || s.status === 'planned');
   const backlogIssues = filtered.filter(i => !i.sprintId);
 
@@ -122,7 +132,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
     </th>
   );
 
-  const IssueTable = ({ issueList }) => (
+  const IssueTable = ({ issueList, droppableId }) => (
     <div className="overflow-x-auto">
       <table className="w-full relative border-separate border-spacing-y-2 px-4 pb-4 bg-transparent">
         <thead className="bg-transparent">
@@ -136,55 +146,81 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             <TableHeaderItem label="Час" tableKey="spentMinutes" />
           </tr>
         </thead>
-        <tbody>
-          {issueList.map(issue => {
-            const pri = PRIORITY_CFG[issue.priority] || PRIORITY_CFG.medium;
-            const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
-            const PrioIcon = pri.i;
-            const TypeIcon = type.i;
-            const assignees = (issue.assigneeIds||[]).map(uid => members.find(m=>(m.id||m.uid)===uid)).filter(Boolean);
+        <Droppable droppableId={droppableId} type="issue">
+          {(provided) => (
+            <tbody ref={provided.innerRef} {...provided.droppableProps}>
+              {issueList.map((issue, index) => {
+                const pri = PRIORITY_CFG[issue.priority] || PRIORITY_CFG.medium;
+                const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
+                const PrioIcon = pri.i;
+                const TypeIcon = type.i;
+                const assignees = (issue.assigneeIds||[]).map(uid => members.find(m=>(m.id||m.uid)===uid)).filter(Boolean);
 
-            return (
-              <tr key={issue.id} onClick={() => setActiveIssue(issue)}
-                className="bg-white hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#1f1f1f]/5 cursor-pointer transition-all duration-200 group">
-                <td className="px-4 py-3 w-[100px] first:rounded-l-[16px] border-y border-l border-[#efefef]">
-                  <span className="font-mono text-[11px] font-bold text-[#9a9a9a] group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
-                </td>
-                <td className="px-4 py-3 max-w-[280px] border-y border-[#efefef]">
-                  <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{issue.title}</p>
-                </td>
-                <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
-                  <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: type.c }}>
-                    <TypeIcon size={11} /> {issue.type}
-                  </span>
-                </td>
-                <td className="px-4 py-3 w-[140px] border-y border-[#efefef]">
-                  <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
-                </td>
-                <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
-                  <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: pri.c }}>
-                    <PrioIcon size={11} /> {issue.priority}
-                  </span>
-                </td>
-                <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
-                  <div className="flex -space-x-1">
-                    {assignees.slice(0,3).map(m => (
-                      <img key={m.id||m.uid} src={m.avatar||m.photoURL||`https://ui-avatars.com/api/?name=${m.name}&size=20`}
-                        alt={m.name} title={m.name}
-                        className="w-[20px] h-[20px] rounded-full ring-[1.5px] ring-white object-cover" />
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-[11px] text-[#9a9a9a] w-[100px] last:rounded-r-[16px] border-y border-r border-[#efefef]">
-                  {issue.spentMinutes > 0 ? `${Math.floor(issue.spentMinutes/60)}г ${issue.spentMinutes%60}хв` : '—'}
-                </td>
-              </tr>
-            );
-          })}
-          {issueList.length === 0 && (
-            <tr><td colSpan={7} className="px-4 py-8 text-center text-[12px] text-[#cfcfcf]">Задач не знайдено в цьому списку</td></tr>
+                return (
+                  <Draggable key={issue.id} draggableId={issue.id} index={index}>
+                    {(provided, snapshot) => (
+                      <tr 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        onClick={() => setActiveIssue(issue)}
+                        className={`bg-white cursor-pointer transition-all duration-200 group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-[#6366f1]' : 'hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#1f1f1f]/5'}`}
+                        style={provided.draggableProps.style}
+                      >
+                        <td className="px-4 py-3 w-[100px] first:rounded-l-[16px] border-y border-l border-[#efefef]">
+                          <span className="font-mono text-[11px] font-bold text-[#9a9a9a] group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
+                        </td>
+                        <td className="px-4 py-3 max-w-[280px] border-y border-[#efefef]">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{issue.title}</p>
+                            {issueLinks?.some(l => 
+                              l.targetIssueId === issue.id && 
+                              l.relationType === 'blocks' && 
+                              issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+                            ) && (
+                              <span title="Заблоковано іншою завданням" className="flex items-center gap-[2px] px-[4px] py-[2px] bg-[#fef2f2] text-[#ef4444] rounded-[4px] text-[9px] font-bold">
+                                <Lock size={10} /> Blocked
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
+                          <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: type.c }}>
+                            <TypeIcon size={11} /> {issue.type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 w-[140px] border-y border-[#efefef]">
+                          <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
+                        </td>
+                        <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
+                          <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: pri.c }}>
+                            <PrioIcon size={11} /> {issue.priority}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
+                          <div className="flex -space-x-1">
+                            {assignees.slice(0,3).map(m => (
+                              <img key={m.id||m.uid} src={m.avatar||m.photoURL||`https://ui-avatars.com/api/?name=${m.name}&size=20`}
+                                alt={m.name} title={m.name}
+                                className="w-[20px] h-[20px] rounded-full ring-[1.5px] ring-white object-cover" />
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-[11px] text-[#9a9a9a] w-[100px] last:rounded-r-[16px] border-y border-r border-[#efefef]">
+                          {issue.spentMinutes > 0 ? `${Math.floor(issue.spentMinutes/60)}г ${issue.spentMinutes%60}хв` : '—'}
+                        </td>
+                      </tr>
+                    )}
+                  </Draggable>
+                );
+              })}
+              {provided.placeholder}
+              {issueList.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-[12px] text-[#cfcfcf]">Задач не знайдено в цьому списку</td></tr>
+              )}
+            </tbody>
           )}
-        </tbody>
+        </Droppable>
       </table>
     </div>
   );
@@ -254,14 +290,15 @@ export default function BacklogTab({ projectId, project, currentUser }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6 pb-20">
-            {/* Sprints */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          {loading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 pb-20">
+              {/* Sprints */}
             {activeOrPlannedSprints.map(sprint => {
               const sprintIssues = filtered.filter(i => i.sprintId === sprint.id);
               return (
@@ -271,7 +308,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                       <h3 className="text-[14px] font-bold text-[#1f1f1f]">{sprint.name}</h3>
                       {sprint.status === 'active' && <Badge label="Активний" color="#10b981" />}
                       {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
-                      <span className="text-[11px] text-[#9a9a9a]">{sprintIssues.length} задач</span>
+                      <span className="text-[11px] text-[#9a9a9a]">{sprintIssues.length} завдань</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {sprint.status === 'planned' && (
@@ -285,7 +322,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                       )}
                     </div>
                   </div>
-                  <IssueTable issueList={sprintIssues} />
+                  <IssueTable issueList={sprintIssues} droppableId={`sprint-${sprint.id}`} />
                 </div>
               );
             })}
@@ -294,13 +331,14 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             <div className="bg-[#f4f4f5] rounded-[16px] border border-transparent shadow-none overflow-hidden mt-4">
               <div className="px-5 py-4 flex items-center gap-3">
                 <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>
-                <span className="text-[11px] text-[#9a9a9a]">{backlogIssues.length} задач</span>
+                <span className="text-[11px] text-[#9a9a9a]">{backlogIssues.length} завдань</span>
               </div>
-              <IssueTable issueList={backlogIssues} />
+              <IssueTable issueList={backlogIssues} droppableId="backlog" />
             </div>
           </div>
         )}
       </div>
+      </DragDropContext>
 
       {activeIssue && (
         <IssueModal issue={activeIssue} members={members} comments={comments} timeLogs={timeLogs} auditLogs={auditLogs} sprints={sprints}

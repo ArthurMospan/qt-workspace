@@ -44,7 +44,7 @@ export default function CleanDbPage() {
     <div className="p-10 max-w-3xl mx-auto font-sans">
       <h1 className="text-3xl font-bold mb-4 text-[#1f1f1f]">Очищення Бази Даних (Wipe DB)</h1>
       <p className="mb-6 text-[#9a9a9a]">
-        Ця сторінка створена тимчасово для повного очищення бази даних від тестових даних (організацій, проєктів, задач тощо).
+        Ця сторінка створена тимчасово для повного очищення бази даних від тестових даних (організацій, проєктів, завдань тощо).
       </p>
       
       {!currentUser ? (

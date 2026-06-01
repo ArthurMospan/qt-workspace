@@ -66,7 +66,7 @@ export default function DataTab() {
 
       {/* Status Badges */}
       <div>
-        <h2 className="text-[24px] font-bold text-[#1f1f1f] mb-4">Status Badges (для задач)</h2>
+        <h2 className="text-[24px] font-bold text-[#1f1f1f] mb-4">Status Badges (для завдань)</h2>
         <Surface padding="lg" className="flex gap-2 flex-wrap">
           <StatusBadge status="todo" />
           <StatusBadge status="in-progress" />

@@ -157,7 +157,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         <EmptyState
           icon={BarChart2}
           title="Даних ще немає"
-          description="Аналітика з'явиться після створення задач"
+          description="Аналітика з'явиться після створення завдань"
         />
       </div>
     );
@@ -183,14 +183,14 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Target}       label="Всі задачі" color="#10b981" onClick={() => onTabChange('velocity')}
+          <KpiCard icon={Target}       label="Всі завдання" color="#10b981" onClick={() => onTabChange('velocity')}
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% прогресу`} />
           <KpiCard icon={Zap}          label="Velocity (7д)" color="#6366f1" onClick={() => onTabChange('velocity')}
-            value={stats.recentDone} sub="задач за тиждень" />
+            value={stats.recentDone} sub="завдань за тиждень" />
           <KpiCard icon={Clock}        label="Списано часу" color="#0891b2" onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.totalMin)} sub={`по ${projects.length} проєктах`} />
           <KpiCard icon={Users}        label="Команда" color="#eab308" onClick={() => onTabChange('workload')}
-            value={stats.byMember.length} sub="учасників із задачами" />
+            value={stats.byMember.length} sub="учасників із завданнями" />
         </div>
 
         {/* Activity + Status */}
@@ -349,26 +349,26 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
               {stats.blockers > 0 && (
                 <Alert
                   variant="error"
-                  title={`${stats.blockers} Blocker-задачі`}
+                  title={`${stats.blockers} Blocker-завдання`}
                   description="Потребують негайної уваги"
                 />
               )}
               {stats.noAssignee > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.noAssignee} задач без виконавця`}
+                  title={`${stats.noAssignee} завдань без виконавця`}
                 />
               )}
               {stats.unestimated > 0 && (
                 <Alert
                   variant="info"
-                  title={`${stats.unestimated} задач без оцінки`}
+                  title={`${stats.unestimated} завдань без оцінки`}
                 />
               )}
               {stats.inProgress > 0 && (
                 <Alert
                   variant="success"
-                  title={`${stats.inProgress} задач в роботі`}
+                  title={`${stats.inProgress} завдань в роботі`}
                 />
               )}
               {stats.blockers === 0 && stats.noAssignee === 0 && stats.overdue.length === 0 && (

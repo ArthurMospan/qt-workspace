@@ -78,7 +78,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
   const priority = { label: priObj ? priObj.label : 'Середній', color: priObj ? priObj.color : '#eab308' };
   
   const typeObj = types.find(t => t.id === task.type) || types[0];
-  const type = { label: typeObj ? typeObj.label : 'Задача', color: typeObj ? typeObj.color : '#6366f1' };
+  const type = { label: typeObj ? typeObj.label : 'Завдання', color: typeObj ? typeObj.color : '#6366f1' };
   const subtotalDone = task.subtasks?.filter(s => s.done)?.length ?? 0;
   const subtotalAll = task.subtasks?.length ?? 0;
 
@@ -208,8 +208,8 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
               </div>
             </Field>
 
-            {/* Підзадачі */}
-            <Field label={`Підзадачі ${subtotalAll > 0 ? `(${subtotalDone}/${subtotalAll})` : ''}`}>
+            {/* Підзавдання */}
+            <Field label={`Підзавдання ${subtotalAll > 0 ? `(${subtotalDone}/${subtotalAll})` : ''}`}>
               <div className="flex flex-col gap-2">
                 {(task.subtasks || []).map((s, i) => (
                   <label key={i} className="flex items-center gap-3 cursor-pointer group">
@@ -227,13 +227,13 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
                       value={subtaskInput}
                       onChange={e => setSubtaskInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') addSubtask(); if (e.key === 'Escape') setShowSubtaskInput(false); }}
-                      placeholder="Назва підзадачі..."
+                      placeholder="Назва підзавдання..."
                     />
                     <Button style="primary" size="sm" onClick={addSubtask}>OK</Button>
                   </div>
                 ) : (
                   <button onClick={() => setShowSubtaskInput(true)} className="flex items-center gap-2 text-[12px] text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors w-fit">
-                    <Plus size={12} /> Додати підзадачу
+                    <Plus size={12} /> Додати підзавдання
                   </button>
                 )}
               </div>
@@ -245,7 +245,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
               {messages.length === 0 && (
-                <div className="text-center py-10 text-[#cfcfcf] text-[12px]">Почніть обговорення задачі</div>
+                <div className="text-center py-10 text-[#cfcfcf] text-[12px]">Почніть обговорення завдання</div>
               )}
               {messages.map(msg => {
                 const isMe = msg.senderId === currentUser?.uid;
@@ -288,7 +288,7 @@ export default function TaskDetailPanel({ task, stages, teamMembers = [], onUpda
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[400px] p-[24px] flex flex-col gap-[24px]">
             <div className="flex flex-col gap-[8px]">
-              <h3 className="text-[18px] font-bold text-[#1f1f1f]">Видалити задачу?</h3>
+              <h3 className="text-[18px] font-bold text-[#1f1f1f]">Видалити завдання?</h3>
               <p className="text-[13px] text-[#9a9a9a]">Ця дія не може бути скасована.</p>
             </div>
             <div className="flex gap-[12px] justify-end">

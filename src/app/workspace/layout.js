@@ -7,6 +7,7 @@ import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import Toast from '@/components/Toast';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
+import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
 
 export default function WorkspaceLayout({ children }) {
@@ -128,6 +129,7 @@ export default function WorkspaceLayout({ children }) {
       </div>
 
       <Toast />
+      <ProfileModal />
     </div>
   );
 }

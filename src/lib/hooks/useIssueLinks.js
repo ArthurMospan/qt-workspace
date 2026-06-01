@@ -91,28 +91,45 @@ export function useIssueLinks(issueId) {
   // addLink — creates the primary link and an inverse link
   // -------------------------------------------------------------------------
   const addLink = useCallback(async (sourceId, targetId, relationType, userId) => {
+    // 1. Check for duplicate link
+    const { getDocs, query, collection, where, writeBatch, doc } = await import('firebase/firestore');
+    
+    const q1 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', sourceId), where('targetIssueId', '==', targetId));
+    const snap1 = await getDocs(q1);
+    
+    const q2 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', targetId), where('targetIssueId', '==', sourceId));
+    const snap2 = await getDocs(q2);
+    
+    if (!snap1.empty || !snap2.empty) {
+      throw new Error('Зв\'язок між цими завданнями вже існує');
+    }
+
+    // 2. Atomic write using batch
+    const batch = writeBatch(db);
     const base = {
       organizationId: activeOrgId,
       createdBy: userId || null,
       createdAt: serverTimestamp()
     };
 
-    // Primary link
-    await addDoc(collection(db, 'issueLinks'), {
+    const primaryRef = doc(collection(db, 'issueLinks'));
+    batch.set(primaryRef, {
       ...base,
       sourceIssueId: sourceId,
       targetIssueId: targetId,
       relationType
     });
 
-    // Inverse link
     const inverseType = INVERSE[relationType] ?? 'relates-to';
-    await addDoc(collection(db, 'issueLinks'), {
+    const inverseRef = doc(collection(db, 'issueLinks'));
+    batch.set(inverseRef, {
       ...base,
       sourceIssueId: targetId,
       targetIssueId: sourceId,
       relationType: inverseType
     });
+
+    await batch.commit();
   }, [activeOrgId]);
 
   // -------------------------------------------------------------------------

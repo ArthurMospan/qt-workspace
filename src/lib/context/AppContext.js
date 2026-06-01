@@ -16,6 +16,12 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
   const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, noOrg, switchOrg, setActiveOrgId } = useOrg();
   const { projects, loading: projectsLoading } = useProjects(user?.id, activeOrgId);
 
+  useEffect(() => {
+    if (user?.localization) {
+      require('@/store/useWorkspaceStore').default.getState().setLocalization(user.localization);
+    }
+  }, [user?.localization]);
+
   // When user signs in: init org if needed + accept pending invitations
   useEffect(() => {
     if (!user) return;

@@ -4,6 +4,7 @@ import { Link2, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useSearch } from '@/lib/hooks/useSearch';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const LINK_TYPES = [
   { value: 'blocks', label: '🚫 блокує', color: '#dc2626' },
@@ -26,6 +27,8 @@ export default function DependenciesPanel({
   const { results: searchResults, search } = useSearch();
   const [searching, setSearching] = useState(false);
 
+  const { showToast } = useWorkspaceStore();
+
   const handleSearchChange = async (q) => {
     setSearchQuery(q);
     if (q.trim()) {
@@ -41,8 +44,10 @@ export default function DependenciesPanel({
       await onAddLink(issue.id, targetIssue.id, linkType);
       setSearchQuery('');
       setShowAddForm(false);
+      showToast('Залежність успішно додано');
     } catch (err) {
       console.error('Error adding link:', err);
+      showToast(err.message || 'Помилка додавання', 'error');
     }
   };
 
@@ -76,7 +81,7 @@ export default function DependenciesPanel({
         <div className="flex items-start gap-[8px] px-[12px] py-[8px] bg-red-50 border border-red-200 rounded-[12px]">
           <AlertCircle size={14} className="text-red-500 mt-[2px] shrink-0" />
           <p className="text-[11px] text-red-700 font-medium">
-            Ця задача заблокована і не може бути закрита
+            Ця завдання заблокована і не може бути закрита
           </p>
         </div>
       )}
@@ -103,7 +108,7 @@ export default function DependenciesPanel({
 
           <div>
             <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
-              Пошук задачи
+              Пошук завданьи
             </label>
             <Input
               value={searchQuery}

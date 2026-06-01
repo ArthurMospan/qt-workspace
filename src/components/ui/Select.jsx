@@ -47,6 +47,9 @@ export function Select({
           {selectedOption?.dotColor && (
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
           )}
+          {selectedOption?.avatar && (
+            <img src={selectedOption.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
+          )}
           {selectedOption?.icon && (
             <selectedOption.icon size={14} className="text-[#9a9a9a] shrink-0" />
           )}
@@ -73,6 +76,9 @@ export function Select({
                 <div className="flex items-center gap-[8px]">
                   {opt.dotColor && (
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
+                  )}
+                  {opt.avatar && (
+                    <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
                   )}
                   {opt.icon && (
                     <opt.icon size={14} className={value === opt.value ? 'text-[#1f1f1f]' : 'text-[#9a9a9a]'} />
@@ -187,6 +193,9 @@ export function MultiSelect({
                     </div>
                     {opt.dotColor && (
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
+                    )}
+                    {opt.avatar && (
+                      <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
                     )}
                     {opt.icon && (
                       <opt.icon size={14} className={isSelected ? 'text-[#1f1f1f]' : 'text-[#9a9a9a]'} />

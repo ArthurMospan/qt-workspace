@@ -600,7 +600,7 @@ export default function BillingTab({ issues = [], members = [], project, project
           <Tabs
             tabs={[
               { id: 'details', label: 'Деталі' },
-              { id: 'issues', label: `Задачі (${checkedCount}/${issues.length})` },
+              { id: 'issues', label: `Завдання (${checkedCount}/${issues.length})` },
               { id: 'history', label: `Історія (${savedInvoices.length})` },
             ]}
             activeTab={tab}
@@ -702,7 +702,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                 <div className="bg-[#f4f4f5] rounded-2xl p-4 flex flex-col gap-3">
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <div className="bg-white rounded-xl p-3 border border-[#e9e9e9]">
-                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Обрано задач</p>
+                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Обрано завдань</p>
                       <p className="text-[18px] font-bold text-[#1f1f1f]">{checkedCount}</p>
                     </div>
                     <div className="bg-white rounded-xl p-3 border border-[#e9e9e9]">
@@ -770,7 +770,7 @@ export default function BillingTab({ issues = [], members = [], project, project
             <div className="p-5 flex flex-col gap-4">
               <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-[#e9e9e9]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-[#1f1f1f]">Задачі:</span>
+                  <span className="text-[12px] font-bold text-[#1f1f1f]">Завдання:</span>
                   <span className="text-[12px] text-[#9a9a9a]">({checkedCount} обрано)</span>
                 </div>
                 
@@ -844,7 +844,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                   <div key={inv.id} className="flex items-center justify-between p-4 border border-[#e9e9e9] rounded-2xl bg-[#fafafa]">
                     <div>
                       <p className="text-[13px] font-bold text-[#1f1f1f]">{inv.number}</p>
-                      <p className="text-[11px] text-[#9a9a9a] font-medium mt-1">{inv.date} · {inv.items?.length} задач</p>
+                      <p className="text-[11px] text-[#9a9a9a] font-medium mt-1">{inv.date} · {inv.items?.length} завдань</p>
                     </div>
                     <span className="text-[14px] font-black text-[#1f1f1f]">{fmtMoney(inv.total, inv.currency)}</span>
                   </div>

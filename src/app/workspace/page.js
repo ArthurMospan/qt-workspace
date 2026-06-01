@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, X, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, AlertCircle, Activity, MessageSquare } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import { PageHeader } from '@/components/ui';
@@ -282,7 +283,19 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
           </div>
 
           {/* Kebab menu */}
-          <div className="relative no-nav">
+          <div className="relative no-nav flex items-center gap-[8px]">
+            {isArchived && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  unarchive(project.id);
+                }}
+                className="px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav"
+              >
+                <ArchiveRestore size={13} />
+                Розархівувати
+              </button>
+            )}
             <ContextMenu
               onOpenChange={setMenuOpen}
               trigger={
@@ -459,7 +472,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
               )}
             </div>
             <p className="text-[#9a9a9a] leading-tight line-clamp-1">
-              оновив задачу{' '}
+              оновив завдання{' '}
               <span className="text-[#1f1f1f] font-semibold underline">{stats.lastAction.issueKey}: {stats.lastAction.title}</span>
             </p>
           </div>
@@ -471,7 +484,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
         <div className="flex items-center justify-between bg-[#fafafa] rounded-[10px] py-[10px]">
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.total}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">задач</span>
+            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">завдань</span>
           </div>
           <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -499,42 +512,45 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
   const isFree      = orgPlan !== 'pro';
   const limitReached = isFree && activeProjectsCount >= 3;
 
+  const [error, setError] = useState(null);
+
   const handleCreate = async () => {
     if (!name.trim()) return;
     setSaving(true);
+    setError(null);
     try {
-      const payload = {
-        name: name.trim(),
-        description: description.trim(),
-        visibility,
-        organizationId: orgId,
-        team: [userId],
-        status: 'active',
-        progress: 0,
-        stagesCount: 4,
-        issueCounter: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdBy: userId,
-      };
+      // Use Firebase JS SDK to get the current user's ID token
+      const auth = (await import('@/lib/firebase')).auth;
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+      
+      const token = await user.getIdToken();
 
-      const projectRef = await addDoc(collection(db, 'projects'), payload);
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+          visibility,
+          organizationId: orgId,
+          userId,
+        })
+      });
 
-      const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
-      for (let i = 0; i < stageNames.length; i++) {
-        const stageData = {
-          label: `${String(i + 1).padStart(2, '0')}. ${stageNames[i]}`,
-          status: i === 0 ? 'in-progress' : 'todo',
-          projectId: projectRef.id,
-          order: i,
-          createdAt: serverTimestamp(),
-        };
-        await addDoc(collection(db, 'stages'), stageData);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create project');
       }
 
       onClose();
     } catch (err) {
       console.error('[NewProject]', err);
+      setError(err.message);
     }
     setSaving(false);
   };
@@ -571,6 +587,19 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
         </div>
       ) : (
         <div className="p-[24px] flex flex-col gap-[16px]">
+          {error && (
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-[10px] text-[13px] border border-red-100 flex flex-col gap-2">
+              <span className="font-semibold">{error}</span>
+              {error.includes('Pro') && (
+                <button 
+                  onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }}
+                  className="bg-red-600 text-white font-bold px-3 py-1.5 rounded-[6px] w-fit hover:bg-red-700 transition-colors"
+                >
+                  Перейти на PRO →
+                </button>
+              )}
+            </div>
+          )}
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
             <input
@@ -616,28 +645,17 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
 
 export default function WorkspacePage() {
   const { projects, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
+  const showToast = useWorkspaceStore(s => s.showToast);
   const { members } = useOrganization();
   const { labels } = useWorkflowConfig();
   const { sprints } = useSprints();
   const searchParams = useSearchParams();
   const router       = useRouter();
-  const [showArchived,   setShowArchived]   = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   // Real-time issues state
   const [allIssues, setAllIssues] = useState([]);
-
-  // Real-time users state to ensure we always have profiles for assignees
-  const [allUsers, setAllUsers] = useState([]);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllUsers(list);
-    }, (err) => console.error('[WorkspacePage] users error:', err));
-    return () => unsubscribe();
-  }, []);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -666,9 +684,7 @@ export default function WorkspacePage() {
 
   // Filter & sort visible projects
   const filteredProjects = useMemo(() => {
-    let list = (projects || []).filter(p =>
-      showArchived ? p.status === 'archived' : p.status !== 'archived'
-    );
+    let list = (projects || []).filter(p => p.status !== 'archived');
 
     // Search query
     if (searchQuery.trim()) {
@@ -707,7 +723,7 @@ export default function WorkspacePage() {
       const bTime = b.updatedAt?.toMillis?.() || b.updatedAt?.seconds * 1000 || (b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0);
       return bTime - aTime;
     });
-  }, [projects, showArchived, searchQuery, selectedMember, dateFilter, sortOption]);
+  }, [projects, searchQuery, selectedMember, dateFilter, sortOption]);
 
   // Sliced recent issues list (limit to 6)
   const recentIssues = useMemo(() => {
@@ -719,8 +735,29 @@ export default function WorkspacePage() {
     return sorted.slice(0, 6);
   }, [allIssues]);
 
-  const archive   = (id) => updateDoc(doc(db, 'projects', id), { status: 'archived' });
-  const unarchive = (id) => updateDoc(doc(db, 'projects', id), { status: 'active' });
+  const archive = async (id) => {
+    try {
+      await updateDoc(doc(db, 'projects', id), { status: 'archived' });
+      showToast('Проєкт архівовано', 'success', {
+        duration: 5000,
+        action: {
+          label: 'Скасувати',
+          onClick: () => unarchive(id)
+        }
+      });
+    } catch (err) {
+      showToast('Помилка архівування', 'error');
+    }
+  };
+
+  const unarchive = async (id) => {
+    try {
+      await updateDoc(doc(db, 'projects', id), { status: 'active' });
+      showToast('Проєкт розархівовано');
+    } catch (err) {
+      showToast('Помилка розархівування', 'error');
+    }
+  };
 
   const stats = useMemo(() => {
     const active = (projects || []).filter(p => p.status !== 'archived');
@@ -790,12 +827,6 @@ export default function WorkspacePage() {
         <PageHeader
           variant="main"
           title="Проєкти"
-          tabs={[
-            { id: 'active', label: 'Активні' },
-            { id: 'archived', label: 'Архів' },
-          ]}
-          activeTab={showArchived ? 'archived' : 'active'}
-          onTabChange={(tabId) => setShowArchived(tabId === 'archived')}
           actions={
             can(orgRole, 'create:project') && (
               <Button
@@ -841,9 +872,9 @@ export default function WorkspacePage() {
                     project={p} 
                     archive={archive} 
                     unarchive={unarchive}
-                    members={allUsers.length > 0 ? allUsers : members}
-                    allOrgMembers={allUsers.length > 0 ? allUsers : members}
-                    isLarge={index === 0 && !showArchived && selectedMember === 'all' && dateFilter === 'all'}
+                    members={members}
+                    allOrgMembers={members}
+                    isLarge={index === 0 && selectedMember === 'all' && dateFilter === 'all'}
                   />
                 ))}
               </div>
@@ -922,7 +953,7 @@ export default function WorkspacePage() {
         }}
         projects={projects}
         stages={[]}
-        teamMembers={allUsers.length > 0 ? allUsers : members}
+        teamMembers={members}
       />
     )}
   </>);

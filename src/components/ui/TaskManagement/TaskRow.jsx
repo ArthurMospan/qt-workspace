@@ -1,6 +1,6 @@
 'use client';
 // src/components/ui/TaskManagement/TaskRow.jsx — Beautiful list-row representation of a task
-import { Calendar, Clock, CheckSquare } from 'lucide-react';
+import { Calendar, Clock, CheckSquare, Lock } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,7 @@ function fmtDate(raw) {
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
-export default function TaskRow({ issue, members = [], labels = [], sprints = [], projectId, projectName, isTimerActive, onClick }) {
+export default function TaskRow({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], projectId, projectName, isTimerActive, onClick }) {
   const router = useRouter();
   const isDraggingRef = useRef(false);
   const { types, priorities } = useWorkflowConfig();
@@ -76,6 +76,12 @@ export default function TaskRow({ issue, members = [], labels = [], sprints = []
   };
 
   const displayKey = getDisplayKey();
+
+  const isBlocked = issueLinks.some(l => 
+    l.targetIssueId === task.id && 
+    l.relationType === 'blocks' && 
+    issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+  );
 
   const handleRowClick = (e) => {
     if (onClick) {
@@ -173,6 +179,16 @@ export default function TaskRow({ issue, members = [], labels = [], sprints = []
               }}
             >
               {typeLabel}
+            </span>
+          )}
+
+          {isBlocked && (
+            <span 
+              className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
+              title="Заблоковано іншою завданням"
+            >
+              <Lock size={10} />
+              Blocked
             </span>
           )}
 

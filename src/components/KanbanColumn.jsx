@@ -67,7 +67,7 @@ export default function KanbanColumn({ columnId, label, color, tasks, teamMember
             {tasks.length === 0 && !snapshot.isDraggingOver && (
               <div className="flex flex-col items-center justify-center py-8 text-[#cfcfcf]">
                 <div className="w-[32px] h-[32px] rounded-full border-2 border-dashed border-[#e9e9e9] mb-2" />
-                <p className="text-[11px]">Немає задач</p>
+                <p className="text-[11px]">Немає завдань</p>
               </div>
             )}
           </div>

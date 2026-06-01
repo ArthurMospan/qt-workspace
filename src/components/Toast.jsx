@@ -21,7 +21,18 @@ export default function Toast() {
           : <CheckCircle size={15} className="text-green-400 shrink-0" />
         }
         <span>{message}</span>
-        <button onClick={clearToast} className="text-white/40 hover:text-white/80 ml-1 transition-colors">
+        {toast.action && (
+          <button
+            onClick={() => {
+              toast.action.onClick();
+              clearToast();
+            }}
+            className="ml-3 px-2.5 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-[6px] text-white text-[11px] font-bold transition-all uppercase tracking-wider shrink-0"
+          >
+            {toast.action.label}
+          </button>
+        )}
+        <button onClick={clearToast} className="text-white/40 hover:text-white/80 ml-1 transition-colors shrink-0">
           <X size={13} />
         </button>
       </div>

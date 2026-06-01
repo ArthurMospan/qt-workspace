@@ -11,7 +11,7 @@ export default function ProjectCard({
   inProgressCount = 3,
   commentCount = 24,
   isLarge = false,
-  lastAction = null, // e.g. { actor: 'Артур', action: 'оновив задачу', actorAvatar: '', issueKey: 'QT-101', title: 'Редизайн', time: '10 хв тому' }
+  lastAction = null, // e.g. { actor: 'Артур', action: 'оновив завдання', actorAvatar: '', issueKey: 'QT-101', title: 'Редизайн', time: '10 хв тому' }
   unreadCount = 0,
   className = '',
 }) {
@@ -95,7 +95,7 @@ export default function ProjectCard({
               )}
             </div>
             <p className="text-[#9a9a9a] leading-tight line-clamp-1">
-              {lastAction.action || 'оновив задачу'}{' '}
+              {lastAction.action || 'оновив завдання'}{' '}
               <span className="text-[#1f1f1f] font-semibold underline">{lastAction.issueKey}: {lastAction.title}</span>
             </p>
           </div>
@@ -108,7 +108,7 @@ export default function ProjectCard({
         <div className="flex items-center justify-between bg-[#fafafa] rounded-[10px] py-[10px]">
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{taskCount}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">задач</span>
+            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">завдань</span>
           </div>
           <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">

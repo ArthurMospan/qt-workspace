@@ -194,6 +194,52 @@ function SprintCreateModal({ onClose, onSave }) {
   );
 }
 
+function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onConfirm }) {
+  const [moveToSprintId, setMoveToSprintId] = useState('backlog');
+
+  const upcomingSprints = sprints.filter(s => s.status === 'planned');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onConfirm(moveToSprintId === 'backlog' ? null : moveToSprintId);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-[24px] shadow-xl w-[480px] p-6 max-w-[90%] border border-[#efefef]">
+        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-4">Завершити спринт: {sprint.name}</h3>
+        <p className="text-[13px] text-[#9a9a9a] mb-4">
+          У цьому спринті залишилось <strong className="text-[#1f1f1f]">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
+        </p>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Перенести завдання в</label>
+            <select 
+              value={moveToSprintId} 
+              onChange={e => setMoveToSprintId(e.target.value)}
+              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+            >
+              <option value="backlog">Беклог</option>
+              {upcomingSprints.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 mt-2">
+            <Button style="secondary" size="md" onClick={onClose} type="button">
+              Скасувати
+            </Button>
+            <Button style="primary" color="blue" size="md" type="submit">
+              Завершити спринт
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
@@ -209,6 +255,7 @@ export default function GlobalSprintsPage() {
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
+  const [showCompleteSprintModal, setShowCompleteSprintModal] = useState(null); // sprint object
   const [editingSprint, setEditingSprint] = useState(null);
   const [activeIssue, setActiveIssue] = useState(null);
   const [sectionExpansion, setSectionExpansion] = useState({});
@@ -221,7 +268,7 @@ export default function GlobalSprintsPage() {
 
   const isManager = can(orgRole, 'manage:sprints');
   const projectIds = (projects || []).map(p => p.id);
-  const { issues, loading: issuesLoading } = useWorkspaceAnalytics(projectIds);
+  const { issues, issueLinks, loading: issuesLoading } = useWorkspaceAnalytics(projectIds);
   const { sprints, loading: sprintsLoading, createSprint, updateSprint, deleteSprint, startSprint, completeSprint } = useSprints();
 
   const loading = issuesLoading || sprintsLoading;
@@ -357,6 +404,7 @@ export default function GlobalSprintsPage() {
                     index={index}
                     projectId={issue.projectId}
                     projectName={pName}
+                    issueLinks={issueLinks}
                   />
                 );
               }
@@ -495,7 +543,7 @@ export default function GlobalSprintsPage() {
                           {sprint.status === 'active' && <Badge label="Активний" color="#10b981" />}
                           {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
                           {sprint.status === 'completed' && <Badge label="Завершено" color="#cbd5e1" />}
-                          <span className="text-[11px] text-[#9a9a9a] shrink-0">{sprintIssues.length} задач</span>
+                          <span className="text-[11px] text-[#9a9a9a] shrink-0">{sprintIssues.length} завдань</span>
                           {sprint.startDate && (
                             <span className="text-[11px] text-[#9a9a9a] hidden sm:inline ml-2">
                               {formatSprintDates(sprint.startDate, sprint.endDate)}
@@ -520,7 +568,7 @@ export default function GlobalSprintsPage() {
                                 style="primary"
                                 size="sm"
                                 icon={Check}
-                                onClick={() => completeSprint(sprint.id)}
+                                onClick={() => setShowCompleteSprintModal(sprint)}
                               >
                                 Завершити
                               </Button>
@@ -570,12 +618,12 @@ export default function GlobalSprintsPage() {
                 <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>
-                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} задач</span>
+                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} завдань</span>
                   </div>
                   <button
                     onClick={() => setShowCreateTaskModal(true)}
                     className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                    title="Додати задачу в беклог"
+                    title="Додати завдання в беклог"
                   >
                     <Plus size={16} />
                   </button>
@@ -613,6 +661,29 @@ export default function GlobalSprintsPage() {
         <SprintCreateModal
           onClose={() => setShowCreateSprintModal(false)}
           onSave={handleCreateSprint}
+        />
+      )}
+
+      {/* Complete Sprint Modal */}
+      {showCompleteSprintModal && (
+        <SprintCompleteModal
+          sprint={showCompleteSprintModal}
+          sprints={sprints}
+          incompleteIssues={filteredIssues.filter(i => i.sprintId === showCompleteSprintModal.id && i.status !== 'done' && i.columnId !== 'done')}
+          onClose={() => setShowCompleteSprintModal(null)}
+          onConfirm={async (moveToSprintId) => {
+            try {
+              const incompleteIssueIds = filteredIssues
+                .filter(i => i.sprintId === showCompleteSprintModal.id && i.status !== 'done' && i.columnId !== 'done')
+                .map(i => i.id);
+              await completeSprint(showCompleteSprintModal.id, moveToSprintId, incompleteIssueIds);
+              setShowCompleteSprintModal(null);
+              showToast('Спринт успішно завершено ✓');
+            } catch (err) {
+              console.error(err);
+              showToast('Помилка завершення спринта');
+            }
+          }}
         />
       )}
 

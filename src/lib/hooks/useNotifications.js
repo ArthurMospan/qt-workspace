@@ -61,6 +61,13 @@ export function useNotifications(userId, {
             seenIds.current.add(n.id);
             // 1. Browser native notification
             fireBrowserNotif(n.title, n.body, n.link);
+
+            if (typeof Audio !== 'undefined') {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+              audio.volume = 0.2;
+              audio.play().catch(() => {});
+            }
+
             // 2. In-app popup callback (goes to store)
             if (onNew) onNew(n);
           }

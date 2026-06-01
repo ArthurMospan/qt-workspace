@@ -5,6 +5,7 @@ import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
   Trash2, X, Pin, ChevronDown, Info, Users, UserPlus
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -60,6 +61,7 @@ function MessageBubble({
   const [editText, setEditText] = useState(msg.text || '');
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const router = useRouter();
 
   const showHeader = !prevMsg
     || prevMsg.senderId !== msg.senderId
@@ -103,9 +105,16 @@ function MessageBubble({
       {/* Avatar or time gutter */}
       <div className="w-9 shrink-0 flex justify-end items-start pt-0.5">
         {showHeader ? (
-          <div className="w-9 h-9 rounded-xl overflow-hidden">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`?member=${msg.senderId}`);
+            }}
+            className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            title="Переглянути профіль"
+          >
             <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
-          </div>
+          </button>
         ) : (
           <span className={`text-[10px] text-[#9a9a9a] leading-[1.8] pt-1 transition-opacity ${showActions ? 'opacity-100' : 'opacity-0'}`}>
             {msg.time}
@@ -117,7 +126,10 @@ function MessageBubble({
       <div className="flex-1 min-w-0">
         {showHeader && (
           <div className="flex items-baseline gap-2 mb-0.5">
-            <span className="font-semibold text-[14px] text-[#1f1f1f]">{msg.user}</span>
+            <span className="font-semibold text-[14px] text-[#1f1f1f] flex items-center gap-1">
+              {msg.user}
+              {members?.find(m => (m.id || m.uid) === msg.senderId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === msg.senderId).statusEmoji}</span>}
+            </span>
             <span className="text-[11px] text-[#9a9a9a]">{msg.time}</span>
             {msg.isPinned && (
               <span className="text-[10px] font-bold text-[#6366f1] bg-[#eef2ff] px-2 py-0.5 rounded-full">📌 Закріплено</span>
@@ -939,7 +951,8 @@ export default function ChatPage() {
         name: m.name || m.email,
         online: lastActive && (Date.now() - new Date(lastActive).getTime() < 120000),
         avatar: m.avatar,
-        isActive: activeDMSet.has(id)
+        isActive: activeDMSet.has(id),
+        statusEmoji: m.statusEmoji
       };
     })
     .sort((a, b) => {
@@ -1028,7 +1041,7 @@ export default function ChatPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
       {/* Two-zone layout */}
-      <div className="flex-1 flex overflow-hidden gap-3 px-3 pb-3 pt-3">
+      <div className="flex-1 flex overflow-hidden gap-3 p-[12px] pt-[56px]">
 
         {/* LEFT: Sidebar (Settings layout styled) */}
         <div className="w-[280px] bg-[#f4f4f5] rounded-[16px] flex flex-col overflow-hidden shrink-0">
@@ -1130,7 +1143,8 @@ export default function ChatPage() {
                             <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-[#f4f4f5]" />
                           )}
                         </div>
-                        <span className="text-[13px] flex-1 truncate">
+                        <span className="text-[13px] flex-1 truncate flex items-center gap-1">
+                          {u.statusEmoji && <span>{u.statusEmoji}</span>}
                           {u.name}
                         </span>
                         {u.online && !active && (
@@ -1165,10 +1179,15 @@ export default function ChatPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-[15px] text-[#1f1f1f] truncate">
+                <h2 className="font-bold text-[15px] text-[#1f1f1f] truncate flex items-center gap-1.5">
                   {activeChannel.type === 'channel'
                     ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
-                    : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті')}
+                    : (
+                      <>
+                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && <span>{dms.find(d => d.id === activeChannel.id).statusEmoji}</span>}
+                        {dms.find(d => d.id === activeChannel.id)?.name || 'Особисті'}
+                      </>
+                    )}
                 </h2>
                 {activeChannel.type === 'dm' && (
                   <p className="text-[11px] text-[#9a9a9a]">

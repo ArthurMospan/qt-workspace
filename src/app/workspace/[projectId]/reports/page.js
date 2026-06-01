@@ -69,8 +69,8 @@ export default function ReportsPage({ params }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Clock}       label="Витрачено"  value={`${spentHours}г`} sub={budget > 0 ? `з ${project?.totalBudgetHours}г бюджету` : 'без бюджету'} color="#6366f1" />
           <StatCard icon={TrendingUp}  label="Burn Rate"  value={`${burnPct}%`}     sub={remaining !== null ? `залишилось ~${remaining}г` : '—'} color={burnPct >= 90 ? '#dc2626' : '#10b981'} />
-          <StatCard icon={CheckCircle} label="Виконано"   value={doneCount}          sub={`з ${totalCount} задач`} color="#10b981" />
-          <StatCard icon={AlertTriangle} label="Відкрито" value={openCount}          sub="активних задач" color="#f97316" />
+          <StatCard icon={CheckCircle} label="Виконано"   value={doneCount}          sub={`з ${totalCount} завдань`} color="#10b981" />
+          <StatCard icon={AlertTriangle} label="Відкрито" value={openCount}          sub="активних завдань" color="#f97316" />
         </div>
 
         {/* Burn rate bar */}
@@ -131,7 +131,7 @@ export default function ReportsPage({ params }) {
         {/* Issues by status */}
         {byStatus.length > 0 && (
           <div className="bg-white border border-[#e9e9e9] rounded-[14px] p-5">
-            <h3 className="text-[13px] font-bold text-[#1f1f1f] mb-4">Задачі по статусах</h3>
+            <h3 className="text-[13px] font-bold text-[#1f1f1f] mb-4">Завдання по статусах</h3>
             <div className="flex flex-col gap-2">
               {byStatus.map(({ col, label, count, color }) => (
                 <div key={col} className="flex items-center gap-3">

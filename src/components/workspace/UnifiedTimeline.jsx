@@ -8,6 +8,7 @@ import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
 
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
@@ -24,6 +25,7 @@ function fmtClock(ts) {
 }
 
 export default function UnifiedTimeline({ issueId, projectId }) {
+  const router = useRouter();
   const { currentUser } = useAppContext();
   const { members } = useOrganization();
   const showToast = useWorkspaceStore(s => s.showToast);
@@ -42,8 +44,10 @@ export default function UnifiedTimeline({ issueId, projectId }) {
     query: '',
     startIndex: -1,
     cursorIndex: -1,
-    selectedIndex: 0
+    selectedIndex: 0,
+    ignoreIndex: -1
   });
+  const wrapperRef = useRef(null);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -52,23 +56,26 @@ export default function UnifiedTimeline({ issueId, projectId }) {
   }, [mentionState.active, mentionState.query, members]);
 
   const checkMentions = (text, cursorPosition) => {
-    const lastAtIdx = text.lastIndexOf('@', cursorPosition - 1);
-    if (lastAtIdx === -1) {
-      setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
-      return;
-    }
-    const textBetween = text.slice(lastAtIdx, cursorPosition);
-    if (/\s/.test(textBetween)) {
-      setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
-      return;
-    }
-    const queryStr = textBetween.slice(1);
-    setMentionState({
-      active: true,
-      query: queryStr,
-      startIndex: lastAtIdx,
-      cursorIndex: cursorPosition,
-      selectedIndex: 0
+    setMentionState(prev => {
+      const lastAtIdx = text.lastIndexOf('@', cursorPosition - 1);
+      if (lastAtIdx === -1) {
+        return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      }
+      const textBetween = text.slice(lastAtIdx, cursorPosition);
+      if (/\s/.test(textBetween)) {
+        return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      }
+      if (prev.ignoreIndex === lastAtIdx) {
+        return prev;
+      }
+      return {
+        active: true,
+        query: textBetween.slice(1),
+        startIndex: lastAtIdx,
+        cursorIndex: cursorPosition,
+        selectedIndex: prev.active && prev.startIndex === lastAtIdx ? prev.selectedIndex : 0,
+        ignoreIndex: -1
+      };
     });
   };
 
@@ -79,7 +86,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
     const nextInput = textBefore + mentionText + textAfter;
     setInput(nextInput);
     
-    setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+    setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 });
     
     setTimeout(() => {
       if (inputRef.current) {
@@ -95,8 +102,8 @@ export default function UnifiedTimeline({ issueId, projectId }) {
   useEffect(() => {
     if (!mentionState.active) return;
     const handleOutsideClick = (e) => {
-      if (inputRef.current && !inputRef.current.contains(e.target)) {
-        setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0 });
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 });
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -170,20 +177,30 @@ export default function UnifiedTimeline({ issueId, projectId }) {
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
             return (
               <div key={`comment-${item.id}`} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                <div className="shrink-0 mt-auto mb-5">
+                <button 
+                  className="shrink-0 mt-auto mb-5 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`?member=${item.authorId}`);
+                  }}
+                  title="Переглянути профіль"
+                >
                   <UserAvatar
                     user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }}
                     size={28}
                   />
-                </div>
+                </button>
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[82%] min-w-0`}>
                   {!isMe && (
-                    <span className="text-[11px] font-bold text-[#1f1f1f] mb-1 ml-1">{item.authorName}</span>
+                    <span className="text-[11px] font-bold text-[#1f1f1f] mb-1 ml-1 flex items-center gap-1">
+                      {item.authorName}
+                      {members.find(m => (m.id || m.uid) === item.authorId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === item.authorId).statusEmoji}</span>}
+                    </span>
                   )}
-                  <div className={`px-[12px] py-[9px] text-[13px] leading-[20px] break-words whitespace-pre-wrap ${
+                  <div className={`px-[14px] py-[10px] text-[13px] leading-[20px] break-words whitespace-pre-wrap shadow-sm border ${
                     isMe
-                      ? 'bg-[#1f1f1f] text-white rounded-[12px] rounded-br-[4px]'
-                      : 'bg-white text-[#1f1f1f] rounded-[12px] rounded-bl-[4px]'
+                      ? 'bg-[#1f1f1f] text-white border-[#1f1f1f] rounded-[16px] rounded-br-[4px]'
+                      : 'bg-white text-[#1f1f1f] border-[#e4e4e7] rounded-[16px] rounded-bl-[4px]'
                   }`}>
                     {item.text}
                   </div>
@@ -199,10 +216,12 @@ export default function UnifiedTimeline({ issueId, projectId }) {
           if (item._type === 'time') {
             const member = members.find(m => m.id === item.userId);
             return (
-              <div key={`time-${item.id}`} className="flex justify-center">
-                <div className="flex items-center gap-[6px] bg-[#eff6ff] text-[#3b82f6] px-3 py-[5px] rounded-full text-[11px] font-semibold">
-                  <Clock size={11} />
-                  <span>{member?.name || 'Хтось'} списав <strong>{fmtTime(item.spentMinutes)}</strong>{item.description ? ` — ${item.description}` : ''}</span>
+              <div key={`time-${item.id}`} className="flex justify-center my-1">
+                <div className="flex items-center gap-[6px] bg-white border border-[#e4e4e7] shadow-sm text-[#52525b] px-3 py-[6px] rounded-full text-[11px] font-medium">
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
+                    <Clock size={10} className="text-[#1f1f1f]" />
+                  </div>
+                  <span><strong className="text-[#1f1f1f]">{member?.name || 'Хтось'}</strong> списав <strong className="text-[#1f1f1f]">{fmtTime(item.spentMinutes)}</strong>{item.description ? ` — ${item.description}` : ''}</span>
                 </div>
               </div>
             );
@@ -230,7 +249,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
       </div>
 
       {/* Input Area — main accent */}
-      <div className="px-3 pb-3 shrink-0 relative">
+      <div className="px-3 pb-3 shrink-0 relative" ref={wrapperRef}>
         {/* Autocomplete Mentions Dropdown */}
         {mentionState.active && filteredMembers.length > 0 && (
           <div className="absolute bottom-[100%] left-3 right-3 mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-[60] overflow-hidden max-h-[160px] overflow-y-auto">
@@ -252,7 +271,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
           </div>
         )}
 
-        <div className={`flex items-end gap-2 bg-white rounded-[10px] px-3 py-2 transition-all border ${input ? 'border-[#d9d9d9]' : 'border-transparent'}`}>
+        <div className={`flex items-end gap-2 bg-white rounded-[16px] px-3 py-[10px] transition-all shadow-sm border ${input ? 'border-[#cfcfcf]' : 'border-[#e4e4e7]'}`}>
           <div className="shrink-0 mt-[2px]">
             <UserAvatar
               user={{ id: currentUser?.uid || currentUser?.id, name: currentUser?.name, avatar: currentUser?.avatar }}
@@ -303,7 +322,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
-                  setMentionState(prev => ({ ...prev, active: false }));
+                  setMentionState(prev => ({ ...prev, active: false, ignoreIndex: prev.startIndex }));
                   return;
                 }
               }
@@ -314,7 +333,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
               }
             }}
             placeholder="Написати повідомлення..."
-            className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1f1f1f] placeholder:text-[#cfcfcf] font-normal resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
+            className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1f1f1f] placeholder:text-[#a1a1aa] font-medium resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
             style={{ height: '28px' }}
           />
           <Button

@@ -1,5 +1,5 @@
 'use client';
-import { useAppContext } from '@/lib/context/AppContext';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const DEFAULT_LOCALIZATION = {
   dateFormat: 'DD.MM.YYYY',
@@ -9,8 +9,8 @@ const DEFAULT_LOCALIZATION = {
 };
 
 export function useLocalization() {
-  const { currentUser } = useAppContext();
-  const settings = currentUser?.localization || DEFAULT_LOCALIZATION;
+  const storeLoc = useWorkspaceStore(s => s.localization);
+  const settings = storeLoc || DEFAULT_LOCALIZATION;
 
   const {
     dateFormat = 'DD.MM.YYYY',

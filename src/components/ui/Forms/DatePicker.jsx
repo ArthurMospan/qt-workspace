@@ -9,17 +9,21 @@ const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 
 // Utility: Format date to YYYY-MM-DD
 const formatDate = (date) => {
   if (!date) return '';
-  const d = new Date(date);
+  const d = date.toDate ? date.toDate() : new Date(date);
+  if (isNaN(d.getTime())) return '';
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${month}-${day}`;
 };
 
-// Utility: Parse YYYY-MM-DD to Date
-const parseDate = (dateStr) => {
-  if (!dateStr) return null;
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
+// Utility: Parse to Date
+const parseDate = (val) => {
+  if (!val) return null;
+  if (typeof val === 'string' && val.includes('-')) {
+    const [year, month, day] = val.split('T')[0].split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return val.toDate ? val.toDate() : new Date(val);
 };
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -35,6 +39,8 @@ export const DatePicker = forwardRef(({
   startDate = '',
   endDate = '',
   onDateRangeChange,
+  inputClassName,
+  hideIcon,
   ...props
 }, ref) => {
   const { formatDate: formatLocal, getWeekdays, getFirstDayOffset } = useLocalization();
@@ -91,10 +97,12 @@ export const DatePicker = forwardRef(({
     <div ref={containerRef} className={`relative w-full ${className}`}>
       {/* Input Field */}
       <div className="relative">
-        <Calendar
-          size={14}
-          className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a] pointer-events-none"
-        />
+        {!hideIcon && (
+          <Calendar
+            size={14}
+            className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a] pointer-events-none"
+          />
+        )}
         <input
           ref={ref}
           type="text"
@@ -103,7 +111,7 @@ export const DatePicker = forwardRef(({
           disabled={disabled}
           readOnly
           onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={`
+          className={inputClassName || `
             h-[36px] w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
             text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
             transition-colors placeholder:text-[#a3a3a3]
@@ -125,7 +133,7 @@ export const DatePicker = forwardRef(({
             }}
             className="absolute right-[8px] top-1/2 -translate-y-1/2 text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         )}
       </div>

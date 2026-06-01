@@ -94,21 +94,21 @@ export function generateEmailTemplate({
   const templates = {
     commented: `
       <h2>${title}</h2>
-      <p><strong>${userName}</strong> написав коментар до задачи <code>${issueKey}</code>:</p>
+      <p><strong>${userName}</strong> написав коментар до завданьи <code>${issueKey}</code>:</p>
       <blockquote style="border-left: 4px solid #e9e9e9; padding-left: 16px; margin: 16px 0; color: #666;">
         ${body}
       </blockquote>
-      <p><a href="${fullLink}" style="display: inline-block; padding: 12px 24px; background: #1f1f1f; color: white; border-radius: 8px; text-decoration: none;">Переглянути задачу</a></p>
+      <p><a href="${fullLink}" style="display: inline-block; padding: 12px 24px; background: #1f1f1f; color: white; border-radius: 8px; text-decoration: none;">Переглянути завдання</a></p>
     `,
     assigned: `
       <h2>${title}</h2>
-      <p>Вам призначена задача <code>${issueKey}</code> в проекті <strong>${projectName}</strong>.</p>
+      <p>Вам призначена завдання <code>${issueKey}</code> в проекті <strong>${projectName}</strong>.</p>
       <p>${body}</p>
-      <p><a href="${fullLink}" style="display: inline-block; padding: 12px 24px; background: #1f1f1f; color: white; border-radius: 8px; text-decoration: none;">Переглянути задачу</a></p>
+      <p><a href="${fullLink}" style="display: inline-block; padding: 12px 24px; background: #1f1f1f; color: white; border-radius: 8px; text-decoration: none;">Переглянути завдання</a></p>
     `,
     blocked: `
       <h2>${title}</h2>
-      <p>Задача <code>${issueKey}</code> заблокована іншою задачею.</p>
+      <p>Завдання <code>${issueKey}</code> заблокована іншою завданням.</p>
       <p>${body}</p>
       <p><a href="${fullLink}" style="display: inline-block; padding: 12px 24px; background: #dc2626; color: white; border-radius: 8px; text-decoration: none;">Переглянути деталі</a></p>
     `,

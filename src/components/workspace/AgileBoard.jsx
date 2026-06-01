@@ -28,7 +28,7 @@ function InlineAddForm({ onAdd, onCancel }) {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
           if (e.key === 'Escape') { onCancel(); setTitle(''); }
         }}
-        placeholder="Назва задачі... (Enter — зберегти)"
+        placeholder="Назва завдання... (Enter — зберегти)"
         rows={2}
         className="w-full px-3 py-2 bg-white rounded-[12px] border border-[#e9e9e9] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] resize-none focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
       />
@@ -44,7 +44,7 @@ function InlineAddForm({ onAdd, onCancel }) {
   );
 }
 
-export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false }) {
+export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false, issueLinks = [] }) {
   const [mounted, setMounted] = useState(false);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
   
@@ -64,10 +64,24 @@ export default function AgileBoard({ issues, members, projectId, project, active
   }
   
   const [activeAddColId, setActiveAddColId] = useState(null);
-  const [collapsedCols, setCollapsedCols] = useState(['__hidden__']);
+  const [collapsedCols, setCollapsedCols] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`qt_board_collapsed_${projectId || 'default'}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return ['__hidden__'];
+  });
 
   const toggleColumnCollapse = (id) => {
-    setCollapsedCols(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+    setCollapsedCols(prev => {
+      const next = prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`qt_board_collapsed_${projectId || 'default'}`, JSON.stringify(next));
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -179,6 +193,11 @@ export default function AgileBoard({ issues, members, projectId, project, active
           <div className="flex gap-4 pb-2 shrink-0 pr-2">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
+              const colTotalIssues = issues.filter(i => {
+                if (col.isHiddenContainer) return col.colIds.includes(i.columnId);
+                return i.columnId === col.id;
+              });
+
               if (isCollapsed) {
                 return (
                   <div key={col.id} className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-[#f4f4f5] rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
@@ -187,6 +206,9 @@ export default function AgileBoard({ issues, members, projectId, project, active
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                     <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                      {colTotalIssues.length}
+                    </span>
                   </div>
                 );
               }
@@ -202,13 +224,16 @@ export default function AgileBoard({ issues, members, projectId, project, active
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
                     <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
+                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                      {colTotalIssues.length}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     {!col.isHiddenContainer && (
                       <button
                         onClick={() => setActiveAddColId(col.id)}
                         className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                        title="Додати задачу"
+                        title="Додати завдання"
                       >
                         <Plus size={16} />
                       </button>
@@ -292,7 +317,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                               <button
                                 onClick={() => setActiveAddColId(col.id)}
                                 className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                                title="Додати задачу"
+                                title="Додати завдання"
                               >
                                 <Plus size={16} />
                               </button>
@@ -326,7 +351,9 @@ export default function AgileBoard({ issues, members, projectId, project, active
                                 labels={labels}
                                 index={i}
                                 projectId={projectId}
+                                projectName={project?.name}
                                 isTimerActive={activeTimerIssueId === issue.id}
+                                issueLinks={issueLinks}
                               />
                             ))}
                             {provided.placeholder}

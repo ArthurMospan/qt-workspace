@@ -136,7 +136,7 @@ function Column({ col, tasks, members, onCardClick, onAddCard }) {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
               if (e.key === 'Escape') { setAdding(false); setTitle(''); }
             }}
-            placeholder="Назва задачі..."
+            placeholder="Назва завдання..."
             rows={2}
             className="w-full px-3 py-2 bg-white rounded-[8px] border border-[#e9e9e9] text-[13px] text-[#1f1f1f] placeholder-[#cfcfcf] resize-none focus:border-[#1f1f1f] transition-colors"
           />

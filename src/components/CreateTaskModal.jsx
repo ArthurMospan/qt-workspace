@@ -83,7 +83,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
-      setError(err?.message || 'Помилка створення задачі. Перевір консоль.');
+      setError(err?.message || 'Помилка створення завдання. Перевір консоль.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[520px] mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e9e9e9]">
-          <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова задача</h2>
+          <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова завдання</h2>
           <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors p-1 rounded-[8px] hover:bg-[#f4f4f5]">
             <X size={18} />
           </button>
@@ -147,7 +147,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Description */}
           <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-bold text-[#1f1f1f] pl-1">Опис задачі</label>
+            <label className="text-[12px] font-bold text-[#1f1f1f] pl-1">Опис завдання</label>
             <MarkdownEditor 
               value={form.description}
               onChange={(val) => set('description', val)}
@@ -292,7 +292,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             loading={loading}
             className="w-full mt-2"
           >
-            {loading ? 'Створення...' : 'Створити задачу'}
+            {loading ? 'Створення...' : 'Створити завдання'}
           </Button>
         </form>
       </div>

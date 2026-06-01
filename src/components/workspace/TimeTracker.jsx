@@ -27,6 +27,17 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (useWorkspaceStore.getState().activeTimer?.issueId === issue?.id) {
+        const result = useWorkspaceStore.getState().stopTimer();
+        if (result && result.minutes > 0) {
+          onLogTime(result.minutes, `Час з таймера (автозбереження)`).catch(() => {});
+        }
+      }
+    };
+  }, [issue?.id, onLogTime]);
+
   const handleManualLog = async () => {
     const total = (parseInt(logForm.hours || 0) * 60) + parseInt(logForm.minutes || 0);
     if (total <= 0) return;
@@ -97,7 +108,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
       )}
 
       {activeTimer && !isThisTimer && (
-        <p className="text-[10px] text-[#9a9a9a] mb-2">Таймер активний на іншій задачі</p>
+        <p className="text-[10px] text-[#9a9a9a] mb-2">Таймер активний на іншій завдання</p>
       )}
 
       {/* Manual log */}

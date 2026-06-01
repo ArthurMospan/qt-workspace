@@ -151,7 +151,7 @@ export default function MemberDetailPage({ params }) {
                 <div className="bg-white rounded-[16px] p-5 border border-[#e9e9e9] shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-[#10b981] mb-2">
                     <CheckCircle2 size={16} />
-                    <span className="text-[12px] font-bold">Виконано задач</span>
+                    <span className="text-[12px] font-bold">Виконано завдань</span>
                   </div>
                   <p className="text-[32px] font-black text-[#1f1f1f] tracking-tight">{mockStats.tasksDone}</p>
                 </div>

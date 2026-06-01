@@ -1,7 +1,7 @@
 'use client';
 // src/app/workspace/[projectId]/issue/[issueId]/page.js
 import { use, useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAppContext }        from '@/lib/context/AppContext';
 import { useIssues }           from '@/lib/hooks/useIssues';
@@ -19,10 +19,12 @@ import UserAvatar from '@/components/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
-import { TaskAttributesPanel } from '@/components/ui';
+import Tabs from '@/components/ui/Tabs';
+import { TaskAttributesPanel, Tooltip } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
@@ -296,11 +298,13 @@ const RELATION_LABELS = {
   'is-blocked-by': 'Блокується',
   'duplicates': 'Дублює',
   'relates-to': 'Повʼязана з',
-  'subtask-of': 'Підзадача для'
+  'subtask-of': 'Підзавдання для'
 };
 
 export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { formatDate } = useLocalization();
   const { projects, currentUser } = useAppContext();
   const { issues, updateIssue, deleteIssue, moveIssue } = useIssues(projectId);
@@ -346,6 +350,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   }));
 
   // ── UI state ──────────────────────────────────────────────────────
+  const [scrollTop, setScrollTop] = useState(0);
   const [showSubInput, setShowSubInput] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
@@ -356,12 +361,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [linkTargetId, setLinkTargetId] = useState('');
   const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(-1);
   const [editingSubtaskText, setEditingSubtaskText] = useState('');
-  
+  const [timeLogsPage, setTimeLogsPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('description');
   const actionsDropdownRef = useRef(null);
   const reporterDropdownRef = useRef(null);
-  
   const [logForm,      setLogForm]      = useState(null);
+  const [logTab, setLogTab] = useState('spend');
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
+  const TIME_LOGS_PER_PAGE = 5;
 
   // Click outside handlers
   useEffect(() => {
@@ -383,6 +390,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [draft, setDraft] = useState({});
 
   const issue = issues.find(i => i.id === issueId);
+
+  useEffect(() => {
+    const logTimeParam = searchParams.get('logTime');
+    if (logTimeParam) {
+      setLogForm({ minutes: parseInt(logTimeParam), desc: '', workType: 'development' });
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
 
   // ── Breadcrumbs ───────────────────────────────────────────────────
   useEffect(() => {
@@ -537,16 +552,33 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '', workType: 'development' });
     } else {
       if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
-      startTimer(issueId);
+      startTimer(issueId, projectId);
     }
   };
 
   const handleLogTime = async () => {
-    if (!logForm || logForm.minutes <= 0) { setLogForm(null); return; }
-    const uid = currentUser?.id || currentUser?.uid;
-    await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc, logForm.workType);
-    await update({ spentMinutes: spentMin + logForm.minutes });
-    showToast(`${logForm.minutes} хв списано ✓`);
+    if (!logForm) return;
+
+    if (logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
+      await update({ estimMinutes: logForm.estim });
+    }
+
+    if (logForm.minutes > 0) {
+      if (logForm.id) {
+        await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc, workType: logForm.workType });
+        const oldLog = timeLogs.find(l => l.id === logForm.id);
+        const diff = logForm.minutes - (oldLog?.spentMinutes || 0);
+        if (diff !== 0) await update({ spentMinutes: Math.max(0, spentMin + diff) });
+        showToast('Запис оновлено ✓');
+      } else {
+        const uid = currentUser?.id || currentUser?.uid;
+        await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc, logForm.workType);
+        await update({ spentMinutes: spentMin + logForm.minutes });
+        showToast(`${logForm.minutes} хв списано ✓`);
+      }
+    } else if (logForm.minutes === 0 && logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
+      showToast('Оцінку часу оновлено ✓');
+    }
     setLogForm(null);
   };
 
@@ -574,10 +606,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleDeleteSubtask = async (index) => {
-    if (!confirm('Видалити цю підзадачу?')) return;
+    if (!confirm('Видалити цю підзавдання?')) return;
     const subs = (issue.subtasks || []).filter((_, idx) => idx !== index);
     await update({ subtasks: subs });
-    showToast('Підзадачу видалено ✓');
+    showToast('Підзавдання видалено ✓');
   };
 
   const handleSaveSubtaskEdit = async (index) => {
@@ -587,7 +619,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     await update({ subtasks: subs });
     setEditingSubtaskIndex(-1);
     setEditingSubtaskText('');
-    showToast('Підзадачу оновлено ✓');
+    showToast('Підзавдання оновлено ✓');
   };
 
   const handleDelete = async () => {
@@ -600,17 +632,22 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // RENDER
   // ════════════════════════════════════════════════════════════════
   return (
-    <div className={`flex-1 flex flex-col overflow-y-auto custom-scrollbar ${isModal ? 'bg-white' : 'bg-transparent'}`}>
+    <div className={`flex-1 flex flex-col overflow-hidden ${isModal ? 'bg-white' : 'bg-transparent'}`}>
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
-      <div className={`w-full px-[24px] md:px-[32px] ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px]`}>
+      <div className={`w-full px-[24px] md:px-[32px] ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-hidden`}>
         
-        {/* TITLE & ACTIONS */}
-        <div className="flex items-center justify-between gap-[16px] w-full pt-[12px] pb-[12px] mb-5">
-          <div className="flex flex-col gap-[4px] flex-1 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] flex-1 min-h-0 items-stretch">
+          
+          {/* LEFT SIDE (Data) */}
+          <div className="lg:col-span-2 flex flex-col gap-[16px] min-h-0 overflow-hidden">
+        
+            {/* TITLE & ACTIONS */}
+            <div className="flex items-start justify-between gap-[16px] w-full pt-[12px]">
+              <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {isEditing ? (
-              <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-[#1f1f1f] tracking-tight bg-transparent border-b-2 border-[#1f1f1f] pb-1 outline-none w-full" placeholder="Назва задачі..." />
+              <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-[#1f1f1f] tracking-tight bg-transparent border-b-2 border-[#1f1f1f] pb-1 outline-none w-full" placeholder="Назва завдання..." />
             ) : (
               <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight leading-tight">{issue.title}</h1>
             )}
@@ -620,10 +657,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  showToast('Посилання на задачу скопійовано! ✓');
+                  showToast('Посилання на завдання скопійовано! ✓');
                 }}
                 className="font-bold text-[#1f1f1f] hover:text-[#6366f1] hover:underline uppercase tracking-widest transition-colors cursor-pointer"
-                title="Копіювати посилання на задачу"
+                title="Копіювати посилання на завдання"
               >
                 {issue.issueKey}
               </button>
@@ -641,13 +678,17 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 </button>
                 {showReporterDropdown && reporter && (
                   <div className="absolute left-0 top-full mt-1 w-[180px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-[6px] z-50">
-                    <Link
-                      href={`/workspace/team/${reporter.id || reporter.uid}`}
-                      onClick={() => setShowReporterDropdown(false)}
+                    <button
+                      onClick={() => {
+                        setShowReporterDropdown(false);
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.set('member', reporter.id || reporter.uid);
+                        router.push(`${pathname}?${params.toString()}`);
+                      }}
                       className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors text-left font-medium"
                     >
                       Переглянути профіль
-                    </Link>
+                    </button>
                     <Link
                       href={`/workspace/chat?user=${reporter.id || reporter.uid}`}
                       onClick={() => setShowReporterDropdown(false)}
@@ -661,22 +702,39 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
               
               {/* Created relative time */}
-              <div
-                className="flex items-center gap-1 cursor-help"
-                title={`Створено: ${issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleString('uk-UA') : issue.createdAt ? new Date(issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+              <Tooltip
+                content={`Створено: ${issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleString('uk-UA') : issue.createdAt ? new Date(issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+                position="bottom"
               >
-                <span>створили</span>
-                <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.createdAt)}</span>
-              </div>
+                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-[#cfcfcf] transition-colors">
+                  <span>створили</span>
+                  <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.createdAt)}</span>
+                </div>
+              </Tooltip>
               <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
               
               {/* Updated relative time */}
-              <div
-                className="flex items-center gap-1 cursor-help"
-                title={`Оновлено: ${(issue.updatedAt || issue.createdAt)?.toDate ? (issue.updatedAt || issue.createdAt).toDate().toLocaleString('uk-UA') : (issue.updatedAt || issue.createdAt) ? new Date(issue.updatedAt || issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+              <Tooltip
+                content={`Оновлено: ${(issue.updatedAt || issue.createdAt)?.toDate ? (issue.updatedAt || issue.createdAt).toDate().toLocaleString('uk-UA') : (issue.updatedAt || issue.createdAt) ? new Date(issue.updatedAt || issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+                position="bottom"
               >
-                <span>оновили</span>
-                <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
+                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-[#cfcfcf] transition-colors">
+                  <span>оновили</span>
+                  <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
+                </div>
+              </Tooltip>
+              
+              <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+              
+              <div className="flex items-center gap-1.5">
+                <Clock size={13} className="text-[#9a9a9a]" />
+                <span>Всього залоговано:</span>
+                <span className="text-[#1f1f1f] font-semibold">{fmtMin(spentMin)}</span>
+                {estimMin > 0 && (
+                  <span className="text-[#9a9a9a] font-normal">
+                    {' '}(Оцінка: <span className="font-semibold text-[#1f1f1f]">{fmtMin(estimMin)}</span>)
+                  </span>
+                )}
               </div>
               
               {isOverdue && (
@@ -735,31 +793,27 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </button>
             )}
           </div>
-        </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px]">
-          
-          {/* LEFT SIDE (Data) */}
-          <div className="lg:col-span-2 flex flex-col gap-[16px]">
-            
             {/* ATTRIBUTES STRIP */}
+            <div className={`sticky ${isModal ? 'top-0' : 'top-[56px]'} z-30 -mx-4 px-4 mb-2`}>
             <TaskAttributesPanel
               primaryChildren={
                 <>
                   {/* Status */}
-                  <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Статус</span>
                     <Select value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Assignee */}
-                  <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Виконавець</span>
-                    <Select value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
+                    <Select value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Sprint */}
-                  <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Спринт</span>
                     <Select 
                       value={issue.sprintId || ''} 
@@ -773,7 +827,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Priority */}
-                  <div className="flex flex-col gap-[4px] min-w-[110px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Пріоритет</span>
                     <Select
                       value={draft.priority || issue.priority || ''}
@@ -787,7 +841,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Type */}
-                  <div className="flex flex-col gap-[4px] min-w-[110px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Тип</span>
                     <Select
                       value={draft.type || issue.type || ''}
@@ -799,83 +853,189 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full"
                     />
                   </div>
-                </>
-              }
-              secondaryChildren={
-                <>
+
                   {/* Due date */}
-                  <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors">
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors">
                     <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Дедлайн</span>
-                    {isEditing ? (
-                      <input type="date" value={draft.dueDate || ''} onChange={e => setDraft(d => ({ ...d, dueDate: e.target.value }))} className="text-[13px] font-medium text-[#1f1f1f] bg-transparent outline-none h-[22px] w-full" />
-                    ) : (
-                      <span className={`text-[13px] font-medium h-[22px] flex items-center ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-[#1f1f1f]' : 'text-[#cfcfcf]'}`}>{dueStr || 'Не вказано'}</span>
-                    )}
+                    <DatePicker 
+                      hideIcon 
+                      inputClassName={`bg-transparent p-0 m-0 h-[22px] w-full text-[13px] font-medium outline-none cursor-pointer ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-[#1f1f1f]' : 'text-[#cfcfcf]'}`}
+                      value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
+                      onChange={(val) => {
+                        if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
+                        else update({ dueDate: val || null });
+                      }}
+                      placeholder="Не вказано"
+                    />
                   </div>
 
                   {/* Time + Timer */}
-                  <div className="flex flex-col gap-[4px] min-w-[180px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors">
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Витрачено / Заплановано</span>
+                  <div 
+                    className="flex-1 min-w-[150px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      if (e.target.closest('button')) return;
+                      setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' });
+                      setLogTab('spend');
+                    }}
+                  >
+                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Трекінг часу</span>
                     <div className="flex items-center gap-2 h-[22px]">
-                      <span className="text-[13px] font-bold text-[#1f1f1f]">{fmtMin(spentMin)}</span>
-                      {estimMin > 0 && <><span className="text-[12px] text-[#cfcfcf]">/</span><span className="text-[12px] font-semibold text-[#9a9a9a]">{fmtMin(estimMin)}</span></>}
-                      <button onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`ml-1 flex items-center justify-center w-[22px] h-[22px] rounded-[8px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-[#e9e9e9] text-[#1f1f1f] hover:bg-[#d9d9d9]'}`}>
-                        {isTimerMine ? <StopIcon size={11} className="animate-pulse" /> : <Play size={11} />}
+                      <button onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`flex items-center justify-center w-[22px] h-[22px] rounded-[6px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-[#e9e9e9] text-[#1f1f1f] hover:bg-[#d9d9d9]'}`}>
+                        {isTimerMine ? <StopIcon size={11} className="animate-pulse fill-current" /> : <Play size={11} className="ml-[2px]" />}
                       </button>
+                      {isTimerMine ? (
+                        <span className="text-[13px] font-bold font-mono text-[#ef4444] animate-pulse leading-none pt-[1px]">{formatElapsed((spentMin * 60) + timerElapsed)}</span>
+                      ) : (
+                        <span className="text-[13px] font-bold font-mono text-[#1f1f1f] leading-none pt-[1px]">{fmtMin(spentMin)}</span>
+                      )}
+                      {estimMin > 0 && (
+                        <><span className="text-[12px] text-[#cfcfcf] leading-none pt-[1px]">/</span><span className="text-[13px] font-mono text-[#1f1f1f] leading-none pt-[1px]">{fmtMin(estimMin)}</span></>
+                      )}
                     </div>
                   </div>
                 </>
               }
             />
+            </div>
 
-            {/* LOG TIME FORM */}
+            {/* LOG TIME FORM MODAL */}
             {logForm && (
-              <div className="bg-[#f4f4f5] rounded-[12px] p-5">
-                <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">Списати час</h2>
-                <div className="flex gap-4 mb-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Хвилини</p>
-                    <input type="number" min="1" value={logForm.minutes} onChange={e => setLogForm(f => ({ ...f, minutes: parseInt(e.target.value) || 0 }))} className="w-[100px] text-[14px] font-bold bg-white rounded-[8px] px-3 py-2 outline-none border border-transparent focus:border-[#e9e9e9] transition-colors" />
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[440px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="px-6 pt-6 pb-4 border-b border-[#f0f0f0] flex items-center justify-between bg-[#fcfcfc]">
+                    <h3 className="text-[18px] font-bold text-[#1f1f1f]">Трекінг часу</h3>
+                    <button onClick={() => setLogForm(null)} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors">
+                      <X size={20} />
+                    </button>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Тип робіт</p>
-                    <Select value={logForm.workType || 'development'} onChange={val => setLogForm(f => ({ ...f, workType: val }))} options={[ { value: 'development', label: 'Development' }, { value: 'design', label: 'Design' }, { value: 'analytics', label: 'Analytics' }, { value: 'testing', label: 'Testing' }, { value: 'management', label: 'Management' } ]} />
+                  
+                  <div className="p-6 flex flex-col gap-4">
+                  <div className="flex gap-4 border-b border-[#e9e9e9]">
+                    <button onClick={() => setLogTab('spend')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'spend' ? 'border-[#1f1f1f] text-[#1f1f1f]' : 'border-transparent text-[#9a9a9a] hover:text-[#1f1f1f]'}`}>Списати час</button>
+                    {!logForm.id && (
+                      <button onClick={() => setLogTab('estim')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'estim' ? 'border-[#1f1f1f] text-[#1f1f1f]' : 'border-transparent text-[#9a9a9a] hover:text-[#1f1f1f]'}`}>Оцінка (Запланувати)</button>
+                    )}
                   </div>
-                </div>
-                <div className="mb-4">
-                  <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Опис (необовʼязково)</p>
-                  <input type="text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} className="w-full text-[13px] bg-white rounded-[10px] px-3 py-2 outline-none border border-transparent focus:border-[#e9e9e9] transition-colors" />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button style="secondary" size="sm" onClick={() => setLogForm(null)}>Скасувати</Button>
-                  <Button style="primary" size="sm" onClick={handleLogTime}>Зберегти лог</Button>
+                  
+                  {logTab === 'spend' ? (
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Списати час</p>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input type="number" min="0" placeholder="0" value={Math.floor(logForm.minutes / 60) || ''} onChange={e => {
+                               const hrs = parseInt(e.target.value) || 0;
+                               const mins = logForm.minutes % 60;
+                               setLogForm(f => ({ ...f, minutes: hrs * 60 + mins }));
+                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">год</span>
+                          </div>
+                          <div className="relative flex-1">
+                            <input type="number" min="0" max="59" placeholder="0" value={logForm.minutes % 60 || ''} onChange={e => {
+                               const mins = parseInt(e.target.value) || 0;
+                               const hrs = Math.floor(logForm.minutes / 60);
+                               setLogForm(f => ({ ...f, minutes: hrs * 60 + Math.min(mins, 59) }));
+                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">хв</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Запланувати час</p>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input type="number" min="0" placeholder="0" value={Math.floor((logForm.estim || 0) / 60) || ''} onChange={e => {
+                               const hrs = parseInt(e.target.value) || 0;
+                               const mins = (logForm.estim || 0) % 60;
+                               setLogForm(f => ({ ...f, estim: hrs * 60 + mins }));
+                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">год</span>
+                          </div>
+                          <div className="relative flex-1">
+                            <input type="number" min="0" max="59" placeholder="0" value={(logForm.estim || 0) % 60 || ''} onChange={e => {
+                               const mins = parseInt(e.target.value) || 0;
+                               const hrs = Math.floor((logForm.estim || 0) / 60);
+                               setLogForm(f => ({ ...f, estim: hrs * 60 + Math.min(mins, 59) }));
+                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">хв</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {logTab === 'spend' && (
+                    <div>
+                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Опис (необовʼязково)</p>
+                      <input type="text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} className="w-full text-[14px] bg-[#f4f4f5] rounded-[12px] px-4 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors" />
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3 justify-end mt-2">
+                    <Button style="secondary" size="md" onClick={() => setLogForm(null)}>Скасувати</Button>
+                    <Button style="primary" size="md" onClick={handleLogTime}>Зберегти лог</Button>
+                  </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* DESCRIPTION */}
-            <div className="bg-[#f4f4f5] rounded-[12px] p-5 flex flex-col gap-5">
-              <div>
-                <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">Опис</h2>
-                {isEditing ? (
-                  <textarea
-                    value={draft.description}
-                    onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
-                    placeholder="Додай детальний опис задачі..."
-                    rows={7}
-                    className="w-full px-4 py-3 bg-white rounded-[10px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:outline-none resize-y leading-relaxed transition-colors border border-transparent focus:border-[#e9e9e9]"
-                  />
-                ) : issue.description ? (
-                  <p className="text-[14px] text-[#1f1f1f] leading-relaxed whitespace-pre-wrap">{issue.description}</p>
-                ) : (
-                  <button onClick={enterEdit} className="text-[13px] text-[#cfcfcf] italic hover:text-[#9a9a9a] transition-colors text-left">
-                    Натисни Редагувати щоб додати опис...
+            {/* MAIN SECTIONS PANEL */}
+            <div className="bg-[#f4f4f5] rounded-[16px] p-5 flex flex-col gap-5 w-full flex-1 min-h-0 overflow-hidden">
+              {/* Pill Tabs */}
+              <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-fit">
+                {[
+                  { id: 'description', label: 'Завдання' },
+                  { id: 'time', label: 'Журнал часу', count: timeLogs.length },
+                  { id: 'links', label: "Зв'язки", count: links.filter(l => l.sourceIssueId === issueId).length }
+                ].map(t => (
+                  <button 
+                    key={t.id} 
+                    onClick={() => setActiveTab(t.id)} 
+                    className={`px-4 py-1.5 text-[13px] font-bold transition-all rounded-[8px] flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}
+                  >
+                    {t.label}
+                    {t.count > 0 && (
+                      <span className={`text-[10px] px-[6px] py-[1px] rounded-full font-bold ${
+                        activeTab === t.id ? 'bg-[#1f1f1f] text-white' : 'bg-[#e9e9e9] text-[#1f1f1f]'
+                      }`}>
+                        {t.count}
+                      </span>
+                    )}
                   </button>
-                )}
+                ))}
               </div>
 
-              {/* Labels (Мітки) Section inside Description card */}
-              <div className="border-t border-[#e9e9e9] pt-4 flex flex-col gap-2">
+              {/* Scrollable Tab Content */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5">
+                {activeTab === 'description' && (
+                <>
+              {/* DESCRIPTION */}
+              <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
+                <div>
+                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">Опис</h2>
+                  {isEditing ? (
+                    <textarea
+                      value={draft.description}
+                      onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
+                      placeholder="Додай детальний опис завдання..."
+                      rows={7}
+                      className="w-full px-4 py-3 bg-white rounded-[10px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:outline-none resize-y leading-relaxed transition-colors border border-transparent focus:border-[#e9e9e9]"
+                    />
+                  ) : issue.description ? (
+                    <p className="text-[14px] text-[#1f1f1f] leading-relaxed whitespace-pre-wrap">{issue.description}</p>
+                  ) : (
+                    <button onClick={enterEdit} className="text-[13px] text-[#cfcfcf] italic hover:text-[#9a9a9a] transition-colors text-left">
+                      Натисни Редагувати щоб додати опис...
+                    </button>
+                  )}
+                </div>
+
+                {/* Labels (Мітки) Section inside Description card */}
+                <div className="flex flex-col gap-2">
                 <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Мітки</span>
                 <div className="flex flex-wrap gap-2 items-center relative">
                   {(issue.labelIds || []).map(id => {
@@ -895,7 +1055,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   })}
                   <button
                     onClick={() => setShowLabelDropdown(v => !v)}
-                    className="flex items-center gap-1 px-[8px] py-[4px] rounded-full text-[11px] font-bold bg-white text-[#9a9a9a] border border-dashed border-[#cfcfcf] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
+                    className="flex items-center gap-1 px-[8px] py-[4px] rounded-[8px] text-[11px] font-bold bg-white text-[#9a9a9a] border border-dashed border-[#cfcfcf] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
                   >
                     <Plus size={10} /> Додати мітку
                   </button>
@@ -933,13 +1093,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* SUBTASKS */}
-            <div className="bg-[#f4f4f5] rounded-[12px] p-5">
+              {/* SUBTASKS */}
+              <div className="pt-2 border-t border-[#f4f4f5] mt-2">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Підзадачі</h2>
+                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Підзавдання</h2>
                   {subtasksAll > 0 && <span className="text-[11px] font-bold bg-[#e9e9e9] text-[#1f1f1f] px-2 py-[1px] rounded-full">{subtasksDone}/{subtasksAll}</span>}
                 </div>
                 <Button style="secondary" size="sm" icon={Plus} onClick={() => setShowSubInput(v => !v)}>Додати</Button>
@@ -991,23 +1150,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                           {s.done ? <CheckSquare size={16} className="text-[#10b981]" /> : <Square size={16} />}
                         </button>
                         <span
-                          className={`text-[13px] font-medium flex-1 cursor-text ${s.done ? 'line-through text-[#cfcfcf]' : 'text-[#1f1f1f]'}`}
-                          onDoubleClick={() => {
+                          className={`text-[13px] font-medium flex-1 cursor-pointer ${s.done ? 'line-through text-[#cfcfcf]' : 'text-[#1f1f1f]'}`}
+                          onClick={() => {
                             setEditingSubtaskIndex(i);
                             setEditingSubtaskText(s.title);
                           }}
-                          title="Двічі клацніть, щоб редагувати"
+                          title="Натисніть для редагування"
                         >
                           {s.title}
                         </span>
                         
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 transition-opacity">
                           <button
                             onClick={() => {
                               setEditingSubtaskIndex(i);
                               setEditingSubtaskText(s.title);
                             }}
-                            className="text-[#cfcfcf] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f4f4f5] transition-colors"
+                            className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f4f4f5] transition-colors"
                             title="Редагувати"
                           >
                             <Pencil size={12} />
@@ -1033,15 +1192,19 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       onKeyDown={e => { if (e.key === 'Enter') handleAddSubtask(); if (e.key === 'Escape') { setShowSubInput(false); setSubtaskText(''); } }}
                       placeholder="Що потрібно зробити?"
                     />
-                    <Button style="primary" size="sm" onClick={handleAddSubtask}>Додати</Button>
-                    <Button style="secondary" size="icon" icon={X} onClick={() => { setShowSubInput(false); setSubtaskText(''); }}>Закрити</Button>
+                    <Button style="primary" onClick={handleAddSubtask}>Додати</Button>
+                    <Button style="secondary" size="icon-lg" icon={X} onClick={() => { setShowSubInput(false); setSubtaskText(''); }}>Закрити</Button>
                   </div>
                 )}
               </div>
+              </div>
             </div>
+            </>
+            )}
 
-            {/* ISSUE LINKS */}
-            <div className="bg-[#f4f4f5] rounded-[12px] p-5">
+              {/* ISSUE LINKS */}
+              {activeTab === 'links' && (
+              <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Зв'язки</h2>
@@ -1116,7 +1279,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         </select>
                       </div>
                       <div className="flex-[2]">
-                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Задача</label>
+                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Завдання</label>
                         <select
                           value={linkTargetId}
                           onChange={e => setLinkTargetId(e.target.value)}
@@ -1130,7 +1293,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                               </option>
                             ))}
                           {issues.filter(i => i.id !== issueId).length === 0 && (
-                            <option value="">Немає інших задач у проєкті</option>
+                            <option value="">Немає інших завдань у проєкті</option>
                           )}
                         </select>
                       </div>
@@ -1157,9 +1320,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 )}
               </div>
             </div>
+            )}
 
-            {/* TIME LOGS LIST */}
-            <div className="bg-[#f4f4f5] rounded-[12px] p-5 mt-4">
+              {/* TIME LOGS LIST */}
+              {activeTab === 'time' && (
+              <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Журнал часу</h2>
@@ -1173,7 +1338,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </div>
 
               <div className="flex flex-col gap-[6px]">
-                {timeLogs.map(log => {
+                {timeLogs.slice(0, timeLogsPage * TIME_LOGS_PER_PAGE).map(log => {
                   const logMember = members.find(m => (m.id || m.uid) === log.userId);
                   const isLogAuthor = log.userId === currentUser?.uid || log.userId === currentUser?.id;
                   
@@ -1212,28 +1377,55 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       </div>
                       
                       {isLogAuthor && (
-                        <button
-                          onClick={() => handleDeleteTimeLog(log)}
-                          className="text-[#cfcfcf] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 shrink-0 self-center"
-                          title="Видалити запис"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center">
+                          <button
+                            onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '', workType: log.workType || 'development' }); setLogTab('spend'); }}
+                            className="text-[#cfcfcf] hover:text-[#1f1f1f] transition-colors p-1 rounded hover:bg-[#f4f4f5]"
+                            title="Редагувати запис"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTimeLog(log)}
+                            className="text-[#cfcfcf] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                            title="Видалити запис"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
                 })}
+                {timeLogs.length > timeLogsPage * TIME_LOGS_PER_PAGE && (
+                  <button
+                    onClick={() => setTimeLogsPage(p => p + 1)}
+                    className="mt-2 text-[12px] font-bold text-[#6366f1] hover:text-[#4f46e5] transition-colors py-2 text-center w-full rounded-[8px] hover:bg-[#e0e7ff]"
+                  >
+                    Показати ще
+                  </button>
+                )}
                 {timeLogs.length === 0 && (
-                  <p className="text-[12px] text-[#cfcfcf] italic text-center py-2">Час ще не списували</p>
+                  <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-[#e9e9e9]">
+                    <Clock size={32} className="text-[#cfcfcf] mb-3" />
+                    <p className="text-[13px] text-[#9a9a9a] font-medium max-w-[200px]">
+                      Час ще не залоговано — запустіть таймер або додайте запис вручну.
+                    </p>
+                  </div>
                 )}
               </div>
+            </div>
+            )}
+            </div>
+
+            {/* End of MAIN SECTIONS PANEL */}
             </div>
           </div>
 
           {/* RIGHT SIDE — CHAT */}
-          <div className="lg:col-span-1">
-            <div className="bg-[#f4f4f5] rounded-[12px] overflow-hidden flex flex-col sticky top-[24px]" style={{ height: 'calc(100vh - 148px)', maxHeight: '720px' }}>
-              <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => setLogForm({ minutes: 0, desc: '', workType: 'development' })} />
+          <div className="lg:col-span-1 h-full min-h-0">
+            <div className="bg-[#f4f4f5] rounded-[12px] overflow-hidden flex flex-col h-full">
+              <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' }); setLogTab('spend'); }} />
             </div>
           </div>
 

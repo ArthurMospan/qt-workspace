@@ -36,8 +36,8 @@ export default function Tag({
   };
 
   const sizeMap = {
-    default: 'px-[10px] py-[3px] rounded-[6px] text-[11px] gap-1.5',
-    small: 'px-[6px] py-[1.5px] rounded-[4px] text-[10px] gap-[4px]',
+    default: 'px-[10px] py-[3px] rounded-[8px] text-[11px] gap-1.5',
+    small: 'px-[6px] py-[1.5px] rounded-[6px] text-[10px] gap-[4px]',
   };
 
   const vClass = color ? '' : (variants[variant] || variants.default);

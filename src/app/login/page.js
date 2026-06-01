@@ -15,30 +15,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleDemoSignIn = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await signInWithEmail('demo@quickteam.me', 'demo123456');
-      sessionStorage.setItem('just_logged_in', 'true');
-      router.replace('/workspace');
-    } catch (err) {
-      console.error('[Demo Login] Error:', err);
-      setError('Помилка демо-входу. Будь ласка, переконайтеся, що ввімкнено Email/Password у консолі Firebase.');
-      setLoading(false);
-    }
-  };
+
 
   useEffect(() => {
     if (!authLoading && currentUser) {
       router.replace('/workspace');
-      return;
-    }
-    if (!authLoading && !currentUser && typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('demo') === '1' || params.get('auth') === 'demo') {
-        handleDemoSignIn();
-      }
     }
   }, [currentUser, authLoading, router]);
 
@@ -98,16 +79,53 @@ export default function LoginPage() {
           )}
         </button>
 
-        {/* Demo Sign-in Button */}
-        <button
-          onClick={handleDemoSignIn}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-white/10 text-white border border-white/20 py-[12px] px-6 rounded-[16px] text-[14px] font-semibold active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all"
+        {/* Email Sign-in Form */}
+        <form 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            try {
+              setLoading(true);
+              setError(null);
+              await signInWithEmail(email, password);
+              sessionStorage.setItem('just_logged_in', 'true');
+              router.replace('/workspace');
+            } catch (err) {
+              console.error('[Email Login] Error:', err);
+              setError('Помилка входу за Email. Перевірте пошту та пароль.');
+              setLoading(false);
+            }
+          }}
+          className="w-full flex flex-col gap-3"
         >
-          {loading ? (
-            <div className="w-[18px] h-[18px] border-[2px] border-white/20 border-t-white rounded-full animate-spin" />
-          ) : 'Увійти як Демо-користувач'}
-        </button>
+          <input 
+            type="email" 
+            name="email" 
+            placeholder="Електронна пошта" 
+            required 
+            disabled={loading}
+            className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-[12px] text-[14px] outline-none focus:border-white/30 transition-colors"
+          />
+          <input 
+            type="password" 
+            name="password" 
+            placeholder="Пароль" 
+            required 
+            disabled={loading}
+            className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-[12px] text-[14px] outline-none focus:border-white/30 transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-white/10 text-white border border-white/20 py-[12px] px-6 rounded-[16px] text-[14px] font-semibold active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all"
+          >
+            {loading ? (
+              <div className="w-[18px] h-[18px] border-[2px] border-white/20 border-t-white rounded-full animate-spin" />
+            ) : 'Увійти за Email'}
+          </button>
+        </form>
 
         {error && (
           <p className="mt-6 text-red-400 text-[13px] font-medium leading-relaxed bg-red-400/10 border border-red-400/20 px-4 py-3 rounded-[12px] w-full">

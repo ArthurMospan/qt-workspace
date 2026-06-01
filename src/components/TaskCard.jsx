@@ -12,7 +12,7 @@ const PRIORITY_CONFIG = {
 };
 
 const TYPE_CONFIG = {
-  task:    { label: 'Задача', color: '#6366f1' },
+  task:    { label: 'Завдання', color: '#6366f1' },
   bug:     { label: 'Баг',    color: '#ef4444' },
   feature: { label: 'Фіча',  color: '#10b981' },
   request: { label: 'Запит', color: '#f97316' },
@@ -70,7 +70,7 @@ export default function TaskCard({ task, teamMembers = [], onClick, isDragging }
           <div className="flex items-center gap-[6px] mb-[6px]">
             <CheckSquare size={12} className="text-[#9a9a9a]" />
             <span className="text-[11px] font-semibold text-[#1f1f1f]">{subtotalDone}/{subtotalAll}</span>
-            <span className="text-[11px] font-medium text-[#cfcfcf]">підзадач</span>
+            <span className="text-[11px] font-medium text-[#cfcfcf]">підзавдань</span>
           </div>
           <div className="h-[3px] bg-[#f0f0f0] rounded-full overflow-hidden">
             <div className="h-full bg-[#1f1f1f] rounded-full transition-all duration-500" 

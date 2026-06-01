@@ -22,7 +22,7 @@ export const PERMISSIONS = {
   // Issues
   'create:issue': ['owner', 'admin', 'member'],
   'edit:issue': ['owner', 'admin', 'member'],
-  'delete:issue': ['owner', 'admin'],   // Member не може видаляти задачі
+  'delete:issue': ['owner', 'admin'],   // Member не може видаляти завдання
 
   // Comments (clients can comment on issues they're invited to view)
   'create:comment': ['owner', 'admin', 'member', 'client'],

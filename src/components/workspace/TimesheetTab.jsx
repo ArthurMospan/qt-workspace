@@ -47,7 +47,7 @@ export default function TimesheetTab() {
   let weekTotal = 0;
 
   logs.forEach(log => {
-    const issue = issuesMap[log.issueId] || { title: 'Невідома задача', issueKey: '???' };
+    const issue = issuesMap[log.issueId] || { title: 'Невідома завдання', issueKey: '???' };
     if (!grid[log.issueId]) {
       grid[log.issueId] = {
         title: issue.title,
@@ -99,7 +99,7 @@ export default function TimesheetTab() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                  <th className="px-6 py-4 text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[30%] border-r border-[#f0f0f0]">Задача</th>
+                  <th className="px-6 py-4 text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[30%] border-r border-[#f0f0f0]">Завдання</th>
                   {DAYS.map((d, i) => {
                     const date = new Date(currentWeek);
                     date.setDate(date.getDate() + i);

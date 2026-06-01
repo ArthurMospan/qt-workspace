@@ -7,6 +7,7 @@ import { useNotifications, requestNotifPermission } from '@/lib/hooks/useNotific
 import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
 import UserAvatar           from '@/components/UserAvatar';
+import UserStatusSetter     from '@/components/UserStatusSetter';
 import SearchModal          from '@/components/SearchModal';
 import TopHeader            from '@/components/ui/Layout/TopHeader';
 import {
@@ -54,7 +55,7 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
     return { mode: 'search', project: null, placeholder: 'Пошук...' };
   }
   if (pathname.startsWith('/workspace/my')) {
-    return { mode: 'search', project: null, placeholder: 'Пошук по моїх задачах...' };
+    return { mode: 'search', project: null, placeholder: 'Пошук по моїх завданнях...' };
   }
   if (pathname.startsWith('/workspace/team')) {
     return { mode: 'search', project: null, placeholder: 'Пошук по команді...' };
@@ -190,10 +191,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
         {/* ── Status dot (Chat mode only) ── */}
         {mode === 'chat' && (
-          <div className="flex items-center gap-1.5 mr-1 bg-[#f4f4f5] px-2 py-1 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-[11px] font-bold text-[#1f1f1f]">В мережі</span>
-          </div>
+          <UserStatusSetter />
         )}
 
         {/* ── User avatar ───────────────── */}
@@ -273,6 +271,8 @@ export default function WorkspaceHeader() {
   const breadcrumbs    = useWorkspaceStore(s => s.breadcrumbs);
   const chatSearch     = useWorkspaceStore(s => s.chatSearch);
   const setChatSearch  = useWorkspaceStore(s => s.setChatSearch);
+  const teamSearch     = useWorkspaceStore(s => s.teamSearch);
+  const setTeamSearch  = useWorkspaceStore(s => s.setTeamSearch);
 
   const router   = useRouter();
   const pathname = usePathname();
@@ -313,13 +313,15 @@ export default function WorkspaceHeader() {
       <TopHeader
         mode={mode}
         hideBorder={true}
-        searchValue={projectSearch ? projectQuery : (mode === 'chat' ? chatSearch : globalQuery)}
+        searchValue={projectSearch ? projectQuery : (mode === 'chat' ? chatSearch : (pathname.startsWith('/workspace/team') ? teamSearch : globalQuery))}
         searchPlaceholder={placeholder}
         onSearchChange={async (q) => {
           if (projectSearch) {
             setProjectQuery(q);
           } else if (mode === 'chat') {
             setChatSearch(q);
+          } else if (pathname.startsWith('/workspace/team')) {
+            setTeamSearch(q);
           } else {
             setGlobalQuery(q);
             if (q.trim() && activeOrgId) {
@@ -336,6 +338,8 @@ export default function WorkspaceHeader() {
             setProjectSearch(false);
           } else if (mode === 'chat') {
             setChatSearch('');
+          } else if (pathname.startsWith('/workspace/team')) {
+            setTeamSearch('');
           } else {
             setGlobalQuery('');
             setShowSearch(false);

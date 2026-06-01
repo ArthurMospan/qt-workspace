@@ -203,7 +203,7 @@ function OnboardingPageContent() {
                   </li>
                   <li className="flex items-start gap-3 text-white/80">
                     <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
-                    <span>Базовий трекінг задач та багів</span>
+                    <span>Базовий трекінг завдань та багів</span>
                   </li>
                   <li className="flex items-start gap-3 text-white/80">
                     <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
@@ -236,7 +236,7 @@ function OnboardingPageContent() {
                   </li>
                   <li className="flex items-start gap-3 text-white">
                     <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />
-                    <span>Трекінг задач, багів та часу</span>
+                    <span>Трекінг завдань, багів та часу</span>
                   </li>
                   <li className="flex items-start gap-3 text-white">
                     <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />

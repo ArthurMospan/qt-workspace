@@ -71,7 +71,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
               <p className="text-[12px] text-[#9a9a9a] mt-[4px]">
                 {query
                   ? `За запитом "${query}" результатів не знайдено`
-                  : 'Шукайте по ID, назві або описанню задачі'}
+                  : 'Шукайте по ID, назві або описанню завдання'}
               </p>
             </div>
           ) : (

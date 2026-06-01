@@ -12,10 +12,20 @@ export default function UserAvatar({ user, size = 32, className = '' }) {
   const name = user.name || user.email || '?';
   const initials = name.charAt(0).toUpperCase();
 
-  // Deterministic dark color from name
+  // Deterministic dark color from ID or name, with user.avatarColor support
   const colors = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#db2777'];
-  const colorIdx = name.charCodeAt(0) % colors.length;
-  const bg = colors[colorIdx];
+  const avatarColor = user.avatarColor || user.color;
+  
+  let bg = avatarColor;
+  if (!bg) {
+    const hashInput = String(user.id || user.uid || name);
+    let hash = 0;
+    for (let i = 0; i < hashInput.length; i++) {
+      hash = hashInput.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIdx = Math.abs(hash) % colors.length;
+    bg = colors[colorIdx];
+  }
 
   return (
     <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"

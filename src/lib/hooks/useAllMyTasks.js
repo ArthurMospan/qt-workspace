@@ -10,6 +10,7 @@ export function useAllMyTasks(userId) {
     activeOrgId
   } = useAppContext();
   const [tasks, setTasks] = useState([]);
+  const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!activeOrgId) {
@@ -33,7 +34,13 @@ export function useAllMyTasks(userId) {
       console.error('[useAllMyTasks]', err);
       setLoading(false);
     });
-    return () => unsub();
+
+    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
+    const unsubLinks = onSnapshot(lq, snap => {
+      setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsub(); unsubLinks(); };
   }, [userId, activeOrgId]);
   const updateTask = useCallback(async (taskId, data) => {
     await updateDoc(doc(db, 'issues', taskId), {
@@ -43,6 +50,7 @@ export function useAllMyTasks(userId) {
   }, []);
   return {
     tasks,
+    issueLinks,
     loading,
     updateTask
   };

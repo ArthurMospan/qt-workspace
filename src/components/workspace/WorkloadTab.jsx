@@ -111,7 +111,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
         <div className="text-center">
           <Users size={36} className="text-[#e9e9e9] mx-auto mb-3" />
           <p className="text-[14px] font-semibold text-[#cfcfcf]">Немає даних про команду</p>
-          <p className="text-[12px] text-[#e0e0e0] mt-1">Призначте виконавців на задачі</p>
+          <p className="text-[12px] text-[#e0e0e0] mt-1">Призначте виконавців на завдання</p>
         </div>
       </div>
     );
@@ -128,7 +128,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
               <Users size={16} className="text-[#6366f1]" />
             </div>
             <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.memberStats.length}</p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Учасників із задачами</p>
+            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Учасників із завданнями</p>
           </div>
 
           <div className="bg-[#f4f4f5] rounded-[24px] p-5">
@@ -138,7 +138,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
             <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">
               {stats.memberStats.reduce((s, m) => s + m.open, 0)}
             </p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Відкритих задач</p>
+            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Відкритих завдань</p>
             <p className="text-[11px] text-[#cfcfcf] mt-1">
               ~{Math.round(stats.memberStats.reduce((s, m) => s + m.open, 0) / Math.max(stats.memberStats.length, 1))} на людину
             </p>

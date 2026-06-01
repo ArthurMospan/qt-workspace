@@ -2,7 +2,7 @@
 // src/app/workspace/[projectId]/page.js
 // Project page: Board | Backlog | Аналітика
 // Portal tab — shown only when project.visibility === 'shared' (synced to QT)
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useEffect } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useIssues }     from '@/lib/hooks/useIssues';
 import { useSprints }    from '@/lib/hooks/useSprints';
@@ -10,7 +10,6 @@ import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
-import BacklogTab from '@/components/workspace/BacklogTab';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
 import { PageHeader } from '@/components/ui';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
@@ -24,7 +23,6 @@ import { can } from '@/lib/utils/can';
 
 const TABS = (projectId) => [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
-  { id: 'backlog',    label: 'Беклог',    icon: Layers },
   { id: 'team',       label: 'Команда',   icon: Users },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
 ];
@@ -32,7 +30,7 @@ const TABS = (projectId) => [
 export default function BoardPage({ params }) {
   const { projectId } = use(params);
   const { projects, currentUser, orgRole } = useAppContext();
-  const { issues, loading: issuesLoading, createIssue, updateIssue, moveIssue } = useIssues(projectId);
+  const { issues, issueLinks, loading: issuesLoading, createIssue, updateIssue, moveIssue } = useIssues(projectId);
   const { sprints, loading: sprintsLoading, startSprint, completeSprint } = useSprints(projectId);
   const loading = issuesLoading || sprintsLoading;
   const showToast   = useWorkspaceStore(s => s.showToast);
@@ -46,11 +44,36 @@ export default function BoardPage({ params }) {
   const isShared = project?.visibility === 'shared';
 
   const [activeTab, setActiveTab] = useState('board');
-  const [boardSprintFilter, setBoardSprintFilter] = useState('all');
-  const [boardSwimlane, setBoardSwimlane] = useState('none');
-  const [boardAssigneeFilter, setBoardAssigneeFilter] = useState('all');
-  const [boardPriorityFilter, setBoardPriorityFilter] = useState('all');
-  const [boardTypeFilter, setBoardTypeFilter] = useState('all');
+  const [boardSprintFilter, setBoardSprintFilter] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_sprint_${projectId}`) || 'all';
+    return 'all';
+  });
+  const [boardSwimlane, setBoardSwimlane] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_swimlane_${projectId}`) || 'none';
+    return 'none';
+  });
+  const [boardAssigneeFilter, setBoardAssigneeFilter] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_assignee_${projectId}`) || 'all';
+    return 'all';
+  });
+  const [boardPriorityFilter, setBoardPriorityFilter] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_priority_${projectId}`) || 'all';
+    return 'all';
+  });
+  const [boardTypeFilter, setBoardTypeFilter] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_type_${projectId}`) || 'all';
+    return 'all';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`qt_board_sprint_${projectId}`, boardSprintFilter);
+      localStorage.setItem(`qt_board_swimlane_${projectId}`, boardSwimlane);
+      localStorage.setItem(`qt_board_assignee_${projectId}`, boardAssigneeFilter);
+      localStorage.setItem(`qt_board_priority_${projectId}`, boardPriorityFilter);
+      localStorage.setItem(`qt_board_type_${projectId}`, boardTypeFilter);
+    }
+  }, [boardSprintFilter, boardSwimlane, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, projectId]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -138,7 +161,7 @@ export default function BoardPage({ params }) {
       }
       await moveIssue(issueId, newColumnId, newIndex, actor);
     } catch (err) {
-      showToast(err.message || 'Помилка', 'error');
+      showToast(`Помилка переміщення. Відновлено попередній стан: ${err.message}`, 'error');
     }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
@@ -184,7 +207,7 @@ export default function BoardPage({ params }) {
               size="lg"
               icon={Plus}
             >
-              Створити задачу
+              Створити завдання
             </Button>
           </>
         }
@@ -270,6 +293,7 @@ export default function BoardPage({ params }) {
                 swimlane={boardSwimlane}
                 onAddIssue={handleAddIssue}
                 onMoveIssue={handleMoveIssue}
+                issueLinks={issueLinks}
               />
           </div>
         )
@@ -289,13 +313,6 @@ export default function BoardPage({ params }) {
         epics={issues.filter(i => i.type === 'epic')}
         sprints={sprints}
       />
-      {activeTab === 'backlog' && (
-        <BacklogTab
-          projectId={projectId}
-          project={project}
-          currentUser={currentUser}
-        />
-      )}
       {activeTab === 'analytics' && (
         <AnalyticsTab
           issues={issues}

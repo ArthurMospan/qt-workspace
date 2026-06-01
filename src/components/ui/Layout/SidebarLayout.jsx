@@ -7,6 +7,7 @@ export function SidebarLayout({
   className = '',
   sidebarWidth = '280px',
   gap = '12px',
+  hasBorder = true,
 }) {
   return (
     <div className={`flex-1 h-full overflow-hidden bg-white p-[12px] flex ${className}`}>
@@ -20,7 +21,7 @@ export function SidebarLayout({
         </div>
         
         {/* Main Content container */}
-        <div className="flex-1 bg-white flex flex-col overflow-hidden relative rounded-[16px] border border-[#f0f0f0]">
+        <div className={`flex-1 bg-white flex flex-col overflow-hidden relative rounded-[16px] ${hasBorder ? 'border border-[#f0f0f0]' : ''}`}>
           {children}
         </div>
       </div>

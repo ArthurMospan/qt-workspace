@@ -17,19 +17,19 @@ const useWorkspaceStore = create((set, get) => ({
   timerElapsed:   0,      // seconds
   _timerInterval: null,
 
-  startTimer: (issueId) => {
+  startTimer: (issueId, projectId) => {
     const { _timerInterval } = get();
     if (_timerInterval) clearInterval(_timerInterval);
     const startedAt = Date.now();
     const interval  = setInterval(() => set({ timerElapsed: Math.floor((Date.now() - startedAt) / 1000) }), 1000);
-    set({ activeTimer: { issueId, startedAt }, timerElapsed: 0, _timerInterval: interval });
+    set({ activeTimer: { issueId, projectId, startedAt }, timerElapsed: 0, _timerInterval: interval });
   },
 
   stopTimer: () => {
     const { activeTimer, timerElapsed, _timerInterval } = get();
     if (_timerInterval) clearInterval(_timerInterval);
     if (!activeTimer) { set({ _timerInterval: null }); return null; }
-    const result = { issueId: activeTimer.issueId, minutes: Math.round(timerElapsed / 60) };
+    const result = { issueId: activeTimer.issueId, projectId: activeTimer.projectId, minutes: Math.max(1, Math.ceil(timerElapsed / 60)) };
     set({ activeTimer: null, timerElapsed: 0, _timerInterval: null });
     return result;
   },
@@ -38,9 +38,15 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── Toast ─────────────────────────────────────────────────────────
   toast: null,
-  showToast: (message, type = 'success') => {
-    set({ toast: { message, type, id: Date.now() } });
-    setTimeout(() => set({ toast: null }), 3500);
+  showToast: (message, type = 'success', options = {}) => {
+    const id = Date.now();
+    set({ toast: { message, type, id, action: options.action } });
+    const duration = options.duration || 3500;
+    setTimeout(() => {
+      if (get().toast?.id === id) {
+        set({ toast: null });
+      }
+    }, duration);
   },
   clearToast: () => set({ toast: null }),
 
@@ -60,9 +66,17 @@ const useWorkspaceStore = create((set, get) => ({
   chatSearch: '',
   setChatSearch: (q) => set({ chatSearch: q }),
 
+  // ── Team search (synced between header and team page) ─────────────
+  teamSearch: '',
+  setTeamSearch: (q) => set({ teamSearch: q }),
+
   // ── Chat online users (synced from chat page to header) ───────────
   chatOnlineUsers: [],
   setChatOnlineUsers: (users) => set({ chatOnlineUsers: users }),
+
+  // ── Localization ──────────────────────────────────────────────────
+  localization: null,
+  setLocalization: (loc) => set({ localization: loc }),
 }));
 
 export default useWorkspaceStore;

@@ -19,6 +19,7 @@ export function useWorkspaceAnalytics(projectIds = []) {
   } = useAppContext();
   const [issues, setIssues] = useState([]);
   const [timeLogs, setTimeLogs] = useState([]);
+  const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!activeOrgId || projectIds.length === 0) {
@@ -28,15 +29,31 @@ export function useWorkspaceAnalytics(projectIds = []) {
     const chunks = chunkArray(projectIds, 10);
     const allIssues = {};
     const allTimeLogs = {};
+    const allIssueLinks = {};
     let pendingIssues = chunks.length;
     let pendingTimeLogs = chunks.length;
+    let pendingLinks = 1; // Not partitioned by project, just one query per org
     const unsubs = [];
-    const flushIssues = () => {
-      setIssues(Object.values(allIssues));
+    const checkDone = () => {
+      if (pendingIssues === 0 && pendingTimeLogs === 0 && pendingLinks === 0) setLoading(false);
     };
-    const flushLogs = () => {
-      setTimeLogs(Object.values(allTimeLogs));
-    };
+    const flushIssues = () => setIssues(Object.values(allIssues));
+    const flushLogs = () => setTimeLogs(Object.values(allTimeLogs));
+    const flushLinks = () => setIssueLinks(Object.values(allIssueLinks));
+    
+    // Fetch all links for the org (usually small enough)
+    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
+    const unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
+      snap.docs.forEach(d => { allIssueLinks[d.id] = { id: d.id, ...d.data() }; });
+      if (pendingLinks > 0) pendingLinks--;
+      flushLinks();
+      checkDone();
+    }, () => {
+      if (pendingLinks > 0) pendingLinks--;
+      checkDone();
+    });
+    unsubs.push(unsubLinks);
+
     chunks.forEach(chunk => {
       // Issues query
       const iq = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', 'in', chunk));
@@ -59,10 +76,10 @@ export function useWorkspaceAnalytics(projectIds = []) {
         });
         if (pendingIssues > 0) pendingIssues--;
         flushIssues();
-        if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
+        checkDone();
       }, () => {
         if (pendingIssues > 0) pendingIssues--;
-        if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
+        checkDone();
       });
 
       // TimeLogs query
@@ -78,10 +95,10 @@ export function useWorkspaceAnalytics(projectIds = []) {
         });
         if (pendingTimeLogs > 0) pendingTimeLogs--;
         flushLogs();
-        if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
+        checkDone();
       }, () => {
         if (pendingTimeLogs > 0) pendingTimeLogs--;
-        if (pendingIssues === 0 && pendingTimeLogs === 0) setLoading(false);
+        checkDone();
       });
       unsubs.push(unsub1, unsub2);
     });
@@ -91,6 +108,7 @@ export function useWorkspaceAnalytics(projectIds = []) {
   return {
     issues,
     timeLogs,
+    issueLinks,
     loading
   };
 }

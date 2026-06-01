@@ -58,7 +58,7 @@ export default function MyTasksPage() {
   const { members } = useOrganization();
   const { labels } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
-  const { tasks, loading, updateTask } = useAllMyTasks(uid);
+  const { tasks, issueLinks, loading, updateTask } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
@@ -119,7 +119,10 @@ export default function MyTasksPage() {
     return acc;
   }, {});
 
-  const filtered = filterTasks(tasks, filters, sprintMap);
+  const filtered = filterTasks(tasks, filters, sprintMap).filter(t => {
+    const p = projects.find(proj => proj.id === t.projectId);
+    return p && !p.archived;
+  });
 
   const activeSprintsList = (sprints || []).filter(s => s.status === 'active');
   const plannedSprintsList = (sprints || []).filter(s => s.status === 'planned');
@@ -174,7 +177,7 @@ export default function MyTasksPage() {
     {
       id: 'backlog',
       title: 'Беклог',
-      goal: 'Задачі без призначеного спринта',
+      goal: 'Завдання без призначеного спринта',
       issues: backlogIssuesList,
       status: 'backlog',
       badgeColor: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
@@ -201,7 +204,7 @@ export default function MyTasksPage() {
       <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
         <PageHeader
           variant="main"
-          title="Мої задачі"
+          title="Мої завдання"
           actions={
             <div className="flex gap-2">
               <Button
@@ -218,7 +221,7 @@ export default function MyTasksPage() {
                 style="primary"
                 color="dark"
               >
-                Створити задачу
+                Створити завдання
               </Button>
             </div>
           }
@@ -347,7 +350,7 @@ export default function MyTasksPage() {
                               <button
                                 onClick={() => { setCreateTaskStatus(col.id); setShowCreateTaskModal(true); }}
                                 className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                                title="Додати задачу"
+                                title="Додати завдання"
                               >
                                 <Plus size={16} />
                               </button>
@@ -364,7 +367,7 @@ export default function MyTasksPage() {
                             >
                               {colIssues.length === 0 ? (
                                 <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
-                                  Немає задач
+                                  Немає завдань
                                 </div>
                               ) : (
                                 colIssues.map((issue, index) => {
@@ -380,6 +383,8 @@ export default function MyTasksPage() {
                                       index={index}
                                       projectId={issue.projectId}
                                       projectName={pName}
+                                      issueLinks={issueLinks}
+                                      issues={tasks}
                                     />
                                   );
                                 })
@@ -440,6 +445,8 @@ export default function MyTasksPage() {
                             sprints={sprints}
                             projectId={issue.projectId}
                             projectName={pName}
+                            issueLinks={issueLinks}
+                            issues={tasks}
                           />
                         );
                       })}
@@ -533,7 +540,7 @@ export default function MyTasksPage() {
                 <h3 className="text-[14px] font-bold text-[#1f1f1f] mb-2">Видимість колонок</h3>
                 <p className="text-[13px] text-[#9a9a9a] mb-4">
                   Оберіть, які колонки ви хочете приховати з вашої особистої дошки. 
-                  Задачі з прихованих колонок будуть зібрані в одну загальну колонку праворуч.
+                  Завдання з прихованих колонок будуть зібрані в одну загальну колонку праворуч.
                 </p>
 
                 <div className="flex flex-col gap-2">

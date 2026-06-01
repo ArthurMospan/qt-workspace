@@ -11,8 +11,9 @@ import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap
+  Zap, Clock, Square as StopIcon
 } from 'lucide-react';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 import { can } from '@/lib/utils/can';
 
@@ -25,12 +26,28 @@ export default function WorkspaceSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
 
+  const activeTimer = useWorkspaceStore(s => s.activeTimer);
+  const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
+  const formatElapsed = useWorkspaceStore(s => s.formatElapsed);
+  const stopTimer = useWorkspaceStore(s => s.stopTimer);
+
+  const handleStopGlobalTimer = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = stopTimer();
+    if (result && result.minutes > 0 && result.projectId) {
+      router.push(`/workspace/${result.projectId}/issue/${result.issueId}?logTime=${result.minutes}`);
+    } else if (result && result.projectId) {
+      router.push(`/workspace/${result.projectId}/issue/${result.issueId}`);
+    }
+  };
+
   const isActive = (href, exact) =>
     exact ? pathname === href : pathname.startsWith(href);
 
   const topNav = [
     { href: '/workspace',            icon: Folder,        label: 'Проєкти',     exact: true },
-    { href: '/workspace/my',         icon: CheckCircle2,  label: 'Мої задачі' },
+    { href: '/workspace/my',         icon: CheckCircle2,  label: 'Мої завдання' },
     { href: '/workspace/sprints',    icon: Zap,           label: 'Спринти' },
     { href: '/workspace/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/workspace/team',       icon: Users,         label: 'Команда' },
@@ -146,6 +163,37 @@ export default function WorkspaceSidebar() {
             })}
         </div>
       </div>
+
+      {/* Global Timer Capsule */}
+      {activeTimer && (
+        <div className={`shrink-0 border-t border-white/[0.06] bg-[#1f1f1f] ${collapsed ? 'p-[12px]' : 'p-[16px]'}`}>
+          <div 
+            onClick={() => {
+              if (activeTimer.projectId) {
+                router.push(`/workspace/${activeTimer.projectId}/issue/${activeTimer.issueId}`);
+              }
+            }}
+            className={`bg-[#333333] hover:bg-[#404040] transition-colors rounded-[12px] flex items-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}
+          >
+            {!collapsed && (
+              <div className="flex items-center gap-[8px]">
+                <Clock size={14} className="text-[#3b82f6] animate-pulse" />
+                <span className="text-white text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
+              </div>
+            )}
+            {collapsed && (
+              <span className="text-white text-[10px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
+            )}
+            <button
+              onClick={handleStopGlobalTimer}
+              title="Зупинити та зберегти"
+              className={`flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${collapsed ? 'w-[24px] h-[24px] mt-1' : 'w-[28px] h-[28px]'}`}
+            >
+              <StopIcon size={12} className="fill-current" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Org switcher modal */}
       {showOrgSwitcher && (

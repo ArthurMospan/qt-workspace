@@ -305,7 +305,7 @@ export default function VelocityTab({ issues = [], projects = [] }) {
             </div>
             <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.totalDone}</p>
             <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Всього закрито</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">{stats.completionPct}% від всіх задач</p>
+            <p className="text-[11px] text-[#cfcfcf] mt-1">{stats.completionPct}% від всіх завдань</p>
           </div>
 
           <div className="bg-[#f4f4f5] rounded-[16px] p-5">
@@ -418,10 +418,10 @@ export default function VelocityTab({ issues = [], projects = [] }) {
         {/* Recent done issues */}
         <div className="bg-[#f4f4f5] rounded-[16px] p-5">
           <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
-            Нещодавно закриті задачі
+            Нещодавно закриті завдання
           </h3>
           {stats.donePeriod === 0 ? (
-            <p className="text-[13px] text-[#9a9a9a] py-4 text-center">За вказаний період задач не закрито</p>
+            <p className="text-[13px] text-[#9a9a9a] py-4 text-center">За вказаний період завдань не закрито</p>
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
               {issues

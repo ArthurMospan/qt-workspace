@@ -157,18 +157,18 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard icon={Target}       label="Завершено задач" color="#10b981"
+          <KpiCard icon={Target}       label="Завершено завдань" color="#10b981"
             value={`${stats.done} / ${stats.total}`}
             sub={`${stats.completionPct}% завершення`} />
           <KpiCard icon={Zap}          label="Velocity (7 днів)" color="#6366f1"
             value={stats.recentDone}
-            sub="задач закрито за тиждень" />
+            sub="завдань закрито за тиждень" />
           <KpiCard icon={AlertCircle}  label="Прострочено" color={stats.overdue.length > 0 ? '#dc2626' : '#10b981'}
             value={stats.overdue.length}
-            sub="задач після дедлайну" />
+            sub="завдань після дедлайну" />
           <KpiCard icon={Users}        label="В роботі" color="#0891b2"
             value={stats.inProg}
-            sub="активних задач" />
+            sub="активних завдань" />
         </div>
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
@@ -209,7 +209,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-            <SectionTitle>Задачі по статусах</SectionTitle>
+            <SectionTitle>Завдання по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-[#cfcfcf] py-4">Задач немає</p>
             ) : (
@@ -230,7 +230,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
           <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
-              <p className="text-[12px] text-[#cfcfcf] py-4">Немає відкритих задач</p>
+              <p className="text-[12px] text-[#cfcfcf] py-4">Немає відкритих завдань</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {stats.byPriority.map(({ p, count }) => {
@@ -259,7 +259,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
           <div className="bg-[#f4f4f5] rounded-[24px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="text-red-500" />
-              <SectionTitle>Прострочені задачі ({stats.overdue.length})</SectionTitle>
+              <SectionTitle>Прострочені завдання ({stats.overdue.length})</SectionTitle>
             </div>
             <div className="flex flex-col gap-0 divide-y divide-white">
               {stats.overdue.slice(0, 8).map(issue => {
@@ -341,7 +341,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 <div className="flex items-center gap-3 p-3 bg-red-50 rounded-[12px]">
                   <AlertTriangle size={14} className="text-red-500 shrink-0" />
                   <p className="text-[12px] font-medium text-red-700">
-                    <span className="font-bold">{stats.blocked}</span> задача з пріоритетом Blocker
+                    <span className="font-bold">{stats.blocked}</span> завдання з пріоритетом Blocker
                   </p>
                 </div>
               )}
@@ -349,7 +349,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-[12px]">
                   <Users size={14} className="text-yellow-600 shrink-0" />
                   <p className="text-[12px] font-medium text-yellow-700">
-                    <span className="font-bold">{stats.noAssignee.length}</span> задач без виконавця
+                    <span className="font-bold">{stats.noAssignee.length}</span> завдань без виконавця
                   </p>
                 </div>
               )}
@@ -357,7 +357,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 <div className="flex items-center gap-3 p-3 bg-[#eef2ff] rounded-[12px]">
                   <Clock size={14} className="text-[#6366f1] shrink-0" />
                   <p className="text-[12px] font-medium text-[#3730a3]">
-                    <span className="font-bold">{stats.unestimated.length}</span> задач без оцінки часу
+                    <span className="font-bold">{stats.unestimated.length}</span> завдань без оцінки часу
                   </p>
                 </div>
               )}
@@ -370,7 +370,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
           <div className="flex flex-col items-center py-16 text-center">
             <BarChart2 size={36} className="text-[#e9e9e9] mb-3" />
             <p className="text-[14px] font-semibold text-[#cfcfcf] mb-1">Даних немає</p>
-            <p className="text-[12px] text-[#e0e0e0]">Аналітика з'явиться після створення задач</p>
+            <p className="text-[12px] text-[#e0e0e0]">Аналітика з'явиться після створення завдань</p>
           </div>
         )}
 

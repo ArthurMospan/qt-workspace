@@ -45,7 +45,7 @@ export default function TaskInternalChat({ taskId }) {
         {comments.length === 0 && (
           <div className="flex flex-col items-center justify-center py-[40px] text-center">
             <div className="text-[30px] mb-[8px]">💬</div>
-            <p className="text-white/25 text-[12px]">Обговорюйте задачу тут</p>
+            <p className="text-white/25 text-[12px]">Обговорюйте завдання тут</p>
           </div>
         )}
         {comments.map(comment => {

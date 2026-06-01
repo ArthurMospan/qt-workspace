@@ -13,8 +13,10 @@ import {
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
-  Globe, Tag as TagIcon, Briefcase
+  Globe, Tag as TagIcon, Briefcase, GripVertical,
+  Archive, ArchiveRestore
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
   Button, 
   Input, 
@@ -26,8 +28,10 @@ import {
   LoadingSpinner, 
   SidebarLayout, 
   InnerNavigation, 
-  PageHeader 
+  PageHeader,
+  Dialog
 } from '@/components/ui';
+import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -82,12 +86,13 @@ const NAV = [
   { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Організація' },
   { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
   { id: 'integrations',  label: 'Інтеграції',       icon: PlugZap,       group: 'Організація', adminOnly: true },
-  { id: 'statuses',      label: 'Статуси задач',    icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
-  { id: 'types',         label: 'Типи задач',       icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
+  { id: 'statuses',      label: 'Статуси завдань',    icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
+  { id: 'types',         label: 'Типи завдань',       icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
   { id: 'priorities',    label: 'Пріоритети',       icon: AlertTriangle, group: 'Налаштування процесів', adminOnly: true },
   { id: 'labels',        label: 'Мітки',            icon: Palette,       group: 'Налаштування процесів', adminOnly: true },
   { id: 'positions',     label: 'Посади та ставки', icon: Briefcase,     group: 'Налаштування процесів', adminOnly: true },
-  { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: true, adminOnly: true },
+  { id: 'archives',      label: 'Архів проєктів',    icon: Archive,       group: 'Інше' },
+  { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: false, adminOnly: true },
 ];
 
 // ── Primitives ───────────────────────────────────────────────────────
@@ -105,12 +110,15 @@ function Row({ label, desc, children, danger = false }) {
   );
 }
 
-function Section({ title, desc, children }) {
+function Section({ title, desc, rightAction, children }) {
   return (
     <div className="flex flex-col">
-      <div className="mb-6">
-        <h2 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{title}</h2>
-        {desc && <p className="text-[13px] text-[#9a9a9a] mt-[4px]">{desc}</p>}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{title}</h2>
+          {desc && <p className="text-[13px] text-[#9a9a9a] mt-[4px] leading-relaxed">{desc}</p>}
+        </div>
+        {rightAction && <div className="shrink-0 flex items-center gap-2">{rightAction}</div>}
       </div>
       <div className="flex flex-col gap-[24px]">
         {children}
@@ -138,7 +146,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status' }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -157,7 +165,16 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
   };
 
   return (
-    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group">
+    <div 
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group bg-white"
+    >
+      {provided?.dragHandleProps && (
+        <div {...provided.dragHandleProps} className="shrink-0 text-[#cfcfcf] hover:text-[#1f1f1f] cursor-grab active:cursor-grabbing">
+          <GripVertical size={14} />
+        </div>
+      )}
       {/* Color */}
       <div className="relative shrink-0">
         <button
@@ -237,12 +254,10 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           <>
             <Button onClick={() => setEditing(true)}
               style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
-              className="opacity-0 group-hover:opacity-100"
             />
             {canDelete ? (
               <Button onClick={() => onDelete(item.id)}
                 style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
-                className="opacity-0 group-hover:opacity-100"
               />
             ) : (
               <div className="w-[28px]" />
@@ -317,11 +332,9 @@ function PositionItem({ item, onSave, onDelete }) {
           <>
             <Button onClick={() => setEditing(true)}
               style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
-              className="opacity-0 group-hover:opacity-100"
             />
             <Button onClick={() => onDelete(item.id)}
               style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
-              className="opacity-0 group-hover:opacity-100"
             />
           </>
         )}
@@ -334,7 +347,7 @@ function PositionItem({ item, onSave, onDelete }) {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { currentUser, signOut, activeOrgId } = useAppContext();
+  const { currentUser, signOut, activeOrgId, projects } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { org, members, inviteMember, changeMemberRole, removeMember, setMemberPosition } = useOrganization();
 
@@ -354,6 +367,13 @@ export default function SettingsPage() {
   const [positions,  setPositions]  = useState([]);
   const [wfLoading,  setWfLoading]  = useState(true);
   const [wfSaving,   setWfSaving]   = useState(false);
+  const [showSavedCheck, setShowSavedCheck] = useState(false);
+
+  const triggerSavedSuccess = () => {
+    setShowSavedCheck(true);
+    setTimeout(() => setShowSavedCheck(false), 2500);
+  };
+
 
   // ── Profile ──
   const [displayName,   setDisplayName]   = useState('');
@@ -373,6 +393,7 @@ export default function SettingsPage() {
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [qtSaving,       setQtSaving]       = useState(false);
 
   // ── Billing ──
@@ -489,6 +510,7 @@ export default function SettingsPage() {
         updatedAt: serverTimestamp(),
       });
       showToast('Профіль збережено');
+      triggerSavedSuccess();
     } catch (e) {
       console.error('Error saving profile:', e);
       showToast('Помилка збереження', 'error');
@@ -512,6 +534,7 @@ export default function SettingsPage() {
         updatedAt: serverTimestamp()
       });
       showToast('Параметри локалізації збережено');
+      triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
     setLocSaving(false);
   };
@@ -526,6 +549,7 @@ export default function SettingsPage() {
         updatedAt: serverTimestamp() 
       });
       showToast('Налаштування організації збережено');
+      triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
     setWorkspaceSaving(false);
   };
@@ -543,6 +567,7 @@ export default function SettingsPage() {
         positions: clean(positions)
       }, { merge: true });
       showToast('Налаштування збережено');
+      triggerSavedSuccess();
     } catch (e) { 
       console.error('Workflow Save Error:', e);
       showToast(e.message || 'Помилка збереження', 'error'); 
@@ -556,7 +581,8 @@ export default function SettingsPage() {
     setNotifSaving(true);
     try {
       await setDoc(doc(db, 'users', uid, 'settings', 'notifications'), { ...notif, updatedAt: serverTimestamp() });
-      showToast('Збережено');
+      showToast('Налаштування збережено');
+      triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
     setNotifSaving(false);
   };
@@ -670,6 +696,15 @@ export default function SettingsPage() {
     showToast('Підключення платіжної системи в розробці 🛠️');
   };
 
+  const unarchiveProject = async (id) => {
+    try {
+      await updateDoc(doc(db, 'projects', id), { status: 'active' });
+      showToast('Проєкт розархівовано');
+    } catch (err) {
+      showToast('Помилка розархівування', 'error');
+    }
+  };
+
   // ── Workflow helpers ─────────────────────────────────────────────
   const makeUpdater = setter => ({
     onSave:   updated => setter(prev => prev.map(i => i.id === updated.id ? updated : i)),
@@ -681,16 +716,111 @@ export default function SettingsPage() {
   const lbA = makeUpdater(setLabels);
   const posA = makeUpdater(setPositions);
 
+  const handleStatusDeleteClick = async (id) => {
+    const targetStatus = statuses.find(s => s.id === id);
+    if (!targetStatus || targetStatus.isNew) {
+      stA.onDelete(id);
+      return;
+    }
+    if (statuses.filter(s => !s.isNew).length <= 1) {
+      showToast('Дошка повинна мати хоча б одну видиму колонку', 'error');
+      return;
+    }
+    setWfLoading(true);
+    try {
+      const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
+      const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('columnId', '==', id));
+      const snap = await getDocs(q);
+      const targetColId = statuses.find(s => s.id !== id && !s.isNew)?.id || 'backlog';
+      
+      if (snap.docs.length > 0) {
+        if (!confirm(`У цій колонці є ${snap.docs.length} завдань. При видаленні вони будуть переміщені в "${statuses.find(s => s.id === targetColId)?.label || 'Backlog'}". Продовжити?`)) {
+          setWfLoading(false);
+          return;
+        }
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.update(d.ref, { columnId: targetColId }));
+        await batch.commit();
+      }
+      stA.onDelete(id);
+    } catch (e) {
+      showToast('Помилка видалення статусу: ' + e.message, 'error');
+    }
+    setWfLoading(false);
+  };
+
+  // ── Sticky Save Action ───────────────────────────────────────────
+  const getSaveAction = () => {
+    switch (activeSection) {
+      case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
+      case 'notifications': return { handler: saveNotifications, loading: notifSaving, label: 'Зберегти сповіщення' };
+      case 'localization': return { handler: saveLocalization, loading: locSaving, label: 'Зберегти локалізацію' };
+      case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
+      case 'statuses':
+      case 'types':
+      case 'priorities':
+      case 'labels':
+      case 'positions':
+        return { handler: saveWorkflow, loading: wfSaving, label: 'Зберегти зміни' };
+      default: return null;
+    }
+  };
+  const saveAction = getSaveAction();
+
+  const handleDragEnd = (result, list, setList) => {
+    if (!result.destination) return;
+    const items = Array.from(list);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    setList(items);
+  };
+
   // ── Section renderer ─────────────────────────────────────────────
+
+  const renderSaveButton = (size = "md") => {
+    if (!saveAction) return null;
+    return (
+      <div className="flex items-center gap-2 no-nav">
+        {['statuses', 'types', 'priorities', 'labels', 'positions'].includes(activeSection) && (
+          <Button 
+            onClick={() => {
+              if (!confirm('Скинути налаштування цієї секції до стандартних?')) return;
+              if (activeSection === 'statuses') setStatuses(DEFAULT_STATUSES);
+              if (activeSection === 'types') setTypes(DEFAULT_TYPES);
+              if (activeSection === 'priorities') setPriorities(DEFAULT_PRIORITIES);
+              if (activeSection === 'labels') setLabels(DEFAULT_LABELS);
+              if (activeSection === 'positions') setPositions(DEFAULT_POSITIONS);
+            }} 
+            style="ghost" color="gray" size={size}
+            className="rounded-xl px-4"
+          >
+            Скинути
+          </Button>
+        )}
+        <Button 
+          onClick={saveAction.handler} 
+          loading={saveAction.loading} 
+          style="primary" 
+          color="dark" 
+          size={size} 
+          icon={showSavedCheck ? Check : undefined}
+          className={`rounded-xl px-6 transition-all duration-300 ${showSavedCheck ? '!bg-emerald-600 !hover:bg-emerald-700 text-white' : ''}`}
+        >
+          {showSavedCheck ? 'Збережено!' : (saveAction.loading ? 'Збереження...' : saveAction.label)}
+        </Button>
+      </div>
+    );
+  };
+  const saveButton = renderSaveButton();
 
   const renderSection = () => {
     switch (activeSection) {
 
       // ──────────────────────────────────────────────────────────────
       case 'profile': return (
-        <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, задачах та чаті">
-          <Card variant="white" padding="lg">
-            <Row label="Ім'я" desc="Показується в задачах і чаті">
+        <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, завданнях та чаті" rightAction={saveButton}>
+          <Card variant="white" padding="lg" className="!border-none">
+            <Row label="Ім'я" desc="Показується в завданнях і чаті">
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-[200px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
@@ -729,12 +859,12 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'notifications': return (
-        <Section title="Сповіщення" desc="Налаштуй які події надсилають тобі сповіщення">
-          <Card variant="white" padding="lg">
+        <Section title="Сповіщення" desc="Налаштуй які події надсилають тобі сповіщення" rightAction={saveButton}>
+          <Card variant="white" padding="lg" className="!border-none">
             {[
-              { key: 'assigned',      label: 'Задачу призначено мені',   desc: 'Хтось призначив задачу на тебе' },
-              { key: 'commented',     label: 'Новий коментар',           desc: 'В задачі де ти виконавець або автор' },
-              { key: 'statusChanged', label: 'Зміна статусу задачі',     desc: 'Коли змінюється статус твоїх задач' },
+              { key: 'assigned',      label: 'Задачу призначено мені',   desc: 'Хтось призначив завдання на тебе' },
+              { key: 'commented',     label: 'Новий коментар',           desc: 'В завдання де ти виконавець або автор' },
+              { key: 'statusChanged', label: 'Зміна статусу завдання',     desc: 'Коли змінюється статус твоїх завдань' },
               { key: 'deadline',      label: 'Нагадування про дедлайн',  desc: 'За 24 години до дедлайну' },
               { key: 'mentioned',     label: 'Згадування в коментарях',  desc: 'Хтось написав @ваше-ім\'я' },
             ].map(n => (
@@ -743,7 +873,7 @@ export default function SettingsPage() {
               </Row>
             ))}
           </Card>
-          <Card variant="white" padding="lg">
+          <Card variant="white" padding="lg" className="!border-none">
             <Row label="Push-сповіщення у браузері" desc="Отримувати сповіщення навіть коли вкладка закрита">
               <Button
                 onClick={async () => {
@@ -763,8 +893,8 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'localization': return (
-        <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону">
-          <Card variant="white" padding="lg">
+        <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону" rightAction={saveButton}>
+          <Card variant="white" padding="lg" className="!border-none">
             <Row label="Мова інтерфейсу" desc="Виберіть мову відображення">
               <Select
                 value={language}
@@ -829,8 +959,8 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': return (
-        <Section title="Загальні" desc="Загальні налаштування вашої організації">
-          <Card variant="white" padding="lg">
+        <Section title="Загальні" desc="Загальні налаштування вашої організації" rightAction={saveButton}>
+          <Card variant="white" padding="lg" className="!border-none">
             <Row label="Назва організації" desc="Видима всім у вашій організації">
               <Input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-[200px]" />
             </Row>
@@ -858,10 +988,10 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'integrations': return (
-        <Section title="Інтеграції" desc="Керуй підключеними сервісами">
+        <Section title="Інтеграції" desc="Керуй підключеними сервісами" rightAction={saveButton}>
 
           {/* QT Portal — головна інтеграція */}
-          <div className="bg-white border border-[#e9e9e9] rounded-[12px] p-5 mb-4">
+          <Card variant="white" padding="lg" className="mb-4 !border-none">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-[10px] bg-[#1f1f1f] flex items-center justify-center shrink-0">
                 <Link2 size={16} className="text-white" />
@@ -878,9 +1008,16 @@ export default function SettingsPage() {
                     <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація матеріалів, чат з клієнтами та статуси проєктів у реальному часі</p>
                   </div>
                   <div className="shrink-0">
-                    <button disabled className="relative w-[40px] h-[22px] rounded-full bg-[#e0e0e0] opacity-50 cursor-not-allowed">
-                      <span className="absolute top-[3px] w-[16px] h-[16px] bg-white rounded-full shadow-sm left-[3px]" />
-                    </button>
+                    <ToggleSwitch
+                      checked={false}
+                      onChange={() => {
+                        if (orgPlan !== 'pro') {
+                          setShowUpgradeModal(true);
+                        } else {
+                          showToast('Функція тимчасово недоступна, чекайте на оновлення.', 'info');
+                        }
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -892,8 +1029,11 @@ export default function SettingsPage() {
                   </span>
 
                   <button
-                    disabled
-                    className="flex items-center gap-1 text-[12px] text-[#cfcfcf] font-medium cursor-not-allowed"
+                    onClick={() => {
+                      if (orgPlan !== 'pro') setShowUpgradeModal(true);
+                      else showToast('Перехід в портал недоступний у цій версії.');
+                    }}
+                    className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
                   >
                     Відкрити QT <ExternalLink size={11} />
                   </button>
@@ -915,7 +1055,7 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </Section>
       );
 
@@ -926,8 +1066,8 @@ export default function SettingsPage() {
         const projectsPercent = isPro ? 100 : Math.min(100, (projectsCount / projectLimit) * 100);
 
         return (
-          <Section title="Тарифний план" desc="Управління підпискою та лімітами організації">
-            <Card className={`border-${isPro ? '[#eab308]/40' : '[#6366f1]/20'} shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
+          <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
+            <Card className={`!border-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
               <div className={`bg-gradient-to-r ${isPro ? 'from-[#fefce8] to-[#fffbeb]' : 'from-[#eef2ff] to-white'} px-6 py-6 border-b border-[#e9e9e9]`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -987,21 +1127,111 @@ export default function SettingsPage() {
       }
 
       // ──────────────────────────────────────────────────────────────
+      case 'team': return (
+        <Section title="Учасники команди" desc="Керування учасниками організації та їхніми ролями" rightAction={
+          <Button onClick={() => setInviteEmail('')} style="primary" icon={Plus}>Запросити</Button>
+        }>
+          <Surface variant="card" className="!rounded-[12px] p-0 overflow-hidden">
+            {isAdmin && (
+              <div className="p-6 border-b border-[#e9e9e9] flex flex-col gap-4 bg-[#f0f0f0]">
+                <h3 className="text-[14px] font-bold text-[#1f1f1f]">Запросити нового учасника</h3>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" className="w-[260px]" />
+                  <Select value={inviteRole} onChange={setInviteRole} options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))} className="w-[160px]" />
+                  <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary">Надіслати</Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col divide-y divide-[#f0f0f0]">
+              {members.map(member => {
+                const isMe = member.id === (currentUser?.uid || currentUser?.id);
+                return (
+                  <div key={member.id} className="p-4 px-6 flex items-center justify-between hover:bg-[#fcfcfc] transition-colors">
+                    <div className="flex items-center gap-3">
+                      <UserAvatar user={member} size={40} />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[14px] font-bold text-[#1f1f1f]">{member.name || member.email}</p>
+                          {isMe && <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider bg-[#f4f4f5] px-1.5 py-0.5 rounded-md">Ти</span>}
+                        </div>
+                        <p className="text-[12px] text-[#9a9a9a]">{member.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Position */}
+                      <Select
+                        value={member.positionId || ''}
+                        onChange={(val) => handlePositionChange(member.id, val)}
+                        options={[{value: '', label: 'Без посади'}, ...positions.map(p => ({value: p.id, label: p.label}))]}
+                        className="w-[160px] h-[32px] text-[12px]"
+                        disabled={!isAdmin}
+                      />
+                      
+                      {/* Role */}
+                      {isOwner && !isMe ? (
+                        <Select
+                          value={member.role}
+                          onChange={(val) => handleRoleChange(member.id, val)}
+                          options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))}
+                          className="w-[140px] h-[32px] text-[12px]"
+                        />
+                      ) : (
+                        <span className="text-[12px] font-semibold px-3 py-1 bg-[#f0f0f0] text-[#4a4a4a] rounded-full w-[140px] text-center">
+                          {ROLE_LABELS[member.role] || member.role}
+                        </span>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 w-[68px] justify-end">
+                        {isAdmin && !isMe && (
+                          <>
+                            {isOwner && member.role === 'admin' && (
+                              <Button onClick={() => handleTransferOwnership(member.id)} style="ghost" size="icon" title="Передати права власника" icon={Shield} className="text-orange-500 hover:text-orange-600" />
+                            )}
+                            <Button onClick={() => handleRemoveMember(member.id)} style="ghost" color="red" size="icon" icon={Trash2} />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Surface>
+        </Section>
+      );
+
+      // ──────────────────────────────────────────────────────────────
       case 'statuses': return (
-        <Section title="Статуси задач" desc="Статуси задач — застосовуються до всіх проєктів">
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card>
-              {statuses.map((s, i) => (
-                <WorkflowItem key={s.id} item={s}
-                  onSave={stA.onSave} onDelete={stA.onDelete}
-                  canDelete={i > 0 && i < statuses.length - 1}
-                  variant="status"
-                />
-              ))}
+            <Card className="!border-none">
+              <DragDropContext onDragEnd={(res) => handleDragEnd(res, statuses, setStatuses)}>
+                <Droppable droppableId="statuses-list">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {statuses.map((s, i) => (
+                        <Draggable key={s.id || `new-${i}`} draggableId={s.id || `new-${i}`} index={i}>
+                          {(provided) => (
+                            <WorkflowItem item={s}
+                              onSave={stA.onSave} onDelete={handleStatusDeleteClick}
+                              canDelete={statuses.length > 1}
+                              variant="status"
+                              provided={provided}
+                            />
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
               <Button
                 onClick={() => {
                   setStatuses(p => {
@@ -1022,13 +1252,13 @@ export default function SettingsPage() {
       );
 
       case 'types': return (
-        <Section title="Типи задач" desc="Типи задач — застосовуються до всіх проєктів">
+        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card>
+            <Card className="!border-none">
               {types.map(t => (
                 <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} variant="type" />
               ))}
@@ -1046,13 +1276,13 @@ export default function SettingsPage() {
       );
 
       case 'priorities': return (
-        <Section title="Пріоритети задач" desc="Пріоритети задач — застосовуються до всіх проєктів">
+        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card>
+            <Card className="!border-none">
               {priorities.map(pItem => (
                 <WorkflowItem key={pItem.id} item={pItem} onSave={prA.onSave} onDelete={prA.onDelete} variant="priority" />
               ))}
@@ -1070,13 +1300,13 @@ export default function SettingsPage() {
       );
 
       case 'labels': return (
-        <Section title="Мітки задач" desc="Глобальні мітки для маркування задач">
+        <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань" rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card>
+            <Card className="!border-none">
               {labels.map(l => (
                 <WorkflowItem key={l.id} item={l} onSave={lbA.onSave} onDelete={lbA.onDelete} variant="label" />
               ))}
@@ -1094,13 +1324,13 @@ export default function SettingsPage() {
       );
 
       case 'positions': return (
-        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців">
+        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців" rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card>
+            <Card className="!border-none">
               {positions.map(p => (
                 <PositionItem key={p.id} item={p} onSave={posA.onSave} onDelete={posA.onDelete} />
               ))}
@@ -1120,7 +1350,7 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'danger': return (
         <Section title="Видалення даних" desc="Незворотні дії. Виконуйте обережно.">
-          <Card variant="white" padding="lg">
+          <Card variant="white" padding="lg" className="!border-none">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
                 onClick={() => { if (confirm('Вийти з акаунта?')) signOut(); }}
@@ -1130,7 +1360,7 @@ export default function SettingsPage() {
                 Вийти
               </Button>
             </Row>
-            <Row label="Експортувати дані" desc="Завантажити всі задачі та файли в ZIP-архів">
+            <Row label="Експортувати дані" desc="Завантажити всі завдання та файли в ZIP-архів">
               <Button
                 onClick={() => showToast('Функція в розробці')}
                 style="ghost" color="gray" size="md"
@@ -1139,7 +1369,7 @@ export default function SettingsPage() {
                 Експортувати
               </Button>
             </Row>
-            <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень" danger>
+            <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень">
               <Button
                 onClick={async () => {
                   if (!confirm('Скинути всі workflow налаштування?')) return;
@@ -1157,7 +1387,7 @@ export default function SettingsPage() {
             </Row>
             {isOwner && (
               <>
-                <Row label="Видалити організацію (через 30 днів)" desc="Організація буде схована і повністю видалиться через 30 днів" danger>
+                <Row label="Видалити організацію (через 30 днів)" desc="Організація буде схована і повністю видалиться через 30 днів">
                   <Button
                     onClick={() => handleDeleteOrg('soft')}
                     style="secondary" color="red" size="md"
@@ -1165,7 +1395,7 @@ export default function SettingsPage() {
                     Видалити через 30 днів
                   </Button>
                 </Row>
-                <Row label="Видалити організацію негайно" desc="Повне і миттєве видалення організації і всіх даних без можливості відновлення" danger>
+                <Row label="Видалити організацію негайно" desc="Повне і миттєве видалення організації і всіх даних без можливості відновлення">
                   <Button
                     onClick={() => handleDeleteOrg('hard')}
                     style="primary" color="red" size="md"
@@ -1179,6 +1409,49 @@ export default function SettingsPage() {
           </Card>
         </Section>
       );
+
+      // ──────────────────────────────────────────────────────────────
+      case 'archives': {
+        const archivedProjects = (projects || []).filter(p => p.status === 'archived');
+        return (
+          <Section title="Архів проєктів" desc="Перелік усіх архівованих проєктів організації з можливістю їх відновлення">
+            <Card variant="white" padding="lg" className="!border-none">
+              {archivedProjects.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#f4f4f5] flex items-center justify-center mb-3">
+                    <Archive size={20} className="text-[#9a9a9a]" />
+                  </div>
+                  <p className="text-[14px] font-bold text-[#1f1f1f]">Немає архівованих проєктів</p>
+                  <p className="text-[12px] text-[#9a9a9a] mt-1">Тут відображатимуться всі архівовані проєкти організації</p>
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-[#f4f4f5] -my-3">
+                  {archivedProjects.map(p => (
+                    <div key={p.id} className="flex items-center justify-between py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{p.name}</p>
+                        {p.description && (
+                          <p className="text-[12px] text-[#9a9a9a] truncate mt-0.5">{p.description}</p>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => unarchiveProject(p.id)}
+                        style="secondary"
+                        color="green"
+                        size="sm"
+                        icon={ArchiveRestore}
+                        className="shrink-0 ml-4 font-bold"
+                      >
+                        Розархівувати
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </Section>
+        );
+      }
 
       default: return null;
     }
@@ -1215,33 +1488,13 @@ export default function SettingsPage() {
     </div>
   );
 
-  // ── Sticky Save Action ───────────────────────────────────────────
-  const getSaveAction = () => {
-    switch (activeSection) {
-      case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
-      case 'notifications': return { handler: saveNotifications, loading: notifSaving, label: 'Зберегти сповіщення' };
-      case 'localization': return { handler: saveLocalization, loading: locSaving, label: 'Зберегти локалізацію' };
-      case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
-      case 'statuses':
-      case 'types':
-      case 'priorities':
-      case 'labels':
-      case 'positions':
-        return { handler: saveWorkflow, loading: wfSaving, label: 'Зберегти зміни' };
-      default: return null;
-    }
-  };
-  const saveAction = getSaveAction();
+
 
   // ── Layout ───────────────────────────────────────────────────
   const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin);
 
   const handleNavChange = (id) => {
-    if (id === 'team') {
-      router.push('/workspace/team');
-    } else {
-      setActiveSection(id);
-    }
+    setActiveSection(id);
   };
 
   const sidebarContent = (
@@ -1253,38 +1506,16 @@ export default function SettingsPage() {
   );
 
   return (
-    <SidebarLayout sidebar={sidebarContent}>
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-white relative">
-        <div className="max-w-[700px] mx-auto px-[32px] py-[48px] min-h-full flex flex-col">
+    <SidebarLayout sidebar={sidebarContent} hasBorder={false}>
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f4f4f5] relative">
+        <div className="max-w-[760px] mx-auto px-[32px] py-[48px] min-h-full flex flex-col">
           <div className="flex-1 pb-[100px]">
             {renderSection()}
           </div>
         </div>
       </main>
 
-      {/* Sticky Save Footer */}
-      {saveAction && (
-        <div className="absolute bottom-[24px] left-1/2 -translate-x-1/2 bg-[#f4f4f5] shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-full p-[8px] flex items-center gap-[8px] border border-[#e9e9e9] z-50">
-          {['statuses', 'types', 'priorities', 'labels', 'positions'].includes(activeSection) && (
-            <Button 
-              onClick={() => {
-                if (!confirm('Скинути налаштування цієї секції до стандартних?')) return;
-                if (activeSection === 'statuses') setStatuses(DEFAULT_STATUSES);
-                if (activeSection === 'types') setTypes(DEFAULT_TYPES);
-                if (activeSection === 'priorities') setPriorities(DEFAULT_PRIORITIES);
-                if (activeSection === 'labels') setLabels(DEFAULT_LABELS);
-                if (activeSection === 'positions') setPositions(DEFAULT_POSITIONS);
-              }} 
-              style="ghost" color="gray" size="md" className="rounded-full px-[16px]"
-            >
-              Скинути
-            </Button>
-          )}
-          <Button onClick={saveAction.handler} loading={saveAction.loading} style="primary" color="dark" size="md" className="rounded-full px-[32px]">
-            {saveAction.loading ? 'Збереження...' : saveAction.label}
-          </Button>
-        </div>
-      )}
+
 
       {disableIntegrationModal}
     </SidebarLayout>

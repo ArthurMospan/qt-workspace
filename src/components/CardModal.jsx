@@ -225,8 +225,8 @@ export default function CardModal({ task, members, onClose, onUpdate, onDelete }
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 rounded-[24px]">
             <div className="bg-white rounded-[16px] shadow-xl p-6 mx-4 w-full max-w-[320px] flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <p className="text-[15px] font-bold text-[#1f1f1f]">Видалити задачу?</p>
-                <p className="text-[13px] text-[#9a9a9a]">Цю дію неможливо скасувати. Задача буде видалена назавжди.</p>
+                <p className="text-[15px] font-bold text-[#1f1f1f]">Видалити завдання?</p>
+                <p className="text-[13px] text-[#9a9a9a]">Цю дію неможливо скасувати. Завдання буде видалена назавжди.</p>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button style="secondary" color="dark" size="md" onClick={() => setShowDeleteConfirm(false)}>

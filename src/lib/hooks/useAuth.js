@@ -10,6 +10,18 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+    let isDemoLogin = false;
+    if (typeof document !== 'undefined' && document.cookie.includes('qt_demo_login=1')) {
+      isDemoLogin = true;
+      document.cookie = 'qt_demo_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      sessionStorage.setItem('just_logged_in', 'true');
+      signInWithEmailAndPassword(auth, 'demo@quickteam.me', 'demo123456').catch((err) => {
+        console.error('[useAuth] Demo sign in error:', err);
+        isDemoLogin = false;
+      });
+    }
+
     let intervalId;
     const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (intervalId) clearInterval(intervalId);
@@ -69,8 +81,10 @@ export function useAuth() {
           clearInterval(intervalId);
         };
       } else {
-        setUser(null);
-        setLoading(false);
+        if (!isDemoLogin) {
+          setUser(null);
+          setLoading(false);
+        }
       }
     });
     return () => {
