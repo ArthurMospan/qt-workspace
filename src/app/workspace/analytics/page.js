@@ -450,18 +450,11 @@ export default function WorkspaceAnalyticsPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2 h-full">
 
         <PageHeader
           variant="main"
-          title={
-            <div className="flex items-baseline gap-3">
-              Аналітика
-              <span className="text-[14px] font-medium text-[#9a9a9a] font-normal tracking-normal">
-                Усі проєкти · {projects.filter(p => p.status !== 'archived').length} активних
-              </span>
-            </div>
-          }
+          title="Аналітика"
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}

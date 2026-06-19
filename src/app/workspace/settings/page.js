@@ -14,7 +14,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical,
-  Archive, ArchiveRestore
+  Archive, ArchiveRestore, Bug, LayoutTemplate
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -29,7 +29,8 @@ import {
   SidebarLayout, 
   InnerNavigation, 
   PageHeader,
-  Dialog
+  Dialog,
+  Surface
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -965,7 +966,7 @@ export default function SettingsPage() {
               <Input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-[200px]" />
             </Row>
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
-              <ImageUpload value={orgLogo} onChange={setOrgLogo} theme="light" showLabel={false} />
+              <ImageUpload value={orgLogo} onChange={setOrgLogo} theme="light" showLabel={false} showHint={false} />
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
@@ -993,19 +994,66 @@ export default function SettingsPage() {
           {/* QT Portal — головна інтеграція */}
           <Card variant="white" padding="lg" className="mb-4 !border-none">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-[10px] bg-[#1f1f1f] flex items-center justify-center shrink-0">
-                <Link2 size={16} className="text-white" />
+              <div className="w-10 h-10 rounded-[10px] bg-[#6366f1] flex items-center justify-center shrink-0">
+                <LayoutTemplate size={16} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-4 mb-1">
+                  <div>
+                    <p className="text-[14px] font-semibold text-[#1f1f1f]">QuickTeam+</p>
+                    <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
+                  </div>
+                  <div className="shrink-0">
+                    <ToggleSwitch
+                      checked={qtEnabled}
+                      onChange={saveIntegration}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex items-center gap-3 flex-wrap">
+                  {qtEnabled ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
+                      <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
+                      Підключено
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
+                      <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
+                      Вимкнено
+                    </span>
+                  )}
+                  {qtEnabled && (
+                    <a
+                      href={process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold hover:underline"
+                    >
+                      Відкрити портал <ExternalLink size={11} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* BuggyBag Portal */}
+          <Card variant="white" padding="lg" className="mb-4 !border-none">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-[10px] bg-[#fdf2f8] flex items-center justify-center shrink-0">
+                <Bug size={16} className="text-[#db2777]" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-4 mb-1">
                   <div>
                     <p className="text-[14px] font-semibold text-[#1f1f1f] flex items-center gap-2">
-                      QT — Клієнтський портал
+                      BuggyBag Portal
                       <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#f0f0f0] text-[#9a9a9a] rounded-[4px] uppercase tracking-wider">
-                        В розробці
+                        QuickTeam+
                       </span>
                     </p>
-                    <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація матеріалів, чат з клієнтами та статуси проєктів у реальному часі</p>
+                    <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
                   </div>
                   <div className="shrink-0">
                     <ToggleSwitch
@@ -1035,17 +1083,17 @@ export default function SettingsPage() {
                     }}
                     className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
                   >
-                    Відкрити QT <ExternalLink size={11} />
+                    Відкрити BuggyBag <ExternalLink size={11} />
                   </button>
                 </div>
 
                 {/* What syncs */}
                 <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1">
                   {[
-                    'Повідомлення від клієнтів',
-                    'Матеріали та файли',
-                    'Статуси стадій проєкту',
-                    'Запити на затвердження',
+                    'Баг-репорти',
+                    'Скріншоти та консоль',
+                    'Коментарі клієнтів',
+                    'Статуси завдань',
                   ].map(item => (
                     <div key={item} className="flex items-center gap-2 text-[12px] text-[#cfcfcf]">
                       <span className="w-[4px] h-[4px] rounded-full shrink-0 bg-[#e0e0e0]" />
@@ -1360,15 +1408,7 @@ export default function SettingsPage() {
                 Вийти
               </Button>
             </Row>
-            <Row label="Експортувати дані" desc="Завантажити всі завдання та файли в ZIP-архів">
-              <Button
-                onClick={() => showToast('Функція в розробці')}
-                style="ghost" color="gray" size="md"
-                icon={Download} iconSize={13}
-              >
-                Експортувати
-              </Button>
-            </Row>
+
             <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень">
               <Button
                 onClick={async () => {

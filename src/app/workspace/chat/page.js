@@ -433,7 +433,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
       )}
 
       {/* Input card */}
-      <div className={`bg-white rounded-2xl border transition-colors ${text.trim() || attachments.length > 0 ? 'border-[#d0d0d0]' : 'border-[#e9e9e9]'} shadow-sm`}>
+      <div className={`bg-white rounded-2xl border transition-colors ${text.trim() || attachments.length > 0 ? 'border-[#d0d0d0]' : 'border-[#e9e9e9]'}`}>
         {/* Attachment previews */}
         {attachments.length > 0 && (
           <div className="px-4 pt-3 flex flex-wrap gap-2">
@@ -1251,7 +1251,7 @@ export default function ChatPage() {
                 </div>
               ) : displayMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center py-16">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
                     <MessageSquare size={28} className="text-[#cfcfcf]" />
                   </div>
                   <p className="text-[15px] font-semibold text-[#9a9a9a]">

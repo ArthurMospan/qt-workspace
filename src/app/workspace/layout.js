@@ -109,7 +109,7 @@ export default function WorkspaceLayout({ children }) {
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel */}
       <div className="print:hidden shrink-0 h-full flex p-[12px] pr-[6px]">
-        <div className="h-full rounded-[24px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex">
+        <div className="h-full rounded-[24px] overflow-hidden flex">
           <WorkspaceSidebar />
         </div>
       </div>

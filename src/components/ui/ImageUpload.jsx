@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 
-export default function ImageUpload({ value, onChange, className = '', label = 'Завантажити логотип', showLabel = true, theme = 'dark' }) {
+export default function ImageUpload({ value, onChange, className = '', label = 'Завантажити логотип', showLabel = true, showHint = true, theme = 'dark' }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -59,9 +59,9 @@ export default function ImageUpload({ value, onChange, className = '', label = '
           >
             Видалити
           </button>
-        ) : (
+        ) : showHint ? (
           <span className={`text-[12px] ${subTextColor}`}>Рекомендовано 1:1 (PNG, JPG)</span>
-        )}
+        ) : null}
       </div>
 
       <input 

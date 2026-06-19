@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, MapPin, Phone, MessageCircle, Zap } from 'lucide-react';
+import { Mail, MapPin, Phone, MessageCircle, Zap, Send } from 'lucide-react';
 import { Surface, Card, Badge, StatusBadge, Button } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
@@ -183,7 +183,7 @@ export default function ProfileView({ user, onClose }) {
               <label className="text-[12px] font-bold text-[#9a9a9a]">Telegram</label>
               {details.telegram ? (
                 <a href={`https://t.me/${details.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#1f1f1f] hover:underline font-medium flex items-center gap-2">
-                  <MessageCircle size={16} className="text-[#10b981]" /> {details.telegram}
+                  <Send size={16} className="text-[#24A1DE]" /> {details.telegram}
                 </a>
               ) : (
                 <span className="text-[14px] text-[#cfcfcf]">Не вказано</span>
@@ -216,7 +216,7 @@ export default function ProfileView({ user, onClose }) {
             
             {/* Email */}
             <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold text-[#9a9a9a]">Імейл</label>
+              <label className="text-[12px] font-bold text-[#9a9a9a]">Email</label>
               {user.email ? (
                 <span className="text-[14px] text-[#1f1f1f] font-medium flex items-center gap-2">
                   <Mail size={16} className="text-[#eab308]" /> {user.email}

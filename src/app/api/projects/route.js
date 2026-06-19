@@ -51,10 +51,10 @@ export async function POST(req) {
     if (orgPlan !== 'pro') {
       const projectsSnap = await db.collection('projects')
         .where('organizationId', '==', organizationId)
-        .where('status', '==', 'active')
         .get();
         
-      if (projectsSnap.size >= 3) {
+      const activeCount = projectsSnap.docs.filter(d => d.data().status === 'active').length;
+      if (activeCount >= 3) {
         return NextResponse.json({ 
           error: 'Ліміт проєктів вичерпано. Перейдіть на Pro план.' 
         }, { status: 403 });

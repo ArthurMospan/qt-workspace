@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, updateDoc, addDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,7 +11,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, EmptyState } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
@@ -519,33 +519,37 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
     setSaving(true);
     setError(null);
     try {
-      // Use Firebase JS SDK to get the current user's ID token
-      const auth = (await import('@/lib/firebase')).auth;
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not authenticated');
+      const payload = {
+        name: name.trim(),
+        description: description.trim(),
+        visibility,
+        organizationId: orgId,
+        team: [userId],
+        status: 'active',
+        progress: 0,
+        stagesCount: 4,
+        issueCounter: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: userId,
+      };
       
-      const token = await user.getIdToken();
-
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          visibility,
-          organizationId: orgId,
-          userId,
-        })
-      });
-
-      const data = await res.json();
+      const docRef = await addDoc(collection(db, 'projects'), payload);
       
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create project');
+      // Create default stages
+      const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
+      const batch = writeBatch(db);
+      for (let i = 0; i < stageNames.length; i++) {
+        const stageRef = doc(collection(db, 'stages'));
+        batch.set(stageRef, {
+          label: `${String(i + 1).padStart(2, '0')}. ${stageNames[i]}`,
+          status: i === 0 ? 'in-progress' : 'todo',
+          projectId: docRef.id,
+          order: i,
+          createdAt: serverTimestamp(),
+        });
       }
+      await batch.commit();
 
       onClose();
     } catch (err) {
@@ -822,7 +826,7 @@ export default function WorkspacePage() {
 
   return (<>
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2 min-h-full">
         
         <PageHeader
           variant="main"
@@ -850,21 +854,17 @@ export default function WorkspacePage() {
         />
 
         {/* Projects Panel */}
-        <div className="w-full">
-          <Surface variant="panel" padding="lg" className="w-full min-h-[420px]">
-            {filteredProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-[80px] text-center bg-white rounded-[12px] min-h-[300px]">
-                <div className="w-[64px] h-[64px] bg-[#f4f4f5] rounded-full flex items-center justify-center mb-[18px]">
-                  <Folder size={32} className="text-[#cfcfcf]" />
-                </div>
-                <h4 className="text-[16px] font-bold text-[#1f1f1f] mb-[6px]">
-                  Проєкти не знайдені
-                </h4>
-                <p className="text-[#9a9a9a] text-[13px] max-w-[280px] px-4 leading-relaxed">
-                  Спробуйте змінити параметри фільтрації
-                </p>
-              </div>
-            ) : (
+        <div className="w-full flex-1 flex flex-col">
+          {filteredProjects.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+              <EmptyState
+                icon={Folder}
+                title="Проєкти не знайдені"
+                description="Спробуйте змінити параметри фільтрації"
+              />
+            </div>
+          ) : (
+            <Surface variant="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {filteredProjects.map((p, index) => (
                   <ProjectCard 
@@ -878,8 +878,8 @@ export default function WorkspacePage() {
                   />
                 ))}
               </div>
-            )}
-          </Surface>
+            </Surface>
+          )}
         </div>
 
       </div>

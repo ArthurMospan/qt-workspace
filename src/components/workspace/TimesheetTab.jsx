@@ -72,7 +72,7 @@ export default function TimesheetTab() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       
       {/* Controls */}
-      <div className="h-[60px] shrink-0 flex items-center justify-between px-[32px] pt-4">
+      <div className="h-[60px] shrink-0 flex items-center justify-between pt-4 w-full">
         <div></div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-[#f4f4f5] rounded-[10px] p-1 border border-[#e9e9e9]">
@@ -89,7 +89,7 @@ export default function TimesheetTab() {
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-auto px-[32px] pt-[20px] pb-16">
+      <div className="flex-1 overflow-auto pt-[20px] pb-16 w-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
