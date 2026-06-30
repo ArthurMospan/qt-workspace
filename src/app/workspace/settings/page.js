@@ -397,6 +397,10 @@ export default function SettingsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [qtSaving,       setQtSaving]       = useState(false);
 
+  // ── API Keys ──
+  const [apiKeys, setApiKeys] = useState([]);
+  const [generatingKey, setGeneratingKey] = useState(false);
+
   // ── Billing ──
   const [orgPlan,        setOrgPlan]        = useState('free');
   const [projectsCount,  setProjectsCount]  = useState(0);
@@ -470,7 +474,9 @@ export default function SettingsPage() {
         
         const orgSnap = await getDoc(doc(db, 'organizations', activeOrgId));
         if (orgSnap.exists()) {
-          setOrgPlan(orgSnap.data().plan || 'free');
+          const orgData = orgSnap.data();
+          setOrgPlan(orgData.plan || 'free');
+          setApiKeys(orgData.apiKeys || []);
         }
 
         const { collection, query, where, getDocs } = await import('firebase/firestore');
@@ -612,6 +618,41 @@ export default function SettingsPage() {
       showToast(enabled ? 'Інтеграцію з QT увімкнено' : 'Інтеграцію з QT вимкнено');
     } catch { showToast('Помилка збереження', 'error'); }
     setQtSaving(false);
+  };
+
+  const generateApiKey = async () => {
+    if (!activeOrgId) return;
+    setGeneratingKey(true);
+    try {
+      const newToken = `qt_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      const newKey = {
+        id: Date.now().toString(),
+        token: newToken,
+        name: `Key ${new Date().toLocaleDateString()}`,
+        createdAt: new Date().toISOString(),
+        active: true
+      };
+      
+      const updatedKeys = [...apiKeys, newKey];
+      await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+      setApiKeys(updatedKeys);
+      showToast('Новий API ключ згенеровано');
+    } catch (e) {
+      showToast('Помилка генерації ключа', 'error');
+    }
+    setGeneratingKey(false);
+  };
+
+  const revokeApiKey = async (keyId) => {
+    if (!activeOrgId || !confirm('Ви дійсно хочете видалити цей ключ? Усі інтеграції, що його використовують, перестануть працювати.')) return;
+    try {
+      const updatedKeys = apiKeys.filter(k => k.id !== keyId);
+      await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+      setApiKeys(updatedKeys);
+      showToast('API ключ видалено');
+    } catch (e) {
+      showToast('Помилка видалення ключа', 'error');
+    }
   };
 
   const handleInvite = async () => {
@@ -988,124 +1029,170 @@ export default function SettingsPage() {
 
 
       // ──────────────────────────────────────────────────────────────
-      case 'integrations': return (
-        <Section title="Інтеграції" desc="Керуй підключеними сервісами" rightAction={saveButton}>
+      case 'integrations': {
+        const buggyBagKey = apiKeys.find(k => k.name === 'BuggyBag Integration');
+        const buggyBagEnabled = !!buggyBagKey;
 
-          {/* QT Portal — головна інтеграція */}
-          <Card variant="white" padding="lg" className="mb-4 !border-none">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-[10px] bg-[#6366f1] flex items-center justify-center shrink-0">
-                <LayoutTemplate size={16} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-4 mb-1">
-                  <div>
-                    <p className="text-[14px] font-semibold text-[#1f1f1f]">QuickTeam+</p>
-                    <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
-                  </div>
-                  <div className="shrink-0">
-                    <ToggleSwitch
-                      checked={qtEnabled}
-                      onChange={saveIntegration}
-                    />
-                  </div>
+        const toggleBuggyBag = async (enabled) => {
+          if (!activeOrgId) return;
+          if (enabled) {
+            const newToken = `qt_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+            const newKey = { id: Date.now().toString(), token: newToken, name: 'BuggyBag Integration', createdAt: new Date().toISOString(), active: true };
+            const updatedKeys = [...apiKeys, newKey];
+            await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+            setApiKeys(updatedKeys);
+            showToast('Інтеграцію з BuggyBag увімкнено!');
+          } else {
+            if (buggyBagKey) {
+              const updatedKeys = apiKeys.filter(k => k.id !== buggyBagKey.id);
+              await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+              setApiKeys(updatedKeys);
+              showToast('Інтеграцію з BuggyBag вимкнено');
+            }
+          }
+        };
+
+        return (
+          <Section title="Інтеграції" desc="Керуй підключеними сервісами" rightAction={saveButton}>
+
+            {/* QT Portal — головна інтеграція */}
+            <Card variant="white" padding="lg" className="mb-4 !border-none">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-[10px] bg-[#6366f1] flex items-center justify-center shrink-0">
+                  <LayoutTemplate size={16} className="text-white" />
                 </div>
-
-                <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex items-center gap-3 flex-wrap">
-                  {qtEnabled ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
-                      <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
-                      Підключено
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
-                      <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
-                      Вимкнено
-                    </span>
-                  )}
-                  {qtEnabled && (
-                    <a
-                      href={process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold hover:underline"
-                    >
-                      Відкрити портал <ExternalLink size={11} />
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* BuggyBag Portal */}
-          <Card variant="white" padding="lg" className="mb-4 !border-none">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-[10px] bg-[#fdf2f8] flex items-center justify-center shrink-0">
-                <Bug size={16} className="text-[#db2777]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-4 mb-1">
-                  <div>
-                    <p className="text-[14px] font-semibold text-[#1f1f1f] flex items-center gap-2">
-                      BuggyBag Portal
-                      <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#f0f0f0] text-[#9a9a9a] rounded-[4px] uppercase tracking-wider">
-                        QuickTeam+
-                      </span>
-                    </p>
-                    <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
-                  </div>
-                  <div className="shrink-0">
-                    <ToggleSwitch
-                      checked={false}
-                      onChange={() => {
-                        if (orgPlan !== 'pro') {
-                          setShowUpgradeModal(true);
-                        } else {
-                          showToast('Функція тимчасово недоступна, чекайте на оновлення.', 'info');
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Status + info */}
-                <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex items-center gap-3 flex-wrap">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
-                    <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
-                    Тимчасово вимкнено
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      if (orgPlan !== 'pro') setShowUpgradeModal(true);
-                      else showToast('Перехід в портал недоступний у цій версії.');
-                    }}
-                    className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
-                  >
-                    Відкрити BuggyBag <ExternalLink size={11} />
-                  </button>
-                </div>
-
-                {/* What syncs */}
-                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1">
-                  {[
-                    'Баг-репорти',
-                    'Скріншоти та консоль',
-                    'Коментарі клієнтів',
-                    'Статуси завдань',
-                  ].map(item => (
-                    <div key={item} className="flex items-center gap-2 text-[12px] text-[#cfcfcf]">
-                      <span className="w-[4px] h-[4px] rounded-full shrink-0 bg-[#e0e0e0]" />
-                      {item}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-4 mb-1">
+                    <div>
+                      <p className="text-[14px] font-semibold text-[#1f1f1f]">QuickTeam+</p>
+                      <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
                     </div>
-                  ))}
+                    <div className="shrink-0">
+                      <ToggleSwitch
+                        checked={qtEnabled}
+                        onChange={saveIntegration}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex items-center gap-3 flex-wrap">
+                    {qtEnabled ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
+                        <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
+                        Підключено
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
+                        <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
+                        Вимкнено
+                      </span>
+                    )}
+                    {qtEnabled && (
+                      <a
+                        href={process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold hover:underline"
+                      >
+                        Відкрити портал <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        </Section>
-      );
+            </Card>
+
+            {/* BuggyBag Portal */}
+            <Card variant="white" padding="lg" className="mb-4 !border-none">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-[10px] bg-[#fdf2f8] flex items-center justify-center shrink-0">
+                  <Bug size={16} className="text-[#db2777]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-4 mb-1">
+                    <div>
+                      <p className="text-[14px] font-semibold text-[#1f1f1f] flex items-center gap-2">
+                        BuggyBag Portal
+                        <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#f0f0f0] text-[#9a9a9a] rounded-[4px] uppercase tracking-wider">
+                          QuickTeam+
+                        </span>
+                      </p>
+                      <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
+                    </div>
+                    <div className="shrink-0">
+                      <ToggleSwitch
+                        checked={buggyBagEnabled}
+                        onChange={toggleBuggyBag}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status + info */}
+                  <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex flex-col gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {buggyBagEnabled ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
+                          <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
+                          Підключено
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
+                          <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
+                          Вимкнено
+                        </span>
+                      )}
+
+                      <a
+                        href="http://localhost:3000/projects"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
+                      >
+                        Відкрити BuggyBag <ExternalLink size={11} />
+                      </a>
+                    </div>
+                    
+                    {buggyBagEnabled && (
+                      <div className="bg-[#fcfcfc] border border-[#e9e9e9] rounded-[8px] p-4 mt-1">
+                        <p className="text-[12px] font-semibold text-[#1f1f1f] mb-3">Вставте ці дані в налаштуваннях BuggyBag:</p>
+                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center mb-3">
+                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">Org ID</span>
+                          <div className="flex items-center gap-2">
+                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
+                            <button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
+                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">API Token</span>
+                          <div className="flex items-center gap-2">
+                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
+                            <button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* What syncs */}
+                  <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1">
+                    {[
+                      'Баг-репорти',
+                      'Скріншоти та консоль',
+                      'Коментарі клієнтів',
+                      'Статуси завдань',
+                    ].map(item => (
+                      <div key={item} className="flex items-center gap-2 text-[12px] text-[#cfcfcf]">
+                        <span className="w-[4px] h-[4px] rounded-full shrink-0 bg-[#e0e0e0]" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Section>
+        );
+      }
 
       // ──────────────────────────────────────────────────────────────
       case 'billing': {
@@ -1268,7 +1355,7 @@ export default function SettingsPage() {
                           {(provided) => (
                             <WorkflowItem item={s}
                               onSave={stA.onSave} onDelete={handleStatusDeleteClick}
-                              canDelete={statuses.length > 1}
+                              canDelete={statuses.length > 1 && !['backlog', 'done'].includes(s.id)}
                               variant="status"
                               provided={provided}
                             />

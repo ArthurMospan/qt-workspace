@@ -450,7 +450,7 @@ export default function WorkspaceAnalyticsPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2 h-full">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[24px] flex flex-col gap-2 h-full">
 
         <PageHeader
           variant="main"

@@ -19,16 +19,14 @@ export default function MarkdownViewer({ content, className = '' }) {
           li: ({node, ...props}) => <li className="" {...props} />,
           a: ({node, ...props}) => <a className="text-[#6366f1] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
           blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#e9e9e9] pl-4 italic text-[#4a4a4a] mb-4" {...props} />,
-          code: ({node, inline, className, children, ...props}) => {
-            if (inline) {
-              return <code className="bg-[#f0f0f0] px-[6px] py-[2px] rounded-[4px] text-[13px] font-mono" {...props}>{children}</code>;
-            }
-            return (
-              <pre className="bg-[#1f1f1f] text-white p-4 rounded-[8px] overflow-x-auto mb-4 text-[13px] font-mono">
-                <code {...props}>{children}</code>
-              </pre>
-            );
-          },
+          pre: ({node, ...props}) => (
+            <pre className="bg-[#1f1f1f] text-white p-4 rounded-[8px] overflow-x-auto mb-4 text-[13px] font-mono [&>code]:!bg-transparent [&>code]:!p-0 [&>code]:!text-inherit" {...props} />
+          ),
+          code: ({node, className, children, ...props}) => (
+            <code className={`bg-[#f0f0f0] px-[6px] py-[2px] rounded-[4px] text-[13px] font-mono ${className || ''}`} {...props}>
+              {children}
+            </code>
+          ),
           table: ({node, ...props}) => (
             <div className="overflow-x-auto mb-4">
               <table className="w-full border-collapse border border-[#e9e9e9]" {...props} />

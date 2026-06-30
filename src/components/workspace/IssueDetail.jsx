@@ -15,6 +15,7 @@ import { usePortalChat }       from '@/lib/hooks/usePortalIntegration';
 import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
 import { useIssueLinks }       from '@/lib/hooks/useIssueLinks';
 import MarkdownEditor from '@/components/MarkdownEditor';
+import MarkdownViewer from '@/components/MarkdownViewer';
 import UserAvatar from '@/components/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
@@ -456,7 +457,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const dueStr    = due ? formatDate(due) : null;
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
-  const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId);
+  const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId) || (issue.reporterName ? { name: issue.reporterName } : null);
   const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
   const subtasksAll   = (issue.subtasks || []).length;
 
@@ -1026,7 +1027,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       className="w-full px-4 py-3 bg-white rounded-[10px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:outline-none resize-y leading-relaxed transition-colors border border-transparent focus:border-[#e9e9e9]"
                     />
                   ) : issue.description ? (
-                    <p className="text-[14px] text-[#1f1f1f] leading-relaxed whitespace-pre-wrap">{issue.description}</p>
+                    <div className="bg-[#fafafa] border border-[#e9e9e9] rounded-[10px] p-4 max-h-[500px] overflow-y-auto">
+                      <MarkdownViewer content={issue.description} />
+                    </div>
                   ) : (
                     <button onClick={enterEdit} className="text-[13px] text-[#cfcfcf] italic hover:text-[#9a9a9a] transition-colors text-left">
                       Натисни Редагувати щоб додати опис...
