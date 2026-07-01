@@ -11,80 +11,65 @@ import { useAppContext } from '@/lib/context/AppContext';
 export const DEFAULT_STATUSES = [{
   id: 'backlog',
   label: 'Backlog',
-  color: '#9a9a9a',
-  emoji: '📋'
+  color: '#9a9a9a'
 }, {
   id: 'todo',
   label: 'To Do',
-  color: '#6366f1',
-  emoji: '📌'
+  color: '#6366f1'
 }, {
   id: 'in-progress',
   label: 'In Progress',
-  color: '#0891b2',
-  emoji: '⚡'
+  color: '#0891b2'
 }, {
   id: 'code-review',
   label: 'Code Review',
-  color: '#d97706',
-  emoji: '🔍'
+  color: '#d97706'
 }, {
   id: 'qa',
   label: 'QA',
-  color: '#7c3aed',
-  emoji: '🧪'
+  color: '#7c3aed'
 }, {
   id: 'client-approval',
   label: 'Client Approval',
-  color: '#db2777',
-  emoji: '👁'
+  color: '#db2777'
 }, {
   id: 'done',
   label: 'Done',
-  color: '#10b981',
-  emoji: '✅'
+  color: '#10b981'
 }];
 export const DEFAULT_TYPES = [{
   id: 'epic',
   label: 'Epic',
-  color: '#8b5cf6',
-  emoji: '⚡'
+  color: '#8b5cf6'
 }, {
   id: 'feature',
   label: 'Feature',
-  color: '#0891b2',
-  emoji: '⭐'
+  color: '#0891b2'
 }, {
   id: 'task',
   label: 'Task',
-  color: '#059669',
-  emoji: '✅'
+  color: '#059669'
 }, {
   id: 'bug',
   label: 'Bug',
-  color: '#dc2626',
-  emoji: '🐛'
+  color: '#dc2626'
 }];
 export const DEFAULT_PRIORITIES = [{
   id: 'blocker',
   label: 'Blocker',
-  color: '#dc2626',
-  emoji: '🚨'
+  color: '#dc2626'
 }, {
   id: 'high',
   label: 'High',
-  color: '#f97316',
-  emoji: '🔴'
+  color: '#f97316'
 }, {
   id: 'medium',
   label: 'Medium',
-  color: '#eab308',
-  emoji: '🟡'
+  color: '#eab308'
 }, {
   id: 'low',
   label: 'Low',
-  color: '#9a9a9a',
-  emoji: '🔵'
+  color: '#9a9a9a'
 }];
 export const DEFAULT_LABELS = [{
   id: 'bug',

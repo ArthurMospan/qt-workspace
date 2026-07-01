@@ -457,7 +457,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const dueStr    = due ? formatDate(due) : null;
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
-  const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId) || (issue.reporterName ? { name: issue.reporterName } : null);
+  const reporterMatchByEmail = issue.reporterName ? members.find(m => m.email && m.email.toLowerCase() === issue.reporterName.toLowerCase()) : null;
+  const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId) || reporterMatchByEmail || (issue.source === 'buggybag' ? { name: 'BuggyBag' } : (issue.reporterName ? { name: issue.reporterName } : null));
   const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
   const subtasksAll   = (issue.subtasks || []).length;
 

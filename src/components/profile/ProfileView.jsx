@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, MapPin, Phone, MessageCircle, Zap, Send } from 'lucide-react';
-import { Surface, Card, Badge, StatusBadge, Button } from '@/components/ui';
+import { Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2 } from 'lucide-react';
+import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 const getRealProfileDetails = (member) => {
   const isDemo = member.email === 'demo@quickteam.com' || member.email?.startsWith('demo');
@@ -36,6 +37,8 @@ export default function ProfileView({ user, onClose }) {
   const router = useRouter();
   const { currentUser, projects } = useAppContext();
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
+  const { positions = [] } = useWorkflowConfig();
+  const [activeTab, setActiveTab] = useState('profile');
 
   if (!user) return null;
 
@@ -46,10 +49,9 @@ export default function ProfileView({ user, onClose }) {
   const isOnline = user.lastActive && (Date.now() - new Date(user.lastActive).getTime() < 120000);
   const details = getRealProfileDetails(user);
 
-  // Filter user tasks (max 5, not done/cancelled)
-  const userTasks = tasks
-    .filter(t => t.assigneeIds?.includes(uid) && t.status !== 'done' && t.status !== 'cancelled')
-    .slice(0, 5);
+  const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
+
+  const allActiveTasks = tasks.filter(t => t.assigneeIds?.includes(uid) && t.status !== 'done' && t.status !== 'cancelled');
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();
@@ -104,163 +106,203 @@ export default function ProfileView({ user, onClose }) {
     }
   };
 
+  const tabsConfig = [
+    { id: 'profile', label: 'Профіль' },
+    { id: 'tasks', label: `Задачі (${allActiveTasks.length})` }
+  ];
+
+  const adminMenu = [
+    { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/workspace/settings?section=team&user=${uid}`); } },
+    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/workspace/analytics?tab=workload&member=${uid}`); } }
+  ];
+
   return (
-    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
-      {/* HERO SECTION */}
-      <div className="px-8 py-10 flex flex-col items-center text-center gap-4 shrink-0">
-        <div className="relative mb-[12px]">
-          <UserAvatar user={user} size={100} className="text-[32px] shadow-sm" />
-          {isOnline && (
-            <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#10b981] rounded-full ring-4 ring-white" />
-          )}
-          {(user.status || user.statusEmoji) && (
-            <div className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
-              <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
-              {user.status && (
-                <span className="text-[13px] font-normal text-[#1f1f1f] tracking-tight truncate">
-                  {user.status}
-                </span>
+    <div className="flex flex-col h-full overflow-hidden bg-white">
+      {/* HEADER SECTION */}
+      <div className="shrink-0 pt-8 pb-4 flex flex-col items-center">
+        <div className="flex flex-col items-center text-center px-8">
+          <div className="relative mb-2">
+            <UserAvatar user={user} size={100} className="text-[32px] shadow-sm" />
+            {isOnline && (
+              <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#10b981] rounded-full ring-4 ring-white" />
+            )}
+            {(user.status || user.statusEmoji) && (
+              <div className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
+                <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
+                {user.status && (
+                  <span className="text-[13px] font-normal text-[#1f1f1f] tracking-tight truncate">
+                    {user.status}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex flex-col gap-1 text-center items-center">
+            <h2 className="text-[24px] font-black text-[#1f1f1f]">{user.name || user.email} {isMe && <span className="text-[#9a9a9a] font-normal text-[18px]">(ти)</span>}</h2>
+            <p className="text-[14px] text-[#9a9a9a] font-medium">
+              {positionName}
+            </p>
+          </div>
+
+          {/* Actions */}
+          {!isMe && (
+            <div className="flex items-center gap-2 mt-4">
+              <Button
+                onClick={() => {
+                  if (onClose) onClose();
+                  router.push(`/workspace/chat?user=${uid}`);
+                }}
+                style="secondary"
+                color="dark"
+                size="lg"
+                icon={MessageCircle}
+              >
+                Написати
+              </Button>
+              <Button
+                onClick={handleEmergencyCall}
+                style="outline"
+                color="red"
+                size="lg"
+                icon={Zap}
+                className="!bg-red-50 hover:!bg-red-100 !border !border-[#ef4444]"
+              >
+                Виклик
+              </Button>
+              
+              {isAdminOrOwner && (
+                <ContextMenu
+                  trigger={
+                    <Button style="secondary" color="dark" size="icon-lg" icon={MoreVertical} />
+                  }
+                  items={adminMenu}
+                />
               )}
             </div>
           )}
         </div>
-        
-        <div className="flex flex-col gap-1 text-center items-center">
-          <h2 className="text-[24px] font-black text-[#1f1f1f]">{user.name || user.email} {isMe && '(ти)'}</h2>
-          <p className="text-[14px] text-[#9a9a9a] font-medium">
-            {user.positionId ? user.positionId : (user.title || user.email)}
-          </p>
-        </div>
 
-        {/* Actions */}
-        {!isMe && (
-          <div className="flex gap-[12px] w-full px-[8px] mt-[4px]">
-            <button
-              onClick={() => {
-                if (onClose) onClose();
-                router.push(`/workspace/chat?user=${uid}`);
-              }}
-              className="h-[56px] flex-1 bg-white border-2 border-[#f0f0f0] rounded-[20px] flex items-center justify-center gap-[10px] text-[15px] font-bold text-[#1f1f1f] hover:bg-[#f7f7f7] hover:border-[#e0e0e0] transition-all active:scale-95"
-            >
-              <MessageCircle size={18} /> Написати
-            </button>
-            <button
-              onClick={handleEmergencyCall}
-              className="h-[56px] flex-1 bg-[#fff1f1] border-2 border-[#ffe0e0] rounded-[20px] flex items-center justify-center gap-[10px] text-[15px] font-bold text-red-500 hover:bg-[#ffeded] hover:border-[#ffdada] transition-all active:scale-95"
-            >
-              <Zap size={18} /> Виклик
-            </button>
-          </div>
-        )}
+        {/* TABS */}
+        <div className="mt-6 flex justify-center w-full px-8">
+          <Tabs tabs={tabsConfig} activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
       </div>
 
       {/* BODY SECTION */}
-      <div className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[800px] w-full mx-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 w-full max-w-[800px] mx-auto">
         
-        {/* Про себе */}
-        {(details.bio || isMe) && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Про себе</h3>
-            {details.bio ? (
-              <p className="text-[14px] text-[#1f1f1f] leading-relaxed">
-                {details.bio}
-              </p>
-            ) : (
-              <p className="text-[14px] text-[#cfcfcf] italic">
-                Додайте опис у налаштуваннях профілю.
-              </p>
+        {activeTab === 'profile' && (
+          <div className="flex flex-col gap-8">
+            {/* Про себе */}
+            {(details.bio || isMe) && (
+              <div className="flex flex-col gap-3">
+                <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Про себе</h3>
+                {details.bio ? (
+                  <p className="text-[14px] text-[#1f1f1f] leading-relaxed">
+                    {details.bio}
+                  </p>
+                ) : (
+                  <p className="text-[14px] text-[#cfcfcf] italic">
+                    Додайте опис у налаштуваннях профілю.
+                  </p>
+                )}
+              </div>
             )}
+
+            {/* Навички */}
+            {details.skills && details.skills.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Навички</h3>
+                <div className="flex flex-wrap gap-2">
+                  {details.skills.map(skill => (
+                    <Badge key={skill} variant="gray" className="text-[13px] px-3 py-1 bg-[#f4f4f5] text-[#1f1f1f] border-transparent font-medium">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Анкета */}
+            <div className="flex flex-col gap-4">
+              <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Контакти</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                {/* Telegram */}
+                <div className="flex items-center gap-3">
+                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
+                    <Send size={14} className="text-[#1f1f1f]" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Telegram</span>
+                    {details.telegram ? (
+                      <a href={`https://t.me/${details.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#1f1f1f] hover:underline font-medium truncate leading-none">
+                        {details.telegram}
+                      </a>
+                    ) : (
+                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="flex items-center gap-3">
+                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
+                    <Phone size={14} className="text-[#1f1f1f]" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Телефон (Контактний номер)</span>
+                    {details.phone ? (
+                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{details.phone}</span>
+                    ) : (
+                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-3">
+                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
+                    <MapPin size={14} className="text-[#1f1f1f]" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Локація (Місто, країна)</span>
+                    {details.location ? (
+                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{details.location}</span>
+                    ) : (
+                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Email */}
+                <div className="flex items-center gap-3">
+                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
+                    <Mail size={14} className="text-[#1f1f1f]" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Email</span>
+                    {user.email ? (
+                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{user.email}</span>
+                    ) : (
+                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Info Blocks */}
-        <div className="flex flex-col gap-4 bg-[#f4f4f5] rounded-[16px] p-[20px]">
-          <h3 className="text-[13px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Анкета учасника</h3>
-          
-          <div className="flex flex-col gap-4">
-            {/* Telegram */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold text-[#9a9a9a]">Telegram</label>
-              {details.telegram ? (
-                <a href={`https://t.me/${details.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#1f1f1f] hover:underline font-medium flex items-center gap-2">
-                  <Send size={16} className="text-[#24A1DE]" /> {details.telegram}
-                </a>
-              ) : (
-                <span className="text-[14px] text-[#cfcfcf]">Не вказано</span>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold text-[#9a9a9a]">Телефон (Контактний номер)</label>
-              {details.phone ? (
-                <span className="text-[14px] text-[#1f1f1f] font-medium flex items-center gap-2">
-                  <Phone size={16} className="text-[#6366f1]" /> {details.phone}
-                </span>
-              ) : (
-                <span className="text-[14px] text-[#cfcfcf]">Не вказано</span>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold text-[#9a9a9a]">Локація (Місто, країна)</label>
-              {details.location ? (
-                <span className="text-[14px] text-[#1f1f1f] font-medium flex items-center gap-2">
-                  <MapPin size={16} className="text-[#f97316]" /> {details.location}
-                </span>
-              ) : (
-                <span className="text-[14px] text-[#cfcfcf]">Не вказано</span>
-              )}
-            </div>
-            
-            {/* Email */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold text-[#9a9a9a]">Email</label>
-              {user.email ? (
-                <span className="text-[14px] text-[#1f1f1f] font-medium flex items-center gap-2">
-                  <Mail size={16} className="text-[#eab308]" /> {user.email}
-                </span>
-              ) : (
-                <span className="text-[14px] text-[#cfcfcf]">Не вказано</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Навички */}
-        {details.skills && details.skills.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Навички</h3>
-            <div className="flex flex-wrap gap-2">
-              {details.skills.map(skill => (
-                <Badge key={skill} variant="gray" className="text-[13px] px-3 py-1 bg-[#f4f4f5] text-[#1f1f1f] border-transparent font-medium">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Активні задачі */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Активні задачі</h3>
-            {userTasks.length > 0 && (
-              <Button style="ghost" size="sm" onClick={() => {
-                if (onClose) onClose();
-                router.push(`/workspace/my?assignee=${uid}`);
-              }}>
-                Всі задачі {user.name?.split(' ')[0]}
-              </Button>
-            )}
-          </div>
-
+        {activeTab === 'tasks' && (
           <div className="flex flex-col gap-2">
-            {userTasks.length === 0 ? (
-              <p className="text-[14px] text-[#9a9a9a] py-2">Немає активних задач</p>
+            {allActiveTasks.length === 0 ? (
+              <div className="bg-[#f4f4f5] rounded-[16px] p-8 text-center border border-[#f0f0f0]">
+                <p className="text-[14px] text-[#9a9a9a]">Немає активних задач</p>
+              </div>
             ) : (
-              userTasks.map(task => {
+              allActiveTasks.map(task => {
                 const projectName = projects.find(p => p.id === task.projectId)?.name || 'Проєкт';
                 return (
                   <TaskRow
@@ -274,28 +316,8 @@ export default function ProfileView({ user, onClose }) {
               })
             )}
           </div>
-        </div>
-
-        {/* Адміністрування */}
-        {isAdminOrOwner && !isMe && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Адміністрування</h3>
-            <div className="flex items-center gap-2">
-              <Button style="secondary" color="gray" onClick={() => {
-                if (onClose) onClose();
-                router.push(`/workspace/settings?section=team&user=${uid}`);
-              }}>
-                Керування доступом
-              </Button>
-              <Button style="secondary" color="gray" onClick={() => {
-                if (onClose) onClose();
-                router.push(`/workspace/analytics?member=${uid}`);
-              }}>
-                Аналітика учасника
-              </Button>
-            </div>
-          </div>
         )}
+
       </div>
     </div>
   );

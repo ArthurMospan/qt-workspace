@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/Input';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const LINK_TYPES = [
-  { value: 'blocks', label: '🚫 блокує', color: '#dc2626' },
-  { value: 'is-blocked-by', label: '⛔ заблокована', color: '#f97316' },
-  { value: 'duplicates', label: '📋 дублікат', color: '#a855f7' },
-  { value: 'relates-to', label: '🔗 пов\'язана з', color: '#0891b2' },
+  { value: 'blocks', label: 'блокує', color: '#dc2626' },
+  { value: 'is-blocked-by', label: 'заблокована', color: '#f97316' },
+  { value: 'duplicates', label: 'дублікат', color: '#a855f7' },
+  { value: 'relates-to', label: 'пов\'язана з', color: '#0891b2' },
 ];
 
 export default function DependenciesPanel({

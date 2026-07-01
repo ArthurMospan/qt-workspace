@@ -91,7 +91,7 @@ export default function BoardConfigModal({ project, onClose }) {
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-full" style={{ background: status.color }} />
                         <span className={`text-[14px] font-semibold ${isHidden ? 'text-[#9a9a9a]' : 'text-[#1f1f1f]'}`}>
-                          {status.emoji} {status.label}
+                          {status.label}
                         </span>
                       </div>
                       <div className="text-[#9a9a9a]">

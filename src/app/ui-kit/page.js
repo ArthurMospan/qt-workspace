@@ -58,6 +58,7 @@ const GROUPS = [
       { id: 'avatars',      label: 'Avatars & Teams',    icon: Users },
       { id: 'surfaces',     label: 'Surfaces',           icon: Layers },
       { id: 'breadcrumbs',  label: 'Breadcrumbs',        icon: ChevronRight },
+      { id: 'tooltips',     label: 'Tooltips',           icon: MessageSquare },
     ]
   },
   {
@@ -1539,6 +1540,29 @@ function AvatarGroupsSection() {
   );
 }
 
+function TooltipsSection() {
+  return (
+    <div className="flex flex-col gap-[32px]">
+      <PreviewBlock title="Tooltip Component" description="Компонент підказки, який з'являється при наведенні. Підтримує 4 позиції: top (default), bottom, left, right." fullWidth>
+        <div className="flex items-center gap-[24px] justify-center w-full py-[40px]">
+          <Tooltip content="Підказка зверху" position="top">
+            <Button style="secondary">Наведи (Top)</Button>
+          </Tooltip>
+          <Tooltip content="Підказка знизу" position="bottom">
+            <Button style="secondary">Наведи (Bottom)</Button>
+          </Tooltip>
+          <Tooltip content="Підказка зліва" position="left">
+            <Button style="secondary">Наведи (Left)</Button>
+          </Tooltip>
+          <Tooltip content="Підказка справа" position="right">
+            <Button style="secondary">Наведи (Right)</Button>
+          </Tooltip>
+        </div>
+      </PreviewBlock>
+    </div>
+  );
+}
+
 function BreadcrumbsSection() {
   const [projectSearchActive, setProjectSearchActive] = useState(false);
   const [projectQuery, setProjectQuery] = useState('');
@@ -1896,6 +1920,7 @@ const SECTION_MAP = {
   'button-groups': <ButtonGroupsSection />,
   'avatar-groups': <AvatarGroupsSection />,
   'breadcrumbs':   <BreadcrumbsSection />,
+  tooltips:        <TooltipsSection />,
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,
 };

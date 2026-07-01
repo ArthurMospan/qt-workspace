@@ -19,83 +19,48 @@ import {
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
+import { Select } from '@/components/ui/Select';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
-function InviteModal({ isOpen, onClose, inviteMember, currentUser }) {
+function InviteModal({ isOpen, onClose, inviteMember }) {
   const showToast = useWorkspaceStore(s => s.showToast);
-  const { members } = useOrganization();
-  const [search, setSearch] = useState('');
-  const [invitedIds, setInvitedIds] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('member');
+  const [inviting, setInviting] = useState(false);
 
-  const filteredMembers = members.filter(m => 
-    (m.name || m.email || '').toLowerCase().includes(search.toLowerCase()) &&
-    m.id !== (currentUser?.id || currentUser?.uid) // exclude self
-  );
-
-  const handleToggle = (id) => {
-    setInvitedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    // In a real scenario, this would add the selected users to a project.
-    // For now, we mock the success.
-    setTimeout(() => {
-      showToast(`Успішно додано ${invitedIds.length} учасників ✓`);
-      setSubmitting(false);
-      setInvitedIds([]);
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    try {
+      setInviting(true);
+      const res = await inviteMember(inviteEmail.trim(), 'me', inviteRole);
+      if (res.type === 'added_directly') {
+        showToast('Користувача додано до команди ✓', 'success');
+      } else {
+        showToast('Запрошення успішно надіслано ✓', 'success');
+      }
+      setInviteEmail('');
+      setInviteRole('member');
       onClose();
-    }, 1000);
+    } catch (err) {
+      showToast(err.message || 'Помилка при запрошенні', 'error');
+    } finally {
+      setInviting(false);
+    }
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title="Запросити учасника" size="md">
-      <div className="flex flex-col gap-4 py-2 h-[400px]">
-        <Input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Пошук по учасниках організації..."
-          icon={Search}
-        />
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1 -mx-2 px-2">
-          {filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-[13px] text-[#9a9a9a]">
-              Нікого не знайдено
-            </div>
-          ) : (
-            filteredMembers.map(m => {
-              const isAdded = invitedIds.includes(m.id || m.uid);
-              return (
-                <div key={m.id || m.uid} className="flex items-center justify-between p-2 hover:bg-[#f4f4f5] rounded-[8px] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <UserAvatar user={m} size={32} />
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-bold text-[#1f1f1f]">{m.name || m.email}</span>
-                      <span className="text-[11px] text-[#9a9a9a]">{m.title || 'Учасник'}</span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    style={isAdded ? 'secondary' : 'ghost'}
-                    color={isAdded ? 'dark' : 'blue'}
-                    onClick={() => handleToggle(m.id || m.uid)}
-                  >
-                    {isAdded ? 'Додано' : 'Запросити'}
-                  </Button>
-                </div>
-              );
-            })
-          )}
-        </div>
+    <Dialog isOpen={isOpen} onClose={onClose} title="Запросити нового учасника" size="md">
+      <div className="flex flex-col gap-4 py-4 min-h-[200px]">
+        <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+        <Select value={inviteRole} onChange={setInviteRole} options={[
+          {value: 'owner', label: 'Власник'},
+          {value: 'admin', label: 'Адміністратор'},
+          {value: 'member', label: 'Учасник'}
+        ]} label="Роль" />
       </div>
-
       <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-[#f0f0f0]">
-        <Button onClick={onClose} style="ghost" color="dark" size="md">Скасувати</Button>
-        <Button onClick={handleSubmit} disabled={submitting || invitedIds.length === 0} loading={submitting} style="primary" color="dark" size="md">
-          Додати до проєкту
-        </Button>
+        <Button onClick={onClose} style="ghost" color="dark" size="lg">Скасувати</Button>
+        <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" color="dark" size="lg">Надіслати запрошення</Button>
       </div>
     </Dialog>
   );
@@ -185,8 +150,8 @@ export default function TeamPage() {
                   </div>
                   <div className="flex flex-col gap-0.5 min-w-0">
                     <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${isSelected ? 'text-[#1f1f1f]' : 'text-[#4a4a4a] group-hover:text-[#1f1f1f]'}`}>
-                      {member.statusEmoji && <span>{member.statusEmoji}</span>}
                       {member.name || member.email}
+                      {member.statusEmoji && <span>{member.statusEmoji}</span>}
                     </span>
                     <span className="text-[11px] font-normal text-[#9a9a9a] truncate">
                       {positionName}
@@ -203,7 +168,7 @@ export default function TeamPage() {
       <div 
         className="flex-1 flex flex-col h-full bg-[#f4f4f5] rounded-[16px] p-[12px] overflow-hidden"
       >
-        <Surface variant="card" className="flex-1 w-full max-w-[800px] mx-auto overflow-hidden !rounded-[12px] flex flex-col">
+        <Surface variant="card" className="flex-1 w-full overflow-hidden !rounded-[12px] flex flex-col bg-white">
           {selectedMember ? (
             <ProfileView user={selectedMember} />
           ) : (

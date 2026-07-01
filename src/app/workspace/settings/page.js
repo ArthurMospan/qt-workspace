@@ -41,8 +41,7 @@ const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.verce
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
-  member: 'Учасник',
-  client: 'Клієнт',
+  member: 'Учасник'
 };
 
 const DEFAULT_STATUSES = [
@@ -360,6 +359,16 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState('profile');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const sec = searchParams.get('section');
+      if (sec) {
+        setActiveSection(sec);
+      }
+    }
+  }, []);
+
   // ── Workflow ──
   const [statuses,   setStatuses]   = useState(DEFAULT_STATUSES);
   const [types,      setTypes]      = useState(DEFAULT_TYPES);
@@ -423,6 +432,7 @@ export default function SettingsPage() {
   // ── Team invite ──
   const [inviting,    setInviting]    = useState(false);
   const [inviteRole,  setInviteRole]  = useState('member');
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Sync from Firestore (initial only)
   useEffect(() => {
@@ -922,7 +932,7 @@ export default function SettingsPage() {
                   const result = await Notification.requestPermission();
                   showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
                 }}
-                style="secondary" color="blue" size="md"
+                style="secondary" color="blue" size="lg"
               >
                 {typeof window !== 'undefined' && window.Notification?.permission === 'granted'
                   ? 'Увімкнено'
@@ -1106,16 +1116,19 @@ export default function SettingsPage() {
             <Card variant="white" padding="lg" className="mb-4 !border-none">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-[10px] bg-[#fdf2f8] flex items-center justify-center shrink-0">
-                  <Bug size={16} className="text-[#db2777]" />
+                  <svg width="18" height="18" viewBox="0 0 194 194" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#db2777]">
+                    <path d="M10.7365 18.4947C-0.604524 20.9451 -6.27503 -5.19299 10.7365 0.933186C24.3457 5.83418 36.659 21.4903 41.1144 28.7056L42.7999 31.4049C54.7817 28.0012 71.5545 27.9996 97.0001 27.9996C122.445 27.9996 139.218 28.0014 151.199 31.4049L152.886 28.7056C157.341 21.4903 169.655 5.83418 183.264 0.933186C200.275 -5.19278 194.605 20.9448 183.264 18.4947C174.191 16.5343 165.982 22.0348 163.012 25.0299L157.341 31.1558L156.075 33.0904C159.532 34.5302 162.546 36.377 165.248 38.7467C166.669 39.9929 168.008 41.3305 169.254 42.7515C180 55.0055 180 73.6704 180 111C180 148.329 180 166.994 169.254 179.248C168.008 180.669 166.669 182.007 165.248 183.253C152.994 194 134.33 194 97.0001 194C59.6708 194 41.006 194 28.7521 183.253C27.331 182.007 25.9925 180.669 24.7462 179.248C14.0002 166.994 14.0001 148.329 14.0001 111C14.0001 73.6703 13.9999 55.0054 24.7462 42.7515C25.9925 41.3304 27.331 39.9929 28.7521 38.7467C31.454 36.3772 34.4674 34.5302 37.924 33.0904L36.6593 31.1558L30.9884 25.0299C28.0181 22.0348 19.8093 16.5343 10.7365 18.4947Z" fill="currentColor"/>
+                    <path d="M30.6001 102.7C30.6001 86.6564 43.6062 73.6503 59.6501 73.6503C75.6939 73.6503 88.7001 86.6564 88.7001 102.7V106.85C88.7001 122.894 75.6939 135.9 59.6501 135.9C43.6062 135.9 30.6001 122.894 30.6001 106.85V102.7Z" fill="white"/>
+                    <path d="M105.3 102.7C105.3 86.6564 118.306 73.6503 134.35 73.6503C150.394 73.6503 163.4 86.6564 163.4 102.7V106.85C163.4 122.894 150.394 135.9 134.35 135.9C118.306 135.9 105.3 122.894 105.3 106.85V102.7Z" fill="white"/>
+                    <path d="M126.05 97.512C126.05 88.917 133.018 81.9495 141.613 81.9495C150.208 81.9495 157.175 88.917 157.175 97.512C157.175 106.107 150.208 113.074 141.613 113.074C133.018 113.074 126.05 106.107 126.05 97.512Z" fill="currentColor"/>
+                    <path d="M51.3501 97.512C51.3501 88.917 58.3176 81.9495 66.9126 81.9495C75.5075 81.9495 82.4751 88.917 82.4751 97.512C82.4751 106.107 75.5075 113.074 66.9126 113.074C58.3176 113.074 51.3501 106.107 51.3501 97.512Z" fill="currentColor"/>
+                  </svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4 mb-1">
                     <div>
                       <p className="text-[14px] font-semibold text-[#1f1f1f] flex items-center gap-2">
                         BuggyBag Portal
-                        <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#f0f0f0] text-[#9a9a9a] rounded-[4px] uppercase tracking-wider">
-                          QuickTeam+
-                        </span>
                       </p>
                       <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
                     </div>
@@ -1156,17 +1169,17 @@ export default function SettingsPage() {
                       <div className="bg-[#fcfcfc] border border-[#e9e9e9] rounded-[8px] p-4 mt-1">
                         <p className="text-[12px] font-semibold text-[#1f1f1f] mb-3">Вставте ці дані в налаштуваннях BuggyBag:</p>
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center mb-3">
-                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">Org ID</span>
-                          <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
-                            <button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
                           <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">API Token</span>
                           <div className="flex items-center gap-2">
                             <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
                             <button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
+                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">Org ID</span>
+                          <div className="flex items-center gap-2">
+                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
+                            <button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
                           </div>
                         </div>
                       </div>
@@ -1264,25 +1277,14 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'team': return (
         <Section title="Учасники команди" desc="Керування учасниками організації та їхніми ролями" rightAction={
-          <Button onClick={() => setInviteEmail('')} style="primary" icon={Plus}>Запросити</Button>
+          <Button onClick={() => setShowInviteModal(true)} style="primary" icon={Plus}>Запросити</Button>
         }>
-          <Surface variant="card" className="!rounded-[12px] p-0 overflow-hidden">
-            {isAdmin && (
-              <div className="p-6 border-b border-[#e9e9e9] flex flex-col gap-4 bg-[#f0f0f0]">
-                <h3 className="text-[14px] font-bold text-[#1f1f1f]">Запросити нового учасника</h3>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" className="w-[260px]" />
-                  <Select value={inviteRole} onChange={setInviteRole} options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))} className="w-[160px]" />
-                  <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary">Надіслати</Button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col divide-y divide-[#f0f0f0]">
-              {members.map(member => {
+          <Surface variant="card" className="!rounded-[12px] p-0 overflow-visible relative z-10">
+            <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[12px]">
+              {members.map((member, i) => {
                 const isMe = member.id === (currentUser?.uid || currentUser?.id);
                 return (
-                  <div key={member.id} className="p-4 px-6 flex items-center justify-between hover:bg-[#fcfcfc] transition-colors">
+                  <div key={member.id} className={`p-4 px-6 flex items-center justify-between hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[12px]' : ''} ${i === members.length - 1 ? 'rounded-b-[12px]' : ''}`}>
                     <div className="flex items-center gap-3">
                       <UserAvatar user={member} size={40} />
                       <div>
@@ -1299,23 +1301,20 @@ export default function SettingsPage() {
                         value={member.positionId || ''}
                         onChange={(val) => handlePositionChange(member.id, val)}
                         options={[{value: '', label: 'Без посади'}, ...positions.map(p => ({value: p.id, label: p.label}))]}
-                        className="w-[160px] h-[32px] text-[12px]"
+                        className="w-[160px]"
+                        buttonClassName="bg-[#f4f4f5] rounded-[10px] px-[12px] h-[36px]"
                         disabled={!isAdmin}
                       />
                       
                       {/* Role */}
-                      {isOwner && !isMe ? (
-                        <Select
-                          value={member.role}
-                          onChange={(val) => handleRoleChange(member.id, val)}
-                          options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))}
-                          className="w-[140px] h-[32px] text-[12px]"
-                        />
-                      ) : (
-                        <span className="text-[12px] font-semibold px-3 py-1 bg-[#f0f0f0] text-[#4a4a4a] rounded-full w-[140px] text-center">
-                          {ROLE_LABELS[member.role] || member.role}
-                        </span>
-                      )}
+                      <Select
+                        value={member.role}
+                        onChange={(val) => handleRoleChange(member.id, val)}
+                        options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))}
+                        className="w-[140px]"
+                        buttonClassName="bg-[#f4f4f5] rounded-[10px] px-[12px] h-[36px]"
+                        disabled={!(isOwner && !isMe)}
+                      />
 
                       {/* Actions */}
                       <div className="flex items-center gap-1 w-[68px] justify-end">
@@ -1371,11 +1370,11 @@ export default function SettingsPage() {
                 onClick={() => {
                   setStatuses(p => {
                     const newStatuses = [...p];
-                    newStatuses.splice(newStatuses.length - 1, 0, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', emoji: '📌', isNew: true });
+                    newStatuses.splice(newStatuses.length - 1, 0, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', isNew: true });
                     return newStatuses;
                   });
                 }}
-                style="ghost" color="gray" size="md"
+                style="ghost" color="gray" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1398,8 +1397,8 @@ export default function SettingsPage() {
                 <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} variant="type" />
               ))}
               <Button
-                onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', emoji: '📄', isNew: true }])}
-                style="ghost" color="gray" size="md"
+                onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
+                style="ghost" color="gray" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1422,8 +1421,8 @@ export default function SettingsPage() {
                 <WorkflowItem key={pItem.id} item={pItem} onSave={prA.onSave} onDelete={prA.onDelete} variant="priority" />
               ))}
               <Button
-                onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', emoji: '🔥', isNew: true }])}
-                style="ghost" color="gray" size="md"
+                onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', isNew: true }])}
+                style="ghost" color="gray" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1447,7 +1446,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#db2777', isNew: true }])}
-                style="ghost" color="gray" size="md"
+                style="ghost" color="gray" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1471,7 +1470,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setPositions(p => [...p, { id: `pos-${Date.now()}`, label: 'Нова посада', hourlyRate: 0, isNew: true }])}
-                style="ghost" color="gray" size="md"
+                style="ghost" color="gray" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1489,7 +1488,7 @@ export default function SettingsPage() {
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
                 onClick={() => { if (confirm('Вийти з акаунта?')) signOut(); }}
-                style="ghost" color="red" size="md"
+                style="ghost" color="red" size="lg"
                 icon={LogOut} iconSize={13}
               >
                 Вийти
@@ -1506,7 +1505,7 @@ export default function SettingsPage() {
                   setLabels(DEFAULT_LABELS);
                   await saveWorkflow();
                 }}
-                style="ghost" color="red" size="md"
+                style="ghost" color="red" size="lg"
                 icon={RefreshCw} iconSize={13}
               >
                 Скинути
@@ -1517,7 +1516,7 @@ export default function SettingsPage() {
                 <Row label="Видалити організацію (через 30 днів)" desc="Організація буде схована і повністю видалиться через 30 днів">
                   <Button
                     onClick={() => handleDeleteOrg('soft')}
-                    style="secondary" color="red" size="md"
+                    style="secondary" color="red" size="lg"
                   >
                     Видалити через 30 днів
                   </Button>
@@ -1525,7 +1524,7 @@ export default function SettingsPage() {
                 <Row label="Видалити організацію негайно" desc="Повне і миттєве видалення організації і всіх даних без можливості відновлення">
                   <Button
                     onClick={() => handleDeleteOrg('hard')}
-                    style="primary" color="red" size="md"
+                    style="primary" color="red" size="lg"
                     icon={Trash2} iconSize={12}
                   >
                     Видалити негайно
@@ -1645,6 +1644,17 @@ export default function SettingsPage() {
 
 
       {disableIntegrationModal}
+
+      <Dialog isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Запросити нового учасника" size="md">
+        <div className="flex flex-col gap-4 py-4 min-h-[200px]">
+          <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+          <Select value={inviteRole} onChange={setInviteRole} options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))} label="Роль" />
+        </div>
+        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-[#f0f0f0]">
+          <Button onClick={() => setShowInviteModal(false)} style="ghost" color="dark" size="lg">Скасувати</Button>
+          <Button onClick={async () => { await handleInvite(); setShowInviteModal(false); }} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" color="dark" size="lg">Надіслати запрошення</Button>
+        </div>
+      </Dialog>
     </SidebarLayout>
   );
 }

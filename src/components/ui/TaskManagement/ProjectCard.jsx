@@ -78,6 +78,7 @@ export default function ProjectCard({
             <img 
               src={lastAction.actorAvatar} 
               alt={lastAction.actor} 
+              referrerPolicy="no-referrer"
               className="w-7 h-7 rounded-full object-cover shrink-0" 
             />
           ) : (

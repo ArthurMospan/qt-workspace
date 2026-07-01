@@ -1,4 +1,6 @@
 'use client';
+import Tooltip from '@/components/ui/Navigation/Tooltip';
+
 // src/components/UserAvatar.jsx — Fixed: uses size prop, supports avatar/photoURL
 export default function UserAvatar({ user, size = 32, className = '' }) {
   if (!user) return (
@@ -28,24 +30,26 @@ export default function UserAvatar({ user, size = 32, className = '' }) {
   }
 
   return (
-    <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
-      className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
-      {avatarUrl ? (
-        <img
-          src={avatarUrl}
-          alt={name}
-          referrerPolicy="no-referrer"
-          style={{ width: size, height: size }}
-          className="object-cover"
-        />
-      ) : (
-        <div style={{ width: size, height: size, background: bg }}
-          className="flex items-center justify-center">
-          <span style={{ fontSize: size * 0.38, lineHeight: 1 }} className="font-bold text-white">
-            {initials}
-          </span>
-        </div>
-      )}
-    </div>
+    <Tooltip content={name} position="top">
+      <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
+        className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name}
+            referrerPolicy="no-referrer"
+            style={{ width: size, height: size }}
+            className="object-cover"
+          />
+        ) : (
+          <div style={{ width: size, height: size, background: bg }}
+            className="flex items-center justify-center">
+            <span style={{ fontSize: size * 0.38, lineHeight: 1 }} className="font-bold text-white">
+              {initials}
+            </span>
+          </div>
+        )}
+      </div>
+    </Tooltip>
   );
 }

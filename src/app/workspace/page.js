@@ -408,10 +408,17 @@ function ProjectStatsSection({ project, isLarge, members }) {
           actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
         } else if (newestIssue.reporterId) {
           actorUser = members.find(m => (m.id || m.uid) === newestIssue.reporterId);
+        } else if (newestIssue.reporterName) {
+          actorUser = members.find(m => m.email && m.email.toLowerCase() === newestIssue.reporterName.toLowerCase());
         }
+
         if (actorUser) {
           actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
           actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
+        } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
+          actorName = 'BuggyBag';
+        } else if (newestIssue.reporterName) {
+          actorName = newestIssue.reporterName;
         }
         
         lastActionStr = {
@@ -455,6 +462,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
             <img 
               src={stats.lastAction.actorAvatar} 
               alt={stats.lastAction.actor} 
+              referrerPolicy="no-referrer"
               className="w-7 h-7 rounded-full object-cover shrink-0" 
             />
           ) : (
@@ -826,7 +834,7 @@ export default function WorkspacePage() {
 
   return (<>
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2 min-h-full">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] flex flex-col gap-2 min-h-full">
         
         <PageHeader
           variant="main"

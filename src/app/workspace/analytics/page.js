@@ -1,7 +1,7 @@
 
 'use client';
 // src/app/workspace/analytics/page.js — Workspace-wide analytics + Billing (admin/owner only)
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
@@ -165,7 +165,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
   return (
     <div className="flex-1 overflow-y-auto bg-transparent">
-      <div className="w-full pb-16">
+      <div className="w-full">
 
         {/* Period filter */}
         <div className="flex justify-end mb-4">
@@ -407,6 +407,16 @@ export default function WorkspaceAnalyticsPage() {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const member = searchParams.get('member');
+      if (member) setAssigneeFilter(member);
+      const tab = searchParams.get('tab');
+      if (tab) setActiveTab(tab);
+    }
+  }, []);
+
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
       if (projectFilters.length > 0 && !projectFilters.includes(i.projectId)) return false;
@@ -450,7 +460,7 @@ export default function WorkspaceAnalyticsPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[24px] flex flex-col gap-2 h-full">
+      <div className="w-full px-[24px] md:px-[32px] pt-[56px] flex flex-col gap-2 h-full">
 
         <PageHeader
           variant="main"

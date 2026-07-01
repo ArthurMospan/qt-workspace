@@ -14,6 +14,7 @@ import {
   Zap, Clock, Square as StopIcon
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import Tooltip from '@/components/ui/Navigation/Tooltip';
 
 import { can } from '@/lib/utils/can';
 
@@ -92,13 +93,14 @@ export default function WorkspaceSidebar() {
             </>
           ) : (
             <div className="flex items-center justify-center w-full h-[36px]">
-              <button
-                onClick={() => setCollapsed(false)}
-                className="text-[#9a9a9a] hover:text-white transition-colors"
-                title="Розгорнути панель"
-              >
-                <PanelLeftOpen size={20} />
-              </button>
+              <Tooltip content="Розгорнути панель" position="right" className="flex items-center justify-center w-full h-full">
+                <button
+                  onClick={() => setCollapsed(false)}
+                  className="text-[#9a9a9a] hover:text-white transition-colors"
+                >
+                  <PanelLeftOpen size={20} />
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -109,17 +111,19 @@ export default function WorkspaceSidebar() {
         {topNav.map(({ href, icon: Icon, label, exact }) => {
           const active = isActive(href, exact);
           return (
-            <Link key={href} href={href} title={collapsed ? label : undefined}
+            <Link key={href} href={href} title={collapsed ? undefined : label}
               className={`flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all ${
                 active ? 'bg-[#333333] text-white' : 'text-[#9a9a9a] hover:text-white hover:bg-white/[0.04]'
               }`}>
-              <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
-                <Icon size={20} className="shrink-0" />
-                {!collapsed && <span className="text-[14px] font-medium">{label}</span>}
-                {!collapsed && label === 'Чат' && (
-                  <Counter value={3} size="sm" status="info" className="ml-auto" dark />
-                )}
-              </div>
+              <Tooltip content={collapsed ? label : null} position="right" className="w-full h-full flex items-center">
+                <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
+                  <Icon size={20} className="shrink-0" />
+                  {!collapsed && <span className="text-[14px] font-medium">{label}</span>}
+                  {!collapsed && label === 'Чат' && (
+                    <Counter value={3} size="sm" status="info" className="ml-auto" dark />
+                  )}
+                </div>
+              </Tooltip>
             </Link>
           );
         })}
@@ -147,17 +151,19 @@ export default function WorkspaceSidebar() {
             .map(p => {
               const active = pathname.startsWith(`/workspace/${p.id}`);
               return (
-                <Link key={p.id} href={`/workspace/${p.id}`} title={collapsed ? p.name : undefined}
+                <Link key={p.id} href={`/workspace/${p.id}`} title={collapsed ? undefined : p.name}
                   className={`flex items-center mx-[8px] h-[32px] rounded-[8px] transition-all ${
                     active ? 'bg-[#333333] text-white' : 'text-[#777777] hover:text-white hover:bg-white/[0.04]'
                   }`}>
-                  <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
-                    <Folder size={16} className="shrink-0" />
-                    {!collapsed && <span className="text-[13px] font-medium truncate">{p.name}</span>}
-                    {!collapsed && (p.status === 'active' || p.id === projects[0]?.id) && (
-                      <Counter variant="dot" size="sm" status="info" className="ml-auto" dark />
-                    )}
-                  </div>
+                  <Tooltip content={collapsed ? p.name : null} position="right" className="w-full h-full flex items-center">
+                    <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
+                      <Folder size={16} className="shrink-0" />
+                      {!collapsed && <span className="text-[13px] font-medium truncate">{p.name}</span>}
+                      {!collapsed && (p.status === 'active' || p.id === projects[0]?.id) && (
+                        <Counter variant="dot" size="sm" status="info" className="ml-auto" dark />
+                      )}
+                    </div>
+                  </Tooltip>
                 </Link>
               );
             })}
