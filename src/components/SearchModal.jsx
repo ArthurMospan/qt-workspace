@@ -52,7 +52,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
           <div>
             <h2 className="text-[13px] font-bold text-[#1f1f1f]">Результати пошуку</h2>
-            {query && <p className="text-[11px] text-[#9a9a9a] mt-[2px]">Запит: "{query}"</p>}
+            {query && <p className="text-[11px] text-[#9a9a9a] mt-[2px]">Запит: «{query}»</p>}
           </div>
         </div>
 

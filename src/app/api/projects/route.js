@@ -69,7 +69,6 @@ export async function POST(req) {
       organizationId,
       team: [userId],
       status: 'active',
-      progress: 0,
       stagesCount: 4,
       issueCounter: 0,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

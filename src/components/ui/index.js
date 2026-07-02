@@ -73,6 +73,7 @@ export { default as PageHeader } from './Layout/PageHeader'
 
 // ===== EXISTING COMPONENTS =====
 export { default as Dialog } from './Dialog'
+export { ConfirmProvider, useConfirm } from './ConfirmProvider'
 export { default as Tabs } from './Tabs'
 export { default as ContextMenu } from './ContextMenu'
 export { default as FilterBar } from './FilterBar'

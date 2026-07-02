@@ -91,7 +91,7 @@ export default function DependenciesPanel({
         <div className="flex flex-col gap-[8px] p-[12px] bg-[#f4f4f5] rounded-[12px] border border-[#e9e9e9]">
           <div>
             <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
-              Тип зв'язку
+              Тип зв’язку
             </label>
             <select
               value={linkType}

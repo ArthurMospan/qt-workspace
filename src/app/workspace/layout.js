@@ -6,6 +6,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import Toast from '@/components/Toast';
+import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
@@ -106,6 +107,7 @@ export default function WorkspaceLayout({ children }) {
   }
 
   return (
+    <ConfirmProvider>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel */}
       <div className="print:hidden shrink-0 h-full flex p-[12px] pr-[6px]">
@@ -131,6 +133,7 @@ export default function WorkspaceLayout({ children }) {
       <Toast />
       <ProfileModal />
     </div>
+    </ConfirmProvider>
   );
 }
 

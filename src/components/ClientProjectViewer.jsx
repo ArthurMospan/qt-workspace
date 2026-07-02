@@ -90,6 +90,7 @@ export default function ClientProjectViewer({ projectId, stageId, stages }) {
                     </a>
                   )}
                   {m.type === 'image' && m.url && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={m.url} alt={m.title} className="mt-[8px] rounded-[8px] max-h-[100px] object-cover w-full" />
                   )}
                 </div>

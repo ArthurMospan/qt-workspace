@@ -63,6 +63,7 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
               <div key={msg.id} className="flex gap-2 items-start">
                 <div className="w-[26px] h-[26px] rounded-full bg-[#f0f0f0] shrink-0 flex items-center justify-center text-[10px] font-bold text-[#9a9a9a] overflow-hidden">
                   {msg.senderAvatar
+                    // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={msg.senderAvatar} alt="" className="w-full h-full object-cover" />
                     : (msg.senderName?.[0] || '?')
                   }
@@ -78,6 +79,7 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
                     </p>
                   )}
                   {msg.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={msg.imageUrl} alt="attachment" className="mt-1 rounded-[8px] max-w-full max-h-[200px] object-cover" />
                   )}
                 </div>
@@ -104,6 +106,7 @@ export default function PortalPanel({ projectId, materials = [], onClose }) {
             materials.map((m, i) => (
               <div key={m.id || i} className="border border-[#e9e9e9] rounded-[10px] overflow-hidden hover:border-[#cfcfcf] transition-all">
                 {(m.url || m.imageUrl || m.fileUrl) && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={m.url || m.imageUrl || m.fileUrl}
                     alt={m.name || m.title || 'Матеріал'}

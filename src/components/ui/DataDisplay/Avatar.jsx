@@ -20,6 +20,7 @@ export default function Avatar({
       title={name}
     >
       {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={name || 'avatar'} className="w-full h-full rounded-full object-cover" />
       ) : (
         initials || '?'

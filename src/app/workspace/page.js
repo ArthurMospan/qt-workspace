@@ -245,8 +245,6 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
     router.push(`/workspace/${project.id}`);
   };
 
-  const progressVal = Math.round(project.progress || 0);
-
   return (
     <>
       <div
@@ -459,6 +457,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
         <div className="bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
           {/* Actor Avatar */}
           {stats.lastAction.actorAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img 
               src={stats.lastAction.actorAvatar} 
               alt={stats.lastAction.actor} 
@@ -534,7 +533,6 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
         organizationId: orgId,
         team: [userId],
         status: 'active',
-        progress: 0,
         stagesCount: 4,
         issueCounter: 0,
         createdAt: serverTimestamp(),
@@ -694,6 +692,22 @@ export default function WorkspacePage() {
     return () => unsubscribe();
   }, [activeOrgId]);
 
+  // Real progress per project: % of issues in 'done' (stored `progress` field is never updated)
+  const progressByProject = useMemo(() => {
+    const counts = {};
+    for (const issue of allIssues) {
+      if (!issue.projectId) continue;
+      const entry = counts[issue.projectId] || (counts[issue.projectId] = { total: 0, done: 0 });
+      entry.total++;
+      if ((issue.columnId || issue.status) === 'done') entry.done++;
+    }
+    const pct = {};
+    for (const [pid, { total, done }] of Object.entries(counts)) {
+      pct[pid] = total > 0 ? Math.round((done / total) * 100) : 0;
+    }
+    return pct;
+  }, [allIssues]);
+
   // Filter & sort visible projects
   const filteredProjects = useMemo(() => {
     let list = (projects || []).filter(p => p.status !== 'archived');
@@ -725,17 +739,17 @@ export default function WorkspacePage() {
         return (a.name || '').localeCompare(b.name || '');
       }
       if (sortOption === 'progress-desc') {
-        return (b.progress || 0) - (a.progress || 0);
+        return (progressByProject[b.id] || 0) - (progressByProject[a.id] || 0);
       }
       if (sortOption === 'progress-asc') {
-        return (a.progress || 0) - (b.progress || 0);
+        return (progressByProject[a.id] || 0) - (progressByProject[b.id] || 0);
       }
       // Default: 'updated' (most recently updated/created)
       const aTime = a.updatedAt?.toMillis?.() || a.updatedAt?.seconds * 1000 || (a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0);
       const bTime = b.updatedAt?.toMillis?.() || b.updatedAt?.seconds * 1000 || (b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0);
       return bTime - aTime;
     });
-  }, [projects, searchQuery, selectedMember, dateFilter, sortOption]);
+  }, [projects, searchQuery, selectedMember, dateFilter, sortOption, progressByProject]);
 
   // Sliced recent issues list (limit to 6)
   const recentIssues = useMemo(() => {
@@ -773,10 +787,7 @@ export default function WorkspacePage() {
 
   const stats = useMemo(() => {
     const active = (projects || []).filter(p => p.status !== 'archived');
-    const total = active.length;
-    const completed = active.filter(p => p.progress >= 100).length;
-    const avgProgress = total > 0 ? Math.round(active.reduce((acc, p) => acc + (p.progress || 0), 0) / total) : 0;
-    return { total, completed, avgProgress };
+    return { total: active.length };
   }, [projects]);
 
   const memberOptions = useMemo(() => {

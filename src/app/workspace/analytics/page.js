@@ -112,8 +112,8 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
     })).filter(s => s.count > 0);
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
-    const days = Array.from({ length: Math.min(period, 30) }, (_, i) => {
-      const daysBack = Math.min(period, 30) - 1;
+    const days = Array.from({ length: period }, (_, i) => {
+      const daysBack = period - 1;
       const base = new Date(now - (daysBack - i) * 86400000);
       const dayStart = new Date(base).setHours(0,0,0,0);
       const dayEnd   = new Date(base).setHours(23,59,59,999);
@@ -185,8 +185,8 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <KpiCard icon={Target}       label="Всі завдання" color="#10b981" onClick={() => onTabChange('velocity')}
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% прогресу`} />
-          <KpiCard icon={Zap}          label="Velocity (7д)" color="#6366f1" onClick={() => onTabChange('velocity')}
-            value={stats.recentDone} sub="завдань за тиждень" />
+          <KpiCard icon={Zap}          label={`Velocity (${period}д)`} color="#6366f1" onClick={() => onTabChange('velocity')}
+            value={stats.recentDone} sub={`завдань за ${period} днів`} />
           <KpiCard icon={Clock}        label="Списано часу" color="#0891b2" onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.totalMin)} sub={`по ${projects.length} проєктах`} />
           <KpiCard icon={Users}        label="Команда" color="#eab308" onClick={() => onTabChange('workload')}
@@ -197,7 +197,7 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card variant="gray" padding="lg" className="col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <SectionTitle>Активність (14 днів)</SectionTitle>
+              <SectionTitle>{`Активність (${period} днів)`}</SectionTitle>
               <div className="flex items-center gap-3 text-[10px] text-[#9a9a9a]">
                 <span className="flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-sm bg-[#6366f1] inline-block" /> Створено</span>
                 <span className="flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-sm bg-[#10b981] inline-block" /> Завершено</span>

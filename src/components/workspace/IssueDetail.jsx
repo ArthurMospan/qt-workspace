@@ -25,12 +25,13 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
-import { TaskAttributesPanel, Tooltip } from '@/components/ui';
+import { TaskAttributesPanel, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
+import { parseMentions, resolveUserIds } from '@/lib/utils/mentions';
 import {
   Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ArrowUp, ArrowDown, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, AlertOctagon, Minus, ChevronRight,
   Zap, Bug, Star,
@@ -118,6 +119,7 @@ function MaterialCard({ mat, onClick }) {
   const renderPreview = () => {
     if (fileType === 'image' && fileUrl) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={fileUrl} alt={name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={e => { e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-[#cfcfcf] text-[10px]">Немає превʼю</div>'; }}
@@ -246,6 +248,7 @@ function MediaViewer({ mat, onClose }) {
       {/* Content */}
       <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
         {fileType === 'image' && fileUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={fileUrl} alt={name}
             className="max-w-full max-h-[85vh] rounded-[8px] shadow-2xl object-contain" />
         )}
@@ -311,6 +314,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const { issues, updateIssue, deleteIssue, moveIssue } = useIssues(projectId);
 
   const showToast      = useWorkspaceStore(s => s.showToast);
+  const confirmDialog  = useConfirm();
   const setBreadcrumbs = useWorkspaceStore(s => s.setBreadcrumbs);
   const startTimer     = useWorkspaceStore(s => s.startTimer);
   const stopTimer      = useWorkspaceStore(s => s.stopTimer);
@@ -522,9 +526,28 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       if (commentAttachment?.file) {
         uploadedAttach = await uploadFile(commentAttachment.file, `organizations/${project.organizationId}/attachments`);
       }
-      await addComment(issueId, commentText, currentUser, uploadedAttach ? [uploadedAttach] : []);
+      const text = commentText;
+      await addComment(issueId, text, currentUser, uploadedAttach ? [uploadedAttach] : []);
       setCommentText('');
       setCommentAttachment(null);
+
+      // Notify: mentioned users get 'mentioned', assignees/reporter get 'commented'
+      const authorUid = currentUser?.id || currentUser?.uid;
+      const link = `/workspace/${projectId}/issue/${issueId}`;
+      const preview = text.trim().slice(0, 140) || '📎 Вкладення';
+      const mentionedIds = resolveUserIds(parseMentions(text), members).filter(id => id !== authorUid);
+      const involved = [...new Set([...(issue.assigneeIds || []), issue.reporterId].filter(Boolean))]
+        .filter(id => id !== authorUid && !mentionedIds.includes(id));
+      if (mentionedIds.length)
+        sendNotification({ userIds: mentionedIds, type: 'mentioned',
+          title: `${currentUser?.name || 'Колега'} згадав вас у ${issue.issueKey}`,
+          body: preview, link, issueId, projectId,
+        }).catch(() => {});
+      if (involved.length)
+        sendNotification({ userIds: involved, type: 'commented',
+          title: `Новий коментар у ${issue.issueKey}`,
+          body: preview, link, issueId, projectId,
+        }).catch(() => {});
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -562,7 +585,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (!logForm) return;
 
     if (logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
-      await update({ estimMinutes: logForm.estim });
+      await update({ estimateMinutes: logForm.estim });
     }
 
     if (logForm.minutes > 0) {
@@ -585,7 +608,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleDeleteTimeLog = async (log) => {
-    if (!confirm('Ви впевнені, що хочете видалити цей запис часу?')) return;
+    if (!(await confirmDialog({
+      title: 'Видалити запис часу?',
+      message: 'Ви впевнені, що хочете видалити цей запис часу?',
+      confirmText: 'Видалити', danger: true,
+    }))) return;
     try {
       await deleteTimeLog(log.id);
       const nextSpent = Math.max(0, spentMin - log.spentMinutes);
@@ -608,7 +635,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleDeleteSubtask = async (index) => {
-    if (!confirm('Видалити цю підзавдання?')) return;
+    if (!(await confirmDialog({
+      title: 'Видалити це підзавдання?',
+      confirmText: 'Видалити', danger: true,
+    }))) return;
     const subs = (issue.subtasks || []).filter((_, idx) => idx !== index);
     await update({ subtasks: subs });
     showToast('Підзавдання видалено ✓');
@@ -625,7 +655,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Видалити ${issue.issueKey}?`)) return;
+    if (!(await confirmDialog({
+      title: `Видалити ${issue.issueKey}?`,
+      confirmText: 'Видалити', danger: true,
+    }))) return;
     await deleteIssue(issueId);
     router.push(`/workspace/${projectId}`);
   };
@@ -1211,7 +1244,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Зв'язки</h2>
+                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Зв’язки</h2>
                   {links.filter(l => l.sourceIssueId === issueId).length > 0 && (
                     <span className="text-[11px] font-bold bg-[#e9e9e9] text-[#1f1f1f] px-2 py-[1px] rounded-full">
                       {links.filter(l => l.sourceIssueId === issueId).length}
@@ -1271,7 +1304,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <div className="flex flex-col gap-3 p-3 bg-white rounded-[10px] border border-[#e9e9e9] mt-2">
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Зв'язок</label>
+                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Зв’язок</label>
                         <select
                           value={linkRelation}
                           onChange={e => setLinkRelation(e.target.value)}
@@ -1318,7 +1351,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             showToast('Помилка: ' + err.message, 'error');
                           }
                         }}
-                      >Додати зв'язок</Button>
+                      >Додати зв’язок</Button>
                     </div>
                   </div>
                 )}
@@ -1437,4 +1470,4 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       </div>
     </div>
   );
-}
+}

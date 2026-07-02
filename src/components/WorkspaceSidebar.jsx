@@ -14,6 +14,7 @@ import {
   Zap, Clock, Square as StopIcon
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 
 import { can } from '@/lib/utils/can';
@@ -26,6 +27,7 @@ export default function WorkspaceSidebar() {
   const { projects, activeOrg, allOrgs, orgRole } = useAppContext();
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
+  const unreadChats = useUnreadChatCount();
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
@@ -119,8 +121,8 @@ export default function WorkspaceSidebar() {
                 <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                   <Icon size={20} className="shrink-0" />
                   {!collapsed && <span className="text-[14px] font-medium">{label}</span>}
-                  {!collapsed && label === 'Чат' && (
-                    <Counter value={3} size="sm" status="info" className="ml-auto" dark />
+                  {!collapsed && label === 'Чат' && unreadChats > 0 && (
+                    <Counter value={unreadChats} size="sm" status="info" className="ml-auto" dark />
                   )}
                 </div>
               </Tooltip>
@@ -159,7 +161,7 @@ export default function WorkspaceSidebar() {
                     <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                       <Folder size={16} className="shrink-0" />
                       {!collapsed && <span className="text-[13px] font-medium truncate">{p.name}</span>}
-                      {!collapsed && (p.status === 'active' || p.id === projects[0]?.id) && (
+                      {!collapsed && p.status === 'active' && (
                         <Counter variant="dot" size="sm" status="info" className="ml-auto" dark />
                       )}
                     </div>

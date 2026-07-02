@@ -17,6 +17,7 @@ function OrgBigCard({ org, role, onClick }) {
     >
       <div id={`org-circle-${org.id}`} className="w-[110px] h-[110px] rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-[#2a2a2a] border-[3px] border-transparent group-hover/item:border-white shadow-xl transition-all duration-300 relative z-10">
         {(org.logo || org.logoUrl) ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={org.logo || org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
         ) : (
           <span className="text-[40px] font-medium text-white">{firstLetter}</span>
@@ -109,6 +110,7 @@ export default function OrgSwitcherScreen({ onClose }) {
             }}
           >
             {(expandingOrg.org.logo || expandingOrg.org.logoUrl) ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={expandingOrg.org.logo || expandingOrg.org.logoUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-[40px] font-medium text-white">{(expandingOrg.org.name || 'О')[0].toUpperCase()}</span>

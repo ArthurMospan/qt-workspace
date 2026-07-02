@@ -32,6 +32,7 @@ export default function MessageContent({ text, members, searchTerm }) {
         // Handle images
         if (line.startsWith('![attachment](')) {
           const url = line.slice(14, -1);
+          // eslint-disable-next-line @next/next/no-img-element
           return <img key={idx} src={url} alt="attachment" className="max-w-[300px] max-h-[300px] rounded-[8px] border border-[#e9e9e9] mt-2 mb-1 object-cover" />;
         }
         if (line.startsWith('📎 ')) {

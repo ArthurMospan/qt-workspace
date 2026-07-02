@@ -15,6 +15,7 @@ import {
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Button from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
@@ -35,6 +36,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
   const { issues, issueLinks, loading: issuesLoading, updateIssue, deleteIssue } = useIssues(projectId);
   const { sprints, loading: sprintsLoading, createSprint, startSprint, completeSprint, deleteSprint } = useSprints(projectId);
   const { showToast } = useWorkspaceStore();
+  const confirmDialog = useConfirm();
   const loading = issuesLoading || sprintsLoading;
 
   const teamUids = Array.isArray(project?.team) ? project.team : [];
@@ -200,6 +202,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                         <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
                           <div className="flex -space-x-1">
                             {assignees.slice(0,3).map(m => (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img key={m.id||m.uid} src={m.avatar||m.photoURL||`https://ui-avatars.com/api/?name=${m.name}&size=20`}
                                 alt={m.name} title={m.name}
                                 className="w-[20px] h-[20px] rounded-full ring-[1.5px] ring-white object-cover" />
@@ -318,7 +321,9 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                         <Button style="primary" size="sm" icon={Check} onClick={() => completeSprint(sprint.id)}>Завершити спринт</Button>
                       )}
                       {sprint.status !== 'active' && (
-                        <Button style="secondary" color="red" size="icon" icon={Trash2} onClick={() => { if(confirm('Видалити спринт?')) deleteSprint(sprint.id); }}>Видалити</Button>
+                        <Button style="secondary" color="red" size="icon" icon={Trash2} onClick={async () => {
+                          if (await confirmDialog({ title: 'Видалити спринт?', confirmText: 'Видалити', danger: true })) deleteSprint(sprint.id);
+                        }}>Видалити</Button>
                       )}
                     </div>
                   </div>

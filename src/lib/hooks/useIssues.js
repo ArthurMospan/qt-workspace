@@ -5,6 +5,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { sendNotification } from '@/lib/hooks/useNotifications';
+
+// Human labels for default workflow columns (used in status_changed notifications)
+const COLUMN_LABELS = {
+  backlog: 'Backlog', todo: 'To Do', 'in-progress': 'In Progress',
+  'code-review': 'Code Review', qa: 'QA', 'client-approval': 'Client Approval', done: 'Done'
+};
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -267,6 +274,22 @@ export function useIssues(projectId) {
       to: newColumnId
     });
 
+    // Notify assignees about the status change (skip same-column reorders and the actor)
+    if (oldColumnId !== newColumnId) {
+      const recipients = (issue.assigneeIds || []).filter(uid => uid && uid !== userId);
+      if (recipients.length) {
+        sendNotification({
+          userIds: recipients,
+          type: 'status_changed',
+          title: `${issue.issueKey || 'Задача'}: статус змінено`,
+          body: `${issue.title || ''} → ${COLUMN_LABELS[newColumnId] || newColumnId}`,
+          link: `/workspace/${projectId}/issue/${issueId}`,
+          issueId,
+          projectId
+        }).catch(() => {});
+      }
+    }
+
     // Side-effect: if moved to client-approval and has a linked stage, mark it
     if (newColumnId === 'client-approval' && issue.linkedClientMaterialId) {
       try {
@@ -278,7 +301,7 @@ export function useIssues(projectId) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [issues]);
+  }, [issues, projectId]);
   return {
     issues,
     issueLinks,

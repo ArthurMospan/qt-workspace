@@ -13,7 +13,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, useConfirm } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { 
@@ -247,6 +247,7 @@ export default function GlobalSprintsPage() {
   const { labels } = useWorkflowConfig();
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
+  const confirmDialog = useConfirm();
 
   // No breadcrumbs for main pages
   useEffect(() => {
@@ -587,7 +588,9 @@ export default function GlobalSprintsPage() {
                                 size="icon"
                                 color="red"
                                 icon={Trash2}
-                                onClick={() => { if(confirm('Видалити спринт?')) deleteSprint(sprint.id); }}
+                                onClick={async () => {
+                                  if (await confirmDialog({ title: 'Видалити спринт?', confirmText: 'Видалити', danger: true })) deleteSprint(sprint.id);
+                                }}
                               >
                                 Видалити
                               </Button>

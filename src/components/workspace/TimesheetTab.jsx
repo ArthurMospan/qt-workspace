@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useWeeklyTimeLogs } from '@/lib/hooks/useWeeklyTimeLogs';
 import Button from '@/components/ui/Button';
 
@@ -82,9 +82,6 @@ export default function TimesheetTab() {
             </span>
             <Button style="secondary" size="icon" icon={ChevronRight} onClick={handleNextWeek} />
           </div>
-          <Button style="primary" size="md" icon={Plus}>
-            Логувати час
-          </Button>
         </div>
       </div>
 
@@ -136,19 +133,10 @@ export default function TimesheetTab() {
                           </div>
                         </td>
                         {row.days.map((mins, i) => (
-                          <td key={i} className="px-2 py-4 text-center border-r border-[#f0f0f0] relative">
+                          <td key={i} className="px-2 py-4 text-center border-r border-[#f0f0f0]">
                             <span className={`text-[13px] font-bold ${mins > 0 ? 'text-[#1164A3]' : 'text-[#cfcfcf]'}`}>
                               {fmtTime(mins)}
                             </span>
-                            {/* Hover add button */}
-                            <button className="absolute inset-0 bg-[#f5f7ff] opacity-0 group-hover:opacity-100 flex items-center justify-center text-[#1164A3] transition-opacity cursor-pointer">
-                              <Plus size={16} />
-                            </button>
-                            {mins > 0 && (
-                               <div className="absolute inset-0 flex items-center justify-center bg-white pointer-events-none z-10">
-                                 <span className="text-[13px] font-bold text-[#1164A3]">{fmtTime(mins)}</span>
-                               </div>
-                            )}
                           </td>
                         ))}
                         <td className="px-4 py-4 text-center bg-[#fafafa]">

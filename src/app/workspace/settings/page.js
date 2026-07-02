@@ -30,7 +30,8 @@ import {
   InnerNavigation, 
   PageHeader,
   Dialog,
-  Surface
+  Surface,
+  useConfirm
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -349,6 +350,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { currentUser, signOut, activeOrgId, projects } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
+  const confirmDialog = useConfirm();
   const { org, members, inviteMember, changeMemberRole, removeMember, setMemberPosition } = useOrganization();
 
   // Role resolution
@@ -634,7 +636,7 @@ export default function SettingsPage() {
     if (!activeOrgId) return;
     setGeneratingKey(true);
     try {
-      const newToken = `qt_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      const newToken = `qt_${crypto.randomUUID().replace(/-/g, '')}`;
       const newKey = {
         id: Date.now().toString(),
         token: newToken,
@@ -654,7 +656,12 @@ export default function SettingsPage() {
   };
 
   const revokeApiKey = async (keyId) => {
-    if (!activeOrgId || !confirm('Ви дійсно хочете видалити цей ключ? Усі інтеграції, що його використовують, перестануть працювати.')) return;
+    if (!activeOrgId) return;
+    if (!(await confirmDialog({
+      title: 'Видалити API ключ?',
+      message: 'Усі інтеграції, що його використовують, перестануть працювати.',
+      confirmText: 'Видалити', danger: true,
+    }))) return;
     try {
       const updatedKeys = apiKeys.filter(k => k.id !== keyId);
       await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
@@ -688,23 +695,17 @@ export default function SettingsPage() {
   };
 
   const handleTransferOwnership = async (targetUid) => {
-    if (!confirm('Ви дійсно хочете передати права власника цій особі? Ви втратите статус власника та станете адміністратором.')) return;
+    if (!(await confirmDialog({
+      title: 'Передати права власника?',
+      message: 'Ви втратите статус власника та станете адміністратором.',
+      confirmText: 'Передати права', danger: true,
+    }))) return;
     try {
-      const orgRef = doc(db, 'organizations', activeOrgId);
-      const orgSnap = await getDoc(orgRef);
-      const orgData = orgSnap.data();
-      
       const uid = currentUser?.id || currentUser?.uid;
-      const updatedMembers = orgData.members.map(m => {
-        if (m.uid === uid) return { ...m, role: 'admin' };
-        if (m.uid === targetUid) return { ...m, role: 'owner' };
-        return m;
-      });
-      
-      await updateDoc(orgRef, {
-        ownerId: targetUid,
-        members: updatedMembers
-      });
+      // Ролі живуть у orgMemberships (джерело правди після міграції 006), не в legacy members[]
+      await updateDoc(doc(db, 'orgMemberships', `${activeOrgId}_${uid}`), { role: 'admin' });
+      await updateDoc(doc(db, 'orgMemberships', `${activeOrgId}_${targetUid}`), { role: 'owner' });
+      await updateDoc(doc(db, 'organizations', activeOrgId), { ownerId: targetUid });
       showToast('Права власника успішно передано');
     } catch (e) {
       showToast('Помилка передачі прав', 'error');
@@ -712,7 +713,10 @@ export default function SettingsPage() {
   };
 
   const handleRemoveMember = async (uid) => {
-    if (!confirm('Видалити учасника з команди?')) return;
+    if (!(await confirmDialog({
+      title: 'Видалити учасника з команди?',
+      confirmText: 'Видалити', danger: true,
+    }))) return;
     try { await removeMember(uid); showToast('Учасника видалено'); }
     catch { showToast('Помилка', 'error'); }
   };
@@ -721,13 +725,23 @@ export default function SettingsPage() {
     if (!activeOrgId) return;
     try {
       if (type === 'hard') {
-        const typed = prompt('Введіть DELETE для повного та безповоротного видалення організації');
+        const typed = await confirmDialog({
+          title: 'Видалити організацію назавжди?',
+          message: 'Введіть DELETE для повного та безповоротного видалення організації.',
+          confirmText: 'Видалити', danger: true,
+          input: { placeholder: 'DELETE' },
+        });
         if (typed !== 'DELETE') return;
         await deleteDoc(doc(db, 'organizations', activeOrgId));
         showToast('Організацію повністю видалено');
         setTimeout(() => window.location.href = '/workspace', 1000);
       } else if (type === 'soft') {
-        const typed = prompt('Введіть 30 для видалення організації через 30 днів (ви зможете її відновити)');
+        const typed = await confirmDialog({
+          title: 'Видалити організацію через 30 днів?',
+          message: 'Введіть 30 для видалення організації через 30 днів (ви зможете її відновити).',
+          confirmText: 'Запланувати видалення', danger: true,
+          input: { placeholder: '30' },
+        });
         if (typed !== '30') return;
         
         const futureDate = new Date();
@@ -786,7 +800,11 @@ export default function SettingsPage() {
       const targetColId = statuses.find(s => s.id !== id && !s.isNew)?.id || 'backlog';
       
       if (snap.docs.length > 0) {
-        if (!confirm(`У цій колонці є ${snap.docs.length} завдань. При видаленні вони будуть переміщені в "${statuses.find(s => s.id === targetColId)?.label || 'Backlog'}". Продовжити?`)) {
+        if (!(await confirmDialog({
+          title: 'Видалити колонку?',
+          message: `У цій колонці є ${snap.docs.length} завдань. При видаленні вони будуть переміщені в "${statuses.find(s => s.id === targetColId)?.label || 'Backlog'}". Продовжити?`,
+          confirmText: 'Продовжити', danger: true,
+        }))) {
           setWfLoading(false);
           return;
         }
@@ -835,8 +853,11 @@ export default function SettingsPage() {
       <div className="flex items-center gap-2 no-nav">
         {['statuses', 'types', 'priorities', 'labels', 'positions'].includes(activeSection) && (
           <Button 
-            onClick={() => {
-              if (!confirm('Скинути налаштування цієї секції до стандартних?')) return;
+            onClick={async () => {
+              if (!(await confirmDialog({
+                title: 'Скинути налаштування цієї секції до стандартних?',
+                confirmText: 'Скинути', danger: true,
+              }))) return;
               if (activeSection === 'statuses') setStatuses(DEFAULT_STATUSES);
               if (activeSection === 'types') setTypes(DEFAULT_TYPES);
               if (activeSection === 'priorities') setPriorities(DEFAULT_PRIORITIES);
@@ -952,8 +973,7 @@ export default function SettingsPage() {
                 value={language}
                 onChange={setLanguage}
                 options={[
-                  { value: 'ua', label: 'Українська' },
-                  { value: 'en', label: 'English (В розробці)' }
+                  { value: 'ua', label: 'Українська' }
                 ]}
                 className="w-[240px]"
               />
@@ -1026,7 +1046,7 @@ export default function SettingsPage() {
                 </code>
                 <Button
                   onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
-                  style="ghost" color="blue" size="sm"
+                  style="ghost" color="blue" size="icon-sm"
                   icon={Copy}
                   iconSize={12}
                 />
@@ -1046,7 +1066,7 @@ export default function SettingsPage() {
         const toggleBuggyBag = async (enabled) => {
           if (!activeOrgId) return;
           if (enabled) {
-            const newToken = `qt_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+            const newToken = `qt_${crypto.randomUUID().replace(/-/g, '')}`;
             const newKey = { id: Date.now().toString(), token: newToken, name: 'BuggyBag Integration', createdAt: new Date().toISOString(), active: true };
             const updatedKeys = [...apiKeys, newKey];
             await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
@@ -1277,7 +1297,7 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'team': return (
         <Section title="Учасники команди" desc="Керування учасниками організації та їхніми ролями" rightAction={
-          <Button onClick={() => setShowInviteModal(true)} style="primary" icon={Plus}>Запросити</Button>
+          <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
         }>
           <Surface variant="card" className="!rounded-[12px] p-0 overflow-visible relative z-10">
             <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[12px]">
@@ -1487,7 +1507,9 @@ export default function SettingsPage() {
           <Card variant="white" padding="lg" className="!border-none">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
-                onClick={() => { if (confirm('Вийти з акаунта?')) signOut(); }}
+                onClick={async () => {
+                  if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();
+                }}
                 style="ghost" color="red" size="lg"
                 icon={LogOut} iconSize={13}
               >
@@ -1498,7 +1520,10 @@ export default function SettingsPage() {
             <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень">
               <Button
                 onClick={async () => {
-                  if (!confirm('Скинути всі workflow налаштування?')) return;
+                  if (!(await confirmDialog({
+                    title: 'Скинути всі workflow налаштування?',
+                    confirmText: 'Скинути', danger: true,
+                  }))) return;
                   setStatuses(DEFAULT_STATUSES);
                   setTypes(DEFAULT_TYPES);
                   setPriorities(DEFAULT_PRIORITIES);

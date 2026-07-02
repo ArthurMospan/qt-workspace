@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
+import { useConfirm } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -62,6 +63,7 @@ function MessageBubble({
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const router = useRouter();
+  const confirmDialog = useConfirm();
 
   const showHeader = !prevMsg
     || prevMsg.senderId !== msg.senderId
@@ -169,6 +171,7 @@ function MessageBubble({
                 {msg.attachments.map((att, i) => (
                   att.type?.startsWith('image/') ? (
                     <a key={i} href={att.url} target="_blank" rel="noopener">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={att.url} alt={att.name} className="rounded-xl border border-[#e9e9e9] max-h-[240px] max-w-[360px] object-cover hover:opacity-90 transition-opacity cursor-zoom-in" />
                     </a>
                   ) : (
@@ -280,7 +283,9 @@ function MessageBubble({
                 <Edit2 size={14} />
               </button>
               <button
-                onClick={() => { if (confirm('Видалити повідомлення?')) onDelete(msg.id); }}
+                onClick={async () => {
+                  if (await confirmDialog({ title: 'Видалити повідомлення?', confirmText: 'Видалити', danger: true })) onDelete(msg.id);
+                }}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#ef4444] hover:bg-red-50 transition-colors"
                 title="Видалити"
               >
@@ -440,6 +445,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
             {attachments.map((att, i) => (
               <div key={i} className="relative">
                 {att.type.startsWith('image/') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={att.url} alt={att.name} className="h-16 rounded-xl object-cover border border-[#e9e9e9]" />
                 ) : (
                   <div className="h-12 px-3 flex items-center gap-2 bg-[#f4f4f5] rounded-xl border border-[#e9e9e9]">
@@ -518,6 +524,7 @@ function ThreadSidebar({
   parentMsg, replies, myUid, members, onSend, onDeleteReply, onClose, loading
 }) {
   const scrollRef = useRef(null);
+  const confirmDialog = useConfirm();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -602,6 +609,7 @@ function ThreadSidebar({
                     {reply.attachments.map((att, j) => (
                       att.type?.startsWith('image/') ? (
                         <a key={j} href={att.url} target="_blank" rel="noopener">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={att.url} alt={att.name} className="rounded-xl border border-[#e9e9e9] max-h-[120px] object-cover" />
                         </a>
                       ) : (
@@ -617,7 +625,9 @@ function ThreadSidebar({
               </div>
               {reply.senderId === myUid && (
                 <button
-                  onClick={() => { if (confirm('Видалити відповідь?')) onDeleteReply(reply.id); }}
+                  onClick={async () => {
+                    if (await confirmDialog({ title: 'Видалити відповідь?', confirmText: 'Видалити', danger: true })) onDeleteReply(reply.id);
+                  }}
                   className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#ef4444] hover:bg-red-50 transition-all shrink-0"
                 >
                   <Trash2 size={12} />
@@ -1232,7 +1242,7 @@ export default function ChatPage() {
             {chatSearch.trim() && (
               <div className="bg-[#fffbe6] border-b border-[#ffe58f] px-6 py-2 flex items-center justify-between shrink-0">
                 <p className="text-[13px] text-[#876800]">
-                  Знайдено <strong>{displayMessages.length}</strong> {displayMessages.length === 1 ? 'повідомлення' : displayMessages.length < 5 ? 'повідомлення' : 'повідомлень'} за запитом <strong>"{chatSearch}"</strong>
+                  Знайдено <strong>{displayMessages.length}</strong> {displayMessages.length === 1 ? 'повідомлення' : displayMessages.length < 5 ? 'повідомлення' : 'повідомлень'} за запитом <strong>«{chatSearch}»</strong>
                 </p>
                 <button onClick={() => setChatSearch('')} className="text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline">
                   Очистити

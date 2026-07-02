@@ -23,6 +23,7 @@ import { Select } from '@/components/ui/Select';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
 function InviteModal({ isOpen, onClose, inviteMember }) {
+  const { currentUser } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
@@ -32,7 +33,8 @@ function InviteModal({ isOpen, onClose, inviteMember }) {
     if (!inviteEmail.trim()) return;
     try {
       setInviting(true);
-      const res = await inviteMember(inviteEmail.trim(), 'me', inviteRole);
+      const uid = currentUser?.id || currentUser?.uid;
+      const res = await inviteMember(inviteEmail.trim().toLowerCase(), uid, inviteRole);
       if (res.type === 'added_directly') {
         showToast('Користувача додано до команди ✓', 'success');
       } else {

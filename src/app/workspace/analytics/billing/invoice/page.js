@@ -228,7 +228,7 @@ function InvoiceContent() {
         {/* Footer Notes */}
         <div className="mt-20 pt-8 border-t border-[#f0f0f0] text-[12px] text-[#9a9a9a] leading-relaxed">
           <p className="font-bold text-[#1f1f1f] mb-1">Умови оплати</p>
-          <p>Оплата здійснюється протягом 14 банківських днів з моменту виставлення рахунку. У разі виникнення питань, будь ласка, зв'яжіться з нами за адресою hello@quickteam.me.</p>
+          <p>Оплата здійснюється протягом 14 банківських днів з моменту виставлення рахунку. У разі виникнення питань, будь ласка, зв’яжіться з нами за адресою hello@quickteam.me.</p>
         </div>
 
       </div>

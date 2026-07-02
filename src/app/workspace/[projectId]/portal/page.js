@@ -119,6 +119,7 @@ export default function PortalPage({ params }) {
                           {/* Preview */}
                           <div className="w-[48px] h-[48px] bg-[#f4f4f5] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
                             {mat.url && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(mat.url) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img src={mat.url} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
                             ) : (
                               <ImageIcon size={18} className="text-[#cfcfcf]" />

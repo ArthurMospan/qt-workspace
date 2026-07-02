@@ -4,7 +4,7 @@
 // Organization = the workspace team. Single org per deployment (ORG_ID).
 // Schema: organizations/{ORG_ID} → { name, ownerId, members: [{uid, role, joinedAt}] }
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 export function useOrganization() {

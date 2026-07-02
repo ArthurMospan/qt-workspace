@@ -48,6 +48,7 @@ export function Select({
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
           )}
           {selectedOption?.avatar && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={selectedOption.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
           )}
           {selectedOption?.icon && (
@@ -78,6 +79,7 @@ export function Select({
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                   )}
                   {opt.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
                   )}
                   {opt.icon && (
@@ -195,6 +197,7 @@ export function MultiSelect({
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                     )}
                     {opt.avatar && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
                     )}
                     {opt.icon && (

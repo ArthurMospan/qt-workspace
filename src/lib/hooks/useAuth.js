@@ -26,6 +26,9 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (intervalId) clearInterval(intervalId);
       if (firebaseUser) {
+        // Lightweight presence flag so middleware can gate /workspace before JS loads.
+        // Not a verified session token — Firestore rules remain the source of truth.
+        document.cookie = 'qt_session=1; path=/; max-age=2592000; SameSite=Lax';
         const userRef = doc(db, 'users', firebaseUser.uid);
         const snap = await getDoc(userRef);
         if (!snap.exists()) {
@@ -81,6 +84,7 @@ export function useAuth() {
           clearInterval(intervalId);
         };
       } else {
+        document.cookie = 'qt_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         if (!isDemoLogin) {
           setUser(null);
           setLoading(false);

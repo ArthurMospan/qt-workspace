@@ -3,7 +3,7 @@
 // src/lib/hooks/useNotifications.js
 // Real-time notifications: detects truly NEW docs, fires browser Notification + in-app popup
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, query, where, limit, onSnapshot, addDoc, updateDoc, doc, writeBatch, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot, addDoc, updateDoc, doc, writeBatch, serverTimestamp, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 // Request browser notification permission once
@@ -107,6 +107,32 @@ export function useNotifications(userId, {
 
 // ── Send notification(s) to users ───────────────────────────────────
 
+// Maps notification type → toggle key in users/{uid}/settings/notifications.
+// Types not listed here (e.g. 'alert' emergency calls) are always delivered.
+const PREF_KEY_BY_TYPE = {
+  assigned: 'assigned',
+  commented: 'commented',
+  status_changed: 'statusChanged',
+  mentioned: 'mentioned',
+  deadline: 'deadline'
+};
+// Must mirror the defaults in settings/page.js (notif initial state)
+const PREF_DEFAULTS = {
+  assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true
+};
+
+async function wantsNotification(userId, type) {
+  const prefKey = PREF_KEY_BY_TYPE[type];
+  if (!prefKey) return true;
+  try {
+    const snap = await getDoc(doc(db, 'users', userId, 'settings', 'notifications'));
+    const prefs = snap.exists() ? snap.data() : {};
+    return prefs[prefKey] ?? PREF_DEFAULTS[prefKey];
+  } catch {
+    return PREF_DEFAULTS[prefKey];
+  }
+}
+
 export async function sendNotification({
   userIds = [],
   type,
@@ -116,15 +142,18 @@ export async function sendNotification({
   issueId = '',
   projectId = ''
 }) {
-  await Promise.all(userIds.map(userId => addDoc(collection(db, 'notifications'), {
-    userId,
-    type,
-    title,
-    body,
-    link,
-    issueId,
-    projectId,
-    read: false,
-    createdAt: serverTimestamp()
-  }).catch(() => {})));
+  await Promise.all(userIds.map(async userId => {
+    if (!(await wantsNotification(userId, type))) return;
+    await addDoc(collection(db, 'notifications'), {
+      userId,
+      type,
+      title,
+      body,
+      link,
+      issueId,
+      projectId,
+      read: false,
+      createdAt: serverTimestamp()
+    }).catch(() => {});
+  }));
 }

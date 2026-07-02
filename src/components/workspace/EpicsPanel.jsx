@@ -75,7 +75,7 @@ export default function EpicsPanel({
 
       {/* No Epic */}
       {!parentEpic && !showCreate && (
-        <p className="text-[11px] text-[#cfcfcf]">Не прив'язана до епіка</p>
+        <p className="text-[11px] text-[#cfcfcf]">Не прив’язана до епіка</p>
       )}
 
       {/* Create/Select Form */}

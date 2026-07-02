@@ -34,6 +34,7 @@ export default function UserAvatar({ user, size = 32, className = '' }) {
       <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
         className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
         {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt={name}

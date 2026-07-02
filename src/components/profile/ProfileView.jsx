@@ -8,6 +8,37 @@ import UserAvatar from '@/components/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+
+// Owner/admin-only editor for a member's hourly rate (stored in orgMemberships)
+function RateEditor({ uid, initialRate, onSave }) {
+  const [rate, setRate] = useState(initialRate);
+  const showToast = useWorkspaceStore(s => s.showToast);
+
+  const save = async () => {
+    if (Number(rate) === Number(initialRate)) return;
+    try {
+      await onSave(uid, rate);
+      showToast('Ставку оновлено ✓');
+    } catch {
+      showToast('Помилка оновлення', 'error');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Погодинна ставка (USD)</h3>
+      <input
+        type="number" min="0" step="1"
+        value={rate}
+        onChange={e => setRate(e.target.value)}
+        onBlur={save}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        className="w-full max-w-[220px] px-4 py-[12px] bg-[#f4f4f5] border border-[#e9e9e9] rounded-[10px] text-[14px] font-semibold text-[#1f1f1f] focus:border-[#1f1f1f] outline-none transition-colors"
+      />
+    </div>
+  );
+}
 
 const getRealProfileDetails = (member) => {
   const isDemo = member.email === 'demo@quickteam.com' || member.email?.startsWith('demo');
@@ -35,16 +66,19 @@ const getRealProfileDetails = (member) => {
 
 export default function ProfileView({ user, onClose }) {
   const router = useRouter();
-  const { currentUser, projects } = useAppContext();
+  const { currentUser, projects, orgRole } = useAppContext();
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
   const { positions = [] } = useWorkflowConfig();
+  const { members: orgMembers, setMemberRate } = useOrganization();
   const [activeTab, setActiveTab] = useState('profile');
 
   if (!user) return null;
 
   const uid = user.id || user.uid;
   const isMe = uid === (currentUser?.id || currentUser?.uid);
-  const isAdminOrOwner = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+  const isAdminOrOwner = orgRole === 'admin' || orgRole === 'owner';
+  // Live membership record — hourlyRate lives in orgMemberships, not the user doc
+  const memberRecord = orgMembers.find(m => (m.id || m.uid) === uid);
   
   const isOnline = user.lastActive && (Date.now() - new Date(user.lastActive).getTime() < 120000);
   const details = getRealProfileDetails(user);
@@ -69,7 +103,8 @@ export default function ProfileView({ user, onClose }) {
       await addDoc(collection(db, 'notifications'), {
         userId: uid,
         type: 'alert',
-        text: emergencyText,
+        title: '🆘 Екстрений виклик',
+        body: emergencyText,
         createdAt: new Date(),
         read: false,
         link
@@ -292,6 +327,16 @@ export default function ProfileView({ user, onClose }) {
                 </div>
               </div>
             </div>
+
+            {/* Погодинна ставка — лише для owner/admin, не для власного профілю */}
+            {isAdminOrOwner && !isMe && (
+              <RateEditor
+                key={uid}
+                uid={uid}
+                initialRate={memberRecord?.hourlyRate || 0}
+                onSave={setMemberRate}
+              />
+            )}
           </div>
         )}
 

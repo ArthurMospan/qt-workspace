@@ -384,7 +384,6 @@ export default function MyTasksPage() {
                                       projectId={issue.projectId}
                                       projectName={pName}
                                       issueLinks={issueLinks}
-                                      issues={tasks}
                                     />
                                   );
                                 })

@@ -15,10 +15,6 @@ import React, { useCallback } from 'react';
  * @param {string} [props.className] - Additional CSS classes to apply
  */
 export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, className = '' }) {
-  if (!steps || steps.length === 0) {
-    return null;
-  }
-
   const handleStepClick = useCallback(
     (index) => {
       // Allow clicking previously completed steps or next step for flexibility
@@ -28,6 +24,10 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
     },
     [currentStep, onStepClick]
   );
+
+  if (!steps || steps.length === 0) {
+    return null;
+  }
 
   const getStepStatus = (index) => {
     if (index < currentStep) return 'completed';

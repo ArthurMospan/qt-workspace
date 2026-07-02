@@ -18,7 +18,7 @@ export default function ProjectTeamTab({ members = [] }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-[20px] pt-[16px] pb-[20px]">
+    <div className="flex-1 overflow-y-auto bg-white pt-[8px] pb-[20px]">
       <div className="w-full">
         <h2 className="text-[16px] font-bold text-[#1f1f1f] mb-6">Команда проєкту</h2>
         

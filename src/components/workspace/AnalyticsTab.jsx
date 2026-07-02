@@ -31,7 +31,7 @@ function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', trend }) {
         <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ background: color + '18' }}>
           <Icon size={16} style={{ color }} />
         </div>
-        {trend !== undefined && (
+        {trend != null && (
           <span className={`text-[11px] font-semibold flex items-center gap-1 ${trend >= 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
             {trend >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
             {Math.abs(trend)}%
@@ -81,13 +81,22 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
     const burnPct     = budget > 0 ? Math.min(Math.round((totalMinutes / budget) * 100), 100) : null;
     const remainH     = budget > 0 ? Math.max(0, (budget - totalMinutes) / 60).toFixed(1) : null;
 
-    // Velocity: done tasks in last 7 days
+    // Velocity: done tasks in last 7 days (+ trend vs previous 7 days, as in VelocityTab)
     const weekAgo = now - 7 * 24 * 3600 * 1000;
+    const twoWeeksAgo = now - 14 * 24 * 3600 * 1000;
     const recentDone = filteredIssues.filter(i => {
       if (i.columnId !== 'done') return false;
       const t = i.updatedAt?.toMillis?.() ?? 0;
       return t > weekAgo;
     }).length;
+    const prevDone = filteredIssues.filter(i => {
+      if (i.columnId !== 'done') return false;
+      const t = i.updatedAt?.toMillis?.() ?? 0;
+      return t > twoWeeksAgo && t <= weekAgo;
+    }).length;
+    const velocityTrend = prevDone > 0
+      ? Math.round(((recentDone - prevDone) / prevDone) * 100)
+      : null;
 
     // By status distribution
     const byStatus = COL_ORDER.map(col => ({
@@ -116,7 +125,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
     return {
       total, done, inProg, blocked, overdue, noAssignee, unestimated,
-      completionPct, budget, spentHours, burnPct, remainH, recentDone,
+      completionPct, budget, spentHours, burnPct, remainH, recentDone, velocityTrend,
       byStatus, byPriority, memberStats,
     };
   }, [filteredIssues, members, project, totalMinutes, byUser]);
@@ -125,7 +134,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
   return (
     <div className="flex-1 overflow-y-auto bg-white">
-      <div className="w-full px-[20px] pt-[16px] pb-[20px] flex flex-col gap-5">
+      <div className="w-full pt-[8px] pb-[20px] flex flex-col gap-5">
 
         {/* ── Filters ─────────────────────────────────────────────── */}
         <FilterBar>
@@ -162,7 +171,8 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
             sub={`${stats.completionPct}% завершення`} />
           <KpiCard icon={Zap}          label="Velocity (7 днів)" color="#6366f1"
             value={stats.recentDone}
-            sub="завдань закрито за тиждень" />
+            sub="завдань закрито за тиждень"
+            trend={stats.velocityTrend} />
           <KpiCard icon={AlertCircle}  label="Прострочено" color={stats.overdue.length > 0 ? '#dc2626' : '#10b981'}
             value={stats.overdue.length}
             sub="завдань після дедлайну" />
@@ -370,7 +380,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
           <div className="flex flex-col items-center py-16 text-center">
             <BarChart2 size={36} className="text-[#e9e9e9] mb-3" />
             <p className="text-[14px] font-semibold text-[#cfcfcf] mb-1">Даних немає</p>
-            <p className="text-[12px] text-[#e0e0e0]">Аналітика з'явиться після створення завдань</p>
+            <p className="text-[12px] text-[#e0e0e0]">Аналітика з’явиться після створення завдань</p>
           </div>
         )}
 

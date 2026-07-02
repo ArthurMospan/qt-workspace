@@ -3,8 +3,9 @@ import { useState, useRef } from 'react';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 
-export default function ImageUpload({ value, onChange, className = '', label = 'Завантажити логотип', showLabel = true, showHint = true, theme = 'dark' }) {
+export default function ImageUpload({ value, onChange, onError, className = '', label = 'Завантажити логотип', showLabel = true, showHint = true, theme = 'dark' }) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
   const isDark = theme === 'dark';
@@ -19,12 +20,14 @@ export default function ImageUpload({ value, onChange, className = '', label = '
     if (!file) return;
     
     setIsUploading(true);
+    setUploadError('');
     try {
       const { downloadUrl } = await uploadFileToCloudinary(file);
       onChange(downloadUrl);
     } catch (err) {
       console.error(err);
-      alert('Помилка завантаження файлу.');
+      const message = 'Помилка завантаження файлу.';
+      if (onError) onError(message); else setUploadError(message);
     } finally {
       setIsUploading(false);
     }
@@ -40,6 +43,7 @@ export default function ImageUpload({ value, onChange, className = '', label = '
           <Loader2 className={`w-6 h-6 animate-spin ${iconColor}`} />
         ) : value ? (
           <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="Logo" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <Upload className="w-5 h-5 text-white" />
@@ -62,6 +66,9 @@ export default function ImageUpload({ value, onChange, className = '', label = '
         ) : showHint ? (
           <span className={`text-[12px] ${subTextColor}`}>Рекомендовано 1:1 (PNG, JPG)</span>
         ) : null}
+        {uploadError && (
+          <span className="text-[12px] font-medium text-red-500">{uploadError}</span>
+        )}
       </div>
 
       <input 

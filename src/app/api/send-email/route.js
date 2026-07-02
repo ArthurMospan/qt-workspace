@@ -13,12 +13,16 @@
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 
 export async function POST(request) {
-  // Check API key (optional but recommended)
+  // Require INTERNAL_API_KEY to be configured — no soft fallback
+  if (!process.env.INTERNAL_API_KEY) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey = request.headers.get('x-api-key');
   if (apiKey !== process.env.INTERNAL_API_KEY) {
-    // Allow from same domain
+    // Allow from same origin only (exact match, not substring)
     const origin = request.headers.get('origin');
-    if (!origin?.includes(process.env.NEXT_PUBLIC_APP_URL || 'localhost')) {
+    if (!origin || origin !== process.env.NEXT_PUBLIC_APP_URL) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }

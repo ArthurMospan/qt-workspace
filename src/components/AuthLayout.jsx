@@ -10,7 +10,6 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
   const { currentUser, signOut } = useAppContext();
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
 
   const handleCreateOrg = () => {
     router.push('/onboarding?new=true');
@@ -63,6 +62,7 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
                   className="w-8 h-8 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 hover:border-white/30 transition-colors cursor-pointer"
                 >
                   {hasPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={photo} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-[14px] font-bold text-white">{firstLetter}</span>
@@ -97,36 +97,9 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
           <Link href="/privacy-policy" className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium">
             Політика конфіденційності
           </Link>
-          <a href="#" className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium">
-            Підтримка
-          </a>
-          <div className="relative">
-            <button 
-              onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium"
-            >
-              Українська
-            </button>
-            {showLangDropdown && (
-              <div className="absolute bottom-full left-0 mb-2 w-[160px] bg-[#2a2a2a] border border-[#3a3a3a] rounded-[12px] shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[100]">
-                <button 
-                  onClick={() => setShowLangDropdown(false)}
-                  className="w-full flex items-center px-3 py-2 text-[13px] font-medium text-white hover:bg-white/5 transition-colors text-left"
-                >
-                  Українська
-                </button>
-                <button 
-                  onClick={() => {
-                    alert('В розробці');
-                    setShowLangDropdown(false);
-                  }}
-                  className="w-full flex items-center px-3 py-2 text-[13px] font-medium text-white/50 hover:bg-white/5 transition-colors text-left"
-                >
-                  English (В розробці)
-                </button>
-              </div>
-            )}
-          </div>
+          <span className="text-white/30 text-[12px] font-medium">
+            Українська
+          </span>
         </div>
 
       </div>

@@ -14,6 +14,7 @@ import {
 import { useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useConfirm } from '@/components/ui';
 
 const FILE_ICONS = {
   image:    FileImage,
@@ -39,6 +40,7 @@ function fmtDate(ts) {
 
 export default function MaterialsTab({ projectId }) {
   const { currentUser } = useAppContext();
+  const confirmDialog = useConfirm();
   const [files, setFiles]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [showAdd, setShowAdd]   = useState(false);
@@ -84,7 +86,7 @@ export default function MaterialsTab({ projectId }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Видалити файл?')) return;
+    if (!(await confirmDialog({ title: 'Видалити файл?', confirmText: 'Видалити', danger: true }))) return;
     await deleteDoc(doc(db, 'projectFiles', id));
   };
 
@@ -189,6 +191,7 @@ export default function MaterialsTab({ projectId }) {
                   {/* Preview */}
                   <div className="w-[40px] h-[40px] bg-[#f4f4f5] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center border border-[#e9e9e9]">
                     {file.type === 'image' && file.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={file.url} alt="" className="w-full h-full object-cover"
                         onError={e => { e.target.style.display='none'; }} />
                     ) : (

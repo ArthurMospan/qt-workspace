@@ -75,6 +75,7 @@ export default function ProjectCard({
         <div className="z-10 bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
           {/* Actor Avatar */}
           {lastAction.actorAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img 
               src={lastAction.actorAvatar} 
               alt={lastAction.actor} 

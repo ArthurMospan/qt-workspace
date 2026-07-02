@@ -22,6 +22,7 @@ const TYPE_CFG = {
   commented:      { icon: MessageSquare,  color: '#0891b2', label: 'Коментар' },
   status_changed: { icon: GitPullRequest, color: '#10b981', label: 'Статус змінено' },
   mentioned:      { icon: AlertCircle,    color: '#f97316', label: 'Згадано' },
+  alert:          { icon: AlertCircle,    color: '#dc2626', label: 'Тривога' },
 };
 
 function timeAgo(ts) {
