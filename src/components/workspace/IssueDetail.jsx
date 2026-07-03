@@ -28,13 +28,12 @@ import Tabs from '@/components/ui/Tabs';
 import { TaskAttributesPanel, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import { parseMentions, resolveUserIds } from '@/lib/utils/mentions';
 import {
-  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ArrowUp, ArrowDown, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, AlertOctagon, Minus, ChevronRight,
-  Zap, Bug, Star,
+  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus,
   CheckCircle, XCircle, Play, Square as StopIcon,
   FileText, Film, Music, Link2,
   ZoomIn, Maximize2,
@@ -345,13 +344,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // Build TYPES and PRIORITIES with icon mapping preserved
   const TYPES = rawTypes.map(t => ({
     ...t,
-    icon: { epic: Zap, feature: Star, task: CheckSquare, bug: Bug }[t.id] || CheckSquare,
-    color: t.color || { epic: '#8b5cf6', feature: '#0891b2', task: '#059669', bug: '#dc2626' }[t.id] || '#9a9a9a',
+    icon: TYPE_ICONS[t.id] || CheckSquare,
+    color: t.color || DEFAULT_TYPES.find(d => d.id === t.id)?.color || '#9a9a9a',
   }));
   const PRIORITIES = rawPriorities.map(p => ({
     ...p,
-    icon: { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown }[p.id] || Minus,
-    color: p.color || { blocker: '#dc2626', high: '#f97316', medium: '#eab308', low: '#9a9a9a' }[p.id] || '#9a9a9a',
+    icon: PRIORITY_ICONS[p.id] || Minus,
+    color: p.color || DEFAULT_PRIORITIES.find(d => d.id === p.id)?.color || '#9a9a9a',
   }));
 
   // ── UI state ──────────────────────────────────────────────────────

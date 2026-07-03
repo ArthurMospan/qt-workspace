@@ -38,7 +38,6 @@ export function EmptyState({
         <div className="mt-5">
           <Button
             style="secondary"
-            color="blue"
             size="md"
             onClick={onAction}
           >

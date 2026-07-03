@@ -254,7 +254,7 @@ export default function BoardPage({ params }) {
                     { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
                     { value: 'high', label: 'High', dotColor: '#f97316' },
                     { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                    { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+                    { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
                   ]}
                   variant="ghost"
                 />

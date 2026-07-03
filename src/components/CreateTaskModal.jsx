@@ -92,19 +92,22 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[520px] mx-4 overflow-hidden">
+      <form
+        onSubmit={handleSubmit}
+        className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[520px] mx-4 max-h-[90vh] flex flex-col overflow-hidden"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#e9e9e9]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9] shrink-0">
           <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова завдання</h2>
-          <button onClick={onClose} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors p-1 rounded-[8px] hover:bg-[#f4f4f5]">
-            <X size={18} />
-          </button>
+          <Button style="secondary" size="icon" icon={X} onClick={onClose} type="button">
+            Закрити
+          </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 flex flex-col gap-4 overflow-y-auto flex-1">
           {/* Title */}
           <div>
             <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Назва *</label>
@@ -282,20 +285,24 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {error && (
             <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2">{error}</p>
           )}
+        </div>
 
-          {/* Submit */}
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f4f4f5] shrink-0">
+          <Button style="secondary" size="md" onClick={onClose} type="button">
+            Скасувати
+          </Button>
           <Button
             type="submit"
             style="primary"
-            size="lg"
+            size="md"
             disabled={!form.title.trim() || loading}
             loading={loading}
-            className="w-full mt-2"
           >
             {loading ? 'Створення...' : 'Створити завдання'}
           </Button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }

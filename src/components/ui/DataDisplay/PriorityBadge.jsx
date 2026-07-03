@@ -4,7 +4,7 @@ export default function PriorityBadge({ priority = 'low', className = '' }) {
   const priorityMap = {
     blocker: {
       bg: 'bg-[#ef4444]/8',
-      text: 'text-[#dc2626]',
+      text: 'text-[#ef4444]',
       dot: 'bg-[#ef4444]',
       label: 'Blocker',
     },

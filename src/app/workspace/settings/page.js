@@ -57,7 +57,7 @@ const DEFAULT_TYPES = [
   { id: 'bug',     label: 'Bug',     color: '#dc2626' },
 ];
 const DEFAULT_PRIORITIES = [
-  { id: 'blocker', label: 'Blocker', color: '#dc2626' },
+  { id: 'blocker', label: 'Blocker', color: '#ef4444' },
   { id: 'high',    label: 'High',    color: '#f97316' },
   { id: 'medium',  label: 'Medium',  color: '#eab308' },
   { id: 'low',     label: 'Low',     color: '#9a9a9a' },
@@ -242,19 +242,19 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" color="green" size="icon" icon={Check} iconSize={12} />
+            <Button onClick={save} style="ghost" size="icon" icon={Check} iconSize={12} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setColor(item.color); }
               }}
-              style="ghost" color="gray" size="icon" icon={X} iconSize={12}
+              style="ghost" size="icon" icon={X} iconSize={12}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
-              style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
+              style="ghost" size="icon" icon={Edit2} iconSize={11}
             />
             {canDelete ? (
               <Button onClick={() => onDelete(item.id)}
@@ -320,19 +320,19 @@ function PositionItem({ item, onSave, onDelete }) {
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" color="green" size="icon" icon={Check} iconSize={12} />
+            <Button onClick={save} style="ghost" size="icon" icon={Check} iconSize={12} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setHourlyRate(item.hourlyRate); }
               }}
-              style="ghost" color="gray" size="icon" icon={X} iconSize={12}
+              style="ghost" size="icon" icon={X} iconSize={12}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
-              style="ghost" color="gray" size="icon" icon={Edit2} iconSize={11}
+              style="ghost" size="icon" icon={Edit2} iconSize={11}
             />
             <Button onClick={() => onDelete(item.id)}
               style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
@@ -864,20 +864,20 @@ export default function SettingsPage() {
               if (activeSection === 'labels') setLabels(DEFAULT_LABELS);
               if (activeSection === 'positions') setPositions(DEFAULT_POSITIONS);
             }} 
-            style="ghost" color="gray" size={size}
-            className="rounded-xl px-4"
+            style="ghost" size={size}
+            className="px-4"
           >
             Скинути
           </Button>
         )}
-        <Button 
-          onClick={saveAction.handler} 
-          loading={saveAction.loading} 
-          style="primary" 
-          color="dark" 
-          size={size} 
+        <Button
+          onClick={saveAction.handler}
+          loading={saveAction.loading}
+          style="primary"
+          color="dark"
+          size={size}
           icon={showSavedCheck ? Check : undefined}
-          className={`rounded-xl px-6 transition-all duration-300 ${showSavedCheck ? '!bg-emerald-600 !hover:bg-emerald-700 text-white' : ''}`}
+          className={`px-6 transition-all duration-300 ${showSavedCheck ? '!bg-emerald-600 !hover:bg-emerald-700 text-white' : ''}`}
         >
           {showSavedCheck ? 'Збережено!' : (saveAction.loading ? 'Збереження...' : saveAction.label)}
         </Button>
@@ -953,7 +953,7 @@ export default function SettingsPage() {
                   const result = await Notification.requestPermission();
                   showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
                 }}
-                style="secondary" color="blue" size="lg"
+                style="secondary" size="lg"
               >
                 {typeof window !== 'undefined' && window.Notification?.permission === 'granted'
                   ? 'Увімкнено'
@@ -1046,7 +1046,7 @@ export default function SettingsPage() {
                 </code>
                 <Button
                   onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
-                  style="ghost" color="blue" size="icon-sm"
+                  style="ghost" size="icon-sm"
                   icon={Copy}
                   iconSize={12}
                 />
@@ -1192,14 +1192,14 @@ export default function SettingsPage() {
                           <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">API Token</span>
                           <div className="flex items-center gap-2">
                             <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
-                            <button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
+                            <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
                           </div>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
                           <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">Org ID</span>
                           <div className="flex items-center gap-2">
                             <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
-                            <button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>
+                            <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
                           </div>
                         </div>
                       </div>
@@ -1394,7 +1394,7 @@ export default function SettingsPage() {
                     return newStatuses;
                   });
                 }}
-                style="ghost" color="gray" size="lg"
+                style="ghost" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1418,7 +1418,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
-                style="ghost" color="gray" size="lg"
+                style="ghost" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1442,7 +1442,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', isNew: true }])}
-                style="ghost" color="gray" size="lg"
+                style="ghost" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1466,7 +1466,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#db2777', isNew: true }])}
-                style="ghost" color="gray" size="lg"
+                style="ghost" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1490,7 +1490,7 @@ export default function SettingsPage() {
               ))}
               <Button
                 onClick={() => setPositions(p => [...p, { id: `pos-${Date.now()}`, label: 'Нова посада', hourlyRate: 0, isNew: true }])}
-                style="ghost" color="gray" size="lg"
+                style="ghost" size="lg"
                 icon={Plus} iconSize={13}
                 className="w-full justify-start py-3 mt-2"
               >
@@ -1588,7 +1588,7 @@ export default function SettingsPage() {
                       <Button
                         onClick={() => unarchiveProject(p.id)}
                         style="secondary"
-                        color="green"
+
                         size="sm"
                         icon={ArchiveRestore}
                         className="shrink-0 ml-4 font-bold"
@@ -1622,7 +1622,7 @@ export default function SettingsPage() {
         <div className="flex gap-3">
           <Button
             onClick={() => setShowDisableConfirm(false)}
-            style="secondary" color="gray" size="lg"
+            style="secondary" size="lg"
             className="flex-1"
           >
             Скасувати

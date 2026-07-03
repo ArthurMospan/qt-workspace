@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
+import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 
 const COL_ORDER  = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COL_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
@@ -22,27 +24,6 @@ function fmtDate(ts) {
   if (!ts) return null;
   const d = ts?.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-}
-
-function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', trend }) {
-  return (
-    <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ background: color + '18' }}>
-          <Icon size={16} style={{ color }} />
-        </div>
-        {trend != null && (
-          <span className={`text-[11px] font-semibold flex items-center gap-1 ${trend >= 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
-            {trend >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-            {Math.abs(trend)}%
-          </span>
-        )}
-      </div>
-      <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">{label}</p>
-      {sub && <p className="text-[11px] text-[#cfcfcf] mt-1">{sub}</p>}
-    </div>
-  );
 }
 
 function SectionTitle({ children }) {
@@ -147,7 +128,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
               { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
               { value: 'high', label: 'High', dotColor: '#f97316' },
               { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-              { value: 'low', label: 'Low', dotColor: '#3b82f6' }
+              { value: 'low', label: 'Low', dotColor: '#9a9a9a' }
             ]}
           />
           <Select
@@ -244,8 +225,8 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
             ) : (
               <div className="flex flex-col gap-3">
                 {stats.byPriority.map(({ p, count }) => {
-                  const colors = { blocker: '#dc2626', high: '#f97316', medium: '#eab308', low: '#9a9a9a' };
-                  const labels = { blocker: 'Blocker', high: 'High', medium: 'Medium', low: 'Low' };
+                  const colors = Object.fromEntries(DEFAULT_PRIORITIES.map(d => [d.id, d.color]));
+                  const labels = Object.fromEntries(DEFAULT_PRIORITIES.map(d => [d.id, d.label]));
                   return (
                     <div key={p} className="flex items-center gap-3">
                       <span className="text-[11px] font-semibold px-2 py-[3px] rounded-full w-[66px] text-center shrink-0"

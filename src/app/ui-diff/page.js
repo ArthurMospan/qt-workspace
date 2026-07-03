@@ -6,7 +6,6 @@ import SplitButton from '@/components/ui/Button/SplitButton';
 import StatusBadge from '@/components/ui/DataDisplay/StatusBadge';
 import PriorityBadge from '@/components/ui/DataDisplay/PriorityBadge';
 import KitKpiCard from '@/components/ui/DataDisplay/KpiCard';
-import KitAvatar from '@/components/ui/DataDisplay/Avatar';
 import AvatarGroup from '@/components/ui/DataDisplay/AvatarGroup';
 import Chip from '@/components/ui/DataDisplay/Chip';
 import Stat from '@/components/ui/DataDisplay/Stat';
@@ -166,41 +165,39 @@ function PaletteRow({ id, level = 'medium', role, current, proposed, note }) {
   );
 }
 
-function ReferenceCard({ id, level = 'low', title, description }) {
+function ResolvedBlock({ id, title, description, decision, swatch, swatchLabel }) {
   return (
-    <div id={id} className="flex flex-col gap-[6px] bg-white border border-[#f0f0f0] rounded-[16px] p-[20px]">
+    <div id={id} className="flex flex-col gap-[14px] scroll-mt-4">
+      <div className="flex items-center gap-[10px] mb-[2px]">
+        <span className="text-[11px] font-bold px-[8px] py-[2px] rounded-[6px] bg-[#1f1f1f] text-white tracking-wide">{id.toUpperCase()}</span>
+        <span className="inline-flex items-center gap-[4px] text-[11px] font-bold text-[#047857]">✅ Рішення прийнято</span>
+      </div>
+      <h3 className="text-[17px] font-bold text-[#1f1f1f]">{title}</h3>
+      {description && <p className="text-[12px] text-[#9a9a9a] max-w-[720px] leading-relaxed">{description}</p>}
+      <div className="flex items-center gap-[16px] bg-[#ecfdf5] border border-[#a7f3d0] rounded-[16px] p-[20px]">
+        <Swatch hex={swatch} label={swatchLabel} />
+        <p className="text-[12px] text-[#065f46] font-semibold">{decision}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReferenceCard({ id, level = 'low', title, description, resolved = false, decision }) {
+  return (
+    <div id={id} className={`flex flex-col gap-[6px] rounded-[16px] p-[20px] border ${resolved ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-white border-[#f0f0f0]'}`}>
       <div className="flex items-center gap-[10px]">
         <span className="text-[11px] font-bold px-[8px] py-[2px] rounded-[6px] bg-[#1f1f1f] text-white tracking-wide">{id.toUpperCase()}</span>
-        <PriorityDot level={level} />
+        {resolved ? <span className="text-[11px] font-bold text-[#047857]">✅ Рішення прийнято</span> : <PriorityDot level={level} />}
       </div>
       <h4 className="text-[14px] font-bold text-[#1f1f1f] mt-[4px]">{title}</h4>
       <p className="text-[12px] text-[#9a9a9a] leading-relaxed">{description}</p>
+      {decision && <p className="text-[12px] text-[#065f46] font-semibold mt-[4px]">{decision}</p>}
     </div>
   );
 }
 
-// Внутрішні (неекспортовані) хардкоджені версії з реального коду —
-// відтворені 1:1, щоб порівняння було чесним.
-function LocalKpiCard({ icon: Icon, label, value, sub, color = '#6366f1', trend }) {
-  return (
-    <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ background: color + '18' }}>
-          <Icon size={16} style={{ color }} />
-        </div>
-        {trend != null && (
-          <span className={`text-[11px] font-semibold flex items-center gap-1 ${trend >= 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
-            {Math.abs(trend)}%
-          </span>
-        )}
-      </div>
-      <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">{label}</p>
-      {sub && <p className="text-[11px] text-[#cfcfcf] mt-1">{sub}</p>}
-    </div>
-  );
-}
-
+// Внутрішня (неекспортована) хардкоджена версія з реального коду —
+// відтворена 1:1, щоб порівняння було чесним.
 function LocalBacklogBadge({ label, color }) {
   return <span className="text-[10px] font-bold px-[6px] py-[2px] rounded-[6px]" style={{ color, background: color + '18' }}>{label}</span>;
 }
@@ -264,24 +261,21 @@ function PaletteSection() {
 function PriorityColorsSection() {
   return (
     <div className="flex flex-col gap-[40px]">
-      <DiffBlock
-        id="d5" level="high"
-        title="Пріоритет Blocker — два різні червоні"
-        description="Дошка (IssueCard, реальні задачі) використовує #dc2626. Але UI Kit PriorityBadge малює крапку (#ef4444) іншим відтінком за текст (#dc2626), і той самий #ef4444 повторюється у фільтрах на сторінці проєкту/аналітики."
-        currentLabel="ФІЛЬТРИ (dotColor='#ef4444')"
-        proposedLabel="ДОШКА / DEFAULT_PRIORITIES (#dc2626)"
-        current={<Swatch hex="#ef4444" label="фільтр пріоритету, projectId/page.js" />}
-        proposed={<Swatch hex="#dc2626" label="IssueCard, BacklogTab, DEFAULT_PRIORITIES" />}
-        note="UI Kit PriorityBadge сам собі суперечить: крапка #ef4444, текст #dc2626 — вибери один і для kit-компонента, і для фільтрів."
+      <ResolvedBlock
+        id="d5"
+        title="Пріоритет Blocker — тепер всюди #ef4444"
+        description="Було два різних червоних (#dc2626 на дошці/PriorityBadge-тексті vs #ef4444 у фільтрах). Уніфіковано на #ef4444 в усіх джерелах: DEFAULT_PRIORITIES, PriorityBadge kit, IssueDetail, SearchModal, sprints/BacklogTab PRIORITY_CFG, AnalyticsTab."
+        swatch="#ef4444"
+        swatchLabel="blocker — єдиний колір усюди"
+        decision="Застосовано у 8 файлах: useWorkflowConfig.js, settings/page.js, PriorityBadge.jsx, IssueDetail.jsx, SearchModal.jsx, sprints/page.js, BacklogTab.jsx, AnalyticsTab.jsx."
       />
-      <DiffBlock
-        id="d6" level="high"
-        title="Пріоритет Low — сірий чи синій?"
-        description="Дошка і PriorityBadge малюють low сірим (узгоджено між собою). Фільтри на 7 сторінках красять low синім — той самий пріоритет виглядає як зовсім інший статус."
-        currentLabel="ФІЛЬТРИ (dotColor='#3b82f6')"
-        proposedLabel="ДОШКА / PriorityBadge (#9a9a9a)"
-        current={<Swatch hex="#3b82f6" label="7 файлів: сторінка проєкту, аналітика, sprints…" />}
-        proposed={<Swatch hex="#9a9a9a" label="IssueCard, BacklogTab, PriorityBadge kit" />}
+      <ResolvedBlock
+        id="d6"
+        title="Пріоритет Low — тепер всюди сірий #9a9a9a"
+        description="Дошка й PriorityBadge вже малювали low сірим; фільтри на 7 сторінках малювали синім (#3b82f6) — той самий пріоритет виглядав як інший статус. Уніфіковано на сірий."
+        swatch="#9a9a9a"
+        swatchLabel="low — єдиний колір усюди"
+        decision="Замінено dotColor у фільтрах на 6 сторінках: analytics, my, sprints, [projectId], AnalyticsTab, BacklogTab."
       />
     </div>
   );
@@ -289,15 +283,17 @@ function PriorityColorsSection() {
 
 function KpiSection() {
   return (
-    <DiffBlock
-      id="d8" level="medium"
-      title="KPI-картка задубльована"
-      description="AnalyticsTab.jsx має власну, невелику копію KPI-картки замість готової з UI Kit. Візуально майже ідентична (кит трохи темніший радіус іконки й трохи інший розмір цифри — 26px замість 28px)."
-      current={<LocalKpiCard icon={Clock} label="ЗАВДАНЬ" value="24" color="#6366f1" trend={12} />}
-      proposed={<KitKpiCard icon={Clock} label="ЗАВДАНЬ" value="24" color="#6366f1" trend={12} />}
-      currentFile="src/components/workspace/AnalyticsTab.jsx:27 (локальна функція KpiCard)"
-      proposedFile="src/components/ui/DataDisplay/KpiCard.jsx"
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d8"
+        title="KPI-картка задубльована — тепер один компонент"
+        description="AnalyticsTab.jsx мала власну копію KPI-картки. Видалено, тепер імпортує kit-версію напряму — коли компонент зміниться, це відобразиться всюди одразу, а не тільки в одному місці."
+        swatch="#6366f1"
+        swatchLabel="KitKpiCard — єдина версія"
+        decision="AnalyticsTab.jsx тепер імпортує ui/DataDisplay/KpiCard.jsx, локальну функцію видалено."
+      />
+      <KitKpiCard icon={Clock} label="ЗАВДАНЬ" value="24" color="#6366f1" trend={12} />
+    </div>
   );
 }
 
@@ -317,99 +313,103 @@ function BadgeSection() {
 
 function PrioritySection() {
   return (
-    <DiffBlock
-      id="d10" level="high"
-      title="Пріоритет — крапка+текст вручну, замість готового PriorityBadge"
-      description="У беклозі й на дошці пріоритет малюється вручну іконкою + кольоровим текстом. У кіті вже є готовий PriorityBadge (0 використань у застосунку) — той самий сенс, компактніше, і колір лежить в одному місці."
-      current={
-        <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: '#dc2626' }}>
-          <span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: '#dc2626' }} /> blocker
-        </span>
-      }
-      proposed={<PriorityBadge priority="blocker" />}
-      currentFile="src/components/workspace/BacklogTab.jsx:198 (ручний рендер), AgileBoard/IssueCard — свій варіант"
-      proposedFile="src/components/ui/DataDisplay/PriorityBadge.jsx"
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d10"
+        title="Пріоритет — тепер PriorityBadge замість ручного рендеру"
+        description="BacklogTab малював пріоритет вручну іконкою+текстом. Замінено на готовий kit PriorityBadge. IssueCard на живій дошці лишився зі своїм компактним кутовим індикатором — це навмисно інший, менший формат для карток, не дублікат, тому його не чіпав."
+        swatch="#ef4444"
+        swatchLabel="PriorityBadge — єдиний спосіб для табличних/списочних видів"
+        decision="BacklogTab.jsx рядок пріоритету замінено на <PriorityBadge priority={...} />."
+      />
+      <PriorityBadge priority="blocker" />
+    </div>
   );
 }
 
 function AvatarsSection() {
   return (
-    <DiffBlock
-      id="d11" level="high"
-      title="Аватарки трьома різними способами"
-      description="У застосунку є три шляхи показати аватар користувача: правильний UserAvatar (детермінований колір з ініціалів, тултіп) — це фактичний стандарт; kit-компонент Avatar (завжди фіолетовий фон, без детермінованого кольру) — гірша версія, майже не використовується; і сирий <img> з фолбеком на зовнішній ui-avatars.com у мертвому BacklogTab."
-      currentLabel="СИРИЙ <img> + ui-avatars.com"
-      proposedLabel="UserAvatar (фактичний стандарт застосунку)"
-      current={
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src="https://ui-avatars.com/api/?name=Ivan&size=32" alt="Ivan" className="w-[32px] h-[32px] rounded-full ring-[1.5px] ring-white object-cover" />
-      }
-      proposed={<UserAvatar user={{ name: 'Ivan Petrenko' }} size={32} />}
-      currentFile="src/components/workspace/BacklogTab.jsx:206"
-      proposedFile="src/components/UserAvatar.jsx"
-      note={<>Третій варіант, kit-компонент <code>ui/DataDisplay/Avatar.jsx</code>, теж живий, але завжди малює фіолетовий фон незалежно від користувача — вважаю його гіршою копією <code>UserAvatar</code>, кандидат на видалення, а не на використання. Показую поруч: <span className="inline-flex align-middle mx-1"><KitAvatar initials="ІП" /></span></>}
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d11"
+        title="Аватарки — тепер один стандарт: UserAvatar"
+        description="Рішення власника: аватарки мають бути однакові по стандарту, якщо аватарки нема — колір з ініціалів (детермінований, «рандомний» на вигляд). Саме так уже працює UserAvatar — сирий <img> з ui-avatars.com у BacklogTab замінено на нього."
+        swatch="#4f46e5"
+        swatchLabel="UserAvatar — єдиний стандарт"
+        decision="BacklogTab.jsx: <img src={ui-avatars.com...}> замінено на <UserAvatar user={m} size={20} />."
+      />
+      <div className="flex items-center gap-3">
+        <UserAvatar user={{ name: 'Ivan Petrenko' }} size={32} />
+        <span className="text-[12px] text-[#6b6b6b]">без фото — колір з ініціалів, детермінований за id</span>
+      </div>
+      <p className="text-[11px] text-[#9a9a9a]">
+        Kit-компонент <code>ui/DataDisplay/Avatar.jsx</code> (завжди фіолетовий, без детермінованого кольору) лишається невикористаним — кандидат на видалення, дивись розділ «Невикористані компоненти».
+      </p>
+    </div>
   );
 }
 
 function CopyButtonSection() {
   return (
-    <DiffBlock
-      id="d12" level="medium"
-      title="Кнопка копіювання — нативна іконка замість Button"
-      description="У розділі Інтеграцій (BuggyBag) дві кнопки копіювання зроблені сирим <button> з іконкою. У профілі організації такий самий елемент вже переведено на Button size='icon-sm' (хвиля E) — лишилось привести ці два."
-      current={<button className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"><Copy size={14} /></button>}
-      proposed={<Button style="ghost" color="blue" size="icon-sm" icon={Copy} iconSize={12} />}
-      currentFile="src/app/workspace/settings/page.js:1195,1202"
-      proposedFile="вже застосовано для Organization ID у той самій формі"
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d12"
+        title="Кнопка копіювання — тепер Button icon-sm скрізь"
+        description="Дві кнопки копіювання в розділі Інтеграцій (BuggyBag) були сирим <button> з іконкою. Переведено на Button, як і Organization ID у тій самій формі раніше."
+        swatch="#9a9a9a"
+        swatchLabel="Button style=ghost size=icon-sm"
+        decision="settings/page.js: обидві кнопки (токен BuggyBag, Org ID у секції інтеграцій) тепер <Button style='ghost' size='icon-sm' icon={Copy} />."
+      />
+      <Button style="ghost" size="icon-sm" icon={Copy} iconSize={12} />
+    </div>
   );
 }
 
 function ChatIconsSection() {
   return (
-    <DiffBlock
-      id="d14" level="medium"
-      title="Іконки-дії повідомлення в чаті"
-      description="Hover-кнопки під повідомленням (відповісти, закріпити, редагувати, видалити) — нативні 28×28px кнопки. Kit-розмір icon-sm — теж рівно 28px, тобто заміна суто механічна, без зміни верстки."
-      current={
-        <button className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors" title="Відповісти в гілку">
-          <MessageSquare size={15} />
-        </button>
-      }
-      proposed={<Button style="ghost" size="icon-sm" icon={MessageSquare} iconSize={15} />}
-      currentFile="src/app/workspace/chat/page.js (MessageBubble, ~4 кнопки на повідомлення)"
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d14"
+        title="Іконки-дії повідомлення в чаті — уніфіковано"
+        description="Hover-кнопки під повідомленням (відповісти, закріпити, редагувати, видалити) були нативними 28×28px кнопками — різниці з kit-розміром icon-sm не було, тож просто замінено."
+        swatch="#9a9a9a"
+        swatchLabel="Button style=ghost size=icon-sm"
+        decision="chat/page.js MessageBubble: усі 4 кнопки (Thread, Pin, Edit, Delete) тепер Button; Pin зберіг активний indigo-стан через className, Delete — color='red'."
+      />
+      <Button style="ghost" size="icon-sm" icon={MessageSquare} iconSize={15} />
+    </div>
   );
 }
 
 function ButtonColorSection() {
   return (
-    <DiffBlock
-      id="d18" level="high"
-      title="Button мовчки ігнорує color=&quot;blue&quot;/&quot;green&quot;/&quot;gray&quot;"
-      description="У коді є виклики Button з color=&quot;blue&quot; (копіювання Org ID), color=&quot;gray&quot; (кнопка «Скинути») — але компонент підтримує лише dark/red, тому обидва мовчки стають чорними. Розробник, який писав color=&quot;blue&quot;, очікував побачити синю кнопку."
-      currentLabel="ЩО НАПИСАНО В КОДІ (color=&quot;blue&quot;)"
-      proposedLabel="ЩО РЕАЛЬНО РЕНДЕРИТЬСЯ ЗАРАЗ"
-      current={<div className="flex flex-col items-start gap-1"><Button style="ghost" color="blue" size="md" icon={Copy}>Мало бути синім</Button><span className="text-[10px] text-[#b91c1c]">задумано: текст синього кольору</span></div>}
-      proposed={<div className="flex flex-col items-start gap-1"><Button style="ghost" color="blue" size="md" icon={Copy}>Насправді чорне</Button><span className="text-[10px] text-[#9a9a9a]">Button.jsx:68 звужує колір до dark/red</span></div>}
-      note="Це не «поточне vs kit» — це один і той самий рендер, показаний двічі, щоб було видно розрив між тим, що написано в коді, і тим, що бачить користувач. Рішення (= T35): або додати blue/green у палітру Button, або прибрати ці кольори з викликів."
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d18"
+        title="Button color=blue/green/gray — прибрано з викликів"
+        description="Рішення власника: кольори не будуть використовуватись часто, тому прибираємо ці пропси з викликів замість розширення палітри Button (= закриває T35 у цьому напрямку)."
+        swatch="#1f1f1f"
+        swatchLabel="Button завжди dark/red — інших кольорів у викликах більше немає"
+        decision="Прибрано color=&quot;blue&quot;/&quot;gray&quot;/&quot;green&quot; з ~16 викликів у settings/page.js, sprints/page.js, EmptyState.jsx. НЕ займали білінг (2 кнопки апгрейду плану лишились як є)."
+      />
+      <Button style="ghost" size="md" icon={Copy}>Тепер просто dark</Button>
+    </div>
   );
 }
 
 function ButtonRadiusSection() {
   return (
-    <DiffBlock
-      id="d19" level="medium"
-      title="Перекриття радіуса кнопки в Налаштуваннях"
-      description="Кнопка «Зберегти» в Налаштуваннях додає className=&quot;rounded-xl px-6&quot; поверх Button — rounded-xl це 12px, а стандартний радіус Button 10px. Виходять дві трохи різні геометрії кнопок в одному застосунку."
-      current={<Button style="primary" size="lg" className="rounded-xl px-6">Зберегти профіль</Button>}
-      proposed={<Button style="primary" size="lg">Зберегти профіль</Button>}
-      currentFile="src/app/workspace/settings/page.js (renderSaveButton)"
-      proposedFile="стандартний Button, без перекриття"
-    />
+    <div className="flex flex-col gap-[16px]">
+      <ResolvedBlock
+        id="d19"
+        title="Радіус кнопок — тепер завжди 10px"
+        description="Кнопка «Зберегти» в Налаштуваннях додавала className=&quot;rounded-xl px-6&quot; (12px) поверх стандартних 10px Button. Прибрано перекриття радіуса."
+        swatch="#1f1f1f"
+        swatchLabel="10px — стандартний радіус Button, без винятків"
+        decision="settings/page.js: rounded-xl прибрано з кнопок «Скинути» і «Зберегти» (px-4/px-6 padding лишився)."
+      />
+      <Button style="primary" size="lg">Зберегти профіль</Button>
+    </div>
   );
 }
 
@@ -541,14 +541,38 @@ function OutOfScopeSection() {
   return (
     <div className="flex flex-col gap-[20px]">
       <p className="text-[13px] text-[#6b6b6b] bg-[#f4f4f5] rounded-[10px] px-[14px] py-[10px] max-w-[820px]">
-        Ці пункти з дизайн-ревю навмисно без візуального порівняння — вони або великі лейаути (за твоєю політикою не перебудовуємо), або суто архітектурні, не про вигляд.
+        D7, D15, D17 вже вирішені (позначено зелено) — залишені тут, бо не мають власного окремого розділу. D16 і далі поза скоупом (великий блок логіки). D22 — опис двох мертвих файлів, чекає твого рішення.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
-        <ReferenceCard id="d7" level="medium" title="PRIORITY_CFG/TYPE_CFG скопійовані в ~6 файлів" description="Архітектурне: кожна копія конфігурації кольорів може розійтися незалежно (D5/D6 — вже наслідок). Кандидат на один спільний файл у lib/, не про вигляд." />
-        <ReferenceCard id="d15" level="low" title="Модалки CreateTaskModal/IssueModal/BoardConfigModal" description="Власні оверлеї, не ui-kit Dialog. Великі форми — за твоєю політикою не перебудовуємо." />
-        <ReferenceCard id="d16" level="low" title="CommentThread/TimeLogDisplay/TeamMemberCard дублюють IssueDetail/ProjectTeamTab" description="Великі блоки логіки, а не дрібні елементи — за політикою не чіпаємо." />
-        <ReferenceCard id="d17" level="medium" title="EmptyState kit vs саморобні заглушки в чаті/беклозі" description="Дрібний елемент, теоретично можна підставити — але завжди всередині великого лейаута, тому переносжу сюди для явного рішення, а не мовчки роблю." />
-        <ReferenceCard id="d22" level="medium" title="BacklogTab.jsx і MaterialsTab.jsx — мертвий код" description="Ніде не імпортуються. Питання не дизайнерське: видалити чи повернути в застосунок?" />
+        <ReferenceCard
+          id="d7" resolved
+          title="PRIORITY_CFG/TYPE_CFG — тепер один спільний модуль"
+          description="Кожен з 6 файлів мав власну копію кольорів/іконок пріоритету й типу — копії вже розходились (D5/D6 — наслідок саме цього)."
+          decision="Додано PRIORITY_ICONS/TYPE_ICONS у useWorkflowConfig.js; BacklogTab, sprints/page.js, SearchModal.jsx, IssueDetail.jsx, AnalyticsTab.jsx тепер будують свої CFG з DEFAULT_PRIORITIES/DEFAULT_TYPES + цих мап — одна зміна кольору поширюється всюди."
+        />
+        <ReferenceCard
+          id="d15" resolved
+          title="Модалки — спільний каркас, різний вміст"
+          description="Рішення власника: розмір і вміст можуть різнитись, але заголовок, хрестик, радіус, відступи і футер-кнопки мають бути однакові."
+          decision="CreateTaskModal вирівняно з BoardConfigModal: хрестик тепер kit Button (був сирий), header px-6 py-4, backdrop bg-black/40 blur-sm скрізь (було 20/60), кнопку submit винесено в спільний футер (bg-[#f4f4f5], Скасувати + Створити). IssueModal — лише backdrop вирівняно, вміст лишився делегованим до IssueDetail."
+        />
+        <ReferenceCard id="d16" level="low" title="CommentThread/TimeLogDisplay/TeamMemberCard дублюють IssueDetail/ProjectTeamTab" description="Великі блоки логіки, а не дрібні елементи — за політикою не чіпаємо. Не піднімалось у цій хвилі." />
+        <ReferenceCard
+          id="d17" resolved
+          title="EmptyState — тепер kit-компонент у чаті"
+          description="Порожній стан чату («Ще немає повідомлень») був саморобним блоком — замінено на kit EmptyState (той самий вигляд: іконка, заголовок, підпис)."
+          decision="chat/page.js: блок з іконкою+двома <p> замінено на <EmptyState icon={MessageSquare} title={...} description={...} />."
+        />
+        <ReferenceCard
+          id="d22" level="medium"
+          title="BacklogTab.jsx і MaterialsTab.jsx — що це і навіщо"
+          description={<>
+            <strong>BacklogTab</strong> — альтернативний табличний (не канбан) вигляд задач проєкту: рядки замість карток, сортування по колонках, групування по спринтах, drag-and-drop між спринтами. По суті «список» тих самих задач, що на дошці. <br/><br/>
+            <strong>MaterialsTab</strong> — внутрішній менеджер файлів/посилань проєкту для команди (не плутати з клієнтським порталом): додати посилання з назвою й нотаткою, фільтр за типом (зображення/PDF/документ/посилання), видалення. <br/><br/>
+            Обидва файли існують у коді, повністю робочі, але жоден нікуди не підключений (0 імпортів) — не видно в застосунку взагалі.
+          </>}
+          decision="Питання не дизайнерське: використовуємо (підключити десь в UI) чи видаляємо як мертвий код? Потрібне твоє рішення."
+        />
       </div>
     </div>
   );

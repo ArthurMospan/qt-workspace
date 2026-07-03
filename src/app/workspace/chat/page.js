@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
-import { useConfirm } from '@/components/ui';
+import Button from '@/components/ui/Button';
+import { useConfirm, EmptyState } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -251,46 +252,39 @@ function MessageBubble({
 
           {/* Thread (only for main chat messages) */}
           {!isThread && (
-            <button
+            <Button
               onClick={() => onThread(msg.id)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors"
+              style="ghost" size="icon-sm" icon={MessageSquare} iconSize={15}
               title="Відповісти в гілку"
-            >
-              <MessageSquare size={15} />
-            </button>
+            />
           )}
 
           {/* Pin */}
           {!isThread && (
-            <button
+            <Button
               onClick={() => onPin(msg.id, !msg.isPinned)}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${msg.isPinned ? 'text-[#6366f1] bg-[#eef2ff]' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5]'}`}
+              style="ghost" size="icon-sm" icon={Pin} iconSize={15}
+              className={msg.isPinned ? '!text-[#6366f1] !bg-[#eef2ff]' : ''}
               title={msg.isPinned ? 'Відкріпити' : 'Закріпити'}
-            >
-              <Pin size={15} />
-            </button>
+            />
           )}
 
           {/* Edit & Delete (own messages only) */}
           {isMe && (
             <>
               <div className="w-px h-4 bg-[#e9e9e9] mx-0.5" />
-              <button
+              <Button
                 onClick={() => { setEditing(true); setEditText(msg.text); }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors"
+                style="ghost" size="icon-sm" icon={Edit2} iconSize={14}
                 title="Редагувати"
-              >
-                <Edit2 size={14} />
-              </button>
-              <button
+              />
+              <Button
                 onClick={async () => {
                   if (await confirmDialog({ title: 'Видалити повідомлення?', confirmText: 'Видалити', danger: true })) onDelete(msg.id);
                 }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9a9a9a] hover:text-[#ef4444] hover:bg-red-50 transition-colors"
+                style="ghost" color="red" size="icon-sm" icon={Trash2} iconSize={14}
                 title="Видалити"
-              >
-                <Trash2 size={14} />
-              </button>
+              />
             </>
           )}
         </div>
@@ -1260,16 +1254,12 @@ export default function ChatPage() {
                   <div className="w-8 h-8 border-3 border-[#e9e9e9] border-t-[#6366f1] rounded-full animate-spin" />
                 </div>
               ) : displayMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-16">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
-                    <MessageSquare size={28} className="text-[#cfcfcf]" />
-                  </div>
-                  <p className="text-[15px] font-semibold text-[#9a9a9a]">
-                    {chatSearch ? 'Нічого не знайдено' : 'Ще немає повідомлень'}
-                  </p>
-                  <p className="text-[13px] text-[#cfcfcf] mt-1">
-                    {chatSearch ? `За запитом "${chatSearch}"` : 'Почніть розмову! 👋'}
-                  </p>
+                <div className="flex-1 flex items-center justify-center h-full">
+                  <EmptyState
+                    icon={MessageSquare}
+                    title={chatSearch ? 'Нічого не знайдено' : 'Ще немає повідомлень'}
+                    description={chatSearch ? `За запитом «${chatSearch}»` : 'Почніть розмову! 👋'}
+                  />
                 </div>
               ) : (
                 displayMessages.map((msg, i) => {

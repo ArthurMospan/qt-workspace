@@ -5,7 +5,7 @@ export default function IssueModal({ issue, onClose }) {
   if (!issue) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center pt-8 pb-8 px-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div 
         className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[1200px] h-full max-h-[90vh] flex flex-col overflow-hidden" 
         onClick={e => e.stopPropagation()}

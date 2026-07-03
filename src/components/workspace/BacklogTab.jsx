@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import UserAvatar from '@/components/UserAvatar';
 import { useIssues } from '@/lib/hooks/useIssues';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
@@ -8,20 +9,19 @@ import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import {
-  AlertOctagon, ArrowUp, Minus, ArrowDown,
-  Zap, Bug, Star, CheckSquare,
   ChevronUp, ChevronDown as ChevronDn, Filter, Plus, Trash2, Play, Check, Lock
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Button from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui';
+import PriorityBadge from '@/components/ui/DataDisplay/PriorityBadge';
+import { DEFAULT_TYPES, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
-const PRIORITY_CFG  = { blocker:{c:'#dc2626',i:AlertOctagon}, high:{c:'#f97316',i:ArrowUp}, medium:{c:'#eab308',i:Minus}, low:{c:'#9a9a9a',i:ArrowDown} };
-const TYPE_CFG      = { epic:{c:'#8b5cf6',i:Zap}, feature:{c:'#0891b2',i:Star}, task:{c:'#059669',i:CheckSquare}, bug:{c:'#dc2626',i:Bug} };
+const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
 
 function Badge({ label, color }) {
   return <span className="text-[10px] font-bold px-[6px] py-[2px] rounded-[6px]" style={{ color, background: color + '18' }}>{label}</span>;
@@ -152,9 +152,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
           {(provided) => (
             <tbody ref={provided.innerRef} {...provided.droppableProps}>
               {issueList.map((issue, index) => {
-                const pri = PRIORITY_CFG[issue.priority] || PRIORITY_CFG.medium;
                 const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
-                const PrioIcon = pri.i;
                 const TypeIcon = type.i;
                 const assignees = (issue.assigneeIds||[]).map(uid => members.find(m=>(m.id||m.uid)===uid)).filter(Boolean);
 
@@ -195,17 +193,12 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                           <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
                         </td>
                         <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
-                          <span className="flex items-center gap-1 text-[11px] font-bold" style={{ color: pri.c }}>
-                            <PrioIcon size={11} /> {issue.priority}
-                          </span>
+                          <PriorityBadge priority={issue.priority} />
                         </td>
                         <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
                           <div className="flex -space-x-1">
                             {assignees.slice(0,3).map(m => (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img key={m.id||m.uid} src={m.avatar||m.photoURL||`https://ui-avatars.com/api/?name=${m.name}&size=20`}
-                                alt={m.name} title={m.name}
-                                className="w-[20px] h-[20px] rounded-full ring-[1.5px] ring-white object-cover" />
+                              <UserAvatar key={m.id||m.uid} user={m} size={20} className="ring-[1.5px] ring-white" />
                             ))}
                           </div>
                         </td>
@@ -270,7 +263,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
               { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
               { value: 'high', label: 'High', dotColor: '#f97316' },
               { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-              { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+              { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
             ]}
             variant="ghost"
           />

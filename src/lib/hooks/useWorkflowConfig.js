@@ -8,6 +8,13 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } from 'lucide-react';
+
+// Single source of truth for priority/type icons — every place that renders
+// a priority or type (BacklogTab, sprints, SearchModal, IssueDetail…) reads
+// from here instead of keeping its own copy, so the icon set can't drift.
+export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
+export const TYPE_ICONS = { epic: Zap, feature: Star, task: CheckSquare, bug: Bug };
 export const DEFAULT_STATUSES = [{
   id: 'backlog',
   label: 'Backlog',
@@ -57,7 +64,7 @@ export const DEFAULT_TYPES = [{
 export const DEFAULT_PRIORITIES = [{
   id: 'blocker',
   label: 'Blocker',
-  color: '#dc2626'
+  color: '#ef4444'
 }, {
   id: 'high',
   label: 'High',

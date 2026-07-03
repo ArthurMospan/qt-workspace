@@ -1,22 +1,12 @@
 'use client';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Bug, Star, CheckSquare } from 'lucide-react';
+import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 
-const PRIORITY_CFG = {
-  blocker: { c: '#dc2626', i: AlertOctagon },
-  high: { c: '#f97316', i: ArrowUp },
-  medium: { c: '#eab308', i: Minus },
-  low: { c: '#9a9a9a', i: ArrowDown }
-};
-
-const TYPE_CFG = {
-  epic: { c: '#8b5cf6', i: Zap },
-  feature: { c: '#0891b2', i: Star },
-  task: { c: '#059669', i: CheckSquare },
-  bug: { c: '#dc2626', i: Bug }
-};
+const PRIORITY_CFG = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
+const TYPE_CFG = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
 
 export default function SearchModal({ isOpen, results, loading, query, onClose, projects }) {
   const router = useRouter();

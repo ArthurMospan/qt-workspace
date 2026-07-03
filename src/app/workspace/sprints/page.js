@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -16,11 +16,10 @@ import IssueModal from '@/components/workspace/IssueModal';
 import { PageHeader, useConfirm } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { useLocalization } from '@/lib/hooks/useLocalization';
-import { 
-  Plus, Play, Check, Trash2, Edit2, Calendar, 
-  ChevronDown, ChevronRight, ChevronUp, Zap, 
-  AlertCircle, AlertOctagon, ArrowUp, Minus, ArrowDown,
-  Star, Bug, CheckSquare, Filter
+import {
+  Plus, Play, Check, Trash2, Edit2, Calendar,
+  ChevronDown, ChevronRight, ChevronUp,
+  AlertCircle, Filter
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -29,8 +28,8 @@ import Button from '@/components/ui/Button';
 
 const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
 const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
-const PRIORITY_CFG  = { blocker:{c:'#dc2626',i:AlertOctagon}, high:{c:'#f97316',i:ArrowUp}, medium:{c:'#eab308',i:Minus}, low:{c:'#9a9a9a',i:ArrowDown} };
-const TYPE_CFG      = { epic:{c:'#8b5cf6',i:Zap}, feature:{c:'#0891b2',i:Star}, task:{c:'#059669',i:CheckSquare}, bug:{c:'#dc2626',i:Bug} };
+const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
+const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
 
 const COLUMNS = [
   { id: 'todo',        label: 'To Do',       color: '#6366f1' },
@@ -230,7 +229,7 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
             <Button style="secondary" size="md" onClick={onClose} type="button">
               Скасувати
             </Button>
-            <Button style="primary" color="blue" size="md" type="submit">
+            <Button style="primary" size="md" type="submit">
               Завершити спринт
             </Button>
           </div>
@@ -497,7 +496,7 @@ export default function GlobalSprintsPage() {
                   { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
                   { value: 'high', label: 'High', dotColor: '#f97316' },
                   { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                  { value: 'low', label: 'Low', dotColor: '#3b82f6' },
+                  { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
                 ]}
                 variant="ghost"
               />
