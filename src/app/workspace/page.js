@@ -357,8 +357,12 @@ function ProjectStatsSection({ project, isLarge, members }) {
   const [stats, setStats] = useState({ total: 0, inProgress: 0, comments: 0, lastAction: null });
 
   useEffect(() => {
-    if (!project?.id) return;
-    const qIssues = query(collection(db, 'issues'), where('projectId', '==', project.id));
+    if (!project?.id || !project?.organizationId) return;
+    const qIssues = query(
+      collection(db, 'issues'),
+      where('organizationId', '==', project.organizationId),
+      where('projectId', '==', project.id)
+    );
     const unsubscribe = onSnapshot(qIssues, async (snapshot) => {
       let totalCount = 0;
       let inProgressCount = 0;
