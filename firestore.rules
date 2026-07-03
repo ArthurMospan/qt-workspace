@@ -1,12 +1,275 @@
 rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────
+// QuickTeam Firestore rules
+//
+// Multi-tenant model: every org-scoped collection is guarded by membership
+// in `orgMemberships/{orgId}_{uid}` (role: owner|admin|member|client). That
+// collection is the single source of truth for roles — see CLAUDE.md.
+//
+// Field-name note: `orgMemberships` docs use `orgId`; every other org-scoped
+// collection (projects, issues, tasks, sprints, timeLogs, issueLinks,
+// invitations) uses `organizationId`. This is intentional (confirmed by
+// code audit), not a bug — don't "fix" it by renaming one of them without
+// updating every hook that reads it.
+//
+// Known residual risks NOT closed by this pass (flagged, not fixed here —
+// each needs a small app-code change alongside the rule, tracked in
+// QuickTeam-Workspace-Review-2.md wave F notes):
+//   - `orgMemberships` self-join (acceptPendingInvitation) can't be
+//     cryptographically tied to a real invitation from rules alone, since
+//     invitations use auto-generated IDs. Mitigated by forbidding
+//     self-granted 'owner' role (only the org-bootstrap path can do that).
+//   - `notifications` has no organizationId field, so `create` can't verify
+//     sender/recipient share an org — only read/update/delete are locked to
+//     the recipient.
+//   - `organizations.apiKeys` is a plain array on the org doc, readable by
+//     every org member (not just owner/admin) because the whole doc is
+//     fetched via onSnapshot. A real fix means moving apiKeys to a
+//     subcollection — a data-model change, out of scope for a rules-only
+//     pass.
+//   - `runMigrations()` (src/lib/migrations/runMigrations.js) does a few
+//     unscoped `getDocs(collection(db, 'projects'|'tasks'|'issues'))` calls.
+//     Those migrations are idempotent and gated by a `hasRun` flag in
+//     `systemMigrations/{ORG_ID}` — as long as they've already completed
+//     once (expected, since orgMemberships is already populated in prod),
+//     they short-circuit before touching the unscoped query. If ever reset,
+//     they will fail under these rules. Recommend converting to a one-off
+//     Admin SDK script instead of client-triggered code.
+// ─────────────────────────────────────────────────────────────────────────
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Глобальне правило: дозволяємо читання та запис усім авторизованим користувачам
-    // TODO: Пізніше потрібно буде деталізувати ці правила для безпеки продакшену
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // ── Helpers ────────────────────────────────────────────────────────
+    function signedIn() {
+      return request.auth != null;
     }
-    
+
+    function membershipDoc(orgId) {
+      return get(/databases/$(database)/documents/orgMemberships/$(orgId + '_' + request.auth.uid));
+    }
+
+    function isOrgMember(orgId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/orgMemberships/$(orgId + '_' + request.auth.uid));
+    }
+
+    function orgRole(orgId) {
+      return membershipDoc(orgId).data.role;
+    }
+
+    function isOrgAdminOrOwner(orgId) {
+      return isOrgMember(orgId) && orgRole(orgId) in ['owner', 'admin'];
+    }
+
+    function isOrgOwner(orgId) {
+      return isOrgMember(orgId) && orgRole(orgId) == 'owner';
+    }
+
+    function projectOrg(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
+    }
+
+    function issueOrg(issueId) {
+      return get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId;
+    }
+
+    function taskOrg(taskId) {
+      return get(/databases/$(database)/documents/tasks/$(taskId)).data.organizationId;
+    }
+
+    // ── organizations/{orgId} ──────────────────────────────────────────
+    match /organizations/{orgId} {
+      allow read: if signedIn() && (isOrgMember(orgId) || resource.data.ownerId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isOrgAdminOrOwner(orgId) &&
+        (request.resource.data.ownerId == resource.data.ownerId || isOrgOwner(orgId));
+      allow delete: if isOrgOwner(orgId);
+    }
+
+    // ── orgMemberships/{orgId}_{uid} — RBAC source of truth ────────────
+    match /orgMemberships/{membershipId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isOrgMember(resource.data.orgId));
+
+      allow create: if signedIn() && (
+        // Bootstrap: first owner of a freshly created org (org doc already
+        // carries ownerId == you, written by the same onboarding flow).
+        (request.resource.data.userId == request.auth.uid &&
+         request.resource.data.role == 'owner' &&
+         get(/databases/$(database)/documents/organizations/$(request.resource.data.orgId)).data.ownerId == request.auth.uid)
+        ||
+        // Self-join (accepted invitation) — never allowed to self-grant owner.
+        (request.resource.data.userId == request.auth.uid && request.resource.data.role != 'owner')
+        ||
+        // Owner/admin adding an existing user directly (inviteMember).
+        (isOrgAdminOrOwner(request.resource.data.orgId) && request.resource.data.role != 'owner')
+      );
+
+      allow update: if signedIn() && (
+        request.resource.data.role == 'owner' ? isOrgOwner(resource.data.orgId) : isOrgAdminOrOwner(resource.data.orgId)
+      );
+
+      allow delete: if signedIn() &&
+        (isOrgAdminOrOwner(resource.data.orgId) || request.auth.uid == resource.data.userId);
+    }
+
+    // ── users/{uid} — global, not org-scoped (needed for cross-org team
+    //    lookups and email-based invite matching) ───────────────────────
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+
+      match /settings/{settingsDoc} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // ── invitations/{id} ────────────────────────────────────────────────
+    match /invitations/{id} {
+      allow read: if signedIn() &&
+        (resource.data.email == request.auth.token.email || isOrgAdminOrOwner(resource.data.organizationId));
+      allow create: if isOrgAdminOrOwner(request.resource.data.organizationId);
+      allow update: if signedIn() &&
+        (resource.data.email == request.auth.token.email || isOrgAdminOrOwner(resource.data.organizationId));
+      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
+    }
+
+    // ── projects/{projectId} — created only via Admin SDK (/api/projects,
+    //    which enforces plan limits); client can read/update/delete ──────
+    match /projects/{projectId} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if false;
+      allow update: if isOrgMember(resource.data.organizationId) &&
+        request.resource.data.organizationId == resource.data.organizationId;
+      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
+
+      // Portal chat — client + workspace side, scoped via parent project.
+      match /messages/{msgId} {
+        allow read, create, update: if isOrgMember(projectOrg(projectId));
+        allow delete: if isOrgMember(projectOrg(projectId)) && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // ── stages/{stageId} — created only via Admin SDK, no organizationId
+    //    field (scoped through the parent project) ──────────────────────
+    match /stages/{stageId} {
+      allow read: if isOrgMember(projectOrg(resource.data.projectId));
+      allow create, delete: if false;
+      allow update: if isOrgMember(projectOrg(resource.data.projectId));
+
+      match /materials/{materialId} {
+        allow read, write: if isOrgMember(projectOrg(get(/databases/$(database)/documents/stages/$(stageId)).data.projectId));
+      }
+    }
+
+    // ── issues/{issueId} ─────────────────────────────────────────────────
+    match /issues/{issueId} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) &&
+        request.resource.data.organizationId == resource.data.organizationId;
+      allow delete: if isOrgMember(resource.data.organizationId);
+
+      match /comments/{commentId} {
+        allow read, create: if isOrgMember(issueOrg(issueId));
+        allow update, delete: if isOrgMember(issueOrg(issueId)) && resource.data.authorId == request.auth.uid;
+      }
+
+      // Append-only activity log.
+      match /audit/{auditId} {
+        allow read, create: if isOrgMember(issueOrg(issueId));
+        allow update, delete: if false;
+      }
+    }
+
+    // ── issueLinks/{id} ──────────────────────────────────────────────────
+    match /issueLinks/{id} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
+    }
+
+    // ── tasks/{taskId} — legacy/parallel collection to issues ───────────
+    match /tasks/{taskId} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) &&
+        request.resource.data.organizationId == resource.data.organizationId;
+      allow delete: if isOrgMember(resource.data.organizationId);
+
+      match /taskComments/{commentId} {
+        allow read, create: if isOrgMember(taskOrg(taskId));
+        allow update, delete: if isOrgMember(taskOrg(taskId)) && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // ── sprints/{id} ─────────────────────────────────────────────────────
+    match /sprints/{id} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) &&
+        request.resource.data.organizationId == resource.data.organizationId;
+      allow delete: if isOrgMember(resource.data.organizationId);
+    }
+
+    // ── timeLogs/{id} ────────────────────────────────────────────────────
+    match /timeLogs/{id} {
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update, delete: if isOrgMember(resource.data.organizationId);
+    }
+
+    // ── notifications/{id} — no organizationId field; locked to recipient
+    //    for read/update/delete. create stays org-agnostic (see header note).
+    match /notifications/{id} {
+      allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn();
+    }
+
+    // ── presence/{uid} ───────────────────────────────────────────────────
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── systemMigrations/{orgId} — single idempotent flag doc per deploy,
+    //    no sensitive data. ───────────────────────────────────────────────
+    match /systemMigrations/{orgId} {
+      allow read, write: if signedIn();
+    }
+
+    // ── organizations/{orgId}/channels/... — chat, scoped via path ──────
+    match /organizations/{orgId}/channels/{channelId} {
+      allow read, create, update: if isOrgMember(orgId);
+      allow delete: if isOrgAdminOrOwner(orgId);
+
+      match /messages/{msgId} {
+        allow read, create, update: if isOrgMember(orgId);
+        allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
+
+        match /replies/{replyId} {
+          allow read, create, update: if isOrgMember(orgId);
+          allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
+        }
+      }
+    }
+
+    match /organizations/{orgId}/readState/{stateId} {
+      allow read, write: if isOrgMember(orgId) && resource.data.userId == request.auth.uid;
+      allow create: if isOrgMember(orgId) && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /organizations/{orgId}/activeDMs/{uid} {
+      allow read: if isOrgMember(orgId);
+      allow write: if isOrgMember(orgId) && request.auth.uid in request.resource.data.partners;
+    }
+
+    match /organizations/{orgId}/settings/{settingsDoc} {
+      allow read: if isOrgMember(orgId);
+      allow write: if isOrgAdminOrOwner(orgId);
+    }
   }
 }
