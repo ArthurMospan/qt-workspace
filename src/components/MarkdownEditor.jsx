@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import MarkdownViewer from './MarkdownViewer';
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered, CheckSquare, Code, Heading } from 'lucide-react';
 
@@ -6,14 +6,14 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
   const [tab, setTab] = useState(defaultTab);
   const textareaRef = useRef(null);
 
-  const insertText = (before, after = '') => {
+  const insertText = useCallback((before, after = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end);
-    
+
     const newText = value.substring(0, start) + before + selectedText + after + value.substring(end);
     onChange(newText);
 
@@ -22,9 +22,9 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
       textarea.focus();
       textarea.setSelectionRange(start + before.length, end + before.length);
     }, 0);
-  };
+  }, [value, onChange]);
 
-  const toolbar = [
+  const toolbar = useMemo(() => [
     { icon: Heading, label: 'Заголовок', action: () => insertText('### ', '') },
     { icon: Bold, label: 'Жирний', action: () => insertText('**', '**') },
     { icon: Italic, label: 'Курсив', action: () => insertText('*', '*') },
@@ -36,7 +36,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
     { icon: CheckSquare, label: 'Чекліст', action: () => insertText('- [ ] ', '') },
     { divider: true },
     { icon: Code, label: 'Код', action: () => insertText('`', '`') },
-  ];
+  ], [insertText]);
 
   return (
     <div className="w-full border border-[#e9e9e9] rounded-[12px] bg-white overflow-hidden flex flex-col">
@@ -64,6 +64,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
         {/* Formatting Toolbar */}
         {tab === 'write' && (
           <div className="flex items-center gap-1 overflow-x-auto pr-2">
+            {/* eslint-disable-next-line react-hooks/refs -- false positive: insertText only reads textareaRef.current inside its own onClick-invoked body, never during render */}
             {toolbar.map((item, idx) => {
               if (item.divider) {
                 return <div key={`div-${idx}`} className="w-[1px] h-[16px] bg-[#e9e9e9] mx-1"></div>;

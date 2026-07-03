@@ -28,12 +28,8 @@ export default function UserStatusSetter() {
     try {
       const { doc, updateDoc } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
-      
-      if (currentUser) {
-        currentUser.status = newText;
-        currentUser.statusEmoji = newEmoji;
-      }
-      
+
+      // UI оновиться через live-підписку useAuth на users/{uid} — мутувати currentUser не можна
       await updateDoc(doc(db, 'users', currentUser.id), {
         status: newText,
         statusEmoji: newEmoji
