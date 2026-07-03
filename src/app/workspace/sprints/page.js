@@ -13,7 +13,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { PageHeader, useConfirm } from '@/components/ui';
+import { PageHeader, useConfirm, Dialog } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
@@ -58,11 +58,19 @@ function SprintEditModal({ sprint, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-[24px] shadow-xl w-[480px] p-6 max-w-[90%] border border-[#efefef]">
-        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-4">Редагувати спринт</h3>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <Dialog
+      isOpen={true}
+      onClose={onClose}
+      title="Редагувати спринт"
+      size="sm"
+      footer={
+        <>
+          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="primary" size="md" type="submit" form="sprint-edit-form">Зберегти</Button>
+        </>
+      }
+    >
+        <form id="sprint-edit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Назва спринта</label>
             <input 
@@ -102,17 +110,8 @@ function SprintEditModal({ sprint, onClose, onSave }) {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <Button style="secondary" size="md" onClick={onClose} type="button">
-              Скасувати
-            </Button>
-            <Button style="primary" size="md" type="submit">
-              Зберегти
-            </Button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -133,11 +132,19 @@ function SprintCreateModal({ onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-[24px] shadow-xl w-[480px] p-6 max-w-[90%] border border-[#efefef]">
-        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-4">Створити спринт</h3>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <Dialog
+      isOpen={true}
+      onClose={onClose}
+      title="Створити спринт"
+      size="sm"
+      footer={
+        <>
+          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="primary" size="md" type="submit" form="sprint-create-form">Створити</Button>
+        </>
+      }
+    >
+        <form id="sprint-create-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Назва спринта</label>
             <input 
@@ -179,17 +186,8 @@ function SprintCreateModal({ onClose, onSave }) {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <Button style="secondary" size="md" onClick={onClose} type="button">
-              Скасувати
-            </Button>
-            <Button style="primary" size="md" type="submit">
-              Створити
-            </Button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -204,14 +202,22 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-[24px] shadow-xl w-[480px] p-6 max-w-[90%] border border-[#efefef]">
-        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-4">Завершити спринт: {sprint.name}</h3>
+    <Dialog
+      isOpen={true}
+      onClose={onClose}
+      title={`Завершити спринт: ${sprint.name}`}
+      size="sm"
+      footer={
+        <>
+          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="primary" size="md" type="submit" form="sprint-complete-form">Завершити спринт</Button>
+        </>
+      }
+    >
         <p className="text-[13px] text-[#9a9a9a] mb-4">
           У цьому спринті залишилось <strong className="text-[#1f1f1f]">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
         </p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form id="sprint-complete-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Перенести завдання в</label>
             <select 
@@ -225,17 +231,8 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <Button style="secondary" size="md" onClick={onClose} type="button">
-              Скасувати
-            </Button>
-            <Button style="primary" size="md" type="submit">
-              Завершити спринт
-            </Button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 

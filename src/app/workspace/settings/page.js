@@ -404,7 +404,6 @@ export default function SettingsPage() {
 
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [qtSaving,       setQtSaving]       = useState(false);
 
@@ -608,20 +607,21 @@ export default function SettingsPage() {
 
   const saveIntegration = async (enabled) => {
     if (!activeOrgId) return;
-    
+
     // If user is trying to turn it OFF, show confirmation
     if (qtEnabled && !enabled) {
-      setShowDisableConfirm(true);
-      return;
+      if (!(await confirmDialog({
+        title: 'Відключити інтеграцію?',
+        message: 'Ви впевнені? Якщо ви відключите інтеграцію, ви більше не зможете інтегрувати проєкти з клієнтським порталом. Ваші клієнти втратять доступ до оновлень у реальному часі.',
+        confirmText: 'Відключити', danger: true,
+      }))) return;
     }
 
-    // Otherwise (turning ON), do it immediately
-    await confirmSaveIntegration(true);
+    await confirmSaveIntegration(enabled);
   };
 
   const confirmSaveIntegration = async (enabled) => {
     setQtSaving(true);
-    setShowDisableConfirm(false);
     try {
       await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'integrations'), {
         qtPortalEnabled: enabled, updatedAt: serverTimestamp(),
@@ -1608,36 +1608,6 @@ export default function SettingsPage() {
     }
   };
 
-  // ── Modals ───────────────────────────────────────────────────────
-  const disableIntegrationModal = showDisableConfirm && (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-[400px] bg-white rounded-[24px] shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-        <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
-          <AlertTriangle size={24} />
-        </div>
-        <h3 className="text-[18px] font-bold text-[#1f1f1f] mb-2">Відключити інтеграцію?</h3>
-        <p className="text-[13px] text-[#9a9a9a] mb-6">
-          Ви впевнені? Якщо ви відключите інтеграцію, ви більше не зможете інтегрувати проєкти з клієнтським порталом. Ваші клієнти втратять доступ до оновлень у реальному часі.
-        </p>
-        <div className="flex gap-3">
-          <Button
-            onClick={() => setShowDisableConfirm(false)}
-            style="secondary" size="lg"
-            className="flex-1"
-          >
-            Скасувати
-          </Button>
-          <Button
-            onClick={() => confirmSaveIntegration(false)}
-            style="primary" color="red" size="lg"
-            className="flex-1"
-          >
-            Відключити
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 
 
 
@@ -1668,16 +1638,21 @@ export default function SettingsPage() {
 
 
 
-      {disableIntegrationModal}
-
-      <Dialog isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Запросити нового учасника" size="md">
-        <div className="flex flex-col gap-4 py-4 min-h-[200px]">
+      <Dialog
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        title="Запросити нового учасника"
+        size="md"
+        footer={
+          <>
+            <Button onClick={() => setShowInviteModal(false)} style="secondary" size="md">Скасувати</Button>
+            <Button onClick={async () => { await handleInvite(); setShowInviteModal(false); }} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" size="md">Надіслати запрошення</Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4 min-h-[200px]">
           <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
           <Select value={inviteRole} onChange={setInviteRole} options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))} label="Роль" />
-        </div>
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-[#f0f0f0]">
-          <Button onClick={() => setShowInviteModal(false)} style="ghost" color="dark" size="lg">Скасувати</Button>
-          <Button onClick={async () => { await handleInvite(); setShowInviteModal(false); }} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" color="dark" size="lg">Надіслати запрошення</Button>
         </div>
       </Dialog>
     </SidebarLayout>

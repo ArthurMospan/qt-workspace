@@ -5,13 +5,13 @@ import { doc, updateDoc, addDoc, deleteDoc, collection, serverTimestamp, getDocs
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, X, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, AlertCircle, Activity, MessageSquare } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
-import { PageHeader, EmptyState } from '@/components/ui';
+import { PageHeader, EmptyState, useConfirm } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
@@ -50,7 +50,20 @@ function EditProjectModal({ project, onClose }) {
   };
 
   return (
-    <Dialog isOpen={true} onClose={onClose} title="Редагувати проєкт" size="sm">
+    <Dialog
+      isOpen={true}
+      onClose={onClose}
+      title="Редагувати проєкт"
+      size="sm"
+      footer={
+        <>
+          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
+          <Button onClick={handleSave} disabled={!name.trim() || saving} style="primary" size="md">
+            {saving ? 'Збереження...' : 'Зберегти'}
+          </Button>
+        </>
+      }
+    >
       <div className="flex flex-col gap-[16px]">
         <div>
           <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
@@ -70,12 +83,6 @@ function EditProjectModal({ project, onClose }) {
             placeholder="Короткий опис проєкту..."
           />
         </div>
-      </div>
-      <div className="flex gap-[8px] mt-[24px]">
-        <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
-        <Button onClick={handleSave} disabled={!name.trim() || saving} style="primary" size="md" className="flex-1">
-          {saving ? 'Збереження...' : 'Зберегти'}
-        </Button>
       </div>
     </Dialog>
   );
@@ -112,7 +119,20 @@ function AddMemberModal({ project, allMembers, onClose }) {
   };
 
   return (
-    <Dialog isOpen={true} onClose={onClose} title="Учасники проєкту" size="sm">
+    <Dialog
+      isOpen={true}
+      onClose={onClose}
+      title="Учасники проєкту"
+      size="sm"
+      footer={
+        <>
+          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
+          <Button onClick={handleSave} disabled={saving} style="primary" size="md">
+            {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
+          </Button>
+        </>
+      }
+    >
       <div className="flex flex-col gap-[16px]">
         <Input
           autoFocus
@@ -151,46 +171,6 @@ function AddMemberModal({ project, allMembers, onClose }) {
           })}
         </div>
       </div>
-      <div className="flex gap-[8px] mt-[24px]">
-        <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
-        <Button onClick={handleSave} disabled={saving} style="primary" size="md" className="flex-1">
-          {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
-        </Button>
-      </div>
-    </Dialog>
-  );
-}
-
-// ── Delete Confirm Modal ─────────────────────────────────────────────────────
-function DeleteConfirmModal({ project, onClose, onDeleted }) {
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteDoc(doc(db, 'projects', project.id));
-      onDeleted?.();
-      onClose();
-    } catch (err) { console.error(err); setDeleting(false); }
-  };
-
-  return (
-    <Dialog isOpen={true} onClose={onClose} size="sm" showCloseButton={false}>
-      <div className="flex flex-col items-center text-center">
-        <div className="w-[56px] h-[56px] bg-red-50 rounded-full flex items-center justify-center mb-[16px]">
-          <AlertCircle size={24} className="text-red-500" />
-        </div>
-        <h2 className="text-[18px] font-bold text-[#1f1f1f] mb-[8px]">Видалити проєкт?</h2>
-        <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-[24px]">
-          Ви видаляєте <strong className="text-[#1f1f1f]">{project.name}</strong>. Цю дію неможливо скасувати.
-        </p>
-        <div className="flex gap-[8px] w-full">
-          <Button onClick={onClose} style="secondary" size="md" className="flex-1">Скасувати</Button>
-          <Button onClick={handleDelete} disabled={deleting} color="red" style="primary" size="md" className="flex-1">
-            {deleting ? 'Видалення...' : 'Видалити'}
-          </Button>
-        </div>
-      </div>
     </Dialog>
   );
 }
@@ -199,11 +179,11 @@ function DeleteConfirmModal({ project, onClose, onDeleted }) {
 const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], isLarge = false }) => {
   const router = useRouter();
   const { currentUser, activeOrgId } = useAppContext();
+  const confirmDialog = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
@@ -312,7 +292,15 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
                   { icon: ArchiveRestore, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' }
                 ),
                 { isDivider: true },
-                { icon: Trash2, label: 'Видалити', isDanger: true, onClick: () => setShowDelete(true) },
+                { icon: Trash2, label: 'Видалити', isDanger: true, onClick: async () => {
+                  if (await confirmDialog({
+                    title: 'Видалити проєкт?',
+                    message: `Ви видаляєте «${project.name}». Цю дію неможливо скасувати.`,
+                    confirmText: 'Видалити', danger: true,
+                  })) {
+                    await deleteDoc(doc(db, 'projects', project.id));
+                  }
+                } },
               ]}
             />
           </div>
@@ -347,7 +335,6 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
       {showEdit && <EditProjectModal project={project} onClose={() => setShowEdit(false)} />}
       {showAddMember && <AddMemberModal project={project} allMembers={allOrgMembers} onClose={() => setShowAddMember(false)} />}
       {showBoardConfig && <BoardConfigModal project={project} onClose={() => setShowBoardConfig(false)} />}
-      {showDelete && <DeleteConfirmModal project={project} onClose={() => setShowDelete(false)} />}
     </>
   );
 };
@@ -570,37 +557,32 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[24px] w-full max-w-[480px] shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[20px] border-b border-[#f0f0f0]">
-          <h2 className="text-[18px] font-bold text-[#1f1f1f]">Новий проєкт</h2>
-          <Button style="secondary" size="icon" icon={X} onClick={onClose} />
+    <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
+      limitReached ? (
+        <div className="flex flex-col gap-2 w-full">
+          <Button onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }} style="primary" color="blue" size="md" className="w-full">Перейти на PRO →</Button>
+          <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
-        {/* Content: upsell OR form */}
-        {limitReached ? (
-        <div className="p-[24px] flex flex-col items-center text-center">
+      ) : (
+        <>
+          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
+          <Button onClick={handleCreate} disabled={!name.trim() || saving} loading={saving} style="primary" size="md">Створити проєкт</Button>
+        </>
+      )
+    }>
+      {limitReached ? (
+        <div className="flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-[#6366f1]" />
           </div>
           <h3 className="text-[17px] font-bold text-[#1f1f1f] mb-2">Ліміт Free плану</h3>
-          <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-6">
+          <p className="text-[13px] text-[#9a9a9a] leading-relaxed">
             На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
             Перейдіть на Pro для необмеженої кількості проєктів.
           </p>
-          <div className="flex flex-col gap-2 w-full">
-            <Button
-              onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }}
-              style="primary" color="blue" size="md" className="w-full"
-            >
-              Перейти на PRO →
-            </Button>
-            <Button onClick={onClose} style="secondary" size="md" className="w-full">
-              Закрити
-            </Button>
-          </div>
         </div>
       ) : (
-        <div className="p-[24px] flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[16px]">
           {error && (
             <div className="bg-red-50 text-red-600 px-4 py-3 rounded-[10px] text-[13px] border border-red-100 flex flex-col gap-2">
               <span className="font-semibold">{error}</span>
@@ -636,24 +618,8 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
             />
           </div>
         </div>
-        )}
-        {!limitReached && (
-          <div className="flex gap-[8px] px-[24px] pb-[24px]">
-            <Button onClick={onClose} style="secondary" size="md" className="flex-1">
-              Скасувати
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!name.trim() || saving}
-              loading={saving}
-              style="primary" size="md" className="flex-1"
-            >
-              Створити проєкт
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </Dialog>
   );
 }
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2 } from 'lucide-react';
+import { Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
@@ -152,7 +152,12 @@ export default function ProfileView({ user, onClose }) {
   ];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
+    <div className="flex flex-col h-full overflow-hidden bg-white relative">
+      {onClose && (
+        <div className="absolute top-4 right-4 z-10">
+          <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
+        </div>
+      )}
       {/* HEADER SECTION */}
       <div className="shrink-0 pt-8 pb-4 flex flex-col items-center">
         <div className="flex flex-col items-center text-center px-8">

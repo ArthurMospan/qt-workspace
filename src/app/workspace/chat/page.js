@@ -1058,10 +1058,10 @@ export default function ChatPage() {
                 {isAdminOrOwner && (
                   <button
                     onClick={() => setIsCreatingChannel(true)}
-                    className="w-5 h-5 flex items-center justify-center rounded-md text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white/85 transition-all"
+                    className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
                     title="Новий канал"
                   >
-                    <Plus size={13} />
+                    <Plus size={16} />
                   </button>
                 )}
               </div>

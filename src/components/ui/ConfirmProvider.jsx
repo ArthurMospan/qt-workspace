@@ -54,8 +54,29 @@ export function ConfirmProvider({ children }) {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      <Dialog isOpen={!!request} onClose={handleCancel} title={title} size="sm">
+      <Dialog
+        isOpen={!!request}
+        onClose={handleCancel}
+        title={title}
+        size="sm"
+        footer={
+          <>
+            <Button style="secondary" size="md" onClick={handleCancel}>{cancelText}</Button>
+            <Button
+              type="submit"
+              form="confirm-dialog-form"
+              style="primary"
+              color={danger ? 'red' : 'dark'}
+              size="md"
+              autoFocus={!input}
+            >
+              {confirmText}
+            </Button>
+          </>
+        }
+      >
         <form
+          id="confirm-dialog-form"
           onSubmit={e => { e.preventDefault(); handleConfirm(); }}
           className="flex flex-col gap-[16px]"
         >
@@ -70,18 +91,6 @@ export function ConfirmProvider({ children }) {
               placeholder={input.placeholder || ''}
             />
           )}
-          <div className="flex justify-end gap-[8px]">
-            <Button style="secondary" size="md" onClick={handleCancel}>{cancelText}</Button>
-            <Button
-              type="submit"
-              style="primary"
-              color={danger ? 'red' : 'dark'}
-              size="md"
-              autoFocus={!input}
-            >
-              {confirmText}
-            </Button>
-          </div>
         </form>
       </Dialog>
     </ConfirmContext.Provider>

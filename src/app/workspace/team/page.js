@@ -51,18 +51,25 @@ function InviteModal({ isOpen, onClose, inviteMember }) {
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title="Запросити нового учасника" size="md">
-      <div className="flex flex-col gap-4 py-4 min-h-[200px]">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Запросити нового учасника"
+      size="md"
+      footer={
+        <>
+          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
+          <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" size="md">Надіслати запрошення</Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4 min-h-[200px]">
         <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
         <Select value={inviteRole} onChange={setInviteRole} options={[
           {value: 'owner', label: 'Власник'},
           {value: 'admin', label: 'Адміністратор'},
           {value: 'member', label: 'Учасник'}
         ]} label="Роль" />
-      </div>
-      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-[#f0f0f0]">
-        <Button onClick={onClose} style="ghost" color="dark" size="lg">Скасувати</Button>
-        <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" color="dark" size="lg">Надіслати запрошення</Button>
       </div>
     </Dialog>
   );

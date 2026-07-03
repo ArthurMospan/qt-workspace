@@ -26,8 +26,7 @@ export default function ProfileModal() {
       isOpen={isOpen} 
       onClose={handleClose} 
       size="lg"
-      className="p-0 overflow-hidden" // removes padding to let ProfileView stretch
-      hideCloseButton={false} // UI Kit Dialog handles standard close button
+      className="p-0 overflow-hidden" // removes padding to let ProfileView stretch — ProfileView renders its own close button
     >
       <div className="w-full h-[80vh] flex flex-col">
         <ProfileView user={user} onClose={handleClose} />
