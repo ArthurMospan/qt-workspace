@@ -672,12 +672,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
-      <div className={`w-full px-[24px] md:px-[32px] ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-hidden`}>
-        
+      <div className={`w-full px-[24px] md:px-[32px] ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] flex-1 min-h-0 items-stretch">
-          
+
           {/* LEFT SIDE (Data) */}
-          <div className="lg:col-span-2 flex flex-col gap-[16px] min-h-0 overflow-hidden">
+          <div className="lg:col-span-2 flex flex-col gap-[16px] min-h-0 overflow-visible lg:overflow-hidden">
         
             {/* TITLE & ACTIONS */}
             <div className="flex items-start justify-between gap-[16px] w-full pt-[12px]">
@@ -1020,7 +1020,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             )}
 
             {/* MAIN SECTIONS PANEL */}
-            <div className="bg-[#f4f4f5] rounded-[16px] p-5 flex flex-col gap-5 w-full flex-1 min-h-0 overflow-hidden">
+            <div className="bg-[#f4f4f5] rounded-[16px] p-4 sm:p-5 flex flex-col gap-5 w-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden">
               {/* Pill Tabs */}
               <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-fit">
                 {[
@@ -1045,8 +1045,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 ))}
               </div>
 
-              {/* Scrollable Tab Content */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5">
+              {/* Scrollable Tab Content (mobile: natural page scroll, lg: inner scroll) */}
+              <div className="lg:flex-1 overflow-visible lg:overflow-y-auto custom-scrollbar lg:pr-1 flex flex-col gap-5">
                 {activeTab === 'description' && (
                 <>
               {/* DESCRIPTION */}
@@ -1460,8 +1460,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             </div>
           </div>
 
-          {/* RIGHT SIDE — CHAT */}
-          <div className="lg:col-span-1 h-full min-h-0">
+          {/* RIGHT SIDE — CHAT (mobile: fixed-height block under the content) */}
+          <div className="lg:col-span-1 h-[65dvh] lg:h-full min-h-0">
             <div className="bg-[#f4f4f5] rounded-[12px] overflow-hidden flex flex-col h-full">
               <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' }); setLogTab('spend'); }} />
             </div>

@@ -36,8 +36,8 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
   };
 
   return (
-    <div id="search-dropdown" className="absolute top-[calc(100%+8px)] left-[16px] z-50 flex items-start">
-      <div className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-[480px] max-h-[480px] overflow-hidden flex flex-col">
+    <div id="search-dropdown" className="absolute top-[calc(100%+8px)] left-[8px] right-[8px] sm:left-[16px] sm:right-auto z-50 flex items-start">
+      <div className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
           <div>

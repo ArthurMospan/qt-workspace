@@ -96,7 +96,8 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
   }, [days, logs]);
 
   return (
-    <div className="grid grid-cols-7 gap-[10px]">
+    <div className="overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] md:mx-0 md:px-0">
+    <div className="grid grid-cols-7 gap-[10px] min-w-[840px] md:min-w-0">
       {days.map((d, i) => {
         const key = dayKey(d);
         const entries = [...(byDay[key]?.entries() || [])];
@@ -141,6 +142,7 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
         );
       })}
     </div>
+    </div>
   );
 }
 
@@ -168,8 +170,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
   const dayTotals = days.map(d => rows.reduce((s, r) => s + (r.byDay[dayKey(d)] || 0), 0));
 
   return (
-    <div className="bg-[#f4f4f5] rounded-[24px] overflow-hidden">
-      <table className="w-full text-left border-collapse">
+    <div className="bg-[#f4f4f5] rounded-[24px] overflow-hidden overflow-x-auto">
+      <table className="w-full text-left border-collapse min-w-[760px] md:min-w-0">
         <thead>
           <tr className="border-b border-[#e9e9e9] bg-[#fafafa]">
             <th className="px-5 py-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[24%]">Учасник</th>
@@ -254,7 +256,8 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
   }, [logs]);
 
   return (
-    <div className="flex flex-col gap-[10px]">
+    <div className="overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] md:mx-0 md:px-0">
+    <div className="flex flex-col gap-[10px] min-w-[560px] md:min-w-0">
       <div className="grid grid-cols-7 gap-[10px]">
         {DAY_LABELS.map(l => (
           <span key={l} className="text-[11px] font-bold text-[#9a9a9a] uppercase text-center">{l}</span>
@@ -293,6 +296,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
           })}
         </div>
       ))}
+    </div>
     </div>
   );
 }

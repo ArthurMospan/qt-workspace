@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
-  Trash2, X, Pin, ChevronDown, Info, Users, UserPlus
+  Trash2, X, Pin, ChevronDown, Info, Users, UserPlus, ArrowLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
@@ -529,7 +529,7 @@ function ThreadSidebar({
   if (!parentMsg) return null;
 
   return (
-    <div className="w-[360px] shrink-0 bg-[#f4f4f5] rounded-[16px] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 w-full rounded-none md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-[#e9e9e9]/70">
         <div className="flex items-center gap-2">
@@ -725,7 +725,7 @@ function ChannelInfoSidebar({
   };
 
   return (
-    <div className="w-[360px] shrink-0 bg-[#f4f4f5] rounded-[16px] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 w-full rounded-none md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-[#e9e9e9]/70">
         <div className="flex items-center gap-2">
@@ -858,6 +858,9 @@ export default function ChatPage() {
   const setChatOnlineUsers = useWorkspaceStore(s => s.setChatOnlineUsers);
 
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
+  // Mobile single-pane mode: 'list' (channels) або 'chat' (розмова); md+ показує обидві панелі
+  const [mobilePane, setMobilePane] = useState('list');
+  const openChannel = (ch) => { setActiveChannel(ch); setMobilePane('chat'); };
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [presenceMap, setPresenceMap] = useState({});
@@ -995,7 +998,7 @@ export default function ChatPage() {
       if (id) {
         setIsCreatingChannel(false);
         setNewChannelName('');
-        setActiveChannel({ id, type: 'channel' });
+        openChannel({ id, type: 'channel' });
         showToast('Канал створено ✓');
       } else {
         showToast('Помилка при створенні каналу');
@@ -1047,8 +1050,8 @@ export default function ChatPage() {
       {/* Two-zone layout */}
       <div className="flex-1 flex overflow-hidden gap-3 p-[12px] pt-[56px]">
 
-        {/* LEFT: Sidebar (Settings layout styled) */}
-        <div className="w-[280px] bg-[#f4f4f5] rounded-[16px] flex flex-col overflow-hidden shrink-0">
+        {/* LEFT: Sidebar (Settings layout styled) — mobile: full width, hidden when a chat is open */}
+        <div className={`${mobilePane === 'chat' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] bg-[#f4f4f5] rounded-[16px] flex-col overflow-hidden shrink-0`}>
           <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
             
             {/* Channels group */}
@@ -1099,7 +1102,7 @@ export default function ChatPage() {
                     return (
                       <button
                         key={c.id}
-                        onClick={() => setActiveChannel({ id: c.id, type: 'channel' })}
+                        onClick={() => openChannel({ id: c.id, type: 'channel' })}
                         className={`w-full flex items-center gap-[8px] px-3 py-2 rounded-xl text-left transition-all ${
                           active
                             ? 'bg-[#ebebeb] text-[#1f1f1f] font-semibold'
@@ -1132,7 +1135,7 @@ export default function ChatPage() {
                     return (
                       <button
                         key={u.id}
-                        onClick={() => setActiveChannel({ id: u.id, type: 'dm' })}
+                        onClick={() => openChannel({ id: u.id, type: 'dm' })}
                         className={`w-full flex items-center gap-[8px] px-3 py-2 rounded-xl text-left transition-all ${
                           active
                             ? 'bg-[#ebebeb] text-[#1f1f1f] font-semibold'
@@ -1162,14 +1165,21 @@ export default function ChatPage() {
           </aside>
         </div>
 
-        {/* RIGHT: Chat + optional sidebar */}
-        <div className="flex-1 flex gap-3 min-w-0 overflow-hidden">
+        {/* RIGHT: Chat + optional sidebar — mobile: shown only when a chat is open */}
+        <div className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 gap-3 min-w-0 overflow-hidden`}>
 
           {/* Main chat area */}
           <div className="flex-1 bg-[#f4f4f5] rounded-[16px] flex flex-col overflow-hidden min-w-0 relative">
             
             {/* Chat header */}
-            <div className="flex items-center gap-3 px-6 h-14 shrink-0 border-b border-[#e9e9e9]/70">
+            <div className="flex items-center gap-3 px-4 md:px-6 h-14 shrink-0 border-b border-[#e9e9e9]/70">
+              <button
+                onClick={() => setMobilePane('list')}
+                className="md:hidden -ml-1 p-1 text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors shrink-0"
+                title="До списку чатів"
+              >
+                <ArrowLeft size={18} />
+              </button>
               {activeChannel.type === 'channel' ? (
                 <Hash size={17} className="text-[#6366f1] shrink-0" />
               ) : (

@@ -453,14 +453,25 @@ export default function GlobalSprintsPage() {
         actions={
           <>
             {isManager && (
-              <Button
-                style="primary"
-                size="lg"
-                icon={Plus}
-                onClick={() => setShowCreateSprintModal(true)}
-              >
-                Створити спринт
-              </Button>
+              <>
+                <Button
+                  style="primary"
+                  size="lg"
+                  icon={Plus}
+                  onClick={() => setShowCreateSprintModal(true)}
+                  className="max-sm:hidden"
+                >
+                  Створити спринт
+                </Button>
+                <Button
+                  style="primary"
+                  size="icon-lg"
+                  icon={Plus}
+                  onClick={() => setShowCreateSprintModal(true)}
+                  className="sm:hidden"
+                  title="Створити спринт"
+                />
+              </>
             )}
           </>
         }
@@ -523,10 +534,10 @@ export default function GlobalSprintsPage() {
         <div className="flex-1 flex flex-col min-h-[600px]">
           
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex-1 flex flex-row gap-6 min-h-0 items-stretch">
-              
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 items-stretch">
+
               {/* Left Column: Sprints (65%) */}
-              <div className="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+              <div className="flex-1 flex flex-col gap-4 overflow-visible lg:overflow-y-auto custom-scrollbar lg:pr-2 min-h-0">
                 {sprints.map(sprint => {
                   const sprintIssues = filteredIssues.filter(i => i.sprintId === sprint.id);
                   const isExpanded = isSectionExpanded(sprint.id, sprint.status !== 'completed');
@@ -612,8 +623,8 @@ export default function GlobalSprintsPage() {
                 )}
               </div>
 
-              {/* Right Column: Backlog (28%) */}
-              <Surface variant="panel" padding="none" className="w-[28%] min-w-[280px] overflow-hidden flex flex-col min-h-0">
+              {/* Right Column: Backlog (28%) — mobile: full-width block under sprints */}
+              <Surface variant="panel" padding="none" className="w-full max-h-[60vh] lg:max-h-none lg:w-[28%] lg:min-w-[280px] overflow-hidden flex flex-col min-h-0">
                 <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>

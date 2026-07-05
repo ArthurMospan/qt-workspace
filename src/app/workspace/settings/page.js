@@ -361,6 +361,8 @@ export default function SettingsPage() {
   const isOwner = myRole === 'owner';
 
   const [activeSection, setActiveSection] = useState('profile');
+  // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
+  const [mobilePane, setMobilePane] = useState('sidebar');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -368,6 +370,7 @@ export default function SettingsPage() {
       const sec = searchParams.get('section');
       if (sec) {
         setActiveSection(sec);
+        setMobilePane('content'); // deep link opens the section directly on mobile
       }
     }
   }, []);
@@ -1670,6 +1673,7 @@ export default function SettingsPage() {
 
   const handleNavChange = (id) => {
     setActiveSection(id);
+    setMobilePane('content');
   };
 
   const sidebarContent = (
@@ -1681,9 +1685,15 @@ export default function SettingsPage() {
   );
 
   return (
-    <SidebarLayout sidebar={sidebarContent} hasBorder={false}>
+    <SidebarLayout sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f4f4f5] relative">
-        <div className="max-w-[760px] mx-auto px-[32px] py-[48px] min-h-full flex flex-col">
+        <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
+          <button
+            onClick={() => setMobilePane('sidebar')}
+            className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[16px] transition-colors"
+          >
+            <ChevronRight size={15} className="rotate-180" /> Всі налаштування
+          </button>
           <div className="flex-1 pb-[100px]">
             {renderSection()}
           </div>

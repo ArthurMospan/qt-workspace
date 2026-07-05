@@ -220,9 +220,19 @@ export default function MyTasksPage() {
                 size="lg"
                 style="primary"
                 color="dark"
+                className="max-sm:hidden"
               >
                 Створити завдання
               </Button>
+              <Button
+                onClick={() => { setCreateTaskStatus(null); setShowCreateTaskModal(true); }}
+                icon={Plus}
+                size="icon-lg"
+                style="primary"
+                color="dark"
+                className="sm:hidden"
+                title="Створити завдання"
+              />
             </div>
           }
           filters={
@@ -294,7 +304,7 @@ export default function MyTasksPage() {
           </div>
         ) : viewMode === 'kanban' ? (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-4 h-full overflow-x-auto pb-2 pr-1">
+            <div className="flex gap-4 h-full overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
               {(() => {
                  const visibleColumns = statuses.filter(s => !hiddenColumns.includes(s.id));
                  const hiddenColIds = hiddenColumns.filter(id => statuses.some(s => s.id === id));
@@ -313,7 +323,7 @@ export default function MyTasksPage() {
 
                     if (isCollapsed) {
                       return (
-                        <div key={col.id} className="flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] rounded-[16px] overflow-hidden items-center py-4 cursor-pointer hover:bg-[#f0f0f2] transition-colors" style={{ height: 'calc(100vh - 180px)' }} onClick={() => toggleColumnCollapse(col.id)}>
+                        <div key={col.id} className="flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] rounded-[16px] overflow-hidden items-center py-4 cursor-pointer hover:bg-[#f0f0f2] transition-colors" style={{ height: 'calc(100dvh - 180px)' }} onClick={() => toggleColumnCollapse(col.id)}>
                           <button className="text-[#9a9a9a] mb-4">
                             <ChevronRight size={16} />
                           </button>
@@ -329,7 +339,7 @@ export default function MyTasksPage() {
                     }
                     
                     return (
-                      <div key={col.id} className="flex flex-col w-[280px] shrink-0 bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100vh - 180px)' }}>
+                      <div key={col.id} className="flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center md:snap-align-none bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100dvh - 180px)' }}>
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                           <div className="flex items-center gap-[6px]">
                             <button

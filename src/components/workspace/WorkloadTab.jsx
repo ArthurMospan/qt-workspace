@@ -123,7 +123,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
       <div className="w-full pb-16">
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <KpiCard icon={Users} color="#6366f1"
             value={stats.memberStats.length} label="Учасників із завданнями" />
           <KpiCard icon={Circle} color="#0891b2"
@@ -143,7 +143,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                 key={uid}
                 className={`bg-[#f4f4f5] rounded-[24px] p-5 transition-all ${isOverloaded ? 'ring-1 ring-[#ef4444]/20' : ''}`}
               >
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex flex-wrap items-start gap-4 mb-4">
                   {/* Avatar + name */}
                   <div className="relative shrink-0">
                     <UserAvatar user={m} size={40} />

@@ -263,9 +263,9 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Charts row */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Daily Activity */}
-          <div className="col-span-2 bg-[#f4f4f5] rounded-[16px] p-5">
+          <div className="md:col-span-2 bg-[#f4f4f5] rounded-[16px] p-5">
             <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
               Активність ({period} днів)
             </h3>
@@ -308,7 +308,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Weekly velocity */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-[#f4f4f5] rounded-[16px] p-5">
             <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)

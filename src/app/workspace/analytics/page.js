@@ -131,7 +131,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
         </div>
 
         {/* Statuses + Projects */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card variant="gray" padding="lg">
             <SectionTitle>По статусах</SectionTitle>
             <div className="flex flex-col gap-[10px]">
@@ -147,7 +147,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
             </div>
           </Card>
 
-          <Card variant="gray" padding="lg" className="col-span-2">
+          <Card variant="gray" padding="lg" className="md:col-span-2">
             <SectionTitle>По проєктах</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -195,7 +195,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
         </div>
 
         {/* Overdue + Insights */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
             <Card variant="gray" padding="lg">
               <div className="flex items-center gap-2 mb-3">
@@ -371,6 +371,11 @@ export default function WorkspaceAnalyticsPage() {
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          actions={
+            activeTab === 'timesheet' ? (
+              <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="md:hidden" title="Списати час" />
+            ) : null
+          }
           filters={
             activeTab === 'billing' ? (
               <FilterBar>
@@ -415,7 +420,7 @@ export default function WorkspaceAnalyticsPage() {
                   <Button style="ghost" size="sm" onClick={() => setTsAnchor(new Date())}>Сьогодні</Button>
                   <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
                 </FilterBar>
-                <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="ml-auto">
+                <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="ml-auto max-md:hidden">
                   Списати час
                 </Button>
               </>

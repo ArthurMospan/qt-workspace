@@ -6,7 +6,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { Plus, Search, Users, X, User } from 'lucide-react';
+import { Plus, Search, Users, X, User, ArrowLeft } from 'lucide-react';
 import { 
   Button, 
   Dialog, 
@@ -84,6 +84,8 @@ export default function TeamPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const teamSearch = useWorkspaceStore(s => s.teamSearch) || '';
   const [selectedUid, setSelectedUid] = useState(null);
+  // Mobile single-pane mode: 'list' (учасники) або 'detail' (профіль); md+ показує обидві
+  const [mobilePane, setMobilePane] = useState('list');
 
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
 
@@ -103,9 +105,9 @@ export default function TeamPage() {
 
   return (
     <div className="flex w-full h-full p-[12px] pt-[56px] gap-[12px] bg-white">
-      {/* LEFT PANEL */}
-      <div 
-        className="w-[280px] shrink-0 flex flex-col h-full bg-[#f4f4f5] rounded-[16px] overflow-hidden"
+      {/* LEFT PANEL — mobile: full width, hidden when a member profile is open */}
+      <div
+        className={`${mobilePane === 'detail' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] shrink-0 flex-col h-full bg-[#f4f4f5] rounded-[16px] overflow-hidden`}
       >
         {/* Header */}
         <div className="p-4 flex items-center justify-between shrink-0">
@@ -146,7 +148,7 @@ export default function TeamPage() {
               return (
                 <button
                   key={uid}
-                  onClick={() => setSelectedUid(uid)}
+                  onClick={() => { setSelectedUid(uid); setMobilePane('detail'); }}
                   className={`w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${
                     isSelected ? 'bg-[#ebebeb]' : 'hover:bg-[#ebebeb]/50'
                   }`}
@@ -173,10 +175,16 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
-      <div 
-        className="flex-1 flex flex-col h-full bg-[#f4f4f5] rounded-[16px] p-[12px] overflow-hidden"
+      {/* RIGHT PANEL — mobile: shown only when a member is selected */}
+      <div
+        className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full bg-[#f4f4f5] rounded-[16px] p-[12px] overflow-hidden`}
       >
+        <button
+          onClick={() => setMobilePane('list')}
+          className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[10px] px-[2px] transition-colors"
+        >
+          <ArrowLeft size={15} /> До списку команди
+        </button>
         <Surface variant="card" className="flex-1 w-full overflow-hidden !rounded-[12px] flex flex-col bg-white">
           {selectedMember ? (
             <ProfileView user={selectedMember} />

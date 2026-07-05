@@ -190,7 +190,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
         
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
-          <div className="flex gap-4 pb-2 shrink-0 pr-2">
+          <div className="flex gap-4 pb-2 shrink-0 -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
               const colTotalIssues = issues.filter(i => {
@@ -213,7 +213,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                 );
               }
               return (
-                <div key={col.id} className="flex items-center justify-between w-[280px] shrink-0 px-4 pt-2 pb-1 rounded-t-[12px]">
+                <div key={col.id} className="flex items-center justify-between w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 px-4 pt-2 pb-1 rounded-t-[12px]">
                   <div className="flex items-center gap-[6px]">
                     <button
                       onClick={() => toggleColumnCollapse(col.id)}
@@ -245,8 +245,8 @@ export default function AgileBoard({ issues, members, projectId, project, active
           </div>
         )}
 
-        {/* Scrollable swimlanes area */}
-        <div className="flex-1 overflow-auto pr-2 pb-6">
+        {/* Scrollable swimlanes area — full-bleed so columns scroll to the panel edge, not the page padding */}
+        <div className="flex-1 overflow-auto pb-6 snap-x snap-mandatory md:snap-none -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
           {swimlanes.map(lane => (
             <div key={lane.id} className="mb-4">
               
@@ -272,7 +272,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
                   if (isCollapsed) {
                     return (
-                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100vh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
+                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
                         {swimlanes.length === 1 && (
                           <>
                             <button className="text-[#9a9a9a] mb-4">
@@ -293,7 +293,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                   }
 
                   return (
-                    <div key={col.id} className={`flex flex-col w-[280px] shrink-0 bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100vh - 160px)' }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center md:snap-align-none bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (

@@ -195,7 +195,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
           </button>
 
           {bellOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] w-[380px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
+            <div className="fixed md:absolute right-[8px] md:right-0 top-[56px] md:top-[calc(100%+8px)] w-[min(380px,calc(100vw-16px))] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#f4f4f5]">
                 <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         const cfg = TYPE_CFG[liveNotif.type] || TYPE_CFG.assigned;
         return (
           <div
-            className="fixed bottom-5 right-[24px] z-[100] w-[320px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+            className="fixed bottom-[72px] md:bottom-5 right-[12px] md:right-[24px] z-[100] w-[min(320px,calc(100vw-24px))] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
             style={{ animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)' }}
           >
             <div className="flex items-start gap-3 px-4 py-4">

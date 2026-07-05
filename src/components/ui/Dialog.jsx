@@ -48,13 +48,14 @@ export default function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
     >
+      {/* Mobile: bottom sheet; sm+: centered dialog (desktop unchanged) */}
       <div
         className={`
-          bg-white rounded-[24px] shadow-[0_25px_50px_rgba(0,0,0,0.15)]
-          w-full flex flex-col max-h-[90vh] overflow-hidden
+          bg-white rounded-t-[24px] rounded-b-none sm:rounded-[24px] shadow-[0_25px_50px_rgba(0,0,0,0.15)]
+          w-full flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden
           ${sizeClasses[size]}
           ${className}
         `}

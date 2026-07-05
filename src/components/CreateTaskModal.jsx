@@ -90,14 +90,14 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
+      {/* Modal — mobile: bottom sheet */}
       <form
         onSubmit={handleSubmit}
-        className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[520px] mx-4 max-h-[90vh] flex flex-col overflow-hidden"
+        className="relative bg-white rounded-t-[24px] rounded-b-none sm:rounded-[24px] shadow-2xl w-full max-w-[520px] mx-0 sm:mx-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9] shrink-0">

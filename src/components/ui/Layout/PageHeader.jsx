@@ -1,6 +1,8 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
+import { Filter } from 'lucide-react';
 import Tabs from '../Tabs';
+import Button from '../Button';
 
 // ─── UI Kit: PageHeader Component ────────────────────────────────────────────
 // Standard page header used across ALL workspace pages.
@@ -22,6 +24,8 @@ export function PageHeader({
   filters,
   className  = '',
 }) {
+  // Mobile-only: filters are collapsed behind a toggle button
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // ── Alt variant: compact bar inside a white panel ──────────────────────────
   if (variant === 'alt') {
@@ -52,23 +56,37 @@ export function PageHeader({
 
   // ── Main variant: full page header with top spacing, sticky with premium blur + dynamic gradient layers ────────────────────────
   return (
-    <div className={`sticky top-[56px] z-20 w-full shrink-0 flex flex-col pt-[12px] pb-[12px] gap-[10px] px-[24px] md:px-[32px] -mx-[24px] md:-mx-[32px] w-[calc(100%+48px)] md:w-[calc(100%+64px)] ${className}`}>
-      
-      {/* LAYER 1 (Bottom): Premium vertical fade mask (from solid white at top to transparent at bottom) */}
-      <div className="absolute inset-0 z-[-2] bg-gradient-to-b from-white via-white/95 to-transparent pointer-events-none rounded-t-[24px]" />
+    <div className={`sticky top-[56px] z-20 shrink-0 flex flex-col pt-[12px] pb-[12px] gap-[10px] px-[24px] md:px-[32px] -mx-[24px] md:-mx-[32px] w-[calc(100%+48px)] md:w-[calc(100%+64px)] ${className}`}>
+
+      {/* LAYER 1 (Bottom): Premium vertical fade mask (from solid white at top to transparent at bottom).
+          Rounded corners only on md+ where the white panel itself is rounded — on mobile they'd leak content. */}
+      <div className="absolute inset-0 z-[-2] bg-gradient-to-b from-white via-white/95 to-transparent pointer-events-none rounded-none md:rounded-t-[24px]" />
 
       {/* LAYER 2 (Top): Pure frosted backdrop-blur layer to smoothly dissolve scrolling text/images */}
       <div className="absolute inset-0 z-[-1] backdrop-blur-md bg-white/20 pointer-events-none" />
 
-      {/* Row 1: Title + Tabs & Actions */}
-      <div className="flex items-center justify-between gap-[16px] w-full">
-        <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate">
+      {/* Row 1: Title + Actions — actions ALWAYS sit right of the title */}
+      <div className="flex items-center justify-between gap-[12px] md:gap-[16px] w-full">
+        <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate min-w-0">
           {title}
         </h1>
 
-        <div className="flex items-center gap-[12px] shrink-0">
+        <div className="flex items-center gap-[8px] md:gap-[12px] shrink-0">
           {tabs?.length > 0 && (
-            <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
+            <div className="hidden md:block">
+              <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
+            </div>
+          )}
+          {/* Mobile filters toggle — sits with the action buttons */}
+          {filters && (
+            <Button
+              style={mobileFiltersOpen ? 'primary' : 'secondary'}
+              size="icon-lg"
+              icon={Filter}
+              onClick={() => setMobileFiltersOpen(o => !o)}
+              title="Фільтри"
+              className="md:hidden"
+            />
           )}
           {actions && (
             <div className="flex items-center gap-[8px] shrink-0">
@@ -78,10 +96,17 @@ export function PageHeader({
         </div>
       </div>
 
-      {/* Row 2: Filters (only if present) */}
+      {/* Row 1.5 (mobile only): tabs scroll edge-to-edge */}
+      {tabs?.length > 0 && (
+        <div className="md:hidden overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] w-[calc(100%+48px)]">
+          <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} className="w-max" />
+        </div>
+      )}
+
+      {/* Row 2: Filters — mobile: hidden until toggled */}
       {filters && (
-        <div className="flex items-center gap-[12px] flex-wrap">
-          <div className="flex items-center gap-[12px] flex-wrap flex-1">
+        <div className={`${mobileFiltersOpen ? 'flex' : 'hidden'} md:flex items-center gap-[12px] flex-wrap`}>
+          <div className="flex items-center gap-[12px] flex-wrap flex-1 min-w-0">
             {filters}
           </div>
         </div>

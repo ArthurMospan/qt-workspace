@@ -822,15 +822,27 @@ export default function WorkspacePage() {
           title="Проєкти"
           actions={
             can(orgRole, 'create:project') && (
-              <Button
-                onClick={() => setShowNewProject(true)}
-                style="primary"
-                color="dark"
-                size="lg"
-                icon={Plus}
-              >
-                <span className="hidden sm:inline">Новий проєкт</span>
-              </Button>
+              <>
+                <Button
+                  onClick={() => setShowNewProject(true)}
+                  style="primary"
+                  color="dark"
+                  size="lg"
+                  icon={Plus}
+                  className="max-sm:hidden"
+                >
+                  Новий проєкт
+                </Button>
+                <Button
+                  onClick={() => setShowNewProject(true)}
+                  style="primary"
+                  color="dark"
+                  size="icon-lg"
+                  icon={Plus}
+                  className="sm:hidden"
+                  title="Новий проєкт"
+                />
+              </>
             )
           }
           filters={

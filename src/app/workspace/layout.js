@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
+import MobileNav from '@/components/MobileNav';
 import Toast from '@/components/Toast';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -109,16 +110,16 @@ export default function WorkspaceLayout({ children }) {
   return (
     <ConfirmProvider>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
-      {/* Sidebar — full height, floating panel */}
-      <div className="print:hidden shrink-0 h-full flex p-[12px] pr-[6px]">
+      {/* Sidebar — full height, floating panel (desktop only; mobile uses MobileNav) */}
+      <div className="print:hidden shrink-0 h-full hidden md:flex p-[12px] pr-[6px]">
         <div className="h-full rounded-[24px] overflow-hidden flex">
           <WorkspaceSidebar />
         </div>
       </div>
 
       {/* Right column: absolute header + content floating panel */}
-      <div className="flex flex-col flex-1 overflow-hidden w-full p-[12px] pl-[6px]">
-        <div className="flex flex-col flex-1 bg-white rounded-[24px] overflow-hidden relative">
+      <div className="flex flex-col flex-1 overflow-hidden w-full p-0 pb-[calc(56px+env(safe-area-inset-bottom))] md:p-[12px] md:pl-[6px] md:pb-[12px]">
+        <div className="flex flex-col flex-1 bg-white rounded-none md:rounded-[24px] overflow-hidden relative">
           {!hideHeader && (
             <div className="print:hidden absolute top-0 left-0 right-0 z-30">
               <WorkspaceHeader />
@@ -128,6 +129,11 @@ export default function WorkspaceLayout({ children }) {
             {children}
           </main>
         </div>
+      </div>
+
+      {/* Mobile bottom navigation */}
+      <div className="print:hidden md:hidden">
+        <MobileNav />
       </div>
 
       <Toast />
