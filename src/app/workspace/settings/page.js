@@ -35,6 +35,7 @@ import {
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
@@ -417,10 +418,16 @@ export default function SettingsPage() {
   const [upgrading,      setUpgrading]      = useState(false);
 
   // ── Notifications ──
+  // Events + delivery channels; channel defaults must mirror CHANNEL_DEFAULTS in useNotifications.js
   const [notif, setNotif] = useState({
     assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true,
+    sound: true, popup: true, emailEnabled: false,
   });
   const [notifSaving, setNotifSaving] = useState(false);
+  const [pushPerm, setPushPerm] = useState('default'); // browser Notification.permission
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) setPushPerm(Notification.permission);
+  }, []);
 
   // ── Localization ──
   const [dateFormat, setDateFormat] = useState('DD.MM.YYYY');
@@ -603,6 +610,20 @@ export default function SettingsPage() {
       triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
     setNotifSaving(false);
+  };
+
+  // Send a test notification to yourself — checks the whole pipeline (sound/popup/push)
+  const sendTestNotification = async () => {
+    const uid = currentUser?.uid || currentUser?.id;
+    if (!uid) return;
+    await sendNotification({
+      userIds: [uid],
+      type: 'test',
+      title: 'Тестове сповіщення',
+      body: 'Все працює! Так виглядатимуть сповіщення про події у воркспейсі.',
+      actor: { id: uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
+    });
+    showToast('Тестове сповіщення надіслано ✓');
   };
 
   const saveIntegration = async (enabled) => {
@@ -932,34 +953,67 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'notifications': return (
-        <Section title="Сповіщення" desc="Налаштуй які події надсилають тобі сповіщення" rightAction={saveButton}>
+        <Section title="Сповіщення" desc="Канали доставки та події, про які тебе повідомляти" rightAction={saveButton}>
+          {/* Канали доставки */}
           <Card variant="white" padding="lg" className="!border-none">
+            <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2">Канали</p>
+            <Row
+              label="Push у браузері"
+              desc={
+                pushPerm === 'granted' ? 'Системні сповіщення увімкнено для цього браузера'
+                : pushPerm === 'denied' ? 'Заблоковано браузером — дозволь сповіщення для сайту в налаштуваннях браузера'
+                : 'Системні сповіщення, навіть коли вкладка не активна'
+              }
+            >
+              {pushPerm === 'granted' ? (
+                <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#10b981]">
+                  <Check size={13} /> Увімкнено
+                </span>
+              ) : pushPerm === 'denied' ? (
+                <span className="text-[12px] font-medium text-[#9a9a9a]">Заблоковано</span>
+              ) : (
+                <Button
+                  onClick={async () => {
+                    const result = await Notification.requestPermission();
+                    setPushPerm(result);
+                    showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
+                  }}
+                  style="secondary" size="md"
+                >
+                  Увімкнути
+                </Button>
+              )}
+            </Row>
+            <Row label="Звук" desc="Короткий сигнал при новому сповіщенні">
+              <ToggleSwitch checked={notif.sound} onChange={v => setNotif(p => ({ ...p, sound: v }))} size="sm" />
+            </Row>
+            <Row label="Спливаючі сповіщення" desc="Картка внизу екрана, коли подія стається в реальному часі">
+              <ToggleSwitch checked={notif.popup} onChange={v => setNotif(p => ({ ...p, popup: v }))} size="sm" />
+            </Row>
+            <Row label="Email" desc="Найважливіше (призначення, згадки, дедлайни) — дублювати на пошту">
+              <ToggleSwitch checked={notif.emailEnabled} onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))} size="sm" />
+            </Row>
+            <Row label="Перевірка" desc="Надішли собі тестове сповіщення — перевір звук, попап і push разом">
+              <Button style="secondary" size="md" icon={Bell} onClick={sendTestNotification}>
+                Надіслати тест
+              </Button>
+            </Row>
+          </Card>
+
+          {/* Події */}
+          <Card variant="white" padding="lg" className="!border-none">
+            <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2">Події</p>
             {[
-              { key: 'assigned',      label: 'Задачу призначено мені',   desc: 'Хтось призначив завдання на тебе' },
-              { key: 'commented',     label: 'Новий коментар',           desc: 'В завдання де ти виконавець або автор' },
-              { key: 'statusChanged', label: 'Зміна статусу завдання',     desc: 'Коли змінюється статус твоїх завдань' },
-              { key: 'deadline',      label: 'Нагадування про дедлайн',  desc: 'За 24 години до дедлайну' },
-              { key: 'mentioned',     label: 'Згадування в коментарях',  desc: 'Хтось написав @ваше-ім\'я' },
+              { key: 'assigned',      label: 'Завдання призначено мені', desc: 'Хтось призначив завдання на тебе або створив нове одразу з тобою' },
+              { key: 'commented',     label: 'Новий коментар',           desc: 'У завданнях, де ти виконавець або автор' },
+              { key: 'mentioned',     label: 'Згадування',               desc: 'Хтось написав @твоє-імʼя в коментарі' },
+              { key: 'statusChanged', label: 'Зміна статусу',            desc: 'Коли твоє завдання рухається по дошці' },
+              { key: 'deadline',      label: 'Дедлайни',                 desc: 'За 24 години до дедлайну та щодня для прострочених завдань' },
             ].map(n => (
               <Row key={n.key} label={n.label} desc={n.desc}>
                 <ToggleSwitch checked={notif[n.key]} onChange={v => setNotif(p => ({ ...p, [n.key]: v }))} size="sm" />
               </Row>
             ))}
-          </Card>
-          <Card variant="white" padding="lg" className="!border-none">
-            <Row label="Push-сповіщення у браузері" desc="Отримувати сповіщення навіть коли вкладка закрита">
-              <Button
-                onClick={async () => {
-                  const result = await Notification.requestPermission();
-                  showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
-                }}
-                style="secondary" size="lg"
-              >
-                {typeof window !== 'undefined' && window.Notification?.permission === 'granted'
-                  ? 'Увімкнено'
-                  : 'Увімкнути'}
-              </Button>
-            </Row>
           </Card>
         </Section>
       );

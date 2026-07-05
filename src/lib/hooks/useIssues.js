@@ -156,6 +156,21 @@ export function useIssues(projectId) {
       from: null,
       to: tempKey
     }).catch(() => {});
+
+    // Step 4: Notify assignees who didn't create the task themselves
+    const notifyIds = (data.assigneeIds || []).filter(uid => uid && uid !== userId);
+    if (notifyIds.length) {
+      sendNotification({
+        userIds: notifyIds,
+        type: 'assigned',
+        title: `${userName || 'Колега'} призначив вам нове завдання`,
+        body: data.title || '',
+        link: `/workspace/${projectId}/issue/${newIssueRef.id}`,
+        issueId: newIssueRef.id,
+        projectId,
+        actor: { id: userId || '', name: userName || '' }
+      }).catch(() => {});
+    }
     return {
       id: newIssueRef.id,
       issueKey: tempKey
@@ -285,7 +300,8 @@ export function useIssues(projectId) {
           body: `${issue.title || ''} → ${COLUMN_LABELS[newColumnId] || newColumnId}`,
           link: `/workspace/${projectId}/issue/${issueId}`,
           issueId,
-          projectId
+          projectId,
+          actor: { id: userId || '', name: userName || '' }
         }).catch(() => {});
       }
     }

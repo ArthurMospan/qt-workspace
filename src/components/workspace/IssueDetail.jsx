@@ -537,15 +537,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       const mentionedIds = resolveUserIds(parseMentions(text), members).filter(id => id !== authorUid);
       const involved = [...new Set([...(issue.assigneeIds || []), issue.reporterId].filter(Boolean))]
         .filter(id => id !== authorUid && !mentionedIds.includes(id));
+      const notifActor = { id: authorUid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' };
       if (mentionedIds.length)
         sendNotification({ userIds: mentionedIds, type: 'mentioned',
           title: `${currentUser?.name || 'Колега'} згадав вас у ${issue.issueKey}`,
-          body: preview, link, issueId, projectId,
+          body: preview, link, issueId, projectId, actor: notifActor,
         }).catch(() => {});
       if (involved.length)
         sendNotification({ userIds: involved, type: 'commented',
-          title: `Новий коментар у ${issue.issueKey}`,
-          body: preview, link, issueId, projectId,
+          title: `${currentUser?.name || 'Колега'} прокоментував ${issue.issueKey}`,
+          body: preview, link, issueId, projectId, actor: notifActor,
         }).catch(() => {});
     } catch (err) {
       showToast(err.message, 'error');
@@ -563,10 +564,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     const cur  = issue.assigneeIds || [];
     const next = cur.includes(uid) ? cur.filter(a => a !== uid) : [...cur, uid];
     await update({ assigneeIds: next });
-    if (!cur.includes(uid))
+    if (!cur.includes(uid) && uid !== (currentUser?.id || currentUser?.uid))
       await sendNotification({ userIds: [uid], type: 'assigned',
-        title: `Вам призначено ${issue.issueKey}`, body: issue.title,
+        title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
         link: `/workspace/${projectId}/issue/${issueId}`, issueId, projectId,
+        actor: { id: currentUser?.id || currentUser?.uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
       }).catch(() => {});
   };
 
