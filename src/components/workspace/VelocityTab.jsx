@@ -1,30 +1,14 @@
 'use client';
-// src/components/workspace/VelocityTab.jsx — Full rebuild with real charts
-import { useMemo, useState } from 'react';
-import { Zap, TrendingUp, CheckCircle2, Calendar, BarChart2, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+// src/components/workspace/VelocityTab.jsx — Продуктивність: тренди, burndown, cycle time
+// Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
+import { useMemo } from 'react';
+import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
+import { KpiCard } from '@/components/ui';
+import { DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function fmtShortDate(date) {
   return date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-}
-
-function Trend({ value }) {
-  if (value === null || value === undefined) return null;
-  const pos = value >= 0;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${pos ? 'text-[#10b981]' : 'text-red-500'}`}>
-      {pos ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
-      {Math.abs(value)}
-    </span>
-  );
 }
 
 // ── Mini Bar Chart ────────────────────────────────────────────────────────────
@@ -176,9 +160,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8 }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function VelocityTab({ issues = [], projects = [] }) {
-  const [period, setPeriod] = useState(30);
-
+export default function VelocityTab({ issues = [], projects = [], period = 30 }) {
   const stats = useMemo(() => {
     const now = Date.now();
     const periodAgo = now - period * 86400000;
@@ -231,11 +213,11 @@ export default function VelocityTab({ issues = [], projects = [] }) {
       };
     });
 
-    // By type breakdown
-    const byType = ['epic', 'feature', 'task', 'bug'].map(type => {
+    // By type breakdown — types come from the shared workflow config
+    const byType = DEFAULT_TYPES.map(({ id: type, label, color }) => {
       const typeIssues = issues.filter(i => i.type === type);
       const typeDone = typeIssues.filter(i => i.columnId === 'done');
-      return { type, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
+      return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
@@ -258,85 +240,26 @@ export default function VelocityTab({ issues = [], projects = [] }) {
     };
   }, [issues, projects, period]);
 
-  const TYPE_COLORS = { epic: '#7c3aed', feature: '#6366f1', task: '#0891b2', bug: '#ef4444' };
-  const TYPE_LABELS = { epic: 'Epic', feature: 'Feature', task: 'Task', bug: 'Bug' };
-
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
       <div className="w-full pb-16">
 
-        {/* Period selector */}
-        <div className="flex justify-end mb-5">
-          <div className="flex items-center gap-1 bg-[#f4f4f5] rounded-[12px] p-[3px]">
-            {[7, 14, 30, 90].map(d => (
-              <button
-                key={d}
-                onClick={() => setPeriod(d)}
-                className={`px-3 py-1 text-[12px] font-semibold rounded-[8px] transition-all ${period === d
-                  ? 'bg-[#1f1f1f] text-white shadow-sm'
-                  : 'text-[#9a9a9a] hover:text-[#1f1f1f]'
-                }`}
-              >
-                {d}д
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#6366f1]/10">
-                <Zap size={16} className="text-[#6366f1]" />
-              </div>
-              <Trend value={stats.velocityTrend} />
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.donePeriod}</p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Закрито за {period}д</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">vs попередній період</p>
-          </div>
-
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#10b981]/10">
-                <CheckCircle2 size={16} className="text-[#10b981]" />
-              </div>
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.totalDone}</p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Всього закрито</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">{stats.completionPct}% від всіх завдань</p>
-          </div>
-
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#0891b2]/10">
-                <Calendar size={16} className="text-[#0891b2]" />
-              </div>
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">
-              {stats.avgCycleTime !== null ? `${stats.avgCycleTime}д` : '—'}
-            </p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Середній цикл</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">від відкриття до закриття</p>
-          </div>
-
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#d97706]/10">
-                <TrendingUp size={16} className="text-[#d97706]" />
-              </div>
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.createdPeriod}</p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Відкрито за {period}д</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">
-              {stats.createdPeriod > stats.donePeriod
-                ? '↑ Більше відкривається'
-                : stats.createdPeriod < stats.donePeriod
-                  ? '↓ Команда випереджає'
-                  : 'Баланс'}
-            </p>
-          </div>
+          <KpiCard icon={Zap} color="#6366f1" trend={stats.velocityTrend ?? undefined}
+            value={stats.donePeriod} label={`Закрито за ${period}д`} sub="vs попередній період" />
+          <KpiCard icon={CheckCircle2} color="#10b981"
+            value={stats.totalDone} label="Всього закрито" sub={`${stats.completionPct}% від всіх завдань`} />
+          <KpiCard icon={Calendar} color="#0891b2"
+            value={stats.avgCycleTime !== null ? `${stats.avgCycleTime}д` : '—'}
+            label="Середній цикл" sub="від відкриття до закриття" />
+          <KpiCard icon={TrendingUp} color="#d97706"
+            value={stats.createdPeriod} label={`Відкрито за ${period}д`}
+            sub={stats.createdPeriod > stats.donePeriod
+              ? '↑ Більше відкривається'
+              : stats.createdPeriod < stats.donePeriod
+                ? '↓ Команда випереджає'
+                : 'Баланс'} />
         </div>
 
         {/* Charts row */}
@@ -356,18 +279,18 @@ export default function VelocityTab({ issues = [], projects = [] }) {
               <p className="text-[12px] text-[#cfcfcf] py-4">Немає даних</p>
             ) : (
               <div className="flex flex-col gap-3">
-                {stats.byType.map(({ type, total, done, pct }) => (
+                {stats.byType.map(({ type, label, color, total, done, pct }) => (
                   <div key={type}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full"
-                        style={{ background: TYPE_COLORS[type] + '18', color: TYPE_COLORS[type] }}>
-                        {TYPE_LABELS[type]}
+                        style={{ background: color + '18', color }}>
+                        {label}
                       </span>
                       <span className="text-[11px] text-[#9a9a9a]">{done}/{total}</span>
                     </div>
                     <div className="h-[5px] bg-white rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: TYPE_COLORS[type] }} />
+                        style={{ width: `${pct}%`, background: color }} />
                     </div>
                   </div>
                 ))}

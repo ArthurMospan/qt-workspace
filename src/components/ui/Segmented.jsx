@@ -1,0 +1,31 @@
+'use client';
+import React from 'react';
+
+// ─── UI Kit: Segmented Control ───────────────────────────────────────────────
+// Compact pill switch for mutually exclusive view options (period, week/month…).
+// Designed to sit INSIDE a FilterBar (transparent bg, active pill = white),
+// so per-tab view controls live in the same container as the other filters.
+//
+// <Segmented value={period} onChange={setPeriod}
+//   options={[7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }))} />
+
+export default function Segmented({ value, onChange, options = [], className = '' }) {
+  return (
+    <div className={`flex items-center gap-[2px] p-[2px] rounded-[8px] shrink-0 ${className}`}>
+      {options.map(o => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange?.(o.value)}
+          className={`px-[10px] h-[26px] text-[12px] font-semibold rounded-[7px] transition-all cursor-pointer ${
+            value === o.value
+              ? 'bg-white text-[#1f1f1f] shadow-sm'
+              : 'text-[#9a9a9a] hover:text-[#1f1f1f]'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

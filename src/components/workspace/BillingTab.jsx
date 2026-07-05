@@ -1,8 +1,7 @@
 'use client';
 // src/components/workspace/BillingTab.jsx
-// Invoice calculator for web agencies:
-//   - Structured similarly to TaskDetailPanel (tabs: details, issues, history)
-//   - Uses 100% UI kit components (Checkbox, Input, Textarea, Select, Tabs, Button, Surface)
+// Invoice calculator: form/tasks on the left, always-visible summary rail on
+// the right. Chrome matches the rest of the analytics tabs (no dark shell).
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useProjectAllTimeLogs } from '@/lib/hooks/useProjectAllTimeLogs';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -11,17 +10,17 @@ import {
   collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, getDoc,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/UserAvatar';
-import {
-  Copy, Printer, Clock, Percent, Save, Eye, FileText, X, AlertCircle,
-} from 'lucide-react';
+import { Copy, Printer, Clock, Save, Eye } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
-import { Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox } from '@/components/ui';
+import {
+  Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
+  Dialog, Card, Alert, PriorityBadge,
+} from '@/components/ui';
+import { DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Defaults ─────────────────────────────────────────────────────────
 
-const TYPE_COLOR = {
-  epic: '#8b5cf6', feature: '#0891b2', task: '#059669', bug: '#dc2626',
-};
+const TYPE_META = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, t]));
 
 const COL_LABEL = {
   backlog: 'Backlog', todo: 'To Do', 'in-progress': 'In Progress',
@@ -139,18 +138,10 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
             <span className="text-[10px] font-bold text-[#9a9a9a] bg-[#f5f5f5] px-2 py-0.5 rounded tracking-wide">
               {issue.issueKey || 'TASK'}
             </span>
-            <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full" style={{ color: TYPE_COLOR[type] || '#059669', background: (TYPE_COLOR[type] || '#059669') + '18' }}>
-              {type}
+            <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full" style={{ color: TYPE_META[type]?.color || '#059669', background: (TYPE_META[type]?.color || '#059669') + '18' }}>
+              {TYPE_META[type]?.label || type}
             </span>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-              issue.priority === 'blocker' || issue.priority === 'high' 
-                ? 'bg-red-50 text-red-600 border border-red-100' 
-                : issue.priority === 'medium'
-                ? 'bg-yellow-50 text-yellow-600 border border-yellow-100'
-                : 'bg-blue-50 text-blue-600 border border-blue-100'
-            }`}>
-              {issue.priority}
-            </span>
+            <PriorityBadge priority={issue.priority} />
           </div>
 
           <h4 className="text-[14px] font-bold text-[#1a1a1a] mt-1 truncate">
@@ -280,27 +271,19 @@ function InvoicePreview({ invoice, project, org, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[24px] w-full max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#f0f0f0]">
-          <p className="text-[14px] font-bold text-[#1f1f1f]">Попередній перегляд рахунку</p>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleCopy} variant="secondary" size="md" icon={Copy}>
-              Копіювати
-            </Button>
-            <Button onClick={handlePrint} variant="primary" size="md" icon={Printer}>
-              Друкувати
-            </Button>
-            <button onClick={onClose} className="p-[7px] text-[#9a9a9a] hover:bg-[#f4f4f5] rounded-[8px]">
-              <X size={15} />
-            </button>
-          </div>
-        </div>
-
-        {/* Invoice content */}
-        <div className="flex-1 overflow-y-auto">
-          <div ref={printRef} className="px-8 py-8 max-w-[640px] mx-auto">
+    <Dialog
+      isOpen
+      onClose={onClose}
+      title="Попередній перегляд рахунку"
+      size="md"
+      footer={
+        <>
+          <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
+          <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
+        </>
+      }
+    >
+          <div ref={printRef} className="px-2 py-3 max-w-[640px] mx-auto">
             <div className="flex items-start justify-between mb-8">
               <div>
                 <h1 className="text-[28px] font-black text-[#1f1f1f] tracking-tight">РАХУНОК</h1>
@@ -386,9 +369,7 @@ function InvoicePreview({ invoice, project, org, onClose }) {
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -580,23 +561,11 @@ export default function BillingTab({ issues = [], members = [], project, project
   const [showPreview, setShowPreview] = useState(false);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#111] overflow-hidden p-6">
-      <div className="max-w-[680px] w-full mx-auto h-full flex flex-col bg-white border border-[#e9e9e9] rounded-[24px] overflow-hidden shadow-sm">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-[#e9e9e9] shrink-0">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full text-indigo-600 bg-indigo-50">
-              Білінг
-            </span>
-            <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full text-emerald-600 bg-emerald-50">
-              {project?.name || 'Проєкт'}
-            </span>
-          </div>
-          <h2 className="text-[15px] font-bold text-[#1f1f1f] leading-snug">Калькулятор рахунків</h2>
-        </div>
+    <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="w-full pb-16 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
-        {/* Tabs */}
-        <div className="px-5 pt-3 shrink-0">
+        {/* LEFT: invoice form & task selection */}
+        <div className="lg:col-span-2 flex flex-col gap-4 min-w-0">
           <Tabs
             tabs={[
               { id: 'details', label: 'Деталі' },
@@ -606,12 +575,9 @@ export default function BillingTab({ issues = [], members = [], project, project
             activeTab={tab}
             onTabChange={setTab}
           />
-        </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto min-h-0">
           {tab === 'details' && (
-            <div className="p-5 flex flex-col gap-5">
+            <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Клієнт (назва)">
                   <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="ТОВ «Компанія»" />
@@ -631,24 +597,6 @@ export default function BillingTab({ issues = [], members = [], project, project
                 <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Умови оплати, терміни..." rows={2} />
               </Field>
 
-              <div className="grid grid-cols-3 gap-4">
-                <Field label="Валюта">
-                  <Select
-                    value={currency}
-                    onChange={setCurrency}
-                    options={CURRENCIES.map(c => ({ value: c, label: c }))}
-                  />
-                </Field>
-                <Field label="Знижка %">
-                  <Input type="number" min={0} max={100} value={discountPct}
-                    onChange={e => setDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))} />
-                </Field>
-                <Field label="ПДВ %">
-                  <Input type="number" min={0} max={100} value={taxPct}
-                    onChange={e => setTaxPct(Math.min(100, Math.max(0, Number(e.target.value))))} />
-                </Field>
-              </div>
-
               {/* Rates section */}
               <Field label="Ставки виконавців">
                 <Surface variant="panel" padding="none" className="overflow-hidden border border-[#e9e9e9] rounded-2xl">
@@ -663,7 +611,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                               billingMembers.forEach(m => { newRates[m.id || m.uid] = preset.hourlyRate; });
                               setMemberRates(newRates);
                             }}
-                            variant="secondary"
+                            style="secondary"
                             size="sm"
                           >
                             {preset.label}: {preset.hourlyRate} {currency}/г
@@ -697,77 +645,11 @@ export default function BillingTab({ issues = [], members = [], project, project
                 </Surface>
               </Field>
 
-              {/* Summary block */}
-              <Field label="Рахунок та підсумки">
-                <div className="bg-[#f4f4f5] rounded-2xl p-4 flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="bg-white rounded-xl p-3 border border-[#e9e9e9]">
-                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Обрано завдань</p>
-                      <p className="text-[18px] font-bold text-[#1f1f1f]">{checkedCount}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-3 border border-[#e9e9e9]">
-                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Списано часу</p>
-                      <p className="text-[18px] font-bold text-[#1f1f1f]">{fmtMin(totalLoggedMin)}</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9a9a9a]">Підсумок</span>
-                    <span className="font-bold text-[#1f1f1f]">{fmtMoney(subtotal, currency)}</span>
-                  </div>
-                  {discountPct > 0 && (
-                    <div className="flex justify-between text-[13px]">
-                      <span className="text-[#9a9a9a]">Знижка ({discountPct}%)</span>
-                      <span className="font-bold text-green-600">−{fmtMoney(discount, currency)}</span>
-                    </div>
-                  )}
-                  {taxPct > 0 && (
-                    <div className="flex justify-between text-[13px]">
-                      <span className="text-[#9a9a9a]">ПДВ ({taxPct}%)</span>
-                      <span className="font-bold text-[#1f1f1f]">+{fmtMoney(tax, currency)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between pt-3 border-t border-[#e9e9e9] items-center">
-                    <span className="text-[13px] font-bold text-[#1f1f1f]">До оплати</span>
-                    <span className="text-[20px] font-black text-[#1f1f1f]">{fmtMoney(total, currency)}</span>
-                  </div>
-
-                  {billingMembers.length > 0 && Object.keys(memberRates).length === 0 && (
-                    <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-100 rounded-xl p-3 mt-1">
-                      <AlertCircle size={13} className="text-yellow-600 mt-[1px] shrink-0" />
-                      <p className="text-[12px] text-yellow-700">Встановіть ставки виконавців щоб розрахувати вартість</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      onClick={showPreviewModal}
-                      disabled={checkedCount === 0}
-                      variant="primary"
-                      size="lg"
-                      icon={Eye}
-                      className="flex-1"
-                    >
-                      Переглянути
-                    </Button>
-                    <Button
-                      onClick={saveInvoice}
-                      disabled={saving || checkedCount === 0}
-                      variant="secondary"
-                      size="lg"
-                      icon={saving ? null : Save}
-                      className="flex-1"
-                    >
-                      {saving && <LoadingSpinner size="sm" className="mr-2 inline" />}
-                      Зберегти чернетку
-                    </Button>
-                  </div>
-                </div>
-              </Field>
             </div>
           )}
 
           {tab === 'issues' && (
-            <div className="p-5 flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-[#e9e9e9]">
                 <div className="flex items-center gap-2">
                   <span className="text-[12px] font-bold text-[#1f1f1f]">Завдання:</span>
@@ -775,9 +657,9 @@ export default function BillingTab({ issues = [], members = [], project, project
                 </div>
                 
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setCheckedIds(new Set(filteredIssues.map(i => i.id)))}>Всі</Button>
-                  <Button variant="ghost" size="sm" onClick={() => setCheckedIds(new Set())}>Жодну</Button>
-                  <Button variant="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => i.columnId === 'done').map(i => i.id)))}>Done</Button>
+                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(filteredIssues.map(i => i.id)))}>Всі</Button>
+                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set())}>Жодну</Button>
+                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => i.columnId === 'done').map(i => i.id)))}>Done</Button>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
@@ -836,7 +718,7 @@ export default function BillingTab({ issues = [], members = [], project, project
           )}
 
           {tab === 'history' && (
-            <div className="p-5 flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               {savedInvoices.length === 0 ? (
                 <div className="py-12 text-center text-[13px] text-[#cfcfcf] font-semibold">Немає збережених рахунків</div>
               ) : (
@@ -853,6 +735,99 @@ export default function BillingTab({ issues = [], members = [], project, project
             </div>
           )}
         </div>
+
+        {/* RIGHT: always-visible invoice summary rail */}
+        <Card variant="gray" padding="lg" className="lg:col-span-1 flex flex-col gap-4">
+          <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">
+            Рахунок · {project?.name || 'Проєкт'}
+          </h3>
+
+          <div className="grid grid-cols-3 gap-2">
+            <Field label="Валюта">
+              <Select
+                value={currency}
+                onChange={setCurrency}
+                options={CURRENCIES.map(c => ({ value: c, label: c }))}
+              />
+            </Field>
+            <Field label="Знижка %">
+              <Input type="number" min={0} max={100} value={discountPct}
+                onChange={e => setDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))} />
+            </Field>
+            <Field label="ПДВ %">
+              <Input type="number" min={0} max={100} value={taxPct}
+                onChange={e => setTaxPct(Math.min(100, Math.max(0, Number(e.target.value))))} />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white rounded-[12px] p-3 border border-[#e9e9e9]">
+              <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Обрано завдань</p>
+              <p className="text-[18px] font-bold text-[#1f1f1f] mt-[2px]">
+                {checkedCount}<span className="text-[12px] text-[#cfcfcf] font-semibold"> / {issues.length}</span>
+              </p>
+            </div>
+            <div className="bg-white rounded-[12px] p-3 border border-[#e9e9e9]">
+              <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Списано часу</p>
+              <p className="text-[18px] font-bold text-[#1f1f1f] mt-[2px]">{fmtMin(totalLoggedMin)}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-[#9a9a9a]">Підсумок</span>
+              <span className="font-bold text-[#1f1f1f]">{fmtMoney(subtotal, currency)}</span>
+            </div>
+            {discountPct > 0 && (
+              <div className="flex justify-between text-[13px]">
+                <span className="text-[#9a9a9a]">Знижка ({discountPct}%)</span>
+                <span className="font-bold text-green-600">−{fmtMoney(discount, currency)}</span>
+              </div>
+            )}
+            {taxPct > 0 && (
+              <div className="flex justify-between text-[13px]">
+                <span className="text-[#9a9a9a]">ПДВ ({taxPct}%)</span>
+                <span className="font-bold text-[#1f1f1f]">+{fmtMoney(tax, currency)}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-3 border-t border-[#e4e4e4] items-center">
+              <span className="text-[13px] font-bold text-[#1f1f1f]">До оплати</span>
+              <span className="text-[20px] font-black text-[#1f1f1f]">{fmtMoney(total, currency)}</span>
+            </div>
+          </div>
+
+          {billingMembers.length > 0 && Object.values(memberRates).every(r => !r) && (
+            <Alert
+              variant="warning"
+              title="Встановіть ставки виконавців"
+              description="Без ставок вартість завдань буде нульовою"
+            />
+          )}
+
+          <div className="flex flex-col gap-2 mt-1">
+            <Button
+              onClick={showPreviewModal}
+              disabled={checkedCount === 0}
+              style="primary"
+              size="lg"
+              icon={Eye}
+              className="w-full"
+            >
+              Переглянути рахунок
+            </Button>
+            <Button
+              onClick={saveInvoice}
+              disabled={saving || checkedCount === 0}
+              style="secondary"
+              size="lg"
+              icon={saving ? null : Save}
+              className="w-full"
+            >
+              {saving && <LoadingSpinner size="sm" className="mr-2 inline" />}
+              Зберегти чернетку
+            </Button>
+          </div>
+        </Card>
       </div>
 
       {/* Invoice preview modal */}

@@ -1,8 +1,11 @@
 'use client';
-// src/components/workspace/WorkloadTab.jsx — Full rebuild with real capacity bars, time logs and overdue
+// src/components/workspace/WorkloadTab.jsx — Команда: capacity bars, time logs, overdue
+// «Готово» та «Час» рахуються в межах періоду з фільтрів сторінки (prop `period`).
 import { useMemo } from 'react';
-import { Users, AlertTriangle, Clock, CheckCircle2, Circle, TrendingUp } from 'lucide-react';
+import { Users, AlertTriangle, Circle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
+import { KpiCard } from '@/components/ui';
+import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -11,12 +14,7 @@ function fmtH(min) {
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
 
-const PRIORITY_COLORS = {
-  blocker: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-};
+const PRIORITY_META = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, p]));
 
 // ── Capacity Bar ──────────────────────────────────────────────────────────────
 function CapacityBar({ open, done, overdue, max = 10 }) {
@@ -66,21 +64,24 @@ function TimeBar({ minutes, maxMinutes }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }) {
+export default function WorkloadTab({ members = [], issues = [], timeLogs = [], period = 30 }) {
   const stats = useMemo(() => {
     const now = Date.now();
+    const periodAgo = now - period * 86400000;
 
     const memberStats = members.map(m => {
       const uid = m.id || m.uid;
       const mine = issues.filter(i => i.assigneeIds?.includes(uid));
       const open = mine.filter(i => i.columnId !== 'done');
-      const done = mine.filter(i => i.columnId === 'done');
+      const done = mine.filter(i => i.columnId === 'done' && (i.updatedAt?.toMillis?.() ?? 0) >= periodAgo);
       const overdue = open.filter(i => {
         const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
         return due && due.getTime() < now;
       });
       const inProg = open.filter(i => i.columnId === 'in-progress');
-      const minutes = timeLogs.filter(l => l.userId === uid).reduce((s, l) => s + (l.spentMinutes || 0), 0);
+      const minutes = timeLogs
+        .filter(l => l.userId === uid && (l.loggedAt?.toMillis?.() ?? 0) >= periodAgo)
+        .reduce((s, l) => s + (l.spentMinutes || 0), 0);
 
       // Priority breakdown of open tasks
       const priorities = { blocker: 0, high: 0, medium: 0, low: 0 };
@@ -103,7 +104,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
     const maxMinutes = Math.max(...memberStats.map(s => s.minutes), 1);
 
     return { memberStats, maxOpen, maxMinutes };
-  }, [members, issues, timeLogs]);
+  }, [members, issues, timeLogs, period]);
 
   if (stats.memberStats.length === 0) {
     return (
@@ -123,37 +124,14 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
 
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#6366f1]/10 mb-3">
-              <Users size={16} className="text-[#6366f1]" />
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.memberStats.length}</p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Учасників із завданнями</p>
-          </div>
-
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#0891b2]/10 mb-3">
-              <Circle size={16} className="text-[#0891b2]" />
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">
-              {stats.memberStats.reduce((s, m) => s + m.open, 0)}
-            </p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Відкритих завдань</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">
-              ~{Math.round(stats.memberStats.reduce((s, m) => s + m.open, 0) / Math.max(stats.memberStats.length, 1))} на людину
-            </p>
-          </div>
-
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
-            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#ef4444]/10 mb-3">
-              <AlertTriangle size={16} className="text-[#ef4444]" />
-            </div>
-            <p className="text-[28px] font-bold text-[#1f1f1f] leading-none mb-1">
-              {stats.memberStats.reduce((s, m) => s + m.overdue, 0)}
-            </p>
-            <p className="text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide">Прострочених</p>
-            <p className="text-[11px] text-[#cfcfcf] mt-1">потребують уваги</p>
-          </div>
+          <KpiCard icon={Users} color="#6366f1"
+            value={stats.memberStats.length} label="Учасників із завданнями" />
+          <KpiCard icon={Circle} color="#0891b2"
+            value={stats.memberStats.reduce((s, m) => s + m.open, 0)} label="Відкритих завдань"
+            sub={`~${Math.round(stats.memberStats.reduce((s, m) => s + m.open, 0) / Math.max(stats.memberStats.length, 1))} на людину`} />
+          <KpiCard icon={AlertTriangle} color="#ef4444"
+            value={stats.memberStats.reduce((s, m) => s + m.overdue, 0)} label="Прострочених"
+            sub="потребують уваги" />
         </div>
 
         {/* Member cards */}
@@ -193,7 +171,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
                     </div>
                     <div className="text-center">
                       <p className="text-[16px] font-bold text-[#10b981]">{done}</p>
-                      <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Готово</p>
+                      <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Готово · {period}д</p>
                     </div>
                     <div className="text-center">
                       <p className="text-[16px] font-bold text-[#6366f1]">{open}</p>
@@ -223,7 +201,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
                 {minutes > 0 && (
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Залоговано часу</span>
+                      <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Залоговано часу · {period}д</span>
                     </div>
                     <TimeBar minutes={minutes} maxMinutes={stats.maxMinutes} />
                   </div>
@@ -236,9 +214,9 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [] }
                       <span
                         key={p}
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: PRIORITY_COLORS[p] + '18', color: PRIORITY_COLORS[p] }}
+                        style={{ background: (PRIORITY_META[p]?.color || '#9a9a9a') + '18', color: PRIORITY_META[p]?.color || '#9a9a9a' }}
                       >
-                        {count} {p}
+                        {count} {PRIORITY_META[p]?.label || p}
                       </span>
                     ))}
                   </div>

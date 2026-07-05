@@ -1,23 +1,28 @@
-
 'use client';
 // src/app/workspace/analytics/page.js — Workspace-wide analytics + Billing (admin/owner only)
+// Огляд = швидкий стан воркспейсу; Продуктивність = тренди; Табель = час;
+// Команда = навантаження; Білінг = рахунки. Всі контроли табу (період,
+// тиждень/місяць, учасник, навігація) живуть в ОДНОМУ FilterBar під табами.
 import { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
-  BarChart2, AlertTriangle, Clock,
-  Users, Zap, Target, Receipt, ArrowRight,
+  BarChart2, AlertTriangle, Clock, Users, Zap, Target, Receipt, ArrowRight,
+  ChevronLeft, ChevronRight, Plus,
 } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
+import { DEFAULT_STATUSES } from '@/lib/hooks/useWorkflowConfig';
 import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
-import { Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader } from '@/components/ui';
+import {
+  Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader, KpiCard, Segmented,
+} from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
+
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
   if (!min) return '0г';
@@ -25,42 +30,21 @@ function fmtH(min) {
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
 
-const COL_COLOR = {
-  backlog:'#9a9a9a', todo:'#6366f1', 'in-progress':'#0891b2',
-  'code-review':'#d97706', qa:'#7c3aed', 'client-approval':'#db2777', done:'#10b981',
-};
-const COL_LABEL = {
-  backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress',
-  'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done',
-};
-
-// ── Sub-components ───────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, sub, color = '#6366f1', onClick }) {
-  const inner = (
-    <div className="bg-[#f4f4f5] border border-transparent rounded-[24px] p-5 group-hover:bg-[#f0f0f0] transition-colors">
-      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center mb-3" style={{ background: color + '15' }}>
-        <Icon size={16} style={{ color }} />
-      </div>
-      <p className="text-[26px] font-bold text-[#1f1f1f] leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">{label}</p>
-      {sub && <p className="text-[11px] text-[#cfcfcf] mt-1">{sub}</p>}
-    </div>
-  );
-  if (onClick) return <div onClick={onClick} className="group cursor-pointer">{inner}</div>;
-  return <div>{inner}</div>;
-}
-
 function SectionTitle({ children }) {
   return <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">{children}</h2>;
 }
 
-// ── ANALYTICS CONTENT ────────────────────────────────────────────────
-function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabChange }) {
-  const [period, setPeriod] = useState(30);
+function FilterDivider() {
+  return <span className="w-[1px] h-[16px] bg-[#e3e3e3] mx-[2px] shrink-0" />;
+}
 
+// ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
+// Детальні графіки активності/трендів живуть у «Продуктивності»,
+// а навантаження по людях — у «Команді»; тут їх свідомо немає.
+function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabChange }) {
   const stats = useMemo(() => {
     if (!issues.length && !loading) return null;
-    const now     = Date.now();
+    const now = Date.now();
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
@@ -79,7 +63,8 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
       return t > periodAgo;
     }).length;
 
-    const totalMin = timeLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
+    const periodLogs = timeLogs.filter(l => (l.loggedAt?.toMillis?.() ?? 0) >= periodAgo);
+    const periodMin  = periodLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
@@ -89,59 +74,25 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
         const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
         return due && due.getTime() < now && i.columnId !== 'done';
       }).length;
-      const pMin   = timeLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
-      const pPct   = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
+      const pMin = periodLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
+      const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
     }).sort((a, b) => b.total - a.total);
 
-    const byMember = members.map(m => {
-      const uid   = m.id || m.uid;
-      const mine  = issues.filter(i => i.assigneeIds?.includes(uid));
-      const mDone = mine.filter(i => i.columnId === 'done').length;
-      const mOpen = mine.filter(i => i.columnId !== 'done').length;
-      const mOver = mine.filter(i => {
-        const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-        return due && due.getTime() < now && i.columnId !== 'done';
-      }).length;
-      const mMin  = timeLogs.filter(l => l.userId === uid).reduce((s, l) => s + (l.spentMinutes || 0), 0);
-      return { m, uid, total: mine.length, done: mDone, open: mOpen, overdue: mOver, minutes: mMin };
-    }).filter(s => s.total > 0 || s.minutes > 0).sort((a, b) => b.total - a.total);
-
-    const byStatus = ['backlog','todo','in-progress','code-review','qa','client-approval','done'].map(col => ({
-      col, count: issues.filter(i => i.columnId === col).length,
+    const byStatus = DEFAULT_STATUSES.map(({ id, label, color }) => ({
+      id, label, color, count: issues.filter(i => i.columnId === id).length,
     })).filter(s => s.count > 0);
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
-    const days = Array.from({ length: period }, (_, i) => {
-      const daysBack = period - 1;
-      const base = new Date(now - (daysBack - i) * 86400000);
-      const dayStart = new Date(base).setHours(0,0,0,0);
-      const dayEnd   = new Date(base).setHours(23,59,59,999);
-      return {
-        label: base.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }),
-        created: issues.filter(iss => {
-          const t = iss.createdAt?.toMillis?.() ?? 0;
-          return t >= dayStart && t <= dayEnd;
-        }).length,
-        done: issues.filter(iss => {
-          if (iss.columnId !== 'done') return false;
-          const t = iss.updatedAt?.toMillis?.() ?? 0;
-          return t >= dayStart && t <= dayEnd;
-        }).length,
-      };
-    });
-    const maxActivity = Math.max(...days.map(d => Math.max(d.created, d.done)), 1);
-
     const noAssignee  = issues.filter(i => !i.assigneeIds?.length && i.columnId !== 'done').length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && !['backlog','done'].includes(i.columnId)).length;
+    const unestimated = issues.filter(i => !i.estimateMinutes && !['backlog', 'done'].includes(i.columnId)).length;
 
     return {
-      total, done, inProgress, blockers, overdue, recentDone,
-      totalMin, byProject, byMember, byStatus, maxStatus, days, maxActivity, noAssignee, unestimated,
-      completionPct: total > 0 ? Math.round((done/total)*100) : 0,
-      activeProjects: projects.filter(p => p.status !== 'archived').length,
+      total, done, inProgress, blockers, overdue, recentDone, periodMin,
+      byProject, byStatus, maxStatus, noAssignee, unestimated,
+      completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
-  }, [issues, timeLogs, members, projects, period, loading]); // eslint-disable-line
+  }, [issues, timeLogs, projects, period, loading]);
 
   if (loading) {
     return (
@@ -165,159 +116,83 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
   return (
     <div className="flex-1 overflow-y-auto bg-transparent">
-      <div className="w-full">
-
-        {/* Period filter */}
-        <div className="flex justify-end mb-4">
-          <div className="flex items-center gap-1 bg-[#f4f4f5] border border-transparent rounded-[12px] p-[3px]">
-            {[7, 14, 30, 90].map(d => (
-              <Button key={d} onClick={() => setPeriod(d)}
-                variant={period === d ? 'primary' : 'secondary'}
-                color={period === d ? 'dark' : 'gray'}
-                size="sm">
-                {d}д
-              </Button>
-            ))}
-          </div>
-        </div>
+      <div className="w-full pb-16">
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Target}       label="Всі завдання" color="#10b981" onClick={() => onTabChange('velocity')}
-            value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% прогресу`} />
-          <KpiCard icon={Zap}          label={`Velocity (${period}д)`} color="#6366f1" onClick={() => onTabChange('velocity')}
-            value={stats.recentDone} sub={`завдань за ${period} днів`} />
-          <KpiCard icon={Clock}        label="Списано часу" color="#0891b2" onClick={() => onTabChange('timesheet')}
-            value={fmtH(stats.totalMin)} sub={`по ${projects.length} проєктах`} />
-          <KpiCard icon={Users}        label="Команда" color="#eab308" onClick={() => onTabChange('workload')}
-            value={stats.byMember.length} sub="учасників із завданнями" />
+          <KpiCard icon={Target} label="Всі завдання" color="#10b981"
+            value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
+          <KpiCard icon={Zap} label={`Закрито за ${period}д`} color="#6366f1" onClick={() => onTabChange('velocity')}
+            value={stats.recentDone} sub="тренди — у Продуктивності" />
+          <KpiCard icon={Clock} label={`Списано часу · ${period}д`} color="#0891b2" onClick={() => onTabChange('timesheet')}
+            value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
+          <KpiCard icon={AlertTriangle} label="Прострочено" color="#ef4444"
+            value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'все вчасно'} />
         </div>
 
-        {/* Activity + Status */}
+        {/* Statuses + Projects */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card variant="gray" padding="lg" className="col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <SectionTitle>{`Активність (${period} днів)`}</SectionTitle>
-              <div className="flex items-center gap-3 text-[10px] text-[#9a9a9a]">
-                <span className="flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-sm bg-[#6366f1] inline-block" /> Створено</span>
-                <span className="flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-sm bg-[#10b981] inline-block" /> Завершено</span>
-              </div>
-            </div>
-            <div className="flex items-end gap-[6px] h-[120px]">
-              {stats.days.map((day, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center h-full justify-end" title={`${day.label}: +${day.created} ✓${day.done}`}>
-                  <div className="w-full flex flex-col items-center gap-[1px] justify-end h-full">
-                    <div className="w-full rounded-t-[3px] bg-[#10b981]"
-                      style={{ height: `${(day.done / stats.maxActivity) * 100}%`, minHeight: day.done > 0 ? 3 : 0 }} />
-                    <div className="w-full rounded-t-[3px] bg-[#6366f1]/50"
-                      style={{ height: `${(day.created / stats.maxActivity) * 100}%`, minHeight: day.created > 0 ? 3 : 0 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-2">
-              <span className="text-[9px] text-[#cfcfcf]">{stats.days[0]?.label}</span>
-              <span className="text-[9px] text-[#cfcfcf]">{stats.days[stats.days.length-1]?.label}</span>
-            </div>
-          </Card>
-
           <Card variant="gray" padding="lg">
             <SectionTitle>По статусах</SectionTitle>
             <div className="flex flex-col gap-[10px]">
-              {stats.byStatus.map(({ col, count }) => (
-                <div key={col} className="flex items-center gap-3">
-                  <span className="w-[90px] text-[10px] font-medium text-[#9a9a9a] shrink-0 truncate">{COL_LABEL[col]}</span>
+              {stats.byStatus.map(({ id, label, color, count }) => (
+                <div key={id} className="flex items-center gap-3">
+                  <span className="w-[90px] text-[10px] font-medium text-[#9a9a9a] shrink-0 truncate">{label}</span>
                   <div className="flex-1 h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: COL_COLOR[col] }} />
+                    <div className="h-full rounded-full" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: color }} />
                   </div>
                   <span className="text-[11px] font-bold text-[#1f1f1f] w-5 text-right shrink-0">{count}</span>
                 </div>
               ))}
             </div>
           </Card>
-        </div>
 
-        {/* Projects table */}
-        <Card variant="gray" padding="lg" className="mb-6">
-          <SectionTitle>По проєктах</SectionTitle>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-[#f0f0f0]">
-                  {['Проєкт','Всього','Прогрес','Відкрито','Прострочено','Час',''].map(h => (
-                    <th key={h} className="pb-2 text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide pr-4 last:pr-0">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f8f8f8]">
-                {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
-                  <tr key={p.id} className="group">
-                    <td className="py-3 pr-4">
-                      <p className="text-[13px] font-semibold text-[#1f1f1f]">{p.name}</p>
-                      <span className="text-[10px] text-[#cfcfcf]">{p.visibility === 'internal' ? 'Внутрішній' : 'Клієнтський'}</span>
-                    </td>
-                    <td className="py-3 pr-4 text-[13px] font-semibold text-[#1f1f1f]">{total}</td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-[80px] h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                          <div className="h-full bg-[#10b981] rounded-full" style={{ width: `${pct}%` }} />
+          <Card variant="gray" padding="lg" className="col-span-2">
+            <SectionTitle>По проєктах</SectionTitle>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-[#f0f0f0]">
+                    {['Проєкт', 'Всього', 'Прогрес', 'Відкрито', 'Прострочено', `Час · ${period}д`, ''].map(h => (
+                      <th key={h} className="pb-2 text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide pr-4 last:pr-0">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f8f8f8]">
+                  {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
+                    <tr key={p.id} className="group">
+                      <td className="py-3 pr-4">
+                        <p className="text-[13px] font-semibold text-[#1f1f1f]">{p.name}</p>
+                        <span className="text-[10px] text-[#cfcfcf]">{p.visibility === 'internal' ? 'Внутрішній' : 'Клієнтський'}</span>
+                      </td>
+                      <td className="py-3 pr-4 text-[13px] font-semibold text-[#1f1f1f]">{total}</td>
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-[80px] h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#10b981] rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[11px] font-semibold text-[#9a9a9a]">{pct}%</span>
                         </div>
-                        <span className="text-[11px] font-semibold text-[#9a9a9a]">{pct}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4 text-[12px] text-[#0891b2] font-semibold">{open}</td>
-                    <td className="py-3 pr-4">
-                      {overdue > 0 ? <span className="text-[12px] font-semibold text-red-500">{overdue}</span>
-                        : <span className="text-[12px] text-[#cfcfcf]">—</span>}
-                    </td>
-                    <td className="py-3 pr-4 text-[12px] text-[#9a9a9a]">{fmtH(minutes)}</td>
-                    <td className="py-3">
-                      <Link href={`/workspace/${p.id}`}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[#cfcfcf] hover:text-[#1f1f1f] flex items-center gap-1 text-[11px] font-medium">
-                        Відкрити <ArrowRight size={11} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Member workload */}
-        {stats.byMember.length > 0 && (
-          <Card variant="gray" padding="lg" className="mb-6">
-            <SectionTitle>Навантаження по команді</SectionTitle>
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-[#f0f0f0]">
-                  {['Учасник','Задач','Виконано','Відкрито','Прострочено','Час'].map(h => (
-                    <th key={h} className="pb-2 text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide pr-6 last:pr-0">{h}</th>
+                      </td>
+                      <td className="py-3 pr-4 text-[12px] text-[#0891b2] font-semibold">{open}</td>
+                      <td className="py-3 pr-4">
+                        {overdue > 0 ? <span className="text-[12px] font-semibold text-red-500">{overdue}</span>
+                          : <span className="text-[12px] text-[#cfcfcf]">—</span>}
+                      </td>
+                      <td className="py-3 pr-4 text-[12px] text-[#9a9a9a]">{fmtH(minutes)}</td>
+                      <td className="py-3">
+                        <Link href={`/workspace/${p.id}`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-[#cfcfcf] hover:text-[#1f1f1f] flex items-center gap-1 text-[11px] font-medium">
+                          Відкрити <ArrowRight size={11} />
+                        </Link>
+                      </td>
+                    </tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f8f8f8]">
-                {stats.byMember.map(({ m, total, done, open, overdue, minutes }) => (
-                  <tr key={m.id || m.uid}>
-                    <td className="py-3 pr-6">
-                      <div className="flex items-center gap-2">
-                        <UserAvatar user={m} size={26} />
-                        <p className="text-[12px] font-semibold text-[#1f1f1f]">{m.name || m.email}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-6 text-[13px] font-semibold text-[#1f1f1f]">{total}</td>
-                    <td className="py-3 pr-6 text-[12px] font-semibold text-[#10b981]">{done}</td>
-                    <td className="py-3 pr-6 text-[12px] font-semibold text-[#0891b2]">{open}</td>
-                    <td className="py-3 pr-6">{overdue > 0
-                      ? <span className="text-[12px] font-semibold text-red-500">{overdue}</span>
-                      : <span className="text-[12px] text-[#cfcfcf]">—</span>}</td>
-                    <td className="py-3 text-[12px] text-[#9a9a9a]">{minutes > 0 ? fmtH(minutes) : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </Card>
-        )}
+        </div>
 
         {/* Overdue + Insights */}
         <div className="grid grid-cols-2 gap-4">
@@ -387,11 +262,12 @@ function AnalyticsContent({ projects, issues, timeLogs, members, loading, onTabC
 
 // ── PAGE ─────────────────────────────────────────────────────────────
 export default function WorkspaceAnalyticsPage() {
-  const { projects = [], orgRole } = useAppContext();
+  const { projects = [], orgRole, currentUser } = useAppContext();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Only admin/owner can see billing
+  // Only admin/owner can see billing and other members' timesheets
   const canSeeBilling = orgRole === 'owner' || orgRole === 'admin';
+  const canSeeTeamTimesheet = canSeeBilling;
 
   const allUids = useMemo(() => {
     const set = new Set();
@@ -402,10 +278,29 @@ export default function WorkspaceAnalyticsPage() {
 
   const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(p => p.id));
 
+  // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
   const [projectFilters, setProjectFilters] = useState([]);
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [period, setPeriod] = useState(30);
+
+  // Табель state
+  const selfUid = currentUser?.uid || currentUser?.id;
+  const [tsMember, setTsMember] = useState(null); // null → default below
+  const [tsMode, setTsMode] = useState('week');
+  const [tsAnchor, setTsAnchor] = useState(() => new Date());
+  const [tsLogOpen, setTsLogOpen] = useState(false);
+  const effectiveTsMember = tsMember ?? (canSeeTeamTimesheet ? 'all' : selfUid);
+
+  const shiftAnchor = dir => {
+    setTsAnchor(prev => {
+      const d = new Date(prev);
+      if (tsMode === 'week') d.setDate(d.getDate() + dir * 7);
+      else d.setMonth(d.getMonth() + dir);
+      return d;
+    });
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -445,18 +340,26 @@ export default function WorkspaceAnalyticsPage() {
     });
   }, [timeLogs, projectFilters, assigneeFilter, priorityFilter, typeFilter, filteredIssueIds]);
 
+  // Табель фільтрується лише по проєктах — вимір «хто» задає селектор учасника
+  const projectScopedTimeLogs = useMemo(
+    () => (projectFilters.length === 0 ? timeLogs : timeLogs.filter(l => projectFilters.includes(l.projectId))),
+    [timeLogs, projectFilters]
+  );
+
   const TABS = [
-    { id: 'overview', label: 'Огляд',   icon: BarChart2 },
-    { id: 'timesheet', label: 'Таймшит', icon: Clock },
+    { id: 'overview', label: 'Огляд', icon: BarChart2 },
+    { id: 'timesheet', label: 'Табель', icon: Clock },
     { id: 'velocity', label: 'Продуктивність', icon: Zap },
     { id: 'workload', label: 'Команда', icon: Users },
     ...(canSeeBilling ? [{ id: 'billing', label: 'Білінг', icon: Receipt }] : []),
   ];
 
-  // For BillingTab — flatten all issues + pick the first project (or let user pick)
+  // Білінг — один конкретний проєкт
   const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = projects.find(p => p.id === billingProjectId) || projects[0];
   const billingIssues  = filteredIssues.filter(i => i.projectId === (billingProject?.id));
+
+  const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
@@ -469,10 +372,31 @@ export default function WorkspaceAnalyticsPage() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           filters={
-            activeTab !== 'billing' ? (
+            activeTab === 'billing' ? (
               <FilterBar>
-                <MultiSelect
-                  value={projectFilters}
+                <Select
+                  value={billingProject?.id || ''}
+                  onChange={setBillingProjectId}
+                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  variant="ghost"
+                />
+              </FilterBar>
+            ) : activeTab === 'timesheet' ? (
+              <>
+                <FilterBar>
+                  {canSeeTeamTimesheet && (
+                    <Select
+                      value={effectiveTsMember}
+                      onChange={setTsMember}
+                      options={[
+                        { value: 'all', label: 'Вся команда' },
+                        ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email })),
+                      ]}
+                      variant="ghost"
+                    />
+                  )}
+                  <MultiSelect
+                    value={projectFilters}
                     onChange={setProjectFilters}
                     options={projects.map(p => ({ value: p.id, label: p.name }))}
                     placeholder="Всі проєкти"
@@ -480,102 +404,117 @@ export default function WorkspaceAnalyticsPage() {
                     className="w-[200px]"
                     variant="ghost"
                   />
-                  <Select
-                    value={assigneeFilter}
-                    onChange={setAssigneeFilter}
-                    options={[
-                      { value: 'all', label: 'Всі виконавці' },
-                      { value: 'unassigned', label: 'Без виконавця' },
-                      ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
-                    ]}
-                    variant="ghost"
+                  <FilterDivider />
+                  <Segmented
+                    value={tsMode}
+                    onChange={setTsMode}
+                    options={[{ value: 'week', label: 'Тиждень' }, { value: 'month', label: 'Місяць' }]}
                   />
-                  <Select
-                    value={priorityFilter}
-                    onChange={setPriorityFilter}
-                    options={[
-                      { value: 'all', label: 'Всі пріоритети' },
-                      { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                      { value: 'high', label: 'High', dotColor: '#f97316' },
-                      { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                      { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
-                    ]}
-                    variant="ghost"
-                  />
-                  <Select
-                    value={typeFilter}
-                    onChange={setTypeFilter}
-                    options={[
-                      { value: 'all', label: 'Всі типи' },
-                      { value: 'epic', label: 'Epic' },
-                      { value: 'feature', label: 'Feature' },
-                      { value: 'task', label: 'Task' },
-                      { value: 'bug', label: 'Bug' },
-                    ]}
-                    variant="ghost"
-                  />
+                  <FilterDivider />
+                  <Button style="ghost" size="icon-sm" icon={ChevronLeft} onClick={() => shiftAnchor(-1)} aria-label="Попередній період" />
+                  <Button style="ghost" size="sm" onClick={() => setTsAnchor(new Date())}>Сьогодні</Button>
+                  <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
                 </FilterBar>
-            ) : null
+                <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="ml-auto">
+                  Списати час
+                </Button>
+              </>
+            ) : (
+              <FilterBar>
+                <MultiSelect
+                  value={projectFilters}
+                  onChange={setProjectFilters}
+                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  placeholder="Всі проєкти"
+                  searchPlaceholder="Пошук проєкту..."
+                  className="w-[200px]"
+                  variant="ghost"
+                />
+                <Select
+                  value={assigneeFilter}
+                  onChange={setAssigneeFilter}
+                  options={[
+                    { value: 'all', label: 'Всі виконавці' },
+                    { value: 'unassigned', label: 'Без виконавця' },
+                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                  ]}
+                  variant="ghost"
+                />
+                <Select
+                  value={priorityFilter}
+                  onChange={setPriorityFilter}
+                  options={[
+                    { value: 'all', label: 'Всі пріоритети' },
+                    { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                    { value: 'high', label: 'High', dotColor: '#f97316' },
+                    { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                    { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
+                  ]}
+                  variant="ghost"
+                />
+                <Select
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  options={[
+                    { value: 'all', label: 'Всі типи' },
+                    { value: 'epic', label: 'Epic' },
+                    { value: 'feature', label: 'Feature' },
+                    { value: 'task', label: 'Task' },
+                    { value: 'bug', label: 'Bug' },
+                  ]}
+                  variant="ghost"
+                />
+                <FilterDivider />
+                <Segmented value={period} onChange={setPeriod} options={periodOptions} />
+              </FilterBar>
+            )
           }
         />
 
         {/* Content */}
-      {activeTab === 'overview' && (
-        <AnalyticsContent
-          projects={projects}
-          issues={filteredIssues}
-          timeLogs={filteredTimeLogs}
-          members={members}
-          loading={loading}
-          onTabChange={setActiveTab}
-        />
-      )}
+        {activeTab === 'overview' && (
+          <AnalyticsContent
+            projects={projects}
+            issues={filteredIssues}
+            timeLogs={filteredTimeLogs}
+            loading={loading}
+            period={period}
+            onTabChange={setActiveTab}
+          />
+        )}
 
-      {activeTab === 'timesheet' && (
-        <TimesheetTab />
-      )}
+        {activeTab === 'timesheet' && (
+          <TimesheetTab
+            issues={issues}
+            timeLogs={projectScopedTimeLogs}
+            members={members}
+            projects={projects}
+            member={effectiveTsMember}
+            mode={tsMode}
+            anchor={tsAnchor}
+            onSelectMember={uid => setTsMember(uid)}
+            onSelectDay={d => { setTsAnchor(d); setTsMode('week'); }}
+            logModalOpen={tsLogOpen}
+            onCloseLogModal={() => setTsLogOpen(false)}
+          />
+        )}
 
-      {activeTab === 'velocity' && (
-        <VelocityTab issues={filteredIssues} projects={projects} />
-      )}
+        {activeTab === 'velocity' && (
+          <VelocityTab issues={filteredIssues} projects={projects} period={period} />
+        )}
 
-      {activeTab === 'workload' && (
-        <WorkloadTab members={members} issues={filteredIssues} timeLogs={filteredTimeLogs} />
-      )}
+        {activeTab === 'workload' && (
+          <WorkloadTab members={members} issues={filteredIssues} timeLogs={filteredTimeLogs} period={period} />
+        )}
 
-      {activeTab === 'billing' && canSeeBilling && (
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Project selector for billing */}
-          {projects.length > 1 && (
-            <div className="bg-white border-b border-[#e9e9e9] px-6 py-3 flex items-center gap-3 shrink-0">
-              <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">Проєкт:</span>
-              <div className="flex flex-wrap gap-2">
-                {projects.map(p => (
-                  <Button
-                    key={p.id}
-                    onClick={() => setBillingProjectId(p.id)}
-                    variant={
-                      (billingProjectId === p.id || (!billingProjectId && p.id === projects[0]?.id))
-                        ? 'primary'
-                        : 'secondary'
-                    }
-                    color="dark"
-                    size="sm"
-                  >
-                    {p.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
+        {activeTab === 'billing' && canSeeBilling && (
           <BillingTab
             issues={billingIssues}
             members={members}
             project={billingProject}
             projectId={billingProject?.id}
           />
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
