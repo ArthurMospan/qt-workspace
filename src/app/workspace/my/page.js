@@ -339,7 +339,7 @@ export default function MyTasksPage() {
                     }
                     
                     return (
-                      <div key={col.id} className="flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center md:snap-align-none bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100dvh - 180px)' }}>
+                      <div key={col.id} className="flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100dvh - 180px)' }}>
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                           <div className="flex items-center gap-[6px]">
                             <button

@@ -529,7 +529,7 @@ function ThreadSidebar({
   if (!parentMsg) return null;
 
   return (
-    <div className="fixed inset-0 z-50 w-full rounded-none md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-[#e9e9e9]/70">
         <div className="flex items-center gap-2">
@@ -725,7 +725,7 @@ function ChannelInfoSidebar({
   };
 
   return (
-    <div className="fixed inset-0 z-50 w-full rounded-none md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-[#f4f4f5] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-[#e9e9e9]/70">
         <div className="flex items-center gap-2">

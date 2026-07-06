@@ -21,6 +21,10 @@ export function PageHeader({
   activeTab,
   onTabChange,
   actions,
+  // Mobile-only action buttons (e.g. an icon CTA that duplicates a desktop
+  // filters-row button). Wrapper is md:hidden, so on desktop it contributes
+  // neither DOM width nor flex gap.
+  mobileActions,
   filters,
   className  = '',
 }) {
@@ -87,6 +91,11 @@ export function PageHeader({
               title="Фільтри"
               className="md:hidden"
             />
+          )}
+          {mobileActions && (
+            <div className="md:hidden flex items-center gap-[8px] shrink-0">
+              {mobileActions}
+            </div>
           )}
           {actions && (
             <div className="flex items-center gap-[8px] shrink-0">

@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
+import { Counter } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
   Folder, CheckCircle2, MessageSquare, PieChart, Menu, X,
@@ -30,6 +31,31 @@ const MORE_NAV = [
   { href: '/workspace/settings', icon: Settings, label: 'Налаштування' },
 ];
 
+// Separate component so the store's 1-second timerElapsed tick re-renders
+// only this capsule (rendered only inside the open sheet), not the whole nav.
+function SheetTimerCapsule({ onNavigate, onStop }) {
+  const activeTimer = useWorkspaceStore(s => s.activeTimer);
+  const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
+  const formatElapsed = useWorkspaceStore(s => s.formatElapsed);
+  if (!activeTimer) return null;
+  return (
+    <div className="px-[16px] pb-[8px]">
+      <div
+        onClick={() => onNavigate(activeTimer)}
+        className="bg-[#333333] rounded-[12px] flex items-center justify-between pl-[12px] pr-[6px] py-[6px] cursor-pointer">
+        <div className="flex items-center gap-[8px]">
+          <Clock size={14} className="text-[#3b82f6] animate-pulse" />
+          <span className="text-white text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
+        </div>
+        <button onClick={onStop} title="Зупинити та зберегти"
+          className="flex items-center justify-center w-[30px] h-[30px] rounded-[8px] bg-[#ef4444] text-white">
+          <StopIcon size={12} className="fill-current" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
@@ -39,8 +65,6 @@ export default function MobileNav() {
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
-  const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
-  const formatElapsed = useWorkspaceStore(s => s.formatElapsed);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
 
   // Close the sheet on navigation
@@ -66,6 +90,11 @@ export default function MobileNav() {
     }
   };
 
+  const handleTimerNavigate = (timer) => {
+    setMoreOpen(false);
+    if (timer.projectId) router.push(`/workspace/${timer.projectId}/issue/${timer.issueId}`);
+  };
+
   return (
     <>
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
@@ -83,8 +112,8 @@ export default function MobileNav() {
               <Icon size={20} />
               <span className="text-[10px] font-semibold leading-none">{label}</span>
               {label === 'Чат' && unreadChats > 0 && (
-                <span className="absolute top-[7px] left-[calc(50%+6px)] min-w-[15px] h-[15px] px-[4px] bg-[#6366f1] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                  {unreadChats > 9 ? '9+' : unreadChats}
+                <span className="absolute top-[6px] left-[calc(50%+4px)]">
+                  <Counter value={unreadChats} size="sm" status="info" dark />
                 </span>
               )}
             </Link>
@@ -128,26 +157,8 @@ export default function MobileNav() {
               </div>
             </div>
 
-            {/* Active timer capsule */}
-            {activeTimer && (
-              <div className="px-[16px] pb-[8px]">
-                <div
-                  onClick={() => {
-                    setMoreOpen(false);
-                    if (activeTimer.projectId) router.push(`/workspace/${activeTimer.projectId}/issue/${activeTimer.issueId}`);
-                  }}
-                  className="bg-[#333333] rounded-[12px] flex items-center justify-between pl-[12px] pr-[6px] py-[6px] cursor-pointer">
-                  <div className="flex items-center gap-[8px]">
-                    <Clock size={14} className="text-[#3b82f6] animate-pulse" />
-                    <span className="text-white text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
-                  </div>
-                  <button onClick={handleStopTimer} title="Зупинити та зберегти"
-                    className="flex items-center justify-center w-[30px] h-[30px] rounded-[8px] bg-[#ef4444] text-white">
-                    <StopIcon size={12} className="fill-current" />
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Active timer capsule (subscribes to the 1s tick internally) */}
+            <SheetTimerCapsule onNavigate={handleTimerNavigate} onStop={handleStopTimer} />
 
             {/* Secondary nav */}
             <div className="flex flex-col gap-[2px] px-[8px]">

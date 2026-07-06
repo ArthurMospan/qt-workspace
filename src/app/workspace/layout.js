@@ -6,6 +6,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import MobileNav from '@/components/MobileNav';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import Toast from '@/components/Toast';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -16,6 +17,9 @@ export default function WorkspaceLayout({ children }) {
   const router = useRouter();
   const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut, allOrgs } = useAppContext();
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
+  // null on first render (both nav variants mounted, CSS decides), then the
+  // irrelevant one is unmounted so its listeners/re-renders don't run twice.
+  const isMobile = useIsMobile();
 
   const pathname = usePathname();
   const isChat = pathname?.startsWith('/workspace/chat');
@@ -111,11 +115,13 @@ export default function WorkspaceLayout({ children }) {
     <ConfirmProvider>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel (desktop only; mobile uses MobileNav) */}
-      <div className="print:hidden shrink-0 h-full hidden md:flex p-[12px] pr-[6px]">
-        <div className="h-full rounded-[24px] overflow-hidden flex">
-          <WorkspaceSidebar />
+      {isMobile !== true && (
+        <div className="print:hidden shrink-0 h-full hidden md:flex p-[12px] pr-[6px]">
+          <div className="h-full rounded-[24px] overflow-hidden flex">
+            <WorkspaceSidebar />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Right column: absolute header + content floating panel */}
       <div className="flex flex-col flex-1 overflow-hidden w-full p-0 pb-[calc(56px+env(safe-area-inset-bottom))] md:p-[12px] md:pl-[6px] md:pb-[12px]">
@@ -132,9 +138,11 @@ export default function WorkspaceLayout({ children }) {
       </div>
 
       {/* Mobile bottom navigation */}
-      <div className="print:hidden md:hidden">
-        <MobileNav />
-      </div>
+      {isMobile !== false && (
+        <div className="print:hidden md:hidden">
+          <MobileNav />
+        </div>
+      )}
 
       <Toast />
       <ProfileModal />

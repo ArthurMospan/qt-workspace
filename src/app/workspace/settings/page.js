@@ -11,7 +11,7 @@ import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Palette, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
-  Copy, ExternalLink, ChevronRight, AlertTriangle,
+  Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical,
   Archive, ArchiveRestore, Bug, LayoutTemplate
@@ -1692,7 +1692,7 @@ export default function SettingsPage() {
             onClick={() => setMobilePane('sidebar')}
             className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[16px] transition-colors"
           >
-            <ChevronRight size={15} className="rotate-180" /> Всі налаштування
+            <ArrowLeft size={15} /> Всі налаштування
           </button>
           <div className="flex-1 pb-[100px]">
             {renderSection()}

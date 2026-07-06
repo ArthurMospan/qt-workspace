@@ -293,7 +293,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                   }
 
                   return (
-                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center md:snap-align-none bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (

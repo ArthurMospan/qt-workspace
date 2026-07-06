@@ -371,9 +371,9 @@ export default function WorkspaceAnalyticsPage() {
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          actions={
+          mobileActions={
             activeTab === 'timesheet' ? (
-              <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="md:hidden" title="Списати час" />
+              <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} title="Списати час" />
             ) : null
           }
           filters={

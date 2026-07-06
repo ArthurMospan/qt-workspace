@@ -97,7 +97,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       {/* Modal — mobile: bottom sheet */}
       <form
         onSubmit={handleSubmit}
-        className="relative bg-white rounded-t-[24px] rounded-b-none sm:rounded-[24px] shadow-2xl w-full max-w-[520px] mx-0 sm:mx-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+        className="relative bg-white rounded-t-[24px] sm:rounded-[24px] shadow-2xl w-full max-w-[520px] sm:mx-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9] shrink-0">
