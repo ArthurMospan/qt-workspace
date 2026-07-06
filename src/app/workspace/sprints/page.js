@@ -13,7 +13,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { PageHeader, useConfirm, Dialog } from '@/components/ui';
+import { PageHeader, useConfirm, Dialog, Input, Textarea } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
@@ -73,41 +73,20 @@ function SprintEditModal({ sprint, onClose, onSave }) {
         <form id="sprint-edit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
-            <input 
-              type="text" 
-              required
-              value={name} 
-              onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
-            />
+            <Input type="text" required value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
             <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
-            <textarea 
-              value={goal} 
-              onChange={e => setGoal(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink resize-none"
-            />
+            <Textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2} />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
-              <input 
-                type="date" 
-                value={startDate} 
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
-              />
+              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div className="flex-1">
               <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
-              <input 
-                type="date" 
-                value={endDate} 
-                onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
-              />
+              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
           </div>
         </form>
@@ -147,43 +126,20 @@ function SprintCreateModal({ onClose, onSave }) {
         <form id="sprint-create-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
-            <input 
-              type="text" 
-              required
-              placeholder="Наприклад: Спринт 1"
-              value={name} 
-              onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
-            />
+            <Input type="text" required placeholder="Наприклад: Спринт 1" value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
             <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
-            <textarea 
-              value={goal} 
-              placeholder="Опишіть ціль цього спринта..."
-              onChange={e => setGoal(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink resize-none"
-            />
+            <Textarea value={goal} placeholder="Опишіть ціль цього спринта..." onChange={e => setGoal(e.target.value)} rows={2} />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
-              <input 
-                type="date" 
-                value={startDate} 
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
-              />
+              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div className="flex-1">
               <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
-              <input 
-                type="date" 
-                value={endDate} 
-                onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
-              />
+              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
           </div>
         </form>
