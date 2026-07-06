@@ -110,20 +110,20 @@ export default function TeamPage() {
     <div className="flex w-full h-full p-[12px] pt-[56px] gap-[12px] bg-white">
       {/* LEFT PANEL — mobile: full width, hidden when a member profile is open */}
       <div
-        className={`${mobilePane === 'detail' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] shrink-0 flex-col h-full bg-[#f4f4f5] rounded-[16px] overflow-hidden`}
+        className={`${mobilePane === 'detail' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] shrink-0 flex-col h-full bg-canvas rounded-[16px] overflow-hidden`}
       >
         {/* Header */}
         <div className="p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-[16px] font-bold text-[#1f1f1f]">Команда</h2>
-            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white px-2 py-0.5 rounded-full border border-[#e9e9e9]">
+            <h2 className="text-[16px] font-bold text-ink">Команда</h2>
+            <span className="text-[11px] font-bold text-muted bg-white px-2 py-0.5 rounded-full border border-line">
               {members.length}
             </span>
           </div>
             {isAdmin && (
               <button 
                 onClick={() => setShowInviteModal(true)} 
-                className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                 title="Запросити"
               >
                 <Plus size={16} />
@@ -138,7 +138,7 @@ export default function TeamPage() {
               <LoadingSpinner size="sm" />
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-[13px] text-[#9a9a9a]">
+            <div className="text-center py-8 text-[13px] text-muted">
               Нікого не знайдено
             </div>
           ) : (
@@ -159,15 +159,15 @@ export default function TeamPage() {
                   <div className="relative shrink-0">
                     <UserAvatar user={member} size={36} />
                     {isOnline && (
-                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-[#f4f4f5]" />
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-canvas" />
                     )}
                   </div>
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${isSelected ? 'text-[#1f1f1f]' : 'text-[#4a4a4a] group-hover:text-[#1f1f1f]'}`}>
+                    <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${isSelected ? 'text-ink' : 'text-[#4a4a4a] group-hover:text-ink'}`}>
                       {member.name || member.email}
                       {member.statusEmoji && <span>{member.statusEmoji}</span>}
                     </span>
-                    <span className="text-[11px] font-normal text-[#9a9a9a] truncate">
+                    <span className="text-[11px] font-normal text-muted truncate">
                       {positionName}
                     </span>
                   </div>
@@ -180,11 +180,11 @@ export default function TeamPage() {
 
       {/* RIGHT PANEL — mobile: shown only when a member is selected */}
       <div
-        className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full bg-[#f4f4f5] rounded-[16px] p-[12px] overflow-hidden`}
+        className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full bg-canvas rounded-[16px] p-[12px] overflow-hidden`}
       >
         <button
           onClick={requestPaneClose}
-          className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[10px] px-[2px] transition-colors"
+          className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors"
         >
           <ArrowLeft size={15} /> До списку команди
         </button>

@@ -16,8 +16,8 @@ export const Textarea = forwardRef(({
         rows={rows}
         placeholder={placeholder}
         className={`
-          w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
-          text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
+          w-full bg-canvas border border-transparent rounded-[10px]
+          text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] resize-none
           disabled:opacity-50 disabled:cursor-not-allowed
           px-[12px] py-[10px]

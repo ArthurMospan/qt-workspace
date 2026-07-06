@@ -14,7 +14,7 @@ export const TimePicker = forwardRef(({
     <div className={`relative w-full ${className}`}>
       <Clock
         size={14}
-        className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a] pointer-events-none"
+        className="absolute left-[12px] top-1/2 -translate-y-1/2 text-muted pointer-events-none"
       />
       <input
         ref={ref}
@@ -23,8 +23,8 @@ export const TimePicker = forwardRef(({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={`
-          h-[36px] w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
-          text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
+          h-[36px] w-full bg-canvas border border-transparent rounded-[10px]
+          text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] flex items-center
           pl-[36px] pr-[12px]
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}

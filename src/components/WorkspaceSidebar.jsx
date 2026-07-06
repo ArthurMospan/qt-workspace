@@ -61,7 +61,7 @@ export default function WorkspaceSidebar() {
   return (
     <aside
       style={{ width: collapsed ? 68 : 260 }}
-      className="h-full bg-[#1f1f1f] flex flex-col transition-[width] duration-200 shrink-0 overflow-hidden hide-scrollbar relative group"
+      className="h-full bg-ink flex flex-col transition-[width] duration-200 shrink-0 overflow-hidden hide-scrollbar relative group"
     >
       {/* Top Logo & Org Switcher */}
       <div className={`flex flex-col pt-[24px] pb-[16px] shrink-0 ${collapsed ? 'px-0 items-center' : 'px-[20px]'}`}>
@@ -78,7 +78,7 @@ export default function WorkspaceSidebar() {
                   </Link>
                   <div 
                     onClick={() => setShowOrgSwitcher(true)}
-                    className="flex items-center gap-[4px] text-[#9a9a9a] mt-[2px] cursor-pointer hover:text-white transition-colors w-fit"
+                    className="flex items-center gap-[4px] text-muted mt-[2px] cursor-pointer hover:text-white transition-colors w-fit"
                   >
                     <span className="text-[12px] font-medium truncate max-w-[120px]">{activeOrg?.name || 'Company name'}</span>
                     <ChevronsUpDown size={12} className="shrink-0" />
@@ -87,7 +87,7 @@ export default function WorkspaceSidebar() {
               </div>
               <button
                 onClick={() => setCollapsed(true)}
-                className="mt-1 text-[#9a9a9a] hover:text-white transition-colors shrink-0 ml-[8px]"
+                className="mt-1 text-muted hover:text-white transition-colors shrink-0 ml-[8px]"
                 title="Сховати панель"
               >
                 <PanelLeftClose size={20} />
@@ -98,7 +98,7 @@ export default function WorkspaceSidebar() {
               <Tooltip content="Розгорнути панель" position="right" className="flex items-center justify-center w-full h-full">
                 <button
                   onClick={() => setCollapsed(false)}
-                  className="text-[#9a9a9a] hover:text-white transition-colors"
+                  className="text-muted hover:text-white transition-colors"
                 >
                   <PanelLeftOpen size={20} />
                 </button>
@@ -115,7 +115,7 @@ export default function WorkspaceSidebar() {
           return (
             <Link key={href} href={href} title={collapsed ? undefined : label}
               className={`flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all ${
-                active ? 'bg-[#333333] text-white' : 'text-[#9a9a9a] hover:text-white hover:bg-white/[0.04]'
+                active ? 'bg-[#333333] text-white' : 'text-muted hover:text-white hover:bg-white/[0.04]'
               }`}>
               <Tooltip content={collapsed ? label : null} position="right" className="w-full h-full flex items-center">
                 <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
@@ -174,7 +174,7 @@ export default function WorkspaceSidebar() {
 
       {/* Global Timer Capsule */}
       {activeTimer && (
-        <div className={`shrink-0 border-t border-white/[0.06] bg-[#1f1f1f] ${collapsed ? 'p-[12px]' : 'p-[16px]'}`}>
+        <div className={`shrink-0 border-t border-white/[0.06] bg-ink ${collapsed ? 'p-[12px]' : 'p-[16px]'}`}>
           <div 
             onClick={() => {
               if (activeTimer.projectId) {

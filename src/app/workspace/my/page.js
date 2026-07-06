@@ -315,14 +315,14 @@ export default function MyTasksPage() {
 
                     if (isCollapsed) {
                       return (
-                        <div key={col.id} className="flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] rounded-[16px] overflow-hidden items-center py-4 cursor-pointer hover:bg-[#f0f0f2] transition-colors" style={{ height: 'calc(100dvh - 180px)' }} onClick={() => toggleColumnCollapse(col.id)}>
-                          <button className="text-[#9a9a9a] mb-4">
+                        <div key={col.id} className="flex flex-col w-[48px] shrink-0 bg-canvas rounded-[16px] overflow-hidden items-center py-4 cursor-pointer hover:bg-[#f0f0f2] transition-colors" style={{ height: 'calc(100dvh - 180px)' }} onClick={() => toggleColumnCollapse(col.id)}>
+                          <button className="text-muted mb-4">
                             <ChevronRight size={16} />
                           </button>
                           <div className="flex-1 flex flex-col items-center gap-4">
                             <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[2px] py-[6px] rounded-full text-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                               {colIssues.length}
                             </span>
                           </div>
@@ -331,19 +331,19 @@ export default function MyTasksPage() {
                     }
                     
                     return (
-                      <div key={col.id} className="flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-[#f4f4f5] hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100dvh - 180px)' }}>
+                      <div key={col.id} className="flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-[#f0f0f2] rounded-[16px] overflow-hidden transition-all duration-200" style={{ height: 'calc(100dvh - 180px)' }}>
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                           <div className="flex items-center gap-[6px]">
                             <button
                               onClick={() => toggleColumnCollapse(col.id)}
-                              className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                              className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
                               title="Згорнути колонку"
                             >
                               <ChevronLeft size={16} />
                             </button>
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{col.label}</h3>
+                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
                               {colIssues.length}
                             </span>
                           </div>
@@ -351,7 +351,7 @@ export default function MyTasksPage() {
                             {!col.isHiddenContainer && (
                               <button
                                 onClick={() => { setCreateTaskStatus(col.id); setShowCreateTaskModal(true); }}
-                                className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                                className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                                 title="Додати завдання"
                               >
                                 <Plus size={16} />
@@ -368,7 +368,7 @@ export default function MyTasksPage() {
                               className={`flex-1 overflow-y-auto p-[8px] flex flex-col gap-[8px] transition-colors custom-scrollbar ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
                             >
                               {colIssues.length === 0 ? (
-                                <div className="flex items-center justify-center h-20 text-[13px] text-[#cfcfcf]">
+                                <div className="flex items-center justify-center h-20 text-[13px] text-faint">
                                   Немає завдань
                                 </div>
                               ) : (
@@ -408,7 +408,7 @@ export default function MyTasksPage() {
               
               if (!hasAnyTasks) {
                 return (
-                  <div className="text-center py-12 text-[13px] text-[#cfcfcf] bg-[#f4f4f5] rounded-[16px]">
+                  <div className="text-center py-12 text-[13px] text-faint bg-canvas rounded-[16px]">
                     Задач не знайдено
                   </div>
                 );
@@ -425,10 +425,10 @@ export default function MyTasksPage() {
                 return (
                   <Surface key={status.id} variant="panel" padding="lg" className="w-full">
                     {/* Header */}
-                    <div className="flex items-center gap-2 pb-2 border-b border-[#e9e9e9] mb-4 select-none">
+                    <div className="flex items-center gap-2 pb-2 border-b border-line mb-4 select-none">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: status.color }} />
-                      <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{status.label}</h3>
-                      <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/80 px-[6px] py-[2px] rounded-full ml-1">
+                      <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{status.label}</h3>
+                      <span className="text-[11px] font-bold text-muted bg-white/80 px-[6px] py-[2px] rounded-full ml-1">
                         {statusIssues.length}
                       </span>
                     </div>
@@ -529,8 +529,8 @@ export default function MyTasksPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[480px] overflow-hidden flex flex-col max-h-[90vh]">
             
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9]">
-              <h2 className="text-[16px] font-bold text-[#1f1f1f]">Налаштування дошки</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line">
+              <h2 className="text-[16px] font-bold text-ink">Налаштування дошки</h2>
               <Button style="secondary" size="icon" icon={X} onClick={() => setShowSettingsModal(false)}>
                 Закрити
               </Button>
@@ -538,8 +538,8 @@ export default function MyTasksPage() {
 
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
               <div>
-                <h3 className="text-[14px] font-bold text-[#1f1f1f] mb-2">Видимість колонок</h3>
-                <p className="text-[13px] text-[#9a9a9a] mb-4">
+                <h3 className="text-[14px] font-bold text-ink mb-2">Видимість колонок</h3>
+                <p className="text-[13px] text-muted mb-4">
                   Оберіть, які колонки ви хочете приховати з вашої особистої дошки. 
                   Завдання з прихованих колонок будуть зібрані в одну загальну колонку праворуч.
                 </p>
@@ -552,16 +552,16 @@ export default function MyTasksPage() {
                         key={status.id} 
                         onClick={() => toggleHiddenColumn(status.id)}
                         className={`flex items-center justify-between border rounded-[12px] p-3 cursor-pointer transition-colors ${
-                          isHidden ? 'bg-[#f4f4f5] border-[#e9e9e9] opacity-60' : 'bg-white border-[#cfcfcf] hover:border-[#1f1f1f]'
+                          isHidden ? 'bg-canvas border-line opacity-60' : 'bg-white border-faint hover:border-ink'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full" style={{ background: status.color }} />
-                          <span className={`text-[14px] font-semibold ${isHidden ? 'text-[#9a9a9a]' : 'text-[#1f1f1f]'}`}>
+                          <span className={`text-[14px] font-semibold ${isHidden ? 'text-muted' : 'text-ink'}`}>
                             {status.label}
                           </span>
                         </div>
-                        <div className="text-[#9a9a9a]">
+                        <div className="text-muted">
                           {isHidden ? <EyeOff size={18} /> : <Eye size={18} className="text-[#10b981]" />}
                         </div>
                       </div>
@@ -571,7 +571,7 @@ export default function MyTasksPage() {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f4f4f5]">
+            <div className="px-6 py-4 border-t border-line flex justify-end gap-3 bg-canvas">
               <Button 
                 style="primary"
                 size="md"

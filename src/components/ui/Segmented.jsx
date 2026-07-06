@@ -19,8 +19,8 @@ export default function Segmented({ value, onChange, options = [], className = '
           onClick={() => onChange?.(o.value)}
           className={`px-[10px] h-[26px] text-[12px] font-semibold rounded-[7px] transition-all cursor-pointer ${
             value === o.value
-              ? 'bg-white text-[#1f1f1f] shadow-sm'
-              : 'text-[#9a9a9a] hover:text-[#1f1f1f]'
+              ? 'bg-white text-ink shadow-sm'
+              : 'text-muted hover:text-ink'
           }`}
         >
           {o.label}

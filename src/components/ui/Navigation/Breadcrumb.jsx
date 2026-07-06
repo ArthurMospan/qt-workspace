@@ -27,7 +27,7 @@ export function Breadcrumb({
           onChange={onSearchChange}
           onClear={onSearchClear}
           placeholder={searchPlaceholder}
-          className="border-[#1f1f1f] w-[300px]"
+          className="border-ink w-[300px]"
         />
       </div>
     );
@@ -43,13 +43,13 @@ export function Breadcrumb({
           return (
             <React.Fragment key={index}>
               {index > 0 && (
-                <ChevronRight size={13} className="text-[#cfcfcf] shrink-0" />
+                <ChevronRight size={13} className="text-faint shrink-0" />
               )}
               
               {showSearchButton && isLast && (
                 <button
                   onClick={onSearchToggle}
-                  className="p-[4px] text-[#9a9a9a] hover:bg-[#f4f4f5] hover:text-[#1f1f1f] rounded-[6px] transition-all shrink-0 mr-[2px]"
+                  className="p-[4px] text-muted hover:bg-canvas hover:text-ink rounded-[6px] transition-all shrink-0 mr-[2px]"
                   title="Пошук"
                 >
                   <Search size={14} />
@@ -60,14 +60,14 @@ export function Breadcrumb({
                 {isClickable ? (
                   <a
                     href={item.href}
-                    className="text-[#9a9a9a] hover:text-[#1f1f1f] font-normal truncate transition-colors max-w-[140px]"
+                    className="text-muted hover:text-ink font-normal truncate transition-colors max-w-[140px]"
                   >
                     {item.label}
                   </a>
                 ) : (
                   <span
                     className={`truncate max-w-[260px] ${
-                      isLast ? 'font-medium text-[#1f1f1f]' : 'text-[#9a9a9a] font-normal'
+                      isLast ? 'font-medium text-ink' : 'text-muted font-normal'
                     }`}
                   >
                     {item.label}

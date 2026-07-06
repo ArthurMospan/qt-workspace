@@ -66,7 +66,7 @@ function EditProjectModal({ project, onClose }) {
     >
       <div className="flex flex-col gap-[16px]">
         <div>
-          <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
+          <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
           <Input
             autoFocus
             value={name}
@@ -75,7 +75,7 @@ function EditProjectModal({ project, onClose }) {
           />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
+          <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Опис</label>
           <Textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
@@ -143,7 +143,7 @@ function AddMemberModal({ project, allMembers, onClose }) {
         />
         <div className="flex-1 overflow-y-auto max-h-[300px] flex flex-col gap-[4px] -mx-1 px-1">
           {filtered.length === 0 && (
-            <p className="text-center text-[13px] text-[#9a9a9a] py-8">Нікого не знайдено</p>
+            <p className="text-center text-[13px] text-muted py-8">Нікого не знайдено</p>
           )}
           {filtered.map(m => {
             const uid = m.id || m.uid;
@@ -153,16 +153,16 @@ function AddMemberModal({ project, allMembers, onClose }) {
                 key={uid}
                 onClick={() => toggleMember(uid)}
                 className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[12px] transition-colors text-left ${
-                  isIn ? 'bg-[#eef2ff]' : 'hover:bg-[#f4f4f5]'
+                  isIn ? 'bg-[#eef2ff]' : 'hover:bg-canvas'
                 }`}
               >
                 <UserAvatar user={m} size={36} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#1f1f1f] truncate">{m.name || m.email}</p>
-                  <p className="text-[12px] text-[#9a9a9a] truncate">{m.email}</p>
+                  <p className="text-[14px] font-semibold text-ink truncate">{m.name || m.email}</p>
+                  <p className="text-[12px] text-muted truncate">{m.email}</p>
                 </div>
                 <div className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center shrink-0 ${
-                  isIn ? 'bg-[#6366f1] border-[#6366f1]' : 'border-[#e9e9e9]'
+                  isIn ? 'bg-[#6366f1] border-[#6366f1]' : 'border-line'
                 }`}>
                   {isIn && <Check size={11} strokeWidth={3} className="text-white" />}
                 </div>
@@ -239,8 +239,8 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
           <div className="flex -space-x-[10px]">
             {teamCount === 0 && (
-              <div className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-[#f4f4f5]">
-                <Users size={13} className="text-[#9a9a9a]" />
+              <div className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                <Users size={13} className="text-muted" />
               </div>
             )}
             {(project.team || []).slice(0, 4).map(uid => {
@@ -248,13 +248,13 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
               return m ? (
                 <UserAvatar key={uid} user={m} size={30} className="border-2 border-white shadow-none" />
               ) : (
-                <div key={uid} className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-[#f4f4f5]">
-                  <User size={13} className="text-[#9a9a9a]" />
+                <div key={uid} className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                  <User size={13} className="text-muted" />
                 </div>
               );
             })}
             {teamCount > 4 && (
-              <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-[#9a9a9a] border-2 border-white">
+              <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">
                 +{teamCount - 4}
               </div>
             )}
@@ -277,7 +277,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
             <ContextMenu
               onOpenChange={setMenuOpen}
               trigger={
-                <button className="p-[7px] text-[#9a9a9a] hover:bg-white hover:text-[#1f1f1f] rounded-[8px] transition-all">
+                <button className="p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all">
                   <MoreVertical size={16} />
                 </button>
               }
@@ -308,18 +308,18 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 
         {/* Title + description */}
         <div className="flex flex-col gap-[8px] z-10">
-          <h2 className={`font-bold text-[#1f1f1f] leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap ${
+          <h2 className={`font-bold text-ink leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap ${
             isLarge ? 'text-[28px]' : 'text-[18px]'
           }`}>
             <span>{project.name}</span>
             {unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center bg-[#1f1f1f] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] h-[20px]" title="Непрочитані повідомлення">
+              <span className="inline-flex items-center justify-center bg-ink text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] h-[20px]" title="Непрочитані повідомлення">
                 {unreadCount}
               </span>
             )}
           </h2>
           {project.description && (
-            <p className={`text-[#9a9a9a] font-medium leading-[1.5] line-clamp-2 ${
+            <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
               isLarge ? 'text-[14px] max-w-[560px]' : 'text-[13px]'
             }`}>
               {project.description}
@@ -456,7 +456,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
               className="w-7 h-7 rounded-full object-cover shrink-0" 
             />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-[#1f1f1f]/5 text-[#1f1f1f] font-bold flex items-center justify-center text-[9px] shrink-0 uppercase">
+            <div className="w-7 h-7 rounded-full bg-ink/5 text-ink font-bold flex items-center justify-center text-[9px] shrink-0 uppercase">
               {stats.lastAction.actor ? stats.lastAction.actor.slice(0, 2) : 'АМ'}
             </div>
           )}
@@ -464,14 +464,14 @@ function ProjectStatsSection({ project, isLarge, members }) {
           {/* Activity Text details */}
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-bold text-[#1f1f1f]">{stats.lastAction.actor}</span>
+              <span className="font-bold text-ink">{stats.lastAction.actor}</span>
               {stats.lastAction.time && (
-                <span className="text-[10px] text-[#9a9a9a] shrink-0 font-medium">{timeAgoString(stats.lastAction.time)}</span>
+                <span className="text-[10px] text-muted shrink-0 font-medium">{timeAgoString(stats.lastAction.time)}</span>
               )}
             </div>
-            <p className="text-[#9a9a9a] leading-tight line-clamp-1">
+            <p className="text-muted leading-tight line-clamp-1">
               оновив завдання{' '}
-              <span className="text-[#1f1f1f] font-semibold underline">{stats.lastAction.issueKey}: {stats.lastAction.title}</span>
+              <span className="text-ink font-semibold underline">{stats.lastAction.issueKey}: {stats.lastAction.title}</span>
             </p>
           </div>
         </div>
@@ -481,18 +481,18 @@ function ProjectStatsSection({ project, isLarge, members }) {
         {/* Shaded stats block with soft custom dividers */}
         <div className="flex items-center justify-between bg-[#fafafa] rounded-[10px] py-[10px]">
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.total}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">завдань</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.total}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">завдань</span>
           </div>
-          <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
+          <div className="w-[1px] h-[16px] bg-line" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.inProgress}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">в роботі</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.inProgress}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">в роботі</span>
           </div>
-          <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
+          <div className="w-[1px] h-[16px] bg-line" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{stats.comments}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">повідомлень</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.comments}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">повідомлень</span>
           </div>
         </div>
       </div>
@@ -575,8 +575,8 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
           <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-[#6366f1]" />
           </div>
-          <h3 className="text-[17px] font-bold text-[#1f1f1f] mb-2">Ліміт Free плану</h3>
-          <p className="text-[13px] text-[#9a9a9a] leading-relaxed">
+          <h3 className="text-[17px] font-bold text-ink mb-2">Ліміт Free плану</h3>
+          <p className="text-[13px] text-muted leading-relaxed">
             На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
             Перейдіть на Pro для необмеженої кількості проєктів.
           </p>
@@ -597,24 +597,24 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
             </div>
           )}
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
             <input
               autoFocus
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
               placeholder="Наприклад: Редизайн сайту"
-              className="w-full text-[15px] font-semibold bg-[#f4f4f5] rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors"
+              className="w-full text-[15px] font-semibold bg-canvas rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-ink transition-colors"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Опис</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Короткий опис проєкту..."
               rows={3}
-              className="w-full text-[14px] bg-[#f4f4f5] rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors resize-none"
+              className="w-full text-[14px] bg-canvas rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-ink transition-colors resize-none"
             />
           </div>
         </div>

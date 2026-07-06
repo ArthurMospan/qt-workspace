@@ -72,41 +72,41 @@ function SprintEditModal({ sprint, onClose, onSave }) {
     >
         <form id="sprint-edit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Назва спринта</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
             <input 
               type="text" 
               required
               value={name} 
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Ціль спринта</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
             <textarea 
               value={goal} 
               onChange={e => setGoal(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f] resize-none"
+              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink resize-none"
             />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата початку</label>
+              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
               <input 
                 type="date" 
                 value={startDate} 
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
               />
             </div>
             <div className="flex-1">
-              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата завершення</label>
+              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
               <input 
                 type="date" 
                 value={endDate} 
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
               />
             </div>
           </div>
@@ -146,43 +146,43 @@ function SprintCreateModal({ onClose, onSave }) {
     >
         <form id="sprint-create-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Назва спринта</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
             <input 
               type="text" 
               required
               placeholder="Наприклад: Спринт 1"
               value={name} 
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Ціль спринта</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
             <textarea 
               value={goal} 
               placeholder="Опишіть ціль цього спринта..."
               onChange={e => setGoal(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f] resize-none"
+              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink resize-none"
             />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата початку</label>
+              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
               <input 
                 type="date" 
                 value={startDate} 
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
               />
             </div>
             <div className="flex-1">
-              <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Дата завершення</label>
+              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
               <input 
                 type="date" 
                 value={endDate} 
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[13px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+                className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[13px] font-medium text-ink focus:outline-none focus:border-ink"
               />
             </div>
           </div>
@@ -214,16 +214,16 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
         </>
       }
     >
-        <p className="text-[13px] text-[#9a9a9a] mb-4">
-          У цьому спринті залишилось <strong className="text-[#1f1f1f]">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
+        <p className="text-[13px] text-muted mb-4">
+          У цьому спринті залишилось <strong className="text-ink">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
         </p>
         <form id="sprint-complete-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Перенести завдання в</label>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Перенести завдання в</label>
             <select 
               value={moveToSprintId} 
               onChange={e => setMoveToSprintId(e.target.value)}
-              className="w-full px-3 py-2 bg-[#f4f4f5] border border-[#efefef] rounded-xl text-[14px] font-medium text-[#1f1f1f] focus:outline-none focus:border-[#1f1f1f]"
+              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
             >
               <option value="backlog">Беклог</option>
               {upcomingSprints.map(s => (
@@ -432,7 +432,7 @@ export default function GlobalSprintsPage() {
               );
             })}
             {issueList.length === 0 && (
-              <div className="py-8 text-center text-[12px] text-[#cfcfcf]">
+              <div className="py-8 text-center text-[12px] text-faint">
                 Задач не знайдено в цьому списку
               </div>
             )}
@@ -518,7 +518,7 @@ export default function GlobalSprintsPage() {
       {/* ── Content area ── */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center bg-transparent">
-          <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+          <div className="w-[28px] h-[28px] border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
         </div>
       ) : (
         /* PLANNING TAB */
@@ -534,17 +534,17 @@ export default function GlobalSprintsPage() {
                   const isExpanded = isSectionExpanded(sprint.id, sprint.status !== 'completed');
 
                   return (
-                    <div key={sprint.id} className="bg-[#f4f4f5] rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
+                    <div key={sprint.id} className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
                       <div className="px-5 py-4 flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 cursor-pointer" onClick={() => toggleSection(sprint.id)}>
-                          {isExpanded ? <ChevronDown size={16} className="text-[#9a9a9a]" /> : <ChevronRight size={16} className="text-[#9a9a9a]" />}
-                          <h3 className="text-[14px] font-bold text-[#1f1f1f] truncate">{sprint.name}</h3>
+                          {isExpanded ? <ChevronDown size={16} className="text-muted" /> : <ChevronRight size={16} className="text-muted" />}
+                          <h3 className="text-[14px] font-bold text-ink truncate">{sprint.name}</h3>
                           {sprint.status === 'active' && <Badge label="Активний" color="#10b981" />}
                           {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
                           {sprint.status === 'completed' && <Badge label="Завершено" color="#cbd5e1" />}
-                          <span className="text-[11px] text-[#9a9a9a] shrink-0">{sprintIssues.length} завдань</span>
+                          <span className="text-[11px] text-muted shrink-0">{sprintIssues.length} завдань</span>
                           {sprint.startDate && (
-                            <span className="text-[11px] text-[#9a9a9a] hidden sm:inline ml-2">
+                            <span className="text-[11px] text-muted hidden sm:inline ml-2">
                               {formatSprintDates(sprint.startDate, sprint.endDate)}
                             </span>
                           )}
@@ -598,7 +598,7 @@ export default function GlobalSprintsPage() {
                       </div>
 
                       {isExpanded && sprint.goal && (
-                        <p className="px-5 pb-2 text-[12px] text-[#9a9a9a] italic">Ціль: {sprint.goal}</p>
+                        <p className="px-5 pb-2 text-[12px] text-muted italic">Ціль: {sprint.goal}</p>
                       )}
 
                       {isExpanded && (
@@ -608,7 +608,7 @@ export default function GlobalSprintsPage() {
                   );
                 })}
                 {sprints.length === 0 && (
-                  <div className="py-12 text-center text-[13px] text-[#cfcfcf] bg-[#f4f4f5] rounded-[16px]">
+                  <div className="py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]">
                     Немає запланованих або активних спринтів. Створіть новий спринт, щоб розпочати планування.
                   </div>
                 )}
@@ -618,12 +618,12 @@ export default function GlobalSprintsPage() {
               <Surface variant="panel" padding="none" className="w-full max-h-[60vh] lg:max-h-none lg:w-[28%] lg:min-w-[280px] overflow-hidden flex flex-col min-h-0">
                 <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>
-                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} завдань</span>
+                    <h3 className="text-[14px] font-bold text-ink">Backlog</h3>
+                    <span className="text-[11px] font-bold text-muted bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} завдань</span>
                   </div>
                   <button
                     onClick={() => setShowCreateTaskModal(true)}
-                    className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                    className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                     title="Додати завдання в беклог"
                   >
                     <Plus size={16} />

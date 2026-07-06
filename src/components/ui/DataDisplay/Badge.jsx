@@ -7,7 +7,7 @@ export default function Badge({
   className = '',
 }) {
   const variants = {
-    default: 'bg-[#1f1f1f]/5 text-[#404040]',
+    default: 'bg-ink/5 text-[#404040]',
     success: 'bg-[#10b981]/8 text-[#047857]',
     warning: 'bg-[#fbbf24]/8 text-[#b45309]',
     danger: 'bg-[#ef4444]/8 text-[#b91c1c]',

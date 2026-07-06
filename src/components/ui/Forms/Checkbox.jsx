@@ -36,9 +36,9 @@ export default function Checkbox({
           onClick={() => !disabled && onChange?.(!checked)}
           className={`
             ${box} flex items-center justify-center shrink-0
-            bg-white border-2 border-[#e9e9e9] transition-all cursor-pointer
-            peer-checked:bg-[#1f1f1f] peer-checked:border-[#1f1f1f]
-            peer-focus-visible:ring-2 peer-focus-visible:ring-[#1f1f1f]/20 peer-focus-visible:ring-offset-0
+            bg-white border-2 border-line transition-all cursor-pointer
+            peer-checked:bg-ink peer-checked:border-ink
+            peer-focus-visible:ring-2 peer-focus-visible:ring-ink/20 peer-focus-visible:ring-offset-0
             hover:border-[#d1d5db]
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${error ? 'border-red-500' : ''}
@@ -51,7 +51,7 @@ export default function Checkbox({
       {label && (
         <label
           htmlFor={checkboxId}
-          className={`text-[13px] font-semibold text-[#1f1f1f] select-none cursor-pointer ${
+          className={`text-[13px] font-semibold text-ink select-none cursor-pointer ${
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >

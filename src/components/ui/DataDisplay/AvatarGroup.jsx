@@ -27,7 +27,7 @@ export default function AvatarGroup({ avatars = [], maxDisplay = 4, size = 'md',
             minWidth: avatarSize,
             fontSize: Math.max(8, avatarSize * 0.35)
           }}
-          className="rounded-full bg-[#f5f5f5] text-[#9a9a9a] border border-[#efefef] ring-2 ring-white flex items-center justify-center font-bold relative z-0"
+          className="rounded-full bg-[#f5f5f5] text-muted border border-[#efefef] ring-2 ring-white flex items-center justify-center font-bold relative z-0"
         >
           +{remaining}
         </div>

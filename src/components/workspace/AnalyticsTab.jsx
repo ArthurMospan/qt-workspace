@@ -27,7 +27,7 @@ function fmtDate(ts) {
 }
 
 function SectionTitle({ children }) {
-  return <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">{children}</h3>;
+  return <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3">{children}</h3>;
 }
 
 export default function AnalyticsTab({ issues, members, project, projectId }) {
@@ -164,34 +164,34 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Бюджет часу</SectionTitle>
               <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
                 stats.burnPct >= 90 ? 'bg-red-50 text-red-600'
                 : stats.burnPct >= 70 ? 'bg-yellow-50 text-yellow-600'
-                : 'bg-[#e9e9e9] text-[#1f1f1f]'
+                : 'bg-line text-ink'
               }`}>
                 {stats.burnPct}% використано
               </span>
             </div>
             <div className="h-[8px] bg-white rounded-full overflow-hidden mb-3">
               <div className={`h-full rounded-full transition-all ${
-                stats.burnPct >= 90 ? 'bg-red-500' : stats.burnPct >= 70 ? 'bg-yellow-400' : 'bg-[#1f1f1f]'
+                stats.burnPct >= 90 ? 'bg-red-500' : stats.burnPct >= 70 ? 'bg-yellow-400' : 'bg-ink'
               }`} style={{ width: `${stats.burnPct}%` }} />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Витрачено</p>
-                <p className="text-[18px] font-bold text-[#1f1f1f]">{stats.spentHours}г</p>
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Витрачено</p>
+                <p className="text-[18px] font-bold text-ink">{stats.spentHours}г</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Залишилось</p>
-                <p className="text-[18px] font-bold text-[#1f1f1f]">{stats.remainH}г</p>
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Залишилось</p>
+                <p className="text-[18px] font-bold text-ink">{stats.remainH}г</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Бюджет</p>
-                <p className="text-[18px] font-bold text-[#1f1f1f]">{project?.totalBudgetHours}г</p>
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Бюджет</p>
+                <p className="text-[18px] font-bold text-ink">{project?.totalBudgetHours}г</p>
               </div>
             </div>
           </div>
@@ -199,29 +199,29 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <SectionTitle>Завдання по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
-              <p className="text-[12px] text-[#cfcfcf] py-4">Задач немає</p>
+              <p className="text-[12px] text-faint py-4">Задач немає</p>
             ) : (
               <div className="flex flex-col gap-[10px]">
                 {stats.byStatus.map(({ col, count, label, color }) => (
                   <div key={col} className="flex items-center gap-3">
-                    <span className="w-[100px] text-[11px] font-medium text-[#9a9a9a] shrink-0 truncate">{label}</span>
+                    <span className="w-[100px] text-[11px] font-medium text-muted shrink-0 truncate">{label}</span>
                     <div className="flex-1 h-[6px] bg-white rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${(count / maxStatus) * 100}%`, background: color }} />
                     </div>
-                    <span className="text-[12px] font-bold text-[#1f1f1f] w-[24px] text-right shrink-0">{count}</span>
+                    <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
-              <p className="text-[12px] text-[#cfcfcf] py-4">Немає відкритих завдань</p>
+              <p className="text-[12px] text-faint py-4">Немає відкритих завдань</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {stats.byPriority.map(({ p, count }) => {
@@ -236,7 +236,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                       <div className="flex-1 h-[6px] bg-white rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: colors[p] }} />
                       </div>
-                      <span className="text-[12px] font-bold text-[#1f1f1f] w-[24px] text-right shrink-0">{count}</span>
+                      <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
                     </div>
                   );
                 })}
@@ -247,7 +247,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="text-red-500" />
               <SectionTitle>Прострочені завдання ({stats.overdue.length})</SectionTitle>
@@ -260,13 +260,13 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                 return (
                   <div key={issue.id} className="flex items-center gap-4 py-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#1f1f1f] truncate">{issue.title}</p>
+                      <p className="text-[13px] font-medium text-ink truncate">{issue.title}</p>
                       <div className="flex items-center gap-2 mt-[2px]">
                         <span className="text-[10px] font-semibold px-[6px] py-[1px] rounded-full"
                           style={{ background: COL_COLOR[issue.columnId] + '18', color: COL_COLOR[issue.columnId] }}>
                           {COL_LABEL[issue.columnId]}
                         </span>
-                        <span className="text-[10px] text-[#9a9a9a]">{issue.issueKey}</span>
+                        <span className="text-[10px] text-muted">{issue.issueKey}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -274,7 +274,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[11px] font-bold text-red-500">+{daysOver}д</p>
-                      <p className="text-[10px] text-[#9a9a9a]">{fmtDate(issue.dueDate)}</p>
+                      <p className="text-[10px] text-muted">{fmtDate(issue.dueDate)}</p>
                     </div>
                   </div>
                 );
@@ -285,14 +285,14 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-white">
                     {['Учасник','Всього','Виконано','Відкрито','Прострочено','Час'].map(h => (
-                      <th key={h} className="pb-3 text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide pr-6 last:pr-0">{h}</th>
+                      <th key={h} className="pb-3 text-[10px] font-bold text-muted uppercase tracking-wide pr-6 last:pr-0">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -302,19 +302,19 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                       <td className="py-3 pr-6">
                         <div className="flex items-center gap-2">
                           <UserAvatar user={m} size={26} />
-                          <span className="text-[12px] font-medium text-[#1f1f1f]">{m.name || m.email}</span>
+                          <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
                         </div>
                       </td>
-                      <td className="py-3 pr-6 text-[13px] font-semibold text-[#1f1f1f]">{total}</td>
+                      <td className="py-3 pr-6 text-[13px] font-semibold text-ink">{total}</td>
                       <td className="py-3 pr-6"><span className="text-[12px] font-semibold text-[#10b981]">{done}</span></td>
                       <td className="py-3 pr-6"><span className="text-[12px] font-semibold text-[#0891b2]">{open}</span></td>
                       <td className="py-3 pr-6">
                         {od > 0
                           ? <span className="text-[12px] font-semibold text-red-500">{od}</span>
-                          : <span className="text-[12px] text-[#cfcfcf]">—</span>
+                          : <span className="text-[12px] text-faint">—</span>
                         }
                       </td>
-                      <td className="py-3 text-[12px] text-[#9a9a9a]">{minutes > 0 ? fmtH(minutes) : '—'}</td>
+                      <td className="py-3 text-[12px] text-muted">{minutes > 0 ? fmtH(minutes) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -325,7 +325,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
         {/* ── Warnings ─────────────────────────────────────────────── */}
         {(stats.noAssignee.length > 0 || stats.unestimated.length > 0 || stats.blocked > 0) && (
-          <div className="bg-[#f4f4f5] rounded-[24px] p-5">
+          <div className="bg-canvas rounded-[24px] p-5">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blocked > 0 && (
@@ -359,8 +359,8 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
         {/* ── Empty state ───────────────────────────────────────────── */}
         {stats.total === 0 && (
           <div className="flex flex-col items-center py-16 text-center">
-            <BarChart2 size={36} className="text-[#e9e9e9] mb-3" />
-            <p className="text-[14px] font-semibold text-[#cfcfcf] mb-1">Даних немає</p>
+            <BarChart2 size={36} className="text-line mb-3" />
+            <p className="text-[14px] font-semibold text-faint mb-1">Даних немає</p>
             <p className="text-[12px] text-[#e0e0e0]">Аналітика з’явиться після створення завдань</p>
           </div>
         )}

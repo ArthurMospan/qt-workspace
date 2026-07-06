@@ -105,8 +105,8 @@ function Row({ label, desc, children, danger = false }) {
   return (
     <div className="flex items-center justify-between gap-6 py-[12px]">
       <div className="min-w-0 flex-1">
-        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{label}</p>
-        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-[#9a9a9a]'}`}>{desc}</p>}
+        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-ink'}`}>{label}</p>
+        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-muted'}`}>{desc}</p>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -118,8 +118,8 @@ function Section({ title, desc, rightAction, children }) {
     <div className="flex flex-col">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{title}</h2>
-          {desc && <p className="text-[13px] text-[#9a9a9a] mt-[4px] leading-relaxed">{desc}</p>}
+          <h2 className="text-[20px] font-bold text-ink tracking-tight">{title}</h2>
+          {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
         </div>
         {rightAction && <div className="shrink-0 flex items-center gap-2">{rightAction}</div>}
       </div>
@@ -171,10 +171,10 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
     <div 
       ref={provided?.innerRef}
       {...provided?.draggableProps}
-      className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group bg-white"
+      className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     >
       {provided?.dragHandleProps && (
-        <div {...provided.dragHandleProps} className="shrink-0 text-[#cfcfcf] hover:text-[#1f1f1f] cursor-grab active:cursor-grabbing">
+        <div {...provided.dragHandleProps} className="shrink-0 text-faint hover:text-ink cursor-grab active:cursor-grabbing">
           <GripVertical size={14} />
         </div>
       )}
@@ -182,11 +182,11 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
       <div className="relative shrink-0">
         <button
           onClick={() => setShowPalette(v => !v)}
-          className="w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-[#1f1f1f]/20 transition-all"
+          className="w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all"
           style={{ background: color }}
         />
         {showPalette && (
-          <div className="absolute left-0 top-[22px] z-20 bg-white border border-[#e9e9e9] rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
+          <div className="absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
             {COLOR_PALETTE.map(c => (
               <button 
                 key={c} 
@@ -218,7 +218,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           />
         </div>
       ) : (
-        <span className="flex-1 text-[13px] font-semibold text-[#1f1f1f]">{item.label}</span>
+        <span className="flex-1 text-[13px] font-semibold text-ink">{item.label}</span>
       )}
 
       {/* Badge preview */}
@@ -289,7 +289,7 @@ function PositionItem({ item, onSave, onDelete }) {
   };
 
   return (
-    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-[#f4f4f5] transition-colors group">
+    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group">
       {editing ? (
         <div className="flex flex-1 items-center gap-3">
           <Input
@@ -300,7 +300,7 @@ function PositionItem({ item, onSave, onDelete }) {
             className="h-[28px] text-[12px] flex-1"
           />
           <div className="w-[120px] flex items-center gap-1">
-            <span className="text-[12px] text-[#9a9a9a]">$</span>
+            <span className="text-[12px] text-muted">$</span>
             <Input
               type="number"
               value={hourlyRate}
@@ -308,13 +308,13 @@ function PositionItem({ item, onSave, onDelete }) {
               placeholder="Ставка"
               className="h-[28px] text-[12px] w-[50px] text-right"
             />
-            <span className="text-[11px] text-[#9a9a9a]">/год</span>
+            <span className="text-[11px] text-muted">/год</span>
           </div>
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-between">
-          <span className="text-[13px] font-semibold text-[#1f1f1f]">{item.label}</span>
-          <span className="text-[12px] font-medium text-[#9a9a9a]">${item.hourlyRate || 0}/год</span>
+          <span className="text-[13px] font-semibold text-ink">{item.label}</span>
+          <span className="text-[12px] font-medium text-muted">${item.hourlyRate || 0}/год</span>
         </div>
       )}
 
@@ -924,7 +924,7 @@ export default function SettingsPage() {
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-[200px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
-              <span className="text-[13px] text-[#9a9a9a]">{currentUser?.email}</span>
+              <span className="text-[13px] text-muted">{currentUser?.email}</span>
             </Row>
             <Row label="Роль">
               <span className="text-[11px] font-semibold px-[8px] py-[3px] bg-[#f0f0f0] text-[#4a4a4a] rounded-full">
@@ -943,9 +943,9 @@ export default function SettingsPage() {
             <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
               <Input value={skillsInput} onChange={e => setSkillsInput(e.target.value)} placeholder="React, Node.js, Design" className="w-[300px]" />
             </Row>
-            <div className="flex flex-col gap-2 py-[12px] border-t border-[#f4f4f5] mt-2">
-              <label className="text-[13px] font-medium text-[#1f1f1f]">Про себе</label>
-              <p className="text-[12px] text-[#9a9a9a] -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
+            <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
+              <label className="text-[13px] font-medium text-ink">Про себе</label>
+              <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
               <Textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
@@ -962,7 +962,7 @@ export default function SettingsPage() {
         <Section title="Сповіщення" desc="Канали доставки та події, про які тебе повідомляти" rightAction={saveButton}>
           {/* Канали доставки */}
           <Card variant="white" padding="lg" className="!border-none">
-            <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2">Канали</p>
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Канали</p>
             <Row
               label="Push у браузері"
               desc={
@@ -976,7 +976,7 @@ export default function SettingsPage() {
                   <Check size={13} /> Увімкнено
                 </span>
               ) : pushPerm === 'denied' ? (
-                <span className="text-[12px] font-medium text-[#9a9a9a]">Заблоковано</span>
+                <span className="text-[12px] font-medium text-muted">Заблоковано</span>
               ) : (
                 <Button
                   onClick={async () => {
@@ -1008,7 +1008,7 @@ export default function SettingsPage() {
 
           {/* Події */}
           <Card variant="white" padding="lg" className="!border-none">
-            <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2">Події</p>
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Події</p>
             {[
               { key: 'assigned',      label: 'Завдання призначено мені', desc: 'Хтось призначив завдання на тебе або створив нове одразу з тобою' },
               { key: 'commented',     label: 'Новий коментар',           desc: 'У завданнях, де ти виконавець або автор' },
@@ -1101,7 +1101,7 @@ export default function SettingsPage() {
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
-                <code className="text-[12px] bg-[#f4f4f5] border border-[#e9e9e9] px-2 py-1 rounded-[6px] text-[#9a9a9a] font-mono">
+                <code className="text-[12px] bg-canvas border border-line px-2 py-1 rounded-[6px] text-muted font-mono">
                   {activeOrgId || 'quickteam'}
                 </code>
                 <Button
@@ -1154,8 +1154,8 @@ export default function SettingsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4 mb-1">
                     <div>
-                      <p className="text-[14px] font-semibold text-[#1f1f1f]">QuickTeam+</p>
-                      <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
+                      <p className="text-[14px] font-semibold text-ink">QuickTeam+</p>
+                      <p className="text-[12px] text-muted mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
                     </div>
                     <div className="shrink-0">
                       <ToggleSwitch
@@ -1172,8 +1172,8 @@ export default function SettingsPage() {
                         Підключено
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
-                        <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-muted">
+                        <span className="w-[5px] h-[5px] rounded-full bg-faint" />
                         Вимкнено
                       </span>
                     )}
@@ -1207,10 +1207,10 @@ export default function SettingsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4 mb-1">
                     <div>
-                      <p className="text-[14px] font-semibold text-[#1f1f1f] flex items-center gap-2">
+                      <p className="text-[14px] font-semibold text-ink flex items-center gap-2">
                         BuggyBag Portal
                       </p>
-                      <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
+                      <p className="text-[12px] text-muted mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
                     </div>
                     <div className="shrink-0">
                       <ToggleSwitch
@@ -1229,8 +1229,8 @@ export default function SettingsPage() {
                           Підключено
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-[#9a9a9a]">
-                          <span className="w-[5px] h-[5px] rounded-full bg-[#cfcfcf]" />
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-muted">
+                          <span className="w-[5px] h-[5px] rounded-full bg-faint" />
                           Вимкнено
                         </span>
                       )}
@@ -1246,19 +1246,19 @@ export default function SettingsPage() {
                     </div>
                     
                     {buggyBagEnabled && (
-                      <div className="bg-[#fcfcfc] border border-[#e9e9e9] rounded-[8px] p-4 mt-1">
-                        <p className="text-[12px] font-semibold text-[#1f1f1f] mb-3">Вставте ці дані в налаштуваннях BuggyBag:</p>
+                      <div className="bg-[#fcfcfc] border border-line rounded-[8px] p-4 mt-1">
+                        <p className="text-[12px] font-semibold text-ink mb-3">Вставте ці дані в налаштуваннях BuggyBag:</p>
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center mb-3">
-                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">API Token</span>
+                          <span className="text-[11px] text-muted uppercase tracking-wider font-bold">API Token</span>
                           <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
+                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
                             <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
                           </div>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
-                          <span className="text-[11px] text-[#9a9a9a] uppercase tracking-wider font-bold">Org ID</span>
+                          <span className="text-[11px] text-muted uppercase tracking-wider font-bold">Org ID</span>
                           <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-[#e9e9e9] px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
+                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
                             <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
                           </div>
                         </div>
@@ -1274,7 +1274,7 @@ export default function SettingsPage() {
                       'Коментарі клієнтів',
                       'Статуси завдань',
                     ].map(item => (
-                      <div key={item} className="flex items-center gap-2 text-[12px] text-[#cfcfcf]">
+                      <div key={item} className="flex items-center gap-2 text-[12px] text-faint">
                         <span className="w-[4px] h-[4px] rounded-full shrink-0 bg-[#e0e0e0]" />
                         {item}
                       </div>
@@ -1296,28 +1296,28 @@ export default function SettingsPage() {
         return (
           <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
             <Card className={`!border-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
-              <div className={`bg-gradient-to-r ${isPro ? 'from-[#fefce8] to-[#fffbeb]' : 'from-[#eef2ff] to-white'} px-6 py-6 border-b border-[#e9e9e9]`}>
+              <div className={`bg-gradient-to-r ${isPro ? 'from-[#fefce8] to-[#fffbeb]' : 'from-[#eef2ff] to-white'} px-6 py-6 border-b border-line`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className={`inline-block px-[10px] py-[3px] ${isPro ? 'bg-[#eab308]' : 'bg-[#6366f1]'} text-white text-[10px] font-bold uppercase tracking-wider rounded-full mb-3 shadow-sm`}>
                       {isPro ? 'PRO Plan' : 'Free Plan'}
                     </span>
-                    <h3 className="text-[20px] font-bold text-[#1f1f1f] mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
-                    <p className="text-[13px] text-[#9a9a9a]">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>
+                    <h3 className="text-[20px] font-bold text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
+                    <p className="text-[13px] text-muted">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[32px] font-black text-[#1f1f1f] leading-none mb-1">{isPro ? '$15' : '$0'}<span className="text-[14px] text-[#cfcfcf] font-medium">/міс</span></p>
+                    <p className="text-[32px] font-black text-ink leading-none mb-1">{isPro ? '$15' : '$0'}<span className="text-[14px] text-faint font-medium">/міс</span></p>
                   </div>
                 </div>
               </div>
               
               <div className="px-6 py-5">
-                <p className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">Ліміти плану</p>
+                <p className="text-[12px] font-bold text-muted uppercase tracking-wider mb-4">Ліміти плану</p>
                 <div className="flex flex-col gap-4">
                   <div>
                     <div className="flex items-center justify-between text-[13px] font-medium mb-2">
                       <span className="text-[#4a4a4a]">Учасники команди</span>
-                      <span className="text-[#1f1f1f]">{members.length} / Необмежено</span>
+                      <span className="text-ink">{members.length} / Необмежено</span>
                     </div>
                     <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
                       <div className="h-full bg-[#10b981] rounded-full" style={{ width: '15%' }} />
@@ -1326,7 +1326,7 @@ export default function SettingsPage() {
                   <div>
                     <div className="flex items-center justify-between text-[13px] font-medium mb-2">
                       <span className="text-[#4a4a4a]">Активні проєкти</span>
-                      <span className="text-[#1f1f1f]">{projectsCount} / {isPro ? 'Необмежено' : projectLimit}</span>
+                      <span className="text-ink">{projectsCount} / {isPro ? 'Необмежено' : projectLimit}</span>
                     </div>
                     <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
                       <div className={`h-full ${isPro ? 'bg-[#10b981]' : (projectsCount >= projectLimit ? 'bg-[#ef4444]' : 'bg-[#eab308]')} rounded-full transition-all`} style={{ width: `${projectsPercent}%` }} />
@@ -1338,7 +1338,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-[#fcfcfc] border-t border-[#e9e9e9] flex justify-end">
+              <div className="px-6 py-4 bg-[#fcfcfc] border-t border-line flex justify-end">
                 {isPro ? (
                   <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" color="gray" size="lg">
                     {upgrading ? 'Завантаження...' : 'Скасувати підписку'}
@@ -1369,10 +1369,10 @@ export default function SettingsPage() {
                       <UserAvatar user={member} size={40} />
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold text-[#1f1f1f]">{member.name || member.email}</p>
-                          {isMe && <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider bg-[#f4f4f5] px-1.5 py-0.5 rounded-md">Ти</span>}
+                          <p className="text-[14px] font-bold text-ink">{member.name || member.email}</p>
+                          {isMe && <span className="text-[10px] font-bold text-muted uppercase tracking-wider bg-canvas px-1.5 py-0.5 rounded-md">Ти</span>}
                         </div>
-                        <p className="text-[12px] text-[#9a9a9a]">{member.email}</p>
+                        <p className="text-[12px] text-muted">{member.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -1382,7 +1382,7 @@ export default function SettingsPage() {
                         onChange={(val) => handlePositionChange(member.id, val)}
                         options={[{value: '', label: 'Без посади'}, ...positions.map(p => ({value: p.id, label: p.label}))]}
                         className="w-[160px]"
-                        buttonClassName="bg-[#f4f4f5] rounded-[10px] px-[12px] h-[36px]"
+                        buttonClassName="bg-canvas rounded-[10px] px-[12px] h-[36px]"
                         disabled={!isAdmin}
                       />
                       
@@ -1392,7 +1392,7 @@ export default function SettingsPage() {
                         onChange={(val) => handleRoleChange(member.id, val)}
                         options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))}
                         className="w-[140px]"
-                        buttonClassName="bg-[#f4f4f5] rounded-[10px] px-[12px] h-[36px]"
+                        buttonClassName="bg-canvas rounded-[10px] px-[12px] h-[36px]"
                         disabled={!(isOwner && !isMe)}
                       />
 
@@ -1629,20 +1629,20 @@ export default function SettingsPage() {
             <Card variant="white" padding="lg" className="!border-none">
               {archivedProjects.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-[#f4f4f5] flex items-center justify-center mb-3">
-                    <Archive size={20} className="text-[#9a9a9a]" />
+                  <div className="w-12 h-12 rounded-full bg-canvas flex items-center justify-center mb-3">
+                    <Archive size={20} className="text-muted" />
                   </div>
-                  <p className="text-[14px] font-bold text-[#1f1f1f]">Немає архівованих проєктів</p>
-                  <p className="text-[12px] text-[#9a9a9a] mt-1">Тут відображатимуться всі архівовані проєкти організації</p>
+                  <p className="text-[14px] font-bold text-ink">Немає архівованих проєктів</p>
+                  <p className="text-[12px] text-muted mt-1">Тут відображатимуться всі архівовані проєкти організації</p>
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-[#f4f4f5] -my-3">
+                <div className="flex flex-col divide-y divide-canvas -my-3">
                   {archivedProjects.map(p => (
                     <div key={p.id} className="flex items-center justify-between py-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{p.name}</p>
+                        <p className="text-[13px] font-semibold text-ink truncate">{p.name}</p>
                         {p.description && (
-                          <p className="text-[12px] text-[#9a9a9a] truncate mt-0.5">{p.description}</p>
+                          <p className="text-[12px] text-muted truncate mt-0.5">{p.description}</p>
                         )}
                       </div>
                       <Button
@@ -1689,11 +1689,11 @@ export default function SettingsPage() {
 
   return (
     <SidebarLayout sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f4f4f5] relative">
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
           <button
             onClick={requestPaneClose}
-            className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[16px] transition-colors"
+            className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors"
           >
             <ArrowLeft size={15} /> Всі налаштування
           </button>

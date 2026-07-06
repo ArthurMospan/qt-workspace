@@ -14,14 +14,14 @@ export const Input = forwardRef(({
       {Icon && (
         <Icon
           size={14}
-          className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a]"
+          className="absolute left-[12px] top-1/2 -translate-y-1/2 text-muted"
         />
       )}
       <input
         ref={ref}
         className={`
-          h-[36px] w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
-          text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
+          h-[36px] w-full bg-canvas border border-transparent rounded-[10px]
+          text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] flex items-center
           disabled:opacity-50 disabled:cursor-not-allowed
           ${Icon ? 'pl-[36px]' : 'pl-[12px]'} pr-[12px]

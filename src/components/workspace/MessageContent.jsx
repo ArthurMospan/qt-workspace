@@ -33,11 +33,11 @@ export default function MessageContent({ text, members, searchTerm }) {
         if (line.startsWith('![attachment](')) {
           const url = line.slice(14, -1);
           // eslint-disable-next-line @next/next/no-img-element
-          return <img key={idx} src={url} alt="attachment" className="max-w-[300px] max-h-[300px] rounded-[8px] border border-[#e9e9e9] mt-2 mb-1 object-cover" />;
+          return <img key={idx} src={url} alt="attachment" className="max-w-[300px] max-h-[300px] rounded-[8px] border border-line mt-2 mb-1 object-cover" />;
         }
         if (line.startsWith('📎 ')) {
           return (
-             <div key={idx} className="h-[40px] px-3 mt-1 inline-flex items-center bg-[#f4f4f5] rounded-[6px] border border-[#e9e9e9] text-[12px] font-medium text-[#1f1f1f]">
+             <div key={idx} className="h-[40px] px-3 mt-1 inline-flex items-center bg-canvas rounded-[6px] border border-line text-[12px] font-medium text-ink">
                {line}
              </div>
           );
@@ -73,7 +73,7 @@ export default function MessageContent({ text, members, searchTerm }) {
               if (part.startsWith('@')) {
                 return (
                   <HoverCard key={pIdx} type="user" value={part.slice(1)} members={members}>
-                    <span className="bg-[#1f1f1f]/10 text-[#1f1f1f] font-bold px-1 rounded cursor-pointer hover:bg-[#1f1f1f]/20 transition-colors">
+                    <span className="bg-ink/10 text-ink font-bold px-1 rounded cursor-pointer hover:bg-ink/20 transition-colors">
                       {part}
                     </span>
                   </HoverCard>

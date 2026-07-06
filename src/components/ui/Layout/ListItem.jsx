@@ -21,8 +21,8 @@ export default function ListItem({
       className={`
         flex items-center gap-[12px] px-[16px]
         ${heightMap[height]}
-        ${onClick ? 'cursor-pointer hover:bg-[#f4f4f5]' : ''}
-        ${divider ? 'border-b border-[#e9e9e9]' : ''}
+        ${onClick ? 'cursor-pointer hover:bg-canvas' : ''}
+        ${divider ? 'border-b border-line' : ''}
         transition-colors duration-200
         ${className}
       `}
@@ -38,12 +38,12 @@ export default function ListItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         {title && (
-          <div className="text-[14px] font-[600] text-[#1f1f1f] truncate">
+          <div className="text-[14px] font-[600] text-ink truncate">
             {title}
           </div>
         )}
         {subtitle && (
-          <div className="text-[13px] font-[600] text-[#9a9a9a] truncate">
+          <div className="text-[13px] font-[600] text-muted truncate">
             {subtitle}
           </div>
         )}

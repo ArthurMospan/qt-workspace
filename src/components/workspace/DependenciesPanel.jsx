@@ -69,7 +69,7 @@ export default function DependenciesPanel({
     <div className="flex flex-col gap-[12px]">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">
+        <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider">
           <Link2 size={12} className="inline mr-[4px]" />
           Залежності
         </h3>
@@ -88,15 +88,15 @@ export default function DependenciesPanel({
 
       {/* Add Link Form */}
       {showAddForm && (
-        <div className="flex flex-col gap-[8px] p-[12px] bg-[#f4f4f5] rounded-[12px] border border-[#e9e9e9]">
+        <div className="flex flex-col gap-[8px] p-[12px] bg-canvas rounded-[12px] border border-line">
           <div>
-            <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
+            <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-[4px]">
               Тип зв’язку
             </label>
             <select
               value={linkType}
               onChange={e => setLinkType(e.target.value)}
-              className="w-full px-[8px] py-[6px] bg-white border border-[#e9e9e9] rounded-[8px] text-[12px] text-[#1f1f1f] focus:border-[#1f1f1f]"
+              className="w-full px-[8px] py-[6px] bg-white border border-line rounded-[8px] text-[12px] text-ink focus:border-ink"
             >
               {LINK_TYPES.map(t => (
                 <option key={t.value} value={t.value}>
@@ -107,7 +107,7 @@ export default function DependenciesPanel({
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-[4px]">
+            <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-[4px]">
               Пошук завданьи
             </label>
             <Input
@@ -124,13 +124,13 @@ export default function DependenciesPanel({
                 <button
                   key={result.id}
                   onClick={() => handleAddLink(result)}
-                  className="flex items-start gap-[8px] p-[8px] text-left bg-white border border-[#e9e9e9] rounded-[8px] hover:border-[#1f1f1f] transition-colors"
+                  className="flex items-start gap-[8px] p-[8px] text-left bg-white border border-line rounded-[8px] hover:border-ink transition-colors"
                 >
-                  <code className="text-[10px] font-bold text-[#9a9a9a] mt-[1px] shrink-0">
+                  <code className="text-[10px] font-bold text-muted mt-[1px] shrink-0">
                     {result.issueKey || 'ID'}
                   </code>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-medium text-[#1f1f1f] truncate">
+                    <p className="text-[11px] font-medium text-ink truncate">
                       {result.title}
                     </p>
                   </div>
@@ -152,7 +152,7 @@ export default function DependenciesPanel({
 
       {/* Links List */}
       {uniqueLinks.length === 0 && !showAddForm ? (
-        <p className="text-[11px] text-[#cfcfcf]">Немає залежностей</p>
+        <p className="text-[11px] text-faint">Немає залежностей</p>
       ) : (
         <div className="flex flex-col gap-[6px]">
           {uniqueLinks.map(link => {
@@ -164,7 +164,7 @@ export default function DependenciesPanel({
             return (
               <div
                 key={link.id}
-                className="flex items-center gap-[8px] p-[8px] bg-[#f4f4f5] border border-[#e9e9e9] rounded-[8px]"
+                className="flex items-center gap-[8px] p-[8px] bg-canvas border border-line rounded-[8px]"
               >
                 <span
                   className="text-[10px] font-bold px-[6px] py-[2px] rounded-[6px] shrink-0 whitespace-nowrap"
@@ -175,15 +175,15 @@ export default function DependenciesPanel({
 
                 {targetIssue ? (
                   <div className="flex-1 min-w-0">
-                    <code className="text-[10px] font-bold text-[#9a9a9a]">
+                    <code className="text-[10px] font-bold text-muted">
                       {targetIssue.issueKey || 'ID'}
                     </code>
-                    <p className="text-[11px] text-[#1f1f1f] truncate">
+                    <p className="text-[11px] text-ink truncate">
                       {targetIssue.title}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[10px] text-[#cfcfcf]">Задачу видалено</p>
+                  <p className="text-[10px] text-faint">Задачу видалено</p>
                 )}
 
                 <Button style="secondary" color="red" size="icon" icon={Trash2} onClick={() => onRemoveLink(link.id)} title="Видалити" />

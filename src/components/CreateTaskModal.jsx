@@ -100,8 +100,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         className="relative bg-white rounded-t-[24px] sm:rounded-[24px] shadow-2xl w-full max-w-[520px] sm:mx-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9] shrink-0">
-          <h2 className="text-[16px] font-bold text-[#1f1f1f]">Нова завдання</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
+          <h2 className="text-[16px] font-bold text-ink">Нова завдання</h2>
           <Button style="secondary" size="icon" icon={X} onClick={onClose} type="button">
             Закрити
           </Button>
@@ -110,7 +110,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         <div className="p-6 flex flex-col gap-4 overflow-y-auto flex-1">
           {/* Title */}
           <div>
-            <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Назва *</label>
+            <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Назва *</label>
             <Input
               autoFocus
               value={form.title}
@@ -122,7 +122,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Project Selector (if projects passed) */}
           {projects && projects.length > 0 && (
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Проєкт *</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Проєкт *</label>
               <Select
                 value={form.projectId}
                 onChange={val => set('projectId', val)}
@@ -135,7 +135,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Sprint Selector */}
           {sprints && sprints.length > 0 && (
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Спринт</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Спринт</label>
               <Select
                 value={form.sprintId}
                 onChange={val => set('sprintId', val)}
@@ -150,7 +150,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Description */}
           <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-bold text-[#1f1f1f] pl-1">Опис завдання</label>
+            <label className="text-[12px] font-bold text-ink pl-1">Опис завдання</label>
             <MarkdownEditor 
               value={form.description}
               onChange={(val) => set('description', val)}
@@ -162,7 +162,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Row: Type + Priority */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Тип</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Тип</label>
               <Select
                 value={form.type}
                 onChange={val => set('type', val)}
@@ -170,7 +170,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Пріоритет</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Пріоритет</label>
               <Select
                 value={form.priority}
                 onChange={val => set('priority', val)}
@@ -182,7 +182,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Row: Status + Due date */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Статус</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Статус</label>
               <Select
                 value={form.status}
                 onChange={val => set('status', val)}
@@ -190,7 +190,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Дедлайн</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Дедлайн</label>
               <Input
                 type="date"
                 value={form.dueDate}
@@ -203,7 +203,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           <div className="grid grid-cols-2 gap-3">
             {epics.length > 0 && (
               <div>
-                <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Епік (Батьківська)</label>
+                <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Епік (Батьківська)</label>
                 <Select
                   value={form.parentEpicId}
                   onChange={val => set('parentEpicId', val)}
@@ -215,7 +215,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               </div>
             )}
             <div className={epics.length > 0 ? '' : 'col-span-2'}>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Оцінка (год)</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Оцінка (год)</label>
               <Input
                 type="number" min="0" step="0.5"
                 value={form.estimateHours}
@@ -228,7 +228,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Assignees */}
           {teamMembers.length > 0 && (
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Виконавці</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Виконавці</label>
               <div className="flex flex-wrap gap-2">
                 {teamMembers.map(m => {
                   const uid = m.uid || m.id;
@@ -240,8 +240,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       onClick={() => toggleAssignee(uid)}
                       className={`flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${
                         selected
-                          ? 'bg-[#1f1f1f] text-white border-[#1f1f1f]'
-                          : 'bg-white text-[#1f1f1f] border-[#e9e9e9] hover:border-[#9a9a9a]'
+                          ? 'bg-ink text-white border-ink'
+                          : 'bg-white text-ink border-line hover:border-muted'
                       }`}
                     >
                       <UserAvatar user={m} size={18} />
@@ -256,7 +256,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Labels */}
           {availableLabels.length > 0 && (
             <div>
-              <label className="block text-[11px] font-semibold text-[#9a9a9a] uppercase tracking-wide mb-2">Мітки (Теги)</label>
+              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Мітки (Теги)</label>
               <div className="flex flex-wrap gap-2">
                 {availableLabels.map(l => {
                   const selected = form.labelIds.includes(l.id);
@@ -268,7 +268,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       className={`flex items-center gap-[6px] px-[10px] py-[5px] rounded-[8px] text-[11px] font-bold border transition-all ${
                         selected
                           ? 'border-transparent'
-                          : 'border-[#e9e9e9] bg-white opacity-60 hover:opacity-100'
+                          : 'border-line bg-white opacity-60 hover:opacity-100'
                       }`}
                       style={selected ? { background: l.color + '18', color: l.color } : { color: '#9a9a9a' }}
                     >
@@ -288,7 +288,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f4f4f5] shrink-0">
+        <div className="px-6 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
           <Button style="secondary" size="md" onClick={onClose} type="button">
             Скасувати
           </Button>

@@ -39,7 +39,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
   ], [insertText]);
 
   return (
-    <div className="w-full border border-[#e9e9e9] rounded-[12px] bg-white overflow-hidden flex flex-col">
+    <div className="w-full border border-line rounded-[12px] bg-white overflow-hidden flex flex-col">
       {/* Tabs & Toolbar */}
       <div className="flex flex-wrap items-center justify-between border-b border-[#f0f0f0] bg-[#fafafa] px-2 py-1 gap-2">
         
@@ -48,14 +48,14 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
           <button
             type="button"
             onClick={() => setTab('write')}
-            className={`px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-colors ${tab === 'write' ? 'bg-white text-[#1f1f1f] shadow-sm' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0]'}`}
+            className={`px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-colors ${tab === 'write' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink hover:bg-[#f0f0f0]'}`}
           >
             Редагування
           </button>
           <button
             type="button"
             onClick={() => setTab('preview')}
-            className={`px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-colors ${tab === 'preview' ? 'bg-white text-[#1f1f1f] shadow-sm' : 'text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0]'}`}
+            className={`px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-colors ${tab === 'preview' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink hover:bg-[#f0f0f0]'}`}
           >
             Попередній перегляд
           </button>
@@ -67,7 +67,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
             {/* eslint-disable-next-line react-hooks/refs -- false positive: insertText only reads textareaRef.current inside its own onClick-invoked body, never during render */}
             {toolbar.map((item, idx) => {
               if (item.divider) {
-                return <div key={`div-${idx}`} className="w-[1px] h-[16px] bg-[#e9e9e9] mx-1"></div>;
+                return <div key={`div-${idx}`} className="w-[1px] h-[16px] bg-line mx-1"></div>;
               }
               const Icon = item.icon;
               return (
@@ -76,7 +76,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
                   type="button"
                   title={item.label}
                   onClick={item.action}
-                  className="p-1.5 text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#e9e9e9] rounded-[6px] transition-colors"
+                  className="p-1.5 text-muted hover:text-ink hover:bg-line rounded-[6px] transition-colors"
                 >
                   <Icon size={14} />
                 </button>
@@ -94,7 +94,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full p-4 text-[14px] text-[#1f1f1f] leading-relaxed resize-y focus:outline-none placeholder-[#cfcfcf]"
+            className="w-full p-4 text-[14px] text-ink leading-relaxed resize-y focus:outline-none placeholder-faint"
             style={{ minHeight }}
           />
         ) : (
@@ -102,7 +102,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = 'Н
             {value.trim() ? (
               <MarkdownViewer content={value} />
             ) : (
-              <p className="text-[14px] text-[#9a9a9a] italic">Нічого для попереднього перегляду</p>
+              <p className="text-[14px] text-muted italic">Нічого для попереднього перегляду</p>
             )}
           </div>
         )}

@@ -7,10 +7,10 @@ export default function ProjectTeamTab({ members = [] }) {
   if (members.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white">
-        <div className="w-[48px] h-[48px] rounded-full bg-[#f4f4f5] flex items-center justify-center mb-4">
-          <span className="text-[#9a9a9a] text-[20px]">👥</span>
+        <div className="w-[48px] h-[48px] rounded-full bg-canvas flex items-center justify-center mb-4">
+          <span className="text-muted text-[20px]">👥</span>
         </div>
-        <p className="text-[13px] text-[#9a9a9a] font-medium text-center">
+        <p className="text-[13px] text-muted font-medium text-center">
           У цьому проєкті ще немає учасників.
         </p>
       </div>
@@ -20,18 +20,18 @@ export default function ProjectTeamTab({ members = [] }) {
   return (
     <div className="flex-1 overflow-y-auto bg-white pt-[8px] pb-[20px]">
       <div className="w-full">
-        <h2 className="text-[16px] font-bold text-[#1f1f1f] mb-6">Команда проєкту</h2>
+        <h2 className="text-[16px] font-bold text-ink mb-6">Команда проєкту</h2>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {members.map(member => (
-            <div key={member.id || member.uid} className="bg-[#f4f4f5] rounded-[24px] p-5 flex items-center gap-4 cursor-default hover:bg-[#f0f0f0] transition-all duration-200">
+            <div key={member.id || member.uid} className="bg-canvas rounded-[24px] p-5 flex items-center gap-4 cursor-default hover:bg-[#f0f0f0] transition-all duration-200">
               <UserAvatar 
                 user={member} 
                 size={48} 
                 className="shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <h3 className="text-[14px] font-bold text-[#1f1f1f] truncate">
+                <h3 className="text-[14px] font-bold text-ink truncate">
                   {member.name || 'Анонім'}
                 </h3>
                 {member.role && (
@@ -42,13 +42,13 @@ export default function ProjectTeamTab({ members = [] }) {
                 {(member.email || member.phone) && (
                   <div className="flex flex-col gap-1 mt-2">
                     {member.email && (
-                      <div className="flex items-center gap-[6px] text-[#9a9a9a]">
+                      <div className="flex items-center gap-[6px] text-muted">
                         <Mail size={12} className="shrink-0" />
                         <span className="text-[11px] truncate">{member.email}</span>
                       </div>
                     )}
                     {member.phone && (
-                      <div className="flex items-center gap-[6px] text-[#9a9a9a]">
+                      <div className="flex items-center gap-[6px] text-muted">
                         <Phone size={12} className="shrink-0" />
                         <span className="text-[11px] truncate">{member.phone}</span>
                       </div>

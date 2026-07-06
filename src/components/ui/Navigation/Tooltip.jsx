@@ -83,7 +83,7 @@ export function Tooltip({ content, children, position = 'top', className = '' })
     tooltipNode = createPortal(
       <div
         style={{ top, left, transform }}
-        className="absolute z-[9999] bg-[#1f1f1f] text-white px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold leading-normal w-max max-w-[240px] whitespace-normal break-words pointer-events-none shadow-[0_4px_12px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-100 ease-out"
+        className="absolute z-[9999] bg-ink text-white px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold leading-normal w-max max-w-[240px] whitespace-normal break-words pointer-events-none shadow-[0_4px_12px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-100 ease-out"
       >
         <div className={`absolute w-0 h-0 ${arrowClasses}`} />
         {content}

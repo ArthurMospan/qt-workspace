@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 // ─── UI Kit: Tabs Component ───────────────────────────────────────────────────
 // Height rule: h-[36px] — matches inputs and buttons for perfect alignment.
-// Wrapper: bg-[#f4f4f5] rounded-[10px] p-[4px] h-[36px]
+// Wrapper: bg-canvas rounded-[10px] p-[4px] h-[36px]
 
 export default function Tabs({
   tabs      = [],
@@ -43,7 +43,7 @@ export default function Tabs({
       role="tablist"
       aria-label="Перемикач вкладок"
       onKeyDown={handleKeyDown}
-      className={`flex bg-[#f4f4f5] h-[36px] p-[4px] rounded-[10px] items-center gap-[2px] shrink-0 ${className}`}
+      className={`flex bg-canvas h-[36px] p-[4px] rounded-[10px] items-center gap-[2px] shrink-0 ${className}`}
     >
       {tabs.map(tab => {
         const Icon   = tab.icon;
@@ -60,10 +60,10 @@ export default function Tabs({
           'flex items-center justify-center gap-[6px]',
           tab.label ? 'px-[16px]' : 'w-[28px] shrink-0',
           'h-[28px] text-[13px] font-medium rounded-[8px]',
-          'transition-all whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-[#1f1f1f] focus-visible:ring-offset-2',
+          'transition-all whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2',
           active
-            ? 'bg-white text-[#1f1f1f] shadow-sm'
-            : 'text-[#9a9a9a] hover:text-[#1f1f1f]',
+            ? 'bg-white text-ink shadow-sm'
+            : 'text-muted hover:text-ink',
         ].join(' ');
 
         if (tab.href) {

@@ -42,11 +42,11 @@ export default function ButtonGroup({
         const dividerClass = !isFirst
           ? isVertical
             ? buttonStyle === 'secondary'
-              ? 'border-t border-[#e9e9e9]'
-              : 'border-t border-[#303030]'
+              ? 'border-t border-line'
+              : 'border-t border-ink-hover'
             : buttonStyle === 'secondary'
-              ? 'border-l border-[#e9e9e9]'
-              : 'border-l border-[#303030]'
+              ? 'border-l border-line'
+              : 'border-l border-ink-hover'
           : '';
 
         return React.cloneElement(child, {

@@ -13,7 +13,7 @@ export default function KpiCard({
   className = '',
 }) {
   const content = (
-    <div className={`bg-[#f4f4f5] border border-transparent rounded-[24px] p-5 transition-all duration-200 ${onClick ? 'hover:bg-[#eef0f2] cursor-pointer' : ''} ${className}`}>
+    <div className={`bg-canvas border border-transparent rounded-[24px] p-5 transition-all duration-200 ${onClick ? 'hover:bg-[#eef0f2] cursor-pointer' : ''} ${className}`}>
       <div className="flex items-start justify-between mb-3">
         {Icon && (
           <div className="w-9 h-9 rounded-[12px] flex items-center justify-center animate-fade-in" style={{ background: color + '15' }}>
@@ -27,9 +27,9 @@ export default function KpiCard({
           </span>
         )}
       </div>
-      <p className="text-[26px] font-bold text-[#1f1f1f] leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide">{label}</p>
-      {sub && <p className="text-[11px] text-[#cfcfcf] mt-1">{sub}</p>}
+      <p className="text-[26px] font-bold text-ink leading-none mb-1">{value}</p>
+      <p className="text-[11px] font-bold text-muted uppercase tracking-wide">{label}</p>
+      {sub && <p className="text-[11px] text-faint mt-1">{sub}</p>}
     </div>
   );
 

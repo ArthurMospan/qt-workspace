@@ -31,7 +31,7 @@ function fmtH(min) {
 }
 
 function SectionTitle({ children }) {
-  return <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">{children}</h2>;
+  return <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3">{children}</h2>;
 }
 
 function FilterDivider() {
@@ -137,11 +137,11 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
             <div className="flex flex-col gap-[10px]">
               {stats.byStatus.map(({ id, label, color, count }) => (
                 <div key={id} className="flex items-center gap-3">
-                  <span className="w-[90px] text-[10px] font-medium text-[#9a9a9a] shrink-0 truncate">{label}</span>
+                  <span className="w-[90px] text-[10px] font-medium text-muted shrink-0 truncate">{label}</span>
                   <div className="flex-1 h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: color }} />
                   </div>
-                  <span className="text-[11px] font-bold text-[#1f1f1f] w-5 text-right shrink-0">{count}</span>
+                  <span className="text-[11px] font-bold text-ink w-5 text-right shrink-0">{count}</span>
                 </div>
               ))}
             </div>
@@ -154,7 +154,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                 <thead>
                   <tr className="border-b border-[#f0f0f0]">
                     {['Проєкт', 'Всього', 'Прогрес', 'Відкрито', 'Прострочено', `Час · ${period}д`, ''].map(h => (
-                      <th key={h} className="pb-2 text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide pr-4 last:pr-0">{h}</th>
+                      <th key={h} className="pb-2 text-[10px] font-bold text-muted uppercase tracking-wide pr-4 last:pr-0">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -162,27 +162,27 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                   {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
                     <tr key={p.id} className="group">
                       <td className="py-3 pr-4">
-                        <p className="text-[13px] font-semibold text-[#1f1f1f]">{p.name}</p>
-                        <span className="text-[10px] text-[#cfcfcf]">{p.visibility === 'internal' ? 'Внутрішній' : 'Клієнтський'}</span>
+                        <p className="text-[13px] font-semibold text-ink">{p.name}</p>
+                        <span className="text-[10px] text-faint">{p.visibility === 'internal' ? 'Внутрішній' : 'Клієнтський'}</span>
                       </td>
-                      <td className="py-3 pr-4 text-[13px] font-semibold text-[#1f1f1f]">{total}</td>
+                      <td className="py-3 pr-4 text-[13px] font-semibold text-ink">{total}</td>
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <div className="w-[80px] h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
                             <div className="h-full bg-[#10b981] rounded-full" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-[11px] font-semibold text-[#9a9a9a]">{pct}%</span>
+                          <span className="text-[11px] font-semibold text-muted">{pct}%</span>
                         </div>
                       </td>
                       <td className="py-3 pr-4 text-[12px] text-[#0891b2] font-semibold">{open}</td>
                       <td className="py-3 pr-4">
                         {overdue > 0 ? <span className="text-[12px] font-semibold text-red-500">{overdue}</span>
-                          : <span className="text-[12px] text-[#cfcfcf]">—</span>}
+                          : <span className="text-[12px] text-faint">—</span>}
                       </td>
-                      <td className="py-3 pr-4 text-[12px] text-[#9a9a9a]">{fmtH(minutes)}</td>
+                      <td className="py-3 pr-4 text-[12px] text-muted">{fmtH(minutes)}</td>
                       <td className="py-3">
                         <Link href={`/workspace/${p.id}`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-[#cfcfcf] hover:text-[#1f1f1f] flex items-center gap-1 text-[11px] font-medium">
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-faint hover:text-ink flex items-center gap-1 text-[11px] font-medium">
                           Відкрити <ArrowRight size={11} />
                         </Link>
                       </td>
@@ -209,8 +209,8 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                 return (
                   <div key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] last:border-0">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-[#1f1f1f] truncate">{issue.title}</p>
-                      <p className="text-[10px] text-[#9a9a9a]">{proj?.name} · {issue.issueKey}</p>
+                      <p className="text-[12px] font-medium text-ink truncate">{issue.title}</p>
+                      <p className="text-[10px] text-muted">{proj?.name} · {issue.issueKey}</p>
                     </div>
                     <span className="text-[11px] font-bold text-red-500 shrink-0">+{days}д</span>
                   </div>

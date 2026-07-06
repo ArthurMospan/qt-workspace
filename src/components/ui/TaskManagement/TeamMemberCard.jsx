@@ -23,7 +23,7 @@ export default function TeamMemberCard({
       onClick={onClick}
       className={`
         bg-white rounded-[16px] p-[16px]
-        border border-transparent hover:border-[#1f1f1f]/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]
+        border border-transparent hover:border-ink/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]
         transition-all duration-200 cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02),0_1px_2px_rgba(0,0,0,0.04)]
         flex flex-col items-center text-center ${className}
       `}
@@ -39,10 +39,10 @@ export default function TeamMemberCard({
       </div>
 
       {/* Name & Role */}
-      <h3 className="text-[14px] font-semibold text-[#1f1f1f] mb-[4px] line-clamp-1">
+      <h3 className="text-[14px] font-semibold text-ink mb-[4px] line-clamp-1">
         {name}
       </h3>
-      <p className="text-[12px] font-medium text-[#9a9a9a] mb-[12px] line-clamp-1">
+      <p className="text-[12px] font-medium text-muted mb-[12px] line-clamp-1">
         {role}
       </p>
 
@@ -57,7 +57,7 @@ export default function TeamMemberCard({
       {/* Message Button */}
       <button
         type="button"
-        className="w-full flex items-center justify-center gap-[6px] h-[32px] bg-[#f0f0f0] hover:bg-[#e9e9e9] rounded-[10px] transition-colors text-[#1f1f1f] font-bold text-[12px]"
+        className="w-full flex items-center justify-center gap-[6px] h-[32px] bg-[#f0f0f0] hover:bg-line rounded-[10px] transition-colors text-ink font-bold text-[12px]"
       >
         <MessageCircle size={14} />
         Повідомлення

@@ -86,7 +86,7 @@ export default function SplitButton({
                   item.action?.();
                   setIsOpen(false);
                 }}
-                className="w-full px-[12px] h-[36px] text-[13px] font-medium hover:bg-[#f4f4f5] transition-colors text-left text-[#1f1f1f]"
+                className="w-full px-[12px] h-[36px] text-[13px] font-medium hover:bg-canvas transition-colors text-left text-ink"
               >
                 {item.label}
               </button>

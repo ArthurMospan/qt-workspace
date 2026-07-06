@@ -13,7 +13,7 @@ export default function Chip({
   className = ''
 }) {
   const colorMap = {
-    default: 'bg-[#f5f5f5] text-[#1f1f1f]',
+    default: 'bg-[#f5f5f5] text-ink',
     primary: 'bg-[#e6f4ff] text-[#1e40af]',
     success: 'bg-[#ecfdf5] text-[#065f46]',
     warning: 'bg-[#fefce8] text-[#92400e]',

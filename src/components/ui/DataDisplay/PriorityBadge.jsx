@@ -21,9 +21,9 @@ export default function PriorityBadge({ priority = 'low', className = '' }) {
       label: 'Medium',
     },
     low: {
-      bg: 'bg-[#9a9a9a]/8',
+      bg: 'bg-muted/8',
       text: 'text-[#737373]',
-      dot: 'bg-[#9a9a9a]',
+      dot: 'bg-muted',
       label: 'Low',
     },
     info: {

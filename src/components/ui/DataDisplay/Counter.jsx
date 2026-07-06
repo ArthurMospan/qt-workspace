@@ -25,7 +25,7 @@ export default function Counter({
       info: 'bg-[#6366f1]',
       danger: 'bg-[#ef4444]',
       success: 'bg-[#10b981]',
-      muted: 'bg-[#9a9a9a]',
+      muted: 'bg-muted',
     };
 
     return (
@@ -51,7 +51,7 @@ export default function Counter({
     info: 'bg-[#6366f1] text-white',
     danger: 'bg-[#ef4444] text-white',
     success: 'bg-[#10b981] text-white',
-    muted: 'bg-[#9a9a9a] text-white',
+    muted: 'bg-muted text-white',
   };
 
   // Format value (e.g. 99+)

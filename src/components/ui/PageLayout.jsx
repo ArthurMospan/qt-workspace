@@ -6,7 +6,7 @@ export default function PageLayout({
   className = '',
 }) {
   return (
-    <div className={`flex-1 flex flex-col overflow-hidden bg-[#f4f4f5] ${className}`}>
+    <div className={`flex-1 flex flex-col overflow-hidden bg-canvas ${className}`}>
       {/* Header section - white background, border */}
       {header && (
         <div className="bg-white border-b border-[#f0f0f0] shrink-0">

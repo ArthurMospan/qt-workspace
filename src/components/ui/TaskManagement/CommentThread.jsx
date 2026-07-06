@@ -36,15 +36,15 @@ function CommentItem({
       <div className="flex-1">
         {/* Header: Name + Time */}
         <div className="flex items-center gap-[8px] mb-[4px]">
-          <span className="text-[13px] font-bold text-[#1f1f1f]">{author}</span>
-          <span className="text-[11px] font-medium text-[#9a9a9a]">
+          <span className="text-[13px] font-bold text-ink">{author}</span>
+          <span className="text-[11px] font-medium text-muted">
             {getRelativeTime(timestamp)}
           </span>
-          {edited && <span className="text-[10px] text-[#9a9a9a] italic">(відредаговано)</span>}
+          {edited && <span className="text-[10px] text-muted italic">(відредаговано)</span>}
         </div>
 
         {/* Comment Content */}
-        <p className="text-[13px] font-medium text-[#1f1f1f] mb-[8px] break-words">
+        <p className="text-[13px] font-medium text-ink mb-[8px] break-words">
           {content}
         </p>
 
@@ -52,7 +52,7 @@ function CommentItem({
         <div className="flex items-center gap-[12px]">
           <button
             onClick={() => onReply?.(comment)}
-            className="flex items-center gap-[4px] text-[11px] font-bold text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+            className="flex items-center gap-[4px] text-[11px] font-bold text-muted hover:text-ink transition-colors"
           >
             <Reply size={12} />
             Відповісти
@@ -60,7 +60,7 @@ function CommentItem({
           {onEdit && (
             <button
               onClick={() => onEdit?.(comment)}
-              className="flex items-center gap-[4px] text-[11px] font-bold text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+              className="flex items-center gap-[4px] text-[11px] font-bold text-muted hover:text-ink transition-colors"
             >
               <Edit2 size={12} />
               Редагувати
@@ -69,7 +69,7 @@ function CommentItem({
           {onDelete && (
             <button
               onClick={() => onDelete?.(comment)}
-              className="flex items-center gap-[4px] text-[11px] font-bold text-[#9a9a9a] hover:text-[#ef4444] transition-colors"
+              className="flex items-center gap-[4px] text-[11px] font-bold text-muted hover:text-[#ef4444] transition-colors"
             >
               <Trash2 size={12} />
               Видалити
@@ -95,7 +95,7 @@ export default function CommentThread({
     <div className={`bg-white rounded-[16px] p-[16px] ${className}`}>
       {comments.length === 0 ? (
         <div className="text-center py-[24px]">
-          <p className="text-[13px] font-medium text-[#9a9a9a]">Немає коментарів</p>
+          <p className="text-[13px] font-medium text-muted">Немає коментарів</p>
         </div>
       ) : (
         <div>

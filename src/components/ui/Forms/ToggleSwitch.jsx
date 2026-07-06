@@ -40,9 +40,9 @@ export default function ToggleSwitch({
         className={`
           relative inline-flex flex-shrink-0 rounded-full p-0
           transition-colors duration-200
-          ${checked ? 'bg-[#1f1f1f]' : 'bg-[#e9e9e9]'}
+          ${checked ? 'bg-ink' : 'bg-line'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          focus:outline-none focus:ring-2 focus:ring-[#1f1f1f]/20 focus:ring-offset-0
+          focus:outline-none focus:ring-2 focus:ring-ink/20 focus:ring-offset-0
         `}
       >
         <div
@@ -51,7 +51,7 @@ export default function ToggleSwitch({
         />
       </button>
       {label && (
-        <span className={`text-[13px] font-semibold text-[#1f1f1f] select-none ${disabled ? 'opacity-50' : ''}`}>
+        <span className={`text-[13px] font-semibold text-ink select-none ${disabled ? 'opacity-50' : ''}`}>
           {label}
         </span>
       )}

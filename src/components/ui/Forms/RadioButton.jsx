@@ -35,9 +35,9 @@ export default function RadioButton({
             checked={value === option.value}
             onChange={() => !disabled && onChange?.(option.value)}
             disabled={disabled}
-            className={`${box} cursor-pointer accent-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#1f1f1f]/20 focus:ring-offset-0`}
+            className={`${box} cursor-pointer accent-ink focus:outline-none focus:ring-2 focus:ring-ink/20 focus:ring-offset-0`}
           />
-          <span className={`font-semibold text-[#1f1f1f] ${labelClass}`}>
+          <span className={`font-semibold text-ink ${labelClass}`}>
             {option.label}
           </span>
         </label>

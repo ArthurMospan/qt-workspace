@@ -58,7 +58,7 @@ function TimeBar({ minutes, maxMinutes }) {
       <div className="w-[80px] h-[4px] bg-[#f0f0f0] rounded-full overflow-hidden">
         <div className="h-full rounded-full bg-[#0891b2] transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[11px] font-medium text-[#9a9a9a] w-[48px]">{fmtH(minutes)}</span>
+      <span className="text-[11px] font-medium text-muted w-[48px]">{fmtH(minutes)}</span>
     </div>
   );
 }
@@ -110,8 +110,8 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <Users size={36} className="text-[#e9e9e9] mx-auto mb-3" />
-          <p className="text-[14px] font-semibold text-[#cfcfcf]">Немає даних про команду</p>
+          <Users size={36} className="text-line mx-auto mb-3" />
+          <p className="text-[14px] font-semibold text-faint">Немає даних про команду</p>
           <p className="text-[12px] text-[#e0e0e0] mt-1">Призначте виконавців на завдання</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
             return (
               <div
                 key={uid}
-                className={`bg-[#f4f4f5] rounded-[24px] p-5 transition-all ${isOverloaded ? 'ring-1 ring-[#ef4444]/20' : ''}`}
+                className={`bg-canvas rounded-[24px] p-5 transition-all ${isOverloaded ? 'ring-1 ring-[#ef4444]/20' : ''}`}
               >
                 <div className="flex flex-wrap items-start gap-4 mb-4">
                   {/* Avatar + name */}
@@ -150,7 +150,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-[14px] font-bold text-[#1f1f1f] truncate">{m.name || m.email}</p>
+                      <p className="text-[14px] font-bold text-ink truncate">{m.name || m.email}</p>
                       {isOverloaded && (
                         <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full shrink-0">Перевантажений</span>
                       )}
@@ -160,27 +160,27 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#9a9a9a]">{m.role || m.email}</p>
+                    <p className="text-[11px] text-muted">{m.role || m.email}</p>
                   </div>
 
                   {/* Stats pill row */}
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-center">
-                      <p className="text-[16px] font-bold text-[#1f1f1f]">{total}</p>
-                      <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Всього</p>
+                      <p className="text-[16px] font-bold text-ink">{total}</p>
+                      <p className="text-[9px] font-bold text-faint uppercase">Всього</p>
                     </div>
                     <div className="text-center">
                       <p className="text-[16px] font-bold text-[#10b981]">{done}</p>
-                      <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Готово · {period}д</p>
+                      <p className="text-[9px] font-bold text-faint uppercase">Готово · {period}д</p>
                     </div>
                     <div className="text-center">
                       <p className="text-[16px] font-bold text-[#6366f1]">{open}</p>
-                      <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Відкрито</p>
+                      <p className="text-[9px] font-bold text-faint uppercase">Відкрито</p>
                     </div>
                     {minutes > 0 && (
                       <div className="text-center">
                         <p className="text-[16px] font-bold text-[#0891b2]">{fmtH(minutes)}</p>
-                        <p className="text-[9px] font-bold text-[#cfcfcf] uppercase">Час</p>
+                        <p className="text-[9px] font-bold text-faint uppercase">Час</p>
                       </div>
                     )}
                   </div>
@@ -189,8 +189,8 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                 {/* Capacity bar */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Завантаженість</span>
-                    <span className="text-[10px] text-[#9a9a9a]">
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Завантаженість</span>
+                    <span className="text-[10px] text-muted">
                       {inProg > 0 && `${inProg} в роботі · `}{open} відкрито
                     </span>
                   </div>
@@ -201,7 +201,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                 {minutes > 0 && (
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Залоговано часу · {period}д</span>
+                      <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Залоговано часу · {period}д</span>
                     </div>
                     <TimeBar minutes={minutes} maxMinutes={stats.maxMinutes} />
                   </div>
@@ -228,13 +228,13 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
 
         {/* Legend */}
         <div className="flex items-center gap-6 mt-5 px-1">
-          <span className="flex items-center gap-1.5 text-[11px] text-[#9a9a9a]">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block" /> Завершено
           </span>
-          <span className="flex items-center gap-1.5 text-[11px] text-[#9a9a9a]">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="w-3 h-3 rounded-full bg-[#6366f1] inline-block" /> Відкрито
           </span>
-          <span className="flex items-center gap-1.5 text-[11px] text-[#9a9a9a]">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="w-3 h-3 rounded-full bg-[#ef4444] inline-block" /> Перевантажений
           </span>
         </div>

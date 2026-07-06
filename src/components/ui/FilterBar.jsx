@@ -6,7 +6,7 @@ import React from 'react';
 
 export default function FilterBar({ children, className = '' }) {
   return (
-    <div className={`flex items-center gap-1 bg-[#f4f4f5] rounded-[10px] p-[4px] h-[36px] w-max max-w-full overflow-x-auto hide-scrollbar ${className}`}>
+    <div className={`flex items-center gap-1 bg-canvas rounded-[10px] p-[4px] h-[36px] w-max max-w-full overflow-x-auto hide-scrollbar ${className}`}>
       {children}
     </div>
   );

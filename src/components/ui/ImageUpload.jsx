@@ -9,11 +9,11 @@ export default function ImageUpload({ value, onChange, onError, className = '', 
   const fileInputRef = useRef(null);
 
   const isDark = theme === 'dark';
-  const textColor = isDark ? 'text-white' : 'text-[#1f1f1f]';
-  const subTextColor = isDark ? 'text-white/40' : 'text-[#9a9a9a]';
+  const textColor = isDark ? 'text-white' : 'text-ink';
+  const subTextColor = isDark ? 'text-white/40' : 'text-muted';
   const removeColor = isDark ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500';
-  const bgClass = isDark ? 'bg-[#2a2a2a] border-white/10 hover:border-white/30' : 'bg-[#f4f4f5] border-[#e9e9e9] hover:border-[#cfcfcf]';
-  const iconColor = isDark ? 'text-white/50' : 'text-[#9a9a9a]';
+  const bgClass = isDark ? 'bg-[#2a2a2a] border-white/10 hover:border-white/30' : 'bg-canvas border-line hover:border-faint';
+  const iconColor = isDark ? 'text-white/50' : 'text-muted';
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];

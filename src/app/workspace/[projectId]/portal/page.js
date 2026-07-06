@@ -57,7 +57,7 @@ export default function PortalPage({ params }) {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#f4f4f5] pt-[56px]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-canvas pt-[56px]">
       {/* Shared project tab bar — Portal tab highlighted */}
       <PageHeader
         variant="alt"
@@ -78,8 +78,8 @@ export default function PortalPage({ params }) {
         {/* ── Materials ─────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13px] font-bold text-[#1f1f1f]">
-              Матеріали <span className="text-[#9a9a9a] font-normal">({materials.length})</span>
+            <h3 className="text-[13px] font-bold text-ink">
+              Матеріали <span className="text-muted font-normal">({materials.length})</span>
             </h3>
             <a href={PORTAL_URL} target="_blank" rel="noopener"
               className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline font-medium">
@@ -106,29 +106,29 @@ export default function PortalPage({ params }) {
                 return (
                   <Card key={stage.id} variant="white" padding="none" className="overflow-hidden">
                     <div className="px-5 py-3 border-b border-[#f0f0f0] flex items-center gap-2">
-                      <FileCheck size={13} className="text-[#9a9a9a]" />
-                      <p className="text-[12px] font-bold text-[#1f1f1f]">{stage.title || stage.name || 'Без назви'}</p>
-                      <span className="text-[10px] text-[#cfcfcf]">· {stageMats.length} матеріал{stageMats.length > 1 ? 'и' : ''}</span>
+                      <FileCheck size={13} className="text-muted" />
+                      <p className="text-[12px] font-bold text-ink">{stage.title || stage.name || 'Без назви'}</p>
+                      <span className="text-[10px] text-faint">· {stageMats.length} матеріал{stageMats.length > 1 ? 'и' : ''}</span>
                     </div>
                     {stageMats.map(mat => {
                       const statusKey = mat.status || (mat.clientApprovalPending ? 'pending' : 'undefined');
                       const cfg = STATUS_CFG[statusKey] || STATUS_CFG.undefined;
                       const StatusIcon = cfg.Icon;
                       return (
-                        <div key={mat.id || mat.url} className="flex items-center gap-4 px-5 py-4 border-b border-[#f4f4f5] last:border-0 hover:bg-[#fafafa] transition-colors">
+                        <div key={mat.id || mat.url} className="flex items-center gap-4 px-5 py-4 border-b border-canvas last:border-0 hover:bg-[#fafafa] transition-colors">
                           {/* Preview */}
-                          <div className="w-[48px] h-[48px] bg-[#f4f4f5] rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
+                          <div className="w-[48px] h-[48px] bg-canvas rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center">
                             {mat.url && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(mat.url) ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={mat.url} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
                             ) : (
-                              <ImageIcon size={18} className="text-[#cfcfcf]" />
+                              <ImageIcon size={18} className="text-faint" />
                             )}
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{mat.name || mat.title || 'Без назви'}</p>
-                            {mat.description && <p className="text-[11px] text-[#9a9a9a] truncate mt-[2px]">{mat.description}</p>}
+                            <p className="text-[13px] font-semibold text-ink truncate">{mat.name || mat.title || 'Без назви'}</p>
+                            {mat.description && <p className="text-[11px] text-muted truncate mt-[2px]">{mat.description}</p>}
                           </div>
 
                           {/* Status */}
@@ -139,7 +139,7 @@ export default function PortalPage({ params }) {
 
                           {mat.url && (
                             <a href={mat.url} target="_blank" rel="noopener"
-                              className="shrink-0 p-2 text-[#cfcfcf] hover:text-[#6366f1] transition-colors">
+                              className="shrink-0 p-2 text-faint hover:text-[#6366f1] transition-colors">
                               <ExternalLink size={13} />
                             </a>
                           )}
@@ -156,11 +156,11 @@ export default function PortalPage({ params }) {
         {/* ── Chat ──────────────────────────────────────────────────── */}
         <Card variant="white" padding="none" className="overflow-hidden sticky top-0">
           <div className="px-5 py-4 border-b border-[#f0f0f0] flex items-center gap-2">
-            <MessageSquare size={14} className="text-[#9a9a9a]" />
-            <h3 className="text-[13px] font-bold text-[#1f1f1f]">Чат з клієнтом</h3>
+            <MessageSquare size={14} className="text-muted" />
+            <h3 className="text-[13px] font-bold text-ink">Чат з клієнтом</h3>
           </div>
 
-          <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-[#f4f4f5]">
+          <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-canvas">
             {chatLoading ? (
               <div className="flex items-center justify-center py-10">
                 <LoadingSpinner size="sm" />
@@ -176,8 +176,8 @@ export default function PortalPage({ params }) {
               messages.map((msg, i) => (
                 <div key={msg.id || i} className="px-4 py-3">
                   <div className="flex items-baseline gap-2 mb-[3px]">
-                    <span className="text-[12px] font-bold text-[#1f1f1f]">{msg.senderName || 'Клієнт'}</span>
-                    <span className="text-[10px] text-[#cfcfcf]">{timeAgo(msg.createdAt || msg.timestamp)}</span>
+                    <span className="text-[12px] font-bold text-ink">{msg.senderName || 'Клієнт'}</span>
+                    <span className="text-[10px] text-faint">{timeAgo(msg.createdAt || msg.timestamp)}</span>
                   </div>
                   <p className="text-[12px] text-[#4a4a4a] leading-relaxed">{msg.text || msg.message}</p>
                 </div>
@@ -186,7 +186,7 @@ export default function PortalPage({ params }) {
           </div>
 
           {/* Reply input */}
-          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-[#f4f4f5] flex gap-2">
+          <div className="px-4 py-3 border-t border-[#f0f0f0] bg-canvas flex gap-2">
             <Input
               type="text"
               value={replyText}

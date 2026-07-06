@@ -100,7 +100,7 @@ export const DatePicker = forwardRef(({
         {!hideIcon && (
           <Calendar
             size={14}
-            className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#9a9a9a] pointer-events-none"
+            className="absolute left-[12px] top-1/2 -translate-y-1/2 text-muted pointer-events-none"
           />
         )}
         <input
@@ -112,8 +112,8 @@ export const DatePicker = forwardRef(({
           readOnly
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={inputClassName || `
-            h-[36px] w-full bg-[#f4f4f5] border border-transparent rounded-[10px]
-            text-[13px] text-[#1f1f1f] focus:border-[#1f1f1f] outline-none
+            h-[36px] w-full bg-canvas border border-transparent rounded-[10px]
+            text-[13px] text-ink focus:border-ink outline-none
             transition-colors placeholder:text-[#a3a3a3]
             pl-[36px] pr-[12px] cursor-pointer
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -131,7 +131,7 @@ export const DatePicker = forwardRef(({
               onChange?.('');
               onDateRangeChange?.('', '');
             }}
-            className="absolute right-[8px] top-1/2 -translate-y-1/2 text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors"
+            className="absolute right-[8px] top-1/2 -translate-y-1/2 text-muted hover:text-ink transition-colors"
           >
             <X size={14} />
           </button>
@@ -140,21 +140,21 @@ export const DatePicker = forwardRef(({
 
       {/* Calendar Popup */}
       {isOpen && !disabled && (
-        <div className="absolute top-[44px] left-0 z-50 bg-white border border-[#e9e9e9] rounded-[12px] shadow-lg p-4 w-[320px]">
+        <div className="absolute top-[44px] left-0 z-50 bg-white border border-line rounded-[12px] shadow-lg p-4 w-[320px]">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-              className="p-1 hover:bg-[#f4f4f5] rounded-[6px] transition-colors"
+              className="p-1 hover:bg-canvas rounded-[6px] transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
-            <h3 className="text-[14px] font-bold text-[#1f1f1f]">
+            <h3 className="text-[14px] font-bold text-ink">
               {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </h3>
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-              className="p-1 hover:bg-[#f4f4f5] rounded-[6px] transition-colors"
+              className="p-1 hover:bg-canvas rounded-[6px] transition-colors"
             >
               <ChevronRight size={18} />
             </button>
@@ -163,7 +163,7 @@ export const DatePicker = forwardRef(({
           {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {WEEKDAYS.map(day => (
-              <div key={day} className="text-center text-[11px] font-bold text-[#9a9a9a] py-1">
+              <div key={day} className="text-center text-[11px] font-bold text-muted py-1">
                 {day}
               </div>
             ))}
@@ -188,10 +188,10 @@ export const DatePicker = forwardRef(({
                   className={`
                     p-1 text-[12px] font-semibold rounded-[6px] transition-all
                     ${isSelected || isRangeStart || isRangeEnd
-                      ? 'bg-[#1f1f1f] text-white'
+                      ? 'bg-ink text-white'
                       : isInRange
-                      ? 'bg-[#e9e9e9] text-[#1f1f1f]'
-                      : 'text-[#1f1f1f] hover:bg-[#f4f4f5]'
+                      ? 'bg-line text-ink'
+                      : 'text-ink hover:bg-canvas'
                     }
                   `}
                 >
@@ -202,8 +202,8 @@ export const DatePicker = forwardRef(({
           </div>
 
           {/* Quick select presets */}
-          <div className="border-t border-[#e9e9e9] mt-4 pt-3">
-            <p className="text-[10px] font-bold text-[#9a9a9a] uppercase mb-2">Quick select</p>
+          <div className="border-t border-line mt-4 pt-3">
+            <p className="text-[10px] font-bold text-muted uppercase mb-2">Quick select</p>
             <div className="grid grid-cols-2 gap-2">
               {['Today', 'This Week', 'This Month', 'Last 30 Days'].map(preset => (
                 <button

@@ -56,23 +56,23 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
 
   return (
     <div>
-      <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Час</p>
+      <p className="text-[10px] font-bold text-muted uppercase tracking-wide mb-2">Час</p>
 
       {/* Stats */}
-      <div className="bg-[#f4f4f5] rounded-[10px] px-3 py-2 mb-2">
+      <div className="bg-canvas rounded-[10px] px-3 py-2 mb-2">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-[#9a9a9a]">Витрачено</span>
-          <span className="font-bold text-[#1f1f1f]">{spentFormatted}</span>
+          <span className="text-muted">Витрачено</span>
+          <span className="font-bold text-ink">{spentFormatted}</span>
         </div>
         {estimateFormatted && (
           <div className="flex items-center justify-between text-[11px] mt-1">
-            <span className="text-[#9a9a9a]">Оцінка</span>
-            <span className="font-medium text-[#9a9a9a]">{estimateFormatted}</span>
+            <span className="text-muted">Оцінка</span>
+            <span className="font-medium text-muted">{estimateFormatted}</span>
           </div>
         )}
         {estimateFormatted && issue.spentMinutes > 0 && (
           <div className="mt-2">
-            <div className="h-[3px] bg-[#e9e9e9] rounded-full overflow-hidden">
+            <div className="h-[3px] bg-line rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
                   issue.spentMinutes > issue.estimateMinutes ? 'bg-red-500' : 'bg-[#6366f1]'
@@ -108,12 +108,12 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
       )}
 
       {activeTimer && !isThisTimer && (
-        <p className="text-[10px] text-[#9a9a9a] mb-2">Таймер активний на іншій завдання</p>
+        <p className="text-[10px] text-muted mb-2">Таймер активний на іншій завдання</p>
       )}
 
       {/* Manual log */}
       <button onClick={() => setShowLogModal(true)}
-        className="flex items-center gap-2 w-full px-3 py-2 bg-white text-[#1f1f1f] rounded-[10px] text-[12px] font-medium hover:bg-[#f4f4f5] transition-colors border border-[#e9e9e9]">
+        className="flex items-center gap-2 w-full px-3 py-2 bg-white text-ink rounded-[10px] text-[12px] font-medium hover:bg-canvas transition-colors border border-line">
         <Plus size={12} /> Додати час вручну
       </button>
 
@@ -124,41 +124,41 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
           <div className="relative bg-white rounded-[16px] shadow-xl w-[320px] p-5"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-bold text-[#1f1f1f]">Списати час</h3>
-              <button onClick={() => setShowLogModal(false)} className="text-[#9a9a9a] hover:text-[#1f1f1f]">
+              <h3 className="text-[14px] font-bold text-ink">Списати час</h3>
+              <button onClick={() => setShowLogModal(false)} className="text-muted hover:text-ink">
                 <X size={16} />
               </button>
             </div>
 
             <div className="flex gap-3 mb-3">
               <div className="flex-1">
-                <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Годин</label>
+                <label className="text-[10px] font-bold text-muted uppercase tracking-wide block mb-1">Годин</label>
                 <input type="number" min="0" max="24" value={logForm.hours}
                   onChange={e => setLogForm(f => ({ ...f, hours: e.target.value }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
+                  className="w-full px-3 py-2 bg-canvas rounded-[8px] text-[14px] font-bold text-ink border border-line focus:border-ink transition-colors text-center" />
               </div>
               <div className="flex-1">
-                <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Хвилин</label>
+                <label className="text-[10px] font-bold text-muted uppercase tracking-wide block mb-1">Хвилин</label>
                 <input type="number" min="0" max="59" value={logForm.minutes}
                   onChange={e => setLogForm(f => ({ ...f, minutes: e.target.value }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[14px] font-bold text-[#1f1f1f] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors text-center" />
+                  className="w-full px-3 py-2 bg-canvas rounded-[8px] text-[14px] font-bold text-ink border border-line focus:border-ink transition-colors text-center" />
               </div>
             </div>
 
             <div className="mb-4">
-              <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide block mb-1">Що зроблено</label>
+              <label className="text-[10px] font-bold text-muted uppercase tracking-wide block mb-1">Що зроблено</label>
               <textarea value={logForm.description}
                 onChange={e => setLogForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Описати виконану роботу..."
                 rows={2}
-                className="w-full px-3 py-2 bg-[#f4f4f5] rounded-[8px] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] border border-[#e9e9e9] focus:border-[#1f1f1f] transition-colors resize-none" />
+                className="w-full px-3 py-2 bg-canvas rounded-[8px] text-[12px] text-ink placeholder-faint border border-line focus:border-ink transition-colors resize-none" />
             </div>
 
             <button onClick={handleManualLog}
               disabled={!logForm.hours && !logForm.minutes}
-              className="w-full py-[10px] bg-[#1f1f1f] text-white rounded-[10px] text-[13px] font-bold hover:bg-[#303030] disabled:opacity-40 transition-colors">
+              className="w-full py-[10px] bg-ink text-white rounded-[10px] text-[13px] font-bold hover:bg-ink-hover disabled:opacity-40 transition-colors">
               Зберегти
             </button>
           </div>

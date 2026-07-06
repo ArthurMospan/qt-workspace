@@ -34,15 +34,15 @@ function BarChart({ data, colorA = '#6366f1', colorB = '#10b981', labelA = 'Ст
       </div>
       {/* X labels — show only first and last */}
       <div className="flex justify-between mt-2">
-        <span className="text-[9px] text-[#cfcfcf]">{data[0]?.label}</span>
-        <span className="text-[9px] text-[#cfcfcf]">{data[data.length - 1]?.label}</span>
+        <span className="text-[9px] text-faint">{data[0]?.label}</span>
+        <span className="text-[9px] text-faint">{data[data.length - 1]?.label}</span>
       </div>
       <div className="flex items-center gap-4 mt-2">
-        <span className="flex items-center gap-1.5 text-[10px] text-[#9a9a9a]">
+        <span className="flex items-center gap-1.5 text-[10px] text-muted">
           <span className="w-2 h-2 rounded-sm inline-block opacity-60" style={{ background: colorA }} />
           {labelA}
         </span>
-        <span className="flex items-center gap-1.5 text-[10px] text-[#9a9a9a]">
+        <span className="flex items-center gap-1.5 text-[10px] text-muted">
           <span className="w-2 h-2 rounded-sm inline-block" style={{ background: colorB }} />
           {labelB}
         </span>
@@ -78,7 +78,7 @@ function BurndownChart({ issues, days = 30 }) {
 
   if (data.length === 0) return (
     <div className="flex items-center justify-center h-[120px]">
-      <p className="text-[12px] text-[#cfcfcf]">Недостатньо даних для burndown</p>
+      <p className="text-[12px] text-faint">Недостатньо даних для burndown</p>
     </div>
   );
 
@@ -117,15 +117,15 @@ function BurndownChart({ issues, days = 30 }) {
         </svg>
       </div>
       <div className="flex justify-between mt-2">
-        <span className="text-[9px] text-[#cfcfcf]">{data[0]?.label}</span>
-        <span className="text-[9px] text-[#cfcfcf]">{data[data.length - 1]?.label}</span>
+        <span className="text-[9px] text-faint">{data[0]?.label}</span>
+        <span className="text-[9px] text-faint">{data[data.length - 1]?.label}</span>
       </div>
       <div className="flex items-center gap-4 mt-2">
-        <span className="flex items-center gap-1.5 text-[10px] text-[#9a9a9a]">
-          <span className="inline-block w-6 border-t border-dashed border-[#cfcfcf]" />
+        <span className="flex items-center gap-1.5 text-[10px] text-muted">
+          <span className="inline-block w-6 border-t border-dashed border-faint" />
           Ідеальний темп
         </span>
-        <span className="flex items-center gap-1.5 text-[10px] text-[#9a9a9a]">
+        <span className="flex items-center gap-1.5 text-[10px] text-muted">
           <span className="inline-block w-6 border-t-2 border-[#6366f1]" />
           Фактичний
         </span>
@@ -265,18 +265,18 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         {/* Charts row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Daily Activity */}
-          <div className="md:col-span-2 bg-[#f4f4f5] rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
+          <div className="md:col-span-2 bg-canvas rounded-[16px] p-5">
+            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Активність ({period} днів)
             </h3>
             <BarChart data={stats.days} colorA="#6366f1" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />
           </div>
 
           {/* By type */}
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">По типах</h3>
+          <div className="bg-canvas rounded-[16px] p-5">
+            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">По типах</h3>
             {stats.byType.length === 0 ? (
-              <p className="text-[12px] text-[#cfcfcf] py-4">Немає даних</p>
+              <p className="text-[12px] text-faint py-4">Немає даних</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {stats.byType.map(({ type, label, color, total, done, pct }) => (
@@ -286,7 +286,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                         style={{ background: color + '18', color }}>
                         {label}
                       </span>
-                      <span className="text-[11px] text-[#9a9a9a]">{done}/{total}</span>
+                      <span className="text-[11px] text-muted">{done}/{total}</span>
                     </div>
                     <div className="h-[5px] bg-white rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
@@ -300,8 +300,8 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Burndown */}
-        <div className="bg-[#f4f4f5] rounded-[16px] p-5 mb-6">
-          <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
+        <div className="bg-canvas rounded-[16px] p-5 mb-6">
+          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
             Burndown Chart ({period} днів)
           </h3>
           <BurndownChart issues={issues} days={period} />
@@ -309,8 +309,8 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
         {/* Weekly velocity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
+          <div className="bg-canvas rounded-[16px] p-5">
+            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)
             </h3>
             <WeeklyVelocityChart issues={issues} weeksBack={8} />
@@ -318,8 +318,8 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
           {/* By project */}
           {stats.byProject.length > 0 && (
-            <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-              <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
+            <div className="bg-canvas rounded-[16px] p-5">
+              <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
                 По проєктах (закрито за {period}д)
               </h3>
               <div className="flex flex-col gap-3">
@@ -330,7 +330,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                       <div className="h-full bg-[#6366f1] rounded-full transition-all"
                         style={{ width: `${total > 0 ? (count / Math.max(...stats.byProject.map(x => x.count), 1)) * 100 : 0}%` }} />
                     </div>
-                    <span className="text-[12px] font-bold text-[#1f1f1f] w-6 text-right shrink-0">{count}</span>
+                    <span className="text-[12px] font-bold text-ink w-6 text-right shrink-0">{count}</span>
                   </div>
                 ))}
               </div>
@@ -339,12 +339,12 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Recent done issues */}
-        <div className="bg-[#f4f4f5] rounded-[16px] p-5">
-          <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">
+        <div className="bg-canvas rounded-[16px] p-5">
+          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
             Нещодавно закриті завдання
           </h3>
           {stats.donePeriod === 0 ? (
-            <p className="text-[13px] text-[#9a9a9a] py-4 text-center">За вказаний період завдань не закрито</p>
+            <p className="text-[13px] text-muted py-4 text-center">За вказаний період завдань не закрито</p>
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
               {issues
@@ -358,15 +358,15 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                   return (
                     <div key={issue.id} className="py-3 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-[#1f1f1f] truncate">{issue.title}</p>
-                        <p className="text-[10px] text-[#9a9a9a] mt-0.5">
+                        <p className="text-[13px] font-medium text-ink truncate">{issue.title}</p>
+                        <p className="text-[10px] text-muted mt-0.5">
                           {issue.issueKey && <span className="font-semibold mr-1">{issue.issueKey}</span>}
                           {proj?.name}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         {cycleDays !== null && (
-                          <span className="text-[11px] text-[#9a9a9a]">{cycleDays}д цикл</span>
+                          <span className="text-[11px] text-muted">{cycleDays}д цикл</span>
                         )}
                         <span className="text-[11px] font-bold text-[#10b981] bg-green-50 px-2 py-0.5 rounded-full">✓ Done</span>
                       </div>

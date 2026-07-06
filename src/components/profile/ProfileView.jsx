@@ -27,14 +27,14 @@ function RateEditor({ uid, initialRate, onSave }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Погодинна ставка (USD)</h3>
+      <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Погодинна ставка (USD)</h3>
       <input
         type="number" min="0" step="1"
         value={rate}
         onChange={e => setRate(e.target.value)}
         onBlur={save}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-        className="w-full max-w-[220px] px-4 py-[12px] bg-[#f4f4f5] border border-[#e9e9e9] rounded-[10px] text-[14px] font-semibold text-[#1f1f1f] focus:border-[#1f1f1f] outline-none transition-colors"
+        className="w-full max-w-[220px] px-4 py-[12px] bg-canvas border border-line rounded-[10px] text-[14px] font-semibold text-ink focus:border-ink outline-none transition-colors"
       />
     </div>
   );
@@ -170,7 +170,7 @@ export default function ProfileView({ user, onClose }) {
               <div className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
                 <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
                 {user.status && (
-                  <span className="text-[13px] font-normal text-[#1f1f1f] tracking-tight truncate">
+                  <span className="text-[13px] font-normal text-ink tracking-tight truncate">
                     {user.status}
                   </span>
                 )}
@@ -179,8 +179,8 @@ export default function ProfileView({ user, onClose }) {
           </div>
           
           <div className="flex flex-col gap-1 text-center items-center">
-            <h2 className="text-[24px] font-black text-[#1f1f1f]">{user.name || user.email} {isMe && <span className="text-[#9a9a9a] font-normal text-[18px]">(ти)</span>}</h2>
-            <p className="text-[14px] text-[#9a9a9a] font-medium">
+            <h2 className="text-[24px] font-black text-ink">{user.name || user.email} {isMe && <span className="text-muted font-normal text-[18px]">(ти)</span>}</h2>
+            <p className="text-[14px] text-muted font-medium">
               {positionName}
             </p>
           </div>
@@ -237,13 +237,13 @@ export default function ProfileView({ user, onClose }) {
             {/* Про себе */}
             {(details.bio || isMe) && (
               <div className="flex flex-col gap-3">
-                <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Про себе</h3>
+                <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Про себе</h3>
                 {details.bio ? (
-                  <p className="text-[14px] text-[#1f1f1f] leading-relaxed">
+                  <p className="text-[14px] text-ink leading-relaxed">
                     {details.bio}
                   </p>
                 ) : (
-                  <p className="text-[14px] text-[#cfcfcf] italic">
+                  <p className="text-[14px] text-faint italic">
                     Додайте опис у налаштуваннях профілю.
                   </p>
                 )}
@@ -253,10 +253,10 @@ export default function ProfileView({ user, onClose }) {
             {/* Навички */}
             {details.skills && details.skills.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Навички</h3>
+                <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Навички</h3>
                 <div className="flex flex-wrap gap-2">
                   {details.skills.map(skill => (
-                    <Badge key={skill} variant="gray" className="text-[13px] px-3 py-1 bg-[#f4f4f5] text-[#1f1f1f] border-transparent font-medium">
+                    <Badge key={skill} variant="gray" className="text-[13px] px-3 py-1 bg-canvas text-ink border-transparent font-medium">
                       {skill}
                     </Badge>
                   ))}
@@ -266,67 +266,67 @@ export default function ProfileView({ user, onClose }) {
 
             {/* Анкета */}
             <div className="flex flex-col gap-4">
-              <h3 className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Контакти</h3>
+              <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Контакти</h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                 {/* Telegram */}
                 <div className="flex items-center gap-3">
-                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
-                    <Send size={14} className="text-[#1f1f1f]" />
+                  <div className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <Send size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Telegram</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Telegram</span>
                     {details.telegram ? (
-                      <a href={`https://t.me/${details.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#1f1f1f] hover:underline font-medium truncate leading-none">
+                      <a href={`https://t.me/${details.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-ink hover:underline font-medium truncate leading-none">
                         {details.telegram}
                       </a>
                     ) : (
-                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                      <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
                   </div>
                 </div>
 
                 {/* Phone */}
                 <div className="flex items-center gap-3">
-                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
-                    <Phone size={14} className="text-[#1f1f1f]" />
+                  <div className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <Phone size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Телефон (Контактний номер)</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Телефон (Контактний номер)</span>
                     {details.phone ? (
-                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{details.phone}</span>
+                      <span className="text-[13px] text-ink font-medium leading-none truncate">{details.phone}</span>
                     ) : (
-                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                      <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
                   </div>
                 </div>
 
                 {/* Location */}
                 <div className="flex items-center gap-3">
-                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
-                    <MapPin size={14} className="text-[#1f1f1f]" />
+                  <div className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <MapPin size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Локація (Місто, країна)</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Локація (Місто, країна)</span>
                     {details.location ? (
-                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{details.location}</span>
+                      <span className="text-[13px] text-ink font-medium leading-none truncate">{details.location}</span>
                     ) : (
-                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                      <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
                   </div>
                 </div>
                 
                 {/* Email */}
                 <div className="flex items-center gap-3">
-                  <div className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
-                    <Mail size={14} className="text-[#1f1f1f]" />
+                  <div className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <Mail size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-[#9a9a9a] leading-none mb-1">Email</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Email</span>
                     {user.email ? (
-                      <span className="text-[13px] text-[#1f1f1f] font-medium leading-none truncate">{user.email}</span>
+                      <span className="text-[13px] text-ink font-medium leading-none truncate">{user.email}</span>
                     ) : (
-                      <span className="text-[13px] text-[#cfcfcf] leading-none">Не вказано</span>
+                      <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
                   </div>
                 </div>
@@ -348,8 +348,8 @@ export default function ProfileView({ user, onClose }) {
         {activeTab === 'tasks' && (
           <div className="flex flex-col gap-2">
             {allActiveTasks.length === 0 ? (
-              <div className="bg-[#f4f4f5] rounded-[16px] p-8 text-center border border-[#f0f0f0]">
-                <p className="text-[14px] text-[#9a9a9a]">Немає активних задач</p>
+              <div className="bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]">
+                <p className="text-[14px] text-muted">Немає активних задач</p>
               </div>
             ) : (
               allActiveTasks.map(task => {

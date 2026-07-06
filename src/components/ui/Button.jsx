@@ -48,19 +48,19 @@ const COLLAPSE_LABEL = { sm: 'max-sm:hidden', md: 'max-md:hidden' };
 
 const STYLES = {
   primary: {
-    dark: 'bg-[#1f1f1f] text-white hover:bg-[#303030]',
+    dark: 'bg-ink text-white hover:bg-ink-hover',
     red:  'bg-[#ef4444] text-white hover:bg-[#dc2626]',
   },
   secondary: {
-    dark: 'bg-[#f5f5f5] text-[#1f1f1f] hover:bg-[#ebebeb]',
+    dark: 'bg-[#f5f5f5] text-ink hover:bg-[#ebebeb]',
     red:  'bg-[#f5f5f5] text-[#ef4444] hover:bg-[#ebebeb]',
   },
   outline: {
-    dark: 'bg-transparent text-[#1f1f1f] border-2 border-[#1f1f1f] hover:bg-[#f4f4f5]',
+    dark: 'bg-transparent text-ink border-2 border-ink hover:bg-canvas',
     red:  'bg-transparent text-[#ef4444] border-2 border-[#ef4444] hover:bg-[#fee2e2]',
   },
   ghost: {
-    dark: 'bg-transparent text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f0f0f0]',
+    dark: 'bg-transparent text-muted hover:text-ink hover:bg-[#f0f0f0]',
     red:  'bg-transparent text-[#ef4444] hover:bg-[#fee2e2]',
   },
 };

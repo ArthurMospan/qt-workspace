@@ -53,7 +53,7 @@ function invoiceNumber() {
 function Field({ label, children }) {
   return (
     <div className="w-full">
-      <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">{label}</label>
+      <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{label}</label>
       {children}
     </div>
   );
@@ -66,7 +66,7 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
     <div className="flex items-center gap-3 py-[10px] border-b border-[#f0f0f0] last:border-0">
       <UserAvatar user={member} size={28} />
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-[#1f1f1f] truncate">{member?.name || member?.email || uid}</p>
+        <p className="text-[12px] font-medium text-ink truncate">{member?.name || member?.email || uid}</p>
         <Select
           value={preset || member?.positionId || ''}
           onChange={val => {
@@ -84,13 +84,13 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
         />
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <span className="text-[12px] text-[#9a9a9a] font-semibold">{currency}/г</span>
+        <span className="text-[12px] text-muted font-semibold">{currency}/г</span>
         <input
           type="number"
           min={0}
           value={rate}
           onChange={e => onRateChange(Number(e.target.value))}
-          className="w-[60px] h-[32px] text-[13px] font-semibold bg-[#f4f4f5] border-0 rounded-[8px] px-2 outline-none focus:bg-[#efefef] text-right"
+          className="w-[60px] h-[32px] text-[13px] font-semibold bg-canvas border-0 rounded-[8px] px-2 outline-none focus:bg-[#efefef] text-right"
         />
       </div>
     </div>
@@ -135,7 +135,7 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
 
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div className="flex items-center gap-[8px] flex-wrap">
-            <span className="text-[10px] font-bold text-[#9a9a9a] bg-[#f5f5f5] px-2 py-0.5 rounded tracking-wide">
+            <span className="text-[10px] font-bold text-muted bg-[#f5f5f5] px-2 py-0.5 rounded tracking-wide">
               {issue.issueKey || 'TASK'}
             </span>
             <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full" style={{ color: TYPE_META[type]?.color || '#059669', background: (TYPE_META[type]?.color || '#059669') + '18' }}>
@@ -153,11 +153,11 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
               {Object.entries(issueLogs.byUser).map(([uid, min]) => {
                 const m = members.find(me => (me.id || me.uid) === uid);
                 return (
-                  <div key={uid} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#9a9a9a] bg-[#f4f4f5] px-2 py-0.5 rounded-full">
+                  <div key={uid} className="flex items-center gap-1.5 text-[11px] font-semibold text-muted bg-canvas px-2 py-0.5 rounded-full">
                     <Clock size={10} />
                     <span>{m?.name || uid.slice(0, 6)}: {fmtMin(min)}</span>
                     {rates[uid] ? (
-                      <span className="text-[#1f1f1f] font-bold">({fmtMoney((min / 60) * rates[uid], currency)})</span>
+                      <span className="text-ink font-bold">({fmtMoney((min / 60) * rates[uid], currency)})</span>
                     ) : null}
                   </div>
                 );
@@ -165,12 +165,12 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
             </div>
           ) : (
             issue.estimateMinutes ? (
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-[#9a9a9a] mt-1.5">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-muted mt-1.5">
                 <Clock size={11} />
                 <span>Оцінка: {fmtMin(issue.estimateMinutes)}</span>
               </div>
             ) : (
-              <span className="text-[11px] text-[#cfcfcf] italic mt-1 block">Часу не списано, немає оцінки</span>
+              <span className="text-[11px] text-faint italic mt-1 block">Часу не списано, немає оцінки</span>
             )
           )}
         </div>
@@ -186,7 +186,7 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
               onClick={onUseManual} 
               title={useManual ? 'Перейти на авто' : 'Ввести вручну'}
               className={`text-[10px] font-bold px-2 py-[2.5px] rounded-full transition-colors uppercase tracking-wider ${
-                useManual ? 'bg-[#1f1f1f] text-white' : 'bg-[#f4f4f5] text-[#9a9a9a] hover:bg-[#efefef]'
+                useManual ? 'bg-ink text-white' : 'bg-canvas text-muted hover:bg-[#efefef]'
               }`}
             >
               {useManual ? 'ручна' : 'авто'}
@@ -203,7 +203,7 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
               className="w-[90px] h-[32px] text-right"
             />
           ) : (
-            <span className={`text-[14px] font-bold ${price > 0 ? 'text-[#1f1f1f]' : 'text-[#cfcfcf]'}`}>
+            <span className={`text-[14px] font-bold ${price > 0 ? 'text-ink' : 'text-faint'}`}>
               {price > 0 ? fmtMoney(price, currency) : '—'}
             </span>
           )}
@@ -286,52 +286,52 @@ function InvoicePreview({ invoice, project, org, onClose }) {
           <div ref={printRef} className="px-2 py-3 max-w-[640px] mx-auto">
             <div className="flex items-start justify-between mb-8">
               <div>
-                <h1 className="text-[28px] font-black text-[#1f1f1f] tracking-tight">РАХУНОК</h1>
-                <p className="text-[14px] font-semibold text-[#9a9a9a]">{invoice.number}</p>
+                <h1 className="text-[28px] font-black text-ink tracking-tight">РАХУНОК</h1>
+                <p className="text-[14px] font-semibold text-muted">{invoice.number}</p>
               </div>
               <div className="text-right">
-                <p className="text-[12px] text-[#9a9a9a]">Дата виставлення</p>
-                <p className="text-[15px] font-bold text-[#1f1f1f]">{invoice.date}</p>
+                <p className="text-[12px] text-muted">Дата виставлення</p>
+                <p className="text-[15px] font-bold text-ink">{invoice.date}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-8 mb-8">
               <div>
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-1">Від</p>
-                <p className="text-[13px] font-semibold text-[#1f1f1f]">{invoice.fromName || 'Ваша агенція'}</p>
-                {invoice.fromDetails && <p className="text-[12px] text-[#9a9a9a] mt-1 whitespace-pre-line">{invoice.fromDetails}</p>}
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Від</p>
+                <p className="text-[13px] font-semibold text-ink">{invoice.fromName || 'Ваша агенція'}</p>
+                {invoice.fromDetails && <p className="text-[12px] text-muted mt-1 whitespace-pre-line">{invoice.fromDetails}</p>}
               </div>
               <div>
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-1">Кому</p>
-                <p className="text-[13px] font-semibold text-[#1f1f1f]">{invoice.clientName || '—'}</p>
-                {invoice.clientDetails && <p className="text-[12px] text-[#9a9a9a] mt-1 whitespace-pre-line">{invoice.clientDetails}</p>}
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Кому</p>
+                <p className="text-[13px] font-semibold text-ink">{invoice.clientName || '—'}</p>
+                {invoice.clientDetails && <p className="text-[12px] text-muted mt-1 whitespace-pre-line">{invoice.clientDetails}</p>}
               </div>
             </div>
 
-            <div className="bg-[#f4f4f5] rounded-[10px] px-4 py-3 mb-6">
-              <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Проєкт</p>
-              <p className="text-[13px] font-semibold text-[#1f1f1f] mt-[2px]">{project?.name}</p>
+            <div className="bg-canvas rounded-[10px] px-4 py-3 mb-6">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Проєкт</p>
+              <p className="text-[13px] font-semibold text-ink mt-[2px]">{project?.name}</p>
             </div>
 
             <table className="w-full mb-2" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2 border-b-2 border-[#1f1f1f]">Послуга</th>
-                  <th className="text-center text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2 border-b-2 border-[#1f1f1f] w-[90px]">Час</th>
-                  <th className="text-right text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider pb-2 border-b-2 border-[#1f1f1f] w-[100px]">Сума</th>
+                  <th className="text-left text-[10px] font-bold text-muted uppercase tracking-wider pb-2 border-b-2 border-ink">Послуга</th>
+                  <th className="text-center text-[10px] font-bold text-muted uppercase tracking-wider pb-2 border-b-2 border-ink w-[90px]">Час</th>
+                  <th className="text-right text-[10px] font-bold text-muted uppercase tracking-wider pb-2 border-b-2 border-ink w-[100px]">Сума</th>
                 </tr>
               </thead>
               <tbody>
                 {invoice.items.map((item, i) => (
                   <tr key={i}>
                     <td className="py-3 border-b border-[#f0f0f0]">
-                      <p className="text-[13px] font-medium text-[#1f1f1f]">{item.title}</p>
-                      <p className="text-[10px] text-[#9a9a9a]">{item.key} · {item.status}</p>
+                      <p className="text-[13px] font-medium text-ink">{item.title}</p>
+                      <p className="text-[10px] text-muted">{item.key} · {item.status}</p>
                     </td>
-                    <td className="py-3 border-b border-[#f0f0f0] text-center text-[12px] text-[#9a9a9a]">
+                    <td className="py-3 border-b border-[#f0f0f0] text-center text-[12px] text-muted">
                       {item.minutes > 0 ? fmtMin(item.minutes) : '—'}
                     </td>
-                    <td className="py-3 border-b border-[#f0f0f0] text-right text-[13px] font-semibold text-[#1f1f1f]">
+                    <td className="py-3 border-b border-[#f0f0f0] text-right text-[13px] font-semibold text-ink">
                       {fmtMoney(item.price, invoice.currency)}
                     </td>
                   </tr>
@@ -341,30 +341,30 @@ function InvoicePreview({ invoice, project, org, onClose }) {
 
             <div className="flex flex-col items-end gap-1 mt-4">
               <div className="flex justify-between w-[240px]">
-                <span className="text-[12px] text-[#9a9a9a]">Підсумок</span>
-                <span className="text-[13px] font-medium text-[#1f1f1f]">{fmtMoney(invoice.subtotal, invoice.currency)}</span>
+                <span className="text-[12px] text-muted">Підсумок</span>
+                <span className="text-[13px] font-medium text-ink">{fmtMoney(invoice.subtotal, invoice.currency)}</span>
               </div>
               {invoice.discount > 0 && (
                 <div className="flex justify-between w-[240px]">
-                  <span className="text-[12px] text-[#9a9a9a]">Знижка ({invoice.discountPct}%)</span>
+                  <span className="text-[12px] text-muted">Знижка ({invoice.discountPct}%)</span>
                   <span className="text-[13px] font-medium text-green-600">−{fmtMoney(invoice.discount, invoice.currency)}</span>
                 </div>
               )}
               {invoice.tax > 0 && (
                 <div className="flex justify-between w-[240px]">
-                  <span className="text-[12px] text-[#9a9a9a]">ПДВ ({invoice.taxPct}%)</span>
-                  <span className="text-[13px] font-medium text-[#1f1f1f]">+{fmtMoney(invoice.tax, invoice.currency)}</span>
+                  <span className="text-[12px] text-muted">ПДВ ({invoice.taxPct}%)</span>
+                  <span className="text-[13px] font-medium text-ink">+{fmtMoney(invoice.tax, invoice.currency)}</span>
                 </div>
               )}
-              <div className="flex justify-between w-[240px] border-t border-[#1f1f1f] pt-2 mt-1">
-                <span className="text-[13px] font-bold text-[#1f1f1f]">До оплати</span>
-                <span className="text-[18px] font-black text-[#1f1f1f]">{fmtMoney(invoice.total, invoice.currency)}</span>
+              <div className="flex justify-between w-[240px] border-t border-ink pt-2 mt-1">
+                <span className="text-[13px] font-bold text-ink">До оплати</span>
+                <span className="text-[18px] font-black text-ink">{fmtMoney(invoice.total, invoice.currency)}</span>
               </div>
             </div>
 
             {invoice.notes && (
               <div className="mt-8 pt-6 border-t border-[#f0f0f0]">
-                <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Примітки</p>
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Примітки</p>
                 <p className="text-[12px] text-[#4a4a4a] whitespace-pre-line">{invoice.notes}</p>
               </div>
             )}
@@ -599,10 +599,10 @@ export default function BillingTab({ issues = [], members = [], project, project
 
               {/* Rates section */}
               <Field label="Ставки виконавців">
-                <Surface variant="panel" padding="none" className="overflow-hidden border border-[#e9e9e9] rounded-2xl">
+                <Surface variant="panel" padding="none" className="overflow-hidden border border-line rounded-2xl">
                   {positions.length > 0 && (
                     <div className="px-4 pt-3 pb-2 bg-[#fafafa]">
-                      <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Швидкі пресети</p>
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Швидкі пресети</p>
                       <div className="flex flex-wrap gap-1.5">
                         {positions.map(preset => (
                           <Button key={preset.id}
@@ -622,7 +622,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                   )}
                   <div className="px-4 py-2 divide-y divide-[#f0f0f0]">
                     {billingMembers.length === 0 ? (
-                      <p className="text-[12px] text-[#cfcfcf] py-3 text-center">Учасників з часом немає</p>
+                      <p className="text-[12px] text-faint py-3 text-center">Учасників з часом немає</p>
                     ) : (
                       billingMembers.map(m => {
                         const uid = m.id || m.uid;
@@ -650,10 +650,10 @@ export default function BillingTab({ issues = [], members = [], project, project
 
           {tab === 'issues' && (
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-[#e9e9e9]">
+              <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-line">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-[#1f1f1f]">Завдання:</span>
-                  <span className="text-[12px] text-[#9a9a9a]">({checkedCount} обрано)</span>
+                  <span className="text-[12px] font-bold text-ink">Завдання:</span>
+                  <span className="text-[12px] text-muted">({checkedCount} обрано)</span>
                 </div>
                 
                 <div className="flex gap-1">
@@ -690,7 +690,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                     <LoadingSpinner size="md" />
                   </div>
                 ) : filteredIssues.length === 0 ? (
-                  <div className="py-12 text-center text-[13px] text-[#cfcfcf] font-semibold">Задач немає</div>
+                  <div className="py-12 text-center text-[13px] text-faint font-semibold">Задач немає</div>
                 ) : (
                   filteredIssues.map(iss => (
                     <IssueRow
@@ -720,15 +720,15 @@ export default function BillingTab({ issues = [], members = [], project, project
           {tab === 'history' && (
             <div className="flex flex-col gap-3">
               {savedInvoices.length === 0 ? (
-                <div className="py-12 text-center text-[13px] text-[#cfcfcf] font-semibold">Немає збережених рахунків</div>
+                <div className="py-12 text-center text-[13px] text-faint font-semibold">Немає збережених рахунків</div>
               ) : (
                 savedInvoices.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between p-4 border border-[#e9e9e9] rounded-2xl bg-[#fafafa]">
+                  <div key={inv.id} className="flex items-center justify-between p-4 border border-line rounded-2xl bg-[#fafafa]">
                     <div>
-                      <p className="text-[13px] font-bold text-[#1f1f1f]">{inv.number}</p>
-                      <p className="text-[11px] text-[#9a9a9a] font-medium mt-1">{inv.date} · {inv.items?.length} завдань</p>
+                      <p className="text-[13px] font-bold text-ink">{inv.number}</p>
+                      <p className="text-[11px] text-muted font-medium mt-1">{inv.date} · {inv.items?.length} завдань</p>
                     </div>
-                    <span className="text-[14px] font-black text-[#1f1f1f]">{fmtMoney(inv.total, inv.currency)}</span>
+                    <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
                   </div>
                 ))
               )}
@@ -738,7 +738,7 @@ export default function BillingTab({ issues = [], members = [], project, project
 
         {/* RIGHT: always-visible invoice summary rail */}
         <Card variant="gray" padding="lg" className="lg:col-span-1 flex flex-col gap-4">
-          <h3 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">
+          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider">
             Рахунок · {project?.name || 'Проєкт'}
           </h3>
 
@@ -761,38 +761,38 @@ export default function BillingTab({ issues = [], members = [], project, project
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-[12px] p-3 border border-[#e9e9e9]">
-              <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Обрано завдань</p>
-              <p className="text-[18px] font-bold text-[#1f1f1f] mt-[2px]">
-                {checkedCount}<span className="text-[12px] text-[#cfcfcf] font-semibold"> / {issues.length}</span>
+            <div className="bg-white rounded-[12px] p-3 border border-line">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Обрано завдань</p>
+              <p className="text-[18px] font-bold text-ink mt-[2px]">
+                {checkedCount}<span className="text-[12px] text-faint font-semibold"> / {issues.length}</span>
               </p>
             </div>
-            <div className="bg-white rounded-[12px] p-3 border border-[#e9e9e9]">
-              <p className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">Списано часу</p>
-              <p className="text-[18px] font-bold text-[#1f1f1f] mt-[2px]">{fmtMin(totalLoggedMin)}</p>
+            <div className="bg-white rounded-[12px] p-3 border border-line">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Списано часу</p>
+              <p className="text-[18px] font-bold text-ink mt-[2px]">{fmtMin(totalLoggedMin)}</p>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-[13px]">
-              <span className="text-[#9a9a9a]">Підсумок</span>
-              <span className="font-bold text-[#1f1f1f]">{fmtMoney(subtotal, currency)}</span>
+              <span className="text-muted">Підсумок</span>
+              <span className="font-bold text-ink">{fmtMoney(subtotal, currency)}</span>
             </div>
             {discountPct > 0 && (
               <div className="flex justify-between text-[13px]">
-                <span className="text-[#9a9a9a]">Знижка ({discountPct}%)</span>
+                <span className="text-muted">Знижка ({discountPct}%)</span>
                 <span className="font-bold text-green-600">−{fmtMoney(discount, currency)}</span>
               </div>
             )}
             {taxPct > 0 && (
               <div className="flex justify-between text-[13px]">
-                <span className="text-[#9a9a9a]">ПДВ ({taxPct}%)</span>
-                <span className="font-bold text-[#1f1f1f]">+{fmtMoney(tax, currency)}</span>
+                <span className="text-muted">ПДВ ({taxPct}%)</span>
+                <span className="font-bold text-ink">+{fmtMoney(tax, currency)}</span>
               </div>
             )}
             <div className="flex justify-between pt-3 border-t border-[#e4e4e4] items-center">
-              <span className="text-[13px] font-bold text-[#1f1f1f]">До оплати</span>
-              <span className="text-[20px] font-black text-[#1f1f1f]">{fmtMoney(total, currency)}</span>
+              <span className="text-[13px] font-bold text-ink">До оплати</span>
+              <span className="text-[20px] font-black text-ink">{fmtMoney(total, currency)}</span>
             </div>
           </div>
 

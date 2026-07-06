@@ -129,7 +129,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
   const backlogIssues = filtered.filter(i => !i.sprintId);
 
   const TableHeaderItem = ({ label, tableKey }) => (
-    <th onClick={() => toggleSort(tableKey)} className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-[#1f1f1f] transition-colors select-none">
+    <th onClick={() => toggleSort(tableKey)} className="text-left text-[10px] font-bold text-muted uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-ink transition-colors select-none">
       {label}<SortIcon k={tableKey} sortKey={sortKey} sortDir={sortDir} />
     </th>
   );
@@ -144,7 +144,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             <TableHeaderItem label="Тип" tableKey="type" />
             <TableHeaderItem label="Статус" tableKey="columnId" />
             <TableHeaderItem label="Пріоритет" tableKey="priority" />
-            <th className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3">Виконавці</th>
+            <th className="text-left text-[10px] font-bold text-muted uppercase tracking-wide px-4 py-3">Виконавці</th>
             <TableHeaderItem label="Час" tableKey="spentMinutes" />
           </tr>
         </thead>
@@ -164,15 +164,15 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                         onClick={() => setActiveIssue(issue)}
-                        className={`bg-white cursor-pointer transition-all duration-200 group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-[#6366f1]' : 'hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#1f1f1f]/5'}`}
+                        className={`bg-white cursor-pointer transition-all duration-200 group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-[#6366f1]' : 'hover:bg-[#fcfcfc] hover:ring-4 hover:ring-ink/5'}`}
                         style={provided.draggableProps.style}
                       >
                         <td className="px-4 py-3 w-[100px] first:rounded-l-[16px] border-y border-l border-[#efefef]">
-                          <span className="font-mono text-[11px] font-bold text-[#9a9a9a] group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
+                          <span className="font-mono text-[11px] font-bold text-muted group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
                         </td>
                         <td className="px-4 py-3 max-w-[280px] border-y border-[#efefef]">
                           <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-semibold text-[#1f1f1f] truncate">{issue.title}</p>
+                            <p className="text-[13px] font-semibold text-ink truncate">{issue.title}</p>
                             {issueLinks?.some(l => 
                               l.targetIssueId === issue.id && 
                               l.relationType === 'blocks' && 
@@ -202,7 +202,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                             ))}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[11px] text-[#9a9a9a] w-[100px] last:rounded-r-[16px] border-y border-r border-[#efefef]">
+                        <td className="px-4 py-3 text-[11px] text-muted w-[100px] last:rounded-r-[16px] border-y border-r border-[#efefef]">
                           {issue.spentMinutes > 0 ? `${Math.floor(issue.spentMinutes/60)}г ${issue.spentMinutes%60}хв` : '—'}
                         </td>
                       </tr>
@@ -212,7 +212,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
               })}
               {provided.placeholder}
               {issueList.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-[12px] text-[#cfcfcf]">Задач не знайдено в цьому списку</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-[12px] text-faint">Задач не знайдено в цьому списку</td></tr>
               )}
             </tbody>
           )}
@@ -290,7 +290,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           {loading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="w-6 h-6 border-2 border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-line border-t-[#1f1f1f] rounded-full animate-spin" />
             </div>
           ) : (
             <div className="flex flex-col gap-6 pb-20">
@@ -298,13 +298,13 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             {activeOrPlannedSprints.map(sprint => {
               const sprintIssues = filtered.filter(i => i.sprintId === sprint.id);
               return (
-                <div key={sprint.id} className="bg-[#f4f4f5] rounded-[16px] border border-transparent shadow-none mb-6 overflow-hidden">
+                <div key={sprint.id} className="bg-canvas rounded-[16px] border border-transparent shadow-none mb-6 overflow-hidden">
                   <div className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-[14px] font-bold text-[#1f1f1f]">{sprint.name}</h3>
+                      <h3 className="text-[14px] font-bold text-ink">{sprint.name}</h3>
                       {sprint.status === 'active' && <Badge label="Активний" color="#10b981" />}
                       {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
-                      <span className="text-[11px] text-[#9a9a9a]">{sprintIssues.length} завдань</span>
+                      <span className="text-[11px] text-muted">{sprintIssues.length} завдань</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {sprint.status === 'planned' && (
@@ -326,10 +326,10 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             })}
 
             {/* Backlog */}
-            <div className="bg-[#f4f4f5] rounded-[16px] border border-transparent shadow-none overflow-hidden mt-4">
+            <div className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden mt-4">
               <div className="px-5 py-4 flex items-center gap-3">
-                <h3 className="text-[14px] font-bold text-[#1f1f1f]">Backlog</h3>
-                <span className="text-[11px] text-[#9a9a9a]">{backlogIssues.length} завдань</span>
+                <h3 className="text-[14px] font-bold text-ink">Backlog</h3>
+                <span className="text-[11px] text-muted">{backlogIssues.length} завдань</span>
               </div>
               <IssueTable issueList={backlogIssues} droppableId="backlog" />
             </div>

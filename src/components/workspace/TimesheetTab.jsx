@@ -66,7 +66,7 @@ function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
     ? 'bg-[#dcfce7] text-[#15803d]'
     : minutes > 0
       ? 'bg-[#ffedd5] text-[#c2410c]'
-      : 'bg-[#efefef] text-[#9a9a9a]';
+      : 'bg-[#efefef] text-muted';
   return (
     <span className={`inline-flex items-center text-[11px] font-bold px-[8px] py-[3px] rounded-[6px] whitespace-nowrap ${cls}`}>
       {compact ? fmtMin(minutes) : `${fmtMin(minutes)} з ${capacity / 60}г`}
@@ -107,12 +107,12 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
         return (
           <div key={key}
             className={`rounded-[16px] p-[8px] flex flex-col gap-[8px] min-h-[260px] ${
-              isToday ? 'bg-[#f0fdf4]' : isWeekend ? 'bg-[#fafafa]' : 'bg-[#f4f4f5]'
+              isToday ? 'bg-[#f0fdf4]' : isWeekend ? 'bg-[#fafafa]' : 'bg-canvas'
             }`}>
             {/* Day header */}
             <div className="flex items-center justify-between px-[4px] pt-[2px]">
-              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-[#15803d]' : 'text-[#9a9a9a]'}`}>
-                {DAY_LABELS[i]} <span className={`text-[13px] ${isToday ? 'text-[#166534]' : 'text-[#1f1f1f]'}`}>{d.getDate()}</span>
+              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-[#15803d]' : 'text-muted'}`}>
+                {DAY_LABELS[i]} <span className={`text-[13px] ${isToday ? 'text-[#166534]' : 'text-ink'}`}>{d.getDate()}</span>
               </span>
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
@@ -120,7 +120,7 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
             {entries.map(([issueId, minutes]) => {
               const issue = issuesById[issueId];
               return (
-                <div key={issueId} className="bg-white border border-[#e9e9e9] rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
+                <div key={issueId} className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
                       <Link href={`/workspace/${issue.projectId}/issue/${issueId}`}
@@ -128,12 +128,12 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
                         {issue.issueKey || issueId.slice(0, 6)}
                       </Link>
                     ) : (
-                      <span className="text-[12px] font-bold text-[#cfcfcf] uppercase">???</span>
+                      <span className="text-[12px] font-bold text-faint uppercase">???</span>
                     )}
-                    <span className="text-[12px] font-bold text-[#1f1f1f] shrink-0">{fmtMin(minutes)}</span>
+                    <span className="text-[12px] font-bold text-ink shrink-0">{fmtMin(minutes)}</span>
                   </div>
                   {issue?.title && (
-                    <p className="text-[11px] text-[#9a9a9a] mt-[2px] line-clamp-2 leading-snug">{issue.title}</p>
+                    <p className="text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">{issue.title}</p>
                   )}
                 </div>
               );
@@ -170,19 +170,19 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
   const dayTotals = days.map(d => rows.reduce((s, r) => s + (r.byDay[dayKey(d)] || 0), 0));
 
   return (
-    <div className="bg-[#f4f4f5] rounded-[24px] overflow-y-hidden overflow-x-auto">
+    <div className="bg-canvas rounded-[24px] overflow-y-hidden overflow-x-auto">
       <table className="w-full text-left border-collapse min-w-[760px] md:min-w-0">
         <thead>
-          <tr className="border-b border-[#e9e9e9] bg-[#fafafa]">
-            <th className="px-5 py-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[24%]">Учасник</th>
+          <tr className="border-b border-line bg-[#fafafa]">
+            <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
               <th key={i} className={`px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#f0fdf4]' : ''}`}>
-                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#15803d]' : 'text-[#9a9a9a]'}`}>
+                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#15803d]' : 'text-muted'}`}>
                   {DAY_LABELS[i]} {d.getDate()}
                 </span>
               </th>
             ))}
-            <th className="px-4 py-3 text-center text-[11px] font-bold text-[#1f1f1f] uppercase tracking-wider w-[13%]">Всього</th>
+            <th className="px-4 py-3 text-center text-[11px] font-bold text-ink uppercase tracking-wider w-[13%]">Всього</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#eeeeee]">
@@ -192,7 +192,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               <td className="px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size={26} />
-                  <span className="text-[13px] font-semibold text-[#1f1f1f] truncate">{m.name || m.email}</span>
+                  <span className="text-[13px] font-semibold text-ink truncate">{m.name || m.email}</span>
                 </div>
               </td>
               {days.map((d, i) => {
@@ -201,12 +201,12 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
                   <td key={i} className={`px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f0fdf4]' : ''}`}>
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
-                      : <span className="text-[12px] text-[#cfcfcf]">—</span>}
+                      : <span className="text-[12px] text-faint">—</span>}
                   </td>
                 );
               })}
               <td className="px-4 py-3 text-center">
-                <span className="text-[13px] font-bold text-[#1f1f1f]">{total > 0 ? fmtMin(total) : '—'}</span>
+                <span className="text-[13px] font-bold text-ink">{total > 0 ? fmtMin(total) : '—'}</span>
               </td>
             </tr>
           ))}
@@ -215,11 +215,11 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
             <td className="px-5 py-3 text-right text-[11px] font-bold text-[#4a4a4a] uppercase tracking-wider">Разом</td>
             {dayTotals.map((min, i) => (
               <td key={i} className="px-2 py-3 text-center">
-                <span className={`text-[12px] font-bold ${min > 0 ? 'text-[#1f1f1f]' : 'text-[#9a9a9a]'}`}>{min > 0 ? fmtMin(min) : '—'}</span>
+                <span className={`text-[12px] font-bold ${min > 0 ? 'text-ink' : 'text-muted'}`}>{min > 0 ? fmtMin(min) : '—'}</span>
               </td>
             ))}
             <td className="px-4 py-3 text-center">
-              <span className="text-[14px] font-bold text-[#1f1f1f]">{fmtMin(dayTotals.reduce((a, b) => a + b, 0))}</span>
+              <span className="text-[14px] font-bold text-ink">{fmtMin(dayTotals.reduce((a, b) => a + b, 0))}</span>
             </td>
           </tr>
         </tbody>
@@ -260,7 +260,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
     <div className="flex flex-col gap-[10px] min-w-[560px] md:min-w-0">
       <div className="grid grid-cols-7 gap-[10px]">
         {DAY_LABELS.map(l => (
-          <span key={l} className="text-[11px] font-bold text-[#9a9a9a] uppercase text-center">{l}</span>
+          <span key={l} className="text-[11px] font-bold text-muted uppercase text-center">{l}</span>
         ))}
       </div>
       {weeks.map((week, wi) => (
@@ -278,15 +278,15 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
                   !inMonth ? 'bg-[#fafafa] opacity-45'
                     : isToday ? 'bg-[#f0fdf4] hover:bg-[#e3f9ea]'
                     : isWeekend ? 'bg-[#fafafa] hover:bg-[#f0f0f0]'
-                    : 'bg-[#f4f4f5] hover:bg-[#ececec]'
+                    : 'bg-canvas hover:bg-[#ececec]'
                 }`}>
-                <span className={`text-[12px] font-bold ${isToday ? 'text-[#15803d]' : inMonth ? 'text-[#1f1f1f]' : 'text-[#9a9a9a]'}`}>
+                <span className={`text-[12px] font-bold ${isToday ? 'text-[#15803d]' : inMonth ? 'text-ink' : 'text-muted'}`}>
                   {d.getDate()}
                 </span>
                 {cell?.minutes > 0 && (
                   <>
                     <DayChip minutes={cell.minutes} capacity={isWeekend ? 0 : DAY_MIN} compact />
-                    <span className="text-[10px] text-[#9a9a9a] font-medium">
+                    <span className="text-[10px] text-muted font-medium">
                       {cell.issues.size} завд.
                     </span>
                   </>
@@ -379,7 +379,7 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Проєкт</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Проєкт</label>
             <Select
               value={effectiveProjectId}
               onChange={val => { setProjectId(val); setIssueId(''); }}
@@ -387,13 +387,13 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
             />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Дата</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Дата</label>
             <DatePicker value={date} onChange={val => setDate(val || todayStr())} />
           </div>
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Завдання</label>
+          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Завдання</label>
           <Select
             value={issueId}
             onChange={setIssueId}
@@ -406,26 +406,26 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Час</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Час</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} className="pr-8" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">год</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
               </div>
               <div className="relative flex-1">
                 <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} className="pr-7" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">хв</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
               </div>
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Тип роботи</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Тип роботи</label>
             <Select value={workType} onChange={setWorkType} options={WORK_TYPES} />
           </div>
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wide mb-2">Опис (необовʼязково)</label>
+          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Опис (необовʼязково)</label>
           <Input placeholder="Що було зроблено?" value={desc} onChange={e => setDesc(e.target.value)} />
         </div>
       </div>
@@ -504,18 +504,18 @@ export default function TimesheetTab({
         <div className="flex items-end justify-between gap-4 flex-wrap mb-5 pt-1">
           <div className="flex items-center gap-3 min-w-0">
             {selectedMember && (
-              <div className="flex items-center gap-2 bg-[#f4f4f5] rounded-full pl-[4px] pr-[12px] py-[4px]">
+              <div className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]">
                 <UserAvatar user={selectedMember} size={24} />
-                <span className="text-[13px] font-bold text-[#1f1f1f] truncate">{selectedMember.name || selectedMember.email}</span>
+                <span className="text-[13px] font-bold text-ink truncate">{selectedMember.name || selectedMember.email}</span>
               </div>
             )}
-            <h2 className="text-[20px] font-bold text-[#1f1f1f] tracking-tight">{rangeLabel}</h2>
+            <h2 className="text-[20px] font-bold text-ink tracking-tight">{rangeLabel}</h2>
           </div>
-          <p className="text-[13px] text-[#9a9a9a] font-medium">
+          <p className="text-[13px] text-muted font-medium">
             Витрачений час{' '}
-            <span className="text-[#1f1f1f] font-bold">{fmtWork(totalMin)}</span>
+            <span className="text-ink font-bold">{fmtWork(totalMin)}</span>
             {' '}з <span className="font-semibold">{fmtWork(teamCapacity)}</span>
-            {isTeam && <span className="text-[#cfcfcf]"> · {members.length} учасн.</span>}
+            {isTeam && <span className="text-faint"> · {members.length} учасн.</span>}
           </p>
         </div>
 
@@ -531,7 +531,7 @@ export default function TimesheetTab({
         )}
 
         {mode === 'week' && !isTeam && rangeLogs.length === 0 && (
-          <p className="text-center text-[13px] text-[#9a9a9a] mt-6">Немає залогованого часу за цей тиждень</p>
+          <p className="text-center text-[13px] text-muted mt-6">Немає залогованого часу за цей тиждень</p>
         )}
       </div>
 

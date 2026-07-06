@@ -32,7 +32,7 @@ export function Toast({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none flex flex-col items-center">
       <div 
-        className="flex items-center gap-3 bg-[#1f1f1f] text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
+        className="flex items-center gap-3 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
         style={{ animation: 'toastSlideUp 0.2s ease-out' }}
       >
         {isSuccess && <CheckCircle size={15} className="text-green-400 shrink-0" />}

@@ -17,7 +17,7 @@ export function SidebarLayout({
       <div className="flex-1 flex overflow-hidden" style={{ gap }}>
         {/* Sidebar container */}
         <div
-          className={`${mobilePane === 'content' ? 'hidden' : 'flex'} md:flex bg-[#f4f4f5] rounded-[16px] flex-col overflow-hidden shrink-0 w-full md:w-[var(--sbw)]`}
+          className={`${mobilePane === 'content' ? 'hidden' : 'flex'} md:flex bg-canvas rounded-[16px] flex-col overflow-hidden shrink-0 w-full md:w-[var(--sbw)]`}
           style={{ '--sbw': sidebarWidth }}
         >
           {sidebar}

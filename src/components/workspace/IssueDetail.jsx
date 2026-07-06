@@ -121,7 +121,7 @@ function MaterialCard({ mat, onClick }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={fileUrl} alt={name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={e => { e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-[#cfcfcf] text-[10px]">Немає превʼю</div>'; }}
+          onError={e => { e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-faint text-[10px]">Немає превʼю</div>'; }}
         />
       );
     }
@@ -139,8 +139,8 @@ function MaterialCard({ mat, onClick }) {
     );
     if (fileType === 'audio') return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#f5f5f5]">
-        <Music size={24} className="text-[#9a9a9a]" />
-        <span className="text-[9px] font-bold text-[#9a9a9a] uppercase">AUDIO</span>
+        <Music size={24} className="text-muted" />
+        <span className="text-[9px] font-bold text-muted uppercase">AUDIO</span>
       </div>
     );
     if (fileType === 'link') return (
@@ -162,8 +162,8 @@ function MaterialCard({ mat, onClick }) {
     );
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#f5f5f5]">
-        <FileText size={24} className="text-[#cfcfcf]" />
-        <span className="text-[9px] text-[#cfcfcf] uppercase">{name.split('.').pop()?.toUpperCase() || 'FILE'}</span>
+        <FileText size={24} className="text-faint" />
+        <span className="text-[9px] text-faint uppercase">{name.split('.').pop()?.toUpperCase() || 'FILE'}</span>
       </div>
     );
   };
@@ -200,10 +200,10 @@ function MaterialCard({ mat, onClick }) {
       {/* Info row */}
       <div className="px-3 py-[9px] flex items-center gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-semibold text-[#1f1f1f] truncate leading-tight">{name}</p>
-          {desc && <p className="text-[10px] text-[#cfcfcf] truncate mt-[1px]">{desc}</p>}
+          <p className="text-[12px] font-semibold text-ink truncate leading-tight">{name}</p>
+          {desc && <p className="text-[10px] text-faint truncate mt-[1px]">{desc}</p>}
         </div>
-        <ExternalLink size={11} className="text-[#cfcfcf] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ExternalLink size={11} className="text-faint shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </button>
   );
@@ -258,7 +258,7 @@ function MediaViewer({ mat, onClose }) {
           <video src={fileUrl} controls autoPlay className="max-w-full max-h-[85vh] rounded-[8px] shadow-2xl" />
         )}
         {fileType === 'audio' && fileUrl && (
-          <div className="bg-[#1f1f1f] rounded-[24px] px-8 py-10 flex flex-col items-center gap-4 min-w-[320px]">
+          <div className="bg-ink rounded-[24px] px-8 py-10 flex flex-col items-center gap-4 min-w-[320px]">
             <Music size={48} className="text-white/40" />
             <p className="text-white font-semibold text-[15px] text-center">{name}</p>
             <audio src={fileUrl} controls className="w-full" />
@@ -272,9 +272,9 @@ function MediaViewer({ mat, onClose }) {
         {fileType === 'link' && mat.url && (
           <div className="bg-white rounded-[16px] p-8 flex flex-col items-center gap-4 shadow-2xl">
             <Link2 size={40} className="text-blue-500" />
-            <p className="text-[14px] font-semibold text-[#1f1f1f]">{name}</p>
+            <p className="text-[14px] font-semibold text-ink">{name}</p>
             <a href={mat.url} target="_blank" rel="noopener"
-              className="flex items-center gap-2 px-6 py-3 bg-[#1f1f1f] text-white rounded-[10px] font-semibold text-[13px] hover:bg-[#303030]">
+              className="flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-[10px] font-semibold text-[13px] hover:bg-ink-hover">
               <ExternalLink size={14} /> Перейти за посиланням
             </a>
           </div>
@@ -433,9 +433,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     return (
       <div className="flex-1 flex items-center justify-center bg-white">
         {issues.length === 0
-          ? <div className="w-7 h-7 border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+          ? <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
           : <div className="text-center">
-              <p className="text-[16px] font-bold text-[#1f1f1f] mb-2">Задачу не знайдено</p>
+              <p className="text-[16px] font-bold text-ink mb-2">Задачу не знайдено</p>
               <Link href={`/workspace/${projectId}`} className="text-[13px] text-[#6366f1] hover:underline">← Повернутись</Link>
             </div>
         }
@@ -683,24 +683,24 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             <div className="flex items-start justify-between gap-[16px] w-full pt-[12px]">
               <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {isEditing ? (
-              <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-[#1f1f1f] tracking-tight bg-transparent border-b-2 border-[#1f1f1f] pb-1 outline-none w-full" placeholder="Назва завдання..." />
+              <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full" placeholder="Назва завдання..." />
             ) : (
-              <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight leading-tight">{issue.title}</h1>
+              <h1 className="text-[24px] font-bold text-ink tracking-tight leading-tight">{issue.title}</h1>
             )}
             
             {/* Metadata strip for non-editable details */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#9a9a9a] font-medium mt-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   showToast('Посилання на завдання скопійовано! ✓');
                 }}
-                className="font-bold text-[#1f1f1f] hover:text-[#6366f1] hover:underline uppercase tracking-widest transition-colors cursor-pointer"
+                className="font-bold text-ink hover:text-[#6366f1] hover:underline uppercase tracking-widest transition-colors cursor-pointer"
                 title="Копіювати посилання на завдання"
               >
                 {issue.issueKey}
               </button>
-              <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               {/* Clickable Reporter Dropdown */}
               <div className="relative" ref={reporterDropdownRef}>
@@ -710,7 +710,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 >
                   <span>Автор:</span>
                   <UserAvatar user={reporter} size={16} />
-                  <span className="text-[#1f1f1f] font-semibold">{reporter?.name || 'Невідомо'}</span>
+                  <span className="text-ink font-semibold">{reporter?.name || 'Невідомо'}</span>
                 </button>
                 {showReporterDropdown && reporter && (
                   <div className="absolute left-0 top-full mt-1 w-[180px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-[6px] z-50">
@@ -721,61 +721,61 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         params.set('member', reporter.id || reporter.uid);
                         router.push(`${pathname}?${params.toString()}`);
                       }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors text-left font-medium"
+                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
                     >
                       Переглянути профіль
                     </button>
                     <Link
                       href={`/workspace/chat?user=${reporter.id || reporter.uid}`}
                       onClick={() => setShowReporterDropdown(false)}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors text-left font-medium"
+                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
                     >
                       Написати в чат
                     </Link>
                   </div>
                 )}
               </div>
-              <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               {/* Created relative time */}
               <Tooltip
                 content={`Створено: ${issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleString('uk-UA') : issue.createdAt ? new Date(issue.createdAt).toLocaleString('uk-UA') : '—'}`}
                 position="bottom"
               >
-                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-[#cfcfcf] transition-colors">
+                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
                   <span>створили</span>
-                  <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.createdAt)}</span>
+                  <span className="text-ink font-semibold">{timeAgo(issue.createdAt)}</span>
                 </div>
               </Tooltip>
-              <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               {/* Updated relative time */}
               <Tooltip
                 content={`Оновлено: ${(issue.updatedAt || issue.createdAt)?.toDate ? (issue.updatedAt || issue.createdAt).toDate().toLocaleString('uk-UA') : (issue.updatedAt || issue.createdAt) ? new Date(issue.updatedAt || issue.createdAt).toLocaleString('uk-UA') : '—'}`}
                 position="bottom"
               >
-                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-[#cfcfcf] transition-colors">
+                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
                   <span>оновили</span>
-                  <span className="text-[#1f1f1f] font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
+                  <span className="text-ink font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
                 </div>
               </Tooltip>
               
-              <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               <div className="flex items-center gap-1.5">
-                <Clock size={13} className="text-[#9a9a9a]" />
+                <Clock size={13} className="text-muted" />
                 <span>Всього залоговано:</span>
-                <span className="text-[#1f1f1f] font-semibold">{fmtMin(spentMin)}</span>
+                <span className="text-ink font-semibold">{fmtMin(spentMin)}</span>
                 {estimMin > 0 && (
-                  <span className="text-[#9a9a9a] font-normal">
-                    {' '}(Оцінка: <span className="font-semibold text-[#1f1f1f]">{fmtMin(estimMin)}</span>)
+                  <span className="text-muted font-normal">
+                    {' '}(Оцінка: <span className="font-semibold text-ink">{fmtMin(estimMin)}</span>)
                   </span>
                 )}
               </div>
               
               {isOverdue && (
                 <>
-                  <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
+                  <span className="w-[3px] h-[3px] rounded-full bg-faint" />
                   <span className="text-[11px] font-bold text-[#ef4444] bg-red-50 px-2 py-[1px] rounded-full">Прострочено</span>
                 </>
               )}
@@ -804,9 +804,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         enterEdit();
                         setShowActionsDropdown(false);
                       }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors text-left font-medium cursor-pointer"
+                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium cursor-pointer"
                     >
-                      <Pencil size={13} className="text-[#9a9a9a]" />
+                      <Pencil size={13} className="text-muted" />
                       Редагувати
                     </button>
                     <button
@@ -824,7 +824,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </div>
             )}
             {isModal && onClose && (
-              <button onClick={onClose} className="p-[9px] ml-2 text-[#9a9a9a] hover:text-[#1f1f1f] transition-all" title="Закрити">
+              <button onClick={onClose} className="p-[9px] ml-2 text-muted hover:text-ink transition-all" title="Закрити">
                 <X size={18} />
               </button>
             )}
@@ -838,19 +838,19 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 <>
                   {/* Status */}
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Статус</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Статус</span>
                     <Select value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Assignee */}
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Виконавець</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Виконавець</span>
                     <Select value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Sprint */}
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Спринт</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Спринт</span>
                     <Select 
                       value={issue.sprintId || ''} 
                       onChange={val => update({ sprintId: val || null })} 
@@ -864,7 +864,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                   {/* Priority */}
                   <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Пріоритет</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Пріоритет</span>
                     <Select
                       value={draft.priority || issue.priority || ''}
                       onChange={val => {
@@ -878,7 +878,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                   {/* Type */}
                   <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Тип</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Тип</span>
                     <Select
                       value={draft.type || issue.type || ''}
                       onChange={val => {
@@ -892,10 +892,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                   {/* Due date */}
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors">
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Дедлайн</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Дедлайн</span>
                     <DatePicker 
                       hideIcon 
-                      inputClassName={`bg-transparent p-0 m-0 h-[22px] w-full text-[13px] font-medium outline-none cursor-pointer ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-[#1f1f1f]' : 'text-[#cfcfcf]'}`}
+                      inputClassName={`bg-transparent p-0 m-0 h-[22px] w-full text-[13px] font-medium outline-none cursor-pointer ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                       onChange={(val) => {
                         if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
@@ -914,18 +914,18 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       setLogTab('spend');
                     }}
                   >
-                    <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Трекінг часу</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Трекінг часу</span>
                     <div className="flex items-center gap-2 h-[22px]">
-                      <button onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`flex items-center justify-center w-[22px] h-[22px] rounded-[6px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-[#e9e9e9] text-[#1f1f1f] hover:bg-[#d9d9d9]'}`}>
+                      <button onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`flex items-center justify-center w-[22px] h-[22px] rounded-[6px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}>
                         {isTimerMine ? <StopIcon size={11} className="animate-pulse fill-current" /> : <Play size={11} className="ml-[2px]" />}
                       </button>
                       {isTimerMine ? (
                         <span className="text-[13px] font-bold font-mono text-[#ef4444] animate-pulse leading-none pt-[1px]">{formatElapsed((spentMin * 60) + timerElapsed)}</span>
                       ) : (
-                        <span className="text-[13px] font-bold font-mono text-[#1f1f1f] leading-none pt-[1px]">{fmtMin(spentMin)}</span>
+                        <span className="text-[13px] font-bold font-mono text-ink leading-none pt-[1px]">{fmtMin(spentMin)}</span>
                       )}
                       {estimMin > 0 && (
-                        <><span className="text-[12px] text-[#cfcfcf] leading-none pt-[1px]">/</span><span className="text-[13px] font-mono text-[#1f1f1f] leading-none pt-[1px]">{fmtMin(estimMin)}</span></>
+                        <><span className="text-[12px] text-faint leading-none pt-[1px]">/</span><span className="text-[13px] font-mono text-ink leading-none pt-[1px]">{fmtMin(estimMin)}</span></>
                       )}
                     </div>
                   </div>
@@ -939,40 +939,40 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[440px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                   <div className="px-6 pt-6 pb-4 border-b border-[#f0f0f0] flex items-center justify-between bg-[#fcfcfc]">
-                    <h3 className="text-[18px] font-bold text-[#1f1f1f]">Трекінг часу</h3>
-                    <button onClick={() => setLogForm(null)} className="text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors">
+                    <h3 className="text-[18px] font-bold text-ink">Трекінг часу</h3>
+                    <button onClick={() => setLogForm(null)} className="text-muted hover:text-ink transition-colors">
                       <X size={20} />
                     </button>
                   </div>
                   
                   <div className="p-6 flex flex-col gap-4">
-                  <div className="flex gap-4 border-b border-[#e9e9e9]">
-                    <button onClick={() => setLogTab('spend')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'spend' ? 'border-[#1f1f1f] text-[#1f1f1f]' : 'border-transparent text-[#9a9a9a] hover:text-[#1f1f1f]'}`}>Списати час</button>
+                  <div className="flex gap-4 border-b border-line">
+                    <button onClick={() => setLogTab('spend')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'spend' ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>Списати час</button>
                     {!logForm.id && (
-                      <button onClick={() => setLogTab('estim')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'estim' ? 'border-[#1f1f1f] text-[#1f1f1f]' : 'border-transparent text-[#9a9a9a] hover:text-[#1f1f1f]'}`}>Оцінка (Запланувати)</button>
+                      <button onClick={() => setLogTab('estim')} className={`pb-2 px-1 text-[13px] font-bold border-b-2 transition-colors ${logTab === 'estim' ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>Оцінка (Запланувати)</button>
                     )}
                   </div>
                   
                   {logTab === 'spend' ? (
                     <div className="flex gap-4">
                       <div className="flex-1">
-                        <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Списати час</p>
+                        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Списати час</p>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <input type="number" min="0" placeholder="0" value={Math.floor(logForm.minutes / 60) || ''} onChange={e => {
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = logForm.minutes % 60;
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + mins }));
-                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">год</span>
+                            }} className="w-full text-[15px] font-bold bg-canvas rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-ink transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
                             <input type="number" min="0" max="59" placeholder="0" value={logForm.minutes % 60 || ''} onChange={e => {
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor(logForm.minutes / 60);
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + Math.min(mins, 59) }));
-                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">хв</span>
+                            }} className="w-full text-[15px] font-bold bg-canvas rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-ink transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>
                       </div>
@@ -980,23 +980,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   ) : (
                     <div className="flex gap-4">
                       <div className="flex-1">
-                        <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Запланувати час</p>
+                        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Запланувати час</p>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <input type="number" min="0" placeholder="0" value={Math.floor((logForm.estim || 0) / 60) || ''} onChange={e => {
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = (logForm.estim || 0) % 60;
                                setLogForm(f => ({ ...f, estim: hrs * 60 + mins }));
-                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">год</span>
+                            }} className="w-full text-[15px] font-bold bg-canvas rounded-[12px] pl-4 pr-8 py-[10px] outline-none border border-transparent focus:border-ink transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
                             <input type="number" min="0" max="59" placeholder="0" value={(logForm.estim || 0) % 60 || ''} onChange={e => {
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor((logForm.estim || 0) / 60);
                                setLogForm(f => ({ ...f, estim: hrs * 60 + Math.min(mins, 59) }));
-                            }} className="w-full text-[15px] font-bold bg-[#f4f4f5] rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#9a9a9a] pointer-events-none">хв</span>
+                            }} className="w-full text-[15px] font-bold bg-canvas rounded-[12px] pl-4 pr-7 py-[10px] outline-none border border-transparent focus:border-ink transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>
                       </div>
@@ -1005,8 +1005,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   
                   {logTab === 'spend' && (
                     <div>
-                      <p className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Опис (необовʼязково)</p>
-                      <input type="text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} className="w-full text-[14px] bg-[#f4f4f5] rounded-[12px] px-4 py-[10px] outline-none border border-transparent focus:border-[#1f1f1f] transition-colors" />
+                      <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Опис (необовʼязково)</p>
+                      <input type="text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} className="w-full text-[14px] bg-canvas rounded-[12px] px-4 py-[10px] outline-none border border-transparent focus:border-ink transition-colors" />
                     </div>
                   )}
                   
@@ -1020,7 +1020,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             )}
 
             {/* MAIN SECTIONS PANEL */}
-            <div className="bg-[#f4f4f5] rounded-[16px] p-4 sm:p-5 flex flex-col gap-5 w-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden">
+            <div className="bg-canvas rounded-[16px] p-4 sm:p-5 flex flex-col gap-5 w-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden">
               {/* Pill Tabs */}
               <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-fit">
                 {[
@@ -1031,12 +1031,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <button 
                     key={t.id} 
                     onClick={() => setActiveTab(t.id)} 
-                    className={`px-4 py-1.5 text-[13px] font-bold transition-all rounded-[8px] flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-[#1f1f1f]' : 'text-[#9a9a9a] hover:text-[#1f1f1f]'}`}
+                    className={`px-4 py-1.5 text-[13px] font-bold transition-all rounded-[8px] flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}
                   >
                     {t.label}
                     {t.count > 0 && (
                       <span className={`text-[10px] px-[6px] py-[1px] rounded-full font-bold ${
-                        activeTab === t.id ? 'bg-[#1f1f1f] text-white' : 'bg-[#e9e9e9] text-[#1f1f1f]'
+                        activeTab === t.id ? 'bg-ink text-white' : 'bg-line text-ink'
                       }`}>
                         {t.count}
                       </span>
@@ -1052,21 +1052,21 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               {/* DESCRIPTION */}
               <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
                 <div>
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-4">Опис</h2>
+                  <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">Опис</h2>
                   {isEditing ? (
                     <textarea
                       value={draft.description}
                       onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
                       placeholder="Додай детальний опис завдання..."
                       rows={7}
-                      className="w-full px-4 py-3 bg-white rounded-[10px] text-[14px] text-[#1f1f1f] placeholder-[#cfcfcf] focus:outline-none resize-y leading-relaxed transition-colors border border-transparent focus:border-[#e9e9e9]"
+                      className="w-full px-4 py-3 bg-white rounded-[10px] text-[14px] text-ink placeholder-faint focus:outline-none resize-y leading-relaxed transition-colors border border-transparent focus:border-line"
                     />
                   ) : issue.description ? (
-                    <div className="bg-[#fafafa] border border-[#e9e9e9] rounded-[10px] p-4 max-h-[500px] overflow-y-auto">
+                    <div className="bg-[#fafafa] border border-line rounded-[10px] p-4 max-h-[500px] overflow-y-auto">
                       <MarkdownViewer content={issue.description} />
                     </div>
                   ) : (
-                    <button onClick={enterEdit} className="text-[13px] text-[#cfcfcf] italic hover:text-[#9a9a9a] transition-colors text-left">
+                    <button onClick={enterEdit} className="text-[13px] text-faint italic hover:text-muted transition-colors text-left">
                       Натисни Редагувати щоб додати опис...
                     </button>
                   )}
@@ -1074,7 +1074,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                 {/* Labels (Мітки) Section inside Description card */}
                 <div className="flex flex-col gap-2">
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Мітки</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Мітки</span>
                 <div className="flex flex-wrap gap-2 items-center relative">
                   {(issue.labelIds || []).map(id => {
                     const l = availableLabels.find(lbl => lbl.id === id);
@@ -1093,7 +1093,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   })}
                   <button
                     onClick={() => setShowLabelDropdown(v => !v)}
-                    className="flex items-center gap-1 px-[8px] py-[4px] rounded-[8px] text-[11px] font-bold bg-white text-[#9a9a9a] border border-dashed border-[#cfcfcf] hover:border-[#9a9a9a] hover:text-[#1f1f1f] transition-all"
+                    className="flex items-center gap-1 px-[8px] py-[4px] rounded-[8px] text-[11px] font-bold bg-white text-muted border border-dashed border-faint hover:border-muted hover:text-ink transition-all"
                   >
                     <Plus size={10} /> Додати мітку
                   </button>
@@ -1101,9 +1101,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   {showLabelDropdown && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowLabelDropdown(false)} />
-                      <div className="absolute bottom-full left-0 mb-1 w-[200px] bg-white border border-[#e9e9e9] rounded-[12px] shadow-lg z-20 py-2">
+                      <div className="absolute bottom-full left-0 mb-1 w-[200px] bg-white border border-line rounded-[12px] shadow-lg z-20 py-2">
                         {availableLabels.length === 0 && (
-                          <p className="px-4 py-2 text-[12px] text-[#9a9a9a]">Немає доступних міток</p>
+                          <p className="px-4 py-2 text-[12px] text-muted">Немає доступних міток</p>
                         )}
                         {availableLabels.map(l => {
                           const active = (issue.labelIds || []).includes(l.id);
@@ -1116,7 +1116,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                                 update({ labelIds: newLabels });
                                 setShowLabelDropdown(false);
                               }}
-                              className={`w-full text-left px-4 py-2 text-[12px] hover:bg-[#f4f4f5] transition-colors flex items-center justify-between ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
+                              className={`w-full text-left px-4 py-2 text-[12px] hover:bg-canvas transition-colors flex items-center justify-between ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
                             >
                               <span className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
@@ -1133,16 +1133,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </div>
 
               {/* SUBTASKS */}
-              <div className="pt-2 border-t border-[#f4f4f5] mt-2">
+              <div className="pt-2 border-t border-canvas mt-2">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Підзавдання</h2>
-                  {subtasksAll > 0 && <span className="text-[11px] font-bold bg-[#e9e9e9] text-[#1f1f1f] px-2 py-[1px] rounded-full">{subtasksDone}/{subtasksAll}</span>}
+                  <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Підзавдання</h2>
+                  {subtasksAll > 0 && <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">{subtasksDone}/{subtasksAll}</span>}
                 </div>
                 <Button style="secondary" size="sm" icon={Plus} onClick={() => setShowSubInput(v => !v)}>Додати</Button>
               </div>
               {subtasksAll > 0 && (
-                <div className="h-[4px] bg-[#e9e9e9] rounded-full mb-4 overflow-hidden">
+                <div className="h-[4px] bg-line rounded-full mb-4 overflow-hidden">
                   <div className="h-full bg-[#10b981] rounded-full transition-all" style={{ width: `${(subtasksDone / subtasksAll) * 100}%` }} />
                 </div>
               )}
@@ -1170,7 +1170,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         </button>
                         <button
                           onClick={() => setEditingSubtaskIndex(-1)}
-                          className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1"
+                          className="text-muted hover:text-ink p-1"
                           title="Скасувати"
                         >
                           <X size={14} />
@@ -1183,12 +1183,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             e.stopPropagation();
                             handleToggleSubtask(i);
                           }}
-                          className="text-[#cfcfcf] hover:text-[#9a9a9a] transition-colors shrink-0"
+                          className="text-faint hover:text-muted transition-colors shrink-0"
                         >
                           {s.done ? <CheckSquare size={16} className="text-[#10b981]" /> : <Square size={16} />}
                         </button>
                         <span
-                          className={`text-[13px] font-medium flex-1 cursor-pointer ${s.done ? 'line-through text-[#cfcfcf]' : 'text-[#1f1f1f]'}`}
+                          className={`text-[13px] font-medium flex-1 cursor-pointer ${s.done ? 'line-through text-faint' : 'text-ink'}`}
                           onClick={() => {
                             setEditingSubtaskIndex(i);
                             setEditingSubtaskText(s.title);
@@ -1204,14 +1204,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                               setEditingSubtaskIndex(i);
                               setEditingSubtaskText(s.title);
                             }}
-                            className="text-[#9a9a9a] hover:text-[#1f1f1f] p-1 rounded hover:bg-[#f4f4f5] transition-colors"
+                            className="text-muted hover:text-ink p-1 rounded hover:bg-canvas transition-colors"
                             title="Редагувати"
                           >
                             <Pencil size={12} />
                           </button>
                           <button
                             onClick={() => handleDeleteSubtask(i)}
-                            className="text-[#cfcfcf] hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
+                            className="text-faint hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
                             title="Видалити"
                           >
                             <Trash2 size={12} />
@@ -1245,9 +1245,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Зв’язки</h2>
+                  <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Зв’язки</h2>
                   {links.filter(l => l.sourceIssueId === issueId).length > 0 && (
-                    <span className="text-[11px] font-bold bg-[#e9e9e9] text-[#1f1f1f] px-2 py-[1px] rounded-full">
+                    <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">
                       {links.filter(l => l.sourceIssueId === issueId).length}
                     </span>
                   )}
@@ -1277,9 +1277,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                           </span>
                           <Link
                             href={`/workspace/${projectId}/issue/${targetIssue.id}`}
-                            className="text-[13px] font-semibold text-[#1f1f1f] hover:text-[#6366f1] hover:underline truncate"
+                            className="text-[13px] font-semibold text-ink hover:text-[#6366f1] hover:underline truncate"
                           >
-                            <span className="text-[#9a9a9a] font-medium mr-1 uppercase">{targetIssue.issueKey}</span>
+                            <span className="text-muted font-medium mr-1 uppercase">{targetIssue.issueKey}</span>
                             {targetIssue.title}
                           </Link>
                         </div>
@@ -1292,7 +1292,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                               showToast('Помилка видалення: ' + err.message, 'error');
                             }
                           }}
-                          className="text-[#cfcfcf] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50"
+                          className="text-faint hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50"
                           title="Видалити зв'язок"
                         >
                           <Trash2 size={13} />
@@ -1302,14 +1302,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   })}
 
                 {showLinkInput && (
-                  <div className="flex flex-col gap-3 p-3 bg-white rounded-[10px] border border-[#e9e9e9] mt-2">
+                  <div className="flex flex-col gap-3 p-3 bg-white rounded-[10px] border border-line mt-2">
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Зв’язок</label>
+                        <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Зв’язок</label>
                         <select
                           value={linkRelation}
                           onChange={e => setLinkRelation(e.target.value)}
-                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-[#e9e9e9] transition-colors font-medium text-[#1f1f1f]"
+                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-line transition-colors font-medium text-ink"
                         >
                           {Object.entries(RELATION_LABELS).map(([val, label]) => (
                             <option key={val} value={val}>{label}</option>
@@ -1317,11 +1317,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         </select>
                       </div>
                       <div className="flex-[2]">
-                        <label className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider block mb-1">Завдання</label>
+                        <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Завдання</label>
                         <select
                           value={linkTargetId}
                           onChange={e => setLinkTargetId(e.target.value)}
-                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-[#e9e9e9] transition-colors font-medium text-[#1f1f1f]"
+                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-line transition-colors font-medium text-ink"
                         >
                           {issues
                             .filter(i => i.id !== issueId)
@@ -1365,9 +1365,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Журнал часу</h2>
+                  <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Журнал часу</h2>
                   {timeLogs.length > 0 && (
-                    <span className="text-[11px] font-bold bg-[#e9e9e9] text-[#1f1f1f] px-2 py-[1px] rounded-full">
+                    <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">
                       {timeLogs.length}
                     </span>
                   )}
@@ -1386,7 +1386,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         <UserAvatar user={logMember} size={20} className="shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[12px] font-semibold text-[#1f1f1f]">
+                            <span className="text-[12px] font-semibold text-ink">
                               {logMember?.name || 'Невідомий'}
                             </span>
                             <span className="text-[11px] font-bold text-[#3b82f6] bg-[#eff6ff] px-1.5 py-0.5 rounded">
@@ -1399,11 +1399,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             </p>
                           )}
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-[#9a9a9a] uppercase font-bold tracking-wider">
+                            <span className="text-[10px] text-muted uppercase font-bold tracking-wider">
                               {log.workType || 'Development'}
                             </span>
-                            <span className="w-[3px] h-[3px] rounded-full bg-[#cfcfcf]" />
-                            <span className="text-[10px] text-[#9a9a9a] font-medium">
+                            <span className="w-[3px] h-[3px] rounded-full bg-faint" />
+                            <span className="text-[10px] text-muted font-medium">
                               {log.loggedAt?.toDate
                                 ? formatDate(log.loggedAt.toDate())
                                 : log.loggedAt
@@ -1418,14 +1418,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center">
                           <button
                             onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '', workType: log.workType || 'development' }); setLogTab('spend'); }}
-                            className="text-[#cfcfcf] hover:text-[#1f1f1f] transition-colors p-1 rounded hover:bg-[#f4f4f5]"
+                            className="text-faint hover:text-ink transition-colors p-1 rounded hover:bg-canvas"
                             title="Редагувати запис"
                           >
                             <Pencil size={13} />
                           </button>
                           <button
                             onClick={() => handleDeleteTimeLog(log)}
-                            className="text-[#cfcfcf] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                            className="text-faint hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
                             title="Видалити запис"
                           >
                             <Trash2 size={13} />
@@ -1444,9 +1444,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </button>
                 )}
                 {timeLogs.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-[#e9e9e9]">
-                    <Clock size={32} className="text-[#cfcfcf] mb-3" />
-                    <p className="text-[13px] text-[#9a9a9a] font-medium max-w-[200px]">
+                  <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line">
+                    <Clock size={32} className="text-faint mb-3" />
+                    <p className="text-[13px] text-muted font-medium max-w-[200px]">
                       Час ще не залоговано — запустіть таймер або додайте запис вручну.
                     </p>
                   </div>
@@ -1462,7 +1462,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
           {/* RIGHT SIDE — CHAT (mobile: fixed-height block under the content) */}
           <div className="lg:col-span-1 h-[65dvh] lg:h-full min-h-0">
-            <div className="bg-[#f4f4f5] rounded-[12px] overflow-hidden flex flex-col h-full">
+            <div className="bg-canvas rounded-[12px] overflow-hidden flex flex-col h-full">
               <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' }); setLogTab('spend'); }} />
             </div>
           </div>

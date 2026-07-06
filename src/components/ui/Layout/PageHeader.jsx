@@ -34,9 +34,9 @@ export function PageHeader({
   // ── Alt variant: compact bar inside a white panel ──────────────────────────
   if (variant === 'alt') {
     return (
-      <div className={`bg-white flex items-center gap-[8px] px-[20px] py-[10px] shrink-0 border-b border-[#f4f4f5] w-full ${className}`}>
+      <div className={`bg-white flex items-center gap-[8px] px-[20px] py-[10px] shrink-0 border-b border-canvas w-full ${className}`}>
         {title && (
-          <h2 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight shrink-0 mr-2">
+          <h2 className="text-[24px] font-bold text-ink tracking-tight shrink-0 mr-2">
             {title}
           </h2>
         )}
@@ -71,7 +71,7 @@ export function PageHeader({
 
       {/* Row 1: Title + Actions — actions ALWAYS sit right of the title */}
       <div className="flex items-center justify-between gap-[12px] md:gap-[16px] w-full">
-        <h1 className="text-[24px] font-bold text-[#1f1f1f] tracking-tight truncate min-w-0">
+        <h1 className="text-[24px] font-bold text-ink tracking-tight truncate min-w-0">
           {title}
         </h1>
 

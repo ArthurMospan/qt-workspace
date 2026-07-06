@@ -41,8 +41,8 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
           <div>
-            <h2 className="text-[13px] font-bold text-[#1f1f1f]">Результати пошуку</h2>
-            {query && <p className="text-[11px] text-[#9a9a9a] mt-[2px]">Запит: «{query}»</p>}
+            <h2 className="text-[13px] font-bold text-ink">Результати пошуку</h2>
+            {query && <p className="text-[11px] text-muted mt-[2px]">Запит: «{query}»</p>}
           </div>
         </div>
 
@@ -50,15 +50,15 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="w-[28px] h-[28px] border-[3px] border-[#e9e9e9] border-t-[#1f1f1f] rounded-full animate-spin" />
+              <div className="w-[28px] h-[28px] border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-[24px] text-center">
               <div className="text-[48px] mb-[12px]">🔍</div>
-              <p className="text-[14px] font-bold text-[#1f1f1f]">
+              <p className="text-[14px] font-bold text-ink">
                 {query ? 'Нічого не знайдено' : 'Почніть вводити для пошуку'}
               </p>
-              <p className="text-[12px] text-[#9a9a9a] mt-[4px]">
+              <p className="text-[12px] text-muted mt-[4px]">
                 {query
                   ? `За запитом "${query}" результатів не знайдено`
                   : 'Шукайте по ID, назві або описанню завдання'}
@@ -75,7 +75,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                   <button
                     key={issue.id}
                     onClick={() => handleResultClick(issue.id, issue.projectId)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#f4f4f5] transition-colors text-left group"
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-canvas transition-colors text-left group"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                       {/* Left: Type Icon */}
@@ -85,10 +85,10 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
 
                       {/* Content: ID + Title */}
                       <div className="flex items-baseline gap-2 min-w-0 flex-1">
-                        <code className="text-[11px] font-semibold text-[#9a9a9a] shrink-0">
+                        <code className="text-[11px] font-semibold text-muted shrink-0">
                           {issue.issueKey || `WS-${issue.id.slice(0, 5)}`}
                         </code>
-                        <span className="text-[13px] font-semibold text-[#1f1f1f] truncate group-hover:text-[#6366f1] transition-colors">
+                        <span className="text-[13px] font-semibold text-ink truncate group-hover:text-[#6366f1] transition-colors">
                           {issue.title}
                         </span>
                       </div>
@@ -101,7 +101,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                           {issue.assigneeIds.slice(0, 2).map(uid => (
                             <div
                               key={uid}
-                              className="w-[18px] h-[18px] rounded-full bg-[#e9e9e9] ring-2 ring-white flex items-center justify-center text-[7px] font-bold text-[#9a9a9a]"
+                              className="w-[18px] h-[18px] rounded-full bg-line ring-2 ring-white flex items-center justify-center text-[7px] font-bold text-muted"
                             >
                               {uid.slice(0, 1).toUpperCase()}
                             </div>
@@ -109,7 +109,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         </div>
                       )}
                       {project && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 bg-[#f5f5f5] text-[#9a9a9a] rounded-full group-hover:bg-[#ebebeb] transition-colors">
+                        <span className="text-[10px] font-medium px-2 py-0.5 bg-[#f5f5f5] text-muted rounded-full group-hover:bg-[#ebebeb] transition-colors">
                           {project.name}
                         </span>
                       )}

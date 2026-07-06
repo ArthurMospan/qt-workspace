@@ -5,8 +5,8 @@ import Tooltip from '@/components/ui/Navigation/Tooltip';
 export default function UserAvatar({ user, size = 32, className = '' }) {
   if (!user) return (
     <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
-      className={`rounded-full bg-[#e9e9e9] flex items-center justify-center shrink-0 ${className}`}>
-      <span style={{ fontSize: size * 0.38 }} className="font-bold text-[#9a9a9a]">?</span>
+      className={`rounded-full bg-line flex items-center justify-center shrink-0 ${className}`}>
+      <span style={{ fontSize: size * 0.38 }} className="font-bold text-muted">?</span>
     </div>
   );
 

@@ -53,15 +53,15 @@ export default function UserStatusSetter() {
           setEmoji(currentUser?.statusEmoji || '💭');
           setIsEditing(true);
         }}
-        className="flex items-center gap-1.5 mr-1 bg-[#f4f4f5] px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors"
+        className="flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors"
       >
         {currentUser?.status || currentUser?.statusEmoji ? (
           <>
             {currentUser.statusEmoji && <span className="text-[12px]">{currentUser.statusEmoji}</span>}
-            {currentUser.status && <span className="text-[11px] font-bold text-[#1f1f1f] max-w-[120px] truncate">{currentUser.status}</span>}
+            {currentUser.status && <span className="text-[11px] font-bold text-ink max-w-[120px] truncate">{currentUser.status}</span>}
           </>
         ) : (
-          <span className="text-[11px] font-bold text-[#9a9a9a]">Встановити статус</span>
+          <span className="text-[11px] font-bold text-muted">Встановити статус</span>
         )}
       </button>
 
@@ -73,7 +73,7 @@ export default function UserStatusSetter() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsEditing(false)}
-              className="absolute inset-0 bg-[#1f1f1f]/60 backdrop-blur-md"
+              className="absolute inset-0 bg-ink/60 backdrop-blur-md"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -82,7 +82,7 @@ export default function UserStatusSetter() {
               className="relative w-full max-w-[340px] bg-white rounded-[24px] p-[24px] shadow-2xl flex flex-col gap-[20px]"
             >
               <div className="flex items-center justify-between px-[4px]">
-                <span className="text-[12px] font-bold text-[#9a9a9a] uppercase tracking-wider">Ваш статус</span>
+                <span className="text-[12px] font-bold text-muted uppercase tracking-wider">Ваш статус</span>
                 <div className="flex items-center gap-[12px]">
                   {(currentUser?.status || currentUser?.statusEmoji) && (
                     <button 
@@ -92,7 +92,7 @@ export default function UserStatusSetter() {
                       Очистити
                     </button>
                   )}
-                  <button onClick={() => setIsEditing(false)} className="w-[32px] h-[32px] rounded-full bg-[#f4f4f5] flex items-center justify-center text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#e9e9e9]">
+                  <button onClick={() => setIsEditing(false)} className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center text-muted hover:text-ink hover:bg-line">
                     <Plus size={18} className="rotate-45" />
                   </button>
                 </div>
@@ -103,10 +103,10 @@ export default function UserStatusSetter() {
                   <button
                     key={i}
                     onClick={() => handleUpdate(p.emoji, p.text)}
-                    className="flex items-center gap-[10px] p-[10px] rounded-[12px] hover:bg-[#f4f4f5] transition-all text-left group"
+                    className="flex items-center gap-[10px] p-[10px] rounded-[12px] hover:bg-canvas transition-all text-left group"
                   >
                     <span className="text-[20px] group-hover:scale-110 transition-transform">{p.emoji}</span>
-                    <span className="text-[12px] font-bold text-[#1f1f1f] truncate">{p.text}</span>
+                    <span className="text-[12px] font-bold text-ink truncate">{p.text}</span>
                   </button>
                 ))}
               </div>
@@ -119,7 +119,7 @@ export default function UserStatusSetter() {
                     <button 
                       key={e}
                       onClick={() => setEmoji(e)}
-                      className={`w-[36px] h-[36px] rounded-full flex items-center justify-center text-[18px] transition-all ${emoji === e ? 'bg-[#f4f4f5] scale-110 shadow-sm' : 'hover:bg-[#fcfcfc]'}`}
+                      className={`w-[36px] h-[36px] rounded-full flex items-center justify-center text-[18px] transition-all ${emoji === e ? 'bg-canvas scale-110 shadow-sm' : 'hover:bg-[#fcfcfc]'}`}
                     >
                       {e}
                     </button>
@@ -132,12 +132,12 @@ export default function UserStatusSetter() {
                     onChange={(e) => setText(e.target.value)}
                     placeholder="Що на думці?"
                     maxLength={35}
-                    className="flex-1 h-[44px] bg-[#f4f4f5] border border-transparent outline-none rounded-[12px] px-[16px] text-[13px] text-[#1f1f1f] font-medium transition-all placeholder:text-[#cfcfcf] focus:border-[#d0d0d0]"
+                    className="flex-1 h-[44px] bg-canvas border border-transparent outline-none rounded-[12px] px-[16px] text-[13px] text-ink font-medium transition-all placeholder:text-faint focus:border-[#d0d0d0]"
                     onKeyDown={(e) => e.key === 'Enter' && handleUpdate(emoji, text)}
                   />
                   <button 
                     onClick={() => handleUpdate(emoji, text)}
-                    className="h-[44px] px-[20px] bg-[#1f1f1f] text-white rounded-[12px] font-bold text-[13px] hover:bg-black transition-all active:scale-95"
+                    className="h-[44px] px-[20px] bg-ink text-white rounded-[12px] font-bold text-[13px] hover:bg-black transition-all active:scale-95"
                   >
                     OK
                   </button>

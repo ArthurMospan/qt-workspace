@@ -76,7 +76,7 @@ export default function TopHeader({
             className="w-[240px]"
           />
           
-          <div className="h-4 w-[1px] bg-[#e9e9e9]"></div>
+          <div className="h-4 w-[1px] bg-line"></div>
           
           {/* Online Users Avatars */}
           <div className="flex items-center -space-x-2">
@@ -118,7 +118,7 @@ export default function TopHeader({
           {showNotifications && (
             <button
               onClick={onBellClick}
-              className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all text-[#9a9a9a] hover:bg-[#f4f4f5] hover:text-[#1f1f1f]`}
+              className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all text-muted hover:bg-canvas hover:text-ink`}
             >
               <Bell size={18} />
               {unreadCount > 0 && (
@@ -130,15 +130,15 @@ export default function TopHeader({
           )}
 
           {mode === 'chat' && (
-            <div className="flex items-center gap-1.5 mr-2 bg-[#f4f4f5] px-2 py-1 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors">
+            <div className="flex items-center gap-1.5 mr-2 bg-canvas px-2 py-1 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-[11px] font-bold text-[#1f1f1f]">В мережі</span>
+              <span className="text-[11px] font-bold text-ink">В мережі</span>
             </div>
           )}
 
           <button
             onClick={onUserClick}
-            className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-[#f4f4f5] transition-all overflow-hidden"
+            className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
             {currentUser ? (
               <UserAvatar user={currentUser} size={28} />

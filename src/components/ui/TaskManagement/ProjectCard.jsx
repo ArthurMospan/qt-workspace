@@ -29,40 +29,40 @@ export default function ProjectCard({
       <div className="flex items-center justify-between z-10">
         <div className="flex -space-x-[10px]">
           {teamCount === 0 && (
-            <div className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-[#f4f4f5]">
-              <Users size={13} className="text-[#9a9a9a]" />
+            <div className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+              <Users size={13} className="text-muted" />
             </div>
           )}
           {members.slice(0, 4).map((m, idx) => (
             <UserAvatar key={idx} user={m} size={30} className="border-2 border-white shadow-none" />
           ))}
           {teamCount > 4 && (
-            <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-[#9a9a9a] border-2 border-white">
+            <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">
               +{teamCount - 4}
             </div>
           )}
         </div>
 
         {/* Kebab menu trigger placeholder */}
-        <button className="p-[7px] text-[#9a9a9a] hover:bg-white hover:text-[#1f1f1f] rounded-[8px] transition-all no-nav">
+        <button className="p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all no-nav">
           <MoreVertical size={16} />
         </button>
       </div>
 
       {/* Title + description */}
       <div className="flex flex-col gap-[8px] z-10">
-        <h2 className={`font-bold text-[#1f1f1f] leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap ${
+        <h2 className={`font-bold text-ink leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap ${
           isLarge ? 'text-[28px]' : 'text-[18px]'
         }`}>
           <span>{name}</span>
           {unreadCount > 0 && (
-            <span className="inline-flex items-center justify-center bg-[#1f1f1f] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] h-[20px]" title="Непрочитані повідомлення">
+            <span className="inline-flex items-center justify-center bg-ink text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] h-[20px]" title="Непрочитані повідомлення">
               {unreadCount}
             </span>
           )}
         </h2>
         {description && (
-          <p className={`text-[#9a9a9a] font-medium leading-[1.5] line-clamp-2 ${
+          <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
             isLarge ? 'text-[14px] max-w-[560px]' : 'text-[13px]'
           }`}>
             {description}
@@ -83,7 +83,7 @@ export default function ProjectCard({
               className="w-7 h-7 rounded-full object-cover shrink-0" 
             />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-[#1f1f1f]/5 text-[#1f1f1f] font-bold flex items-center justify-center text-[9px] shrink-0 uppercase">
+            <div className="w-7 h-7 rounded-full bg-ink/5 text-ink font-bold flex items-center justify-center text-[9px] shrink-0 uppercase">
               {lastAction.actor ? lastAction.actor.slice(0, 2) : 'АМ'}
             </div>
           )}
@@ -91,14 +91,14 @@ export default function ProjectCard({
           {/* Activity Text details */}
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-bold text-[#1f1f1f]">{lastAction.actor}</span>
+              <span className="font-bold text-ink">{lastAction.actor}</span>
               {lastAction.time && (
-                <span className="text-[10px] text-[#9a9a9a] shrink-0 font-medium">{lastAction.time}</span>
+                <span className="text-[10px] text-muted shrink-0 font-medium">{lastAction.time}</span>
               )}
             </div>
-            <p className="text-[#9a9a9a] leading-tight line-clamp-1">
+            <p className="text-muted leading-tight line-clamp-1">
               {lastAction.action || 'оновив завдання'}{' '}
-              <span className="text-[#1f1f1f] font-semibold underline">{lastAction.issueKey}: {lastAction.title}</span>
+              <span className="text-ink font-semibold underline">{lastAction.issueKey}: {lastAction.title}</span>
             </p>
           </div>
         </div>
@@ -109,18 +109,18 @@ export default function ProjectCard({
         {/* Shaded stats block with soft custom dividers */}
         <div className="flex items-center justify-between bg-[#fafafa] rounded-[10px] py-[10px]">
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{taskCount}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">завдань</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{taskCount}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">завдань</span>
           </div>
-          <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
+          <div className="w-[1px] h-[16px] bg-line" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{inProgressCount}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">в роботі</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{inProgressCount}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">в роботі</span>
           </div>
-          <div className="w-[1px] h-[16px] bg-[#e9e9e9]" />
+          <div className="w-[1px] h-[16px] bg-line" />
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-[#1f1f1f] leading-none mb-1">{commentCount}</span>
-            <span className="text-[9px] font-bold text-[#9a9a9a] uppercase tracking-wider">повідомлень</span>
+            <span className="text-[14px] font-bold text-ink leading-none mb-1">{commentCount}</span>
+            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">повідомлень</span>
           </div>
         </div>
       </div>

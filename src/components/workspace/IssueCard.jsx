@@ -236,7 +236,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
                   </div>
                 ))
               ) : (
-                <span className="text-[11px] text-[#cfcfcf] italic">Unassigned</span>
+                <span className="text-[11px] text-faint italic">Unassigned</span>
               )}
             </div>
 

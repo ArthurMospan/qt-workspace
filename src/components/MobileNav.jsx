@@ -99,7 +99,7 @@ export default function MobileNav() {
     <>
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1f1f1f] flex items-stretch"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-ink flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {TABS.map(({ href, icon: Icon, label, exact }) => {
@@ -138,20 +138,20 @@ export default function MobileNav() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
             onClick={e => e.stopPropagation()}
-            className="absolute bottom-0 left-0 right-0 bg-[#1f1f1f] rounded-t-[24px] max-h-[80vh] overflow-y-auto"
+            className="absolute bottom-0 left-0 right-0 bg-ink rounded-t-[24px] max-h-[80vh] overflow-y-auto"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
           >
             {/* Handle + org row */}
-            <div className="sticky top-0 bg-[#1f1f1f] pt-[10px] pb-[4px]">
+            <div className="sticky top-0 bg-ink pt-[10px] pb-[4px]">
               <div className="w-[36px] h-[4px] bg-white/20 rounded-full mx-auto mb-[12px]" />
               <div className="flex items-center justify-between px-[20px] pb-[8px]">
                 <button
                   onClick={() => setShowOrgSwitcher(true)}
                   className="flex items-center gap-[6px] text-white min-w-0">
                   <span className="text-[15px] font-bold truncate">{activeOrg?.name || 'QuickTeam'}</span>
-                  <ChevronsUpDown size={14} className="text-[#9a9a9a] shrink-0" />
+                  <ChevronsUpDown size={14} className="text-muted shrink-0" />
                 </button>
-                <button onClick={() => setMoreOpen(false)} className="text-[#9a9a9a] p-[6px] -mr-[6px]">
+                <button onClick={() => setMoreOpen(false)} className="text-muted p-[6px] -mr-[6px]">
                   <X size={18} />
                 </button>
               </div>
@@ -197,7 +197,7 @@ export default function MobileNav() {
                   return (
                     <Link key={p.id} href={`/workspace/${p.id}`}
                       className={`flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] transition-colors ${
-                        active ? 'bg-[#333333] text-white' : 'text-[#9a9a9a]'
+                        active ? 'bg-[#333333] text-white' : 'text-muted'
                       }`}>
                       <Folder size={16} className="shrink-0" />
                       <span className="text-[13px] font-medium truncate">{p.name}</span>

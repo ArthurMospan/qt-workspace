@@ -64,8 +64,8 @@ export default function Dialog({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#e9e9e9] shrink-0">
-            <h2 className="text-[16px] font-bold text-[#1f1f1f]">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
+            <h2 className="text-[16px] font-bold text-ink">{title}</h2>
             {showCloseButton && (
               <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
             )}
@@ -79,7 +79,7 @@ export default function Dialog({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-[#e9e9e9] flex justify-end gap-3 bg-[#f4f4f5] shrink-0">
+          <div className="px-6 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
             {footer}
           </div>
         )}

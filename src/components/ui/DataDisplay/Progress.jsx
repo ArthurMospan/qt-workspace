@@ -24,13 +24,13 @@ export default function Progress({
 
   return (
     <div className={className}>
-      <div className={`w-full bg-[#e9e9e9] rounded-full overflow-hidden ${sizes[size]}`}>
+      <div className={`w-full bg-line rounded-full overflow-hidden ${sizes[size]}`}>
         <div
           className={`h-full ${variants[variant]} transition-all`}
           style={{ width: `${percent}%` }}
         />
       </div>
-      {showLabel && <p className="text-[12px] text-[#9a9a9a] mt-1">{percent}%</p>}
+      {showLabel && <p className="text-[12px] text-muted mt-1">{percent}%</p>}
     </div>
   );
 }

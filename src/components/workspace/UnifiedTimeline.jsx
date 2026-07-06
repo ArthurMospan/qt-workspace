@@ -164,10 +164,10 @@ export default function UnifiedTimeline({ issueId, projectId }) {
         {timeline.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3 text-center">
             <div className="w-10 h-10 rounded-full bg-[#ebebeb] flex items-center justify-center">
-              <MessageSquare size={18} className="text-[#9a9a9a]" />
+              <MessageSquare size={18} className="text-muted" />
             </div>
-            <p className="text-[12px] font-medium text-[#9a9a9a]">Поки що немає повідомлень</p>
-            <p className="text-[11px] text-[#cfcfcf]">Напиши перше — команда побачить</p>
+            <p className="text-[12px] font-medium text-muted">Поки що немає повідомлень</p>
+            <p className="text-[11px] text-faint">Напиши перше — команда побачить</p>
           </div>
         )}
 
@@ -192,19 +192,19 @@ export default function UnifiedTimeline({ issueId, projectId }) {
                 </button>
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[82%] min-w-0`}>
                   {!isMe && (
-                    <span className="text-[11px] font-bold text-[#1f1f1f] mb-1 ml-1 flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-ink mb-1 ml-1 flex items-center gap-1">
                       {item.authorName}
                       {members.find(m => (m.id || m.uid) === item.authorId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === item.authorId).statusEmoji}</span>}
                     </span>
                   )}
                   <div className={`px-[14px] py-[10px] text-[13px] leading-[20px] break-words whitespace-pre-wrap shadow-sm border ${
                     isMe
-                      ? 'bg-[#1f1f1f] text-white border-[#1f1f1f] rounded-[16px] rounded-br-[4px]'
-                      : 'bg-white text-[#1f1f1f] border-[#e4e4e7] rounded-[16px] rounded-bl-[4px]'
+                      ? 'bg-ink text-white border-ink rounded-[16px] rounded-br-[4px]'
+                      : 'bg-white text-ink border-[#e4e4e7] rounded-[16px] rounded-bl-[4px]'
                   }`}>
                     {item.text}
                   </div>
-                  <span className="text-[10px] text-[#cfcfcf] mt-[3px] font-medium">
+                  <span className="text-[10px] text-faint mt-[3px] font-medium">
                     {fmtClock(item.createdAt)}
                   </span>
                 </div>
@@ -218,10 +218,10 @@ export default function UnifiedTimeline({ issueId, projectId }) {
             return (
               <div key={`time-${item.id}`} className="flex justify-center my-1">
                 <div className="flex items-center gap-[6px] bg-white border border-[#e4e4e7] shadow-sm text-[#52525b] px-3 py-[6px] rounded-full text-[11px] font-medium">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#f4f4f5] flex items-center justify-center shrink-0">
-                    <Clock size={10} className="text-[#1f1f1f]" />
+                  <div className="w-[16px] h-[16px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <Clock size={10} className="text-ink" />
                   </div>
-                  <span><strong className="text-[#1f1f1f]">{member?.name || 'Хтось'}</strong> списав <strong className="text-[#1f1f1f]">{fmtTime(item.spentMinutes)}</strong>{item.description ? ` — ${item.description}` : ''}</span>
+                  <span><strong className="text-ink">{member?.name || 'Хтось'}</strong> списав <strong className="text-ink">{fmtTime(item.spentMinutes)}</strong>{item.description ? ` — ${item.description}` : ''}</span>
                 </div>
               </div>
             );
@@ -231,10 +231,10 @@ export default function UnifiedTimeline({ issueId, projectId }) {
           if (item._type === 'audit') {
             return (
               <div key={`audit-${item.id}`} className="flex justify-center">
-                <div className="flex items-center gap-[5px] text-[#9a9a9a] text-[11px] font-medium">
+                <div className="flex items-center gap-[5px] text-muted text-[11px] font-medium">
                   <Activity size={10} className="shrink-0" />
                   <span>
-                    <strong className="text-[#1f1f1f]">{item.byName || 'Система'}</strong>{' '}
+                    <strong className="text-ink">{item.byName || 'Система'}</strong>{' '}
                     {item.action === 'update'
                       ? `змінив ${item.field}${item.newValue ? ` → ${item.newValue}` : ''}`
                       : 'зробив зміну'}
@@ -252,7 +252,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
       <div className="px-3 pb-3 shrink-0 relative" ref={wrapperRef}>
         {/* Autocomplete Mentions Dropdown */}
         {mentionState.active && filteredMembers.length > 0 && (
-          <div className="absolute bottom-[100%] left-3 right-3 mb-2 bg-white border border-[#e9e9e9] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-[60] overflow-hidden max-h-[160px] overflow-y-auto">
+          <div className="absolute bottom-[100%] left-3 right-3 mb-2 bg-white border border-line rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-[60] overflow-hidden max-h-[160px] overflow-y-auto">
             {filteredMembers.map((member, index) => {
               const isSelected = index === mentionState.selectedIndex;
               return (
@@ -260,7 +260,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
                   key={member.id || member.uid}
                   onClick={() => selectMention(member)}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] font-medium transition-colors ${
-                    isSelected ? 'bg-[#f4f4f5] text-[#1f1f1f] font-bold' : 'text-[#4b5563] hover:bg-[#fafafa]'
+                    isSelected ? 'bg-canvas text-ink font-bold' : 'text-[#4b5563] hover:bg-[#fafafa]'
                   }`}
                 >
                   <UserAvatar user={member} size={20} />
@@ -271,7 +271,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
           </div>
         )}
 
-        <div className={`flex items-end gap-2 bg-white rounded-[16px] px-3 py-[10px] transition-all shadow-sm border ${input ? 'border-[#cfcfcf]' : 'border-[#e4e4e7]'}`}>
+        <div className={`flex items-end gap-2 bg-white rounded-[16px] px-3 py-[10px] transition-all shadow-sm border ${input ? 'border-faint' : 'border-[#e4e4e7]'}`}>
           <div className="shrink-0 mt-[2px]">
             <UserAvatar
               user={{ id: currentUser?.uid || currentUser?.id, name: currentUser?.name, avatar: currentUser?.avatar }}
@@ -333,7 +333,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
               }
             }}
             placeholder="Написати повідомлення..."
-            className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1f1f1f] placeholder:text-[#a1a1aa] font-medium resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
+            className="flex-1 bg-transparent border-none outline-none text-[13px] text-ink placeholder:text-[#a1a1aa] font-medium resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
             style={{ height: '28px' }}
           />
           <Button
@@ -346,7 +346,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
             icon={Send}
           />
         </div>
-        <p className="text-[10px] text-[#cfcfcf] text-center mt-1">Enter — надіслати · Shift+Enter — новий рядок</p>
+        <p className="text-[10px] text-faint text-center mt-1">Enter — надіслати · Shift+Enter — новий рядок</p>
       </div>
     </div>
   );

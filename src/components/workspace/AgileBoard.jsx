@@ -30,7 +30,7 @@ function InlineAddForm({ onAdd, onCancel }) {
         }}
         placeholder="Назва завдання... (Enter — зберегти)"
         rows={2}
-        className="w-full px-3 py-2 bg-white rounded-[12px] border border-[#e9e9e9] text-[12px] text-[#1f1f1f] placeholder-[#cfcfcf] resize-none focus:border-[#1f1f1f] focus:ring-1 focus:ring-[#1f1f1f] transition-all shadow-sm"
+        className="w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all shadow-sm"
       />
       <div className="flex gap-2 mt-[6px]">
         <Button style="primary" size="sm" onClick={submit}>
@@ -200,13 +200,13 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
               if (isCollapsed) {
                 return (
-                  <div key={col.id} className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-[#f4f4f5] rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
-                    <button className="text-[#9a9a9a] mb-4">
+                  <div key={col.id} className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
+                    <button className="text-muted mb-4">
                       <ChevronRight size={16} />
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                    <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                    <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                    <span className="text-[11px] font-bold text-muted bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                       {colTotalIssues.length}
                     </span>
                   </div>
@@ -217,14 +217,14 @@ export default function AgileBoard({ issues, members, projectId, project, active
                   <div className="flex items-center gap-[6px]">
                     <button
                       onClick={() => toggleColumnCollapse(col.id)}
-                      className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                      className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
                       title="Згорнути колонку"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                    <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                    <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                    <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{col.label}</h3>
+                    <span className="text-[11px] font-bold text-muted bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
                       {colTotalIssues.length}
                     </span>
                   </div>
@@ -232,7 +232,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                     {!col.isHiddenContainer && (
                       <button
                         onClick={() => setActiveAddColId(col.id)}
-                        className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                        className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                         title="Додати завдання"
                       >
                         <Plus size={16} />
@@ -252,8 +252,8 @@ export default function AgileBoard({ issues, members, projectId, project, active
               
               {swimlanes.length > 1 && (
                 <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
-                  <h4 className="text-[12px] font-bold text-[#1f1f1f]">{lane.title}</h4>
-                  <span className="ml-2 text-[10px] font-bold text-[#9a9a9a] bg-white px-2 py-[2px] rounded-full">{lane.issues.length}</span>
+                  <h4 className="text-[12px] font-bold text-ink">{lane.title}</h4>
+                  <span className="ml-2 text-[10px] font-bold text-muted bg-white px-2 py-[2px] rounded-full">{lane.issues.length}</span>
                 </div>
               )}
               
@@ -272,28 +272,28 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
                   if (isCollapsed) {
                     return (
-                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-[#f4f4f5] ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
+                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
                         {swimlanes.length === 1 && (
                           <>
-                            <button className="text-[#9a9a9a] mb-4">
+                            <button className="text-muted mb-4">
                               <ChevronRight size={16} />
                             </button>
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                               {colIssues.length}
                             </span>
                           </>
                         )}
                         {swimlanes.length > 1 && (
-                          <div className="flex-1 border-2 border-dashed border-[#e9e9e9]/50 rounded-[12px] m-1" />
+                          <div className="flex-1 border-2 border-dashed border-line/50 rounded-[12px] m-1" />
                         )}
                       </div>
                     );
                   }
 
                   return (
-                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-[#f4f4f5] hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (
@@ -301,14 +301,14 @@ export default function AgileBoard({ issues, members, projectId, project, active
                           <div className="flex items-center gap-[6px]">
                             <button
                               onClick={() => toggleColumnCollapse(col.id)}
-                              className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                              className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
                               title="Згорнути колонку"
                             >
                               <ChevronLeft size={16} />
                             </button>
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-[#1f1f1f] uppercase tracking-wide">{col.label}</h3>
-                            <span className="text-[11px] font-bold text-[#9a9a9a] bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{col.label}</h3>
+                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
                               {colIssues.length}
                             </span>
                           </div>
@@ -316,7 +316,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                             {!col.isHiddenContainer && (
                               <button
                                 onClick={() => setActiveAddColId(col.id)}
-                                className="text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                                className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                                 title="Додати завдання"
                               >
                                 <Plus size={16} />

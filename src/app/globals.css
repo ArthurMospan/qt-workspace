@@ -6,16 +6,17 @@
   --font-inter: 'Inter', sans-serif;
   --font-roboto: 'Roboto Condensed', sans-serif;
 
-  /* Mirror qt/ design tokens */
-  --color-bg-dark:       #1f1f1f;
-  --color-bg-grey:       #f4f4f5;
-  --color-element-grey:  #f4f4f5;
-  --color-surface:       #ffffff;
-  --color-border:        #e9e9e9;
-  --color-text-dark:     #1f1f1f;
-  --color-text-muted:    #9a9a9a;
-  --color-text-inactive: #cfcfcf;
-  --color-pill-dark:     #303030;
+  /* ── Brand tokens — single source of truth for the workspace palette.
+     Utilities: bg-ink / text-ink / bg-canvas / bg-surface / border-line /
+     text-muted / text-faint / bg-ink-hover. Change a value here → propagates
+     everywhere (product code references these, not raw hex). ── */
+  --color-ink:        #1f1f1f;  /* primary dark: text, buttons, sidebar */
+  --color-ink-hover:  #303030;  /* dark hover / pill */
+  --color-canvas:     #f4f4f5;  /* app canvas / element grey */
+  --color-surface:    #ffffff;  /* cards, modals, content bg */
+  --color-line:       #e9e9e9;  /* borders */
+  --color-muted:      #9a9a9a;  /* secondary text, placeholders */
+  --color-faint:      #cfcfcf;  /* disabled / very light text */
 }
 
 @layer base {
@@ -25,7 +26,7 @@
   }
   body {
     font-family: var(--font-inter);
-    @apply antialiased bg-[#f4f4f5] text-[#1f1f1f];
+    @apply antialiased bg-canvas text-ink;
     width: 100%;
     height: 100dvh;
     margin: 0;
@@ -40,13 +41,13 @@
 
   /* Sidebar glass (dark) */
   .sidebar-glass {
-    background-color: #1f1f1f;
+    background-color: var(--color-ink);
   }
 
   /* Card surface */
   .card {
-    background: #ffffff;
-    border: 1px solid #e9e9e9;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
     border-radius: 12px;
   }
 

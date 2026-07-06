@@ -20,7 +20,7 @@ export function InnerNavigation({
     <aside className={`flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px] ${className}`}>
       {groups.map(group => (
         <div key={group} className="mb-[24px] last:mb-0">
-          <p className="px-3 pb-[8px] text-[10px] font-bold text-[#9a9a9a] uppercase tracking-widest">
+          <p className="px-3 pb-[8px] text-[10px] font-bold text-muted uppercase tracking-widest">
             {group}
           </p>
           <div className="flex flex-col gap-[2px]">
@@ -40,10 +40,10 @@ export function InnerNavigation({
                     iconSize={15}
                     className={`w-full justify-start font-medium transition-colors ${
                       active
-                        ? 'bg-[#ebebeb] text-[#1f1f1f]'
+                        ? 'bg-[#ebebeb] text-ink'
                         : item.danger
                         ? 'text-red-500 hover:bg-red-50'
-                        : 'text-[#9a9a9a] hover:bg-[#ebebeb]/50 hover:text-[#1f1f1f]'
+                        : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
                     }`}
                   >
                     {item.label}

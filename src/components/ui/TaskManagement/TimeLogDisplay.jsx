@@ -35,7 +35,7 @@ export default function TimeLogDisplay({
     <div
       className={`
         bg-white rounded-[12px] p-[12px]
-        border border-[#f0f0f0] hover:border-[#e9e9e9]
+        border border-[#f0f0f0] hover:border-line
         hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]
         transition-all duration-200
         flex items-center justify-between ${className}
@@ -45,19 +45,19 @@ export default function TimeLogDisplay({
       <div className="flex-1 min-w-0">
         {/* Task Name */}
         <div className="flex items-center gap-[8px] mb-[4px]">
-          <Clock size={14} className="text-[#9a9a9a] shrink-0" />
-          <h4 className="text-[13px] font-bold text-[#1f1f1f] truncate">
+          <Clock size={14} className="text-muted shrink-0" />
+          <h4 className="text-[13px] font-bold text-ink truncate">
             {task}
           </h4>
         </div>
 
         {/* Duration + Date + Billable */}
         <div className="flex items-center gap-[12px] ml-[22px]">
-          <span className="text-[12px] font-bold text-[#1f1f1f]">
+          <span className="text-[12px] font-bold text-ink">
             {formatMinutes(duration)}
           </span>
           {date && (
-            <span className="text-[11px] font-medium text-[#9a9a9a]">
+            <span className="text-[11px] font-medium text-muted">
               {formatDate(date)} {formatTime(date)}
             </span>
           )}
@@ -78,7 +78,7 @@ export default function TimeLogDisplay({
           {onEdit && (
             <button
               onClick={() => onEdit?.()}
-              className="p-[6px] hover:bg-[#f0f0f0] rounded-[6px] transition-colors text-[#9a9a9a] hover:text-[#1f1f1f]"
+              className="p-[6px] hover:bg-[#f0f0f0] rounded-[6px] transition-colors text-muted hover:text-ink"
               title="Редагувати"
             >
               <Edit2 size={12} />
@@ -87,7 +87,7 @@ export default function TimeLogDisplay({
           {onDelete && (
             <button
               onClick={() => onDelete?.()}
-              className="p-[6px] hover:bg-[#fef2f2] rounded-[6px] transition-colors text-[#9a9a9a] hover:text-[#ef4444]"
+              className="p-[6px] hover:bg-[#fef2f2] rounded-[6px] transition-colors text-muted hover:text-[#ef4444]"
               title="Видалити"
             >
               <Trash2 size={12} />

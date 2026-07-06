@@ -23,7 +23,7 @@ export default function Table({
               {headers.map((header, idx) => (
                 <th
                   key={idx}
-                  className="text-left text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide px-4 py-3 select-none"
+                  className="text-left text-[10px] font-bold text-muted uppercase tracking-wide px-4 py-3 select-none"
                 >
                   {header}
                 </th>
@@ -38,14 +38,14 @@ export default function Table({
                 key={rowIdx}
                 className={`
                   bg-white cursor-pointer transition-all duration-200 group
-                  hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#1f1f1f]/5
+                  hover:bg-[#fcfcfc] hover:ring-4 hover:ring-ink/5
                 `}
               >
                 {row.map((cell, cellIdx) => (
                   <td
                     key={cellIdx}
                     className={`
-                      px-4 py-3 text-[13px] font-semibold text-[#1f1f1f]
+                      px-4 py-3 text-[13px] font-semibold text-ink
                       border-y border-[#efefef]
                       first:border-l first:rounded-l-[16px]
                       last:border-r last:rounded-r-[16px]
@@ -61,7 +61,7 @@ export default function Table({
 
         {/* Empty state */}
         {rows.length === 0 && (
-          <div className="py-[32px] text-center text-[12px] font-bold text-[#cfcfcf]">
+          <div className="py-[32px] text-center text-[12px] font-bold text-faint">
             Задач не знайдено в цьому списку
           </div>
         )}
@@ -75,11 +75,11 @@ export default function Table({
       <table className={`w-full border-collapse ${className}`}>
         {/* Header */}
         <thead className={stickyHeader ? 'sticky top-0 z-[20]' : ''}>
-          <tr className="bg-[#f4f4f5]">
+          <tr className="bg-canvas">
             {headers.map((header, idx) => (
               <th
                 key={idx}
-                className="px-[16px] py-[12px] text-left text-[13px] font-[700] text-[#1f1f1f]"
+                className="px-[16px] py-[12px] text-left text-[13px] font-[700] text-ink"
               >
                 {header}
               </th>
@@ -93,7 +93,7 @@ export default function Table({
             <tr
               key={rowIdx}
               className={`
-                border-b border-[#e9e9e9]
+                border-b border-line
                 ${striped && rowIdx % 2 === 1 ? 'bg-[#fafafa]' : ''}
                 ${
                   hoverable
@@ -110,7 +110,7 @@ export default function Table({
               {row.map((cell, cellIdx) => (
                 <td
                   key={cellIdx}
-                  className="px-[16px] py-[12px] text-[14px] font-[600] text-[#1f1f1f]"
+                  className="px-[16px] py-[12px] text-[14px] font-[600] text-ink"
                 >
                   {cell}
                 </td>
@@ -122,7 +122,7 @@ export default function Table({
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <div className="py-[32px] text-center text-[14px] font-[600] text-[#9a9a9a]">
+        <div className="py-[32px] text-center text-[14px] font-[600] text-muted">
           No data available
         </div>
       )}

@@ -75,14 +75,14 @@ export default function ContextMenu({
                   className={`w-full text-left px-[14px] py-[9px] text-[13px] font-medium flex items-center gap-[8px] transition-colors ${
                     isDanger 
                       ? 'text-[#ef4444] hover:bg-red-50' 
-                      : 'text-[#1f1f1f] hover:bg-[#f4f4f5]'
+                      : 'text-ink hover:bg-canvas'
                   }`}
                   style={item.color && !isDanger ? { color: item.color } : {}}
                 >
                   {Icon && (
                     <Icon 
                       size={14} 
-                      className={isDanger ? 'text-[#ef4444]' : 'text-[#9a9a9a]'} 
+                      className={isDanger ? 'text-[#ef4444]' : 'text-muted'} 
                     />
                   )}
                   <span>{item.label}</span>

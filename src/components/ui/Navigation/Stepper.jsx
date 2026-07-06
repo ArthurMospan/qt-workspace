@@ -56,8 +56,8 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
                     status === 'completed' 
                       ? 'bg-[#10b981] text-white shadow-sm' 
                       : status === 'active'
-                        ? 'bg-[#1f1f1f] text-white shadow-sm ring-4 ring-[#1f1f1f]/10 scale-105'
-                        : 'bg-white text-[#9a9a9a] border border-[#e9e9e9] group-hover:border-[#d0d0d0] group-hover:text-[#666666]'
+                        ? 'bg-ink text-white shadow-sm ring-4 ring-ink/10 scale-105'
+                        : 'bg-white text-muted border border-line group-hover:border-[#d0d0d0] group-hover:text-[#666666]'
                   }`}
                 >
                   {status === 'completed' ? (
@@ -85,10 +85,10 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
                 <span 
                   className={`text-[13px] font-semibold transition-colors duration-300 ${
                     status === 'active' 
-                      ? 'text-[#1f1f1f]' 
+                      ? 'text-ink' 
                       : status === 'completed'
                         ? 'text-[#10b981]'
-                        : 'text-[#9a9a9a] group-hover:text-[#666666]'
+                        : 'text-muted group-hover:text-[#666666]'
                   }`}
                 >
                   {step}
@@ -97,7 +97,7 @@ export function Stepper({ steps = [], currentStep = 0, onStepClick = () => {}, c
 
               {/* Connecting Line */}
               {!isLast && (
-                <li className="flex-1 mx-3 h-[2px] min-w-[30px] rounded-full overflow-hidden bg-[#e9e9e9] shrink">
+                <li className="flex-1 mx-3 h-[2px] min-w-[30px] rounded-full overflow-hidden bg-line shrink">
                   <div 
                     className="h-full bg-[#10b981] transition-all duration-500 ease-in-out rounded-full"
                     style={{ 

@@ -9,8 +9,8 @@ export default function Card({
   className = '',
 }) {
   const variantMap = {
-    white: 'bg-[#ffffff] border border-[#e9e9e9]',
-    gray: 'bg-[#f4f4f5]',
+    white: 'bg-surface border border-line',
+    gray: 'bg-canvas',
   };
 
   const paddingMap = {
@@ -26,7 +26,7 @@ export default function Card({
         rounded-[16px]
         ${variantMap[variant]}
         ${paddingMap[padding]}
-        ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:border-[#cfcfcf] hover:ring-4 hover:ring-[#1f1f1f]/5 transition-all duration-200' : ''}
+        ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:border-faint hover:ring-4 hover:ring-ink/5 transition-all duration-200' : ''}
         ${className}
       `}
       onClick={onClick}

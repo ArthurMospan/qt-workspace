@@ -47,45 +47,45 @@ export default function HoverCard({ type, value, children, members }) {
       </span>
 
       {show && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-[#e9e9e9] rounded-[12px] shadow-xl p-3 text-left">
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">
           {type === 'user' ? (
             data ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <UserAvatar user={data} size={40} />
                   <div>
-                    <p className="text-[14px] font-bold text-[#1f1f1f] leading-tight">{data.name || data.email}</p>
-                    <p className="text-[11px] text-[#9a9a9a]">{data.role || 'Учасник'}</p>
+                    <p className="text-[14px] font-bold text-ink leading-tight">{data.name || data.email}</p>
+                    <p className="text-[11px] text-muted">{data.role || 'Учасник'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-[#9a9a9a] mt-1">
-                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (Date.now() - new Date(data.lastActive).getTime() < 120000) ? 'bg-[#10b981]' : 'bg-[#cfcfcf]'}`} />
+                <div className="flex items-center gap-1 text-[11px] text-muted mt-1">
+                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (Date.now() - new Date(data.lastActive).getTime() < 120000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
                   {data.lastActive && (Date.now() - new Date(data.lastActive).getTime() < 120000) ? 'Онлайн' : 'Не в мережі'}
                 </div>
               </div>
             ) : (
-               <div className="text-[12px] text-[#9a9a9a]">Користувача не знайдено</div>
+               <div className="text-[12px] text-muted">Користувача не знайдено</div>
             )
           ) : (
             // Issue
             loading ? (
-              <div className="text-[12px] text-[#9a9a9a] flex items-center justify-center py-2">
-                 <div className="w-4 h-4 border-2 border-[#e9e9e9] border-t-[#c026d3] rounded-full animate-spin" />
+              <div className="text-[12px] text-muted flex items-center justify-center py-2">
+                 <div className="w-4 h-4 border-2 border-line border-t-[#c026d3] rounded-full animate-spin" />
               </div>
             ) : data && !data.notFound ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-bold text-[#c026d3] bg-[#fdf4ff] px-2 py-0.5 rounded-full">{data.issueKey}</span>
-                  <span className="text-[10px] font-bold text-[#9a9a9a] bg-[#f0f0f0] px-2 py-0.5 rounded-full">{data.status || data.columnId}</span>
+                  <span className="text-[10px] font-bold text-muted bg-[#f0f0f0] px-2 py-0.5 rounded-full">{data.status || data.columnId}</span>
                 </div>
-                <p className="text-[14px] font-bold text-[#1f1f1f] leading-tight line-clamp-2">{data.title}</p>
+                <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{data.title}</p>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f0f0f0]">
                   <div className="flex items-center gap-1">
-                    <CheckSquare size={12} className="text-[#9a9a9a]" />
-                    <span className="text-[11px] font-medium text-[#1f1f1f]">{data.type || 'Завдання'}</span>
+                    <CheckSquare size={12} className="text-muted" />
+                    <span className="text-[11px] font-medium text-ink">{data.type || 'Завдання'}</span>
                   </div>
                   {data.dueDate && (
-                    <div className="flex items-center gap-1 text-[11px] text-[#9a9a9a]">
+                    <div className="flex items-center gap-1 text-[11px] text-muted">
                       <Clock size={12} />
                       {data.dueDate.toDate ? data.dueDate.toDate().toLocaleDateString() : new Date(data.dueDate).toLocaleDateString()}
                     </div>
@@ -93,7 +93,7 @@ export default function HoverCard({ type, value, children, members }) {
                 </div>
               </div>
             ) : (
-              <div className="text-[12px] text-[#9a9a9a]">Задачу не знайдено</div>
+              <div className="text-[12px] text-muted">Задачу не знайдено</div>
             )
           )}
         </div>

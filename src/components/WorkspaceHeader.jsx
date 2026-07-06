@@ -183,7 +183,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               id="notif-bell"
             onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
             className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${
-              bellOpen ? 'bg-[#f4f4f5] text-[#1f1f1f]' : 'text-[#9a9a9a] hover:bg-[#f4f4f5] hover:text-[#1f1f1f]'
+              bellOpen ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'
             } ${unreadCount > 0 ? 'animate-[bellShake_0.4s_ease]' : ''}`}
           >
             <Bell size={18} />
@@ -197,9 +197,9 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
           {bellOpen && (
             <div className="fixed md:absolute right-[8px] md:right-0 top-[56px] md:top-[calc(100%+8px)] w-[min(380px,calc(100vw-16px))] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[#f4f4f5]">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-canvas">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-[14px] font-bold text-[#1f1f1f]">Сповіщення</h3>
+                  <h3 className="text-[14px] font-bold text-ink">Сповіщення</h3>
                   {unreadCount > 0 && (
                     <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#6366f1]/10 text-[#6366f1] rounded-full">
                       {unreadCount} нових
@@ -209,14 +209,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
                     <button onClick={markAllRead} title="Позначити всі прочитаними"
-                      className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] transition-all">
+                      className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
                       <CheckCheck size={14} />
                     </button>
                   )}
                   <button
                     onClick={() => { setBellOpen(false); router.push('/workspace/settings?section=notifications'); }}
                     title="Налаштування сповіщень"
-                    className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-[#9a9a9a] hover:text-[#1f1f1f] hover:bg-[#f4f4f5] transition-all">
+                    className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
                     <Settings size={13} />
                   </button>
                 </div>
@@ -225,7 +225,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               {/* Filter */}
               <div className="px-4 pt-[10px] pb-2">
                 <Segmented
-                  className="bg-[#f4f4f5] w-max"
+                  className="bg-canvas w-max"
                   value={notifFilter}
                   onChange={setNotifFilter}
                   options={[
@@ -239,26 +239,26 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               <div className="max-h-[400px] overflow-y-auto">
                 {shownNotifications.length === 0 ? (
                   <div className="flex flex-col items-center py-12">
-                    <Bell size={24} className="text-[#e9e9e9] mb-3" />
-                    <p className="text-[12px] text-[#cfcfcf]">
+                    <Bell size={24} className="text-line mb-3" />
+                    <p className="text-[12px] text-faint">
                       {notifFilter === 'unread' ? 'Все прочитано 👌' : 'Немає сповіщень'}
                     </p>
                   </div>
                 ) : notifGroups.map(group => (
                   <div key={group.label}>
-                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-[#cfcfcf] uppercase tracking-wider">
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-faint uppercase tracking-wider">
                       {group.label}
                     </p>
                     {group.items.map(n => (
                       <div key={n.id} onClick={() => handleNotifClick(n)}
-                        className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-[#f4f4f5] transition-colors ${!n.read ? 'bg-[#f5f7ff]' : ''}`}>
+                        className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${!n.read ? 'bg-[#f5f7ff]' : ''}`}>
                         <NotifIcon n={n} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-[#1f1f1f]' : 'text-[#4a4a4a]'}`}>
+                          <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
                             {n.title}
                           </p>
-                          {n.body && <p className="text-[11px] text-[#9a9a9a] mt-[2px] line-clamp-2">{n.body}</p>}
-                          <p className="text-[10px] text-[#cfcfcf] mt-[3px]">{timeAgo(n.createdAt)}</p>
+                          {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
+                          <p className="text-[10px] text-faint mt-[3px]">{timeAgo(n.createdAt)}</p>
                         </div>
                         {!n.read && (
                           <span className="w-[6px] h-[6px] bg-[#6366f1] rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
@@ -268,13 +268,13 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                           <button
                             title={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
                             onClick={e => { e.stopPropagation(); n.read ? markUnread(n.id) : markRead(n.id); }}
-                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-[#e9e9e9] text-[#9a9a9a] hover:text-[#1f1f1f] shadow-sm transition-colors">
+                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-ink shadow-sm transition-colors">
                             {n.read ? <Mail size={12} /> : <Check size={12} />}
                           </button>
                           <button
                             title="Видалити"
                             onClick={e => { e.stopPropagation(); removeNotification(n.id); }}
-                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-[#e9e9e9] text-[#9a9a9a] hover:text-red-500 shadow-sm transition-colors">
+                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-red-500 shadow-sm transition-colors">
                             <Trash2 size={12} />
                           </button>
                         </div>
@@ -286,14 +286,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
               {/* Footer */}
               {notifications.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-[10px] border-t border-[#f4f4f5] bg-[#fafafa]">
+                <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-[#fafafa]">
                   <button
                     onClick={clearRead}
                     disabled={readCount === 0}
-                    className="text-[11px] font-medium text-[#9a9a9a] hover:text-red-500 disabled:opacity-40 disabled:hover:text-[#9a9a9a] transition-colors">
+                    className="text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors">
                     Очистити прочитані{readCount > 0 ? ` (${readCount})` : ''}
                   </button>
-                  <span className="text-[10px] text-[#cfcfcf]">останні {notifications.length}</span>
+                  <span className="text-[10px] text-faint">останні {notifications.length}</span>
                 </div>
               )}
             </div>
@@ -310,21 +310,21 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         <div className="relative" ref={userRef}>
           <button
             onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
-            className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-[#f4f4f5] transition-all overflow-hidden"
+            className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
             <UserAvatar user={currentUser} size={28} />
           </button>
           {userOpen && (
             <div className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-[#f4f4f5]">
-                <p className="text-[13px] font-bold text-[#1f1f1f] truncate">{currentUser?.name}</p>
-                <p className="text-[11px] text-[#9a9a9a] truncate">{currentUser?.email}</p>
+              <div className="px-4 py-3 border-b border-canvas">
+                <p className="text-[13px] font-bold text-ink truncate">{currentUser?.name}</p>
+                <p className="text-[11px] text-muted truncate">{currentUser?.email}</p>
               </div>
               <button onClick={() => { router.push('/workspace/settings'); setUserOpen(false); }}
-                className="flex w-full px-4 py-[10px] text-[13px] text-[#1f1f1f] hover:bg-[#f4f4f5] transition-colors font-medium">
+                className="flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium">
                 Налаштування
               </button>
-              <div className="border-t border-[#f4f4f5]">
+              <div className="border-t border-canvas">
                 <button onClick={() => signOut()}
                   className="flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium">
                   Вийти
@@ -348,9 +348,9 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wide mb-[3px]"
                   style={{ color: cfg.color }}>{cfg.label}</p>
-                <p className="text-[13px] font-bold text-[#1f1f1f] leading-snug">{liveNotif.title}</p>
+                <p className="text-[13px] font-bold text-ink leading-snug">{liveNotif.title}</p>
                 {liveNotif.body && (
-                  <p className="text-[11px] text-[#9a9a9a] mt-1 line-clamp-2">{liveNotif.body}</p>
+                  <p className="text-[11px] text-muted mt-1 line-clamp-2">{liveNotif.body}</p>
                 )}
                 {liveNotif.link && (
                   <button
@@ -361,7 +361,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                   </button>
                 )}
               </div>
-              <button onClick={clearLiveNotif} className="text-[#cfcfcf] hover:text-[#1f1f1f] transition-colors p-1">
+              <button onClick={clearLiveNotif} className="text-faint hover:text-ink transition-colors p-1">
                 <X size={14} />
               </button>
             </div>

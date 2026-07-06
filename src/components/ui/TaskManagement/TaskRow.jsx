@@ -227,7 +227,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
                 </div>
               ))
             ) : (
-              <span className="text-[10px] text-[#cfcfcf] italic">Н/В</span>
+              <span className="text-[10px] text-faint italic">Н/В</span>
             )}
           </div>
 

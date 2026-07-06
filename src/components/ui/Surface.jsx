@@ -12,7 +12,7 @@
 
 const VARIANTS = {
   // Gray surface — separates logical blocks in a white content area
-  panel: 'bg-[#f4f4f5] rounded-[16px]',
+  panel: 'bg-canvas rounded-[16px]',
   // White card surface — lifts content cleanly
   card:  'bg-white rounded-[16px]',
   // Inset surface — for nested elements within a surface
