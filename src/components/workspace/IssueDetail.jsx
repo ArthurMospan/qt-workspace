@@ -672,7 +672,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
-      <div className={`w-full px-[24px] md:px-[32px] ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}>
+      <div className={`w-full page-gutter ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] flex-1 min-h-0 items-stretch">
 

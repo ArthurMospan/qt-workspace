@@ -169,7 +169,7 @@ export default function BoardPage({ params }) {
 
   return (
     <div className={`flex-1 h-full bg-transparent ${isBoard ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
-      <div className={`w-full flex flex-col gap-2 px-[24px] md:px-[32px] pt-[56px] ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
+      <div className={`w-full flex flex-col gap-2 page-gutter pt-[56px] ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
 
       {/* ── PageHeader ── */}
       <PageHeader
@@ -207,18 +207,11 @@ export default function BoardPage({ params }) {
               style="primary"
               size="lg"
               icon={Plus}
-              className="max-sm:hidden"
+              collapseAt="sm"
+              title="Створити завдання"
             >
               Створити завдання
             </Button>
-            <Button
-              onClick={() => setShowCreateTaskModal(true)}
-              style="primary"
-              size="icon-lg"
-              icon={Plus}
-              className="sm:hidden"
-              title="Створити завдання"
-            />
           </>
         }
         filters={

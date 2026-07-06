@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import {
@@ -363,6 +364,8 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('profile');
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
+  // Системний «назад» на телефоні повертає до списку розділів
+  const requestPaneClose = useMobilePaneBack(mobilePane === 'content', () => setMobilePane('sidebar'));
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1689,7 +1692,7 @@ export default function SettingsPage() {
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f4f4f5] relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
           <button
-            onClick={() => setMobilePane('sidebar')}
+            onClick={requestPaneClose}
             className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[16px] transition-colors"
           >
             <ArrowLeft size={15} /> Всі налаштування

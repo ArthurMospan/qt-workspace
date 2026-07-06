@@ -60,7 +60,7 @@ export function PageHeader({
 
   // ── Main variant: full page header with top spacing, sticky with premium blur + dynamic gradient layers ────────────────────────
   return (
-    <div className={`sticky top-[56px] z-20 shrink-0 flex flex-col pt-[12px] pb-[12px] gap-[10px] px-[24px] md:px-[32px] -mx-[24px] md:-mx-[32px] w-[calc(100%+48px)] md:w-[calc(100%+64px)] ${className}`}>
+    <div className={`sticky top-[56px] z-20 shrink-0 flex flex-col pt-[12px] pb-[12px] gap-[10px] full-bleed ${className}`}>
 
       {/* LAYER 1 (Bottom): Premium vertical fade mask (from solid white at top to transparent at bottom).
           Rounded corners only on md+ where the white panel itself is rounded — on mobile they'd leak content. */}
@@ -107,7 +107,7 @@ export function PageHeader({
 
       {/* Row 1.5 (mobile only): tabs scroll edge-to-edge */}
       {tabs?.length > 0 && (
-        <div className="md:hidden overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] w-[calc(100%+48px)]">
+        <div className="md:hidden overflow-x-auto hide-scrollbar full-bleed">
           <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} className="w-max" />
         </div>
       )}

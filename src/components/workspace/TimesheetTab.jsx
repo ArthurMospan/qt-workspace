@@ -96,7 +96,7 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
   }, [days, logs]);
 
   return (
-    <div className="overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] md:mx-0 md:px-0">
+    <div className="overflow-x-auto hide-scrollbar full-bleed-mobile">
     <div className="grid grid-cols-7 gap-[10px] min-w-[840px] md:min-w-0">
       {days.map((d, i) => {
         const key = dayKey(d);
@@ -256,7 +256,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
   }, [logs]);
 
   return (
-    <div className="overflow-x-auto hide-scrollbar -mx-[24px] px-[24px] md:mx-0 md:px-0">
+    <div className="overflow-x-auto hide-scrollbar full-bleed-mobile">
     <div className="flex flex-col gap-[10px] min-w-[560px] md:min-w-0">
       <div className="grid grid-cols-7 gap-[10px]">
         {DAY_LABELS.map(l => (

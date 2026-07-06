@@ -201,7 +201,7 @@ export default function MyTasksPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] pb-[120px] flex flex-col gap-2">
+      <div className="w-full page-gutter pt-[56px] pb-[120px] flex flex-col gap-2">
         <PageHeader
           variant="main"
           title="Мої завдання"
@@ -220,19 +220,11 @@ export default function MyTasksPage() {
                 size="lg"
                 style="primary"
                 color="dark"
-                className="max-sm:hidden"
+                collapseAt="sm"
+                title="Створити завдання"
               >
                 Створити завдання
               </Button>
-              <Button
-                onClick={() => { setCreateTaskStatus(null); setShowCreateTaskModal(true); }}
-                icon={Plus}
-                size="icon-lg"
-                style="primary"
-                color="dark"
-                className="sm:hidden"
-                title="Створити завдання"
-              />
             </div>
           }
           filters={
@@ -304,7 +296,7 @@ export default function MyTasksPage() {
           </div>
         ) : viewMode === 'kanban' ? (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-4 h-full overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
+            <div className="flex gap-4 h-full overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none full-bleed">
               {(() => {
                  const visibleColumns = statuses.filter(s => !hiddenColumns.includes(s.id));
                  const hiddenColIds = hiddenColumns.filter(id => statuses.some(s => s.id === id));

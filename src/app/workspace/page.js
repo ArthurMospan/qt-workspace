@@ -815,34 +815,24 @@ export default function WorkspacePage() {
 
   return (<>
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full px-[24px] md:px-[32px] pt-[56px] flex flex-col gap-2 min-h-full">
+      <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 min-h-full">
         
         <PageHeader
           variant="main"
           title="Проєкти"
           actions={
             can(orgRole, 'create:project') && (
-              <>
-                <Button
-                  onClick={() => setShowNewProject(true)}
-                  style="primary"
-                  color="dark"
-                  size="lg"
-                  icon={Plus}
-                  className="max-sm:hidden"
-                >
-                  Новий проєкт
-                </Button>
-                <Button
-                  onClick={() => setShowNewProject(true)}
-                  style="primary"
-                  color="dark"
-                  size="icon-lg"
-                  icon={Plus}
-                  className="sm:hidden"
-                  title="Новий проєкт"
-                />
-              </>
+              <Button
+                onClick={() => setShowNewProject(true)}
+                style="primary"
+                color="dark"
+                size="lg"
+                icon={Plus}
+                collapseAt="sm"
+                title="Новий проєкт"
+              >
+                Новий проєкт
+              </Button>
             )
           }
           filters={

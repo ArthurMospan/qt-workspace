@@ -27,6 +27,25 @@ const SIZES = {
   'icon-sm': 'w-[28px] h-[28px] rounded-[10px] p-0',
 };
 
+// collapseAt="sm"|"md": below that breakpoint the label hides and the button
+// becomes a square icon button — one Button instead of a hand-rolled pair.
+// NOTE: these use max-* responsive variants on purpose — a plain `hidden` in
+// className can NOT override the base `inline-flex` (same-layer utilities,
+// stylesheet order wins), while responsive variants always can.
+const COLLAPSE_BTN = {
+  sm: {
+    sm: 'max-sm:w-[28px] max-sm:px-0 max-sm:gap-0',
+    md: 'max-sm:w-[32px] max-sm:px-0 max-sm:gap-0',
+    lg: 'max-sm:w-[36px] max-sm:px-0 max-sm:gap-0',
+  },
+  md: {
+    sm: 'max-md:w-[28px] max-md:px-0 max-md:gap-0',
+    md: 'max-md:w-[32px] max-md:px-0 max-md:gap-0',
+    lg: 'max-md:w-[36px] max-md:px-0 max-md:gap-0',
+  },
+};
+const COLLAPSE_LABEL = { sm: 'max-sm:hidden', md: 'max-md:hidden' };
+
 const STYLES = {
   primary: {
     dark: 'bg-[#1f1f1f] text-white hover:bg-[#303030]',
@@ -58,6 +77,7 @@ export function Button({
   onClick,
   type      = 'button',
   className = '',
+  collapseAt,            // 'sm' | 'md' — icon-only square below this breakpoint
   // Legacy prop support
   variant,
   ...props
@@ -72,6 +92,8 @@ export function Button({
     'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0';
 
   const sizeClass  = SIZES[size] ?? SIZES.lg;
+  const collapseClass = collapseAt ? (COLLAPSE_BTN[collapseAt]?.[size] ?? '') : '';
+  const labelCollapseClass = collapseAt ? (COLLAPSE_LABEL[collapseAt] ?? '') : '';
   const styleClass = STYLES[effectiveStyle]?.[effectiveColor] ?? STYLES.primary.dark;
   const defaultIconSize = size === 'lg' ? 16 : size === 'sm' ? 12 : 14;
   const finalIconSize = iconSize ?? defaultIconSize;
@@ -81,7 +103,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${baseClasses} ${sizeClass} ${styleClass} ${className}`}
+      className={`${baseClasses} ${sizeClass} ${collapseClass} ${styleClass} ${className}`}
       {...props}
     >
       {loading ? (
@@ -102,7 +124,7 @@ export function Button({
         <>
           {Icon && <Icon size={finalIconSize} />}
           {children && (
-            <span className={size.startsWith('icon') ? 'sr-only' : ''}>{children}</span>
+            <span className={size.startsWith('icon') ? 'sr-only' : labelCollapseClass}>{children}</span>
           )}
         </>
       )}

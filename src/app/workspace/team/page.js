@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Plus, Search, Users, X, User, ArrowLeft } from 'lucide-react';
@@ -86,6 +87,8 @@ export default function TeamPage() {
   const [selectedUid, setSelectedUid] = useState(null);
   // Mobile single-pane mode: 'list' (учасники) або 'detail' (профіль); md+ показує обидві
   const [mobilePane, setMobilePane] = useState('list');
+  // Системний «назад» на телефоні повертає до списку команди
+  const requestPaneClose = useMobilePaneBack(mobilePane === 'detail', () => setMobilePane('list'));
 
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
 
@@ -180,7 +183,7 @@ export default function TeamPage() {
         className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full bg-[#f4f4f5] rounded-[16px] p-[12px] overflow-hidden`}
       >
         <button
-          onClick={() => setMobilePane('list')}
+          onClick={requestPaneClose}
           className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-[#9a9a9a] hover:text-[#1f1f1f] pb-[10px] px-[2px] transition-colors"
         >
           <ArrowLeft size={15} /> До списку команди

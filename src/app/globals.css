@@ -53,6 +53,35 @@
   /* Hide scrollbar utility */
   .hide-scrollbar { scrollbar-width: none; overflow: -moz-scrollbars-none; -ms-overflow-style: none; }
   .hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  /* ── Page gutter — single source of truth for page horizontal padding.
+     Pages apply .page-gutter (instead of px-[24px] md:px-[32px]); rows that
+     must scroll edge-to-edge (kanban, tabs, timesheet) apply .full-bleed and
+     automatically match whatever gutter their page declares. ── */
+  .page-gutter {
+    --page-px: 24px;
+    padding-left: var(--page-px);
+    padding-right: var(--page-px);
+  }
+  @media (min-width: 768px) {
+    .page-gutter { --page-px: 32px; }
+  }
+  .full-bleed {
+    margin-left: calc(var(--page-px, 24px) * -1);
+    margin-right: calc(var(--page-px, 24px) * -1);
+    padding-left: var(--page-px, 24px);
+    padding-right: var(--page-px, 24px);
+    width: calc(100% + var(--page-px, 24px) * 2);
+  }
+  /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */
+  @media (max-width: 767px) {
+    .full-bleed-mobile {
+      margin-left: calc(var(--page-px, 24px) * -1);
+      margin-right: calc(var(--page-px, 24px) * -1);
+      padding-left: var(--page-px, 24px);
+      padding-right: var(--page-px, 24px);
+    }
+  }
 }
 
 /* Thin scrollbars globally — outside @layer to avoid Turbopack specificity issues */

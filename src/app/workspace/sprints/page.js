@@ -445,7 +445,7 @@ export default function GlobalSprintsPage() {
 
   return (
     <div className="flex-1 h-full overflow-hidden bg-transparent">
-      <div className="w-full h-full px-[24px] md:px-[32px] pt-[56px] pb-[24px] flex flex-col gap-2">
+      <div className="w-full h-full page-gutter pt-[56px] pb-[24px] flex flex-col gap-2">
       
       <PageHeader
         variant="main"
@@ -453,25 +453,16 @@ export default function GlobalSprintsPage() {
         actions={
           <>
             {isManager && (
-              <>
-                <Button
-                  style="primary"
-                  size="lg"
-                  icon={Plus}
-                  onClick={() => setShowCreateSprintModal(true)}
-                  className="max-sm:hidden"
-                >
-                  Створити спринт
-                </Button>
-                <Button
-                  style="primary"
-                  size="icon-lg"
-                  icon={Plus}
-                  onClick={() => setShowCreateSprintModal(true)}
-                  className="sm:hidden"
-                  title="Створити спринт"
-                />
-              </>
+              <Button
+                style="primary"
+                size="lg"
+                icon={Plus}
+                onClick={() => setShowCreateSprintModal(true)}
+                collapseAt="sm"
+                title="Створити спринт"
+              >
+                Створити спринт
+              </Button>
             )}
           </>
         }

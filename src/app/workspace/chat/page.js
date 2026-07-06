@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button';
 import { useConfirm, EmptyState } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
+import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MessageContent from '@/components/workspace/MessageContent';
@@ -861,6 +862,8 @@ export default function ChatPage() {
   // Mobile single-pane mode: 'list' (channels) або 'chat' (розмова); md+ показує обидві панелі
   const [mobilePane, setMobilePane] = useState('list');
   const openChannel = (ch) => { setActiveChannel(ch); setMobilePane('chat'); };
+  // Системний «назад» на телефоні повертає до списку чатів, а не виходить зі сторінки
+  const requestPaneClose = useMobilePaneBack(mobilePane === 'chat', () => setMobilePane('list'));
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [presenceMap, setPresenceMap] = useState({});
@@ -1174,7 +1177,7 @@ export default function ChatPage() {
             {/* Chat header */}
             <div className="flex items-center gap-3 px-4 md:px-6 h-14 shrink-0 border-b border-[#e9e9e9]/70">
               <button
-                onClick={() => setMobilePane('list')}
+                onClick={requestPaneClose}
                 className="md:hidden -ml-1 p-1 text-[#9a9a9a] hover:text-[#1f1f1f] transition-colors shrink-0"
                 title="До списку чатів"
               >

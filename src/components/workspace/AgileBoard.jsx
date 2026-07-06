@@ -190,7 +190,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
         
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
-          <div className="flex gap-4 pb-2 shrink-0 -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
+          <div className="flex gap-4 pb-2 shrink-0 full-bleed">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
               const colTotalIssues = issues.filter(i => {
@@ -246,7 +246,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
         )}
 
         {/* Scrollable swimlanes area — full-bleed so columns scroll to the panel edge, not the page padding */}
-        <div className="flex-1 overflow-auto pb-6 snap-x snap-mandatory md:snap-none -mx-[24px] px-[24px] md:-mx-[32px] md:px-[32px]">
+        <div className="flex-1 overflow-auto pb-6 snap-x snap-mandatory md:snap-none full-bleed">
           {swimlanes.map(lane => (
             <div key={lane.id} className="mb-4">
               
