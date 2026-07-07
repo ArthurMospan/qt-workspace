@@ -302,15 +302,6 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
 }
 
 // ── "Списати час" modal ───────────────────────────────────────────────────────
-const WORK_TYPES = [
-  { value: 'development', label: 'Розробка' },
-  { value: 'design', label: 'Дизайн' },
-  { value: 'testing', label: 'Тестування' },
-  { value: 'meeting', label: 'Зустріч' },
-  { value: 'management', label: 'Менеджмент' },
-  { value: 'other', label: 'Інше' },
-];
-
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -324,7 +315,6 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
   const [date, setDate] = useState(todayStr());
   const [hours, setHours] = useState('');
   const [mins, setMins] = useState('');
-  const [workType, setWorkType] = useState('development');
   const [desc, setDesc] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -351,7 +341,6 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
         organizationId: activeOrgId,
         spentMinutes,
         description: desc || '',
-        workType,
         loggedAt: Timestamp.fromDate(new Date(y, m - 1, d, 12, 0, 0)),
       });
       showToast('Час списано ✓');
@@ -404,23 +393,17 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Час</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} className="pr-8" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
-              </div>
-              <div className="relative flex-1">
-                <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} className="pr-7" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
-              </div>
+        <div>
+          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Час</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} className="pr-8" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
             </div>
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Тип роботи</label>
-            <Select value={workType} onChange={setWorkType} options={WORK_TYPES} />
+            <div className="relative flex-1">
+              <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} className="pr-7" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
+            </div>
           </div>
         </div>
 

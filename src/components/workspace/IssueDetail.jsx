@@ -398,7 +398,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   useEffect(() => {
     const logTimeParam = searchParams.get('logTime');
     if (logTimeParam) {
-      setLogForm({ minutes: parseInt(logTimeParam), desc: '', workType: 'development' });
+      setLogForm({ minutes: parseInt(logTimeParam), desc: '' });
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams, pathname, router]);
@@ -575,7 +575,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const handleTimerToggle = async () => {
     if (isTimerMine) {
       const result = stopTimer();
-      if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '', workType: 'development' });
+      if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '' });
     } else {
       if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
       startTimer(issueId, projectId);
@@ -591,14 +591,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
     if (logForm.minutes > 0) {
       if (logForm.id) {
-        await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc, workType: logForm.workType });
+        await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc });
         const oldLog = timeLogs.find(l => l.id === logForm.id);
         const diff = logForm.minutes - (oldLog?.spentMinutes || 0);
         if (diff !== 0) await update({ spentMinutes: Math.max(0, spentMin + diff) });
         showToast('Запис оновлено ✓');
       } else {
         const uid = currentUser?.id || currentUser?.uid;
-        await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc, logForm.workType);
+        await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc);
         await update({ spentMinutes: spentMin + logForm.minutes });
         showToast(`${logForm.minutes} хв списано ✓`);
       }
@@ -910,7 +910,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     className="flex-1 min-w-[150px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors"
                     onClick={(e) => {
                       if (e.target.closest('button')) return;
-                      setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' });
+                      setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
                       setLogTab('spend');
                     }}
                   >
@@ -1372,7 +1372,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     </span>
                   )}
                 </div>
-                <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '', workType: 'development' })}>Списати</Button>
+                <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '' })}>Списати</Button>
               </div>
 
               <div className="flex flex-col gap-[6px]">
@@ -1399,10 +1399,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             </p>
                           )}
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-muted uppercase font-bold tracking-wider">
-                              {log.workType || 'Development'}
-                            </span>
-                            <span className="w-[3px] h-[3px] rounded-full bg-faint" />
                             <span className="text-[10px] text-muted font-medium">
                               {log.loggedAt?.toDate
                                 ? formatDate(log.loggedAt.toDate())
@@ -1417,7 +1413,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       {isLogAuthor && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center">
                           <button
-                            onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '', workType: log.workType || 'development' }); setLogTab('spend'); }}
+                            onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '' }); setLogTab('spend'); }}
                             className="text-faint hover:text-ink transition-colors p-1 rounded hover:bg-canvas"
                             title="Редагувати запис"
                           >
@@ -1463,7 +1459,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           {/* RIGHT SIDE — CHAT (mobile: fixed-height block under the content) */}
           <div className="lg:col-span-1 h-[65dvh] lg:h-full min-h-0">
             <div className="bg-canvas rounded-[12px] overflow-hidden flex flex-col h-full">
-              <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '', workType: 'development' }); setLogTab('spend'); }} />
+              <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' }); setLogTab('spend'); }} />
             </div>
           </div>
 
