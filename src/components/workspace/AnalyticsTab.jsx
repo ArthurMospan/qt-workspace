@@ -9,12 +9,8 @@ import {
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
-import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
-
-const COL_ORDER  = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
-const COL_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
-const COL_COLOR  = { backlog:'#9a9a9a', todo:'#6366f1', 'in-progress':'#0891b2', 'code-review':'#d97706', qa:'#7c3aed', 'client-approval':'#db2777', done:'#10b981' };
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
@@ -32,7 +28,12 @@ function SectionTitle({ children }) {
 
 export default function AnalyticsTab({ issues, members, project, projectId }) {
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
+  const { statuses, doneStatusIds } = useWorkflowConfig();
   const [filters, setFilters] = useState({ priority: 'all', type: 'all' });
+
+  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const statusById = useMemo(() => Object.fromEntries((statuses || []).map(s => [s.id, s])), [statuses]);
+  const firstStatusId = statuses?.[0]?.id;
 
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
@@ -45,15 +46,15 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
   const stats = useMemo(() => {
     const now     = Date.now();
     const total   = filteredIssues.length;
-    const done    = filteredIssues.filter(i => i.columnId === 'done').length;
+    const done    = filteredIssues.filter(i => doneSet.has(i.columnId)).length;
     const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
     const blocked = filteredIssues.filter(i => i.priority === 'blocker').length;
     const overdue = filteredIssues.filter(i => {
       const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-      return due && due.getTime() < now && i.columnId !== 'done';
+      return due && due.getTime() < now && !doneSet.has(i.columnId);
     });
-    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && i.columnId !== 'done');
-    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && i.columnId !== 'backlog' && i.columnId !== 'done');
+    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId));
+    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && i.columnId !== firstStatusId && !doneSet.has(i.columnId));
     const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
     // Budget
@@ -66,12 +67,12 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
     const weekAgo = now - 7 * 24 * 3600 * 1000;
     const twoWeeksAgo = now - 14 * 24 * 3600 * 1000;
     const recentDone = filteredIssues.filter(i => {
-      if (i.columnId !== 'done') return false;
+      if (!doneSet.has(i.columnId)) return false;
       const t = i.updatedAt?.toMillis?.() ?? 0;
       return t > weekAgo;
     }).length;
     const prevDone = filteredIssues.filter(i => {
-      if (i.columnId !== 'done') return false;
+      if (!doneSet.has(i.columnId)) return false;
       const t = i.updatedAt?.toMillis?.() ?? 0;
       return t > twoWeeksAgo && t <= weekAgo;
     }).length;
@@ -79,26 +80,26 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
       ? Math.round(((recentDone - prevDone) / prevDone) * 100)
       : null;
 
-    // By status distribution
-    const byStatus = COL_ORDER.map(col => ({
-      col, count: filteredIssues.filter(i => i.columnId === col).length,
-      label: COL_LABEL[col], color: COL_COLOR[col],
+    // By status distribution — column order & styling come from the live config
+    const byStatus = (statuses || []).map(s => ({
+      col: s.id, count: filteredIssues.filter(i => i.columnId === s.id).length,
+      label: s.label, color: s.color,
     })).filter(s => s.count > 0);
 
     // By priority
     const byPriority = ['blocker','high','medium','low'].map(p => ({
-      p, count: filteredIssues.filter(i => i.priority === p && i.columnId !== 'done').length,
+      p, count: filteredIssues.filter(i => i.priority === p && !doneSet.has(i.columnId)).length,
     })).filter(s => s.count > 0);
 
     // Per-member stats
     const memberStats = members.map(m => {
       const uid    = m.id || m.uid;
       const mine   = filteredIssues.filter(i => i.assigneeIds?.includes(uid));
-      const mDone  = mine.filter(i => i.columnId === 'done').length;
-      const mOpen  = mine.filter(i => i.columnId !== 'done').length;
+      const mDone  = mine.filter(i => doneSet.has(i.columnId)).length;
+      const mOpen  = mine.filter(i => !doneSet.has(i.columnId)).length;
       const mOverdue = mine.filter(i => {
         const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-        return due && due.getTime() < now && i.columnId !== 'done';
+        return due && due.getTime() < now && !doneSet.has(i.columnId);
       }).length;
       const mMin  = byUser[uid] || 0;
       return { m, uid, total: mine.length, done: mDone, open: mOpen, overdue: mOverdue, minutes: mMin };
@@ -109,7 +110,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
       completionPct, budget, spentHours, burnPct, remainH, recentDone, velocityTrend,
       byStatus, byPriority, memberStats,
     };
-  }, [filteredIssues, members, project, totalMinutes, byUser]);
+  }, [filteredIssues, members, project, totalMinutes, byUser, statuses, doneSet, firstStatusId]);
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
 
@@ -263,8 +264,8 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
                       <p className="text-[13px] font-medium text-ink truncate">{issue.title}</p>
                       <div className="flex items-center gap-2 mt-[2px]">
                         <span className="text-[10px] font-semibold px-[6px] py-[1px] rounded-full"
-                          style={{ background: COL_COLOR[issue.columnId] + '18', color: COL_COLOR[issue.columnId] }}>
-                          {COL_LABEL[issue.columnId]}
+                          style={{ background: (statusById[issue.columnId]?.color || '#9a9a9a') + '18', color: statusById[issue.columnId]?.color || '#9a9a9a' }}>
+                          {statusById[issue.columnId]?.label || issue.columnId}
                         </span>
                         <span className="text-[10px] text-muted">{issue.issueKey}</span>
                       </div>

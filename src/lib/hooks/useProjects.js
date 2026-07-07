@@ -46,13 +46,16 @@ export function useProjects(userId, activeOrgId) {
   };
 }
 
-// Helper to check if a project should be visible in qt-workspace
-// 'internal' and 'shared' are both visible; undefined defaults to 'shared' (backward compat)
+// Helper to check if a project should be visible in qt-workspace.
+// Everything the team owns is visible here; undefined visibility is treated as
+// 'internal', so it still shows in the workspace.
 export function isWorkspaceProject(project) {
   return !project.visibility || project.visibility === 'internal' || project.visibility === 'shared';
 }
 
-// Helper to check if a project should be visible in the client portal (qt)
+// Helper to check if a project should be visible in the client portal (qt).
+// Only an explicit 'shared' visibility exposes a project to the client — an
+// undefined/legacy value is treated as 'internal' (never leaked to the portal).
 export function isClientProject(project) {
-  return !project.visibility || project.visibility === 'shared';
+  return project.visibility === 'shared';
 }

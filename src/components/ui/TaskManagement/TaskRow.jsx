@@ -31,7 +31,7 @@ function fmtDate(raw) {
 export default function TaskRow({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], projectId, projectName, isTimerActive, onClick }) {
   const router = useRouter();
   const isDraggingRef = useRef(false);
-  const { types, priorities } = useWorkflowConfig();
+  const { types, priorities, doneStatusIds } = useWorkflowConfig();
 
   const task = issue;
   if (!task) return null;
@@ -53,7 +53,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
 
   const due = task.dueDate?.toDate ? task.dueDate.toDate()
             : task.dueDate ? new Date(task.dueDate) : null;
-  const isOverdue = due && due < new Date() && task.columnId !== 'done' && task.status !== 'done';
+  const isOverdue = due && due < new Date() && !doneStatusIds.includes(task.columnId) && !doneStatusIds.includes(task.status);
 
   const subAll = (task.subtasks || []).length;
   const subDone = (task.subtasks || []).filter(s => s.done).length;
@@ -80,7 +80,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   const isBlocked = issueLinks.some(l => 
     l.targetIssueId === task.id && 
     l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
   );
 
   const handleRowClick = (e) => {

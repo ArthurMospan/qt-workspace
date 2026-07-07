@@ -16,11 +16,9 @@ import FilterBar from '@/components/ui/FilterBar';
 import Button from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui';
 import PriorityBadge from '@/components/ui/DataDisplay/PriorityBadge';
-import { DEFAULT_TYPES, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_TYPES, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
-const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
 
 function Badge({ label, color }) {
@@ -35,6 +33,9 @@ function SortIcon({ k, sortKey, sortDir }) {
 export default function BacklogTab({ projectId, project, currentUser }) {
   const { issues, issueLinks, loading: issuesLoading, updateIssue, deleteIssue } = useIssues(projectId);
   const { sprints, loading: sprintsLoading, createSprint, startSprint, completeSprint, deleteSprint } = useSprints(projectId);
+  const { statuses, doneStatusIds } = useWorkflowConfig();
+  const statusOrder  = statuses.map(s => s.id);
+  const statusLabelOf = (id) => statuses.find(s => s.id === id)?.label || id;
   const { showToast } = useWorkspaceStore();
   const confirmDialog = useConfirm();
   const loading = issuesLoading || sprintsLoading;
@@ -79,7 +80,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
     .sort((a, b) => {
       let av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
       if (sortKey === 'priority') { const O = {blocker:0,high:1,medium:2,low:3}; av = O[a.priority]??3; bv = O[b.priority]??3; }
-      if (sortKey === 'columnId') { av = COLUMNS_ORDER.indexOf(a.columnId); bv = COLUMNS_ORDER.indexOf(b.columnId); }
+      if (sortKey === 'columnId') { av = statusOrder.indexOf(a.columnId); bv = statusOrder.indexOf(b.columnId); }
       const res = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
       return sortDir === 'asc' ? res : -res;
     });
@@ -176,7 +177,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                             {issueLinks?.some(l => 
                               l.targetIssueId === issue.id && 
                               l.relationType === 'blocks' && 
-                              issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+                              issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
                             ) && (
                               <span title="Заблоковано іншою завданням" className="flex items-center gap-[2px] px-[4px] py-[2px] bg-[#fef2f2] text-[#ef4444] rounded-[4px] text-[9px] font-bold">
                                 <Lock size={10} /> Blocked
@@ -190,7 +191,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                           </span>
                         </td>
                         <td className="px-4 py-3 w-[140px] border-y border-[#efefef]">
-                          <Badge label={COLUMN_LABEL[issue.columnId] || issue.columnId} color="#9a9a9a" />
+                          <Badge label={statusLabelOf(issue.columnId)} color="#9a9a9a" />
                         </td>
                         <td className="px-4 py-3 w-[120px] border-y border-[#efefef]">
                           <PriorityBadge priority={issue.priority} />
@@ -251,7 +252,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
             onChange={val => setFilter('status', val)}
             options={[
               { value: 'all', label: 'Всі статуси' },
-              ...COLUMNS_ORDER.map(c => ({ value: c, label: COLUMN_LABEL[c] }))
+              ...statuses.map(s => ({ value: s.id, label: s.label }))
             ]}
             variant="ghost"
           />

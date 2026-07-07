@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Link2, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useSearch } from '@/lib/hooks/useSearch';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -28,6 +29,7 @@ export default function DependenciesPanel({
   const [searching, setSearching] = useState(false);
 
   const { showToast } = useWorkspaceStore();
+  const { doneStatusIds } = useWorkflowConfig();
 
   const handleSearchChange = async (q) => {
     setSearchQuery(q);
@@ -62,7 +64,7 @@ export default function DependenciesPanel({
   const hasBlocker = links.some(l =>
     l.relationType === 'blocks' &&
     l.targetIssueId === issue.id &&
-    allIssues.find(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+    allIssues.find(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
   );
 
   return (

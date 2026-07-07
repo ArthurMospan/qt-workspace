@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 // Human labels for default workflow columns (used in status_changed notifications)
 const COLUMN_LABELS = {
@@ -44,6 +45,7 @@ export function useIssues(projectId) {
   const {
     activeOrgId
   } = useAppContext();
+  const { doneStatusIds } = useWorkflowConfig();
   const [issues, setIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -240,8 +242,8 @@ export function useIssues(projectId) {
     const issue = issues.find(i => i.id === issueId);
     if (!issue) throw new Error('Issue not found');
 
-    // Guard: cannot move to 'done' if open subtasks exist
-    if (newColumnId === 'done') {
+    // Guard: cannot move to a terminal status if open subtasks exist
+    if (doneStatusIds.includes(newColumnId)) {
       const hasOpenSubtasks = issue.subtasks?.some(s => !s.done);
       if (hasOpenSubtasks) {
         throw new Error('Є незакриті підзавдання');
@@ -289,9 +291,10 @@ export function useIssues(projectId) {
       to: newColumnId
     });
 
-    // Notify assignees about the status change (skip same-column reorders and the actor)
+    // Notify assignees + watchers about the status change (skip same-column reorders and the actor)
     if (oldColumnId !== newColumnId) {
-      const recipients = (issue.assigneeIds || []).filter(uid => uid && uid !== userId);
+      const recipients = [...new Set([...(issue.assigneeIds || []), ...(issue.watcherIds || [])])]
+        .filter(uid => uid && uid !== userId);
       if (recipients.length) {
         sendNotification({
           userIds: recipients,
@@ -317,7 +320,7 @@ export function useIssues(projectId) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [issues, projectId]);
+  }, [issues, projectId, doneStatusIds]);
   return {
     issues,
     issueLinks,

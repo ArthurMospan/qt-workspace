@@ -4,7 +4,7 @@
 // Reads workflow config (statuses, types, priorities) from Firestore.
 // Falls back to sensible defaults so the app works out of the box before
 // an admin customises anything in Settings.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -44,6 +44,27 @@ export const DEFAULT_STATUSES = [{
   label: 'Done',
   color: '#10b981'
 }];
+// ── Terminal ("done") status helpers ───────────────────────────────────────────
+// A status counts as terminal (work complete) when it carries `isDone: true`.
+// The whole app must ask these helpers instead of comparing against a hardcoded
+// id `'done'`, so renaming/adding a final status stays correct everywhere
+// (analytics, billing, backlog, sprints, overdue, dependencies…).
+// Back-compat: configs saved before the flag existed have no `isDone`, so we
+// fall back to a status whose id is 'done', and finally to the last column.
+export function getDoneStatusIds(statuses) {
+  const list = Array.isArray(statuses) && statuses.length ? statuses : DEFAULT_STATUSES;
+  const flagged = list.filter(s => s?.isDone === true).map(s => s.id);
+  if (flagged.length) return flagged;
+  const named = list.find(s => s?.id === 'done');
+  if (named) return [named.id];
+  return [list[list.length - 1].id];
+}
+
+// True when `statusId` is one of the terminal statuses for the given config.
+export function isDoneStatus(statusId, statuses) {
+  return getDoneStatusIds(statuses).includes(statusId);
+}
+
 export const DEFAULT_TYPES = [{
   id: 'epic',
   label: 'Epic',
@@ -137,12 +158,16 @@ export function useWorkflowConfig() {
     }, () => setLoading(false));
     return () => unsub();
   }, [activeOrgId]);
+  // Terminal status ids derived from the live config — components use this
+  // instead of hardcoding `'done'`.
+  const doneStatusIds = useMemo(() => getDoneStatusIds(statuses), [statuses]);
   return {
     statuses,
     types,
     priorities,
     labels,
     positions,
+    doneStatusIds,
     loading
   };
 }

@@ -12,6 +12,7 @@
 import { useEffect } from 'react';
 import { collection, query, where, getDocs, getDoc, setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 const THROTTLE_MS = 4 * 3600 * 1000;
 
@@ -20,6 +21,7 @@ function dayKeyOf(date) {
 }
 
 export function useDeadlineReminders(userId, activeOrgId) {
+  const { doneStatusIds } = useWorkflowConfig();
   useEffect(() => {
     if (!userId || !activeOrgId) return;
 
@@ -46,7 +48,7 @@ export function useDeadlineReminders(userId, activeOrgId) {
 
         for (const d of snap.docs) {
           const iss = d.data();
-          if (iss.columnId === 'done') continue;
+          if (doneStatusIds.includes(iss.columnId)) continue;
           if (!iss.assigneeIds?.includes(userId)) continue;
           const due = iss.dueDate?.toDate ? iss.dueDate.toDate() : iss.dueDate ? new Date(iss.dueDate) : null;
           if (!due || isNaN(due.getTime())) continue;
@@ -85,5 +87,5 @@ export function useDeadlineReminders(userId, activeOrgId) {
         console.warn('[useDeadlineReminders]', err);
       }
     })();
-  }, [userId, activeOrgId]);
+  }, [userId, activeOrgId, doneStatusIds]);
 }

@@ -126,7 +126,7 @@ src/
 
 **Permissions**:
 - Backend enforces row-level security via Firebase rules
-- `can.js` has client-side permission checks (admin, editor, viewer roles)
+- `can.js` has client-side permission checks (owner, admin, member roles)
 - Invitations system for adding team members
 
 ## Important Notes

@@ -26,16 +26,8 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 
-const COLUMNS_ORDER = ['backlog','todo','in-progress','code-review','qa','client-approval','done'];
-const COLUMN_LABEL  = { backlog:'Backlog', todo:'To Do', 'in-progress':'In Progress', 'code-review':'Code Review', qa:'QA', 'client-approval':'Client Approval', done:'Done' };
 const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
-
-const COLUMNS = [
-  { id: 'todo',        label: 'To Do',       color: '#6366f1' },
-  { id: 'in-progress', label: 'In Progress', color: '#0891b2' },
-  { id: 'done',        label: 'Done',        color: '#10b981' },
-];
 
 function Badge({ label, color }) {
   return <span className="text-[10px] font-bold px-[6px] py-[2px] rounded-[5px]" style={{ color, background: color + '18' }}>{label}</span>;
@@ -196,7 +188,9 @@ export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
-  const { labels } = useWorkflowConfig();
+  const { labels, statuses, doneStatusIds } = useWorkflowConfig();
+  const statusOrder = statuses.map(s => s.id);
+  const isDoneCol = (id) => doneStatusIds.includes(id);
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
   const confirmDialog = useConfirm();
@@ -287,9 +281,9 @@ export default function GlobalSprintsPage() {
         av = O[a.priority] ?? 3; 
         bv = O[b.priority] ?? 3; 
       }
-      if (sortKey === 'columnId') { 
-        av = COLUMNS_ORDER.indexOf(a.columnId); 
-        bv = COLUMNS_ORDER.indexOf(b.columnId); 
+      if (sortKey === 'columnId') {
+        av = statusOrder.indexOf(a.columnId);
+        bv = statusOrder.indexOf(b.columnId);
       }
       const res = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
       return sortDir === 'asc' ? res : -res;
@@ -626,12 +620,12 @@ export default function GlobalSprintsPage() {
         <SprintCompleteModal
           sprint={showCompleteSprintModal}
           sprints={sprints}
-          incompleteIssues={filteredIssues.filter(i => i.sprintId === showCompleteSprintModal.id && i.status !== 'done' && i.columnId !== 'done')}
+          incompleteIssues={filteredIssues.filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))}
           onClose={() => setShowCompleteSprintModal(null)}
           onConfirm={async (moveToSprintId) => {
             try {
               const incompleteIssueIds = filteredIssues
-                .filter(i => i.sprintId === showCompleteSprintModal.id && i.status !== 'done' && i.columnId !== 'done')
+                .filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))
                 .map(i => i.id);
               await completeSprint(showCompleteSprintModal.id, moveToSprintId, incompleteIssueIds);
               setShowCompleteSprintModal(null);
@@ -703,7 +697,6 @@ export default function GlobalSprintsPage() {
           showToast('Задачу створено ✓');
         }}
         projects={projects}
-        stages={[]}
         teamMembers={members}
         sprints={sprints}
       />

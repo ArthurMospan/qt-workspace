@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 // Inverse relation map
 const INVERSE = {
@@ -18,6 +19,7 @@ export function useIssueLinks(issueId) {
   const {
     activeOrgId
   } = useAppContext();
+  const { doneStatusIds } = useWorkflowConfig();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -169,9 +171,9 @@ export function useIssueLinks(issueId) {
     const blockingLinks = links.filter(l => l.relationType === 'blocks' && l.targetIssueId === targetIssueId);
     return blockingLinks.some(l => {
       const blocker = allIssues.find(i => i.id === l.sourceIssueId);
-      return blocker && blocker.status !== 'done';
+      return blocker && !doneStatusIds.includes(blocker.columnId ?? blocker.status);
     });
-  }, [links]);
+  }, [links, doneStatusIds]);
   return {
     links,
     loading,

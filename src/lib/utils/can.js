@@ -24,22 +24,23 @@ export const PERMISSIONS = {
   'edit:issue': ['owner', 'admin', 'member'],
   'delete:issue': ['owner', 'admin'],   // Member не може видаляти завдання
 
-  // Comments (clients can comment on issues they're invited to view)
-  'create:comment': ['owner', 'admin', 'member', 'client'],
-  'edit:comment': ['owner', 'admin', 'member', 'client'], // Only on own comments
+  // Comments
+  'create:comment': ['owner', 'admin', 'member'],
+  'edit:comment': ['owner', 'admin', 'member'], // Only on own comments
 };
 
 /**
  * Checks if the given role is authorized to perform the action.
- * @param {string} role - The user's role in the organization (owner, admin, member, client)
+ * @param {string} role - The user's role in the organization (owner, admin, member)
  * @param {string} action - The action to check permission for
  * @returns {boolean} True if allowed, false otherwise
  */
 export function can(role, action) {
   if (role === 'owner') return true; // Owner has full access
   if (!role) {
-    // If role hasn't loaded yet, allow basic member actions so UI is not completely broken
-    const memberActions = ['create:issue', 'edit:issue', 'create:project'];
+    // Role not loaded yet: allow only what a plain member could do, so the UI
+    // isn't broken but we never over-grant (create:project is owner/admin only).
+    const memberActions = ['create:issue', 'edit:issue'];
     return memberActions.includes(action);
   }
   return PERMISSIONS[action]?.includes(role) || false;

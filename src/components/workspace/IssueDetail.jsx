@@ -33,7 +33,7 @@ import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import { parseMentions, resolveUserIds } from '@/lib/utils/mentions';
 import {
-  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus,
+  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   CheckCircle, XCircle, Play, Square as StopIcon,
   FileText, Film, Music, Link2,
   ZoomIn, Maximize2,
@@ -88,6 +88,24 @@ function detectFileType(mat) {
 function getMatFileUrl(mat) {
   return mat.previewUrl || mat.url || mat.audioUrl || null;
 }
+
+function fmtBytes(bytes) {
+  if (!bytes || bytes < 0) return '';
+  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+  let n = bytes, i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(i > 0 && n < 10 ? 1 : 0)} ${units[i]}`;
+}
+
+// Module-level id factory — keeps the impure Date.now()/Math.random() calls out
+// of component render scope (react-compiler lint), while staying unique enough
+// for an array element key on the issue document.
+let _attSeq = 0;
+function makeAttachmentId() {
+  _attSeq += 1;
+  return `att_${Date.now().toString(36)}_${_attSeq}`;
+}
+function nowMs() { return Date.now(); }
 
 // ── Circular ring progress ─────────────────────────────────────────
 function Ring({ pct, color, size = 36, stroke = 3.5 }) {
@@ -335,7 +353,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const { links = [], addLink, removeLink } = useIssueLinks(issueId);
 
   const {
-    types: rawTypes, priorities: rawPriorities, statuses: STATUSES, labels: availableLabels = []
+    types: rawTypes, priorities: rawPriorities, statuses: STATUSES, labels: availableLabels = [], doneStatusIds
   } = useWorkflowConfig();
 
   const activeHiddenCols = project?.hiddenColumns || [];
@@ -372,6 +390,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [logForm,      setLogForm]      = useState(null);
   const [logTab, setLogTab] = useState('spend');
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
+  const [uploadingAttach, setUploadingAttach] = useState(false);
+  const attachInputRef = useRef(null);
   const TIME_LOGS_PER_PAGE = 5;
 
   // Click outside handlers
@@ -456,7 +476,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const PrioIcon    = priorityCfg.icon;
 
   const due       = issue.dueDate?.toDate ? issue.dueDate.toDate() : issue.dueDate ? new Date(issue.dueDate) : null;
-  const isOverdue = due && due < new Date() && issue.columnId !== 'done';
+  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId);
   const dueStr    = due ? formatDate(due) : null;
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
@@ -535,7 +555,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       const link = `/workspace/${projectId}/issue/${issueId}`;
       const preview = text.trim().slice(0, 140) || '📎 Вкладення';
       const mentionedIds = resolveUserIds(parseMentions(text), members).filter(id => id !== authorUid);
-      const involved = [...new Set([...(issue.assigneeIds || []), issue.reporterId].filter(Boolean))]
+      const involved = [...new Set([...(issue.assigneeIds || []), issue.reporterId, ...(issue.watcherIds || [])].filter(Boolean))]
         .filter(id => id !== authorUid && !mentionedIds.includes(id));
       const notifActor = { id: authorUid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' };
       if (mentionedIds.length)
@@ -570,6 +590,17 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
         link: `/workspace/${projectId}/issue/${issueId}`, issueId, projectId,
         actor: { id: currentUser?.id || currentUser?.uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
       }).catch(() => {});
+  };
+
+  // ── Watchers (follow a task you're not assigned to, to get its notifications) ──
+  const myUid = currentUser?.id || currentUser?.uid;
+  const isWatching = (issue.watcherIds || []).includes(myUid);
+  const watchers = (issue.watcherIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
+  const toggleWatch = async () => {
+    if (!myUid) return;
+    const cur = issue.watcherIds || [];
+    const next = isWatching ? cur.filter(u => u !== myUid) : [...cur, myUid];
+    await update({ watcherIds: next });
   };
 
   const handleTimerToggle = async () => {
@@ -622,6 +653,38 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     } catch (err) {
       showToast('Помилка видалення: ' + err.message, 'error');
     }
+  };
+
+  // ── Attachments (first-class files on the task, separate from comments) ──
+  const handleUploadAttachments = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    setUploadingAttach(true);
+    try {
+      const orgId = project?.organizationId || '';
+      const uploaded = [];
+      for (const file of files) {
+        const meta = await uploadFile(file, `organizations/${orgId}/attachments`);
+        uploaded.push({
+          id: makeAttachmentId(),
+          ...meta, // { name, url, size, type }
+          uploadedById: currentUser?.id || currentUser?.uid || '',
+          uploadedByName: currentUser?.name || currentUser?.email || '',
+          uploadedAt: nowMs(),
+        });
+      }
+      await update({ attachments: [...(issue.attachments || []), ...uploaded] });
+      showToast(`Додано вкладень: ${uploaded.length} ✓`);
+    } catch (err) {
+      showToast('Помилка завантаження файлу', 'error');
+    } finally {
+      setUploadingAttach(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (id) => {
+    if (!(await confirmDialog({ title: 'Видалити вкладення?', confirmText: 'Видалити', danger: true }))) return;
+    await update({ attachments: (issue.attachments || []).filter(a => a.id !== id) });
   };
 
   const handleAddSubtask = async () => {
@@ -848,6 +911,29 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <Select value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
+                  {/* Watchers */}
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] p-2 -m-2">
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Спостерігачі</span>
+                    <div className="flex items-center gap-2 h-[22px]">
+                      <button
+                        onClick={toggleWatch}
+                        className={`flex items-center gap-1 text-[12px] font-bold rounded-[8px] px-2 h-[22px] transition-colors ${
+                          isWatching ? 'bg-[#eef2ff] text-[#4f46e5]' : 'text-muted hover:text-ink hover:bg-[#ebebeb]'
+                        }`}
+                        title={isWatching ? 'Ви стежите за завданням' : 'Стежити за завданням'}
+                      >
+                        {isWatching ? <Eye size={13} /> : <EyeOff size={13} />}
+                        {isWatching ? 'Стежите' : 'Стежити'}
+                      </button>
+                      {watchers.length > 0 && (
+                        <div className="flex items-center -space-x-1">
+                          {watchers.slice(0, 3).map(m => <UserAvatar key={m.id || m.uid} user={m} size={20} className="ring-[1.5px] ring-white" />)}
+                          {watchers.length > 3 && <span className="text-[10px] text-muted pl-2">+{watchers.length - 3}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Sprint */}
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Спринт</span>
@@ -1025,6 +1111,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-fit">
                 {[
                   { id: 'description', label: 'Завдання' },
+                  { id: 'attachments', label: 'Вкладення', count: (issue.attachments || []).length },
                   { id: 'time', label: 'Журнал часу', count: timeLogs.length },
                   { id: 'links', label: "Зв'язки", count: links.filter(l => l.sourceIssueId === issueId).length }
                 ].map(t => (
@@ -1239,6 +1326,90 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             </div>
             </>
             )}
+
+              {/* ATTACHMENTS */}
+              {activeTab === 'attachments' && (
+              <div className="bg-white rounded-[12px] p-5 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Вкладення</h2>
+                    {(issue.attachments || []).length > 0 && (
+                      <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">{(issue.attachments || []).length}</span>
+                    )}
+                  </div>
+                  <Button style="secondary" size="sm" icon={Plus} onClick={() => attachInputRef.current?.click()} disabled={uploadingAttach}>
+                    {uploadingAttach ? 'Завантаження…' : 'Додати файл'}
+                  </Button>
+                </div>
+
+                <input
+                  ref={attachInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={e => { handleUploadAttachments(e.target.files); e.target.value = ''; }}
+                />
+
+                {(issue.attachments || []).length === 0 ? (
+                  <button
+                    onClick={() => attachInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2 py-10 border border-dashed border-line rounded-[12px] text-faint hover:text-muted hover:border-muted transition-colors"
+                  >
+                    <Paperclip size={22} />
+                    <span className="text-[13px] font-medium">Прикріпіть файли до завдання</span>
+                    <span className="text-[11px]">Зображення, PDF, відео та інші файли</span>
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {(issue.attachments || []).map(att => {
+                      const ftype = detectFileType(att);
+                      const url   = getMatFileUrl(att);
+                      return (
+                        <div key={att.id} className="group relative bg-[#fafafa] border border-line rounded-[12px] overflow-hidden flex flex-col">
+                          <button
+                            onClick={() => setViewerMat(att)}
+                            className="h-[110px] bg-white flex items-center justify-center overflow-hidden"
+                            title="Переглянути"
+                          >
+                            {ftype === 'image' && url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={url} alt={att.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <FileText size={30} className="text-faint" />
+                            )}
+                          </button>
+                          <div className="p-[10px] flex flex-col gap-[2px]">
+                            <p className="text-[12px] font-semibold text-ink truncate" title={att.name}>{att.name}</p>
+                            <p className="text-[10px] text-muted truncate">
+                              {fmtBytes(att.size)}{att.uploadedByName ? ` · ${att.uploadedByName}` : ''}
+                            </p>
+                          </div>
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {url && (
+                              <a
+                                href={url} target="_blank" rel="noopener"
+                                onClick={e => e.stopPropagation()}
+                                className="w-[26px] h-[26px] rounded-full bg-white/90 shadow flex items-center justify-center text-muted hover:text-ink"
+                                title="Відкрити в новій вкладці"
+                              >
+                                <ExternalLink size={13} />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteAttachment(att.id)}
+                              className="w-[26px] h-[26px] rounded-full bg-white/90 shadow flex items-center justify-center text-faint hover:text-red-500"
+                              title="Видалити"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              )}
 
               {/* ISSUE LINKS */}
               {activeTab === 'links' && (

@@ -37,6 +37,7 @@ import {
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
@@ -149,7 +150,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, isDone = false, onToggleDone }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -238,6 +239,20 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
           {label}
         </span>
+      )}
+
+      {/* Terminal (done) toggle — statuses only */}
+      {variant === 'status' && !editing && onToggleDone && (
+        <button
+          type="button"
+          onClick={onToggleDone}
+          title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/білінг (клік, щоб прибрати)' : 'Позначити завершальним'}
+          className={`shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${
+            isDone ? 'bg-[#10b981]/12 text-[#10b981]' : 'text-faint hover:text-muted hover:bg-canvas'
+          }`}
+        >
+          <Check size={11} /> Завершальний
+        </button>
       )}
 
       {/* Actions */}
@@ -808,6 +823,18 @@ export default function SettingsPage() {
   const prA = makeUpdater(setPriorities);
   const lbA = makeUpdater(setLabels);
   const posA = makeUpdater(setPositions);
+
+  // Toggle whether a status counts as "work complete". We materialize explicit
+  // `isDone` flags on every status so the terminal set is unambiguous (no reliance
+  // on the implicit 'done'-id fallback). There is always ≥1 terminal status:
+  // clearing the last one just falls back to the default via getDoneStatusIds.
+  const handleToggleStatusDone = (id) => {
+    setStatuses(prev => {
+      const done = new Set(getDoneStatusIds(prev));
+      if (done.has(id)) done.delete(id); else done.add(id);
+      return prev.map(s => ({ ...s, isDone: done.has(s.id) }));
+    });
+  };
 
   const handleStatusDeleteClick = async (id) => {
     const targetStatus = statuses.find(s => s.id === id);
@@ -1417,8 +1444,10 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
-      case 'statuses': return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
+      case 'statuses': {
+        const doneIds = getDoneStatusIds(statuses);
+        return (
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг." rightAction={saveButton}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -1436,6 +1465,8 @@ export default function SettingsPage() {
                               onSave={stA.onSave} onDelete={handleStatusDeleteClick}
                               canDelete={statuses.length > 1 && !['backlog', 'done'].includes(s.id)}
                               variant="status"
+                              isDone={doneIds.includes(s.id)}
+                              onToggleDone={() => handleToggleStatusDone(s.id)}
                               provided={provided}
                             />
                           )}
@@ -1463,7 +1494,8 @@ export default function SettingsPage() {
             </Card>
           )}
         </Section>
-      );
+        );
+      }
 
       case 'types': return (
         <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів" rightAction={saveButton}>

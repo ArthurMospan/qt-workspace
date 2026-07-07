@@ -627,7 +627,7 @@ export default function WorkspacePage() {
   const { projects, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members } = useOrganization();
-  const { labels } = useWorkflowConfig();
+  const { labels, doneStatusIds } = useWorkflowConfig();
   const { sprints } = useSprints();
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -662,21 +662,23 @@ export default function WorkspacePage() {
     return () => unsubscribe();
   }, [activeOrgId]);
 
-  // Real progress per project: % of issues in 'done' (stored `progress` field is never updated)
+  // Real progress per project: % of issues in a terminal status (the stored
+  // `progress` field is never updated). Terminal statuses come from the config.
   const progressByProject = useMemo(() => {
+    const doneSet = new Set(doneStatusIds);
     const counts = {};
     for (const issue of allIssues) {
       if (!issue.projectId) continue;
       const entry = counts[issue.projectId] || (counts[issue.projectId] = { total: 0, done: 0 });
       entry.total++;
-      if ((issue.columnId || issue.status) === 'done') entry.done++;
+      if (doneSet.has(issue.columnId || issue.status)) entry.done++;
     }
     const pct = {};
     for (const [pid, { total, done }] of Object.entries(counts)) {
       pct[pid] = total > 0 ? Math.round((done / total) * 100) : 0;
     }
     return pct;
-  }, [allIssues]);
+  }, [allIssues, doneStatusIds]);
 
   // Filter & sort visible projects
   const filteredProjects = useMemo(() => {

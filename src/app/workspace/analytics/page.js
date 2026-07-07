@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
-import { DEFAULT_STATUSES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
@@ -42,23 +42,27 @@ function FilterDivider() {
 // Детальні графіки активності/трендів живуть у «Продуктивності»,
 // а навантаження по людях — у «Команді»; тут їх свідомо немає.
 function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabChange }) {
+  const { statuses, doneStatusIds } = useWorkflowConfig();
+  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const firstStatusId = statuses?.[0]?.id;
+
   const stats = useMemo(() => {
     if (!issues.length && !loading) return null;
     const now = Date.now();
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
-    const done       = issues.filter(i => i.columnId === 'done').length;
+    const done       = issues.filter(i => doneSet.has(i.columnId)).length;
     const inProgress = issues.filter(i => i.columnId === 'in-progress').length;
-    const blockers   = issues.filter(i => i.priority === 'blocker' && i.columnId !== 'done').length;
+    const blockers   = issues.filter(i => i.priority === 'blocker' && !doneSet.has(i.columnId)).length;
 
     const overdue = issues.filter(i => {
       const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-      return due && due.getTime() < now && i.columnId !== 'done';
+      return due && due.getTime() < now && !doneSet.has(i.columnId);
     });
 
     const recentDone = issues.filter(i => {
-      if (i.columnId !== 'done') return false;
+      if (!doneSet.has(i.columnId)) return false;
       const t = i.updatedAt?.toMillis?.() ?? 0;
       return t > periodAgo;
     }).length;
@@ -68,31 +72,31 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
-      const pDone    = pIssues.filter(i => i.columnId === 'done').length;
-      const pOpen    = pIssues.filter(i => i.columnId !== 'done').length;
+      const pDone    = pIssues.filter(i => doneSet.has(i.columnId)).length;
+      const pOpen    = pIssues.filter(i => !doneSet.has(i.columnId)).length;
       const pOverdue = pIssues.filter(i => {
         const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-        return due && due.getTime() < now && i.columnId !== 'done';
+        return due && due.getTime() < now && !doneSet.has(i.columnId);
       }).length;
       const pMin = periodLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
     }).sort((a, b) => b.total - a.total);
 
-    const byStatus = DEFAULT_STATUSES.map(({ id, label, color }) => ({
+    const byStatus = (statuses || []).map(({ id, label, color }) => ({
       id, label, color, count: issues.filter(i => i.columnId === id).length,
     })).filter(s => s.count > 0);
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
-    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && i.columnId !== 'done').length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && !['backlog', 'done'].includes(i.columnId)).length;
+    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId)).length;
+    const unestimated = issues.filter(i => !i.estimateMinutes && i.columnId !== firstStatusId && !doneSet.has(i.columnId)).length;
 
     return {
       total, done, inProgress, blockers, overdue, recentDone, periodMin,
       byProject, byStatus, maxStatus, noAssignee, unestimated,
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
-  }, [issues, timeLogs, projects, period, loading]);
+  }, [issues, timeLogs, projects, period, loading, statuses, doneSet, firstStatusId]);
 
   if (loading) {
     return (

@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
 import { KpiCard } from '@/components/ui';
-import { DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtShortDate(date) {
@@ -52,7 +52,7 @@ function BarChart({ data, colorA = '#6366f1', colorB = '#10b981', labelA = 'Ст
 }
 
 // ── Burndown Chart ────────────────────────────────────────────────────────────
-function BurndownChart({ issues, days = 30 }) {
+function BurndownChart({ issues, days = 30, doneSet }) {
   const data = useMemo(() => {
     const now = Date.now();
     const total = issues.length;
@@ -66,13 +66,13 @@ function BurndownChart({ issues, days = 30 }) {
       const remaining = issues.filter(iss => {
         const created = iss.createdAt?.toMillis?.() ?? 0;
         if (created > dayEnd) return false;
-        if (iss.columnId !== 'done') return true;
+        if (!doneSet.has(iss.columnId)) return true;
         const closedAt = iss.updatedAt?.toMillis?.() ?? 0;
         return closedAt > dayEnd;
       }).length;
       return { label, remaining, ideal: Math.round(total - (total / Math.min(days, 30)) * i) };
     });
-  }, [issues, days]);
+  }, [issues, days, doneSet]);
 
   const maxVal = Math.max(...data.map(d => Math.max(d.remaining, d.ideal)), 1);
 
@@ -135,7 +135,7 @@ function BurndownChart({ issues, days = 30 }) {
 }
 
 // ── Weekly Velocity Chart ─────────────────────────────────────────────────────
-function WeeklyVelocityChart({ issues, weeksBack = 8 }) {
+function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet }) {
   const data = useMemo(() => {
     const now = Date.now();
     return Array.from({ length: weeksBack }, (_, i) => {
@@ -144,7 +144,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8 }) {
       const weekEnd = now - weekIdx * 7 * 86400000;
       const label = fmtShortDate(new Date(weekStart));
       const closed = issues.filter(iss => {
-        if (iss.columnId !== 'done') return false;
+        if (!doneSet.has(iss.columnId)) return false;
         const t = iss.updatedAt?.toMillis?.() ?? 0;
         return t >= weekStart && t < weekEnd;
       }).length;
@@ -154,19 +154,22 @@ function WeeklyVelocityChart({ issues, weeksBack = 8 }) {
       }).length;
       return { label, a: created, b: closed };
     });
-  }, [issues, weeksBack]);
+  }, [issues, weeksBack, doneSet]);
 
   return <BarChart data={data} colorA="#6366f1" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function VelocityTab({ issues = [], projects = [], period = 30 }) {
+  const { doneStatusIds } = useWorkflowConfig();
+  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+
   const stats = useMemo(() => {
     const now = Date.now();
     const periodAgo = now - period * 86400000;
     const prevPeriodAgo = now - period * 2 * 86400000;
 
-    const doneAll = issues.filter(i => i.columnId === 'done');
+    const doneAll = issues.filter(i => doneSet.has(i.columnId));
 
     const donePeriod = doneAll.filter(i => {
       const t = i.updatedAt?.toMillis?.() ?? 0;
@@ -209,21 +212,21 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       return {
         label,
         a: issues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
-        b: issues.filter(iss => { if (iss.columnId !== 'done') return false; const t = iss.updatedAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
+        b: issues.filter(iss => { if (!doneSet.has(iss.columnId)) return false; const t = iss.updatedAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
       };
     });
 
     // By type breakdown — types come from the shared workflow config
     const byType = DEFAULT_TYPES.map(({ id: type, label, color }) => {
       const typeIssues = issues.filter(i => i.type === type);
-      const typeDone = typeIssues.filter(i => i.columnId === 'done');
+      const typeDone = typeIssues.filter(i => doneSet.has(i.columnId));
       return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
     const byProject = projects.map(p => {
       const pIssues = issues.filter(i => i.projectId === p.id);
-      const pDone = pIssues.filter(i => i.columnId === 'done' && ((i.updatedAt?.toMillis?.() ?? 0) >= periodAgo));
+      const pDone = pIssues.filter(i => doneSet.has(i.columnId) && ((i.updatedAt?.toMillis?.() ?? 0) >= periodAgo));
       return { p, count: pDone.length, total: pIssues.length };
     }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
 
@@ -238,7 +241,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       byType,
       byProject,
     };
-  }, [issues, projects, period]);
+  }, [issues, projects, period, doneSet]);
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -304,7 +307,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
           <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
             Burndown Chart ({period} днів)
           </h3>
-          <BurndownChart issues={issues} days={period} />
+          <BurndownChart issues={issues} days={period} doneSet={doneSet} />
         </div>
 
         {/* Weekly velocity */}
@@ -313,7 +316,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
             <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)
             </h3>
-            <WeeklyVelocityChart issues={issues} weeksBack={8} />
+            <WeeklyVelocityChart issues={issues} weeksBack={8} doneSet={doneSet} />
           </div>
 
           {/* By project */}
@@ -348,7 +351,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
               {issues
-                .filter(i => i.columnId === 'done' && (i.updatedAt?.toMillis?.() ?? 0) >= Date.now() - period * 86400000)
+                .filter(i => doneSet.has(i.columnId) && (i.updatedAt?.toMillis?.() ?? 0) >= Date.now() - period * 86400000)
                 .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
                 .slice(0, 8)
                 .map(issue => {

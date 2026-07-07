@@ -4,7 +4,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/UserAvatar';
-import { Calendar, Lock } from 'lucide-react';
+import { Calendar, Lock, Paperclip } from 'lucide-react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -29,7 +29,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
   const router   = useRouter();
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
-  const { types, priorities } = useWorkflowConfig();
+  const { types, priorities, doneStatusIds } = useWorkflowConfig();
   
   const typeObj = types.find(t => t.id === issue.type) || types[0];
   const typeLabel = typeObj ? typeObj.label : 'Task';
@@ -49,10 +49,11 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
   const due       = issue.dueDate?.toDate ? issue.dueDate.toDate()
                   : issue.dueDate         ? new Date(issue.dueDate) : null;
-  const isOverdue = due && due < new Date() && issue.columnId !== 'done';
+  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId);
 
   const subAll  = (issue.subtasks || []).length;
   const subDone = (issue.subtasks || []).filter(s => s.done).length;
+  const attachCount = (issue.attachments || []).length;
 
   const isDraggable = typeof index === 'number';
 
@@ -76,7 +77,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
   const isBlocked = issueLinks.some(l => 
     l.targetIssueId === issue.id && 
     l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && i.columnId !== 'done')
+    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
   );
 
   const renderCardContent = (provided = {}, isDragging = false) => {
@@ -240,15 +241,25 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
               )}
             </div>
 
-            {/* Chat count indicator: totally flat, no background, no border, no shadow */}
-            {msgCount > 0 && (
-              <div className="flex items-center gap-[4px] text-[#4f46e5] text-[11px] font-bold select-none shrink-0" title={`${msgCount} повідомлень в чаті`}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-[#4f46e5]/10">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                <span className="font-mono">{msgCount}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-[10px] shrink-0">
+              {/* Attachments indicator */}
+              {attachCount > 0 && (
+                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${attachCount} вкладень`}>
+                  <Paperclip size={12} />
+                  <span className="font-mono">{attachCount}</span>
+                </div>
+              )}
+
+              {/* Chat count indicator: totally flat, no background, no border, no shadow */}
+              {msgCount > 0 && (
+                <div className="flex items-center gap-[4px] text-[#4f46e5] text-[11px] font-bold select-none" title={`${msgCount} повідомлень в чаті`}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-[#4f46e5]/10">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span className="font-mono">{msgCount}</span>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

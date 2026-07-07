@@ -16,7 +16,7 @@ import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
   Dialog, Card, Alert, PriorityBadge,
 } from '@/components/ui';
-import { DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Defaults ─────────────────────────────────────────────────────────
 
@@ -378,6 +378,9 @@ function InvoicePreview({ invoice, project, org, onClose }) {
 export default function BillingTab({ issues = [], members = [], project, projectId }) {
   const { currentUser, activeOrgId } = useAppContext();
   const { byIssue, loading: logsLoading } = useProjectAllTimeLogs(projectId);
+  const { statuses, doneStatusIds } = useWorkflowConfig();
+  // Status labels come from the live workflow config (fall back to legacy map).
+  const statusLabelOf = (id) => statuses.find(s => s.id === id)?.label || COL_LABEL[id] || id;
 
   // ── Rate settings per member
   const [memberRates, setMemberRates] = useState({}); // { uid: number }
@@ -526,7 +529,7 @@ export default function BillingTab({ issues = [], members = [], project, project
       return {
         key: iss.issueKey,
         title: iss.title,
-        status: COL_LABEL[iss.columnId] || iss.columnId,
+        status: statusLabelOf(iss.columnId),
         minutes: byIssue[iss.id]?.totalMinutes || iss.estimateMinutes || 0,
         price: computePrice(iss),
       };
@@ -659,7 +662,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                 <div className="flex gap-1">
                   <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(filteredIssues.map(i => i.id)))}>Всі</Button>
                   <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set())}>Жодну</Button>
-                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => i.columnId === 'done').map(i => i.id)))}>Done</Button>
+                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => doneStatusIds.includes(i.columnId)).map(i => i.id)))}>Done</Button>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
@@ -668,7 +671,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                     onChange={val => setFilterStatus(val)}
                     options={[
                       { value: 'all', label: 'Всі статуси' },
-                      ...statusOptions.map(s => ({ value: s, label: COL_LABEL[s] || s }))
+                      ...statusOptions.map(s => ({ value: s, label: statusLabelOf(s) }))
                     ]}
                     className="w-[120px]"
                   />

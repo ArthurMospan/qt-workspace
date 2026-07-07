@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { Users, AlertTriangle, Circle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { KpiCard } from '@/components/ui';
-import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -65,6 +65,9 @@ function TimeBar({ minutes, maxMinutes }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function WorkloadTab({ members = [], issues = [], timeLogs = [], period = 30 }) {
+  const { doneStatusIds } = useWorkflowConfig();
+  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+
   const stats = useMemo(() => {
     const now = Date.now();
     const periodAgo = now - period * 86400000;
@@ -72,8 +75,8 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
     const memberStats = members.map(m => {
       const uid = m.id || m.uid;
       const mine = issues.filter(i => i.assigneeIds?.includes(uid));
-      const open = mine.filter(i => i.columnId !== 'done');
-      const done = mine.filter(i => i.columnId === 'done' && (i.updatedAt?.toMillis?.() ?? 0) >= periodAgo);
+      const open = mine.filter(i => !doneSet.has(i.columnId));
+      const done = mine.filter(i => doneSet.has(i.columnId) && (i.updatedAt?.toMillis?.() ?? 0) >= periodAgo);
       const overdue = open.filter(i => {
         const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
         return due && due.getTime() < now;
@@ -104,7 +107,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
     const maxMinutes = Math.max(...memberStats.map(s => s.minutes), 1);
 
     return { memberStats, maxOpen, maxMinutes };
-  }, [members, issues, timeLogs, period]);
+  }, [members, issues, timeLogs, period, doneSet]);
 
   if (stats.memberStats.length === 0) {
     return (

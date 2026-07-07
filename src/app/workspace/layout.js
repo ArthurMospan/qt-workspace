@@ -86,7 +86,9 @@ export default function WorkspaceLayout({ children }) {
   }
 
 
-  // 4. User is in an org but role is client → redirect to portal
+  // 4. Defensive fallback: the 'client' role is no longer assignable inside the
+  //    team workspace (owner/admin/member only), but keep this guard so any legacy
+  //    membership that still carries it lands on the client portal instead of here.
   const isClientOnly = orgRole === 'client';
   if (isClientOnly) {
     return (
