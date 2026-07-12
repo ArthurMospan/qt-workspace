@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, updateDoc, collection, serverTimestamp, getCountFromServer, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, collection, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -176,7 +176,7 @@ function AddMemberModal({ project, allMembers, onClose }) {
 }
 
 // ── Project Card ─────────────────────────────────────────────────────────────
-const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], isLarge = false }) => {
+const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false }) => {
   const router = useRouter();
   const { currentUser, activeOrgId } = useAppContext();
   const confirmDialog = useConfirm();
@@ -333,7 +333,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
         </div>
 
         {/* Real-time stats and Dynamic content */}
-        <ProjectStatsSection project={project} isLarge={isLarge} members={members} />
+        <ProjectStatsSection isLarge={isLarge} members={members} issues={issues} now={now} />
       </div>
 
       {/* Modals */}
@@ -345,101 +345,73 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 };
 
 // Helper Component for Real-time project statistics and details
-function ProjectStatsSection({ project, isLarge, members }) {
-  const [stats, setStats] = useState({ total: 0, inProgress: 0, comments: 0, lastAction: null });
+function ProjectStatsSection({ isLarge, members, issues = [], now }) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const inProgressStatusIds = useMemo(
     () => statuses.slice(1).filter(status => !doneStatusIds.includes(status.id)).map(status => status.id),
     [statuses, doneStatusIds],
   );
 
-  useEffect(() => {
-    if (!project?.id || !project?.organizationId) return;
-    const qIssues = query(
-      collection(db, 'issues'),
-      where('organizationId', '==', project.organizationId),
-      where('projectId', '==', project.id)
+  const stats = useMemo(() => {
+    let inProgressCount = 0;
+    let newestIssue = null;
+    let newestTime = 0;
+
+    for (const issue of issues) {
+      if (inProgressStatusIds.includes(issue.columnId || issue.status)) {
+        inProgressCount++;
+      }
+
+      const updatedAtTime = issue.updatedAt?.toMillis?.() || issue.createdAt?.toMillis?.() || 0;
+      if (updatedAtTime > newestTime) {
+        newestTime = updatedAtTime;
+        newestIssue = issue;
+      }
+    }
+
+    const commentsCount = issues.reduce(
+      (sum, issue) => sum + (typeof issue.commentCount === 'number' ? issue.commentCount : 0),
+      0,
     );
-    const unsubscribe = onSnapshot(qIssues, async (snapshot) => {
-      let totalCount = 0;
-      let inProgressCount = 0;
-      let commentsCount = 0;
-      let newestIssue = null;
-      let newestTime = 0;
 
-      const issueDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      totalCount = issueDocs.length;
-
-      for (const issue of issueDocs) {
-        if (inProgressStatusIds.includes(issue.columnId || issue.status)) {
-          inProgressCount++;
-        }
-
-        const updatedAtTime = issue.updatedAt?.toMillis?.() || issue.createdAt?.toMillis?.() || 0;
-        if (updatedAtTime > newestTime) {
-          newestTime = updatedAtTime;
-          newestIssue = issue;
-        }
+    let lastActionStr = null;
+    if (newestIssue) {
+      let actorName = 'Команда';
+      let actorAvatar = null;
+      let actorUser = null;
+      if (newestIssue.updatedBy) {
+        actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
+      } else if (newestIssue.reporterId) {
+        actorUser = members.find(m => (m.id || m.uid) === newestIssue.reporterId);
+      } else if (newestIssue.reporterName) {
+        actorUser = members.find(m => m.email && m.email.toLowerCase() === newestIssue.reporterName.toLowerCase());
       }
 
-      const countedComments = issueDocs.reduce(
-        (sum, issue) => sum + (typeof issue.commentCount === 'number' ? issue.commentCount : 0),
-        0,
-      );
-      const legacyIssues = issueDocs.filter(issue => typeof issue.commentCount !== 'number');
-      const legacyCounts = await Promise.all(legacyIssues.map(async issue => {
-        try {
-          const aggregate = await getCountFromServer(collection(db, 'issues', issue.id, 'comments'));
-          return aggregate.data().count;
-        } catch {
-          return 0;
-        }
-      }));
-      commentsCount = countedComments + legacyCounts.reduce((sum, count) => sum + count, 0);
-
-      let lastActionStr = null;
-      if (newestIssue) {
-        let actorName = 'Команда';
-        let actorAvatar = null;
-        let actorUser = null;
-        if (newestIssue.updatedBy) {
-          actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
-        } else if (newestIssue.reporterId) {
-          actorUser = members.find(m => (m.id || m.uid) === newestIssue.reporterId);
-        } else if (newestIssue.reporterName) {
-          actorUser = members.find(m => m.email && m.email.toLowerCase() === newestIssue.reporterName.toLowerCase());
-        }
-
-        if (actorUser) {
-          actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
-          actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
-        } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
-          actorName = 'BuggyBag';
-        } else if (newestIssue.reporterName) {
-          actorName = newestIssue.reporterName;
-        }
-        
-        lastActionStr = {
-          issueKey: newestIssue.issueKey || 'Задачу',
-          title: newestIssue.title,
-          actor: actorName,
-          actorAvatar: actorAvatar,
-          time: newestIssue.updatedAt || newestIssue.createdAt
-        };
+      if (actorUser) {
+        actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
+        actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
+      } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
+        actorName = 'BuggyBag';
+      } else if (newestIssue.reporterName) {
+        actorName = newestIssue.reporterName;
       }
 
-      setStats({
-        total: totalCount,
-        inProgress: inProgressCount,
-        comments: commentsCount,
-        lastAction: lastActionStr
-      });
-    }, (err) => {
-      console.error('[ProjectStatsSection] error fetching stats:', err);
-    });
+      lastActionStr = {
+        issueKey: newestIssue.issueKey || 'Задачу',
+        title: newestIssue.title,
+        actor: actorName,
+        actorAvatar,
+        time: newestIssue.updatedAt || newestIssue.createdAt
+      };
+    }
 
-    return () => unsubscribe();
-  }, [project.id, project.organizationId, members, inProgressStatusIds]);
+    return {
+      total: issues.length,
+      inProgress: inProgressCount,
+      comments: commentsCount,
+      lastAction: lastActionStr
+    };
+  }, [issues, members, inProgressStatusIds]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -623,7 +595,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
 }
 
 export default function WorkspacePage() {
-  const { projects, projectsLoading, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
+  const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members } = useOrganization();
   const { labels, doneStatusIds } = useWorkflowConfig();
@@ -635,6 +607,7 @@ export default function WorkspacePage() {
 
   // Real-time issues state
   const [allIssues, setAllIssues] = useState([]);
+  const [issuesError, setIssuesError] = useState(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -662,7 +635,12 @@ export default function WorkspacePage() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllIssues(list);
-    }, (err) => console.error('[WorkspacePage] issues error:', err));
+      setIssuesError(null);
+    }, (err) => {
+      console.error('[WorkspacePage] issues error:', err);
+      setAllIssues([]);
+      setIssuesError(err);
+    });
     return () => unsubscribe();
   }, [activeOrgId]);
 
@@ -683,6 +661,15 @@ export default function WorkspacePage() {
     }
     return pct;
   }, [allIssues, doneStatusIds]);
+
+  const issuesByProject = useMemo(() => {
+    const grouped = {};
+    for (const issue of allIssues) {
+      if (!issue.projectId) continue;
+      (grouped[issue.projectId] ||= []).push(issue);
+    }
+    return grouped;
+  }, [allIssues]);
 
   // Filter & sort visible projects
   const filteredProjects = useMemo(() => {
@@ -849,6 +836,14 @@ export default function WorkspacePage() {
           }
         />
 
+        {(projectsError || issuesError) && (
+          <Alert
+            variant="error"
+            title="Не вдалося завантажити дані workspace"
+            description="Перезавантажте сторінку. Якщо помилка повториться, перевірте доступ до організації або Firestore rules."
+          />
+        )}
+
         {/* Projects Panel */}
         <div className="w-full flex-1 flex flex-col">
           {projectsLoading ? (
@@ -887,6 +882,7 @@ export default function WorkspacePage() {
                     unarchive={unarchive}
                     members={members}
                     allOrgMembers={members}
+                    issues={issuesByProject[p.id] || []}
                     isLarge={index === 0 && selectedMember === 'all' && dateFilter === 'all'}
                   />
                 ))}

@@ -13,7 +13,8 @@ const AppContext = createContext(null);
 // ─── Inner provider (has access to OrgContext) ────────────────────────────
 function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail, signOut, children }) {
   const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, noOrg, switchOrg, setActiveOrgId } = useOrg();
-  const { projects, loading: projectsLoading } = useProjects(user?.id, activeOrgId);
+  const userId = authLoading ? undefined : (user?.id || user?.uid || null);
+  const { projects, loading: projectsLoading, error: projectsError } = useProjects(userId, activeOrgId);
 
   useEffect(() => {
     if (user?.localization) {
@@ -65,6 +66,7 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
   const value = {
     authLoading,
     projectsLoading,
+    projectsError,
     orgLoading,
     signInWithGoogle,
     signInWithEmail,
@@ -110,6 +112,7 @@ export const useAppContext = () => {
     return {
       authLoading: true,
       projectsLoading: true,
+      projectsError: null,
       orgLoading: true,
       signInWithGoogle: async () => {},
       signInWithEmail: async () => {},

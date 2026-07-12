@@ -21,7 +21,9 @@ export async function proxy(request) {
   }
 
   // Redirect unauthenticated users away from protected routes
-  if (pathname.startsWith('/workspace') && !hasSession) {
+  const isProtectedRoute = pathname.startsWith('/workspace') || pathname === '/ui-kit' || pathname === '/ui-diff';
+
+  if (isProtectedRoute && !hasSession) {
     const loginUrl = new URL('/login', request.url);
     const response = NextResponse.redirect(loginUrl);
     if (sessionCookie) response.cookies.delete('qt_session');
@@ -40,5 +42,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/workspace/:path*', '/login'],
+  matcher: ['/workspace/:path*', '/ui-kit', '/ui-diff', '/login'],
 };

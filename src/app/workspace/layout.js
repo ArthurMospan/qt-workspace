@@ -17,8 +17,8 @@ export default function WorkspaceLayout({ children }) {
   const router = useRouter();
   const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut, allOrgs } = useAppContext();
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
-  // null on first render (both nav variants mounted, CSS decides), then the
-  // irrelevant one is unmounted so its listeners/re-renders don't run twice.
+  // null on first render, then the matching nav is mounted. This prevents the
+  // hidden nav variant from briefly opening its own Firestore subscriptions.
   const isMobile = useIsMobile();
 
   const pathname = usePathname();
@@ -118,7 +118,7 @@ export default function WorkspaceLayout({ children }) {
     <ConfirmProvider>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel (desktop only; mobile uses MobileNav) */}
-      {isMobile !== true && (
+      {isMobile === false && (
         <div className="print:hidden shrink-0 h-full hidden md:flex p-[12px] pr-[6px]">
           <div className="h-full rounded-[24px] overflow-hidden flex">
             <WorkspaceSidebar />
@@ -141,7 +141,7 @@ export default function WorkspaceLayout({ children }) {
       </div>
 
       {/* Mobile bottom navigation */}
-      {isMobile !== false && (
+      {isMobile === true && (
         <div className="print:hidden md:hidden">
           <MobileNav />
         </div>

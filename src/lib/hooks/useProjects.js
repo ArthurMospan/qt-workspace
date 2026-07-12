@@ -10,17 +10,23 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 export function useProjects(userId, activeOrgId) {
   const [projects, setProjects] = useState([]);
+  const [error, setError] = useState(null);
   // Start as loading=true so callers don't flash an empty state
   // while auth/org context is still resolving.
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If userId is explicitly null/undefined (auth resolved but no user),
-    // or activeOrgId is null (org resolved but no org), clear and stop loading.
-    // If they are still undefined (context not yet ready), stay in loading=true.
-    if (userId === null || userId === undefined) {
+    // Undefined means auth is still resolving; keep the loading state so the
+    // projects page does not briefly render an empty state.
+    if (userId === undefined) {
+      queueMicrotask(() => setLoading(true));
+      return;
+    }
+    // Null means auth resolved without a user.
+    if (userId === null) {
       queueMicrotask(() => {
         setProjects([]);
+        setError(null);
         setLoading(false);
       });
       return;
@@ -44,16 +50,20 @@ export function useProjects(userId, activeOrgId) {
         return timeB - timeA;
       });
       setProjects(docs);
+      setError(null);
       setLoading(false);
     }, err => {
       console.error('[useProjects]', err);
+      setProjects([]);
+      setError(err);
       setLoading(false);
     });
     return () => unsub();
   }, [userId, activeOrgId]);
   return {
     projects,
-    loading
+    loading,
+    error
   };
 }
 
