@@ -6,6 +6,7 @@ import { Users, AlertTriangle, Circle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { KpiCard } from '@/components/ui';
 import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { parseDueDate } from '@/lib/utils/date';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -79,10 +80,10 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
     const memberStats = members.map(m => {
       const uid = m.id || m.uid;
       const mine = issues.filter(i => i.assigneeIds?.includes(uid));
-      const open = mine.filter(i => !doneSet.has(i.columnId));
-      const done = mine.filter(i => doneSet.has(i.columnId) && (i.updatedAt?.toMillis?.() ?? 0) >= periodAgo);
+      const open = mine.filter(i => !doneSet.has(i.columnId || i.status));
+      const done = mine.filter(i => doneSet.has(i.columnId || i.status) && (i.updatedAt?.toMillis?.() ?? 0) >= periodAgo);
       const overdue = open.filter(i => {
-        const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
+        const due = parseDueDate(i.dueDate);
         return due && due.getTime() < now;
       });
       const inProg = open.filter(i => i.columnId === 'in-progress');

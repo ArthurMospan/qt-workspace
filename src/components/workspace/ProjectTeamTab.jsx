@@ -35,7 +35,7 @@ export default function ProjectTeamTab({ members = [], issues = [], projectId })
           {members.map(member => {
             const uid = member.id || member.uid;
             const memberIssues = issues.filter(i => i.assigneeIds?.includes(uid));
-            const done = memberIssues.filter(i => doneSet.has(i.columnId)).length;
+            const done = memberIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
             const open = memberIssues.length - done;
             const mins = byUser[uid] || 0;
             const h = Math.floor(mins / 60);

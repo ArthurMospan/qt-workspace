@@ -52,6 +52,19 @@ export const DatePicker = forwardRef(({
   const [rangeEnd, setRangeEnd] = useState(endDate ? parseDate(endDate) : null);
   const containerRef = useRef(null);
 
+  // Keep the internal calendar state aligned when a parent switches records or
+  // resets a controlled value after saving.
+  useEffect(() => {
+    const next = value ? parseDate(value) : null;
+    setSelectedDate(next);
+    if (next) setCurrentMonth(next);
+  }, [value]);
+
+  useEffect(() => {
+    setRangeStart(startDate ? parseDate(startDate) : null);
+    setRangeEnd(endDate ? parseDate(endDate) : null);
+  }, [startDate, endDate]);
+
   // Close calendar on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -77,10 +90,11 @@ export const DatePicker = forwardRef(({
       } else if (newDate < rangeStart) {
         setRangeEnd(rangeStart);
         setRangeStart(newDate);
+        onDateRangeChange?.(formatDate(newDate), formatDate(rangeStart));
       } else {
         setRangeEnd(newDate);
+        onDateRangeChange?.(formatDate(rangeStart), formatDate(newDate));
       }
-      if (rangeStart && rangeEnd) onDateRangeChange?.(formatDate(rangeStart), formatDate(rangeEnd));
     }
   };
 

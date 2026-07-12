@@ -26,6 +26,7 @@ import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
+import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
 
 const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
@@ -37,16 +38,16 @@ function Badge({ label, color }) {
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
   const [goal, setGoal] = useState(sprint.goal || '');
-  const [startDate, setStartDate] = useState(sprint.startDate ? new Date(sprint.startDate.toDate ? sprint.startDate.toDate() : sprint.startDate).toISOString().substring(0, 10) : '');
-  const [endDate, setEndDate] = useState(sprint.endDate ? new Date(sprint.endDate.toDate ? sprint.endDate.toDate() : sprint.endDate).toISOString().substring(0, 10) : '');
+  const [startDate, setStartDate] = useState(() => toLocalDateInput(sprint.startDate));
+  const [endDate, setEndDate] = useState(() => toLocalDateInput(sprint.endDate));
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
       name,
       goal,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null
+      startDate: fromDateInput(startDate),
+      endDate: fromDateInput(endDate, { endOfDay: true })
     });
   };
 
@@ -98,8 +99,8 @@ function SprintCreateModal({ onClose, onSave }) {
     onSave({
       name,
       goal,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null
+      startDate: fromDateInput(startDate),
+      endDate: fromDateInput(endDate, { endOfDay: true })
     });
   };
 

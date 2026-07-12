@@ -6,6 +6,7 @@ import { useRef } from 'react';
 import UserAvatar from '@/components/UserAvatar';
 import { Calendar, Lock, Paperclip } from 'lucide-react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { parseDueDate } from '@/lib/utils/date';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 
@@ -47,9 +48,8 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
     .filter(Boolean);
   const first = assignees[0] || null;
 
-  const due       = issue.dueDate?.toDate ? issue.dueDate.toDate()
-                  : issue.dueDate         ? new Date(issue.dueDate) : null;
-  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId);
+  const due       = parseDueDate(issue.dueDate);
+  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
 
   const subAll  = (issue.subtasks || []).length;
   const subDone = (issue.subtasks || []).filter(s => s.done).length;
@@ -77,11 +77,11 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
   const isBlocked = issueLinks.some(l => 
     l.targetIssueId === issue.id && 
     l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
+    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
   );
 
   const renderCardContent = (provided = {}, isDragging = false) => {
-    const msgCount = issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
+    const msgCount = issue.commentCount || issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
 
     return (
       <div

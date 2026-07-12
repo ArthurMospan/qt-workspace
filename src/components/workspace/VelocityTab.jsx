@@ -65,7 +65,7 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
       const remaining = issues.filter(iss => {
         const created = iss.createdAt?.toMillis?.() ?? 0;
         if (created > dayEnd) return false;
-        if (!doneSet.has(iss.columnId)) return true;
+        if (!doneSet.has(iss.columnId || iss.status)) return true;
         const closedAt = getCompletedAtMillis(iss);
         return closedAt > dayEnd;
       }).length;
@@ -142,7 +142,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
       const weekEnd = now - weekIdx * 7 * 86400000;
       const label = fmtShortDate(new Date(weekStart));
       const closed = issues.filter(iss => {
-        if (!doneSet.has(iss.columnId)) return false;
+        if (!doneSet.has(iss.columnId || iss.status)) return false;
         const t = getCompletedAtMillis(iss);
         return t >= weekStart && t < weekEnd;
       }).length;
@@ -171,7 +171,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
     const periodAgo = now - period * 86400000;
     const prevPeriodAgo = now - period * 2 * 86400000;
 
-    const doneAll = issues.filter(i => doneSet.has(i.columnId));
+    const doneAll = issues.filter(i => doneSet.has(i.columnId || i.status));
 
     const donePeriod = doneAll.filter(i => {
       const t = getCompletedAtMillis(i);
@@ -214,21 +214,21 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       return {
         label,
         a: issues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
-        b: issues.filter(iss => { if (!doneSet.has(iss.columnId)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
+        b: issues.filter(iss => { if (!doneSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
       };
     });
 
     // By type breakdown — types come from the shared workflow config
     const byType = DEFAULT_TYPES.map(({ id: type, label, color }) => {
       const typeIssues = issues.filter(i => i.type === type);
-      const typeDone = typeIssues.filter(i => doneSet.has(i.columnId));
+      const typeDone = typeIssues.filter(i => doneSet.has(i.columnId || i.status));
       return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
     const byProject = projects.map(p => {
       const pIssues = issues.filter(i => i.projectId === p.id);
-      const pDone = pIssues.filter(i => doneSet.has(i.columnId) && getCompletedAtMillis(i) >= periodAgo);
+      const pDone = pIssues.filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
       return { p, count: pDone.length, total: pIssues.length };
     }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
 
@@ -353,7 +353,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
               {issues
-                .filter(i => doneSet.has(i.columnId) && getCompletedAtMillis(i) >= now - period * 86400000)
+                .filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= now - period * 86400000)
                 .sort((a, b) => getCompletedAtMillis(b) - getCompletedAtMillis(a))
                 .slice(0, 8)
                 .map(issue => {

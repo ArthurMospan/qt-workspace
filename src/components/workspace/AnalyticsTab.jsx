@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { useWorkflowConfig, DEFAULT_PRIORITIES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
+import { parseDueDate } from '@/lib/utils/date';
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
@@ -49,15 +50,15 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
   const stats = useMemo(() => {
     const total   = filteredIssues.length;
-    const done    = filteredIssues.filter(i => doneSet.has(i.columnId)).length;
+    const done    = filteredIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
     const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
     const blocked = filteredIssues.filter(i => i.priority === 'blocker').length;
     const overdue = filteredIssues.filter(i => {
-      const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-      return due && due.getTime() < now && !doneSet.has(i.columnId);
+      const due = parseDueDate(i.dueDate);
+      return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
     });
-    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId));
-    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && i.columnId !== firstStatusId && !doneSet.has(i.columnId));
+    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status));
+    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && (i.columnId || i.status) !== firstStatusId && !doneSet.has(i.columnId || i.status));
     const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
     // Budget
@@ -70,12 +71,12 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
     const weekAgo = now - 7 * 24 * 3600 * 1000;
     const twoWeeksAgo = now - 14 * 24 * 3600 * 1000;
     const recentDone = filteredIssues.filter(i => {
-      if (!doneSet.has(i.columnId)) return false;
+      if (!doneSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > weekAgo;
     }).length;
     const prevDone = filteredIssues.filter(i => {
-      if (!doneSet.has(i.columnId)) return false;
+      if (!doneSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > twoWeeksAgo && t <= weekAgo;
     }).length;
@@ -91,18 +92,18 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
     // By priority
     const byPriority = ['blocker','high','medium','low'].map(p => ({
-      p, count: filteredIssues.filter(i => i.priority === p && !doneSet.has(i.columnId)).length,
+      p, count: filteredIssues.filter(i => i.priority === p && !doneSet.has(i.columnId || i.status)).length,
     })).filter(s => s.count > 0);
 
     // Per-member stats
     const memberStats = members.map(m => {
       const uid    = m.id || m.uid;
       const mine   = filteredIssues.filter(i => i.assigneeIds?.includes(uid));
-      const mDone  = mine.filter(i => doneSet.has(i.columnId)).length;
-      const mOpen  = mine.filter(i => !doneSet.has(i.columnId)).length;
+      const mDone  = mine.filter(i => doneSet.has(i.columnId || i.status)).length;
+      const mOpen  = mine.filter(i => !doneSet.has(i.columnId || i.status)).length;
       const mOverdue = mine.filter(i => {
-        const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-        return due && due.getTime() < now && !doneSet.has(i.columnId);
+        const due = parseDueDate(i.dueDate);
+        return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
       }).length;
       const mMin  = byUser[uid] || 0;
       return { m, uid, total: mine.length, done: mDone, open: mOpen, overdue: mOverdue, minutes: mMin };

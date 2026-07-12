@@ -14,6 +14,7 @@ import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firesto
 import { db } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { parseDueDate } from '@/lib/utils/date';
 
 const THROTTLE_MS = 4 * 3600 * 1000;
 
@@ -49,10 +50,10 @@ export function useDeadlineReminders(userId, activeOrgId) {
 
         for (const d of snap.docs) {
           const iss = d.data();
-          if (doneStatusIds.includes(iss.columnId)) continue;
+          if (doneStatusIds.includes(iss.columnId || iss.status)) continue;
           if (!iss.assigneeIds?.includes(userId)) continue;
-          const due = iss.dueDate?.toDate ? iss.dueDate.toDate() : iss.dueDate ? new Date(iss.dueDate) : null;
-          if (!due || isNaN(due.getTime())) continue;
+          const due = parseDueDate(iss.dueDate);
+          if (!due) continue;
           const dueMs = due.getTime();
 
           let notifId = null;

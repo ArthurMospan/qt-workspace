@@ -6,6 +6,7 @@ import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { parseDueDate } from '@/lib/utils/date';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -51,14 +52,13 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
     .map(uid => members.find(m => (m.id || m.uid) === uid))
     .filter(Boolean);
 
-  const due = task.dueDate?.toDate ? task.dueDate.toDate()
-            : task.dueDate ? new Date(task.dueDate) : null;
+  const due = parseDueDate(task.dueDate);
   const isOverdue = due && due < new Date() && !doneStatusIds.includes(task.columnId) && !doneStatusIds.includes(task.status);
 
   const subAll = (task.subtasks || []).length;
   const subDone = (task.subtasks || []).filter(s => s.done).length;
 
-  const msgCount = task.commentsCount || task.comments?.length || (task.hasUnreadChat ? 1 : 0);
+  const msgCount = task.commentCount || task.commentsCount || task.comments?.length || (task.hasUnreadChat ? 1 : 0);
 
   // Generate dynamic, readable project prefix instead of generic WS-
   const getDisplayKey = () => {
@@ -80,7 +80,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   const isBlocked = issueLinks.some(l => 
     l.targetIssueId === task.id && 
     l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
+    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
   );
 
   const handleRowClick = (e) => {

@@ -667,7 +667,7 @@ export default function BillingTab({ issues = [], members = [], project, project
                 <div className="flex gap-1">
                   <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(filteredIssues.map(i => i.id)))}>Всі</Button>
                   <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set())}>Жодну</Button>
-                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => doneStatusIds.includes(i.columnId)).map(i => i.id)))}>Done</Button>
+                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(issues.filter(i => doneStatusIds.includes(i.columnId || i.status)).map(i => i.id)))}>Done</Button>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">

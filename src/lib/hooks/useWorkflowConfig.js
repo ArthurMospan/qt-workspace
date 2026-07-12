@@ -152,19 +152,25 @@ export function useWorkflowConfig() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!activeOrgId) {
-      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => {
+        setStatuses(DEFAULT_STATUSES);
+        setTypes(DEFAULT_TYPES);
+        setPriorities(DEFAULT_PRIORITIES);
+        setLabels(DEFAULT_LABELS);
+        setPositions(DEFAULT_POSITIONS);
+        setLoading(false);
+      });
       return;
     }
+    queueMicrotask(() => setLoading(true));
     const ref = doc(db, 'organizations', activeOrgId, 'settings', 'workflow');
     const unsub = onSnapshot(ref, snap => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (d.statuses !== undefined) setStatuses(d.statuses);
-        if (d.types !== undefined) setTypes(d.types);
-        if (d.priorities !== undefined) setPriorities(d.priorities);
-        if (d.labels !== undefined) setLabels(d.labels);
-        if (d.positions !== undefined) setPositions(d.positions);
-      }
+      const d = snap.exists() ? snap.data() : {};
+      setStatuses(Array.isArray(d.statuses) ? d.statuses : DEFAULT_STATUSES);
+      setTypes(Array.isArray(d.types) ? d.types : DEFAULT_TYPES);
+      setPriorities(Array.isArray(d.priorities) ? d.priorities : DEFAULT_PRIORITIES);
+      setLabels(Array.isArray(d.labels) ? d.labels : DEFAULT_LABELS);
+      setPositions(Array.isArray(d.positions) ? d.positions : DEFAULT_POSITIONS);
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();

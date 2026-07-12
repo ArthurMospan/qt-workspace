@@ -20,6 +20,7 @@ import UserAvatar from '@/components/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import { fromDateInput, parseDueDate, toLocalDateInput } from '@/lib/utils/date';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
@@ -39,7 +40,7 @@ import {
   ZoomIn, Maximize2,
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, deleteDoc, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -350,7 +351,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const { messages } = usePortalChat(projectId);
   const { sprints = [] } = useSprints();
 
-  const { logs: timeLogs, addTimeLog, deleteTimeLog } = useTimeLogs(issueId);
+  const { logs: timeLogs, totalMinutes: loggedMinutes, addTimeLog, updateTimeLog, deleteTimeLog } = useTimeLogs(issueId);
   const { comments, addComment }       = useComments(issueId);
   const { entries: auditLogs = [] }    = useAuditLog(issueId);
   const { links = [], addLink, removeLink } = useIssueLinks(issueId);
@@ -478,8 +479,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const TypeIcon    = typeCfg.icon;
   const PrioIcon    = priorityCfg.icon;
 
-  const due       = issue.dueDate?.toDate ? issue.dueDate.toDate() : issue.dueDate ? new Date(issue.dueDate) : null;
-  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId);
+  const due       = parseDueDate(issue.dueDate);
+  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
   const dueStr    = due ? formatDate(due) : null;
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
@@ -488,7 +489,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
   const subtasksAll   = (issue.subtasks || []).length;
 
-  const spentMin  = issue.spentMinutes    || 0;
+  const spentMin  = loggedMinutes;
   const estimMin  = isEditing ? (draft.estimateMinutes ?? issue.estimateMinutes ?? 0) : (issue.estimateMinutes || 0);
   const timePct   = estimMin > 0 ? Math.round((spentMin / estimMin) * 100) : 0;
   const timeColor = timePct >= 100 ? '#dc2626' : timePct >= 75 ? '#f97316' : '#6366f1';
@@ -504,7 +505,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       type:            issue.type     || 'task',
       priority:        issue.priority || 'medium',
       estimateMinutes: issue.estimateMinutes || 0,
-      dueDate:         due ? due.toISOString().split('T')[0] : '',
+      dueDate:         toLocalDateInput(due),
       description:     issue.description || '',
       parentEpicId:    issue.parentEpicId || null,
     });
@@ -522,10 +523,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (draft.description     !== (issue.description||''))patch.description = draft.description;
     if (draft.parentEpicId    !== (issue.parentEpicId || null)) patch.parentEpicId = draft.parentEpicId;
     // dueDate
-    const draftDue = draft.dueDate ? new Date(draft.dueDate) : null;
-    const origDue  = due;
-    if ((draftDue?.toISOString() || '') !== (origDue?.toISOString() || '')) {
-      patch.dueDate = draft.dueDate || null;
+    const originalDueInput = toLocalDateInput(due);
+    if ((draft.dueDate || '') !== originalDueInput) {
+      patch.dueDate = draft.dueDate
+        ? fromDateInput(draft.dueDate, { endOfDay: true })
+        : null;
     }
     if (Object.keys(patch).length > 0) {
       try { await updateIssue(issueId, patch, actor); showToast('Збережено ✓'); }
@@ -601,9 +603,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const watchers = (issue.watcherIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
   const toggleWatch = async () => {
     if (!myUid) return;
-    const cur = issue.watcherIds || [];
-    const next = isWatching ? cur.filter(u => u !== myUid) : [...cur, myUid];
-    await update({ watcherIds: next });
+    await update({ watcherIds: isWatching ? arrayRemove(myUid) : arrayUnion(myUid) });
   };
 
   const handleTimerToggle = async () => {
@@ -995,7 +995,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                       onChange={(val) => {
                         if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
-                        else update({ dueDate: val || null });
+                        else update({ dueDate: val ? fromDateInput(val, { endOfDay: true }) : null });
                       }}
                       placeholder="Не вказано"
                     />

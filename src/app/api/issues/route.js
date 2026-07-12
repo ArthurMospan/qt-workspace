@@ -20,6 +20,20 @@ function terminalStatusIds(workflow) {
   return statuses.length ? [statuses.at(-1).id] : ['done'];
 }
 
+function normalizedDate(value) {
+  if (value == null || value === '') return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? admin.firestore.Timestamp.fromDate(date) : undefined;
+}
+
+function normalizedSubtasks(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 100).flatMap(item => {
+    const title = typeof item?.title === 'string' ? item.title.trim().slice(0, 500) : '';
+    return title ? [{ title, done: item.done === true }] : [];
+  });
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -58,6 +72,19 @@ export async function POST(request) {
       }
     }
 
+    if (data.parentEpicId) {
+      const parentSnap = await db.collection('issues').doc(data.parentEpicId).get();
+      const parent = parentSnap.data();
+      if (!parentSnap.exists || parent.organizationId !== organizationId || parent.projectId !== projectId || parent.type !== 'epic') {
+        return NextResponse.json({ error: 'Invalid parent epic' }, { status: 400 });
+      }
+    }
+
+    const dueDate = normalizedDate(data.dueDate);
+    if (dueDate === undefined) {
+      return NextResponse.json({ error: 'Invalid due date' }, { status: 400 });
+    }
+
     const workflowSnap = await db.collection('organizations').doc(organizationId)
       .collection('settings').doc('workflow').get();
     const workflow = workflowSnap.data() || {};
@@ -94,12 +121,12 @@ export async function POST(request) {
         type: typeIds.has(data.type) ? data.type : (typeIds.has('task') ? 'task' : [...typeIds][0]),
         assigneeIds,
         labelIds: Array.isArray(data.labelIds) ? data.labelIds.filter(id => labelIds.has(id)).slice(0, 20) : [],
-        dueDate: data.dueDate || null,
+        dueDate,
         sprintId: data.sprintId || null,
-        reporterId: data.reporterId || authorization.user.uid,
+        reporterId: authorization.user.uid,
         estimateMinutes: Number.isFinite(data.estimateMinutes) ? Math.max(0, data.estimateMinutes) : null,
         parentEpicId: data.parentEpicId || null,
-        subtasks: Array.isArray(data.subtasks) ? data.subtasks.slice(0, 100) : [],
+        subtasks: normalizedSubtasks(data.subtasks),
         watcherIds: [],
         order: next,
         createdBy: authorization.user.uid,

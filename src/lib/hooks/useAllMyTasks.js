@@ -15,16 +15,24 @@ export function useAllMyTasks(userId) {
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!activeOrgId) {
-      queueMicrotask(() => setLoading(false));
+    if (!activeOrgId || !userId) {
+      queueMicrotask(() => {
+        setTasks([]);
+        setIssueLinks([]);
+        setLoading(false);
+      });
       return;
     }
+    queueMicrotask(() => {
+      setTasks([]);
+      setIssueLinks([]);
+      setLoading(true);
+    });
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId));
     const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+      const docs = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(issue => issue.assigneeIds?.includes(userId));
       docs.sort((a, b) => {
         const aTime = a.dueDate?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
         const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;

@@ -101,7 +101,7 @@ service cloud.firestore {
         request.resource.data.userId == resource.data.userId &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['role', 'hourlyRate', 'positionId', 'updatedAt']) && (
-        request.resource.data.role in ['owner', 'admin', 'member', 'client'] &&
+        request.resource.data.role in ['owner', 'admin', 'member'] &&
         (request.resource.data.role != 'owner' || resource.data.role == 'owner') &&
         (resource.data.role == 'owner' || request.resource.data.role == 'owner'
           ? isOrgOwner(resource.data.orgId)
@@ -184,9 +184,11 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if isOrgMember(issueOrg(issueId));
         allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.authorId == request.auth.uid;
-        allow update, delete: if isOrgMember(issueOrg(issueId)) &&
+        allow update: if isOrgMember(issueOrg(issueId)) &&
           resource.data.authorId == request.auth.uid &&
           request.resource.data.authorId == resource.data.authorId;
+        allow delete: if isOrgMember(issueOrg(issueId)) &&
+          resource.data.authorId == request.auth.uid;
       }
 
       // Append-only activity log.
@@ -231,12 +233,14 @@ service cloud.firestore {
       allow read: if isOrgMember(resource.data.organizationId);
       allow create: if isOrgMember(request.resource.data.organizationId) &&
         request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isOrgMember(resource.data.organizationId) &&
+      allow update: if isOrgMember(resource.data.organizationId) &&
         (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.organizationId)) &&
         request.resource.data.organizationId == resource.data.organizationId &&
         request.resource.data.userId == resource.data.userId &&
         request.resource.data.issueId == resource.data.issueId &&
         request.resource.data.projectId == resource.data.projectId;
+      allow delete: if isOrgMember(resource.data.organizationId) &&
+        (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.organizationId));
     }
 
     // ── invoices/{id} ────────────────────────────────────────────────────

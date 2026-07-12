@@ -60,7 +60,7 @@ export default function DependenciesPanel({
   const hasBlocker = links.some(l =>
     l.relationType === 'blocks' &&
     l.targetIssueId === issue.id &&
-    allIssues.find(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
+    allIssues.find(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
   );
 
   return (

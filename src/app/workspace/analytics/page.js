@@ -22,6 +22,7 @@ import {
 } from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
+import { parseDueDate } from '@/lib/utils/date';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -56,17 +57,17 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
-    const done       = issues.filter(i => doneSet.has(i.columnId)).length;
+    const done       = issues.filter(i => doneSet.has(i.columnId || i.status)).length;
     const inProgress = issues.filter(i => i.columnId === 'in-progress').length;
-    const blockers   = issues.filter(i => i.priority === 'blocker' && !doneSet.has(i.columnId)).length;
+    const blockers   = issues.filter(i => i.priority === 'blocker' && !doneSet.has(i.columnId || i.status)).length;
 
     const overdue = issues.filter(i => {
-      const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-      return due && due.getTime() < now && !doneSet.has(i.columnId);
+      const due = parseDueDate(i.dueDate);
+      return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
     });
 
     const recentDone = issues.filter(i => {
-      if (!doneSet.has(i.columnId)) return false;
+      if (!doneSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > periodAgo;
     }).length;
@@ -76,11 +77,11 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
-      const pDone    = pIssues.filter(i => doneSet.has(i.columnId)).length;
-      const pOpen    = pIssues.filter(i => !doneSet.has(i.columnId)).length;
+      const pDone    = pIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
+      const pOpen    = pIssues.filter(i => !doneSet.has(i.columnId || i.status)).length;
       const pOverdue = pIssues.filter(i => {
-        const due = i.dueDate?.toDate ? i.dueDate.toDate() : i.dueDate ? new Date(i.dueDate) : null;
-        return due && due.getTime() < now && !doneSet.has(i.columnId);
+        const due = parseDueDate(i.dueDate);
+        return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
       }).length;
       const pMin = periodLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
@@ -92,8 +93,8 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
     })).filter(s => s.count > 0);
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
-    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId)).length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && i.columnId !== firstStatusId && !doneSet.has(i.columnId)).length;
+    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status)).length;
+    const unestimated = issues.filter(i => !i.estimateMinutes && (i.columnId || i.status) !== firstStatusId && !doneSet.has(i.columnId || i.status)).length;
 
     return {
       total, done, inProgress, blockers, overdue, recentDone, periodMin,

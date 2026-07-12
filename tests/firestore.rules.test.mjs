@@ -41,6 +41,12 @@ beforeEach(async () => {
     await setDoc(doc(db, 'issues', 'issue-a'), {
       organizationId: 'org-a', projectId: 'project-a', title: 'Issue A',
     });
+    await setDoc(doc(db, 'issues', 'issue-a', 'comments', 'member-comment'), {
+      authorId: 'member-a', text: 'Member comment',
+    });
+    await setDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment'), {
+      authorId: 'owner-a', text: 'Owner comment',
+    });
     await setDoc(doc(db, 'organizations', 'org-a', 'channels', 'general'), { name: 'general', type: 'public' });
     await setDoc(doc(db, 'organizations', 'org-a', 'channels', 'general', 'messages', 'owner-message'), {
       senderId: 'owner-a', text: 'Original', reactions: {}, replyCount: 0,
@@ -74,6 +80,13 @@ test('a member cannot change identity fields on a membership', async () => {
   const ownerDb = environment.authenticatedContext('owner-a').firestore();
   await assertFails(updateDoc(doc(ownerDb, 'orgMemberships', 'org-a_member-a'), {
     userId: 'outsider',
+  }));
+});
+
+test('the removed client role cannot be assigned to a membership', async () => {
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  await assertFails(updateDoc(doc(ownerDb, 'orgMemberships', 'org-a_member-a'), {
+    role: 'client',
   }));
 });
 
@@ -114,6 +127,22 @@ test('a member can create only their own time log and cannot edit another user l
     userId: 'owner-a', spentMinutes: 999,
   }));
   await assertFails(updateDoc(doc(db, 'timeLogs', 'log-owner'), { spentMinutes: 999 }));
+});
+
+test('authors can delete their own comments but not another authors comments', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'member-comment')));
+  await assertFails(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment')));
+});
+
+test('users can delete their own time logs but not another users logs', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(setDoc(doc(memberDb, 'timeLogs', 'member-log-delete'), {
+    organizationId: 'org-a', projectId: 'project-a', issueId: 'issue-a',
+    userId: 'member-a', spentMinutes: 10,
+  }));
+  await assertSucceeds(deleteDoc(doc(memberDb, 'timeLogs', 'member-log-delete')));
+  await assertFails(deleteDoc(doc(memberDb, 'timeLogs', 'log-owner')));
 });
 
 test('invoices are owner-only', async () => {

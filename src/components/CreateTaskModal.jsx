@@ -9,6 +9,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { fromDateInput } from '@/lib/utils/date';
 
 
 
@@ -77,7 +78,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       await onSubmit({
         ...form,
         createdBy: currentUser?.id || currentUser?.uid,
-        dueDate: form.dueDate ? new Date(form.dueDate) : null,
+        dueDate: form.dueDate ? fromDateInput(form.dueDate, { endOfDay: true }) : null,
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
         parentEpicId: form.parentEpicId || null,
         sprintId: form.sprintId || null

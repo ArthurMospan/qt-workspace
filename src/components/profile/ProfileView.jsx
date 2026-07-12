@@ -32,7 +32,7 @@ export default function ProfileView({ user, onClose }) {
   const router = useRouter();
   const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
-  const { positions = [] } = useWorkflowConfig();
+  const { positions = [], doneStatusIds } = useWorkflowConfig();
   const { members: orgMembers } = useOrganization();
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -49,7 +49,10 @@ export default function ProfileView({ user, onClose }) {
 
   const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
 
-  const allActiveTasks = tasks.filter(t => t.assigneeIds?.includes(uid) && t.status !== 'done' && t.status !== 'cancelled');
+  const allActiveTasks = tasks.filter(task => {
+    const project = projects.find(item => item.id === task.projectId);
+    return project?.status !== 'archived' && !doneStatusIds.includes(task.columnId || task.status);
+  });
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();

@@ -177,7 +177,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                             {issueLinks?.some(l => 
                               l.targetIssueId === issue.id && 
                               l.relationType === 'blocks' && 
-                              issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId))
+                              issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
                             ) && (
                               <span title="Заблоковано іншою завданням" className="flex items-center gap-[2px] px-[4px] py-[2px] bg-[#fef2f2] text-[#ef4444] rounded-[4px] text-[9px] font-bold">
                                 <Lock size={10} /> Blocked
