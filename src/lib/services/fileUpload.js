@@ -1,4 +1,5 @@
 'use client';
+import { auth } from '@/lib/firebase';
 // src/lib/services/fileUpload.js
 
 /**
@@ -6,6 +7,7 @@
  */
 export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars') {
   try {
+    if (file.size > 25 * 1024 * 1024) throw new Error('File exceeds the 25 MB limit');
     const ext = file.name.split('.').pop()?.toLowerCase();
     const baseName = file.name.substring(0, file.name.lastIndexOf('.')).replace(/[^a-zA-Z0-9]/g, '_');
     const public_id = `${Date.now()}_${baseName}`;
@@ -17,16 +19,22 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
       resource_type = 'video';
     }
 
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Authentication is required for uploads');
+
     const signRes = await fetch('/api/upload/sign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ 
         params: { folder, public_id } 
       }),
     });
 
     if (!signRes.ok) throw new Error('Failed to get upload signature');
-    const { signature, timestamp, apiKey, cloudName } = await signRes.json();
+    const { signature, timestamp, apiKey, cloudName, overwrite } = await signRes.json();
 
     const formData = new FormData();
     formData.append('file', file);
@@ -35,6 +43,7 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
     formData.append('signature', signature);
     formData.append('folder', folder);
     formData.append('public_id', public_id);
+    formData.append('overwrite', String(overwrite));
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resource_type}/upload`, {
       method: 'POST',
@@ -51,7 +60,7 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
       downloadUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');
     }
 
-    return { downloadUrl, storagePath: data.public_id };
+    return { downloadUrl, storagePath: data.public_id, resourceType: data.resource_type };
   } catch (err) {
     console.error('Upload Error:', err);
     throw err;

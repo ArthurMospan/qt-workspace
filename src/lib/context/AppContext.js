@@ -5,7 +5,6 @@ import { useAuth }         from '@/lib/hooks/useAuth';
 import { useProjects }     from '@/lib/hooks/useProjects';
 import { acceptPendingInvitation } from '@/lib/hooks/useOrganization';
 import { OrgProvider, useOrg } from '@/lib/context/OrgContext';
-import { runMigrations } from '@/lib/migrations/runMigrations';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -36,8 +35,6 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
           await acceptPendingInvitation(uid, email);
         }
 
-        // Run one-time migrations (idempotent — safe to call every login)
-        await runMigrations();
       } catch (err) {
         console.error('[AppContext] init error:', err);
       }
@@ -46,23 +43,24 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
 
   // Update presence
   useEffect(() => {
-    if (!user) return;
+    if (!user || !activeOrgId) return;
     const uid = user.id || user.uid;
+    const presenceRef = doc(db, 'organizations', activeOrgId, 'presence', uid);
     const updatePresence = async () => {
-      if (document.visibilityState === 'visible') {
-        try {
-          await setDoc(doc(db, 'presence', uid), {
-            online: true,
-            lastSeen: serverTimestamp(),
-            email: user.email,
-          }, { merge: true });
-        } catch {}
-      }
+      try {
+        await setDoc(presenceRef, {
+          online: document.visibilityState === 'visible',
+          lastSeen: serverTimestamp(),
+        }, { merge: true });
+      } catch {}
     };
     updatePresence();
     document.addEventListener('visibilitychange', updatePresence);
-    return () => document.removeEventListener('visibilitychange', updatePresence);
-  }, [user]);
+    return () => {
+      document.removeEventListener('visibilitychange', updatePresence);
+      setDoc(presenceRef, { online: false, lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+    };
+  }, [activeOrgId, user]);
 
   const value = {
     authLoading,

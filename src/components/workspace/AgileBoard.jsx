@@ -44,7 +44,7 @@ function InlineAddForm({ onAdd, onCancel }) {
   );
 }
 
-export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false, issueLinks = [] }) {
+export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false, issueLinks = [], isArchived }) {
   const [mounted, setMounted] = useState(false);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
   
@@ -85,10 +85,12 @@ export default function AgileBoard({ issues, members, projectId, project, active
   };
 
   useEffect(() => {
-    setMounted(true);
+    queueMicrotask(() => setMounted(true));
   }, []);
 
-  const onDragEnd = ({ draggableId, source, destination }) => {
+  const onDragEnd = (result) => {
+    if (isArchived) return;
+    const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
     
@@ -229,7 +231,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {!col.isHiddenContainer && (
+                    {!isArchived && !col.isHiddenContainer && (
                       <button
                         onClick={() => setActiveAddColId(col.id)}
                         className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
@@ -246,9 +248,9 @@ export default function AgileBoard({ issues, members, projectId, project, active
         )}
 
         {/* Scrollable swimlanes area — full-bleed so columns scroll to the panel edge, not the page padding */}
-        <div className="flex-1 overflow-auto pb-6 snap-x snap-mandatory md:snap-none full-bleed">
+        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none full-bleed ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
           {swimlanes.map(lane => (
-            <div key={lane.id} className="mb-4">
+            <div key={lane.id} className={`mb-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               
               {swimlanes.length > 1 && (
                 <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
@@ -257,7 +259,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                 </div>
               )}
               
-              <div className="flex gap-4">
+              <div className={`flex gap-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0' : ''}`}>
                 {columns.map(col => {
                   const colIssues = lane.issues
                     .filter(i => {
@@ -272,7 +274,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
                   if (isCollapsed) {
                     return (
-                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
+                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
                         {swimlanes.length === 1 && (
                           <>
                             <button className="text-muted mb-4">
@@ -293,7 +295,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                   }
 
                   return (
-                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px]' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : 'calc(100dvh - 160px)' }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px] h-full overflow-hidden' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (
@@ -313,7 +315,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            {!col.isHiddenContainer && (
+                            {!isArchived && !col.isHiddenContainer && (
                               <button
                                 onClick={() => setActiveAddColId(col.id)}
                                 className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
@@ -333,12 +335,12 @@ export default function AgileBoard({ issues, members, projectId, project, active
                         />
                       )}
 
-                      <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer}>
+                      <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 p-[8px] flex flex-col gap-[8px] transition-colors ${swimlanes.length === 1 ? 'rounded-b-[16px]' : 'rounded-[12px]'} ${
+                            className={`flex-1 p-[8px] flex flex-col gap-[8px] transition-colors custom-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
                               snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                             }`}
                           >
@@ -354,6 +356,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                                 projectName={project?.name}
                                 isTimerActive={activeTimerIssueId === issue.id}
                                 issueLinks={issueLinks}
+                                isArchived={isArchived}
                               />
                             ))}
                             {provided.placeholder}

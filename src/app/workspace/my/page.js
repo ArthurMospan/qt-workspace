@@ -22,6 +22,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Layout/Card';
 import Surface from '@/components/ui/Surface';
 import FilterBar from '@/components/ui/FilterBar';
+import { createIssueViaApi } from '@/lib/services/issues';
 
 
 
@@ -121,7 +122,7 @@ export default function MyTasksPage() {
 
   const filtered = filterTasks(tasks, filters, sprintMap).filter(t => {
     const p = projects.find(proj => proj.id === t.projectId);
-    return p && !p.archived;
+    return p && p.status !== 'archived';
   });
 
   const activeSprintsList = (sprints || []).filter(s => s.status === 'active');
@@ -200,8 +201,8 @@ export default function MyTasksPage() {
   };
 
   return (
-    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full page-gutter pt-[56px] pb-[120px] flex flex-col gap-2">
+    <div className={`flex-1 h-full bg-transparent ${viewMode === 'kanban' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
+      <div className={`w-full flex flex-col gap-2 page-gutter pt-[56px] ${viewMode === 'kanban' ? 'h-full pb-0' : 'min-h-full pb-[120px]'}`}>
         <PageHeader
           variant="main"
           title="Мої завдання"
@@ -469,53 +470,22 @@ export default function MyTasksPage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          const { addDoc, collection, serverTimestamp, doc, runTransaction } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase');
-          
-          const tempKey = `WS-${Date.now()}`;
-          const newIssueRef = await addDoc(collection(db, 'issues'), {
-            issueKey: tempKey,
+          await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
-            title: formData.title,
-            description: formData.description || '',
-            columnId: formData.status || 'todo',
-            status: formData.status || 'todo',
-            priority: formData.priority || 'medium',
-            type: formData.type || 'task',
-            assigneeIds: formData.assignees || [],
-            labelIds: formData.labelIds || [],
-            dueDate: formData.dueDate || null,
-            sprintId: formData.sprintId || null,
-            createdAt: serverTimestamp(),
-            createdBy: uid
+            data: {
+              title: formData.title,
+              description: formData.description || '',
+              status: formData.status || 'todo',
+              priority: formData.priority || 'medium',
+              type: formData.type || 'task',
+              assigneeIds: formData.assignees || [],
+              labelIds: formData.labelIds || [],
+              dueDate: formData.dueDate || null,
+              sprintId: formData.sprintId || null,
+              reporterId: uid,
+            },
           });
-
-          // Run background transaction to get sequential key
-          const projectRef = doc(db, 'projects', formData.projectId);
-          runTransaction(db, async tx => {
-            const projectSnap = await tx.get(projectRef);
-            if (!projectSnap.exists()) return;
-            const projectData = projectSnap.data();
-            const current = projectData.issueCounter ?? 0;
-            const next = current + 1;
-            
-            const pName = projectData.name || 'WS';
-            const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-            let prefix = cleanProj.slice(0, 3).toUpperCase();
-            if (prefix.length < 2) {
-              prefix = pName.slice(0, 2).toUpperCase();
-            }
-            if (!prefix) prefix = 'WS';
-
-            tx.update(projectRef, {
-              issueCounter: next,
-              updatedAt: serverTimestamp()
-            });
-            tx.update(doc(db, 'issues', newIssueRef.id), {
-              issueKey: `${prefix}-${next}`
-            });
-          }).catch(err => console.warn('[myTasks] issueCounter update failed:', err));
 
           showToast('Задачу створено ✓');
         }}

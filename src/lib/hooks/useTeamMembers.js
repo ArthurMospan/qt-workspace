@@ -2,23 +2,32 @@
 
 // src/lib/hooks/useTeamMembers.js — Fetch user profiles for a list of UIDs
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useAppContext } from '@/lib/context/AppContext';
+import { fetchOrganizationMembers } from '@/lib/services/members';
 export function useTeamMembers(teamUids) {
+  const { activeOrgId } = useAppContext();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const key = teamUids?.join(',') ?? '';
   useEffect(() => {
-    if (!teamUids || teamUids.length === 0) {
-      queueMicrotask(() => setLoading(false));
+    if (!key || !activeOrgId) {
+      queueMicrotask(() => {
+        setMembers([]);
+        setLoading(false);
+      });
       return;
     }
-    setLoading(true);
-    Promise.all(teamUids.map(uid => getDoc(doc(db, 'users', uid)).then(snap => snap.exists() ? {
-      id: snap.id,
-      ...snap.data()
-    } : null))).then(results => setMembers(results.filter(Boolean))).catch(console.error).finally(() => setLoading(false));
-  }, [key]);
+    const uids = key ? key.split(',') : [];
+    let active = true;
+    queueMicrotask(() => setLoading(true));
+    fetchOrganizationMembers(activeOrgId)
+      .then(results => {
+        if (active) setMembers(results.filter(member => uids.includes(member.id || member.uid)));
+      })
+      .catch(console.error)
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [activeOrgId, key]);
   return {
     members,
     loading

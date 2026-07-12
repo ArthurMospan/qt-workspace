@@ -13,29 +13,9 @@ rules_version = '2';
 // code audit), not a bug — don't "fix" it by renaming one of them without
 // updating every hook that reads it.
 //
-// Known residual risks NOT closed by this pass (flagged, not fixed here —
-// each needs a small app-code change alongside the rule, tracked in
-// QuickTeam-Workspace-Review-2.md wave F notes):
-//   - `orgMemberships` self-join (acceptPendingInvitation) can't be
-//     cryptographically tied to a real invitation from rules alone, since
-//     invitations use auto-generated IDs. Mitigated by forbidding
-//     self-granted 'owner' role (only the org-bootstrap path can do that).
-//   - `notifications` has no organizationId field, so `create` can't verify
-//     sender/recipient share an org — only read/update/delete are locked to
-//     the recipient.
-//   - `organizations.apiKeys` is a plain array on the org doc, readable by
-//     every org member (not just owner/admin) because the whole doc is
-//     fetched via onSnapshot. A real fix means moving apiKeys to a
-//     subcollection — a data-model change, out of scope for a rules-only
-//     pass.
-//   - `runMigrations()` (src/lib/migrations/runMigrations.js) does a few
-//     unscoped `getDocs(collection(db, 'projects'|'tasks'|'issues'))` calls.
-//     Those migrations are idempotent and gated by a `hasRun` flag in
-//     `systemMigrations/{ORG_ID}` — as long as they've already completed
-//     once (expected, since orgMemberships is already populated in prod),
-//     they short-circuit before touching the unscoped query. If ever reset,
-//     they will fail under these rules. Recommend converting to a one-off
-//     Admin SDK script instead of client-triggered code.
+// Membership invitations, project/issue creation and deletion, API keys,
+// profile sharing, and notification delivery go through authenticated server
+// routes. Client rules intentionally deny those privileged write/read paths.
 // ─────────────────────────────────────────────────────────────────────────
 
 service cloud.firestore {
@@ -67,6 +47,10 @@ service cloud.firestore {
       return isOrgMember(orgId) && orgRole(orgId) == 'owner';
     }
 
+    function userIsOrgMember(orgId, uid) {
+      return exists(/databases/$(database)/documents/orgMemberships/$(orgId + '_' + uid));
+    }
+
     function projectOrg(projectId) {
       return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
     }
@@ -82,10 +66,18 @@ service cloud.firestore {
     // ── organizations/{orgId} ──────────────────────────────────────────
     match /organizations/{orgId} {
       allow read: if signedIn() && (isOrgMember(orgId) || resource.data.ownerId == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid &&
+        !request.resource.data.keys().hasAny(['apiKeys']);
       allow update: if isOrgAdminOrOwner(orgId) &&
-        (request.resource.data.ownerId == resource.data.ownerId || isOrgOwner(orgId));
-      allow delete: if isOrgOwner(orgId);
+        request.resource.data.ownerId == resource.data.ownerId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['apiKeys']);
+      allow delete: if false; // Requires a future server-side cascading delete.
+
+      match /presence/{uid} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if isOrgMember(orgId) && request.auth.uid == uid;
+        allow delete: if false;
+      }
     }
 
     // ── orgMemberships/{orgId}_{uid} — RBAC source of truth ────────────
@@ -93,32 +85,39 @@ service cloud.firestore {
       allow read: if signedIn() &&
         (resource.data.userId == request.auth.uid || isOrgMember(resource.data.orgId));
 
-      allow create: if signedIn() && (
+      allow create: if signedIn() &&
+        request.resource.data.id == membershipId &&
+        membershipId == request.resource.data.orgId + '_' + request.resource.data.userId && (
         // Bootstrap: first owner of a freshly created org (org doc already
         // carries ownerId == you, written by the same onboarding flow).
         (request.resource.data.userId == request.auth.uid &&
          request.resource.data.role == 'owner' &&
          get(/databases/$(database)/documents/organizations/$(request.resource.data.orgId)).data.ownerId == request.auth.uid)
-        ||
-        // Self-join (accepted invitation) — never allowed to self-grant owner.
-        (request.resource.data.userId == request.auth.uid && request.resource.data.role != 'owner')
-        ||
-        // Owner/admin adding an existing user directly (inviteMember).
-        (isOrgAdminOrOwner(request.resource.data.orgId) && request.resource.data.role != 'owner')
       );
 
-      allow update: if signedIn() && (
-        request.resource.data.role == 'owner' ? isOrgOwner(resource.data.orgId) : isOrgAdminOrOwner(resource.data.orgId)
+      allow update: if signedIn() &&
+        membershipId == resource.data.orgId + '_' + resource.data.userId &&
+        request.resource.data.orgId == resource.data.orgId &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['role', 'hourlyRate', 'positionId', 'updatedAt']) && (
+        request.resource.data.role in ['owner', 'admin', 'member', 'client'] &&
+        (request.resource.data.role != 'owner' || resource.data.role == 'owner') &&
+        (resource.data.role == 'owner' || request.resource.data.role == 'owner'
+          ? isOrgOwner(resource.data.orgId)
+          : isOrgAdminOrOwner(resource.data.orgId)) &&
+        (resource.data.role != 'owner' || request.resource.data.role == 'owner')
       );
 
       allow delete: if signedIn() &&
+        resource.data.role != 'owner' &&
         (isOrgAdminOrOwner(resource.data.orgId) || request.auth.uid == resource.data.userId);
     }
 
-    // ── users/{uid} — global, not org-scoped (needed for cross-org team
-    //    lookups and email-based invite matching) ───────────────────────
+    // ── users/{uid} — private self profile. Organization-visible profile
+    //    fields are returned by /api/organizations/:id/members. ─────────
     match /users/{uid} {
-      allow read: if signedIn();
+      allow read: if signedIn() && request.auth.uid == uid;
       allow create, update: if signedIn() && request.auth.uid == uid;
       allow delete: if false;
 
@@ -131,9 +130,8 @@ service cloud.firestore {
     match /invitations/{id} {
       allow read: if signedIn() &&
         (resource.data.email == request.auth.token.email || isOrgAdminOrOwner(resource.data.organizationId));
-      allow create: if isOrgAdminOrOwner(request.resource.data.organizationId);
-      allow update: if signedIn() &&
-        (resource.data.email == request.auth.token.email || isOrgAdminOrOwner(resource.data.organizationId));
+      allow create: if false; // Created by the authenticated invitation API.
+      allow update: if isOrgAdminOrOwner(resource.data.organizationId);
       allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
     }
 
@@ -142,13 +140,20 @@ service cloud.firestore {
     match /projects/{projectId} {
       allow read: if isOrgMember(resource.data.organizationId);
       allow create: if false;
-      allow update: if isOrgMember(resource.data.organizationId) &&
-        request.resource.data.organizationId == resource.data.organizationId;
-      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
+      allow update: if request.resource.data.organizationId == resource.data.organizationId && (
+        (isOrgAdminOrOwner(resource.data.organizationId) && request.resource.data.status == resource.data.status) ||
+        (isOrgMember(resource.data.organizationId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'issueCounter']))
+      );
+      allow delete: if false; // Cascading deletion is handled by /api/projects/[projectId].
 
       // Portal chat — client + workspace side, scoped via parent project.
       match /messages/{msgId} {
-        allow read, create, update: if isOrgMember(projectOrg(projectId));
+        allow read: if isOrgMember(projectOrg(projectId));
+        allow create: if isOrgMember(projectOrg(projectId)) && request.resource.data.senderId == request.auth.uid;
+        allow update: if isOrgMember(projectOrg(projectId)) &&
+          resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderId == resource.data.senderId;
         allow delete: if isOrgMember(projectOrg(projectId)) && resource.data.senderId == request.auth.uid;
       }
     }
@@ -158,7 +163,8 @@ service cloud.firestore {
     match /stages/{stageId} {
       allow read: if isOrgMember(projectOrg(resource.data.projectId));
       allow create, delete: if false;
-      allow update: if isOrgMember(projectOrg(resource.data.projectId));
+      allow update: if isOrgMember(projectOrg(resource.data.projectId)) &&
+        request.resource.data.projectId == resource.data.projectId;
 
       match /materials/{materialId} {
         allow read, write: if isOrgMember(projectOrg(get(/databases/$(database)/documents/stages/$(stageId)).data.projectId));
@@ -168,19 +174,25 @@ service cloud.firestore {
     // ── issues/{issueId} ─────────────────────────────────────────────────
     match /issues/{issueId} {
       allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow create: if false; // Created through /api/issues or trusted integrations.
       allow update: if isOrgMember(resource.data.organizationId) &&
-        request.resource.data.organizationId == resource.data.organizationId;
-      allow delete: if isOrgMember(resource.data.organizationId);
+        request.resource.data.organizationId == resource.data.organizationId &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['organizationId', 'projectId', 'issueKey', 'createdAt', 'createdBy']);
+      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
 
       match /comments/{commentId} {
-        allow read, create: if isOrgMember(issueOrg(issueId));
-        allow update, delete: if isOrgMember(issueOrg(issueId)) && resource.data.authorId == request.auth.uid;
+        allow read: if isOrgMember(issueOrg(issueId));
+        allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isOrgMember(issueOrg(issueId)) &&
+          resource.data.authorId == request.auth.uid &&
+          request.resource.data.authorId == resource.data.authorId;
       }
 
       // Append-only activity log.
       match /audit/{auditId} {
-        allow read, create: if isOrgMember(issueOrg(issueId));
+        allow read: if isOrgMember(issueOrg(issueId));
+        allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.userId == request.auth.uid;
         allow update, delete: if false;
       }
     }
@@ -188,88 +200,132 @@ service cloud.firestore {
     // ── issueLinks/{id} ──────────────────────────────────────────────────
     match /issueLinks/{id} {
       allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId) &&
+        issueOrg(request.resource.data.sourceIssueId) == request.resource.data.organizationId &&
+        issueOrg(request.resource.data.targetIssueId) == request.resource.data.organizationId;
       allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     // ── tasks/{taskId} — legacy/parallel collection to issues ───────────
     match /tasks/{taskId} {
       allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId);
-      allow update: if isOrgMember(resource.data.organizationId) &&
-        request.resource.data.organizationId == resource.data.organizationId;
-      allow delete: if isOrgMember(resource.data.organizationId);
+      allow create, update, delete: if false; // Legacy collection; new work uses issues.
 
       match /taskComments/{commentId} {
-        allow read, create: if isOrgMember(taskOrg(taskId));
-        allow update, delete: if isOrgMember(taskOrg(taskId)) && resource.data.senderId == request.auth.uid;
+        allow read: if isOrgMember(taskOrg(taskId));
+        allow create, update, delete: if false;
       }
     }
 
     // ── sprints/{id} ─────────────────────────────────────────────────────
     match /sprints/{id} {
       allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId);
-      allow update: if isOrgMember(resource.data.organizationId) &&
+      allow create: if isOrgAdminOrOwner(request.resource.data.organizationId);
+      allow update: if isOrgAdminOrOwner(resource.data.organizationId) &&
         request.resource.data.organizationId == resource.data.organizationId;
-      allow delete: if isOrgMember(resource.data.organizationId);
+      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
     }
 
     // ── timeLogs/{id} ────────────────────────────────────────────────────
     match /timeLogs/{id} {
       allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId);
-      allow update, delete: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId) &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOrgMember(resource.data.organizationId) &&
+        (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.organizationId)) &&
+        request.resource.data.organizationId == resource.data.organizationId &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.issueId == resource.data.issueId &&
+        request.resource.data.projectId == resource.data.projectId;
     }
 
-    // ── notifications/{id} — no organizationId field; locked to recipient
-    //    for read/update/delete. create stays org-agnostic (see header note).
+    // ── invoices/{id} ────────────────────────────────────────────────────
+    match /invoices/{id} {
+      allow read: if isOrgOwner(resource.data.organizationId);
+      allow create: if isOrgOwner(request.resource.data.organizationId);
+      allow update: if isOrgOwner(resource.data.organizationId) &&
+        request.resource.data.organizationId == resource.data.organizationId;
+      allow delete: if isOrgOwner(resource.data.organizationId);
+    }
+
+    // ── notifications/{id} — created by the authenticated server route;
+    //    recipients may only read, delete, or toggle `read`. ──────────────
     match /notifications/{id} {
-      allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn();
+      allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create: if false;
     }
 
     // ── presence/{uid} ───────────────────────────────────────────────────
     match /presence/{uid} {
-      allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == uid;
-    }
-
-    // ── systemMigrations/{orgId} — single idempotent flag doc per deploy,
-    //    no sensitive data. ───────────────────────────────────────────────
-    match /systemMigrations/{orgId} {
-      allow read, write: if signedIn();
+      allow read, write: if false;
     }
 
     // ── organizations/{orgId}/channels/... — chat, scoped via path ──────
     match /organizations/{orgId}/channels/{channelId} {
-      allow read, create, update: if isOrgMember(orgId);
+      allow read: if isOrgMember(orgId);
+      allow create: if isOrgAdminOrOwner(orgId) || (
+        isOrgMember(orgId) && (
+          request.resource.data.type == 'dm' ||
+          (channelId == 'general' && request.resource.data.type == 'public')
+        )
+      );
+      allow update: if isOrgAdminOrOwner(orgId) || (
+        isOrgMember(orgId) && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['typing', 'lastMessageAt', 'lastMessageText', 'lastMessageSender'])
+      );
       allow delete: if isOrgAdminOrOwner(orgId);
 
       match /messages/{msgId} {
-        allow read, create, update: if isOrgMember(orgId);
+        allow read: if isOrgMember(orgId);
+        allow create: if isOrgMember(orgId) && request.resource.data.senderId == request.auth.uid;
+        allow update: if isOrgMember(orgId) &&
+          request.resource.data.senderId == resource.data.senderId && (
+            resource.data.senderId == request.auth.uid ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'replyCount'])
+          );
         allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
 
         match /replies/{replyId} {
-          allow read, create, update: if isOrgMember(orgId);
+          allow read: if isOrgMember(orgId);
+          allow create: if isOrgMember(orgId) && request.resource.data.senderId == request.auth.uid;
+          allow update: if isOrgMember(orgId) &&
+            resource.data.senderId == request.auth.uid &&
+            request.resource.data.senderId == resource.data.senderId;
           allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
         }
       }
     }
 
     match /organizations/{orgId}/readState/{stateId} {
-      allow read, write: if isOrgMember(orgId) && resource.data.userId == request.auth.uid;
-      allow create: if isOrgMember(orgId) && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if isOrgMember(orgId) && resource.data.userId == request.auth.uid;
+      allow create: if isOrgMember(orgId) &&
+        request.resource.data.userId == request.auth.uid &&
+        stateId == request.auth.uid + '_' + request.resource.data.channelId;
+      allow update: if isOrgMember(orgId) &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.channelId == resource.data.channelId;
     }
 
     match /organizations/{orgId}/activeDMs/{uid} {
       allow read: if isOrgMember(orgId);
-      allow write: if isOrgMember(orgId) && request.auth.uid in request.resource.data.partners;
+      allow create, update: if isOrgMember(orgId) && userIsOrgMember(orgId, uid) &&
+        request.auth.uid in request.resource.data.partners;
+      allow delete: if false;
     }
 
     match /organizations/{orgId}/settings/{settingsDoc} {
       allow read: if isOrgMember(orgId);
       allow write: if isOrgAdminOrOwner(orgId);
+    }
+
+    // Secrets are never stored on the member-readable organization document.
+    // They are managed by authenticated Admin SDK routes only.
+    match /organizations/{orgId}/private/{privateDoc} {
+      allow read, write: if false;
     }
   }
 }

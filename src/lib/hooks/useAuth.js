@@ -11,24 +11,20 @@ export function useAuth() {
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(console.error);
 
-    let isDemoLogin = false;
-    if (typeof document !== 'undefined' && document.cookie.includes('qt_demo_login=1')) {
-      isDemoLogin = true;
-      document.cookie = 'qt_demo_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      sessionStorage.setItem('just_logged_in', 'true');
-      signInWithEmailAndPassword(auth, 'demo@quickteam.me', 'demo123456').catch((err) => {
-        console.error('[useAuth] Demo sign in error:', err);
-        isDemoLogin = false;
-      });
-    }
-
     let intervalId;
+    let unsubscribeProfile = () => {};
     const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
+      try {
       if (intervalId) clearInterval(intervalId);
+      unsubscribeProfile();
+      unsubscribeProfile = () => {};
       if (firebaseUser) {
-        // Lightweight presence flag so middleware can gate /workspace before JS loads.
-        // Not a verified session token — Firestore rules remain the source of truth.
-        document.cookie = 'qt_session=1; path=/; max-age=2592000; SameSite=Lax';
+        const idToken = await firebaseUser.getIdToken();
+        const sessionResponse = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!sessionResponse.ok) throw new Error('Failed to establish server session');
         const userRef = doc(db, 'users', firebaseUser.uid);
         const snap = await getDoc(userRef);
         if (!snap.exists()) {
@@ -64,7 +60,7 @@ export function useAuth() {
         };
         setUser(profile);
         setLoading(false);
-        const unsubProfile = onSnapshot(userRef, docSnap => {
+        unsubscribeProfile = onSnapshot(userRef, docSnap => {
           if (docSnap.exists()) setUser(prev => ({
             ...prev,
             ...docSnap.data()
@@ -79,20 +75,20 @@ export function useAuth() {
             merge: true
           }).catch(console.error);
         }, 30000);
-        return () => {
-          unsubProfile();
-          clearInterval(intervalId);
-        };
       } else {
-        document.cookie = 'qt_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        if (!isDemoLogin) {
-          setUser(null);
-          setLoading(false);
-        }
+        fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+        setUser(null);
+        setLoading(false);
+      }
+      } catch (error) {
+        console.error('[useAuth] Authentication initialization failed:', error);
+        setUser(null);
+        setLoading(false);
       }
     });
     return () => {
       unsubscribe();
+      unsubscribeProfile();
       if (intervalId) clearInterval(intervalId);
     };
   }, []);
@@ -116,6 +112,7 @@ export function useAuth() {
         merge: true
       }).catch(console.error);
     }
+    await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
     return firebaseSignOut(auth);
   };
   const signInWithEmail = async (email, password) => {

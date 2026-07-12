@@ -1,82 +1,4 @@
 /**
- * Send email notifications
- *
- * Requires setup:
- * 1. Firebase Cloud Functions OR
- * 2. Next.js API route (POST /api/send-email)
- *
- * Example Firebase Cloud Function:
- *
- * const functions = require('firebase-functions');
- * const nodemailer = require('nodemailer');
- *
- * const transporter = nodemailer.createTransport({
- *   service: 'gmail',
- *   auth: {
- *     user: functions.config().gmail.email,
- *     pass: functions.config().gmail.password,
- *   },
- * });
- *
- * exports.sendEmailNotification = functions.https.onCall(async (data, context) => {
- *   const { to, subject, html } = data;
- *   await transporter.sendMail({
- *     from: 'noreply@quickteam.com',
- *     to,
- *     subject,
- *     html,
- *   });
- * });
- */
-
-/**
- * Send email notification (requires backend setup)
- * @param {string} email - recipient email
- * @param {string} type - notification type ('commented', 'assigned', 'blocked', etc)
- * @param {string} title - email subject/title
- * @param {string} body - email body text
- * @param {string} link - link to the issue
- * @param {object} issue - issue data for context
- */
-export async function sendEmailNotification({
-  email,
-  type,
-  title,
-  body,
-  link,
-  issue = {},
-}) {
-  // This requires either:
-  // 1. Firebase Cloud Function
-  // 2. Next.js API route
-  // 3. External email service (SendGrid, Mailgun, Resend)
-
-  try {
-    // Option 1: Using Next.js API route (recommended for simplicity)
-    const response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        type,
-        title,
-        body,
-        link,
-        issueKey: issue.issueKey,
-        projectName: issue.projectName,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Email send failed:', await response.text());
-    }
-  } catch (err) {
-    console.error('[sendEmailNotification]', err);
-    // Fail silently - email is optional, don't break the app
-  }
-}
-
-/**
  * Generate email HTML template
  */
 export function generateEmailTemplate({
@@ -88,6 +10,19 @@ export function generateEmailTemplate({
   projectName,
   userName,
 }) {
+  const escapeHtml = value => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  title = escapeHtml(title);
+  body = escapeHtml(body).replaceAll('\n', '<br>');
+  issueKey = escapeHtml(issueKey);
+  projectName = escapeHtml(projectName);
+  userName = escapeHtml(userName);
+  link = typeof link === 'string' && link.startsWith('/workspace') ? link : '/workspace';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const fullLink = baseUrl + link;
 

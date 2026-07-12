@@ -24,7 +24,7 @@ function fmtClock(ts) {
   return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function UnifiedTimeline({ issueId, projectId }) {
+export default function UnifiedTimeline({ issueId, projectId, isArchived }) {
   const router = useRouter();
   const { currentUser } = useAppContext();
   const { members } = useOrganization();
@@ -116,19 +116,19 @@ export default function UnifiedTimeline({ issueId, projectId }) {
 
     comments.forEach(c => items.push({
       _type: 'comment',
-      _time: c.createdAt?.toMillis ? c.createdAt.toMillis() : Date.now(),
+      _time: c.createdAt?.toMillis ? c.createdAt.toMillis() : 0,
       ...c
     }));
 
     auditLogs.forEach(a => items.push({
       _type: 'audit',
-      _time: a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now(),
+      _time: a.createdAt?.toMillis ? a.createdAt.toMillis() : 0,
       ...a
     }));
 
     timeLogs.forEach(t => items.push({
       _type: 'time',
-      _time: t.loggedAt?.toMillis ? t.loggedAt.toMillis() : Date.now(),
+      _time: t.loggedAt?.toMillis ? t.loggedAt.toMillis() : 0,
       ...t
     }));
 
@@ -249,6 +249,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
       </div>
 
       {/* Input Area — main accent */}
+      {!isArchived && (
       <div className="px-3 pb-3 shrink-0 relative" ref={wrapperRef}>
         {/* Autocomplete Mentions Dropdown */}
         {mentionState.active && filteredMembers.length > 0 && (
@@ -348,6 +349,7 @@ export default function UnifiedTimeline({ issueId, projectId }) {
         </div>
         <p className="text-[10px] text-faint text-center mt-1">Enter — надіслати · Shift+Enter — новий рядок</p>
       </div>
+      )}
     </div>
   );
 }

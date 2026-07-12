@@ -54,13 +54,9 @@ export default function WorkspaceLayout({ children }) {
     
     if (allOrgs?.length > 1) {
       const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
-      if (justLoggedIn) {
-        setNeedsOrgSelection(true);
-      } else {
-        setNeedsOrgSelection(false);
-      }
+      queueMicrotask(() => setNeedsOrgSelection(justLoggedIn));
     } else {
-      setNeedsOrgSelection(false);
+      queueMicrotask(() => setNeedsOrgSelection(false));
     }
   }, [authLoading, orgLoading, currentUser, noOrg, allOrgs]);
 
@@ -91,6 +87,7 @@ export default function WorkspaceLayout({ children }) {
   //    membership that still carries it lands on the client portal instead of here.
   const isClientOnly = orgRole === 'client';
   if (isClientOnly) {
+    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL;
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-canvas p-8 text-center">
         <div className="w-[64px] h-[64px] bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
@@ -100,10 +97,14 @@ export default function WorkspaceLayout({ children }) {
         <p className="text-[14px] text-muted max-w-[320px] mb-8">
           Ви намагаєтесь увійти у внутрішній простір команди. Щоб керувати своїми проєктами, перейдіть на клієнтський портал.
         </p>
-        <a href={process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app'}
-           className="bg-ink text-white px-6 py-3 rounded-[12px] font-bold text-[14px] hover:bg-ink-hover transition-colors">
-          Перейти на клієнтський портал
-        </a>
+        {portalUrl ? (
+          <a href={portalUrl}
+             className="bg-ink text-white px-6 py-3 rounded-[12px] font-bold text-[14px] hover:bg-ink-hover transition-colors">
+            Перейти на клієнтський портал
+          </a>
+        ) : (
+          <p className="text-[13px] text-red-600">URL клієнтського порталу не налаштовано. Зверніться до адміністратора.</p>
+        )}
       </div>
     );
   }

@@ -1,27 +1,5 @@
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin securely
-if (!admin.apps.length) {
-  try {
-    const config = {
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quickteam-me',
-    };
-    
-    // Add credentials if available (required for Vercel and local development)
-    if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      config.credential = admin.credential.cert({
-        projectId: config.projectId,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      });
-    }
-    
-    admin.initializeApp(config);
-  } catch (error) {
-    console.error('Firebase admin initialization error', error);
-  }
-}
+import { enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 
 export async function GET(req) {
   try {
@@ -38,7 +16,7 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Missing required query parameter: organizationId' }, { status: 400 });
     }
 
-    const db = admin.firestore();
+    const db = getAdminDb();
 
     // 1. Verify organization exists and validate API Key
     const orgRef = db.collection('organizations').doc(organizationId);
@@ -49,13 +27,16 @@ export async function GET(req) {
     }
 
     const orgData = orgSnap.data();
-    const apiKeys = orgData.apiKeys || [];
+    const apiKeys = await getOrganizationApiKeys(organizationId, orgData);
     
     // Check if the provided apiKey exists in the organization's valid apiKeys
-    const isValidKey = apiKeys.some(key => key.token === apiKey && key.active !== false);
+    const validApiKey = isValidApiKey(apiKeys, apiKey);
 
-    if (!isValidKey) {
+    if (!validApiKey) {
       return NextResponse.json({ error: 'Unauthorized. Invalid or revoked API Key for this organization.' }, { status: 401 });
+    }
+    if (!(await enforceRateLimit('integration-projects', `${organizationId}:${hashApiKey(apiKey)}`, 300, 60))) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     // 2. Fetch active projects for this organization

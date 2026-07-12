@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/chat/page.js — Rebuilt from scratch
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
   Trash2, X, Pin, ChevronDown, Info, Users, UserPlus, ArrowLeft
@@ -871,6 +871,11 @@ export default function ChatPage() {
   const [unreadBadge, setUnreadBadge] = useState(0);
   const [lastMsgCount, setLastMsgCount] = useState(0);
   const [showChannelInfo, setShowChannelInfo] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const myUid = currentUser?.uid || currentUser?.id;
   const myMemberInfo = members.find(m => (m.id || m.uid) === myUid);
@@ -899,17 +904,21 @@ export default function ChatPage() {
 
   // Presence
   useEffect(() => {
-    if (!members.length) return;
-    const uids = members.map(m => m.id || m.uid).filter(Boolean).slice(0, 30);
-    if (!uids.length) return;
-    const q = query(collection(db, 'users'), where('__name__', 'in', uids));
+    if (!activeOrgId) return;
+    const q = query(collection(db, 'organizations', activeOrgId, 'presence'));
     const unsub = onSnapshot(q, snap => {
       const map = {};
-      snap.forEach(d => { map[d.id] = d.data().lastActive; });
-      setPresenceMap(prev => ({ ...prev, ...map }));
+      snap.forEach(d => {
+        const presence = d.data();
+        const lastSeen = presence.lastSeen?.toMillis?.() ?? 0;
+        map[d.id] = presence.online && lastSeen ? lastSeen : 0;
+      });
+      setPresenceMap(map);
+    }, err => {
+      console.error('[ChatPage] presence error:', err);
     });
     return () => unsub();
-  }, [members]);
+  }, [activeOrgId]);
 
   // Scroll handling
   useEffect(() => {
@@ -930,17 +939,19 @@ export default function ChatPage() {
     if (!isScrolledUp) {
       messagesEndRef.current?.scrollIntoView({ behavior: count <= 1 ? 'instant' : 'smooth' });
     } else if (count > lastMsgCount && lastMsgCount > 0) {
-      setUnreadBadge(v => v + (count - lastMsgCount));
+      queueMicrotask(() => setUnreadBadge(v => v + (count - lastMsgCount)));
     }
-    setLastMsgCount(count);
+    queueMicrotask(() => setLastMsgCount(count));
   }, [messages.length]); // eslint-disable-line
 
   // Mark as read + scroll to bottom when switching channel
   useEffect(() => {
     markAsRead(getRoomId());
-    setIsScrolledUp(false);
-    setUnreadBadge(0);
-    setLastMsgCount(0);
+    queueMicrotask(() => {
+      setIsScrolledUp(false);
+      setUnreadBadge(0);
+      setLastMsgCount(0);
+    });
     // Force scroll to bottom on channel switch
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
@@ -948,18 +959,19 @@ export default function ChatPage() {
   }, [activeChannel.id, activeChannel.type]); // eslint-disable-line
 
   // DMs list
-  const activeDMSet = new Set(activeDMs);
-  if (activeChannel.type === 'dm') activeDMSet.add(activeChannel.id);
-
-  const dms = members
+  const dms = useMemo(() => {
+    const activeDMSet = new Set(activeDMs);
+    if (activeChannel.type === 'dm') activeDMSet.add(activeChannel.id);
+    return members
     .filter(m => (m.uid || m.id) !== myUid)
     .map(m => {
       const id = m.uid || m.id;
-      const lastActive = presenceMap[id] || m.lastActive;
+      const hasPresence = Object.prototype.hasOwnProperty.call(presenceMap, id);
+      const lastActive = hasPresence ? presenceMap[id] : m.lastActive;
       return {
         id,
         name: m.name || m.email,
-        online: lastActive && (Date.now() - new Date(lastActive).getTime() < 120000),
+        online: lastActive && (now - new Date(lastActive).getTime() < 120000),
         avatar: m.avatar,
         isActive: activeDMSet.has(id),
         statusEmoji: m.statusEmoji
@@ -970,18 +982,19 @@ export default function ChatPage() {
       if (a.isActive !== b.isActive) return b.isActive ? 1 : -1;
       return (a.name || '').localeCompare(b.name || '');
     });
+  }, [activeDMs, activeChannel.id, activeChannel.type, members, myUid, now, presenceMap]);
 
   const isActive = (id) => activeChannel.id === id;
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
   const currentChannel = channels.find(c => c.id === activeChannel.id);
 
   // Sync online users to global header
-  useEffect(() => {
-    const onlineUsersForHeader = dms
+  const onlineUsersForHeader = useMemo(() => dms
       .filter(u => u.online)
-      .map(u => ({ name: u.name, avatar: u.avatar }));
+      .map(u => ({ name: u.name, avatar: u.avatar })), [dms]);
+  useEffect(() => {
     setChatOnlineUsers(onlineUsersForHeader);
-  }, [JSON.stringify(dms.filter(u => u.online).map(u => u.id)), setChatOnlineUsers]);
+  }, [onlineUsersForHeader, setChatOnlineUsers]);
 
   const handlePin = async (msgId, pin) => {
     if (!activeOrgId || !getRoomId()) return;

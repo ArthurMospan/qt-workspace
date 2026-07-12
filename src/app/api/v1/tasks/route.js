@@ -1,27 +1,6 @@
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin securely
-if (!admin.apps.length) {
-  try {
-    const config = {
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quickteam-me',
-    };
-    
-    // Add credentials if available (required for Vercel and local development)
-    if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      config.credential = admin.credential.cert({
-        projectId: config.projectId,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      });
-    }
-    
-    admin.initializeApp(config);
-  } catch (error) {
-    console.error('Firebase admin initialization error', error);
-  }
-}
+import { randomUUID } from 'node:crypto';
+import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 
 export async function POST(req) {
   try {
@@ -34,11 +13,11 @@ export async function POST(req) {
     const body = await req.json();
     const { title, description, attachments, organizationId, projectId, metadata, reporter, priority } = body;
 
-    if (!title || !organizationId) {
+    if (!title || !organizationId || title.trim().length > 240) {
       return NextResponse.json({ error: 'Missing required fields: title, organizationId' }, { status: 400 });
     }
 
-    const db = admin.firestore();
+    const db = getAdminDb();
 
     // 1. Verify organization exists and validate API Key
     const orgRef = db.collection('organizations').doc(organizationId);
@@ -49,32 +28,63 @@ export async function POST(req) {
     }
 
     const orgData = orgSnap.data();
-    const apiKeys = orgData.apiKeys || [];
+    const apiKeys = await getOrganizationApiKeys(organizationId, orgData);
     
     // Check if the provided apiKey exists in the organization's valid apiKeys
-    const isValidKey = apiKeys.some(key => key.token === apiKey && key.active !== false);
+    const validApiKey = isValidApiKey(apiKeys, apiKey);
 
-    if (!isValidKey) {
+    if (!validApiKey) {
       return NextResponse.json({ error: 'Unauthorized. Invalid or revoked API Key for this organization.' }, { status: 401 });
+    }
+    if (!(await enforceRateLimit('integration-task', `${organizationId}:${hashApiKey(apiKey)}`, 120, 60))) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
+    if (projectId) {
+      const projectSnap = await db.collection('projects').doc(projectId).get();
+      if (!projectSnap.exists || projectSnap.data().organizationId !== organizationId) {
+        return NextResponse.json({ error: 'Project does not belong to this organization' }, { status: 400 });
+      }
+    }
+
+    const safeAttachments = (Array.isArray(attachments) ? attachments : []).slice(0, 10).flatMap(attachment => {
+      if (!attachment || typeof attachment !== 'object') return [];
+      try {
+        const url = new URL(attachment.url);
+        if (url.protocol !== 'https:') return [];
+        return [{
+          name: String(attachment.name || 'Attachment').slice(0, 180),
+          url: url.toString(),
+          type: String(attachment.type || '').slice(0, 100),
+          size: Number.isFinite(attachment.size) ? Math.max(0, attachment.size) : null,
+        }];
+      } catch {
+        return [];
+      }
+    });
+    let safeMetadata = {};
+    if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+      const serializedMetadata = JSON.stringify(metadata);
+      if (serializedMetadata.length <= 20_000) safeMetadata = JSON.parse(serializedMetadata);
     }
 
     // 2. Prepare task payload
     const payload = {
-      issueKey: `BUG-${Date.now().toString().slice(-6)}`,
+      issueKey: `EXT-${randomUUID().slice(0, 8).toUpperCase()}`,
       title: title.trim(),
-      description: description ? description.trim() : '',
+      description: description ? String(description).trim().slice(0, 50_000) : '',
       status: 'backlog', 
       columnId: 'backlog',
       priority: priority || 'high',
       type: 'bug',
       organizationId,
       projectId: projectId || null, 
-      attachments: attachments || [],
-      metadata: metadata || {},
+      attachments: safeAttachments,
+      metadata: safeMetadata,
       source: 'buggybag',
       order: 0,
       assigneeIds: [],
-      reporterName: reporter || 'Buggy Bag Integration',
+      reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };

@@ -117,7 +117,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       queueMicrotask(() => setMessages([]));
       return;
     }
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     const messagesRef = collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => {
@@ -211,7 +211,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       // Ensure channel exists and update metadata
       await setDoc(channelRef, {
         name: channelType === 'channel' ? channelId : 'DM',
-        type: channelType,
+        type: channelType === 'channel' ? 'public' : 'dm',
         lastMessageAt: serverTimestamp(),
         lastMessageText: text.trim().slice(0, 80),
         lastMessageSender: currentUser.name || 'Користувач'

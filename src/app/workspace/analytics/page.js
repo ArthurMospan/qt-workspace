@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
-import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
@@ -45,10 +45,14 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const firstStatusId = statuses?.[0]?.id;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stats = useMemo(() => {
     if (!issues.length && !loading) return null;
-    const now = Date.now();
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
@@ -63,7 +67,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
 
     const recentDone = issues.filter(i => {
       if (!doneSet.has(i.columnId)) return false;
-      const t = i.updatedAt?.toMillis?.() ?? 0;
+      const t = getCompletedAtMillis(i);
       return t > periodAgo;
     }).length;
 
@@ -96,7 +100,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
       byProject, byStatus, maxStatus, noAssignee, unestimated,
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
-  }, [issues, timeLogs, projects, period, loading, statuses, doneSet, firstStatusId]);
+  }, [issues, timeLogs, projects, period, loading, statuses, doneSet, firstStatusId, now]);
 
   if (loading) {
     return (
@@ -208,7 +212,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
               </div>
               {stats.overdue.slice(0, 6).map(issue => {
                 const due  = issue.dueDate?.toDate ? issue.dueDate.toDate() : new Date(issue.dueDate);
-                const days = Math.floor((Date.now() - due.getTime()) / 86400000);
+                const days = Math.floor((now - due.getTime()) / 86400000);
                 const proj = projects.find(p => p.id === issue.projectId);
                 return (
                   <div key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] last:border-0">
@@ -310,9 +314,9 @@ export default function WorkspaceAnalyticsPage() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const member = searchParams.get('member');
-      if (member) setAssigneeFilter(member);
+      if (member) queueMicrotask(() => setAssigneeFilter(member));
       const tab = searchParams.get('tab');
-      if (tab) setActiveTab(tab);
+      if (tab) queueMicrotask(() => setActiveTab(tab));
     }
   }, []);
 
@@ -367,7 +371,7 @@ export default function WorkspaceAnalyticsPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 h-full">
+      <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 min-h-full pb-[120px]">
 
         <PageHeader
           variant="main"

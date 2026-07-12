@@ -51,7 +51,7 @@ export function useProjectAllTimeLogs(projectId) {
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();
-  }, [projectId, activeOrgId]); // eslint-disable-line
+  }, [projectId, activeOrgId]);
 
   return {
     logs,

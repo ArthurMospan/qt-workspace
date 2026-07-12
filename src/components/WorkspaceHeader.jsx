@@ -415,8 +415,10 @@ export default function WorkspaceHeader() {
 
   // Reset project search when leaving project page
   useEffect(() => {
-    setProjectSearch(false);
-    setProjectQuery('');
+    queueMicrotask(() => {
+      setProjectSearch(false);
+      setProjectQuery('');
+    });
   }, [pathname]);
 
   return (

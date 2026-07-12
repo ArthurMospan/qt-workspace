@@ -53,7 +53,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
   const { logs: auditLogs }            = useAuditLog(activeIssue?.id);
 
   useEffect(() => {
-    setActiveIssue(prev => prev ? issues.find(i => i.id === prev.id) ?? prev : null);
+    queueMicrotask(() => setActiveIssue(prev => prev ? issues.find(i => i.id === prev.id) ?? prev : null));
   }, [issues]);
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
@@ -129,24 +129,24 @@ export default function BacklogTab({ projectId, project, currentUser }) {
   const activeOrPlannedSprints = sprints.filter(s => s.status === 'active' || s.status === 'planned');
   const backlogIssues = filtered.filter(i => !i.sprintId);
 
-  const TableHeaderItem = ({ label, tableKey }) => (
+  const renderTableHeaderItem = (label, tableKey) => (
     <th onClick={() => toggleSort(tableKey)} className="text-left text-[10px] font-bold text-muted uppercase tracking-wide px-4 py-3 cursor-pointer hover:text-ink transition-colors select-none">
       {label}<SortIcon k={tableKey} sortKey={sortKey} sortDir={sortDir} />
     </th>
   );
 
-  const IssueTable = ({ issueList, droppableId }) => (
+  const renderIssueTable = (issueList, droppableId) => (
     <div className="overflow-x-auto">
       <table className="w-full relative border-separate border-spacing-y-2 px-4 pb-4 bg-transparent">
         <thead className="bg-transparent">
           <tr>
-            <TableHeaderItem label="ID" tableKey="issueKey" />
-            <TableHeaderItem label="Назва" tableKey="title" />
-            <TableHeaderItem label="Тип" tableKey="type" />
-            <TableHeaderItem label="Статус" tableKey="columnId" />
-            <TableHeaderItem label="Пріоритет" tableKey="priority" />
+            {renderTableHeaderItem('ID', 'issueKey')}
+            {renderTableHeaderItem('Назва', 'title')}
+            {renderTableHeaderItem('Тип', 'type')}
+            {renderTableHeaderItem('Статус', 'columnId')}
+            {renderTableHeaderItem('Пріоритет', 'priority')}
             <th className="text-left text-[10px] font-bold text-muted uppercase tracking-wide px-4 py-3">Виконавці</th>
-            <TableHeaderItem label="Час" tableKey="spentMinutes" />
+            {renderTableHeaderItem('Час', 'spentMinutes')}
           </tr>
         </thead>
         <Droppable droppableId={droppableId} type="issue">
@@ -321,7 +321,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                       )}
                     </div>
                   </div>
-                  <IssueTable issueList={sprintIssues} droppableId={`sprint-${sprint.id}`} />
+                  {renderIssueTable(sprintIssues, `sprint-${sprint.id}`)}
                 </div>
               );
             })}
@@ -332,7 +332,7 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                 <h3 className="text-[14px] font-bold text-ink">Backlog</h3>
                 <span className="text-[11px] text-muted">{backlogIssues.length} завдань</span>
               </div>
-              <IssueTable issueList={backlogIssues} droppableId="backlog" />
+              {renderIssueTable(backlogIssues, 'backlog')}
             </div>
           </div>
         )}

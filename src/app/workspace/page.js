@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, updateDoc, addDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where, onSnapshot, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, updateDoc, collection, serverTimestamp, getCountFromServer, query, where, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
@@ -26,8 +26,8 @@ import TaskCard from '@/components/ui/TaskManagement/TaskCard';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
-
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
+import { createIssueViaApi } from '@/lib/services/issues';
+import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 
 // ── Edit Project Modal ───────────────────────────────────────────────────────
 function EditProjectModal({ project, onClose }) {
@@ -185,6 +185,11 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
 
@@ -298,7 +303,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
                     message: `Ви видаляєте «${project.name}». Цю дію неможливо скасувати.`,
                     confirmText: 'Видалити', danger: true,
                   })) {
-                    await deleteDoc(doc(db, 'projects', project.id));
+                    await deleteProject(project.id);
                   }
                 } },
               ]}
@@ -342,6 +347,11 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 // Helper Component for Real-time project statistics and details
 function ProjectStatsSection({ project, isLarge, members }) {
   const [stats, setStats] = useState({ total: 0, inProgress: 0, comments: 0, lastAction: null });
+  const { statuses, doneStatusIds } = useWorkflowConfig();
+  const inProgressStatusIds = useMemo(
+    () => statuses.slice(1).filter(status => !doneStatusIds.includes(status.id)).map(status => status.id),
+    [statuses, doneStatusIds],
+  );
 
   useEffect(() => {
     if (!project?.id || !project?.organizationId) return;
@@ -360,11 +370,8 @@ function ProjectStatsSection({ project, isLarge, members }) {
       const issueDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       totalCount = issueDocs.length;
 
-      // In-progress columns are columns that are not 'done', 'todo', or 'backlog'
-      const inProgressColumns = ['in-progress', 'code-review', 'qa', 'client-approval'];
-      
       for (const issue of issueDocs) {
-        if (inProgressColumns.includes(issue.columnId || issue.status)) {
+        if (inProgressStatusIds.includes(issue.columnId || issue.status)) {
           inProgressCount++;
         }
 
@@ -375,18 +382,20 @@ function ProjectStatsSection({ project, isLarge, members }) {
         }
       }
 
-      // Query subcollection comment counts in parallel for all issues in this project
-      const commentCountPromises = issueDocs.map(async (issue) => {
+      const countedComments = issueDocs.reduce(
+        (sum, issue) => sum + (typeof issue.commentCount === 'number' ? issue.commentCount : 0),
+        0,
+      );
+      const legacyIssues = issueDocs.filter(issue => typeof issue.commentCount !== 'number');
+      const legacyCounts = await Promise.all(legacyIssues.map(async issue => {
         try {
-          const commentsSnap = await getDocs(collection(db, 'issues', issue.id, 'comments'));
-          return commentsSnap.size;
-        } catch (e) {
+          const aggregate = await getCountFromServer(collection(db, 'issues', issue.id, 'comments'));
+          return aggregate.data().count;
+        } catch {
           return 0;
         }
-      });
-
-      const commentCounts = await Promise.all(commentCountPromises);
-      commentsCount = commentCounts.reduce((sum, c) => sum + c, 0);
+      }));
+      commentsCount = countedComments + legacyCounts.reduce((sum, count) => sum + count, 0);
 
       let lastActionStr = null;
       if (newestIssue) {
@@ -430,12 +439,12 @@ function ProjectStatsSection({ project, isLarge, members }) {
     });
 
     return () => unsubscribe();
-  }, [project.id, members]);
+  }, [project.id, project.organizationId, members, inProgressStatusIds]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
     const d = ts?.toDate ? ts.toDate() : new Date(ts);
-    const diff = Date.now() - d.getTime();
+    const diff = now - d.getTime();
     if (diff < 60000) return 'щойно';
     if (diff < 3600000) return `${Math.floor(diff / 60000)} хв тому`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
@@ -501,7 +510,7 @@ function ProjectStatsSection({ project, isLarge, members }) {
 }
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount }) {
+function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
@@ -522,31 +531,21 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
         description: description.trim(),
         visibility,
         organizationId: orgId,
-        team: [userId],
-        status: 'active',
-        stagesCount: 4,
-        issueCounter: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdBy: userId,
       };
-      
-      const docRef = await addDoc(collection(db, 'projects'), payload);
-      
-      // Create default stages
-      const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
-      const batch = writeBatch(db);
-      for (let i = 0; i < stageNames.length; i++) {
-        const stageRef = doc(collection(db, 'stages'));
-        batch.set(stageRef, {
-          label: `${String(i + 1).padStart(2, '0')}. ${stageNames[i]}`,
-          status: i === 0 ? 'in-progress' : 'todo',
-          projectId: docRef.id,
-          order: i,
-          createdAt: serverTimestamp(),
-        });
-      }
-      await batch.commit();
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Сесія завершилась. Увійдіть знову.');
+
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Не вдалося створити проєкт');
 
       onClose();
     } catch (err) {
@@ -624,7 +623,7 @@ function NewProjectModal({ onClose, orgId, userId, orgPlan, activeProjectsCount 
 }
 
 export default function WorkspacePage() {
-  const { projects, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
+  const { projects, projectsLoading, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members } = useOrganization();
   const { labels, doneStatusIds } = useWorkflowConfig();
@@ -642,14 +641,19 @@ export default function WorkspacePage() {
   const [selectedMember, setSelectedMember] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [sortOption, setSortOption] = useState('updated');
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Auto-open modal when navigated with ?new=1
   useEffect(() => {
     if (searchParams?.get('new') === '1') {
-      setShowNewProject(true);
+      queueMicrotask(() => setShowNewProject(true));
       router.replace('/workspace', { scroll: false });
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   // Real-time listener for all issues in this organization
   useEffect(() => {
@@ -697,7 +701,6 @@ export default function WorkspacePage() {
 
     // Date Filter (Created range)
     if (dateFilter !== 'all') {
-      const now = Date.now();
       const limit = dateFilter === '7days' ? 7 * 86400000 : 30 * 86400000;
       list = list.filter(p => {
         const time = p.createdAt?.toMillis?.() || p.createdAt?.seconds * 1000 || (p.createdAt instanceof Date ? p.createdAt.getTime() : 0);
@@ -721,7 +724,7 @@ export default function WorkspacePage() {
       const bTime = b.updatedAt?.toMillis?.() || b.updatedAt?.seconds * 1000 || (b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0);
       return bTime - aTime;
     });
-  }, [projects, searchQuery, selectedMember, dateFilter, sortOption, progressByProject]);
+  }, [projects, searchQuery, selectedMember, dateFilter, sortOption, progressByProject, now]);
 
   // Sliced recent issues list (limit to 6)
   const recentIssues = useMemo(() => {
@@ -735,7 +738,7 @@ export default function WorkspacePage() {
 
   const archive = async (id) => {
     try {
-      await updateDoc(doc(db, 'projects', id), { status: 'archived' });
+      await archiveProject(id);
       showToast('Проєкт архівовано', 'success', {
         duration: 5000,
         action: {
@@ -750,7 +753,7 @@ export default function WorkspacePage() {
 
   const unarchive = async (id) => {
     try {
-      await updateDoc(doc(db, 'projects', id), { status: 'active' });
+      await restoreProject(id);
       showToast('Проєкт розархівовано');
     } catch (err) {
       showToast('Помилка розархівування', 'error');
@@ -848,7 +851,24 @@ export default function WorkspacePage() {
 
         {/* Projects Panel */}
         <div className="w-full flex-1 flex flex-col">
-          {filteredProjects.length === 0 ? (
+          {projectsLoading ? (
+            // Skeleton cards — shown while projects load to prevent empty state flash
+            <Surface variant="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="rounded-[16px] border border-line bg-canvas p-[20px] flex flex-col gap-[12px] animate-pulse">
+                    <div className="h-[18px] w-2/3 bg-line rounded-[6px]" />
+                    <div className="h-[12px] w-full bg-line rounded-[6px]" />
+                    <div className="h-[12px] w-4/5 bg-line rounded-[6px]" />
+                    <div className="mt-auto flex gap-2">
+                      <div className="h-[24px] w-[24px] rounded-full bg-line" />
+                      <div className="h-[24px] w-[24px] rounded-full bg-line" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Surface>
+          ) : filteredProjects.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
               <EmptyState
                 icon={Folder}
@@ -882,7 +902,6 @@ export default function WorkspacePage() {
       <NewProjectModal
         onClose={() => setShowNewProject(false)}
         orgId={activeOrgId}
-        userId={currentUser?.id || currentUser?.uid}
         orgPlan={activeOrg?.plan}
         activeProjectsCount={stats.total}
       />
@@ -896,53 +915,21 @@ export default function WorkspacePage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          const { addDoc, collection, serverTimestamp, doc, runTransaction } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase');
-          
-          const tempKey = `WS-${Date.now()}`;
-          const newIssueRef = await addDoc(collection(db, 'issues'), {
-            issueKey: tempKey,
+          await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
-            title: formData.title,
-            description: formData.description || '',
-            columnId: formData.status || 'todo',
-            status: formData.status || 'todo',
-            priority: formData.priority || 'medium',
-            type: formData.type || 'task',
-            assigneeIds: formData.assignees || [],
-            labelIds: formData.labelIds || [],
-            dueDate: formData.dueDate || null,
-            sprintId: formData.sprintId || null,
-            createdAt: serverTimestamp(),
-            createdBy: currentUser?.id || currentUser?.uid
+            data: {
+              title: formData.title,
+              description: formData.description || '',
+              status: formData.status || 'todo',
+              priority: formData.priority || 'medium',
+              type: formData.type || 'task',
+              assigneeIds: formData.assignees || [],
+              labelIds: formData.labelIds || [],
+              dueDate: formData.dueDate || null,
+              sprintId: formData.sprintId || null,
+            },
           });
-
-          // Run transaction to increment project sequential counter and update sequential task key
-          const projectRef = doc(db, 'projects', formData.projectId);
-          runTransaction(db, async tx => {
-            const projectSnap = await tx.get(projectRef);
-            if (!projectSnap.exists()) return;
-            const projectData = projectSnap.data();
-            const current = projectData.issueCounter ?? 0;
-            const next = current + 1;
-            
-            const pName = projectData.name || 'WS';
-            const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-            let prefix = cleanProj.slice(0, 3).toUpperCase();
-            if (prefix.length < 2) {
-              prefix = pName.slice(0, 2).toUpperCase();
-            }
-            if (!prefix) prefix = 'WS';
-
-            tx.update(projectRef, {
-              issueCounter: next,
-              updatedAt: serverTimestamp()
-            });
-            tx.update(doc(db, 'issues', newIssueRef.id), {
-              issueKey: `${prefix}-${next}`
-            });
-          }).catch(err => console.warn('[workspaceProjects] issueCounter update failed:', err));
         }}
         projects={projects}
         stages={[]}

@@ -2,11 +2,12 @@
 
 // src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { createIssueViaApi } from '@/lib/services/issues';
 
 // Human labels for default workflow columns (used in status_changed notifications)
 const COLUMN_LABELS = {
@@ -81,6 +82,8 @@ export function useIssues(projectId) {
     const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
     const unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
       setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error('[useIssues] links error:', err);
     });
 
     return () => { unsub(); unsubLinks(); };
@@ -94,70 +97,18 @@ export function useIssues(projectId) {
       userId,
       userName
     } = actorUser;
-    const orgId = activeOrgId || 'unknown';
-    const colId = data.columnId || data.status || 'backlog';
-    const orderVal = issues.filter(i => i.columnId === colId).length;
-
-    // Step 1: Generate a temp optimistic key and create the doc IMMEDIATELY
-    const tempKey = `WS-${Date.now()}`;
-    const newIssueRef = await addDoc(collection(db, 'issues'), {
-      issueKey: tempKey,
-      projectId,
+    const orgId = activeOrgId;
+    if (!orgId || !projectId) throw new Error('Organization and project are required');
+    const result = await createIssueViaApi({
       organizationId: orgId,
-      title: data.title || '',
-      description: data.description || '',
-      type: data.type || 'task',
-      columnId: colId,
-      status: colId,
-      priority: data.priority || 'medium',
-      assigneeIds: data.assigneeIds || (userId ? [userId] : []),
-      reporterId: data.reporterId || userId || null,
-      order: orderVal,
-      estimateMinutes: data.estimateMinutes ?? null,
-      dueDate: data.dueDate || null,
-      linkedClientMaterialId: data.linkedClientMaterialId || null,
-      clientVisibility: data.clientVisibility ?? false,
-      subtasks: data.subtasks || [],
-      sprintId: data.sprintId || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      projectId,
+      data: {
+        ...data,
+        status: data.columnId || data.status || 'backlog',
+        assigneeIds: data.assigneeIds || (userId ? [userId] : []),
+        reporterId: data.reporterId || userId || null,
+      },
     });
-
-    // Step 2: Get real key via transaction — runs ASYNC, updates key in background
-    const projectRef = doc(db, 'projects', projectId);
-    runTransaction(db, async tx => {
-      const projectSnap = await tx.get(projectRef);
-      if (!projectSnap.exists()) return;
-      const projectData = projectSnap.data();
-      const current = projectData.issueCounter ?? 0;
-      const next = current + 1;
-      
-      // Calculate project prefix dynamically: first 3 letters of name, capitalized, e.g. "QT" or "PRO"
-      const pName = projectData.name || 'WS';
-      const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-      let prefix = cleanProj.slice(0, 3).toUpperCase();
-      if (prefix.length < 2) {
-        prefix = pName.slice(0, 2).toUpperCase();
-      }
-      if (!prefix) prefix = 'WS';
-
-      tx.update(projectRef, {
-        issueCounter: next,
-        updatedAt: serverTimestamp()
-      });
-      tx.update(doc(db, 'issues', newIssueRef.id), {
-        issueKey: `${prefix}-${next}`
-      });
-    }).catch(err => console.warn('[useIssues] issueCounter update failed (key stays temp):', err));
-
-    // Step 3: Audit log — fire and forget
-    writeAudit(newIssueRef.id, {
-      userId,
-      userName,
-      action: 'created',
-      from: null,
-      to: tempKey
-    }).catch(() => {});
 
     // Step 4: Notify assignees who didn't create the task themselves
     const notifyIds = (data.assigneeIds || []).filter(uid => uid && uid !== userId);
@@ -167,17 +118,17 @@ export function useIssues(projectId) {
         type: 'assigned',
         title: `${userName || 'Колега'} призначив вам нове завдання`,
         body: data.title || '',
-        link: `/workspace/${projectId}/issue/${newIssueRef.id}`,
-        issueId: newIssueRef.id,
+        link: `/workspace/${projectId}/issue/${result.id}`,
+        issueId: result.id,
         projectId,
         actor: { id: userId || '', name: userName || '' }
       }).catch(() => {});
     }
     return {
-      id: newIssueRef.id,
-      issueKey: tempKey
+      id: result.id,
+      issueKey: result.issueKey
     };
-  }, [projectId, issues, activeOrgId]);
+  }, [projectId, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // updateIssue — updateDoc + conditional audit for key field changes
@@ -221,11 +172,15 @@ export function useIssues(projectId) {
   // deleteIssue
   // -------------------------------------------------------------------------
   const deleteIssue = useCallback(async issueId => {
-    await deleteDoc(doc(db, 'issues', issueId));
-    await updateDoc(doc(db, 'projects', projectId), {
-      updatedAt: serverTimestamp()
-    }).catch(() => {});
-  }, [projectId]);
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Authentication required');
+    const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Не вдалося видалити задачу');
+  }, []);
 
   // -------------------------------------------------------------------------
   // moveIssue — batch reorder + columnId/status update + audit
@@ -267,13 +222,18 @@ export function useIssues(projectId) {
     });
 
     // Update the moved issue itself
-    batch.update(doc(db, 'issues', issueId), {
+    const movedIssueUpdates = {
       columnId: newColumnId,
       status: newColumnId,
       order: Math.max(0, newOrder),
       subtasks: issue.subtasks || [],
       updatedAt: serverTimestamp()
-    });
+    };
+    const wasDone = doneStatusIds.includes(oldColumnId);
+    const willBeDone = doneStatusIds.includes(newColumnId);
+    if (willBeDone && !wasDone) movedIssueUpdates.completedAt = serverTimestamp();
+    if (!willBeDone && wasDone) movedIssueUpdates.completedAt = deleteField();
+    batch.update(doc(db, 'issues', issueId), movedIssueUpdates);
 
     // Touch parent project in the same batch
     batch.update(doc(db, 'projects', projectId), {

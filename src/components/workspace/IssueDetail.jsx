@@ -46,7 +46,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 
 // Statuses are now loaded dynamically via useWorkflowConfig.
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -301,8 +301,10 @@ function MediaViewer({ mat, onClose }) {
           <div className="text-white text-center">
             <FileText size={48} className="mx-auto mb-3 text-white/40" />
             <p>Превʼю недоступне</p>
-            <a href={PORTAL_URL} target="_blank" rel="noopener"
-              className="text-[#6366f1] hover:underline text-[13px] mt-2 inline-block">Відкрити в порталі →</a>
+            {PORTAL_URL && (
+              <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer"
+                className="text-[#6366f1] hover:underline text-[13px] mt-2 inline-block">Відкрити в порталі →</a>
+            )}
           </div>
         )}
       </div>
@@ -342,6 +344,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
+  const isArchived = project?.status === 'archived';
 
   const { stages }   = useStagesForProject(projectId);
   const { messages } = usePortalChat(projectId);
@@ -418,7 +421,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   useEffect(() => {
     const logTimeParam = searchParams.get('logTime');
     if (logTimeParam) {
-      setLogForm({ minutes: parseInt(logTimeParam), desc: '' });
+      queueMicrotask(() => setLogForm({ minutes: parseInt(logTimeParam), desc: '' }));
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams, pathname, router]);
@@ -434,7 +437,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       ]
     });
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
-  }, [project?.name, issue?.issueKey, projectId, isModal]); // eslint-disable-line
+  }, [project?.name, issue?.issueKey, projectId, isModal]);
 
   useEffect(() => {
     const fn = (e) => {
@@ -851,6 +854,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 <Button style="primary" size="md" icon={Check} onClick={saveEdit}>Зберегти</Button>
               </>
             ) : (
+              !isArchived && (
               <div className="relative" ref={actionsDropdownRef}>
                 <Button 
                   style="secondary" 
@@ -885,6 +889,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
                 )}
               </div>
+              )
             )}
             {isModal && onClose && (
               <button onClick={onClose} className="p-[9px] ml-2 text-muted hover:text-ink transition-all" title="Закрити">
@@ -900,15 +905,15 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               primaryChildren={
                 <>
                   {/* Status */}
-                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Статус</span>
-                    <Select value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
+                    <Select disabled={isArchived} value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Assignee */}
-                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Виконавець</span>
-                    <Select value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
+                    <Select disabled={isArchived} value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
                   {/* Watchers */}
@@ -917,6 +922,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <div className="flex items-center gap-2 h-[22px]">
                       <button
                         onClick={toggleWatch}
+                        disabled={isArchived}
                         className={`flex items-center gap-1 text-[12px] font-bold rounded-[8px] px-2 h-[22px] transition-colors ${
                           isWatching ? 'bg-[#eef2ff] text-[#4f46e5]' : 'text-muted hover:text-ink hover:bg-[#ebebeb]'
                         }`}
@@ -935,9 +941,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Sprint */}
-                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Спринт</span>
                     <Select 
+                      disabled={isArchived}
                       value={issue.sprintId || ''} 
                       onChange={val => update({ sprintId: val || null })} 
                       options={[
@@ -949,9 +956,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Priority */}
-                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Пріоритет</span>
                     <Select
+                      disabled={isArchived}
                       value={draft.priority || issue.priority || ''}
                       onChange={val => {
                         update({ priority: val });
@@ -963,9 +971,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Type */}
-                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+                  <div className="flex-1 min-w-[100px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Тип</span>
                     <Select
+                      disabled={isArchived}
                       value={draft.type || issue.type || ''}
                       onChange={val => {
                         update({ type: val });
@@ -980,6 +989,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors">
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Дедлайн</span>
                     <DatePicker 
+                      disabled={isArchived}
                       hideIcon 
                       inputClassName={`bg-transparent p-0 m-0 h-[22px] w-full text-[13px] font-medium outline-none cursor-pointer ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
@@ -995,6 +1005,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <div 
                     className="flex-1 min-w-[150px] flex flex-col gap-[4px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors"
                     onClick={(e) => {
+                      if (isArchived) return;
                       if (e.target.closest('button')) return;
                       setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
                       setLogTab('spend');
@@ -1002,7 +1013,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   >
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Трекінг часу</span>
                     <div className="flex items-center gap-2 h-[22px]">
-                      <button onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`flex items-center justify-center w-[22px] h-[22px] rounded-[6px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}>
+                      <button disabled={isArchived} onClick={handleTimerToggle} title={isTimerMine ? 'Зупинити' : 'Запустити таймер'} className={`flex items-center justify-center w-[22px] h-[22px] rounded-[6px] transition-all shrink-0 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}>
                         {isTimerMine ? <StopIcon size={11} className="animate-pulse fill-current" /> : <Play size={11} className="ml-[2px]" />}
                       </button>
                       {isTimerMine ? (
@@ -1178,12 +1189,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       />
                     );
                   })}
-                  <button
-                    onClick={() => setShowLabelDropdown(v => !v)}
-                    className="flex items-center gap-1 px-[8px] py-[4px] rounded-[8px] text-[11px] font-bold bg-white text-muted border border-dashed border-faint hover:border-muted hover:text-ink transition-all"
-                  >
-                    <Plus size={10} /> Додати мітку
-                  </button>
+                  {!isArchived && (
+                    <button
+                      onClick={() => setShowLabelDropdown(v => !v)}
+                      className="flex items-center gap-1 px-[8px] py-[4px] rounded-[8px] text-[11px] font-bold bg-white text-muted border border-dashed border-faint hover:border-muted hover:text-ink transition-all"
+                    >
+                      <Plus size={10} /> Додати мітку
+                    </button>
+                  )}
 
                   {showLabelDropdown && (
                     <>
@@ -1226,7 +1239,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Підзавдання</h2>
                   {subtasksAll > 0 && <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">{subtasksDone}/{subtasksAll}</span>}
                 </div>
-                <Button style="secondary" size="sm" icon={Plus} onClick={() => setShowSubInput(v => !v)}>Додати</Button>
+                {!isArchived && <Button style="secondary" size="sm" icon={Plus} onClick={() => setShowSubInput(v => !v)}>Додати</Button>}
               </div>
               {subtasksAll > 0 && (
                 <div className="h-[4px] bg-line rounded-full mb-4 overflow-hidden">
@@ -1266,6 +1279,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     ) : (
                       <>
                         <button
+                          disabled={isArchived}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleToggleSubtask(i);
@@ -1275,16 +1289,18 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                           {s.done ? <CheckSquare size={16} className="text-[#10b981]" /> : <Square size={16} />}
                         </button>
                         <span
-                          className={`text-[13px] font-medium flex-1 cursor-pointer ${s.done ? 'line-through text-faint' : 'text-ink'}`}
+                          className={`text-[13px] font-medium flex-1 ${s.done ? 'line-through text-faint' : 'text-ink'} ${!isArchived ? 'cursor-pointer' : ''}`}
                           onClick={() => {
+                            if (isArchived) return;
                             setEditingSubtaskIndex(i);
                             setEditingSubtaskText(s.title);
                           }}
-                          title="Натисніть для редагування"
+                          title={!isArchived ? "Натисніть для редагування" : ""}
                         >
                           {s.title}
                         </span>
                         
+                        {!isArchived && (
                         <div className="flex items-center gap-1 transition-opacity">
                           <button
                             onClick={() => {
@@ -1304,6 +1320,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             <Trash2 size={12} />
                           </button>
                         </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -1337,9 +1354,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">{(issue.attachments || []).length}</span>
                     )}
                   </div>
+                  {!isArchived && (
                   <Button style="secondary" size="sm" icon={Plus} onClick={() => attachInputRef.current?.click()} disabled={uploadingAttach}>
                     {uploadingAttach ? 'Завантаження…' : 'Додати файл'}
                   </Button>
+                  )}
                 </div>
 
                 <input
@@ -1351,6 +1370,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 />
 
                 {(issue.attachments || []).length === 0 ? (
+                  isArchived ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-10 border border-dashed border-line rounded-[12px] text-faint">
+                      <Paperclip size={22} />
+                      <span className="text-[13px] font-medium">Немає вкладень</span>
+                    </div>
+                  ) : (
                   <button
                     onClick={() => attachInputRef.current?.click()}
                     className="flex flex-col items-center justify-center gap-2 py-10 border border-dashed border-line rounded-[12px] text-faint hover:text-muted hover:border-muted transition-colors"
@@ -1359,6 +1384,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <span className="text-[13px] font-medium">Прикріпіть файли до завдання</span>
                     <span className="text-[11px]">Зображення, PDF, відео та інші файли</span>
                   </button>
+                  )
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {(issue.attachments || []).map(att => {
@@ -1395,6 +1421,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                                 <ExternalLink size={13} />
                               </a>
                             )}
+                            {!isArchived && (
                             <button
                               onClick={() => handleDeleteAttachment(att.id)}
                               className="w-[26px] h-[26px] rounded-full bg-white/90 shadow flex items-center justify-center text-faint hover:text-red-500"
@@ -1402,6 +1429,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             >
                               <Trash2 size={13} />
                             </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -1423,6 +1451,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     </span>
                   )}
                 </div>
+                {!isArchived && (
                 <Button style="secondary" size="sm" icon={Plus} onClick={() => {
                   setShowLinkInput(v => !v);
                   const availableIssues = issues.filter(i => i.id !== issueId);
@@ -1430,6 +1459,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     setLinkTargetId(availableIssues[0].id);
                   }
                 }}>Додати</Button>
+                )}
               </div>
 
               <div className="flex flex-col gap-[6px]">
@@ -1454,6 +1484,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             {targetIssue.title}
                           </Link>
                         </div>
+                        {!isArchived && (
                         <button
                           onClick={async () => {
                             try {
@@ -1468,6 +1499,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         >
                           <Trash2 size={13} />
                         </button>
+                        )}
                       </div>
                     );
                   })}
@@ -1543,7 +1575,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     </span>
                   )}
                 </div>
-                <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '' })}>Списати</Button>
+                {!isArchived && <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '' })}>Списати</Button>}
               </div>
 
               <div className="flex flex-col gap-[6px]">
@@ -1581,7 +1613,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         </div>
                       </div>
                       
-                      {isLogAuthor && (
+                      {isLogAuthor && !isArchived && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center">
                           <button
                             onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '' }); setLogTab('spend'); }}
@@ -1630,7 +1662,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           {/* RIGHT SIDE — CHAT (mobile: fixed-height block under the content) */}
           <div className="lg:col-span-1 h-[65dvh] lg:h-full min-h-0">
             <div className="bg-canvas rounded-[12px] overflow-hidden flex flex-col h-full">
-              <UnifiedTimeline issueId={issueId} projectId={projectId} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' }); setLogTab('spend'); }} />
+              <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} onLogTime={() => { setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' }); setLogTab('spend'); }} />
             </div>
           </div>
 

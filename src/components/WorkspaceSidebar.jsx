@@ -19,8 +19,6 @@ import Tooltip from '@/components/ui/Navigation/Tooltip';
 
 import { can } from '@/lib/utils/can';
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
-
 export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();

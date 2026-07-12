@@ -37,11 +37,6 @@ export const PERMISSIONS = {
  */
 export function can(role, action) {
   if (role === 'owner') return true; // Owner has full access
-  if (!role) {
-    // Role not loaded yet: allow only what a plain member could do, so the UI
-    // isn't broken but we never over-grant (create:project is owner/admin only).
-    const memberActions = ['create:issue', 'edit:issue'];
-    return memberActions.includes(action);
-  }
+  if (!role) return false;
   return PERMISSIONS[action]?.includes(role) || false;
 }

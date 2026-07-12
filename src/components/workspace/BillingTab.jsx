@@ -100,7 +100,10 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
 // ── Issue row component ───────────────────────────────────────────────
 
 function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPrice, onManualPrice, currency, useManual, onUseManual }) {
-  const issueLogs = timeLogs[issue.id] || { totalMinutes: 0, byUser: {} };
+  const issueLogs = useMemo(
+    () => timeLogs[issue.id] || { totalMinutes: 0, byUser: {} },
+    [timeLogs, issue.id],
+  );
 
   // Calculate auto price: sum per-user (minutes/60 * rate)
   const autoPrice = useMemo(() => {
@@ -435,7 +438,7 @@ export default function BillingTab({ issues = [], members = [], project, project
   // Initialize checked ids on load (check all by default)
   useEffect(() => {
     if (issues.length > 0 && checkedIds.size === 0) {
-      setCheckedIds(new Set(issues.map(i => i.id)));
+      queueMicrotask(() => setCheckedIds(new Set(issues.map(i => i.id))));
     }
   }, [issues.length]); // eslint-disable-line
 
@@ -456,10 +459,12 @@ export default function BillingTab({ issues = [], members = [], project, project
           initialPresets[uid] = m.positionId;
         }
       });
-      setMemberRates(initialRates);
-      setMemberPresets(initialPresets);
+      queueMicrotask(() => {
+        setMemberRates(initialRates);
+        setMemberPresets(initialPresets);
+      });
     }
-  }, [billingMembers, positions]);
+  }, [billingMembers, positions, memberRates]);
 
   // Load saved invoices
   useEffect(() => {

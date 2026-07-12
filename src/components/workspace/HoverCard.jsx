@@ -3,36 +3,51 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, CheckSquare, Clock, Hash } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
+import { useAppContext } from '@/lib/context/AppContext';
 
 export default function HoverCard({ type, value, children, members }) {
+  const { activeOrgId } = useAppContext();
   const [show, setShow] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!show) return;
+    let cancelled = false;
     
     // For user, data is usually already in members array
     if (type === 'user') {
       const u = members.find(m => (m.name || m.email)?.replace(/\s+/g, '_') === value);
-      if (u) setData(u);
+      if (u) queueMicrotask(() => { if (!cancelled) setData(u); });
       return;
     }
 
     // For issue, fetch from firestore if not loaded
-    if (type === 'issue' && !data) {
-      setLoading(true);
-      const q = query(collection(db, 'issues'), where('issueKey', '==', value), limit(1));
+    if (type === 'issue' && activeOrgId) {
+      queueMicrotask(() => { if (!cancelled) setLoading(true); });
+      const q = query(
+        collection(db, 'issues'),
+        where('organizationId', '==', activeOrgId),
+        where('issueKey', '==', value),
+        limit(1),
+      );
       getDocs(q).then(snap => {
+        if (cancelled) return;
         if (!snap.empty) {
           setData({ id: snap.docs[0].id, ...snap.docs[0].data() });
         } else {
           setData({ notFound: true });
         }
         setLoading(false);
-      });
+      }).catch(() => { if (!cancelled) setLoading(false); });
     }
-  }, [show, type, value, data, members]);
+    return () => { cancelled = true; };
+  }, [show, type, value, members, activeOrgId]);
 
   return (
     <div 
@@ -59,8 +74,8 @@ export default function HoverCard({ type, value, children, members }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-1">
-                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (Date.now() - new Date(data.lastActive).getTime() < 120000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
-                  {data.lastActive && (Date.now() - new Date(data.lastActive).getTime() < 120000) ? 'Онлайн' : 'Не в мережі'}
+                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (now - new Date(data.lastActive).getTime() < 120000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
+                  {data.lastActive && (now - new Date(data.lastActive).getTime() < 120000) ? 'Онлайн' : 'Не в мережі'}
                 </div>
               </div>
             ) : (

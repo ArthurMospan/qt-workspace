@@ -1,6 +1,6 @@
 'use client';
 // src/components/workspace/AnalyticsTab.jsx — Real reports: velocity, burndown, assignee stats, overdue
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import UserAvatar from '@/components/UserAvatar';
 import {
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
-import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, DEFAULT_PRIORITIES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 
 function fmtH(min) {
@@ -26,10 +26,14 @@ function SectionTitle({ children }) {
   return <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3">{children}</h3>;
 }
 
-export default function AnalyticsTab({ issues, members, project, projectId }) {
+export default function AnalyticsTab({ issues, members, project, projectId, priorityFilter = 'all', typeFilter = 'all' }) {
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
   const { statuses, doneStatusIds } = useWorkflowConfig();
-  const [filters, setFilters] = useState({ priority: 'all', type: 'all' });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const statusById = useMemo(() => Object.fromEntries((statuses || []).map(s => [s.id, s])), [statuses]);
@@ -37,14 +41,13 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
 
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
-      if (filters.priority !== 'all' && i.priority !== filters.priority) return false;
-      if (filters.type !== 'all' && i.type !== filters.type) return false;
+      if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+      if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
-  }, [issues, filters]);
+  }, [issues, priorityFilter, typeFilter]);
 
   const stats = useMemo(() => {
-    const now     = Date.now();
     const total   = filteredIssues.length;
     const done    = filteredIssues.filter(i => doneSet.has(i.columnId)).length;
     const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
@@ -68,12 +71,12 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
     const twoWeeksAgo = now - 14 * 24 * 3600 * 1000;
     const recentDone = filteredIssues.filter(i => {
       if (!doneSet.has(i.columnId)) return false;
-      const t = i.updatedAt?.toMillis?.() ?? 0;
+      const t = getCompletedAtMillis(i);
       return t > weekAgo;
     }).length;
     const prevDone = filteredIssues.filter(i => {
       if (!doneSet.has(i.columnId)) return false;
-      const t = i.updatedAt?.toMillis?.() ?? 0;
+      const t = getCompletedAtMillis(i);
       return t > twoWeeksAgo && t <= weekAgo;
     }).length;
     const velocityTrend = prevDone > 0
@@ -110,41 +113,13 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
       completionPct, budget, spentHours, burnPct, remainH, recentDone, velocityTrend,
       byStatus, byPriority, memberStats,
     };
-  }, [filteredIssues, members, project, totalMinutes, byUser, statuses, doneSet, firstStatusId]);
+  }, [filteredIssues, members, project, totalMinutes, byUser, statuses, doneSet, firstStatusId, now]);
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white">
-      <div className="w-full pt-[8px] pb-[20px] flex flex-col gap-5">
-
-        {/* ── Filters ─────────────────────────────────────────────── */}
-        <FilterBar>
-          <Select
-            variant="ghost"
-            value={filters.priority}
-            onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
-            options={[
-              { value: 'all', label: 'Всі пріоритети' },
-              { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-              { value: 'high', label: 'High', dotColor: '#f97316' },
-              { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-              { value: 'low', label: 'Low', dotColor: '#9a9a9a' }
-            ]}
-          />
-          <Select
-            variant="ghost"
-            value={filters.type}
-            onChange={(val) => setFilters(f => ({ ...f, type: val }))}
-            options={[
-              { value: 'all', label: 'Всі типи' },
-              { value: 'epic', label: 'Epic' },
-              { value: 'feature', label: 'Feature' },
-              { value: 'task', label: 'Task' },
-              { value: 'bug', label: 'Bug' }
-            ]}
-          />
-        </FilterBar>
+    <div className="flex-1 flex flex-col pb-8">
+      <div className="w-full pt-[8px] flex flex-col gap-5">
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -256,7 +231,7 @@ export default function AnalyticsTab({ issues, members, project, projectId }) {
             <div className="flex flex-col gap-0 divide-y divide-white">
               {stats.overdue.slice(0, 8).map(issue => {
                 const due = issue.dueDate?.toDate ? issue.dueDate.toDate() : new Date(issue.dueDate);
-                const daysOver = Math.floor((Date.now() - due.getTime()) / 86400000);
+                const daysOver = Math.floor((now - due.getTime()) / 86400000);
                 const assignees = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
                 return (
                   <div key={issue.id} className="flex items-center gap-4 py-3">

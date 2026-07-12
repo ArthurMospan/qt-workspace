@@ -25,7 +25,7 @@ function hexToRgba(hex, alpha) {
 
 
 
-export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive }) {
+export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive, isArchived }) {
   const router   = useRouter();
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
@@ -91,7 +91,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
         onClick={() => { if (!isDraggingRef.current) router.push(`/workspace/${projectId}/issue/${issue.id}`); }}
-        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''}`}
+        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''} shrink-0`}
         style={{
           ...provided.draggableProps?.style,
           borderWidth: '1px',
@@ -269,7 +269,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
   if (isDraggable) {
     return (
-      <Draggable draggableId={issue.id} index={index}>
+      <Draggable draggableId={issue.id} index={index} isDragDisabled={isArchived}>
         {(provided, snapshot) => renderCardContent(provided, snapshot.isDragging)}
       </Draggable>
     );

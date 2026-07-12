@@ -1,93 +1,67 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-let globalIssuesCache = {};
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { auth } from '@/lib/firebase';
 
 export function useSearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const activeRequest = useRef(null);
+  const pendingDelay = useRef(null);
 
-  const search = useCallback(async (queryText, orgId, scope = 'all') => {
-    if (!queryText.trim() || !orgId) {
+  useEffect(() => () => {
+    activeRequest.current?.abort();
+    if (pendingDelay.current) {
+      clearTimeout(pendingDelay.current.timer);
+      pendingDelay.current.resolve(false);
+    }
+  }, []);
+
+  const search = useCallback(async (queryText, orgId) => {
+    const term = queryText.trim();
+    if (term.length < 2 || !orgId) {
+      if (pendingDelay.current) {
+        clearTimeout(pendingDelay.current.timer);
+        pendingDelay.current.resolve(false);
+        pendingDelay.current = null;
+      }
+      activeRequest.current?.abort();
       setResults([]);
+      setLoading(false);
       return;
     }
 
+    if (pendingDelay.current) {
+      clearTimeout(pendingDelay.current.timer);
+      pendingDelay.current.resolve(false);
+    }
+    activeRequest.current?.abort();
     setLoading(true);
+    const shouldRun = await new Promise(resolve => {
+      const timer = setTimeout(() => resolve(true), 250);
+      pendingDelay.current = { timer, resolve };
+    });
+    if (!shouldRun) return;
+    pendingDelay.current = null;
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
-      const q = queryText.toLowerCase();
-      let issues = [];
-      const now = Date.now();
-
-      if (globalIssuesCache[orgId] && (now - globalIssuesCache[orgId].timestamp < CACHE_TTL)) {
-        issues = globalIssuesCache[orgId].issues;
-      } else {
-        // Fetch all issues for the org
-        const issuesQuery = query(
-          collection(db, 'issues'),
-          where('organizationId', '==', orgId),
-          limit(500) // Cap to prevent huge loads
-        );
-        const snap = await getDocs(issuesQuery);
-        issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // Update cache
-        globalIssuesCache[orgId] = {
-          issues,
-          timestamp: now,
-        };
-      }
-
-      // Client-side filtering - search across multiple fields
-      const filtered = issues.filter(issue => {
-        const issueKey = (issue.issueKey || '').toLowerCase();
-        const title = (issue.title || '').toLowerCase();
-        const description = (issue.description || '').toLowerCase();
-        const projectId = (issue.projectId || '').toLowerCase();
-
-        // Pошук по ID, назві, описанню
-        return (
-          issueKey.includes(q) ||
-          title.includes(q) ||
-          description.includes(q) ||
-          projectId.includes(q)
-        );
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Authentication required');
+      const params = new URLSearchParams({ organizationId: orgId, q: term });
+      const response = await fetch(`/api/search?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+        cache: 'no-store',
       });
-
-      // Sort: ID matches first, then title, then description
-      filtered.sort((a, b) => {
-        const aKey = (a.issueKey || '').toLowerCase();
-        const bKey = (b.issueKey || '').toLowerCase();
-        const aTitle = (a.title || '').toLowerCase();
-        const bTitle = (b.title || '').toLowerCase();
-
-        // Exact key match scores highest
-        if (aKey === q && bKey !== q) return -1;
-        if (bKey === q && aKey !== q) return 1;
-
-        // Then key starts with query
-        if (aKey.startsWith(q) && !bKey.startsWith(q)) return -1;
-        if (bKey.startsWith(q) && !aKey.startsWith(q)) return 1;
-
-        // Then title starts with query
-        if (aTitle.startsWith(q) && !bTitle.startsWith(q)) return -1;
-        if (bTitle.startsWith(q) && !aTitle.startsWith(q)) return 1;
-
-        // Default: by creation date
-        const aTime = a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.createdAt?.toMillis?.() ?? 0;
-        return bTime - aTime;
-      });
-
-      setResults(filtered.slice(0, 50)); // Limit display results
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Search failed');
+      setResults(result.results || []);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error('[useSearch]', err);
       setResults([]);
     } finally {
-      setLoading(false);
+      if (activeRequest.current === controller) setLoading(false);
     }
   }, []);
 

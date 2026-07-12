@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { Link2, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { useSearch } from '@/lib/hooks/useSearch';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -25,20 +24,17 @@ export default function DependenciesPanel({
   const [showAddForm, setShowAddForm] = useState(false);
   const [linkType, setLinkType] = useState('relates-to');
   const [searchQuery, setSearchQuery] = useState('');
-  const { results: searchResults, search } = useSearch();
-  const [searching, setSearching] = useState(false);
 
   const { showToast } = useWorkspaceStore();
   const { doneStatusIds } = useWorkflowConfig();
 
-  const handleSearchChange = async (q) => {
-    setSearchQuery(q);
-    if (q.trim()) {
-      setSearching(true);
-      // Note: search requires orgId, but we'll handle it in the callback
-      setSearching(false);
-    }
-  };
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const searchResults = normalizedSearch
+    ? allIssues.filter(candidate => candidate.id !== issue.id && (
+        (candidate.issueKey || '').toLowerCase().includes(normalizedSearch) ||
+        (candidate.title || '').toLowerCase().includes(normalizedSearch)
+      )).slice(0, 5)
+    : [];
 
   const handleAddLink = async (targetIssue) => {
     if (targetIssue.id === issue.id) return; // Don't link to self
@@ -110,11 +106,11 @@ export default function DependenciesPanel({
 
           <div>
             <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-[4px]">
-              Пошук завданьи
+              Пошук завдання
             </label>
             <Input
               value={searchQuery}
-              onChange={e => handleSearchChange(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               placeholder="ID або назва..."
             />
           </div>
@@ -142,11 +138,8 @@ export default function DependenciesPanel({
           )}
 
           <div className="flex gap-[8px]">
-            <Button style="secondary" size="md" onClick={() => { setShowAddForm(false); setSearchQuery(''); }} className="flex-1">
+            <Button style="secondary" size="md" onClick={() => { setShowAddForm(false); setSearchQuery(''); }} className="w-full">
               Скасувати
-            </Button>
-            <Button style="primary" size="md" disabled={!searchQuery} className="flex-1">
-              Додати
             </Button>
           </div>
         </div>

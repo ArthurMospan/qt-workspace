@@ -15,6 +15,7 @@ import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
 import { PageHeader, useConfirm, Dialog, Input, Textarea } from '@/components/ui';
 import { can } from '@/lib/utils/can';
+import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
@@ -253,6 +254,15 @@ export default function GlobalSprintsPage() {
     }
   };
 
+  const handleStartSprint = async (sprintId) => {
+    try {
+      await startSprint(sprintId);
+      showToast('Спринт розпочато ✓');
+    } catch (error) {
+      showToast(error.message || 'Помилка запуску спринта', 'error');
+    }
+  };
+
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('asc'); }
@@ -327,7 +337,7 @@ export default function GlobalSprintsPage() {
     return sortDir === 'asc' ? <ChevronUp size={11} className="inline ml-1" /> : <ChevronDown size={11} className="inline ml-1" />;
   };
 
-  const IssueTable = ({ issueList, droppableId, isBacklogCol = false }) => {
+  const renderIssueTable = (issueList, droppableId, isBacklogCol = false) => {
     const sorted = getSortedIssues(issueList);
     return (
       <Droppable droppableId={droppableId}>
@@ -507,7 +517,7 @@ export default function GlobalSprintsPage() {
                                 style="primary"
                                 size="sm"
                                 icon={Play}
-                                onClick={() => startSprint(sprint.id)}
+                                onClick={() => handleStartSprint(sprint.id)}
                               >
                                 Почати спринт
                               </Button>
@@ -552,7 +562,7 @@ export default function GlobalSprintsPage() {
                       )}
 
                       {isExpanded && (
-                        <IssueTable issueList={sprintIssues} droppableId={sprint.id} />
+                        renderIssueTable(sprintIssues, sprint.id)
                       )}
                     </div>
                   );
@@ -580,7 +590,7 @@ export default function GlobalSprintsPage() {
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  <IssueTable issueList={backlogIssues} droppableId="backlog" isBacklogCol={true} />
+                  {renderIssueTable(backlogIssues, 'backlog', true)}
                 </div>
               </Surface>
 
@@ -620,14 +630,11 @@ export default function GlobalSprintsPage() {
         <SprintCompleteModal
           sprint={showCompleteSprintModal}
           sprints={sprints}
-          incompleteIssues={filteredIssues.filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))}
+          incompleteIssues={issues.filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))}
           onClose={() => setShowCompleteSprintModal(null)}
           onConfirm={async (moveToSprintId) => {
             try {
-              const incompleteIssueIds = filteredIssues
-                .filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))
-                .map(i => i.id);
-              await completeSprint(showCompleteSprintModal.id, moveToSprintId, incompleteIssueIds);
+              await completeSprint(showCompleteSprintModal.id, moveToSprintId);
               setShowCompleteSprintModal(null);
               showToast('Спринт успішно завершено ✓');
             } catch (err) {
@@ -646,53 +653,22 @@ export default function GlobalSprintsPage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          const { addDoc, collection, serverTimestamp, doc, runTransaction } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase');
-          
-          const tempKey = `WS-${Date.now()}`;
-          const newIssueRef = await addDoc(collection(db, 'issues'), {
-            issueKey: tempKey,
+          await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
-            title: formData.title,
-            description: formData.description || '',
-            columnId: formData.status || 'todo',
-            status: formData.status || 'todo',
-            priority: formData.priority || 'medium',
-            type: formData.type || 'task',
-            assigneeIds: formData.assignees || [],
-            labelIds: formData.labelIds || [],
-            dueDate: formData.dueDate || null,
-            sprintId: formData.sprintId || null,
-            createdAt: serverTimestamp(),
-            createdBy: currentUser?.uid || currentUser?.id
+            data: {
+              title: formData.title,
+              description: formData.description || '',
+              status: formData.status || 'todo',
+              priority: formData.priority || 'medium',
+              type: formData.type || 'task',
+              assigneeIds: formData.assignees || [],
+              labelIds: formData.labelIds || [],
+              dueDate: formData.dueDate || null,
+              sprintId: formData.sprintId || null,
+              reporterId: currentUser?.uid || currentUser?.id,
+            },
           });
-
-          // Run background transaction to get sequential key
-          const projectRef = doc(db, 'projects', formData.projectId);
-          runTransaction(db, async tx => {
-            const projectSnap = await tx.get(projectRef);
-            if (!projectSnap.exists()) return;
-            const projectData = projectSnap.data();
-            const current = projectData.issueCounter ?? 0;
-            const next = current + 1;
-            
-            const pName = projectData.name || 'WS';
-            const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-            let prefix = cleanProj.slice(0, 3).toUpperCase();
-            if (prefix.length < 2) {
-              prefix = pName.slice(0, 2).toUpperCase();
-            }
-            if (!prefix) prefix = 'WS';
-
-            tx.update(projectRef, {
-              issueCounter: next,
-              updatedAt: serverTimestamp()
-            });
-            tx.update(doc(db, 'issues', newIssueRef.id), {
-              issueKey: `${prefix}-${next}`
-            });
-          }).catch(err => console.warn('[sprints] issueCounter update failed:', err));
 
           showToast('Задачу створено ✓');
         }}

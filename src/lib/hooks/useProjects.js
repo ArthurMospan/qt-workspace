@@ -10,15 +10,26 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 export function useProjects(userId, activeOrgId) {
   const [projects, setProjects] = useState([]);
+  // Start as loading=true so callers don't flash an empty state
+  // while auth/org context is still resolving.
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!userId || !activeOrgId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      queueMicrotask(() => setProjects(prev => prev.length > 0 ? [] : prev));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      queueMicrotask(() => setLoading(prev => prev ? false : prev));
+    // If userId is explicitly null/undefined (auth resolved but no user),
+    // or activeOrgId is null (org resolved but no org), clear and stop loading.
+    // If they are still undefined (context not yet ready), stay in loading=true.
+    if (userId === null || userId === undefined) {
+      queueMicrotask(() => {
+        setProjects([]);
+        setLoading(false);
+      });
       return;
     }
+    if (!activeOrgId) {
+      // userId exists but orgId not yet resolved — keep loading
+      return;
+    }
+    queueMicrotask(() => setLoading(true));
     const q = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
     const unsub = onSnapshot(q, {
       serverTimestamps: 'estimate'

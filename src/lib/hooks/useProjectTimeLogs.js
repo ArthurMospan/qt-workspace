@@ -41,7 +41,7 @@ export function useProjectTimeLogs(projectId) {
       setLoading(false);
     });
     return () => unsub();
-  }, [projectId]);
+  }, [projectId, activeOrgId]);
   return {
     totalMinutes,
     byUser,

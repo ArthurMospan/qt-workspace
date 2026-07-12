@@ -1,34 +1,8 @@
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quickteam-me',
-    });
-  } catch (error) {
-    console.error('Firebase admin initialization error', error);
-  }
-}
+import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 
 export async function POST(req) {
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    const token = authHeader.split('Bearer ')[1];
-    let decodedToken;
-    try {
-      decodedToken = await admin.auth().verifyIdToken(token);
-    } catch (err) {
-      console.error('[API Projects] Token verification failed:', err);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-    
-    const userId = decodedToken.uid;
     const body = await req.json();
     const { name, description, visibility, organizationId } = body;
 
@@ -36,36 +10,23 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const db = admin.firestore();
+    const authorization = await authorizeOrgRequest(req, organizationId, ['owner', 'admin']);
+    if (authorization.error) {
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+    }
+    if (!(await enforceRateLimit('project-create', authorization.user.uid, 10, 60))) {
+      return NextResponse.json({ error: 'Too many project creation requests' }, { status: 429 });
+    }
 
-    // 1. Verify plan and limits
+    const userId = authorization.user.uid;
+    const db = getAdminDb();
+
     const orgRef = db.collection('organizations').doc(organizationId);
-    const orgSnap = await orgRef.get();
-    
-    if (!orgSnap.exists) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-    }
-    
-    const orgPlan = orgSnap.data().plan || 'free';
-    
-    if (orgPlan !== 'pro') {
-      const projectsSnap = await db.collection('projects')
-        .where('organizationId', '==', organizationId)
-        .get();
-        
-      const activeCount = projectsSnap.docs.filter(d => d.data().status === 'active').length;
-      if (activeCount >= 3) {
-        return NextResponse.json({ 
-          error: 'Ліміт проєктів вичерпано. Перейдіть на Pro план.' 
-        }, { status: 403 });
-      }
-    }
-
-    // 2. Create the project
+    const projectRef = db.collection('projects').doc();
     const payload = {
       name: name.trim(),
       description: description ? description.trim() : '',
-      visibility: visibility || 'internal',
+      visibility: visibility === 'shared' ? 'shared' : 'internal',
       organizationId,
       team: [userId],
       status: 'active',
@@ -76,25 +37,44 @@ export async function POST(req) {
       createdBy: userId,
     };
     
-    const projectRef = await db.collection('projects').add(payload);
-    
-    // 3. Create default stages
     const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
-    const batch = db.batch();
-    for (let i = 0; i < stageNames.length; i++) {
-      const stageRef = db.collection('stages').doc();
-      batch.set(stageRef, {
-        label: `${String(i + 1).padStart(2, '0')}. ${stageNames[i]}`,
-        status: i === 0 ? 'in-progress' : 'todo',
-        projectId: projectRef.id,
-        order: i,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    await db.runTransaction(async transaction => {
+      const orgSnap = await transaction.get(orgRef);
+      if (!orgSnap.exists) throw new Error('ORGANIZATION_NOT_FOUND');
+
+      // Reading and then updating the org document serializes concurrent project
+      // creations. A retried transaction sees the project created by the winner.
+      const activeProjectsQuery = db.collection('projects')
+        .where('organizationId', '==', organizationId)
+        .where('status', '==', 'active');
+      const activeProjectsSnap = await transaction.get(activeProjectsQuery);
+      if ((orgSnap.data().plan || 'free') !== 'pro' && activeProjectsSnap.size >= 3) {
+        throw new Error('PROJECT_LIMIT_REACHED');
+      }
+
+      transaction.create(projectRef, payload);
+      stageNames.forEach((stageName, index) => {
+        transaction.create(db.collection('stages').doc(), {
+          label: `${String(index + 1).padStart(2, '0')}. ${stageName}`,
+          status: index === 0 ? 'in-progress' : 'todo',
+          projectId: projectRef.id,
+          order: index,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
       });
-    }
-    await batch.commit();
+      transaction.update(orgRef, {
+        projectMutationVersion: admin.firestore.FieldValue.increment(1),
+      });
+    });
     
     return NextResponse.json({ success: true, id: projectRef.id });
   } catch (error) {
+    if (error.message === 'PROJECT_LIMIT_REACHED') {
+      return NextResponse.json({ error: 'Ліміт проєктів вичерпано. Перейдіть на Pro план.' }, { status: 403 });
+    }
+    if (error.message === 'ORGANIZATION_NOT_FOUND') {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
     console.error('[API Projects Create Error]', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

@@ -10,9 +10,10 @@
 //   - дедлайн у найближчі 24 години → одне нагадування на кожен дедлайн
 //   - дедлайн прострочено → одне нагадування на день, поки завдання не закрите
 import { useEffect } from 'react';
-import { collection, query, where, getDocs, getDoc, setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 
 const THROTTLE_MS = 4 * 3600 * 1000;
 
@@ -65,22 +66,16 @@ export function useDeadlineReminders(userId, activeOrgId) {
           }
           if (!notifId) continue;
 
-          const ref = doc(db, 'notifications', notifId);
-          const exists = await getDoc(ref);
-          if (exists.exists()) continue; // already reminded (maybe from another session)
-          await setDoc(ref, {
-            userId,
+          await sendNotification({
+            userIds: [userId],
             type: 'deadline',
             title,
             body: iss.title || '',
             link: `/workspace/${iss.projectId}/issue/${d.id}`,
             issueId: d.id,
             projectId: iss.projectId || '',
-            actorId: '',
-            actorName: '',
-            actorAvatar: '',
-            read: false,
-            createdAt: serverTimestamp(),
+            organizationId: activeOrgId,
+            dedupeKey: notifId,
           });
         }
       } catch (err) {

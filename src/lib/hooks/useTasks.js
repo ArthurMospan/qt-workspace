@@ -38,7 +38,7 @@ export function useTasks(projectId) {
       setLoading(false);
     });
     return () => unsub();
-  }, [projectId]);
+  }, [projectId, activeOrgId]);
   const createTask = useCallback(async data => {
     const {
       createdBy,

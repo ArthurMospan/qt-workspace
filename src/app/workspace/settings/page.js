@@ -6,8 +6,10 @@ import { useAppContext }  from '@/lib/context/AppContext';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { restoreProject } from '@/lib/services/projects';
+import { transferOrganizationOwnership } from '@/lib/services/organizations';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Palette, Check, Plus, Trash2, Edit2, X, Save,
@@ -40,13 +42,16 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Constants ────────────────────────────────────────────────────────
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
 
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
   member: 'Учасник'
 };
+const ASSIGNABLE_ROLE_OPTIONS = Object.entries(ROLE_LABELS)
+  .filter(([role]) => role !== 'owner')
+  .map(([value, label]) => ({ value, label }));
 
 const DEFAULT_STATUSES = [
   { id: 'todo',            label: 'To Do',           color: '#6366f1' },
@@ -365,14 +370,14 @@ function PositionItem({ item, onSave, onDelete }) {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { currentUser, signOut, activeOrgId, projects } = useAppContext();
+  const { currentUser, signOut, activeOrgId, projects, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const confirmDialog = useConfirm();
   const { org, members, inviteMember, changeMemberRole, removeMember, setMemberPosition } = useOrganization();
 
   // Role resolution
   const myMemberInfo = members.find(m => m.id === (currentUser?.uid || currentUser?.id));
-  const myRole = myMemberInfo?.role || 'member';
+  const myRole = orgRole || myMemberInfo?.role || 'member';
   const isAdmin = myRole === 'owner' || myRole === 'admin';
   const isOwner = myRole === 'owner';
 
@@ -387,8 +392,10 @@ export default function SettingsPage() {
       const searchParams = new URLSearchParams(window.location.search);
       const sec = searchParams.get('section');
       if (sec) {
-        setActiveSection(sec);
-        setMobilePane('content'); // deep link opens the section directly on mobile
+        queueMicrotask(() => {
+          setActiveSection(sec);
+          setMobilePane('content'); // deep link opens the section directly on mobile
+        });
       }
     }
   }, []);
@@ -431,6 +438,22 @@ export default function SettingsPage() {
 
   // ── API Keys ──
   const [apiKeys, setApiKeys] = useState([]);
+
+  const apiKeysRequest = async (method = 'GET', body = null) => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token || !activeOrgId) throw new Error('Authentication required');
+    const response = await fetch(`/api/integrations/api-keys?organizationId=${encodeURIComponent(activeOrgId)}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'API key request failed');
+    return result;
+  };
   const [generatingKey, setGeneratingKey] = useState(false);
 
   // ── Billing ──
@@ -447,7 +470,9 @@ export default function SettingsPage() {
   const [notifSaving, setNotifSaving] = useState(false);
   const [pushPerm, setPushPerm] = useState('default'); // browser Notification.permission
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) setPushPerm(Notification.permission);
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      queueMicrotask(() => setPushPerm(Notification.permission));
+    }
   }, []);
 
   // ── Localization ──
@@ -466,26 +491,30 @@ export default function SettingsPage() {
   // Sync from Firestore (initial only)
   useEffect(() => {
     if (currentUser) {
-      if (currentUser.name && !displayName) setDisplayName(currentUser.name);
-      setBio(currentUser.bio || '');
-      setTelegram(currentUser.telegram || '');
-      setPhone(currentUser.phone || '');
-      setLocation(currentUser.location || '');
-      setSkillsInput(Array.isArray(currentUser.skills) ? currentUser.skills.join(', ') : '');
-      if (currentUser.localization) {
-        setDateFormat(currentUser.localization.dateFormat || 'DD.MM.YYYY');
-        setFirstDayOfWeek(currentUser.localization.firstDayOfWeek || 'Monday');
-        setTimeFormat(currentUser.localization.timeFormat || '24h');
-        setTimezone(currentUser.localization.timezone || 'Europe/Kyiv');
-        setLanguage(currentUser.localization.language || 'ua');
-      }
+      queueMicrotask(() => {
+        if (currentUser.name && !displayName) setDisplayName(currentUser.name);
+        setBio(currentUser.bio || '');
+        setTelegram(currentUser.telegram || '');
+        setPhone(currentUser.phone || '');
+        setLocation(currentUser.location || '');
+        setSkillsInput(Array.isArray(currentUser.skills) ? currentUser.skills.join(', ') : '');
+        if (currentUser.localization) {
+          setDateFormat(currentUser.localization.dateFormat || 'DD.MM.YYYY');
+          setFirstDayOfWeek(currentUser.localization.firstDayOfWeek || 'Monday');
+          setTimeFormat(currentUser.localization.timeFormat || '24h');
+          setTimezone(currentUser.localization.timezone || 'Europe/Kyiv');
+          setLanguage(currentUser.localization.language || 'ua');
+        }
+      });
     }
   }, [currentUser]); // eslint-disable-line
 
   useEffect(() => {
-    if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
-    if (org?.name && !orgName) setOrgName(org.name);
-    if (org?.logo && !orgLogo) setOrgLogo(org.logo);
+    queueMicrotask(() => {
+      if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
+      if (org?.name && !orgName) setOrgName(org.name);
+      if (org?.logo && !orgLogo) setOrgLogo(org.logo);
+    });
   }, [currentUser?.name, org?.name, org?.logo]); // eslint-disable-line
 
   // ── Breadcrumbs ──
@@ -515,7 +544,11 @@ export default function SettingsPage() {
         if (orgSnap.exists()) {
           const orgData = orgSnap.data();
           setOrgPlan(orgData.plan || 'free');
-          setApiKeys(orgData.apiKeys || []);
+        }
+
+        if (isAdmin) {
+          const keyResult = await apiKeysRequest();
+          setApiKeys(keyResult.keys || []);
         }
 
         const { collection, query, where, getDocs } = await import('firebase/firestore');
@@ -532,7 +565,7 @@ export default function SettingsPage() {
       setWfLoading(false);
     };
     load();
-  }, [activeOrgId, currentUser?.uid]); // eslint-disable-line
+  }, [activeOrgId, currentUser?.uid, isAdmin]); // eslint-disable-line
 
   // ── Handlers ─────────────────────────────────────────────────────
 
@@ -642,6 +675,7 @@ export default function SettingsPage() {
       type: 'test',
       title: 'Тестове сповіщення',
       body: 'Все працює! Так виглядатимуть сповіщення про події у воркспейсі.',
+      organizationId: activeOrgId,
       actor: { id: uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
     });
     showToast('Тестове сповіщення надіслано ✓');
@@ -649,6 +683,10 @@ export default function SettingsPage() {
 
   const saveIntegration = async (enabled) => {
     if (!activeOrgId) return;
+    if (enabled && !PORTAL_URL) {
+      showToast('Спочатку налаштуйте NEXT_PUBLIC_PORTAL_URL', 'error');
+      return;
+    }
 
     // If user is trying to turn it OFF, show confirmation
     if (qtEnabled && !enabled) {
@@ -678,17 +716,8 @@ export default function SettingsPage() {
     if (!activeOrgId) return;
     setGeneratingKey(true);
     try {
-      const newToken = `qt_${crypto.randomUUID().replace(/-/g, '')}`;
-      const newKey = {
-        id: Date.now().toString(),
-        token: newToken,
-        name: `Key ${new Date().toLocaleDateString()}`,
-        createdAt: new Date().toISOString(),
-        active: true
-      };
-      
-      const updatedKeys = [...apiKeys, newKey];
-      await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+      const { key } = await apiKeysRequest('POST', { name: `Key ${new Date().toLocaleDateString()}` });
+      const updatedKeys = [...apiKeys, key];
       setApiKeys(updatedKeys);
       showToast('Новий API ключ згенеровано');
     } catch (e) {
@@ -706,7 +735,7 @@ export default function SettingsPage() {
     }))) return;
     try {
       const updatedKeys = apiKeys.filter(k => k.id !== keyId);
-      await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+      await apiKeysRequest('DELETE', { keyId });
       setApiKeys(updatedKeys);
       showToast('API ключ видалено');
     } catch (e) {
@@ -743,11 +772,7 @@ export default function SettingsPage() {
       confirmText: 'Передати права', danger: true,
     }))) return;
     try {
-      const uid = currentUser?.id || currentUser?.uid;
-      // Ролі живуть у orgMemberships (джерело правди після міграції 006), не в legacy members[]
-      await updateDoc(doc(db, 'orgMemberships', `${activeOrgId}_${uid}`), { role: 'admin' });
-      await updateDoc(doc(db, 'orgMemberships', `${activeOrgId}_${targetUid}`), { role: 'owner' });
-      await updateDoc(doc(db, 'organizations', activeOrgId), { ownerId: targetUid });
+      await transferOrganizationOwnership(activeOrgId, targetUid);
       showToast('Права власника успішно передано');
     } catch (e) {
       showToast('Помилка передачі прав', 'error');
@@ -763,50 +788,13 @@ export default function SettingsPage() {
     catch { showToast('Помилка', 'error'); }
   };
 
-  const handleDeleteOrg = async (type) => {
-    if (!activeOrgId) return;
-    try {
-      if (type === 'hard') {
-        const typed = await confirmDialog({
-          title: 'Видалити організацію назавжди?',
-          message: 'Введіть DELETE для повного та безповоротного видалення організації.',
-          confirmText: 'Видалити', danger: true,
-          input: { placeholder: 'DELETE' },
-        });
-        if (typed !== 'DELETE') return;
-        await deleteDoc(doc(db, 'organizations', activeOrgId));
-        showToast('Організацію повністю видалено');
-        setTimeout(() => window.location.href = '/workspace', 1000);
-      } else if (type === 'soft') {
-        const typed = await confirmDialog({
-          title: 'Видалити організацію через 30 днів?',
-          message: 'Введіть 30 для видалення організації через 30 днів (ви зможете її відновити).',
-          confirmText: 'Запланувати видалення', danger: true,
-          input: { placeholder: '30' },
-        });
-        if (typed !== '30') return;
-        
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 30);
-        
-        await updateDoc(doc(db, 'organizations', activeOrgId), {
-          status: 'pending_deletion',
-          deleteAt: futureDate.toISOString()
-        });
-        showToast('Організацію заплановано до видалення');
-      }
-    } catch (e) {
-      showToast('Помилка видалення', 'error');
-    }
-  };
-
   const handleUpgradePlan = async (newPlan = 'pro') => {
     showToast('Підключення платіжної системи в розробці 🛠️');
   };
 
   const unarchiveProject = async (id) => {
     try {
-      await updateDoc(doc(db, 'projects', id), { status: 'active' });
+      await restoreProject(id);
       showToast('Проєкт розархівовано');
     } catch (err) {
       showToast('Помилка розархівування', 'error');
@@ -848,7 +836,7 @@ export default function SettingsPage() {
     }
     setWfLoading(true);
     try {
-      const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
+      const { collection, query, where, getDocs, writeBatch, serverTimestamp, deleteField } = await import('firebase/firestore');
       const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('columnId', '==', id));
       const snap = await getDocs(q);
       const targetColId = statuses.find(s => s.id !== id && !s.isNew)?.id || 'backlog';
@@ -862,9 +850,18 @@ export default function SettingsPage() {
           setWfLoading(false);
           return;
         }
-        const batch = writeBatch(db);
-        snap.docs.forEach(d => batch.update(d.ref, { columnId: targetColId }));
-        await batch.commit();
+        const sourceWasDone = getDoneStatusIds(statuses).includes(id);
+        const targetIsDone = getDoneStatusIds(statuses).includes(targetColId);
+        for (let offset = 0; offset < snap.docs.length; offset += 400) {
+          const batch = writeBatch(db);
+          snap.docs.slice(offset, offset + 400).forEach(issueDoc => {
+            const updates = { columnId: targetColId, status: targetColId, updatedAt: serverTimestamp() };
+            if (targetIsDone && !sourceWasDone) updates.completedAt = serverTimestamp();
+            if (!targetIsDone && sourceWasDone) updates.completedAt = deleteField();
+            batch.update(issueDoc.ref, updates);
+          });
+          await batch.commit();
+        }
       }
       stA.onDelete(id);
     } catch (e) {
@@ -1153,16 +1150,14 @@ export default function SettingsPage() {
         const toggleBuggyBag = async (enabled) => {
           if (!activeOrgId) return;
           if (enabled) {
-            const newToken = `qt_${crypto.randomUUID().replace(/-/g, '')}`;
-            const newKey = { id: Date.now().toString(), token: newToken, name: 'BuggyBag Integration', createdAt: new Date().toISOString(), active: true };
-            const updatedKeys = [...apiKeys, newKey];
-            await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+            const { key } = await apiKeysRequest('POST', { name: 'BuggyBag Integration' });
+            const updatedKeys = [...apiKeys, key];
             setApiKeys(updatedKeys);
             showToast('Інтеграцію з BuggyBag увімкнено!');
           } else {
             if (buggyBagKey) {
               const updatedKeys = apiKeys.filter(k => k.id !== buggyBagKey.id);
-              await updateDoc(doc(db, 'organizations', activeOrgId), { apiKeys: updatedKeys });
+              await apiKeysRequest('DELETE', { keyId: buggyBagKey.id });
               setApiKeys(updatedKeys);
               showToast('Інтеграцію з BuggyBag вимкнено');
             }
@@ -1204,9 +1199,9 @@ export default function SettingsPage() {
                         Вимкнено
                       </span>
                     )}
-                    {qtEnabled && (
+                    {qtEnabled && PORTAL_URL && (
                       <a
-                        href={process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app'}
+                        href={PORTAL_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold hover:underline"
@@ -1278,8 +1273,12 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center mb-3">
                           <span className="text-[11px] text-muted uppercase tracking-wider font-bold">API Token</span>
                           <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">{buggyBagKey.token}</code>
-                            <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
+                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">
+                              {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
+                            </code>
+                            {buggyBagKey.token && (
+                              <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
+                            )}
                           </div>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
@@ -1417,7 +1416,9 @@ export default function SettingsPage() {
                       <Select
                         value={member.role}
                         onChange={(val) => handleRoleChange(member.id, val)}
-                        options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))}
+                        options={member.role === 'owner'
+                          ? [{ value: 'owner', label: ROLE_LABELS.owner }]
+                          : ASSIGNABLE_ROLE_OPTIONS}
                         className="w-[140px]"
                         buttonClassName="bg-canvas rounded-[10px] px-[12px] h-[36px]"
                         disabled={!(isOwner && !isMe)}
@@ -1629,25 +1630,14 @@ export default function SettingsPage() {
               </Button>
             </Row>
             {isOwner && (
-              <>
-                <Row label="Видалити організацію (через 30 днів)" desc="Організація буде схована і повністю видалиться через 30 днів">
-                  <Button
-                    onClick={() => handleDeleteOrg('soft')}
-                    style="secondary" color="red" size="lg"
-                  >
-                    Видалити через 30 днів
-                  </Button>
-                </Row>
-                <Row label="Видалити організацію негайно" desc="Повне і миттєве видалення організації і всіх даних без можливості відновлення">
-                  <Button
-                    onClick={() => handleDeleteOrg('hard')}
-                    style="primary" color="red" size="lg"
-                    icon={Trash2} iconSize={12}
-                  >
-                    Видалити негайно
-                  </Button>
-                </Row>
-              </>
+              <Row
+                label="Видалення організації"
+                desc="Тимчасово недоступне, доки не налаштовано безпечне каскадне видалення даних і файлів"
+              >
+                <Button style="secondary" color="red" size="lg" disabled>
+                  Недоступно
+                </Button>
+              </Row>
             )}
           </Card>
         </Section>
@@ -1751,7 +1741,7 @@ export default function SettingsPage() {
       >
         <div className="flex flex-col gap-4 min-h-[200px]">
           <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
-          <Select value={inviteRole} onChange={setInviteRole} options={Object.entries(ROLE_LABELS).map(([k,v]) => ({value: k, label: v}))} label="Роль" />
+          <Select value={inviteRole} onChange={setInviteRole} options={ASSIGNABLE_ROLE_OPTIONS} label="Роль" />
         </div>
       </Dialog>
     </SidebarLayout>

@@ -43,7 +43,7 @@ export function useTimeLogs(issueId) {
       setLoading(false);
     });
     return () => unsub();
-  }, [issueId]);
+  }, [issueId, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // addTimeLog

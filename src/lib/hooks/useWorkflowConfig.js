@@ -65,6 +65,17 @@ export function isDoneStatus(statusId, statuses) {
   return getDoneStatusIds(statuses).includes(statusId);
 }
 
+// Historical issues may not have completedAt yet. The updatedAt fallback keeps
+// old analytics usable while every new terminal transition records completedAt.
+export function getCompletedAtMillis(issue) {
+  const value = issue?.completedAt || issue?.updatedAt;
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.seconds === 'number') return value.seconds * 1000;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export const DEFAULT_TYPES = [{
   id: 'epic',
   label: 'Epic',

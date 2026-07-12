@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# QuickTeam Workspace
 
-## Getting Started
+Internal multi-tenant task and project workspace built with Next.js 16, React 19 and Firebase.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20+
+- Java 21+ for the Firestore emulator
+- A Firebase project for local development
+- Cloudinary credentials for file uploads
+- Optional Resend credentials for email notifications
+
+## Environment
+
+Create `.env.local` with:
+
+```text
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_PORTAL_URL=
+RESEND_API_KEY=
+EMAIL_FROM=
+```
+
+`NEXT_PUBLIC_*` values are shipped to the browser. Never put Admin SDK, Cloudinary secret, email-provider secret, API keys or other credentials in a public variable.
+
+## Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run build
+npm run test:rules:emulator
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+On Windows with Firebase CLI 15 and Node 24, the rules assertions can finish successfully while the CLI reports an error during emulator shutdown. Always check the Node test summary (`pass`, `fail`) separately from that known teardown error.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Security model
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Firebase ID tokens authenticate API requests.
+- `/api/auth/session` exchanges an ID token for an HTTP-only Firebase session cookie used by Next.js Proxy.
+- Firestore rules remain authoritative for browser Firestore access.
+- Memberships are created only by the onboarding bootstrap or authenticated invitation APIs; client self-join is forbidden.
+- Projects and issues are created through server APIs so plan limits, sequential issue keys and audit records are atomic.
+- API keys live under a server-only Firestore path and are stored as SHA-256 hashes. The clear-text token is returned only once.
+- Cloudinary signing, notifications/email, invitations and integration endpoints are authenticated and rate-limited.
+- User documents are private; shared team profile fields and presence are organization-scoped.
 
-## Learn More
+## Data model
 
-To learn more about Next.js, take a look at the following resources:
+Primary collections:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `organizations` and `orgMemberships`
+- `projects` and `stages`
+- `issues`, with `comments` and `audit` subcollections
+- `issueLinks`, `sprints`, `timeLogs`, `invoices`
+- `notifications`; presence under `organizations/{orgId}/presence`
+- organization-scoped `channels`, `messages` and `readState`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`tasks` is a legacy read-only collection. New development must use `issues`.
 
-## Deploy on Vercel
+## Development rules
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Read the versioned Next.js guides in `node_modules/next/dist/docs/` before changing framework APIs.
+- Do not run migrations from browser login flows. Use reviewed Admin SDK scripts against an explicit project.
+- Do not add direct client creates/deletes for projects, issues, memberships or API keys.
+- Any Firestore rule change must include or update emulator assertions in `tests/firestore.rules.test.mjs`.

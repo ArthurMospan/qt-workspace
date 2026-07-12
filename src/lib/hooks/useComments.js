@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useComments.js — Internal comments for an issue (subcollection)
 import { useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 export function useComments(issueId) {
   const [comments, setComments] = useState([]);
@@ -41,13 +41,26 @@ export function useComments(issueId) {
   // -------------------------------------------------------------------------
   const addComment = useCallback(async (issueId, text, user = {}, attachments = []) => {
     if (!text?.trim() && attachments.length === 0) throw new Error('Comment cannot be empty');
-    await addDoc(collection(db, 'issues', issueId, 'comments'), {
-      authorId: user.uid || user.id || null,
-      authorName: user.name || user.displayName || user.email?.split('@')[0] || 'Невідомо',
-      authorAvatar: user.avatar || user.photoURL || null,
-      text: text?.trim() || '',
-      attachments: attachments,
-      createdAt: serverTimestamp()
+    const commentRef = doc(collection(db, 'issues', issueId, 'comments'));
+    const issueRef = doc(db, 'issues', issueId);
+    const existingCount = await getCountFromServer(collection(db, 'issues', issueId, 'comments'));
+    await runTransaction(db, async transaction => {
+      const issueSnap = await transaction.get(issueRef);
+      if (!issueSnap.exists()) throw new Error('Issue not found');
+      transaction.set(commentRef, {
+        authorId: user.uid || user.id || null,
+        authorName: user.name || user.displayName || user.email?.split('@')[0] || 'Невідомо',
+        authorAvatar: user.avatar || user.photoURL || null,
+        text: text?.trim() || '',
+        attachments,
+        createdAt: serverTimestamp()
+      });
+      transaction.update(issueRef, {
+        commentCount: typeof issueSnap.data().commentCount === 'number'
+          ? increment(1)
+          : existingCount.data().count + 1,
+        updatedAt: serverTimestamp(),
+      });
     });
   }, []);
   return {

@@ -1240,8 +1240,8 @@ function FeedbackSection() {
 
 function TaskCRMSection() {
   const dummyComments = [
-    { id: '1', author: 'Артур Моспан', initials: 'АМ', timestamp: new Date(Date.now() - 3600000), content: 'Кругові скруглення тепер виглядають супер!', edited: false },
-    { id: '2', author: 'Іван Петренко', initials: 'ІП', timestamp: new Date(Date.now() - 600000), content: 'Згоден, концентричність робить інтерфейс дуже акуратним.', parentId: '1' }
+    { id: '1', author: 'Артур Моспан', initials: 'АМ', timestamp: new Date('2026-07-12T10:00:00Z'), content: 'Кругові скруглення тепер виглядають супер!', edited: false },
+    { id: '2', author: 'Іван Петренко', initials: 'ІП', timestamp: new Date('2026-07-12T10:50:00Z'), content: 'Згоден, концентричність робить інтерфейс дуже акуратним.', parentId: '1' }
   ];
 
   const demoMembers = [
@@ -1265,7 +1265,7 @@ function TaskCRMSection() {
     priority: "high",
     type: "feature",
     assigneeIds: ['1', '2'],
-    dueDate: new Date(Date.now() + 86400000),
+    dueDate: new Date('2026-07-13T12:00:00Z'),
     subtasks: [{ id: '1', title: 'Кнопки', done: true }, { id: '2', title: 'Інпути', done: false }],
     labelIds: ['frontend', 'design'],
     sprintId: 'sprint-1'
@@ -1277,7 +1277,7 @@ function TaskCRMSection() {
     priority: "critical",
     type: "bug",
     assigneeIds: ['2'],
-    dueDate: new Date(Date.now() - 86400000), // overdue!
+    dueDate: new Date('2026-07-11T12:00:00Z'), // overdue in this static demo
     subtasks: [],
     labelIds: ['bug']
   };
@@ -1309,7 +1309,7 @@ function TaskCRMSection() {
     priority: "low",
     type: "feature",
     assigneeIds: ['2'],
-    dueDate: new Date(Date.now() + 172800000),
+    dueDate: new Date('2026-07-14T12:00:00Z'),
     subtasks: [],
     labelIds: ['frontend']
   };

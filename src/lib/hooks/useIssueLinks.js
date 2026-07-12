@@ -87,7 +87,7 @@ export function useIssueLinks(issueId) {
       unsub1();
       unsub2();
     };
-  }, [issueId, merge]);
+  }, [issueId, merge, activeOrgId]);
 
   // -------------------------------------------------------------------------
   // addLink — creates the primary link and an inverse link

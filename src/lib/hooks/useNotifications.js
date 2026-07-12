@@ -7,11 +7,10 @@
 // opt-in email. Also exposes list actions for the notification center.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  collection, query, where, limit, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, writeBatch, serverTimestamp, getDocs, getDoc,
+  collection, query, where, orderBy, limit, onSnapshot, updateDoc, deleteDoc,
+  doc, writeBatch, getDocs,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { sendEmailNotification } from '@/lib/utils/sendEmail';
+import { auth, db } from '@/lib/firebase';
 
 // Request browser notification permission once
 export async function requestNotifPermission() {
@@ -92,7 +91,12 @@ export function useNotifications(userId, {
       queueMicrotask(() => setLoading(false));
       return;
     }
-    const q = query(collection(db, 'notifications'), where('userId', '==', userId), limit(60));
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(60),
+    );
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs.map(d => ({
         id: d.id,
@@ -177,31 +181,8 @@ export function useNotifications(userId, {
 
 // ── Send notification(s) to users ───────────────────────────────────
 
-// Maps notification type → toggle key in users/{uid}/settings/notifications.
-// Types not listed here (e.g. 'alert' emergency calls, 'test') are always delivered.
-const PREF_KEY_BY_TYPE = {
-  assigned: 'assigned',
-  commented: 'commented',
-  status_changed: 'statusChanged',
-  mentioned: 'mentioned',
-  deadline: 'deadline'
-};
-// Must mirror the defaults in settings/page.js (notif initial state)
-const PREF_DEFAULTS = {
-  assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true
-};
-// Only the important types go to the opt-in email channel
-const EMAIL_TYPES = new Set(['assigned', 'mentioned', 'deadline', 'alert']);
-
-async function getRecipientPrefs(userId) {
-  try {
-    const snap = await getDoc(doc(db, 'users', userId, 'settings', 'notifications'));
-    return snap.exists() ? snap.data() : {};
-  } catch {
-    return {};
-  }
-}
-
+// Recipient preferences, actor identity, membership and email delivery are
+// resolved server-side; callers never need access to another user's profile.
 export async function sendNotification({
   userIds = [],
   type,
@@ -210,35 +191,17 @@ export async function sendNotification({
   link = '',
   issueId = '',
   projectId = '',
-  actor = null, // { id, name, avatar } — хто виконав дію (для аватарки в центрі сповіщень)
+  organizationId = '',
+  dedupeKey = '',
 }) {
-  await Promise.all(userIds.map(async userId => {
-    const prefs = await getRecipientPrefs(userId);
-    const prefKey = PREF_KEY_BY_TYPE[type];
-    if (prefKey && !(prefs[prefKey] ?? PREF_DEFAULTS[prefKey])) return;
-
-    await addDoc(collection(db, 'notifications'), {
-      userId,
-      type,
-      title,
-      body,
-      link,
-      issueId,
-      projectId,
-      actorId: actor?.id || '',
-      actorName: actor?.name || '',
-      actorAvatar: actor?.avatar || '',
-      read: false,
-      createdAt: serverTimestamp()
-    }).catch(() => {});
-
-    // Opt-in email channel (Налаштування → Сповіщення → Email)
-    if (prefs.emailEnabled && EMAIL_TYPES.has(type)) {
-      try {
-        const userSnap = await getDoc(doc(db, 'users', userId));
-        const email = userSnap.exists() ? userSnap.data()?.email : null;
-        if (email) await sendEmailNotification({ email, type, title, body, link });
-      } catch { /* email is best-effort */ }
-    }
-  }));
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Authentication required');
+  const response = await fetch('/api/notifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ userIds, type, title, body, link, issueId, projectId, organizationId, dedupeKey }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Failed to send notification');
+  return result;
 }

@@ -30,11 +30,10 @@ export function OrgProvider({ user, children }) {
       if (memSnap.exists()) {
         setOrgRole(memSnap.data().role);
       } else {
-        const legacyMember = (orgData.members || []).find(m => m.uid === uid);
-        setOrgRole(legacyMember?.role || 'member');
+        setOrgRole(null);
       }
     } catch {
-      setOrgRole('member');
+      setOrgRole(null);
     }
     
     setNoOrg(false);
@@ -45,45 +44,50 @@ export function OrgProvider({ user, children }) {
   // ── Load all orgs when user changes ─────────────────────────────────────
   useEffect(() => {
     if (!user) {
-      setAllOrgs([]);
-      setActiveOrgId(null);
-      setActiveOrg(null);
-      setOrgRole(null);
-      setOrgLoading(false);
-      setNoOrg(false);
+      queueMicrotask(() => {
+        setAllOrgs([]);
+        setActiveOrgId(null);
+        setActiveOrg(null);
+        setOrgRole(null);
+        setOrgLoading(false);
+        setNoOrg(false);
+      });
       return;
     }
 
     const uid = user.id || user.uid;
 
-    const findOrgs = async () => {
-      try {
-        // Query orgMemberships for this user
-        const q = query(
-          collection(db, 'orgMemberships'),
-          where('userId', '==', uid)
-        );
-        const memSnap = await getDocs(q);
+    let cancelled = false;
+    const membershipsQuery = query(
+      collection(db, 'orgMemberships'),
+      where('userId', '==', uid)
+    );
 
+    const applyMembershipSnapshot = async (memSnap) => {
+      try {
         let orgs = [];
         if (!memSnap.empty) {
           // Fetch the organization documents for these memberships
-          const orgIds = memSnap.docs.map(d => d.data().orgId);
-          // To avoid firestore "in" limit of 10, chunk if necessary, but assume < 10 orgs for now
-          const orgsQ = query(
+          const orgIds = [...new Set(memSnap.docs.map(d => d.data().orgId).filter(Boolean))];
+          const chunks = [];
+          for (let i = 0; i < orgIds.length; i += 30) chunks.push(orgIds.slice(i, i + 30));
+          const snapshots = await Promise.all(chunks.map(ids => getDocs(query(
             collection(db, 'organizations'),
-            where('__name__', 'in', orgIds.slice(0, 10))
-          );
-          const orgSnap = await getDocs(orgsQ);
-          orgs = orgSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            where('__name__', 'in', ids)
+          ))));
+          orgs = snapshots.flatMap(orgSnap => orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         }
 
         // Legacy fallback removed to enforce strict multi-tenancy
 
+        if (cancelled) return;
         setAllOrgs(orgs);
 
         if (orgs.length === 0) {
           setNoOrg(true);
+          setActiveOrgId(null);
+          setActiveOrg(null);
+          setOrgRole(null);
           setOrgLoading(false);
           return;
         }
@@ -94,19 +98,16 @@ export function OrgProvider({ user, children }) {
         const chosen = preferred || orgs[0];
 
         // Retrieve role from orgMemberships if we can, else fallback
-        let chosenRole = 'member';
+        let chosenRole = null;
         if (!memSnap.empty) {
            const memData = memSnap.docs.find(d => d.data().orgId === chosen.id)?.data();
            if (memData) chosenRole = memData.role;
-        } else {
-           const legacyMember = (chosen.members || []).find(m => m.uid === uid);
-           if (legacyMember) chosenRole = legacyMember.role;
         }
 
         // Apply org (bypassing members array logic)
         setActiveOrgId(chosen.id);
         setActiveOrg(chosen);
-        setOrgRole(chosenRole || 'member');
+        setOrgRole(chosenRole);
         setNoOrg(false);
         setOrgLoading(false);
         if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, chosen.id);
@@ -116,7 +117,14 @@ export function OrgProvider({ user, children }) {
       }
     };
 
-    findOrgs();
+    const unsubscribe = onSnapshot(membershipsQuery, applyMembershipSnapshot, err => {
+      console.error('[OrgContext] membership list error:', err);
+      setOrgLoading(false);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [user?.id, applyOrg]); // eslint-disable-line
 
   // ── Org switcher: called from UI ─────────────────────────────────────────
@@ -132,9 +140,6 @@ export function OrgProvider({ user, children }) {
   // ── Live-sync the active org document and membership ──────────────────
   useEffect(() => {
     if (!activeOrgId) return;
-    
-    // Once an org is active, we are no longer in "noOrg" state
-    setNoOrg(false);
     
     // Sync organization data
     const unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), (snap) => {
@@ -158,9 +163,7 @@ export function OrgProvider({ user, children }) {
     let unsubMem = () => {};
     if (uid) {
       unsubMem = onSnapshot(doc(db, 'orgMemberships', `${activeOrgId}_${uid}`), (snap) => {
-        if (snap.exists()) {
-          setOrgRole(snap.data().role);
-        }
+        setOrgRole(snap.exists() ? snap.data().role : null);
       }, (err) => {
         console.warn('[OrgContext] membership sync permission error (expected during logout):', err.message);
       });

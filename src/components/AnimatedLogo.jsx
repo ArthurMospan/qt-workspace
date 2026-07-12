@@ -37,7 +37,7 @@ export default function AnimatedLogo({ className = '' }) {
 
   useEffect(() => {
     if (clicks >= 3) {
-      setIsAngry(true);
+      queueMicrotask(() => setIsAngry(true));
       const timer = setTimeout(() => {
         setClicks(0);
         setIsAngry(false);

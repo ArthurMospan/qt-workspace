@@ -42,6 +42,7 @@ export default function BoardPage({ params }) {
 
   // Portal tab visible only when project is shared (synced to QT)
   const isShared = project?.visibility === 'shared';
+  const isArchived = project?.status === 'archived';
 
   const [activeTab, setActiveTab] = useState('board');
   const [boardSprintFilter, setBoardSprintFilter] = useState(() => {
@@ -64,6 +65,8 @@ export default function BoardPage({ params }) {
     if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_type_${projectId}`) || 'all';
     return 'all';
   });
+  const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
+  const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -174,7 +177,12 @@ export default function BoardPage({ params }) {
       {/* ── PageHeader ── */}
       <PageHeader
         variant="main"
-        title={project?.name}
+        title={
+          <div className="flex items-center gap-2">
+            {project?.name}
+            {isArchived && <span className="text-[10px] uppercase tracking-wider font-bold bg-[#f3f4f6] text-muted px-2 py-1 rounded-md">В архіві</span>}
+          </div>
+        }
         tabs={TABS(projectId)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -193,7 +201,7 @@ export default function BoardPage({ params }) {
                 )}
               </Link>
             )}
-            {can(orgRole, 'edit:board_columns') && (
+            {!isArchived && can(orgRole, 'edit:board_columns') && (
               <Button
                 onClick={() => setShowConfigModal(true)}
                 icon={Settings2}
@@ -202,16 +210,18 @@ export default function BoardPage({ params }) {
                 title="Налаштування дошки"
               />
             )}
-            <Button
-              onClick={() => setShowCreateTaskModal(true)}
-              style="primary"
-              size="lg"
-              icon={Plus}
-              collapseAt="sm"
-              title="Створити завдання"
-            >
-              Створити завдання
-            </Button>
+            {!isArchived && (
+              <Button
+                onClick={() => setShowCreateTaskModal(true)}
+                style="primary"
+                size="lg"
+                icon={Plus}
+                collapseAt="sm"
+                title="Створити завдання"
+              >
+                Створити завдання
+              </Button>
+            )}
           </>
         }
         filters={
@@ -274,6 +284,33 @@ export default function BoardPage({ params }) {
                   variant="ghost"
                 />
               </FilterBar>
+          ) : activeTab === 'analytics' ? (
+            <FilterBar>
+              <Select
+                variant="ghost"
+                value={analyticsPriorityFilter}
+                onChange={setAnalyticsPriorityFilter}
+                options={[
+                  { value: 'all', label: 'Всі пріоритети' },
+                  { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
+                  { value: 'high', label: 'High', dotColor: '#f97316' },
+                  { value: 'medium', label: 'Medium', dotColor: '#eab308' },
+                  { value: 'low', label: 'Low', dotColor: '#9a9a9a' }
+                ]}
+              />
+              <Select
+                variant="ghost"
+                value={analyticsTypeFilter}
+                onChange={setAnalyticsTypeFilter}
+                options={[
+                  { value: 'all', label: 'Всі типи' },
+                  { value: 'epic', label: 'Epic' },
+                  { value: 'feature', label: 'Feature' },
+                  { value: 'task', label: 'Task' },
+                  { value: 'bug', label: 'Bug' }
+                ]}
+              />
+            </FilterBar>
           ) : null
         }
       />
@@ -297,6 +334,7 @@ export default function BoardPage({ params }) {
                 onAddIssue={handleAddIssue}
                 onMoveIssue={handleMoveIssue}
                 issueLinks={issueLinks}
+                isArchived={isArchived}
               />
           </div>
         )
@@ -322,11 +360,17 @@ export default function BoardPage({ params }) {
           members={members}
           project={project}
           projectId={projectId}
+          priorityFilter={analyticsPriorityFilter}
+          typeFilter={analyticsTypeFilter}
         />
       )}
 
       {activeTab === 'team' && (
-        <ProjectTeamTab members={members} />
+        <ProjectTeamTab
+          members={members}
+          issues={issues}
+          projectId={projectId}
+        />
       )}
       </div>
     </div>

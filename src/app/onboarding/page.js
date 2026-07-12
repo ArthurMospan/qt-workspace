@@ -24,19 +24,21 @@ function OnboardingPageContent() {
 
   // Auto-fill org name
   useEffect(() => {
+    let nextName = '';
     if (isNewOrg) {
       if (currentUser?.email) {
         const prefix = currentUser.email.split('@')[0];
         const formatted = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-        setOrgName(`${formatted} Team`);
+        nextName = `${formatted} Team`;
       }
     } else if (activeOrg?.name && activeOrg.name !== 'QuickTeam') {
-      setOrgName(activeOrg.name);
+      nextName = activeOrg.name;
     } else if (currentUser?.email) {
       const prefix = currentUser.email.split('@')[0];
       const formatted = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-      setOrgName(`${formatted} Team`);
+      nextName = `${formatted} Team`;
     }
+    if (nextName) queueMicrotask(() => setOrgName(nextName));
   }, [activeOrg?.name, currentUser?.email, isNewOrg]);
 
   // Non-owner/admin → go to workspace (skip if creating new org)

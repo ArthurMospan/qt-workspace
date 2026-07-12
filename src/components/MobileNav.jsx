@@ -68,7 +68,7 @@ export default function MobileNav() {
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
 
   // Close the sheet on navigation
-  useEffect(() => { setMoreOpen(false); }, [pathname]);
+  useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 
   // Lock body scroll while the sheet is open
   useEffect(() => {

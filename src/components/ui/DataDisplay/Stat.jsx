@@ -9,14 +9,6 @@ export default function Stat({ number, label, trend, trendValue, icon: Icon, cla
     return 'text-muted';
   };
 
-  const getTrendIcon = (direction) => {
-    if (direction === 'up') return TrendingUp;
-    if (direction === 'down') return TrendingDown;
-    return Minus;
-  };
-
-  const TrendIcon = getTrendIcon(trend);
-
   return (
     <div className={`flex flex-col items-start ${className}`}>
       <div className="flex items-center gap-[8px] mb-[4px]">
@@ -27,7 +19,7 @@ export default function Stat({ number, label, trend, trendValue, icon: Icon, cla
         <span className="text-[28px] font-bold text-ink">{number}</span>
         {trend && trendValue && (
           <span className={`text-[13px] font-bold flex items-center gap-[4px] ${getTrendColor(trend)}`}>
-            <TrendIcon size={14} />
+            {trend === 'up' ? <TrendingUp size={14} /> : trend === 'down' ? <TrendingDown size={14} /> : <Minus size={14} />}
             {trendValue}%
           </span>
         )}

@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/workspace/team/page.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
@@ -87,20 +87,25 @@ export default function TeamPage() {
   const [selectedUid, setSelectedUid] = useState(null);
   // Mobile single-pane mode: 'list' (учасники) або 'detail' (профіль); md+ показує обидві
   const [mobilePane, setMobilePane] = useState('list');
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   // Системний «назад» на телефоні повертає до списку команди
   const requestPaneClose = useMobilePaneBack(mobilePane === 'detail', () => setMobilePane('list'));
 
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
 
-  const filteredMembers = members.filter(m =>
+  const filteredMembers = useMemo(() => members.filter(m =>
     (m.name || '').toLowerCase().includes(teamSearch.toLowerCase()) ||
     (m.email || '').toLowerCase().includes(teamSearch.toLowerCase())
-  );
+  ), [members, teamSearch]);
 
   // Auto-select first member on initial load
   useEffect(() => {
     if (!loading && members.length > 0 && !selectedUid) {
-      setSelectedUid(filteredMembers[0]?.id || filteredMembers[0]?.uid);
+      queueMicrotask(() => setSelectedUid(filteredMembers[0]?.id || filteredMembers[0]?.uid));
     }
   }, [loading, members, selectedUid, filteredMembers]);
 
@@ -145,7 +150,7 @@ export default function TeamPage() {
             filteredMembers.map(member => {
               const uid = member.id || member.uid;
               const isSelected = selectedUid === uid;
-              const isOnline = member.lastActive && (Date.now() - new Date(member.lastActive).getTime() < 120000);
+              const isOnline = member.lastActive && (now - new Date(member.lastActive).getTime() < 120000);
               const positionName = positions.find(p => p.id === member.positionId)?.label || member.title || 'Посада не вказана';
 
               return (

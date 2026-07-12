@@ -1,12 +1,12 @@
 'use client';
 
 // src/lib/hooks/useOrganization.js
-// Organization = the workspace team. Single org per deployment (ORG_ID).
-// Schema: organizations/{ORG_ID} → { name, ownerId, members: [{uid, role, joinedAt}] }
+// Organization = one workspace in the multi-organization membership model.
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc, deleteDoc, setDoc, getDoc, collection, query, where, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { fetchOrganizationMembers } from '@/lib/services/members';
 export function useOrganization() {
   const {
     activeOrgId
@@ -17,9 +17,12 @@ export function useOrganization() {
 
   // Listen to org doc
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!activeOrgId) {
-      queueMicrotask(() => setLoading(prev => prev ? false : prev));
+      queueMicrotask(() => {
+        setOrg(null);
+        setMembers([]);
+        setLoading(false);
+      });
       return;
     }
     let unsubOrg = () => {};
@@ -38,30 +41,25 @@ export function useOrganization() {
     }, err => {
       console.error("[useOrganization.js] onSnapshot error", err);
     });
+    let active = true;
     const memQ = query(collection(db, 'orgMemberships'), where('orgId', '==', activeOrgId));
     unsubMem = onSnapshot(memQ, async snap => {
-      const memberEntries = snap.docs.map(d => d.data());
-      const profiles = await Promise.all(memberEntries.map(async m => {
-        const uSnap = await getDoc(doc(db, 'users', m.userId));
-        return uSnap.exists() ? {
-          ...uSnap.data(),
-          id: m.userId,
-          role: m.role,
-          joinedAt: m.joinedAt,
-          hourlyRate: m.hourlyRate || 0,
-          positionId: m.positionId || ''
-        } : {
-          id: m.userId,
-          name: m.userId,
-          role: m.role,
-          hourlyRate: m.hourlyRate || 0,
-          positionId: m.positionId || ''
-        };
-      }));
-      setMembers(profiles.filter(Boolean));
-      setLoading(false);
+      try {
+        if (snap.empty) {
+          if (active) setMembers([]);
+        } else {
+          const profiles = await fetchOrganizationMembers(activeOrgId, { force: true });
+          if (active) setMembers(profiles);
+        }
+      } catch (error) {
+        console.error('[useOrganization] member profiles:', error);
+        if (active) setMembers([]);
+      } finally {
+        if (active) setLoading(false);
+      }
     }, () => setLoading(false));
     return () => {
+      active = false;
       unsubOrg();
       unsubMem();
     };
@@ -98,46 +96,16 @@ export function useOrganization() {
 
   // Invite by email
   const inviteMember = useCallback(async (email, invitedBy, role = 'member') => {
-    // Check if user with this email already exists
-    const usersQ = query(collection(db, 'users'), where('email', '==', email));
-    const userSnap = await getDocs(usersQ);
-    if (!userSnap.empty) {
-      // User exists → add them directly
-      const uid = userSnap.docs[0].id;
-      const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-      const memSnap = await getDoc(membershipRef);
-      if (memSnap.exists()) {
-        throw new Error('Цей користувач вже в команді');
-      }
-      await setDoc(membershipRef, {
-        id: `${activeOrgId}_${uid}`,
-        orgId: activeOrgId,
-        userId: uid,
-        role,
-        joinedAt: new Date().toISOString(),
-        hourlyRate: 0
-      });
-      return {
-        type: 'added_directly'
-      };
-    }
-
-    // User not registered yet → create invitation
-    const existingInvite = await getDocs(query(collection(db, 'invitations'), where('email', '==', email), where('organizationId', '==', activeOrgId), where('status', '==', 'pending')));
-    if (!existingInvite.empty) {
-      throw new Error('Запрошення вже відправлено на цей email');
-    }
-    await addDoc(collection(db, 'invitations'), {
-      email,
-      organizationId: activeOrgId,
-      invitedBy,
-      role,
-      status: 'pending',
-      createdAt: serverTimestamp()
+    if (!activeOrgId || !auth.currentUser) throw new Error('Authentication required');
+    const token = await auth.currentUser.getIdToken();
+    const response = await fetch('/api/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ email, organizationId: activeOrgId, role, invitedBy }),
     });
-    return {
-      type: 'invitation_sent'
-    };
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Не вдалося запросити користувача');
+    return result;
   }, [activeOrgId]);
 
   // Change role
@@ -190,38 +158,15 @@ export function useOrganization() {
 // across all organizations in the multi-org environment.
 export async function acceptPendingInvitation(uid, email) {
   try {
-    const q = query(collection(db, 'invitations'), where('email', '==', email), where('status', '==', 'pending'));
-    const snap = await getDocs(q);
-    if (snap.empty) return false;
-
-    // Add user to orgs
-    for (const d of snap.docs) {
-      const inviteData = d.data();
-      const orgId = inviteData.organizationId;
-      const orgRef = doc(db, 'organizations', orgId);
-      const orgSnap = await getDoc(orgRef);
-      if (orgSnap.exists()) {
-        const membershipRef = doc(db, 'orgMemberships', `${orgId}_${uid}`);
-        const memSnap = await getDoc(membershipRef);
-        if (!memSnap.exists()) {
-          await setDoc(membershipRef, {
-            id: `${orgId}_${uid}`,
-            orgId: orgId,
-            userId: uid,
-            role: inviteData.role || 'member',
-            joinedAt: new Date().toISOString(),
-            hourlyRate: 0
-          });
-        }
-      }
-
-      // Mark invitation as accepted
-      await updateDoc(doc(db, 'invitations', d.id), {
-        status: 'accepted',
-        acceptedAt: serverTimestamp()
-      });
-    }
-    return true;
+    if (!uid || !email || !auth.currentUser) return false;
+    const token = await auth.currentUser.getIdToken();
+    const response = await fetch('/api/invitations/accept', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error(`Invitation acceptance failed (${response.status})`);
+    const result = await response.json();
+    return result.accepted > 0;
   } catch (err) {
     console.error('[acceptPendingInvitation]', err);
     return false;

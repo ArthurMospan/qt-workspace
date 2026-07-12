@@ -20,6 +20,3 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
-
-// Organization ID — used for multi-tenancy
-export const ORG_ID = process.env.NEXT_PUBLIC_ORG_ID || 'quickteam';

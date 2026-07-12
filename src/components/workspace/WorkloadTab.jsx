@@ -1,7 +1,7 @@
 'use client';
 // src/components/workspace/WorkloadTab.jsx — Команда: capacity bars, time logs, overdue
 // «Готово» та «Час» рахуються в межах періоду з фільтрів сторінки (prop `period`).
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Users, AlertTriangle, Circle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { KpiCard } from '@/components/ui';
@@ -65,11 +65,15 @@ function TimeBar({ minutes, maxMinutes }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function WorkloadTab({ members = [], issues = [], timeLogs = [], period = 30 }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const { doneStatusIds } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
 
   const stats = useMemo(() => {
-    const now = Date.now();
     const periodAgo = now - period * 86400000;
 
     const memberStats = members.map(m => {
@@ -107,7 +111,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
     const maxMinutes = Math.max(...memberStats.map(s => s.minutes), 1);
 
     return { memberStats, maxOpen, maxMinutes };
-  }, [members, issues, timeLogs, period, doneSet]);
+  }, [members, issues, timeLogs, period, doneSet, now]);
 
   if (stats.memberStats.length === 0) {
     return (

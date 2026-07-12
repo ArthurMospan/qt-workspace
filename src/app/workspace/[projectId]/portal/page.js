@@ -14,7 +14,7 @@ const TABS = (projectId) => [
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2, href: `/workspace/${projectId}` },
 ];
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://qt-green.vercel.app';
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
 
 const STATUS_CFG = {
   approved:  { label: 'Погоджено',     color: '#10b981', Icon: CheckCircle },
@@ -81,10 +81,12 @@ export default function PortalPage({ params }) {
             <h3 className="text-[13px] font-bold text-ink">
               Матеріали <span className="text-muted font-normal">({materials.length})</span>
             </h3>
-            <a href={PORTAL_URL} target="_blank" rel="noopener"
-              className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline font-medium">
-              <ExternalLink size={11} /> Відкрити в порталі
-            </a>
+            {PORTAL_URL && (
+              <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline font-medium">
+                <ExternalLink size={11} /> Відкрити в порталі
+              </a>
+            )}
           </div>
 
           {stagesLoading ? (

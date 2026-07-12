@@ -31,7 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 src/
   app/                      # Next.js App Router
     api/
-      send-email/           # Cloud function for email
+      notifications/        # Server notification preferences + optional email
+      organizations/        # Organization-scoped member profiles
     login/                  # Google Auth login page
     onboarding/             # User onboarding flow
     workspace/              # Main authenticated app
@@ -74,7 +75,8 @@ src/
 
 **Authentication & Org Context**:
 - User authenticates via Google in /login
-- AppContext wraps the app, runs migrations on login, tracks presence
+- AppContext wraps the app, accepts verified pending invitations, and tracks presence
+- `/api/auth/session` creates an HTTP-only Firebase session cookie for Next.js Proxy
 - OrgContext manages org switching, members, invitations, role-based access
 - Both are in `src/lib/context/` and needed at app root for deep tree access
 
@@ -91,8 +93,8 @@ src/
 - App-level: React Context (AppContext, OrgContext) for auth, org, projects
 
 **Multi-Tenancy**:
-- Organization ID in firebase.js (`process.env.NEXT_PUBLIC_ORG_ID`)
-- All Firestore queries filtered by org
+- The active organization comes from the authenticated user's `orgMemberships`
+- All Firestore queries must be filtered or path-scoped by organization
 - User presence tracked at `presence/{userId}`
 
 ### Core Features
@@ -148,13 +150,13 @@ This is Next.js 16.2.6. There are breaking changes from earlier versions:
 - Modals (CreateTaskModal, IssueModal, BoardConfigModal) handle form state locally
 
 ### Migrations
-- `runMigrations()` in AppContext runs once per user on login
-- Idempotent and safe to call repeatedly
-- Add new migrations to `src/lib/migrations/` as schema evolves
+- Never run schema migrations from browser login flows
+- Use reviewed, idempotent Admin SDK scripts against an explicit Firebase project
+- Browser Firestore rules intentionally prevent cross-organization migration scans
 
 ### Environment Setup
 - Firebase config from `NEXT_PUBLIC_*` env vars in `.env.local`
-- Required: API Key, Auth Domain, Project ID, Storage Bucket, Messaging ID, App ID, Measurement ID, ORG_ID
+- Required: API Key, Auth Domain, Project ID, Storage Bucket, Messaging ID, App ID, Measurement ID
 
 ## Code Style
 

@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useId } from 'react';
 import { Check } from 'lucide-react';
 
 export default function Checkbox({
@@ -19,7 +19,8 @@ export default function Checkbox({
   };
 
   const { box, icon } = sizeMap[size];
-  const checkboxId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const checkboxId = id || generatedId;
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

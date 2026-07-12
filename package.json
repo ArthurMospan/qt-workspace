@@ -6,7 +6,9 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:rules": "node --test tests/firestore.rules.test.mjs",
+    "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\""
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -28,6 +30,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "firebase-tools": "^15.23.0",
     "tailwindcss": "^4"
   },
   "overrides": {

@@ -1,6 +1,6 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { X, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
@@ -28,26 +28,29 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   const [error, setError] = useState('');
 
   const selectedProject = projects?.find(p => p.id === form.projectId);
-  const activeHiddenCols = selectedProject?.hiddenColumns || [];
-  const visibleStatuses = statuses.filter(s => !activeHiddenCols.includes(s.id));
+  const activeHiddenCols = selectedProject?.hiddenColumns;
+  const visibleStatuses = useMemo(
+    () => statuses.filter(s => !(activeHiddenCols || []).includes(s.id)),
+    [statuses, activeHiddenCols],
+  );
 
   useEffect(() => {
     if (isOpen) {
-      setForm(f => ({
-        ...f,
-        status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
-      }));
+      queueMicrotask(() => setForm(f => ({
+          ...f,
+          status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
+        })));
     }
-  }, [isOpen, initialStatus]);
+  }, [isOpen, initialStatus, visibleStatuses]);
 
   useEffect(() => {
     if (isOpen && form.status) {
       const isValid = visibleStatuses.some(s => s.id === form.status);
       if (!isValid && visibleStatuses.length > 0) {
-        setForm(f => ({ ...f, status: visibleStatuses[0].id }));
+        queueMicrotask(() => setForm(f => ({ ...f, status: visibleStatuses[0].id })));
       }
     }
-  }, [form.projectId, isOpen]); // intentionally left visibleStatuses out to prevent infinite re-renders
+  }, [form.projectId, form.status, isOpen, visibleStatuses]);
 
   if (!isOpen) return null;
 

@@ -15,18 +15,19 @@ export async function uploadFile(file, path, onProgress = null) {
 
   try {
     if (onProgress) onProgress(20);
-    const { downloadUrl } = await uploadFileToCloudinary(file, folder);
+    const { downloadUrl, storagePath, resourceType } = await uploadFileToCloudinary(file, folder);
     if (onProgress) onProgress(100);
 
     return {
       name: file.name,
       url: downloadUrl,
       size: file.size,
-      type: file.type
+      type: file.type,
+      storagePath,
+      resourceType,
     };
   } catch (error) {
     console.error('Error in uploadFile helper via Cloudinary:', error);
     throw error;
   }
 }
-

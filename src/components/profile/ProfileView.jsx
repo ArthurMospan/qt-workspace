@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu } from '@/components/ui';
@@ -9,50 +9,9 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-
-// Owner/admin-only editor for a member's hourly rate (stored in orgMemberships)
-function RateEditor({ uid, initialRate, onSave }) {
-  const [rate, setRate] = useState(initialRate);
-  const showToast = useWorkspaceStore(s => s.showToast);
-
-  const save = async () => {
-    if (Number(rate) === Number(initialRate)) return;
-    try {
-      await onSave(uid, rate);
-      showToast('Ставку оновлено ✓');
-    } catch {
-      showToast('Помилка оновлення', 'error');
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Погодинна ставка (USD)</h3>
-      <input
-        type="number" min="0" step="1"
-        value={rate}
-        onChange={e => setRate(e.target.value)}
-        onBlur={save}
-        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-        className="w-full max-w-[220px] px-4 py-[12px] bg-canvas border border-line rounded-[10px] text-[14px] font-semibold text-ink focus:border-ink outline-none transition-colors"
-      />
-    </div>
-  );
-}
+import { sendNotification } from '@/lib/hooks/useNotifications';
 
 const getRealProfileDetails = (member) => {
-  const isDemo = member.email === 'demo@quickteam.com' || member.email?.startsWith('demo');
-  if (isDemo && !member.bio && !member.profile?.bio) {
-    return {
-      bio: 'Я продукт-менеджер з понад 5 роками досвіду в управлінні B2B SaaS продуктами. Завжди відкритий до нових ідей та спілкування.',
-      skills: ['Product Management', 'Agile', 'Scrum', 'UX/UI', 'Roadmapping'],
-      telegram: '@demo_pm',
-      phone: '+38 (050) 123-45-67',
-      location: 'Київ, Україна',
-      timezone: 'Europe/Kyiv'
-    };
-  }
-
   const skills = member.profile?.skills || member.skills;
   return {
     bio:      member.profile?.bio      || member.bio      || null,
@@ -65,11 +24,16 @@ const getRealProfileDetails = (member) => {
 };
 
 export default function ProfileView({ user, onClose }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const router = useRouter();
-  const { currentUser, projects, orgRole } = useAppContext();
+  const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
   const { positions = [] } = useWorkflowConfig();
-  const { members: orgMembers, setMemberRate } = useOrganization();
+  const { members: orgMembers } = useOrganization();
   const [activeTab, setActiveTab] = useState('profile');
 
   if (!user) return null;
@@ -80,7 +44,7 @@ export default function ProfileView({ user, onClose }) {
   // Live membership record — hourlyRate lives in orgMemberships, not the user doc
   const memberRecord = orgMembers.find(m => (m.id || m.uid) === uid);
   
-  const isOnline = user.lastActive && (Date.now() - new Date(user.lastActive).getTime() < 120000);
+  const isOnline = user.lastActive && (now - new Date(user.lastActive).getTime() < 120000);
   const details = getRealProfileDetails(user);
 
   const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
@@ -94,43 +58,27 @@ export default function ProfileView({ user, onClose }) {
 
   const handleEmergencyCall = async () => {
     try {
-      const { collection, addDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
-      
       const emergencyText = `🆘 ЕКСТРЕННИЙ ВИКЛИК від ${currentUser?.name || 'Учасника'}!`;
       const link = `/workspace/chat?user=${currentUser?.id || currentUser?.uid}`;
-      
-      await addDoc(collection(db, 'notifications'), {
-        userId: uid,
+
+      await sendNotification({
+        userIds: [uid],
         type: 'alert',
         title: '🆘 Екстрений виклик',
         body: emergencyText,
-        createdAt: new Date(),
-        read: false,
-        link
+        link,
+        organizationId: activeOrgId,
+        actor: {
+          id: currentUser?.id || currentUser?.uid,
+          name: currentUser?.name || '',
+          avatar: currentUser?.avatar || '',
+        },
       });
       
       if (typeof Audio !== 'undefined') {
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
         audio.volume = 0.2;
         audio.play().catch(() => {});
-      }
-
-      try {
-        await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: user.email,
-            type: 'emergency',
-            title: '🆘 ЕКСТРЕННИЙ ВИКЛИК',
-            body: `Вас терміново викликає ${currentUser?.name || 'Учасник'}. Зайдіть у додаток!`,
-            link: `${window.location.origin}${link}`,
-            userName: currentUser?.name || 'Учасник'
-          })
-        });
-      } catch (err) {
-        console.error('Email failed to send', err);
       }
 
       useWorkspaceStore.getState().showToast(`Виклик надіслано ${user.name || 'користувачу'}`, 'success');
@@ -333,15 +281,7 @@ export default function ProfileView({ user, onClose }) {
               </div>
             </div>
 
-            {/* Погодинна ставка — лише для owner/admin, не для власного профілю */}
-            {isAdminOrOwner && !isMe && (
-              <RateEditor
-                key={uid}
-                uid={uid}
-                initialRate={memberRecord?.hourlyRate || 0}
-                onSave={setMemberRate}
-              />
-            )}
+            {/* Rates section removed as user requested to only configure rates via settings positions */}
           </div>
         )}
 
