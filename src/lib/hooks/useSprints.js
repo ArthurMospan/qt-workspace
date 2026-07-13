@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useSprints() {
   const {
     activeOrgId
@@ -35,7 +36,7 @@ export function useSprints() {
       setSprints(docs);
       setLoading(false);
     }, err => {
-      console.error('[useSprints] onSnapshot error', err);
+      reportLoadError('[useSprints]', err);
       setLoading(false);
     });
     return () => unsub();

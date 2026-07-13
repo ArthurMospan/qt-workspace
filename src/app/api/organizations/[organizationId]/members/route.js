@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const PUBLIC_PROFILE_FIELDS = [
   'name', 'email', 'avatar', 'photoURL', 'phone', 'title', 'statusEmoji',
@@ -58,7 +59,6 @@ export async function GET(request, context) {
 
     return NextResponse.json({ members }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('[organization-members]', error);
-    return NextResponse.json({ error: 'Failed to load organization members' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'organization-members', fallbackMessage: 'Failed to load organization members' });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const INVERSE = {
   blocks: 'is-blocked-by',
@@ -44,8 +45,7 @@ export async function GET(request, context) {
       .map(document => [document.id, serialize(document)]));
     return NextResponse.json({ links: [...unique.values()] }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('[Issue links GET]', error);
-    return NextResponse.json({ error: 'Failed to load issue links' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Issue links GET', fallbackMessage: 'Failed to load issue links' });
   }
 }
 
@@ -87,8 +87,7 @@ export async function POST(request, context) {
     await batch.commit();
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
-    console.error('[Issue links POST]', error);
-    return NextResponse.json({ error: 'Failed to create issue link' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Issue links POST', fallbackMessage: 'Failed to create issue link' });
   }
 }
 
@@ -123,7 +122,6 @@ export async function DELETE(request, context) {
     await batch.commit();
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Issue links DELETE]', error);
-    return NextResponse.json({ error: 'Failed to remove issue link' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Issue links DELETE', fallbackMessage: 'Failed to remove issue link' });
   }
 }

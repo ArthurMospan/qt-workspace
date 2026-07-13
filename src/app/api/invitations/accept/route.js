@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function POST(request) {
   try {
@@ -53,7 +54,6 @@ export async function POST(request) {
     if (accepted > 0) await batch.commit();
     return NextResponse.json({ accepted });
   } catch (error) {
-    console.error('[Invitation Accept]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Invitation Accept', fallbackMessage: 'Internal Server Error' });
   }
 }

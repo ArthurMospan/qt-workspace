@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 async function loadAuthorizedProject(request, projectId) {
   const db = getAdminDb();
@@ -60,8 +61,7 @@ export async function PATCH(request, context) {
     if (error.message === 'PROJECT_LIMIT_REACHED') {
       return NextResponse.json({ error: 'Ліміт активних проєктів вичерпано' }, { status: 403 });
     }
-    console.error('[Project PATCH]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Project PATCH', fallbackMessage: 'Internal Server Error' });
   }
 }
 
@@ -101,7 +101,6 @@ export async function DELETE(request, context) {
     await db.recursiveDelete(ref);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Project DELETE]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Project DELETE', fallbackMessage: 'Internal Server Error' });
   }
 }

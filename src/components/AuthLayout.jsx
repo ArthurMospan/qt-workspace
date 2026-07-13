@@ -36,7 +36,7 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
         {/* Header - Padding matches WorkspaceSidebar: pt-24px, px-20px */}
         <div className="w-full flex items-center justify-between pt-[24px] px-[20px] pb-[16px] shrink-0 relative z-50">
           <div className="flex items-center gap-[12px]">
-            <Image src="/logo-min.svg" alt="QT" width={32} height={32} className="object-contain" />
+            <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
             <h1 className="text-white text-[18px] font-bold tracking-tight leading-tight truncate">QuickTeam</h1>
           </div>
 

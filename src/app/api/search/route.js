@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 function scoreIssue(issue, term) {
   const key = (issue.issueKey || '').toLowerCase();
@@ -51,7 +52,6 @@ export async function GET(request) {
 
     return NextResponse.json({ results }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('[search]', error);
-    return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'search', fallbackMessage: 'Search failed' });
   }
 }

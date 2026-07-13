@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useProjectTimeLogs(projectId) {
   const {
     activeOrgId
@@ -37,7 +38,7 @@ export function useProjectTimeLogs(projectId) {
       setByUser(userMap);
       setLoading(false);
     }, err => {
-      console.error('[useProjectTimeLogs] onSnapshot error', err);
+      reportLoadError('[useProjectTimeLogs]', err);
       setLoading(false);
     });
     return () => unsub();

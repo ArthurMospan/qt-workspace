@@ -1,43 +1,272 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Clock, Send, Activity, MessageSquare } from 'lucide-react';
+'use client';
+
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, FileText, Paperclip, Pencil, Reply, Send, Trash2, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
+import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import Button from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
-import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
+import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import Button from '@/components/ui/Button';
-import { useRouter } from 'next/navigation';
+
+const FIELD_LABELS = {
+  status: 'статус',
+  columnId: 'статус',
+  priority: 'пріоритет',
+  title: 'назву',
+  assigneeIds: 'виконавця',
+};
+
+const STATUS_LABELS = {
+  backlog: 'Backlog',
+  todo: 'To Do',
+  'in-progress': 'In Progress',
+  'code-review': 'Code Review',
+  qa: 'QA',
+  'client-approval': 'Client Approval',
+  done: 'Done',
+};
 
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
-  const h = Math.floor(minutes / 60), m = minutes % 60;
-  if (h === 0) return `${m}хв`;
-  if (m === 0) return `${h}г`;
-  return `${h}г ${m}хв`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest}хв`;
+  if (rest === 0) return `${hours}г`;
+  return `${hours}г ${rest}хв`;
 }
 
-function fmtClock(ts) {
-  if (!ts) return '';
-  const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+function fmtClock(timestamp) {
+  if (!timestamp) return '';
+  const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function UnifiedTimeline({ issueId, projectId, isArchived }) {
+function timestampDate(timestamp) {
+  if (!timestamp) return null;
+  const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function dayKey(timestamp) {
+  const date = timestampDate(timestamp);
+  if (!date) return '';
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function dayLabel(timestamp) {
+  const date = timestampDate(timestamp);
+  if (!date) return '';
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(date) === dayKey(today)) return 'Сьогодні';
+  if (dayKey(date) === dayKey(yesterday)) return 'Вчора';
+  return date.toLocaleDateString('uk-UA', {
+    day: 'numeric',
+    month: 'long',
+    ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
+  });
+}
+
+function attachmentUrl(attachment) {
+  return attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || '';
+}
+
+function isImageAttachment(attachment) {
+  if (attachment?.type?.startsWith('image/')) return true;
+  return /\.(png|jpe?g|gif|webp|avif)$/i.test(attachment?.name || attachmentUrl(attachment));
+}
+
+function fmtBytes(bytes) {
+  if (!bytes || bytes < 0) return '';
+  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(unitIndex > 0 && value < 10 ? 1 : 0)} ${units[unitIndex]}`;
+}
+
+function AttachmentPreview({ attachment, dark = false, previewUrl, onRemove, onOpen }) {
+  const url = previewUrl || attachmentUrl(attachment);
+  const name = attachment.name || 'Файл';
+  const image = isImageAttachment(attachment) && url;
+  const sizeLabel = fmtBytes(attachment.size);
+
+  if (image) {
+    const imageContent = (
+      <>
+        <span className="relative block h-[140px] w-full overflow-hidden bg-canvas">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+          {!onRemove && (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/10 group-hover:opacity-100">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white"><Eye size={15} /></span>
+            </span>
+          )}
+          {onRemove && (
+            <button type="button" onClick={onRemove} aria-label={`Прибрати ${name}`} className="absolute right-2 top-2 z-10 rounded-[7px] bg-black/55 p-1.5 text-white hover:bg-black/70"><X size={14} /></button>
+          )}
+        </span>
+        <span className={`flex items-center gap-2 px-3 py-2 ${dark ? 'bg-white/10' : 'bg-white/90'}`}>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12px] font-semibold">{name}</span>
+            {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
+          </span>
+          {!onRemove && <Eye size={14} className={dark ? 'text-white/55' : 'text-faint'} />}
+        </span>
+      </>
+    );
+
+    const imageClassName = `group block w-full overflow-hidden rounded-[10px] border text-left transition-colors ${dark ? 'border-white/10 text-white hover:border-white/20' : 'border-black/[0.06] text-ink hover:border-[#d7d7d7]'}`;
+    return onRemove
+      ? <div className={imageClassName}>{imageContent}</div>
+      : <button type="button" onClick={() => onOpen?.({ ...attachment, previewUrl: url })} className={imageClassName} aria-label={`Переглянути ${name}`}>{imageContent}</button>;
+  }
+
+  const className = `flex min-w-0 w-full items-center gap-3 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${dark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-white/80 text-ink hover:border-[#d7d7d7] hover:bg-white'}`;
+  const content = (
+    <>
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ${dark ? 'bg-white/10' : 'bg-canvas'}`}>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="" className="h-full w-full object-cover" />
+        ) : <FileText size={16} className={dark ? 'text-white/65' : 'text-muted'} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[12px] font-semibold">{name}</span>
+        {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
+      </span>
+      {onRemove ? (
+        <button type="button" onClick={onRemove} aria-label={`Прибрати ${name}`} className={`shrink-0 rounded-[6px] p-1 ${dark ? 'text-white/55 hover:bg-white/10 hover:text-white' : 'text-faint hover:bg-canvas hover:text-ink'}`}><X size={13} /></button>
+      ) : <Eye size={14} className={`shrink-0 ${dark ? 'text-white/45' : 'text-faint'}`} />}
+    </>
+  );
+
+  return url && !onRemove ? (
+    <button type="button" onClick={() => onOpen?.({ ...attachment, previewUrl: url })} className={className} aria-label={`Переглянути ${name}`}>{content}</button>
+  ) : <div className={className}>{content}</div>;
+}
+
+function PendingAttachmentPreview({ file, onRemove }) {
+  const [previewUrl] = useState(() => file?.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
+  useEffect(() => {
+    if (!previewUrl) return undefined;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+  return <AttachmentPreview attachment={file} previewUrl={previewUrl} onRemove={onRemove} />;
+}
+
+function CommentAttachments({ attachments = [], dark = false, onOpen }) {
+  if (attachments.length === 0) return null;
+  return (
+    <div className="mt-2 flex min-w-[210px] max-w-[280px] flex-col gap-1.5">
+      {attachments.map((attachment, index) => (
+        <AttachmentPreview key={`${attachment.name || 'file'}-${index}`} attachment={attachment} dark={dark} onOpen={onOpen} />
+      ))}
+    </div>
+  );
+}
+
+function parseArrayValue(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string' || !value.startsWith('[')) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatAuditValue(field, value, members) {
+  if (value === null || value === undefined || value === '') return 'не вказано';
+  if (field === 'assigneeIds') {
+    const ids = parseArrayValue(value) || [value];
+    if (ids.length === 0) return 'не призначено';
+    return ids.map(id => members.find(member => (member.id || member.uid) === id)?.name || 'учасника').join(', ');
+  }
+  if (field === 'status' || field === 'columnId') return STATUS_LABELS[value] || value;
+  return String(value);
+}
+
+function formatAuditEvent(item, members) {
+  const field = item.field || item.action?.replace(/^changed_/, '');
+  if (item.action === 'created') return 'Створено завдання';
+  if (!field || !FIELD_LABELS[field]) return 'Оновлено завдання';
+  const fieldLabel = `${FIELD_LABELS[field][0].toUpperCase()}${FIELD_LABELS[field].slice(1)}`;
+  const from = formatAuditValue(field, item.from ?? item.oldValue, members);
+  const to = formatAuditValue(field, item.to ?? item.newValue, members);
+  if (from === to || from === 'не вказано') return `${fieldLabel} змінено на «${to}»`;
+  return `${fieldLabel} змінено: «${from}» → «${to}»`;
+}
+
+function ReplyQuote({ replyTo, dark = false }) {
+  if (!replyTo) return null;
+  return (
+    <div className={`mb-2 rounded-[7px] px-2.5 py-2 text-[11px] leading-4 ${dark ? 'bg-white/10 text-white/75' : 'bg-black/[0.05] text-muted'}`}>
+      <div className={`mb-0.5 font-bold ${dark ? 'text-white' : 'text-ink'}`}>{replyTo.authorName || 'Учасник'}</div>
+      <div className="line-clamp-2 whitespace-pre-wrap">{replyTo.text || 'Вкладення'}</div>
+    </div>
+  );
+}
+
+function EventMessage({ text, time, actor }) {
+  return (
+    <div className="flex items-end gap-2.5">
+      <div className="mb-5 shrink-0"><UserAvatar user={actor} size={28} /></div>
+      <div className="flex max-w-[84%] min-w-0 flex-col items-start">
+        <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{actor?.name || 'Система'}</span>
+        <div className="max-w-full rounded-[12px] bg-white/75 px-3 py-2.5 text-[12px] leading-5 text-[#555]">
+          {text}
+        </div>
+        <span className="mt-1 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
+      </div>
+    </div>
+  );
+}
+
+function DaySeparator({ timestamp }) {
+  const label = dayLabel(timestamp);
+  if (!label) return null;
+  return (
+    <div className="flex items-center gap-3 py-1" aria-label={`Дата: ${label}`}>
+      <span className="h-px flex-1 bg-black/[0.06]" />
+      <span className="text-[10px] font-semibold text-[#999]">{label}</span>
+      <span className="h-px flex-1 bg-black/[0.06]" />
+    </div>
+  );
+}
+
+export default function UnifiedTimeline({ issueId, projectId, isArchived, org, members = [] }) {
   const router = useRouter();
-  const { currentUser } = useAppContext();
-  const { members } = useOrganization();
-  const showToast = useWorkspaceStore(s => s.showToast);
+  const { currentUser, projects = [] } = useAppContext();
+  const showToast = useWorkspaceStore(state => state.showToast);
+  const confirmDialog = useConfirm();
+  const project = projects.find(item => item.id === projectId);
 
-  const { comments, addComment } = useComments(issueId);
+  const { comments, addComment, updateComment, deleteComment } = useComments(issueId);
   const { entries: auditLogs } = useAuditLog(issueId);
   const { logs: timeLogs } = useTimeLogs(issueId);
 
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [viewerAttachment, setViewerAttachment] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const wrapperRef = useRef(null);
 
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -45,64 +274,111 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived }) {
     startIndex: -1,
     cursorIndex: -1,
     selectedIndex: 0,
-    ignoreIndex: -1
+    ignoreIndex: -1,
   });
-  const wrapperRef = useRef(null);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
-    const q = mentionState.query.toLowerCase();
-    return members.filter(m => m.name?.toLowerCase().includes(q));
+    const query = mentionState.query.toLowerCase();
+    return members.filter(member => member.name?.toLowerCase().includes(query));
   }, [mentionState.active, mentionState.query, members]);
 
+  const timeline = useMemo(() => {
+    const items = [];
+    comments.forEach(comment => items.push({
+      _type: 'comment',
+      _time: comment.createdAt?.toMillis ? comment.createdAt.toMillis() : 0,
+      ...comment,
+    }));
+    auditLogs.forEach(entry => items.push({
+      _type: 'audit',
+      _time: entry.createdAt?.toMillis ? entry.createdAt.toMillis() : 0,
+      ...entry,
+    }));
+    timeLogs.forEach(log => items.push({
+      _type: 'time',
+      _time: log.loggedAt?.toMillis ? log.loggedAt.toMillis() : 0,
+      ...log,
+    }));
+    return items.sort((a, b) => a._time - b._time);
+  }, [comments, auditLogs, timeLogs]);
+
+  const resetComposer = () => {
+    setInput('');
+    setPendingFiles([]);
+    setReplyTo(null);
+    setEditingComment(null);
+    if (inputRef.current) inputRef.current.style.height = '32px';
+  };
+
+  const focusComposer = () => setTimeout(() => inputRef.current?.focus(), 0);
+
+  const beginReply = comment => {
+    setEditingComment(null);
+    setReplyTo({ id: comment.id, authorName: comment.authorName, text: comment.text });
+    focusComposer();
+  };
+
+  const beginEdit = comment => {
+    setReplyTo(null);
+    setPendingFiles([]);
+    setEditingComment(comment);
+    setInput(comment.text || '');
+    focusComposer();
+  };
+
+  const handleDelete = async comment => {
+    const confirmed = await confirmDialog({
+      title: 'Видалити повідомлення?',
+      message: 'Цю дію неможливо скасувати.',
+      confirmText: 'Видалити',
+      danger: true,
+    });
+    if (!confirmed) return;
+    try {
+      await deleteComment(comment.id);
+      if (editingComment?.id === comment.id || replyTo?.id === comment.id) resetComposer();
+    } catch (error) {
+      showToast(`Не вдалося видалити повідомлення: ${error.message}`, 'error');
+    }
+  };
+
   const checkMentions = (text, cursorPosition) => {
-    setMentionState(prev => {
-      const lastAtIdx = text.lastIndexOf('@', cursorPosition - 1);
-      if (lastAtIdx === -1) {
-        return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
-      }
-      const textBetween = text.slice(lastAtIdx, cursorPosition);
-      if (/\s/.test(textBetween)) {
-        return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
-      }
-      if (prev.ignoreIndex === lastAtIdx) {
-        return prev;
-      }
+    setMentionState(previous => {
+      const lastAtIndex = text.lastIndexOf('@', cursorPosition - 1);
+      if (lastAtIndex === -1) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      const textBetween = text.slice(lastAtIndex, cursorPosition);
+      if (/\s/.test(textBetween)) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      if (previous.ignoreIndex === lastAtIndex) return previous;
       return {
         active: true,
         query: textBetween.slice(1),
-        startIndex: lastAtIdx,
+        startIndex: lastAtIndex,
         cursorIndex: cursorPosition,
-        selectedIndex: prev.active && prev.startIndex === lastAtIdx ? prev.selectedIndex : 0,
-        ignoreIndex: -1
+        selectedIndex: previous.active && previous.startIndex === lastAtIndex ? previous.selectedIndex : 0,
+        ignoreIndex: -1,
       };
     });
   };
 
-  const selectMention = (member) => {
+  const selectMention = member => {
     const textBefore = input.slice(0, mentionState.startIndex);
     const textAfter = input.slice(mentionState.cursorIndex);
     const mentionText = `@${member.name} `;
-    const nextInput = textBefore + mentionText + textAfter;
-    setInput(nextInput);
-    
+    setInput(textBefore + mentionText + textAfter);
     setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 });
-    
     setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        const cursorPosition = textBefore.length + mentionText.length;
-        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-        inputRef.current.style.height = 'auto';
-        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
-      }
+      if (!inputRef.current) return;
+      const cursorPosition = textBefore.length + mentionText.length;
+      inputRef.current.focus();
+      inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
     }, 0);
   };
 
   useEffect(() => {
-    if (!mentionState.active) return;
-    const handleOutsideClick = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+    if (!mentionState.active) return undefined;
+    const handleOutsideClick = event => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setMentionState({ active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 });
       }
     };
@@ -110,245 +386,196 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived }) {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [mentionState.active]);
 
-  // Combine and sort
-  const timeline = useMemo(() => {
-    const items = [];
-
-    comments.forEach(c => items.push({
-      _type: 'comment',
-      _time: c.createdAt?.toMillis ? c.createdAt.toMillis() : 0,
-      ...c
-    }));
-
-    auditLogs.forEach(a => items.push({
-      _type: 'audit',
-      _time: a.createdAt?.toMillis ? a.createdAt.toMillis() : 0,
-      ...a
-    }));
-
-    timeLogs.forEach(t => items.push({
-      _type: 'time',
-      _time: t.loggedAt?.toMillis ? t.loggedAt.toMillis() : 0,
-      ...t
-    }));
-
-    return items.sort((a, b) => a._time - b._time);
-  }, [comments, auditLogs, timeLogs]);
-
-  // Scroll to bottom on new items
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [timeline.length]);
+
+  const addPendingFiles = fileList => {
+    const files = Array.from(fileList || []);
+    const accepted = files.filter(file => file.size <= 20 * 1024 * 1024).slice(0, Math.max(0, 5 - pendingFiles.length));
+    if (accepted.length !== files.length) showToast('До 5 файлів, максимум 20 МБ кожен', 'error');
+    setPendingFiles(previous => [...previous, ...accepted]);
+  };
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || sending) return;
+    if ((!text && pendingFiles.length === 0) || sending) return;
     setSending(true);
     try {
-      await addComment(issueId, text, currentUser);
-      setInput('');
-    } catch (err) {
-      showToast('Помилка надсилання: ' + err.message, 'error');
+      if (editingComment) {
+        await updateComment(editingComment.id, text);
+      } else {
+        const folder = `organizations/${project?.organizationId || 'shared'}/comments`;
+        const attachments = [];
+        for (const file of pendingFiles) attachments.push(await uploadFile(file, folder));
+        await addComment(issueId, text, currentUser, attachments, replyTo);
+      }
+      resetComposer();
+    } catch (error) {
+      showToast(`Помилка надсилання: ${error.message}`, 'error');
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
-
-      {/* Scrollable Timeline */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar flex flex-col gap-3">
+    <div className="flex h-full flex-col bg-canvas">
+      {viewerAttachment && <AttachmentViewer attachment={viewerAttachment} onClose={() => setViewerAttachment(null)} />}
+      <div ref={scrollRef} className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
         {timeline.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3 text-center">
-            <div className="w-10 h-10 rounded-full bg-[#ebebeb] flex items-center justify-center">
-              <MessageSquare size={18} className="text-muted" />
-            </div>
+          <div className="flex flex-1 items-center justify-center py-12 text-center">
             <p className="text-[12px] font-medium text-muted">Поки що немає повідомлень</p>
-            <p className="text-[11px] text-faint">Напиши перше — команда побачить</p>
           </div>
         )}
 
-        {timeline.map(item => {
-          // ── Comment ─────────────────────────────────────
+        {timeline.map((item, index) => {
+          const itemTimestamp = item._type === 'time' ? item.loggedAt : item.createdAt;
+          const previousItem = timeline[index - 1];
+          const previousTimestamp = previousItem?._type === 'time' ? previousItem.loggedAt : previousItem?.createdAt;
+          const separator = index === 0 || dayKey(itemTimestamp) !== dayKey(previousTimestamp)
+            ? <DaySeparator timestamp={itemTimestamp} />
+            : null;
+
           if (item._type === 'comment') {
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
             return (
-              <div key={`comment-${item.id}`} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                <button 
-                  className="shrink-0 mt-auto mb-5 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`?member=${item.authorId}`);
-                  }}
-                  title="Переглянути профіль"
+              <Fragment key={`comment-${item.id}`}>
+              {separator}
+              <div className={`group flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
+                <button
+                  type="button"
+                  className="mb-6 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                  onClick={() => router.push(`?member=${item.authorId}`)}
+                  aria-label={`Профіль: ${item.authorName || 'учасник'}`}
                 >
-                  <UserAvatar
-                    user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }}
-                    size={28}
-                  />
+                  <UserAvatar user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }} size={28} />
                 </button>
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[82%] min-w-0`}>
-                  {!isMe && (
-                    <span className="text-[11px] font-bold text-ink mb-1 ml-1 flex items-center gap-1">
-                      {item.authorName}
-                      {members.find(m => (m.id || m.uid) === item.authorId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === item.authorId).statusEmoji}</span>}
+                <div className={`flex max-w-[84%] min-w-0 flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  {!isMe && <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{item.authorName}</span>}
+                  <div className={`max-w-full break-words rounded-[12px] px-3 py-2.5 text-[13px] leading-5 ${isMe ? 'bg-ink text-white' : 'bg-white text-ink'}`}>
+                    <ReplyQuote replyTo={item.replyTo} dark={isMe} />
+                    {item.text && <div className="whitespace-pre-wrap">{item.text}</div>}
+                    <CommentAttachments attachments={item.attachments} dark={isMe} onOpen={setViewerAttachment} />
+                  </div>
+                  <div className={`mt-1 flex items-center gap-1 ${isMe ? 'flex-row-reverse' : ''}`}>
+                    <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
+                      {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
-                  )}
-                  <div className={`px-[14px] py-[10px] text-[13px] leading-[20px] break-words whitespace-pre-wrap shadow-sm border ${
-                    isMe
-                      ? 'bg-ink text-white border-ink rounded-[16px] rounded-br-[4px]'
-                      : 'bg-white text-ink border-[#e4e4e7] rounded-[16px] rounded-bl-[4px]'
-                  }`}>
-                    {item.text}
+                    {!isArchived && (
+                      <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
+                        <button type="button" onClick={() => beginReply(item)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Відповісти" title="Відповісти"><Reply size={12} /></button>
+                        {isMe && <button type="button" onClick={() => beginEdit(item)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Редагувати повідомлення" title="Редагувати"><Pencil size={12} /></button>}
+                        {isMe && <button type="button" onClick={() => handleDelete(item)} className="rounded-[6px] p-1 text-muted hover:bg-red-100 hover:text-red-500" aria-label="Видалити повідомлення" title="Видалити"><Trash2 size={12} /></button>}
+                      </div>
+                    )}
                   </div>
-                  <span className="text-[10px] text-faint mt-[3px] font-medium">
-                    {fmtClock(item.createdAt)}
-                  </span>
                 </div>
               </div>
+              </Fragment>
             );
           }
 
-          // ── Time log ─────────────────────────────────────
           if (item._type === 'time') {
-            const member = members.find(m => m.id === item.userId);
-            return (
-              <div key={`time-${item.id}`} className="flex justify-center my-1">
-                <div className="flex items-center gap-[6px] bg-white border border-[#e4e4e7] shadow-sm text-[#52525b] px-3 py-[6px] rounded-full text-[11px] font-medium">
-                  <div className="w-[16px] h-[16px] rounded-full bg-canvas flex items-center justify-center shrink-0">
-                    <Clock size={10} className="text-ink" />
-                  </div>
-                  <span><strong className="text-ink">{member?.name || 'Хтось'}</strong> списав <strong className="text-ink">{fmtTime(item.spentMinutes)}</strong>{item.description ? ` — ${item.description}` : ''}</span>
-                </div>
-              </div>
-            );
+            const member = members.find(candidate => (candidate.id || candidate.uid) === item.userId);
+            const text = `Списано ${fmtTime(item.spentMinutes)}${item.description ? ` · ${item.description}` : ''}`;
+            const actor = member
+              ? { ...member, id: member.id || member.uid, avatar: member.avatar || member.photoURL }
+              : { id: item.userId, name: item.userName || 'Учасник' };
+            return <Fragment key={`time-${item.id}`}>{separator}<EventMessage text={text} time={fmtClock(item.loggedAt)} actor={actor} /></Fragment>;
           }
 
-          // ── Audit log ─────────────────────────────────────
           if (item._type === 'audit') {
-            return (
-              <div key={`audit-${item.id}`} className="flex justify-center">
-                <div className="flex items-center gap-[5px] text-muted text-[11px] font-medium">
-                  <Activity size={10} className="shrink-0" />
-                  <span>
-                    Зміна від <strong className="text-ink">{item.byName || 'системи'}</strong>
-                    {(item.field || item.action?.startsWith('changed_'))
-                      ? `: ${item.field || item.action.replace('changed_', '')}${item.newValue || item.to ? ` → ${item.newValue || item.to}` : ''}`
-                      : ''}
-                  </span>
-                </div>
-              </div>
-            );
+            const member = members.find(candidate => (candidate.id || candidate.uid) === item.userId);
+            const actor = item.userId
+              ? { ...member, id: item.userId, name: item.userName || member?.name || 'Учасник', avatar: member?.avatar || member?.photoURL }
+              : { id: org?.id, name: org?.name || 'Організація', avatar: org?.logo || org?.logoUrl };
+            return <Fragment key={`audit-${item.id}`}>{separator}<EventMessage text={formatAuditEvent(item, members)} time={fmtClock(item.createdAt)} actor={actor} /></Fragment>;
           }
-
           return null;
         })}
       </div>
 
-      {/* Input Area — main accent */}
       {!isArchived && (
-      <div className="px-3 pb-3 shrink-0 relative" ref={wrapperRef}>
-        {/* Autocomplete Mentions Dropdown */}
-        {mentionState.active && filteredMembers.length > 0 && (
-          <div className="absolute bottom-[100%] left-3 right-3 mb-2 bg-white border border-line rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-[60] overflow-hidden max-h-[160px] overflow-y-auto">
-            {filteredMembers.map((member, index) => {
-              const isSelected = index === mentionState.selectedIndex;
-              return (
+        <div className="relative shrink-0 bg-canvas px-3 pb-3 pt-2" ref={wrapperRef}>
+          {mentionState.active && filteredMembers.length > 0 && (
+            <div className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
+              {filteredMembers.map((member, index) => (
                 <button
                   key={member.id || member.uid}
+                  type="button"
                   onClick={() => selectMention(member)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] font-medium transition-colors ${
-                    isSelected ? 'bg-canvas text-ink font-bold' : 'text-[#4b5563] hover:bg-[#fafafa]'
-                  }`}
+                  className={`flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium ${index === mentionState.selectedIndex ? 'bg-canvas text-ink' : 'text-muted hover:bg-[#f7f7f7]'}`}
                 >
                   <UserAvatar user={member} size={20} />
                   <span>{member.name}</span>
                 </button>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        <div className={`flex items-end gap-2 bg-white rounded-[16px] px-3 py-[10px] transition-all shadow-sm border ${input ? 'border-faint' : 'border-[#e4e4e7]'}`}>
-          <div className="shrink-0 mt-[2px]">
-            <UserAvatar
-              user={{ id: currentUser?.uid || currentUser?.id, name: currentUser?.name, avatar: currentUser?.avatar }}
-              size={24}
+          {(replyTo || editingComment) && (
+            <div className="mb-2 flex items-start gap-2 rounded-[10px] bg-black/[0.05] px-3 py-2">
+              <div className="min-w-0 flex-1 border-l-2 border-[#8d8d8d] pl-2">
+                <div className="text-[11px] font-bold text-ink">{editingComment ? 'Редагування повідомлення' : `Відповідь для ${replyTo.authorName || 'учасника'}`}</div>
+                <div className="truncate text-[11px] text-muted">{editingComment?.text || replyTo?.text || 'Вкладення'}</div>
+              </div>
+              <button type="button" onClick={resetComposer} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Скасувати"><X size={13} /></button>
+            </div>
+          )}
+
+          {pendingFiles.length > 0 && (
+            <div className="mb-2 flex max-w-[320px] flex-col gap-1.5">
+              {pendingFiles.map((file, index) => (
+                <PendingAttachmentPreview key={`${file.name}-${index}`} file={file} onRemove={() => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))} />
+              ))}
+            </div>
+          )}
+
+          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
+          <div className="flex items-center gap-1 rounded-[16px] border-[4px] border-[#e3e3e3] bg-white p-1 transition-colors focus-within:border-[#d8d8d8]">
+            {!editingComment && <Button style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
+            <textarea
+              ref={inputRef}
+              rows={1}
+              value={input}
+              onChange={event => {
+                setInput(event.target.value);
+                checkMentions(event.target.value, event.target.selectionStart);
+                event.target.style.height = 'auto';
+                event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+              }}
+              onClick={event => checkMentions(event.target.value, event.target.selectionStart)}
+              onKeyDown={event => {
+                if (mentionState.active && filteredMembers.length > 0) {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    const delta = event.key === 'ArrowDown' ? 1 : -1;
+                    setMentionState(previous => ({ ...previous, selectedIndex: (previous.selectedIndex + delta + filteredMembers.length) % filteredMembers.length }));
+                    return;
+                  }
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    selectMention(filteredMembers[mentionState.selectedIndex]);
+                    return;
+                  }
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    setMentionState(previous => ({ ...previous, active: false, ignoreIndex: previous.startIndex }));
+                    return;
+                  }
+                }
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
+              className="custom-scrollbar min-h-[32px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-1 py-[6px] text-[13px] font-medium leading-5 text-ink outline-none placeholder:text-[#a1a1aa]"
+              style={{ height: '32px' }}
             />
+            <Button style="primary" size="icon" disabled={(!input.trim() && pendingFiles.length === 0) || sending} loading={sending} onClick={handleSend} icon={Send} aria-label={editingComment ? 'Зберегти зміни' : 'Надіслати'} />
           </div>
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={input}
-            onChange={e => {
-              setInput(e.target.value);
-              checkMentions(e.target.value, e.target.selectionStart);
-              // Auto-grow
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onClick={e => {
-              checkMentions(e.target.value, e.target.selectionStart);
-            }}
-            onKeyUp={e => {
-              if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Enter' && e.key !== 'Escape') {
-                checkMentions(e.target.value, e.target.selectionStart);
-              }
-            }}
-            onKeyDown={e => {
-              if (mentionState.active && filteredMembers.length > 0) {
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setMentionState(prev => ({
-                    ...prev,
-                    selectedIndex: (prev.selectedIndex + 1) % filteredMembers.length
-                  }));
-                  return;
-                }
-                if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setMentionState(prev => ({
-                    ...prev,
-                    selectedIndex: (prev.selectedIndex - 1 + filteredMembers.length) % filteredMembers.length
-                  }));
-                  return;
-                }
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  selectMention(filteredMembers[mentionState.selectedIndex]);
-                  return;
-                }
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setMentionState(prev => ({ ...prev, active: false, ignoreIndex: prev.startIndex }));
-                  return;
-                }
-              }
-
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Написати повідомлення..."
-            className="flex-1 bg-transparent border-none outline-none text-[13px] text-ink placeholder:text-[#a1a1aa] font-medium resize-none leading-[20px] py-[4px] min-h-[28px] max-h-[120px] custom-scrollbar"
-            style={{ height: '28px' }}
-          />
-          <Button
-            style="primary"
-            size="icon"
-            disabled={!input.trim() || sending}
-            loading={sending}
-            onClick={handleSend}
-            className="mb-[1px]"
-            icon={Send}
-          />
         </div>
-        <p className="text-[10px] text-faint text-center mt-1">Enter — надіслати · Shift+Enter — новий рядок</p>
-      </div>
       )}
     </div>
   );

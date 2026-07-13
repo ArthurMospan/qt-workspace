@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight, Copy, Search } from 'lucide-react';
 import { HeaderSearch } from '../Forms/HeaderSearch';
 
 export function Breadcrumb({
@@ -39,6 +39,7 @@ export function Breadcrumb({
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const isClickable = item.href && !isLast;
+          const isAction = typeof item.onClick === 'function';
 
           return (
             <React.Fragment key={index}>
@@ -64,6 +65,17 @@ export function Breadcrumb({
                   >
                     {item.label}
                   </a>
+                ) : isAction ? (
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    title={item.title || 'Копіювати'}
+                    aria-label={item.title || `Копіювати ${item.label}`}
+                    className={`group flex min-w-0 items-center gap-1.5 rounded-[6px] px-1.5 py-1 transition-colors hover:bg-canvas ${isLast ? 'font-medium text-ink' : 'font-normal text-muted hover:text-ink'}`}
+                  >
+                    <span className="max-w-[260px] truncate">{item.label}</span>
+                    <Copy size={12} className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 max-md:opacity-100" />
+                  </button>
                 ) : (
                   <span
                     className={`truncate max-w-[260px] ${

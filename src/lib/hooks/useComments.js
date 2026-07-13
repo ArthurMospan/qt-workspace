@@ -2,8 +2,9 @@
 
 // src/lib/hooks/useComments.js — Internal comments for an issue (subcollection)
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useComments(issueId) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export function useComments(issueId) {
       setComments(docs);
       setLoading(false);
     }, err => {
-      console.error('[useComments] onSnapshot error', err);
+      reportLoadError('[useComments]', err);
       setLoading(false);
     });
     return () => unsub();
@@ -39,7 +40,7 @@ export function useComments(issueId) {
   // addComment
   // user: { uid, displayName, photoURL }
   // -------------------------------------------------------------------------
-  const addComment = useCallback(async (issueId, text, user = {}, attachments = []) => {
+  const addComment = useCallback(async (issueId, text, user = {}, attachments = [], replyTo = null) => {
     if (!text?.trim() && attachments.length === 0) throw new Error('Comment cannot be empty');
     const commentRef = doc(collection(db, 'issues', issueId, 'comments'));
     const issueRef = doc(db, 'issues', issueId);
@@ -53,6 +54,11 @@ export function useComments(issueId) {
         authorAvatar: user.avatar || user.photoURL || null,
         text: text?.trim() || '',
         attachments,
+        replyTo: replyTo ? {
+          id: replyTo.id,
+          authorName: replyTo.authorName || '',
+          text: replyTo.text || '',
+        } : null,
         createdAt: serverTimestamp()
       });
       transaction.update(issueRef, {
@@ -63,9 +69,36 @@ export function useComments(issueId) {
       });
     });
   }, []);
+
+  const updateComment = useCallback(async (commentId, text) => {
+    if (!issueId || !commentId || !text?.trim()) return;
+    await updateDoc(doc(db, 'issues', issueId, 'comments', commentId), {
+      text: text.trim(),
+      editedAt: serverTimestamp(),
+    });
+  }, [issueId]);
+
+  const deleteComment = useCallback(async commentId => {
+    if (!issueId || !commentId) return;
+    const commentRef = doc(db, 'issues', issueId, 'comments', commentId);
+    const issueRef = doc(db, 'issues', issueId);
+    await runTransaction(db, async transaction => {
+      const issueSnap = await transaction.get(issueRef);
+      transaction.delete(commentRef);
+      if (issueSnap.exists()) {
+        transaction.update(issueRef, {
+          commentCount: Math.max(0, (issueSnap.data().commentCount || 0) - 1),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    });
+  }, [issueId]);
+
   return {
     comments,
     loading,
-    addComment
+    addComment,
+    updateComment,
+    deleteComment,
   };
 }

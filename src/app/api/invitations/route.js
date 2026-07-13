@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function POST(request) {
   try {
@@ -59,7 +60,6 @@ export async function POST(request) {
     });
     return NextResponse.json({ type: 'invitation_sent' }, { status: 201 });
   } catch (error) {
-    console.error('[Invitation POST]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Invitation POST', fallbackMessage: 'Internal Server Error' });
   }
 }

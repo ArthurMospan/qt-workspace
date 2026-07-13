@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function DELETE(request, context) {
   try {
@@ -42,7 +43,6 @@ export async function DELETE(request, context) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Issue DELETE]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Issue DELETE', fallbackMessage: 'Internal Server Error' });
   }
 }

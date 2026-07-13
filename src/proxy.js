@@ -1,9 +1,9 @@
-// src/proxy.js — server-side session gate
+// src/proxy.js — server-side gate for development-only UI reference pages.
 //
-// The app uses client-side Firebase Auth (see src/lib/hooks/useAuth.js) with no
-// server-verified session token, so this is a presence check on the `qt_session`
-// cookie (set/cleared by useAuth on auth state changes), not a verified JWT.
-// Firestore security rules remain the authoritative access control layer.
+// Workspace authentication is intentionally resolved by Firebase on the
+// client. Gating /workspace here creates a race when Firebase persistence is
+// valid but the server session cookie has not been refreshed yet. API routes
+// and Firestore rules remain the authoritative data-access boundary.
 import { NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/server/firebaseAdmin';
 
@@ -20,27 +20,16 @@ export async function proxy(request) {
     }
   }
 
-  // Redirect unauthenticated users away from protected routes
-  const isProtectedRoute = pathname.startsWith('/workspace') || pathname === '/ui-kit' || pathname === '/ui-diff';
-
-  if (isProtectedRoute && !hasSession) {
+  if (!hasSession) {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname);
     const response = NextResponse.redirect(loginUrl);
     if (sessionCookie) response.cookies.delete('qt_session');
     return response;
   }
-
-  // Redirect authenticated users away from login page (prevents flash of login)
-  if (pathname === '/login' && hasSession) {
-    const workspaceUrl = new URL('/workspace', request.url);
-    return NextResponse.redirect(workspaceUrl);
-  }
-
-  const response = NextResponse.next();
-  if (sessionCookie && !hasSession) response.cookies.delete('qt_session');
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/workspace/:path*', '/ui-kit', '/ui-diff', '/login'],
+  matcher: ['/ui-kit', '/ui-diff'],
 };

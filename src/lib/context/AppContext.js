@@ -7,13 +7,18 @@ import { acceptPendingInvitation } from '@/lib/hooks/useOrganization';
 import { OrgProvider, useOrg } from '@/lib/context/OrgContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { claimActivityHeartbeat } from '@/lib/utils/activity';
 
 const AppContext = createContext(null);
+const INVITATION_CHECK_TTL = 5 * 60 * 1000;
+const PRESENCE_HEARTBEAT_MS = 60_000;
 
 // ─── Inner provider (has access to OrgContext) ────────────────────────────
 function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail, signOut, children }) {
-  const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, noOrg, switchOrg, setActiveOrgId } = useOrg();
+  const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, orgError, noOrg, switchOrg, setActiveOrgId } = useOrg();
   const userId = authLoading ? undefined : (user?.id || user?.uid || null);
+  const invitationUid = user?.id || user?.uid;
+  const invitationEmail = user?.email;
   const { projects, loading: projectsLoading, error: projectsError } = useProjects(userId, activeOrgId);
 
   useEffect(() => {
@@ -24,50 +29,54 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
 
   // When user signs in: init org if needed + accept pending invitations
   useEffect(() => {
-    if (!user) return;
+    if (!invitationUid) return;
 
     (async () => {
+      const uid = invitationUid;
+      const email = invitationEmail;
+      if (!uid || !email) return;
+
+      const storageKey = `qt:invitation-check:${uid}`;
       try {
-        const uid   = user.id || user.uid;
-        const email = user.email;
-
-        // Check pending invitations across all orgs
-        if (email) {
-          await acceptPendingInvitation(uid, email);
-        }
-
+        const lastCheck = Number(window.localStorage.getItem(storageKey) || 0);
+        if (Date.now() - lastCheck < INVITATION_CHECK_TTL) return;
+        window.localStorage.setItem(storageKey, String(Date.now()));
+        await acceptPendingInvitation(uid, email);
       } catch (err) {
+        window.localStorage.removeItem(storageKey);
         console.error('[AppContext] init error:', err);
       }
     })();
-  }, [user?.id]); // eslint-disable-line
+  }, [invitationEmail, invitationUid]);
 
   // Update presence
   useEffect(() => {
-    if (!user || !activeOrgId) return;
-    const uid = user.id || user.uid;
-    const presenceRef = doc(db, 'organizations', activeOrgId, 'presence', uid);
+    if (!userId || !activeOrgId) return;
+    const presenceRef = doc(db, 'organizations', activeOrgId, 'presence', userId);
     const updatePresence = async () => {
+      if (!claimActivityHeartbeat(`presence:${activeOrgId}:${userId}`, PRESENCE_HEARTBEAT_MS)) return;
       try {
         await setDoc(presenceRef, {
-          online: document.visibilityState === 'visible',
+          online: true,
           lastSeen: serverTimestamp(),
         }, { merge: true });
       } catch {}
     };
     updatePresence();
+    const intervalId = setInterval(updatePresence, PRESENCE_HEARTBEAT_MS);
     document.addEventListener('visibilitychange', updatePresence);
     return () => {
+      clearInterval(intervalId);
       document.removeEventListener('visibilitychange', updatePresence);
-      setDoc(presenceRef, { online: false, lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
     };
-  }, [activeOrgId, user]);
+  }, [activeOrgId, userId]);
 
   const value = {
     authLoading,
     projectsLoading,
     projectsError,
     orgLoading,
+    orgError,
     signInWithGoogle,
     signInWithEmail,
     signOut,
@@ -114,6 +123,7 @@ export const useAppContext = () => {
       projectsLoading: true,
       projectsError: null,
       orgLoading: true,
+      orgError: null,
       signInWithGoogle: async () => {},
       signInWithEmail: async () => {},
       signOut: async () => {},

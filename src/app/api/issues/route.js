@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const DEFAULT_PRIORITIES = ['blocker', 'high', 'medium', 'low'];
 const DEFAULT_TYPES = ['epic', 'feature', 'task', 'bug'];
@@ -148,7 +149,6 @@ export async function POST(request) {
 
     return NextResponse.json({ id: issueRef.id, issueKey }, { status: 201 });
   } catch (error) {
-    console.error('[Issue POST]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'Issue POST', fallbackMessage: 'Internal Server Error' });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function POST(req) {
   try {
@@ -75,7 +76,6 @@ export async function POST(req) {
     if (error.message === 'ORGANIZATION_NOT_FOUND') {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
-    console.error('[API Projects Create Error]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API Projects Create', fallbackMessage: 'Internal Server Error' });
   }
 }

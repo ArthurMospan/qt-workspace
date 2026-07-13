@@ -2,68 +2,129 @@
 
 // src/lib/hooks/useOrganization.js
 // Organization = one workspace in the multi-organization membership model.
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { doc, onSnapshot, updateDoc, deleteDoc, setDoc, getDoc, collection, query, where, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { fetchOrganizationMembers } from '@/lib/services/members';
-export function useOrganization() {
-  const {
-    activeOrgId
-  } = useAppContext();
-  const [org, setOrg] = useState(null);
-  const [members, setMembers] = useState([]); // full user profiles
-  const [loading, setLoading] = useState(true);
+import { reportLoadError } from '@/lib/utils/errors';
 
-  // Listen to org doc
-  useEffect(() => {
-    if (!activeOrgId) {
-      queueMicrotask(() => {
-        setOrg(null);
-        setMembers([]);
-        setLoading(false);
-      });
-      return;
-    }
-    let unsubOrg = () => {};
-    let unsubMem = () => {};
-    unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), async snap => {
-      if (!snap.exists()) {
-        setOrg(null);
-        setMembers([]);
-        setLoading(false);
+const ORGANIZATION_SERVER_SNAPSHOT = Object.freeze({
+  org: null,
+  members: [],
+  loading: true,
+  error: null,
+});
+
+const EMPTY_ORGANIZATION_SNAPSHOT = Object.freeze({
+  ...ORGANIZATION_SERVER_SNAPSHOT,
+  loading: false,
+});
+
+const organizationStores = new Map();
+
+function createOrganizationStore(organizationId) {
+  let snapshot = ORGANIZATION_SERVER_SNAPSHOT;
+  let unsubscribeOrg = null;
+  let unsubscribeMembers = null;
+  let stopTimer = null;
+  let requestVersion = 0;
+  const listeners = new Set();
+
+  const emit = next => {
+    snapshot = next;
+    listeners.forEach(listener => listener());
+  };
+
+  const start = () => {
+    if (unsubscribeOrg || unsubscribeMembers) return;
+
+    unsubscribeOrg = onSnapshot(doc(db, 'organizations', organizationId), orgSnap => {
+      if (!orgSnap.exists()) {
+        emit({ org: null, members: [], loading: false, error: null });
         return;
       }
-      setOrg({
-        id: snap.id,
-        ...snap.data()
-      });
-    }, err => {
-      console.error("[useOrganization.js] onSnapshot error", err);
+      emit({ ...snapshot, org: { id: orgSnap.id, ...orgSnap.data() }, error: null });
+    }, error => {
+      reportLoadError('[useOrganization] organization', error);
+      emit({ ...snapshot, loading: false, error });
     });
-    let active = true;
-    const memQ = query(collection(db, 'orgMemberships'), where('orgId', '==', activeOrgId));
-    unsubMem = onSnapshot(memQ, async snap => {
+
+    const membershipsQuery = query(collection(db, 'orgMemberships'), where('orgId', '==', organizationId));
+    unsubscribeMembers = onSnapshot(membershipsQuery, async membershipsSnap => {
+      const version = ++requestVersion;
+      if (membershipsSnap.empty) {
+        emit({ ...snapshot, members: [], loading: false, error: null });
+        return;
+      }
+
       try {
-        if (snap.empty) {
-          if (active) setMembers([]);
-        } else {
-          const profiles = await fetchOrganizationMembers(activeOrgId, { force: true });
-          if (active) setMembers(profiles);
+        const members = await fetchOrganizationMembers(organizationId, { force: true });
+        if (version === requestVersion) {
+          emit({ ...snapshot, members, loading: false, error: null });
         }
       } catch (error) {
-        console.error('[useOrganization] member profiles:', error);
-        if (active) setMembers([]);
-      } finally {
-        if (active) setLoading(false);
+        if (version !== requestVersion) return;
+        reportLoadError('[useOrganization] member profiles', error);
+        emit({ ...snapshot, members: [], loading: false, error });
       }
-    }, () => setLoading(false));
+    }, error => {
+      reportLoadError('[useOrganization] memberships', error);
+      emit({ ...snapshot, loading: false, error });
+    });
+  };
+
+  const subscribe = listener => {
+    if (stopTimer) {
+      clearTimeout(stopTimer);
+      stopTimer = null;
+    }
+    listeners.add(listener);
+    start();
     return () => {
-      active = false;
-      unsubOrg();
-      unsubMem();
+      listeners.delete(listener);
+      if (listeners.size === 0) {
+        stopTimer = setTimeout(() => {
+          requestVersion += 1;
+          unsubscribeOrg?.();
+          unsubscribeMembers?.();
+          unsubscribeOrg = null;
+          unsubscribeMembers = null;
+          stopTimer = null;
+        }, 1000);
+      }
     };
-  }, [activeOrgId]);
+  };
+
+  return {
+    subscribe,
+    getSnapshot: () => snapshot,
+    getServerSnapshot: () => ORGANIZATION_SERVER_SNAPSHOT,
+  };
+}
+
+const emptyOrganizationStore = {
+  subscribe: () => () => {},
+  getSnapshot: () => EMPTY_ORGANIZATION_SNAPSHOT,
+  getServerSnapshot: () => EMPTY_ORGANIZATION_SNAPSHOT,
+};
+
+function getOrganizationStore(organizationId) {
+  if (!organizationId) return emptyOrganizationStore;
+  if (!organizationStores.has(organizationId)) {
+    organizationStores.set(organizationId, createOrganizationStore(organizationId));
+  }
+  return organizationStores.get(organizationId);
+}
+
+export function useOrganization() {
+  const { activeOrgId } = useAppContext();
+  const store = useMemo(() => getOrganizationStore(activeOrgId), [activeOrgId]);
+  const { org, members, loading, error } = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getServerSnapshot,
+  );
 
   // Ensure org exists (called by owner on first load)
   const initOrg = useCallback(async (ownerId, ownerName) => {
@@ -145,6 +206,7 @@ export function useOrganization() {
     org,
     members,
     loading,
+    error,
     initOrg,
     inviteMember,
     changeMemberRole,

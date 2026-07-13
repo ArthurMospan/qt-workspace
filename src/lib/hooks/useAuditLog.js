@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 const LIMIT = 50;
 export function useAuditLog(issueId) {
   const [entries, setEntries] = useState([]);
@@ -33,7 +34,7 @@ export function useAuditLog(issueId) {
       setEntries(docs.slice(0, LIMIT));
       setLoading(false);
     }, err => {
-      console.error('[useAuditLog] onSnapshot error', err);
+      reportLoadError('[useAuditLog]', err);
       setLoading(false);
     });
     return () => unsub();

@@ -15,7 +15,7 @@ import { useState } from 'react';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
-  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgRole, noOrg, signOut, allOrgs } = useAppContext();
+  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgError, orgRole, noOrg, signOut, allOrgs } = useAppContext();
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
   // null on first render, then the matching nav is mounted. This prevents the
   // hidden nav variant from briefly opening its own Firestore subscriptions.
@@ -27,8 +27,12 @@ export default function WorkspaceLayout({ children }) {
   const hideHeader = isSettings;
 
   useEffect(() => {
-    if (!authLoading && !currentUser) router.replace('/login');
-  }, [currentUser, authLoading, router]);
+    if (!authLoading && !currentUser) {
+      const currentLocation = `${window.location.pathname}${window.location.search}`;
+      const returnTo = currentLocation.startsWith('/workspace') ? currentLocation : '/workspace';
+      router.replace(`/login?next=${encodeURIComponent(returnTo)}`);
+    }
+  }, [currentUser, authLoading, pathname, router]);
 
   // Onboarding redirect: if owner/admin and org not yet onboarded
   useEffect(() => {
@@ -71,6 +75,18 @@ export default function WorkspaceLayout({ children }) {
 
   // 2. Not authenticated
   if (!currentUser) return null;
+
+  if (orgError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
+        <div className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
+          <h1 className="text-[18px] font-bold text-ink mb-2">Workspace тимчасово недоступний</h1>
+          <p className="text-[13px] text-muted mb-5">Не вдалося прочитати дані організації. Ваші дані не видалені.</p>
+          <button onClick={() => window.location.reload()} className="rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-ink-hover">Спробувати ще раз</button>
+        </div>
+      </div>
+    );
+  }
 
   // 3. Authenticated but not in any org → redirect immediately to onboarding
   if (noOrg) {

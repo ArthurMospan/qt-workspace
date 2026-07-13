@@ -19,7 +19,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && currentUser) {
-      router.replace('/workspace');
+      const requested = new URLSearchParams(window.location.search).get('next');
+      const isSafeDestination = requested?.startsWith('/workspace')
+        || requested === '/ui-kit'
+        || requested === '/ui-diff';
+      const destination = isSafeDestination && !requested.startsWith('//')
+        ? requested
+        : '/workspace';
+      router.replace(destination);
     }
   }, [currentUser, authLoading, router]);
 
@@ -29,7 +36,6 @@ export default function LoginPage() {
       setError(null);
       await signInWithGoogle();
       sessionStorage.setItem('just_logged_in', 'true');
-      router.replace('/workspace');
     } catch (err) {
       console.error('[Login] Error:', err);
       setError('Не вдалося увійти. Спробуйте ще раз.');
@@ -91,7 +97,6 @@ export default function LoginPage() {
               setError(null);
               await signInWithEmail(email, password);
               sessionStorage.setItem('just_logged_in', 'true');
-              router.replace('/workspace');
             } catch (err) {
               console.error('[Email Login] Error:', err);
               setError('Помилка входу за Email. Перевірте пошту та пароль.');

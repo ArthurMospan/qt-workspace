@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useProjects(userId, activeOrgId) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
@@ -53,8 +54,7 @@ export function useProjects(userId, activeOrgId) {
       setError(null);
       setLoading(false);
     }, err => {
-      console.error('[useProjects]', err);
-      setProjects([]);
+      reportLoadError('[useProjects]', err);
       setError(err);
       setLoading(false);
     });

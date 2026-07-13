@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb, hashApiKey } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 async function authorize(request) {
   const organizationId = new URL(request.url).searchParams.get('organizationId');
@@ -35,8 +36,7 @@ export async function GET(request) {
     const publicKeys = keys.map(({ tokenHash, token, ...key }) => key);
     return NextResponse.json({ keys: publicKeys });
   } catch (error) {
-    console.error('[API keys GET]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API keys GET', fallbackMessage: 'Internal Server Error' });
   }
 }
 
@@ -63,8 +63,7 @@ export async function POST(request) {
     await keysRef.set({ keys: [...keys, storedKey], updatedAt: admin.firestore.FieldValue.serverTimestamp() });
     return NextResponse.json({ key: { ...storedKey, token, tokenHash: undefined } }, { status: 201 });
   } catch (error) {
-    console.error('[API keys POST]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API keys POST', fallbackMessage: 'Internal Server Error' });
   }
 }
 
@@ -83,7 +82,6 @@ export async function DELETE(request) {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[API keys DELETE]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API keys DELETE', fallbackMessage: 'Internal Server Error' });
   }
 }

@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, deleteField, serv
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useAllMyTasks(userId) {
   const {
     activeOrgId
@@ -41,7 +42,7 @@ export function useAllMyTasks(userId) {
       setTasks(docs);
       setLoading(false);
     }, err => {
-      console.error('[useAllMyTasks]', err);
+      reportLoadError('[useAllMyTasks]', err);
       setLoading(false);
     });
 
@@ -49,7 +50,7 @@ export function useAllMyTasks(userId) {
     const unsubLinks = onSnapshot(lq, snap => {
       setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, err => {
-      console.error('[useAllMyTasks] links error:', err);
+      reportLoadError('[useAllMyTasks] links', err);
     });
 
     return () => { unsub(); unsubLinks(); };

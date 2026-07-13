@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 
 export function useProjectUnreadIndicators(userId) {
   const [notifications, setNotifications] = useState([]);
@@ -21,7 +22,7 @@ export function useProjectUnreadIndicators(userId) {
         .map(item => ({ id: item.id, ...item.data() }))
         .filter(item => !item.read));
     }, error => {
-      console.error('[useProjectUnreadIndicators]', error);
+      reportLoadError('[useProjectUnreadIndicators]', error);
       setNotifications([]);
     });
   }, [userId]);

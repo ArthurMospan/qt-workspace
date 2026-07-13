@@ -8,6 +8,7 @@ import {
   doc, getDoc, onSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 
 const LS_KEY = 'qt_active_org_id';
 const OrgContext = createContext(null);
@@ -18,6 +19,7 @@ export function OrgProvider({ user, children }) {
   const [activeOrg,   setActiveOrg]   = useState(null);
   const [orgRole,     setOrgRole]     = useState(null);  // role inside the active org
   const [orgLoading,  setOrgLoading]  = useState(true);
+  const [orgError,    setOrgError]    = useState(null);
   const [noOrg,       setNoOrg]       = useState(false); // true → show onboarding prompt
 
   // ── Apply an org as active (Internal helper) ─────────────────────────
@@ -37,6 +39,7 @@ export function OrgProvider({ user, children }) {
     }
     
     setNoOrg(false);
+    setOrgError(null);
     setOrgLoading(false);
     if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, orgData.id);
   }, []);
@@ -51,6 +54,7 @@ export function OrgProvider({ user, children }) {
         setOrgRole(null);
         setOrgLoading(false);
         setNoOrg(false);
+        setOrgError(null);
       });
       return;
     }
@@ -81,6 +85,7 @@ export function OrgProvider({ user, children }) {
         // Legacy fallback removed to enforce strict multi-tenancy
 
         if (cancelled) return;
+        setOrgError(null);
         setAllOrgs(orgs);
 
         if (orgs.length === 0) {
@@ -112,13 +117,15 @@ export function OrgProvider({ user, children }) {
         setOrgLoading(false);
         if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, chosen.id);
       } catch (err) {
-        console.error('[OrgContext] error finding orgs:', err);
+        reportLoadError('[OrgContext] organizations', err);
+        setOrgError(err);
         setOrgLoading(false);
       }
     };
 
     const unsubscribe = onSnapshot(membershipsQuery, applyMembershipSnapshot, err => {
-      console.error('[OrgContext] membership list error:', err);
+      reportLoadError('[OrgContext] memberships', err);
+      setOrgError(err);
       setOrgLoading(false);
     });
     return () => {
@@ -175,7 +182,7 @@ export function OrgProvider({ user, children }) {
   return (
     <OrgContext.Provider value={{
       allOrgs, activeOrgId, activeOrg, orgRole,
-      orgLoading, noOrg,
+      orgLoading, orgError, noOrg,
       setActiveOrgId, switchOrg,
     }}>
       {children}

@@ -4,10 +4,11 @@
 // Reads workflow config (statuses, types, priorities) from Firestore.
 // Falls back to sensible defaults so the app works out of the box before
 // an admin customises anything in Settings.
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } from 'lucide-react';
 
 // Single source of truth for priority/type icons — every place that renders
@@ -140,51 +141,104 @@ export const DEFAULT_POSITIONS = [{
   label: 'QA',
   hourlyRate: 25
 }];
-export function useWorkflowConfig() {
-  const {
-    activeOrgId
-  } = useAppContext();
-  const [statuses, setStatuses] = useState(DEFAULT_STATUSES);
-  const [types, setTypes] = useState(DEFAULT_TYPES);
-  const [priorities, setPriorities] = useState(DEFAULT_PRIORITIES);
-  const [labels, setLabels] = useState(DEFAULT_LABELS);
-  const [positions, setPositions] = useState(DEFAULT_POSITIONS);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (!activeOrgId) {
-      queueMicrotask(() => {
-        setStatuses(DEFAULT_STATUSES);
-        setTypes(DEFAULT_TYPES);
-        setPriorities(DEFAULT_PRIORITIES);
-        setLabels(DEFAULT_LABELS);
-        setPositions(DEFAULT_POSITIONS);
-        setLoading(false);
+
+const WORKFLOW_SERVER_SNAPSHOT = Object.freeze({
+  statuses: DEFAULT_STATUSES,
+  types: DEFAULT_TYPES,
+  priorities: DEFAULT_PRIORITIES,
+  labels: DEFAULT_LABELS,
+  positions: DEFAULT_POSITIONS,
+  loading: true,
+  error: null,
+});
+
+const EMPTY_WORKFLOW_SNAPSHOT = Object.freeze({
+  ...WORKFLOW_SERVER_SNAPSHOT,
+  loading: false,
+});
+
+const workflowStores = new Map();
+
+function createWorkflowStore(organizationId) {
+  let snapshot = WORKFLOW_SERVER_SNAPSHOT;
+  let unsubscribe = null;
+  let stopTimer = null;
+  const listeners = new Set();
+
+  const emit = next => {
+    snapshot = next;
+    listeners.forEach(listener => listener());
+  };
+
+  const start = () => {
+    if (unsubscribe) return;
+    const ref = doc(db, 'organizations', organizationId, 'settings', 'workflow');
+    unsubscribe = onSnapshot(ref, workflowSnap => {
+      const data = workflowSnap.exists() ? workflowSnap.data() : {};
+      emit({
+        statuses: Array.isArray(data.statuses) ? data.statuses : DEFAULT_STATUSES,
+        types: Array.isArray(data.types) ? data.types : DEFAULT_TYPES,
+        priorities: Array.isArray(data.priorities) ? data.priorities : DEFAULT_PRIORITIES,
+        labels: Array.isArray(data.labels) ? data.labels : DEFAULT_LABELS,
+        positions: Array.isArray(data.positions) ? data.positions : DEFAULT_POSITIONS,
+        loading: false,
+        error: null,
       });
-      return;
+    }, error => {
+      reportLoadError('[useWorkflowConfig]', error);
+      emit({ ...EMPTY_WORKFLOW_SNAPSHOT, error });
+    });
+  };
+
+  const subscribe = listener => {
+    if (stopTimer) {
+      clearTimeout(stopTimer);
+      stopTimer = null;
     }
-    queueMicrotask(() => setLoading(true));
-    const ref = doc(db, 'organizations', activeOrgId, 'settings', 'workflow');
-    const unsub = onSnapshot(ref, snap => {
-      const d = snap.exists() ? snap.data() : {};
-      setStatuses(Array.isArray(d.statuses) ? d.statuses : DEFAULT_STATUSES);
-      setTypes(Array.isArray(d.types) ? d.types : DEFAULT_TYPES);
-      setPriorities(Array.isArray(d.priorities) ? d.priorities : DEFAULT_PRIORITIES);
-      setLabels(Array.isArray(d.labels) ? d.labels : DEFAULT_LABELS);
-      setPositions(Array.isArray(d.positions) ? d.positions : DEFAULT_POSITIONS);
-      setLoading(false);
-    }, () => setLoading(false));
-    return () => unsub();
-  }, [activeOrgId]);
+    listeners.add(listener);
+    start();
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) {
+        stopTimer = setTimeout(() => {
+          unsubscribe?.();
+          unsubscribe = null;
+          stopTimer = null;
+        }, 1000);
+      }
+    };
+  };
+
+  return {
+    subscribe,
+    getSnapshot: () => snapshot,
+    getServerSnapshot: () => WORKFLOW_SERVER_SNAPSHOT,
+  };
+}
+
+const emptyWorkflowStore = {
+  subscribe: () => () => {},
+  getSnapshot: () => EMPTY_WORKFLOW_SNAPSHOT,
+  getServerSnapshot: () => EMPTY_WORKFLOW_SNAPSHOT,
+};
+
+function getWorkflowStore(organizationId) {
+  if (!organizationId) return emptyWorkflowStore;
+  if (!workflowStores.has(organizationId)) {
+    workflowStores.set(organizationId, createWorkflowStore(organizationId));
+  }
+  return workflowStores.get(organizationId);
+}
+
+export function useWorkflowConfig() {
+  const { activeOrgId } = useAppContext();
+  const store = useMemo(() => getWorkflowStore(activeOrgId), [activeOrgId]);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
   // Terminal status ids derived from the live config — components use this
   // instead of hardcoding `'done'`.
-  const doneStatusIds = useMemo(() => getDoneStatusIds(statuses), [statuses]);
+  const doneStatusIds = useMemo(() => getDoneStatusIds(snapshot.statuses), [snapshot.statuses]);
   return {
-    statuses,
-    types,
-    priorities,
-    labels,
-    positions,
+    ...snapshot,
     doneStatusIds,
-    loading
   };
 }

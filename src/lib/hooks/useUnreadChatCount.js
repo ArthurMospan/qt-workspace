@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 
 export function useUnreadChatCount() {
   const { currentUser, activeOrgId } = useAppContext();
@@ -24,7 +25,7 @@ export function useUnreadChatCount() {
       });
       setReadState(state);
     }, err => {
-      console.error('[useUnreadChatCount.js] onSnapshot error', err);
+      reportLoadError('[useUnreadChatCount] read state', err);
     });
     return () => unsub();
   }, [activeOrgId, currentUser]);
@@ -35,7 +36,7 @@ export function useUnreadChatCount() {
     const unsub = onSnapshot(qChannels, snap => {
       setChannels(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, err => {
-      console.error('[useUnreadChatCount.js] onSnapshot error', err);
+      reportLoadError('[useUnreadChatCount] channels', err);
     });
     return () => unsub();
   }, [activeOrgId]);

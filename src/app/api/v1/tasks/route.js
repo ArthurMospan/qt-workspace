@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { randomUUID } from 'node:crypto';
 import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 
@@ -113,7 +114,6 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error('[API v1 Tasks Create Error]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API v1 Tasks Create', fallbackMessage: 'Internal Server Error' });
   }
 }

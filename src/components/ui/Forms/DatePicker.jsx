@@ -1,5 +1,6 @@
 'use client';
 import React, { forwardRef, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 
@@ -50,7 +51,9 @@ export const DatePicker = forwardRef(({
   const [selectedDate, setSelectedDate] = useState(value ? parseDate(value) : null);
   const [rangeStart, setRangeStart] = useState(startDate ? parseDate(startDate) : null);
   const [rangeEnd, setRangeEnd] = useState(endDate ? parseDate(endDate) : null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef(null);
+  const popupRef = useRef(null);
 
   // Keep the internal calendar state aligned when a parent switches records or
   // resets a controlled value after saving.
@@ -68,13 +71,38 @@ export const DatePicker = forwardRef(({
   // Close calendar on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current
+        && !containerRef.current.contains(e.target)
+        && !popupRef.current?.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const updatePopupPosition = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const popupWidth = 320;
+      const popupHeight = mode === 'range' ? 410 : 390;
+      const left = Math.min(Math.max(8, rect.left), window.innerWidth - popupWidth - 8);
+      const hasRoomBelow = window.innerHeight - rect.bottom >= popupHeight;
+      const top = hasRoomBelow ? rect.bottom + 8 : Math.max(8, rect.top - popupHeight - 8);
+      setPopupPosition({ top, left });
+    };
+    updatePopupPosition();
+    window.addEventListener('resize', updatePopupPosition);
+    window.addEventListener('scroll', updatePopupPosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePopupPosition);
+      window.removeEventListener('scroll', updatePopupPosition, true);
+    };
+  }, [isOpen, mode]);
 
   const handleDateClick = (day) => {
     if (mode === 'single') {
@@ -107,6 +135,54 @@ export const DatePicker = forwardRef(({
     (rangeStart && rangeEnd ? `${formatLocal(rangeStart)} - ${formatLocal(rangeEnd)}` :
      rangeStart ? formatLocal(rangeStart) : '');
 
+  const singlePresets = [
+    { id: 'today', label: 'Сьогодні' },
+    { id: 'tomorrow', label: 'Завтра' },
+    { id: 'week-end', label: 'Кінець тижня' },
+    { id: 'month-end', label: 'Кінець місяця' },
+  ];
+  const rangePresets = [
+    { id: 'today', label: 'Сьогодні' },
+    { id: 'this-week', label: 'Цей тиждень' },
+    { id: 'this-month', label: 'Цей місяць' },
+    { id: 'last-30-days', label: 'Останні 30 днів' },
+  ];
+
+  const handlePreset = presetId => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (mode === 'single') {
+      const date = new Date(today);
+      if (presetId === 'tomorrow') date.setDate(date.getDate() + 1);
+      if (presetId === 'week-end') date.setDate(date.getDate() + ((7 - date.getDay()) % 7));
+      if (presetId === 'month-end') date.setMonth(date.getMonth() + 1, 0);
+      setSelectedDate(date);
+      setCurrentMonth(date);
+      onChange?.(formatDate(date));
+      setIsOpen(false);
+      return;
+    }
+
+    let start = new Date(today);
+    let end = new Date(today);
+    if (presetId === 'this-week') {
+      const mondayOffset = (today.getDay() + 6) % 7;
+      start.setDate(today.getDate() - mondayOffset);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+    } else if (presetId === 'this-month') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    } else if (presetId === 'last-30-days') {
+      start.setDate(today.getDate() - 29);
+    }
+    setRangeStart(start);
+    setRangeEnd(end);
+    onDateRangeChange?.(formatDate(start), formatDate(end));
+    setIsOpen(false);
+  };
+
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
       {/* Input Field */}
@@ -137,6 +213,8 @@ export const DatePicker = forwardRef(({
         />
         {(selectedDate || rangeStart) && !disabled && (
           <button
+            type="button"
+            aria-label="Очистити дату"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedDate(null);
@@ -153,8 +231,12 @@ export const DatePicker = forwardRef(({
       </div>
 
       {/* Calendar Popup */}
-      {isOpen && !disabled && (
-        <div className="absolute top-[44px] left-0 z-50 bg-white border border-line rounded-[12px] shadow-lg p-4 w-[320px]">
+      {isOpen && !disabled && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={popupRef}
+          className="fixed z-[200] w-[320px] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
+          style={{ top: popupPosition.top, left: popupPosition.left }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -217,48 +299,22 @@ export const DatePicker = forwardRef(({
 
           {/* Quick select presets */}
           <div className="border-t border-line mt-4 pt-3">
-            <p className="text-[10px] font-bold text-muted uppercase mb-2">Quick select</p>
+            <p className="text-[10px] font-bold text-muted uppercase mb-2">Швидкий вибір</p>
             <div className="grid grid-cols-2 gap-2">
-              {['Today', 'This Week', 'This Month', 'Last 30 Days'].map(preset => (
+              {(mode === 'single' ? singlePresets : rangePresets).map(preset => (
                 <button
-                  key={preset}
-                  onClick={() => {
-                    const today = new Date();
-                    let start, end;
-                    switch (preset) {
-                      case 'Today':
-                        start = end = today;
-                        break;
-                      case 'This Week':
-                        start = new Date(today.setDate(today.getDate() - today.getDay()));
-                        end = new Date(today.setDate(today.getDate() + 6));
-                        break;
-                      case 'This Month':
-                        start = new Date(today.getFullYear(), today.getMonth(), 1);
-                        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                        break;
-                      case 'Last 30 Days':
-                        end = new Date();
-                        start = new Date(end.setDate(end.getDate() - 30));
-                        break;
-                      default:
-                        break;
-                    }
-                    if (mode === 'range') {
-                      setRangeStart(start);
-                      setRangeEnd(end);
-                      onDateRangeChange?.(formatDate(start), formatDate(end));
-                    }
-                    setIsOpen(false);
-                  }}
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handlePreset(preset.id)}
                   className="text-[11px] font-bold text-[#6366f1] hover:bg-[#eef2ff] rounded-[6px] py-1 transition-colors"
                 >
-                  {preset}
+                  {preset.label}
                 </button>
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

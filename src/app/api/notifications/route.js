@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 
 const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
@@ -123,7 +124,6 @@ export async function POST(request) {
 
     return NextResponse.json({ delivered: createdDeliveries.length });
   } catch (error) {
-    console.error('[notifications]', error);
-    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'notifications', fallbackMessage: 'Failed to send notification' });
   }
 }

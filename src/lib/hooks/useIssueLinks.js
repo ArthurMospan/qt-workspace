@@ -3,8 +3,32 @@
 import { useCallback, useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { createResponseError, reportLoadError } from '@/lib/utils/errors';
+
+const GET_CACHE_MS = 5_000;
+const requestCache = new Map();
 
 async function requestLinks(issueId, method = 'GET', body = null) {
+  const cacheKey = String(issueId);
+  if (method === 'GET') {
+    const cached = requestCache.get(cacheKey);
+    if (cached && Date.now() - cached.createdAt < GET_CACHE_MS) return cached.promise;
+  }
+
+  const promise = performRequest(issueId, method, body);
+  if (method === 'GET') requestCache.set(cacheKey, { createdAt: Date.now(), promise });
+
+  try {
+    const result = await promise;
+    if (method !== 'GET') requestCache.delete(cacheKey);
+    return result;
+  } catch (error) {
+    requestCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+async function performRequest(issueId, method, body) {
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new Error('Authentication required');
   const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/links`, {
@@ -17,7 +41,7 @@ async function requestLinks(issueId, method = 'GET', body = null) {
     cache: 'no-store',
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Issue links request failed');
+  if (!response.ok) throw createResponseError(response, result, 'Issue links request failed');
   return result;
 }
 
@@ -37,7 +61,7 @@ export function useIssueLinks(issueId) {
       const result = await requestLinks(issueId);
       setLinks(result.links || []);
     } catch (error) {
-      console.error('[useIssueLinks]', error);
+      reportLoadError('[useIssueLinks]', error);
       setLinks([]);
     } finally {
       setLoading(false);
@@ -45,7 +69,13 @@ export function useIssueLinks(issueId) {
   }, [issueId]);
 
   useEffect(() => {
-    queueMicrotask(refresh);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) refresh();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
 
   const addLink = useCallback(async (sourceId, targetId, relationType) => {

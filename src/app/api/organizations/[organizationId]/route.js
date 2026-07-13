@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function PATCH(request, context) {
   try {
@@ -36,7 +37,6 @@ export async function PATCH(request, context) {
   } catch (error) {
     if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Organization member not found' }, { status: 404 });
     if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Ownership changed; reload and try again' }, { status: 409 });
-    console.error('[organization-transfer]', error);
-    return NextResponse.json({ error: 'Failed to transfer ownership' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'organization-transfer', fallbackMessage: 'Failed to transfer ownership' });
   }
 }

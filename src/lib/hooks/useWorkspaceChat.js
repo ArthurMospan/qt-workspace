@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { collection, doc, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, where, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useWorkspaceChat(channelId, channelType = 'channel') {
   const {
     currentUser,
@@ -34,7 +35,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       });
       setReadState(state);
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] messages', err);
     });
     return () => unsub();
   }, [activeOrgId, currentUser]);
@@ -51,7 +52,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         setActiveDMs([]);
       }
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] channel', err);
     });
     return () => unsub();
   }, [activeOrgId, currentUser]);
@@ -106,7 +107,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         }]);
       }
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] channels', err);
     });
     return () => unsubChannels();
   }, [activeOrgId]);
@@ -144,7 +145,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       setMessages(data);
       setLoading(false);
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] read state', err);
     });
     return () => unsub();
   }, [channelId, activeOrgId]);
@@ -179,7 +180,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       });
       setThreadMessages(data);
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] direct messages', err);
     });
     return () => unsub();
   }, [activeThreadId, channelId, activeOrgId]);
@@ -198,7 +199,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         setActiveChannelData(null);
       }
     }, err => {
-      console.error("[useWorkspaceChat.js] onSnapshot error", err);
+      reportLoadError('[useWorkspaceChat] replies', err);
     });
     return () => unsub();
   }, [channelId, activeOrgId]);

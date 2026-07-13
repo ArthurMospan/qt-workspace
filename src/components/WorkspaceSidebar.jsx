@@ -79,7 +79,7 @@ export default function WorkspaceSidebar() {
             <>
               <div className="flex items-start min-w-0 flex-1">
                 <Link href="/workspace" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
-                  <Image src="/logo-min.svg" alt="QT" width={32} height={32} className="object-contain" />
+                  <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                 </Link>
                 <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
                   <Link href="/workspace" className="hover:opacity-80 transition-opacity">

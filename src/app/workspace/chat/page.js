@@ -10,6 +10,7 @@ import UserAvatar from '@/components/UserAvatar';
 import Button from '@/components/ui/Button';
 import { useConfirm, EmptyState } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -911,11 +912,13 @@ export default function ChatPage() {
       snap.forEach(d => {
         const presence = d.data();
         const lastSeen = presence.lastSeen?.toMillis?.() ?? 0;
-        map[d.id] = presence.online && lastSeen ? lastSeen : 0;
+        // Fresh lastSeen is authoritative. A boolean written by another tab
+        // can become stale when one tab closes while another remains open.
+        map[d.id] = lastSeen;
       });
       setPresenceMap(map);
     }, err => {
-      console.error('[ChatPage] presence error:', err);
+      reportLoadError('[ChatPage] presence', err);
     });
     return () => unsub();
   }, [activeOrgId]);

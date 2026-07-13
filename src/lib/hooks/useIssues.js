@@ -8,6 +8,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { createIssueViaApi } from '@/lib/services/issues';
+import { reportLoadError } from '@/lib/utils/errors';
 
 // Human labels for default workflow columns (used in status_changed notifications)
 const COLUMN_LABELS = {
@@ -42,7 +43,7 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-export function useIssues(projectId) {
+export function useIssues(projectId, { includeLinks = true } = {}) {
   const {
     activeOrgId
   } = useAppContext();
@@ -50,11 +51,24 @@ export function useIssues(projectId) {
   const [issues, setIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   useEffect(() => {
     if (!projectId || !activeOrgId) {
-      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => {
+        setIssues([]);
+        setIssueLinks([]);
+        setError(null);
+        setLoading(false);
+      });
       return;
     }
+
+    queueMicrotask(() => {
+      setIssues([]);
+      setIssueLinks([]);
+      setError(null);
+      setLoading(true);
+    });
 
     // No orderBy — sorted client-side to avoid composite index
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
@@ -73,21 +87,26 @@ export function useIssues(projectId) {
         return aTime - bTime;
       });
       setIssues(docs);
+      setError(null);
       setLoading(false);
     }, err => {
-      console.error('[useIssues] onSnapshot error', err);
+      reportLoadError('[useIssues]', err);
+      setError(err);
       setLoading(false);
     });
 
-    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
-    const unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
-      setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, err => {
-      console.error('[useIssues] links error:', err);
-    });
+    let unsubLinks = () => {};
+    if (includeLinks) {
+      const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
+      unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
+        setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, err => {
+        reportLoadError('[useIssues] links', err);
+      });
+    }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId]);
+  }, [projectId, activeOrgId, includeLinks]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit
@@ -285,6 +304,7 @@ export function useIssues(projectId) {
     issues,
     issueLinks,
     loading,
+    error,
     createIssue,
     updateIssue,
     deleteIssue,

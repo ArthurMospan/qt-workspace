@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useTimeLogs(issueId) {
   const {
     activeOrgId
@@ -39,7 +40,7 @@ export function useTimeLogs(issueId) {
       setTotalMinutes(total);
       setLoading(false);
     }, err => {
-      console.error('[useTimeLogs] onSnapshot error', err);
+      reportLoadError('[useTimeLogs]', err);
       setLoading(false);
     });
     return () => unsub();

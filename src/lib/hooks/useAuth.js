@@ -1,90 +1,144 @@
 'use client';
 
 // src/lib/hooks/useAuth.js — Auth hook (copied & adapted from qt/)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
+import { claimActivityHeartbeat } from '@/lib/utils/activity';
+import { reportLoadError } from '@/lib/utils/errors';
+
+const ACTIVITY_HEARTBEAT_MS = 60_000;
+
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const sessionUserRef = useRef(null);
   useEffect(() => {
     let cancelled = false;
     let intervalId;
+    let removeVisibilityListener = () => {};
     let unsubscribeProfile = () => {};
     let unsubscribeAuth = () => {};
+    let profileSignature = '';
 
     const handleAuthChange = async firebaseUser => {
-      try {
       if (intervalId) clearInterval(intervalId);
+      removeVisibilityListener();
+      removeVisibilityListener = () => {};
       unsubscribeProfile();
       unsubscribeProfile = () => {};
-      if (firebaseUser) {
-        const idToken = await firebaseUser.getIdToken();
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${idToken}` },
-        });
-        if (!sessionResponse.ok) throw new Error('Failed to establish server session');
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Користувач',
-            email: firebaseUser.email,
-            avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-            role: 'user',
-            createdAt: new Date().toISOString(),
-            lastActive: new Date().toISOString()
-          });
-        } else {
-          await setDoc(userRef, {
-            lastActive: new Date().toISOString(),
-            name: firebaseUser.displayName || snap.data().name || 'Користувач',
-            avatar: firebaseUser.photoURL || snap.data().avatar || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
-          }, {
-            merge: true
-          });
+
+      if (!firebaseUser) {
+        const hadServerSession = Boolean(sessionUserRef.current);
+        sessionUserRef.current = null;
+        if (hadServerSession) fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
         }
-        const profile = snap.exists() ? {
-          ...snap.data(),
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || snap.data().name || 'Користувач',
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL || snap.data().avatar || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
-        } : {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'Користувач',
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
-        };
-        setUser(profile);
-        setLoading(false);
-        unsubscribeProfile = onSnapshot(userRef, docSnap => {
-          if (docSnap.exists()) setUser(prev => ({
-            ...prev,
-            ...docSnap.data()
-          }));
-        }, err => {
-          console.error("[useAuth.js] onSnapshot error", err);
-        });
-        intervalId = setInterval(() => {
-          setDoc(userRef, {
-            lastActive: new Date().toISOString()
-          }, {
-            merge: true
-          }).catch(console.error);
-        }, 30000);
-      } else {
-        fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
-        setUser(null);
-        setLoading(false);
+        return;
       }
+
+      const fallbackProfile = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Користувач',
+        email: firebaseUser.email,
+        avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+      };
+
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        try {
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+          if (!sessionResponse.ok) throw new Error('Failed to establish server session');
+          sessionUserRef.current = firebaseUser.uid;
+        } catch (sessionError) {
+          // Workspace/API authentication uses the Firebase ID token directly.
+          // A transient cookie-sync failure must not sign out a valid user.
+          console.warn('[useAuth] Server session synchronization failed:', sessionError);
+        }
+        if (cancelled) return;
+
+        setUser(fallbackProfile);
+        setLoading(false);
+
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        try {
+          const snap = await getDoc(userRef);
+          if (cancelled) return;
+          const storedProfile = snap.exists() ? snap.data() : null;
+
+          const syncLastActive = () => {
+            if (!claimActivityHeartbeat(`profile:${firebaseUser.uid}`, ACTIVITY_HEARTBEAT_MS)) return;
+            setDoc(userRef, { lastActive: new Date().toISOString() }, { merge: true }).catch(() => {});
+          };
+
+          const resolvedName = firebaseUser.displayName || storedProfile?.name || 'Користувач';
+          const resolvedAvatar = firebaseUser.photoURL || storedProfile?.avatar || fallbackProfile.avatar;
+          let reactiveProfile;
+          if (snap.exists()) {
+            const profileUpdates = {};
+            if (storedProfile.name !== resolvedName) profileUpdates.name = resolvedName;
+            if (storedProfile.avatar !== resolvedAvatar) profileUpdates.avatar = resolvedAvatar;
+            if (Object.keys(profileUpdates).length > 0) {
+              await setDoc(userRef, profileUpdates, { merge: true });
+            }
+            reactiveProfile = { ...storedProfile, ...profileUpdates };
+          } else {
+            reactiveProfile = {
+              ...fallbackProfile,
+              role: 'user',
+              createdAt: new Date().toISOString(),
+              lastActive: new Date().toISOString(),
+            };
+            await setDoc(userRef, reactiveProfile, { merge: true });
+          }
+
+          if (cancelled) return;
+          setUser({
+            ...fallbackProfile,
+            ...(storedProfile || {}),
+            id: firebaseUser.uid,
+            name: resolvedName,
+            email: firebaseUser.email,
+            avatar: resolvedAvatar,
+          });
+
+          const profileWithoutActivity = { ...reactiveProfile };
+          delete profileWithoutActivity.lastActive;
+          profileSignature = JSON.stringify(profileWithoutActivity);
+
+          unsubscribeProfile = onSnapshot(userRef, docSnap => {
+            if (cancelled || !docSnap.exists()) return;
+            const profile = { ...docSnap.data() };
+            delete profile.lastActive;
+            const nextSignature = JSON.stringify(profile);
+            if (nextSignature === profileSignature) return;
+            profileSignature = nextSignature;
+            setUser(previous => ({ ...previous, ...profile, id: firebaseUser.uid }));
+          }, error => {
+            reportLoadError('[useAuth] profile subscription', error);
+          });
+          syncLastActive();
+          intervalId = setInterval(syncLastActive, ACTIVITY_HEARTBEAT_MS);
+          const handleVisibilityChange = () => syncLastActive();
+          document.addEventListener('visibilitychange', handleVisibilityChange);
+          removeVisibilityListener = () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+        } catch (profileError) {
+          // A profile permission/read error must not invalidate a valid Firebase session.
+          reportLoadError('[useAuth] profile synchronization', profileError);
+        }
       } catch (error) {
         console.error('[useAuth] Authentication initialization failed:', error);
-        setUser(null);
-        setLoading(false);
+        sessionUserRef.current = null;
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
       }
     };
 
@@ -103,6 +157,7 @@ export function useAuth() {
       cancelled = true;
       unsubscribeAuth();
       unsubscribeProfile();
+      removeVisibilityListener();
       if (intervalId) clearInterval(intervalId);
     };
   }, []);
@@ -126,6 +181,7 @@ export function useAuth() {
         merge: true
       }).catch(console.error);
     }
+    sessionUserRef.current = null;
     await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
     return firebaseSignOut(auth);
   };

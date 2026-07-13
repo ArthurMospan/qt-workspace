@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 export function useTasks(projectId) {
   const {
     activeOrgId
@@ -34,7 +35,7 @@ export function useTasks(projectId) {
       setTasks(docs);
       setLoading(false);
     }, err => {
-      console.error('[useTasks]', err);
+      reportLoadError('[useTasks]', err);
       setLoading(false);
     });
     return () => unsub();

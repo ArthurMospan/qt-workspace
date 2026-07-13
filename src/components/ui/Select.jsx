@@ -17,7 +17,8 @@ export function Select({
   dropdownClassName = '',
   disabled = false,
   variant = 'default',
-  triggerIcon: TriggerIcon
+  triggerIcon: TriggerIcon,
+  compact = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -42,7 +43,7 @@ export function Select({
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between text-ink transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : buttonClassName}`}
       >
-        <div className="flex items-center gap-[8px] overflow-hidden">
+        <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {TriggerIcon && <TriggerIcon size={14} className="text-muted shrink-0" />}
           {selectedOption?.dotColor && (
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
@@ -58,7 +59,7 @@ export function Select({
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <ChevronDown size={14} className={`text-muted shrink-0 ml-[8px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={compact ? 12 : 14} className={`text-muted shrink-0 transition-transform ${compact ? 'ml-1' : 'ml-[8px]'} ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

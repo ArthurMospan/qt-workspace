@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { doc, updateDoc, collection, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { reportLoadError } from '@/lib/utils/errors';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
@@ -637,8 +638,7 @@ export default function WorkspacePage() {
       setAllIssues(list);
       setIssuesError(null);
     }, (err) => {
-      console.error('[WorkspacePage] issues error:', err);
-      setAllIssues([]);
+      reportLoadError('[WorkspacePage] issues', err);
       setIssuesError(err);
     });
     return () => unsubscribe();

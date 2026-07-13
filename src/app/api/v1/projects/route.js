@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 
 export async function GET(req) {
@@ -60,7 +61,6 @@ export async function GET(req) {
     });
 
   } catch (error) {
-    console.error('[API v1 Projects Fetch Error]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return routeErrorResponse(error, { context: 'API v1 Projects Fetch', fallbackMessage: 'Internal Server Error' });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { auth } from '@/lib/firebase';
+import { createResponseError } from '@/lib/utils/errors';
 
 const memberCache = new Map();
 const CACHE_MS = 10_000;
@@ -20,7 +21,7 @@ export async function fetchOrganizationMembers(organizationId, { force = false }
     })
     .then(async response => {
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to load organization members');
+      if (!response.ok) throw createResponseError(response, result, 'Failed to load organization members');
       return result.members || [];
     })
     .catch(error => {
