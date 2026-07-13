@@ -75,12 +75,13 @@ function dayLabel(timestamp) {
 }
 
 function attachmentUrl(attachment) {
-  return attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || '';
+  return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
 }
 
 function isImageAttachment(attachment) {
-  if (attachment?.type?.startsWith('image/')) return true;
-  return /\.(png|jpe?g|gif|webp|avif)$/i.test(attachment?.name || attachmentUrl(attachment));
+  const declaredType = (attachment?.resourceType || attachment?.mimeType || attachment?.type || '').toLowerCase();
+  if (declaredType === 'image' || declaredType.startsWith('image/')) return true;
+  return /\.(png|jpe?g|gif|webp|avif|bmp|svg|heic|heif|tiff?)(?:[?#]|$)/i.test(`${attachment?.name || ''} ${attachmentUrl(attachment)}`);
 }
 
 function fmtBytes(bytes) {

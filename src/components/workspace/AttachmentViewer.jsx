@@ -9,12 +9,12 @@ function getUrl(attachment) {
 }
 
 function getKind(attachment) {
-  const type = attachment?.type || attachment?.mimeType || '';
+  const type = (attachment?.resourceType || attachment?.type || attachment?.mimeType || '').toLowerCase();
   const source = `${attachment?.name || ''} ${getUrl(attachment)}`;
-  if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[?#]|$)/i.test(source)) return 'image';
+  if (type === 'image' || type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg|heic|heif|tiff?)(?:[?#]|$)/i.test(source)) return 'image';
   if (type === 'application/pdf' || /\.pdf(?:[?#]|$)/i.test(source)) return 'pdf';
-  if (type.startsWith('video/') || /\.(mp4|webm|mov|m4v)(?:[?#]|$)/i.test(source)) return 'video';
-  if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)(?:[?#]|$)/i.test(source)) return 'audio';
+  if (type === 'video' || type.startsWith('video/') || /\.(mp4|webm|mov|m4v)(?:[?#]|$)/i.test(source)) return 'video';
+  if (type === 'audio' || type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)(?:[?#]|$)/i.test(source)) return 'audio';
   return 'file';
 }
 

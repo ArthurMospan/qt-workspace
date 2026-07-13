@@ -71,9 +71,13 @@ function timeAgo(ts) {
 // Detect file type from name or URL
 function detectFileType(mat) {
   const name = (mat.title || mat.name || '').toLowerCase();
-  const url  = (mat.previewUrl || mat.url || '').toLowerCase();
-  const src  = name || url;
-  if (/\.(jpg|jpeg|png|gif|webp|svg|heic|bmp)/.test(src)) return 'image';
+  const url  = getMatFileUrl(mat).toLowerCase();
+  const declaredType = (mat.resourceType || mat.mimeType || mat.type || '').toLowerCase();
+  const src  = `${name} ${url}`;
+  if (declaredType === 'image' || declaredType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|avif|svg|heic|heif|bmp|tiff?)(?:[?#]|$)/.test(src)) return 'image';
+  if (declaredType === 'video' || declaredType.startsWith('video/')) return 'video';
+  if (declaredType === 'audio' || declaredType.startsWith('audio/')) return 'audio';
+  if (declaredType === 'application/pdf') return 'pdf';
   if (/\.pdf/.test(src))                                    return 'pdf';
   if (/\.(mp4|mov|avi|webm|mkv)/.test(src))                return 'video';
   if (/\.(mp3|wav|m4a|ogg|aac)/.test(src))                 return 'audio';
@@ -83,7 +87,7 @@ function detectFileType(mat) {
 }
 
 function getMatFileUrl(mat) {
-  return mat.previewUrl || mat.url || mat.audioUrl || null;
+  return mat.previewUrl || mat.url || mat.downloadUrl || mat.downloadURL || mat.audioUrl || '';
 }
 
 function fmtBytes(bytes) {
@@ -505,11 +509,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId) || reporterMatchByEmail || (issue.source === 'buggybag' ? { name: 'BuggyBag' } : (issue.reporterName ? { name: issue.reporterName } : null));
   const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
   const subtasksAll   = (issue.subtasks || []).length;
-  const descriptionContent = isEditing ? (draft.description || '') : (issue.description || '');
-  const looseAttachments = (issue.attachments || []).filter(attachment => {
-    const url = getMatFileUrl(attachment);
-    return !url || !descriptionContent.includes(url);
-  });
+  const visibleAttachments = issue.attachments || [];
   const currentIssueLinks = links.filter(link => link.sourceIssueId === issueId);
 
   const spentMin  = loggedMinutes;
@@ -1235,15 +1235,15 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
                 )}
 
-                {looseAttachments.length > 0 && (
+                {visibleAttachments.length > 0 && (
                   <div className="border-t border-[#eeeeee] pt-4">
                     <div className="mb-3 flex items-center gap-2">
                       <Paperclip size={13} className="text-muted" />
-                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted">Файли поза текстом</h3>
-                      <span className="text-[11px] font-semibold text-faint">{looseAttachments.length}</span>
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted">Вкладення</h3>
+                      <span className="text-[11px] font-semibold text-faint">{visibleAttachments.length}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {looseAttachments.map(attachment => {
+                      {visibleAttachments.map(attachment => {
                         const url = getMatFileUrl(attachment);
                         const fileType = detectFileType(attachment);
                         return (
