@@ -39,11 +39,18 @@ export function useProjects(userId, activeOrgId) {
     queueMicrotask(() => setLoading(true));
     const q = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
     const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
+      includeMetadataChanges: true,
     }, snap => {
+      // Do not turn an unresolved empty cache into an empty workspace. A real
+      // empty result is only authoritative when it came from the server.
+      if (snap.empty && snap.metadata.fromCache) {
+        setError(null);
+        setLoading(true);
+        return;
+      }
       const docs = snap.docs.map(d => ({
         id: d.id,
-        ...d.data()
+        ...d.data({ serverTimestamps: 'estimate' })
       }));
       docs.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : a.createdAt ? new Date(a.createdAt).getTime() : 0;

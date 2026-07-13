@@ -6,7 +6,6 @@ import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPer
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
 import { claimActivityHeartbeat } from '@/lib/utils/activity';
-import { reportLoadError } from '@/lib/utils/errors';
 
 const ACTIVITY_HEARTBEAT_MS = 60_000;
 
@@ -121,7 +120,10 @@ export function useAuth() {
             profileSignature = nextSignature;
             setUser(previous => ({ ...previous, ...profile, id: firebaseUser.uid }));
           }, error => {
-            reportLoadError('[useAuth] profile subscription', error);
+            // Authentication is still valid when the optional profile document
+            // is unavailable; keep the Firebase Auth fallback without raising a
+            // Next.js error overlay.
+            console.warn('[useAuth] profile subscription unavailable:', error);
           });
           syncLastActive();
           intervalId = setInterval(syncLastActive, ACTIVITY_HEARTBEAT_MS);
@@ -130,7 +132,7 @@ export function useAuth() {
           removeVisibilityListener = () => document.removeEventListener('visibilitychange', handleVisibilityChange);
         } catch (profileError) {
           // A profile permission/read error must not invalidate a valid Firebase session.
-          reportLoadError('[useAuth] profile synchronization', profileError);
+          console.warn('[useAuth] profile synchronization unavailable:', profileError);
         }
       } catch (error) {
         console.error('[useAuth] Authentication initialization failed:', error);

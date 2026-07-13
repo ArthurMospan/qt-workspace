@@ -73,11 +73,19 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // No orderBy — sorted client-side to avoid composite index
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
     const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
+      includeMetadataChanges: true,
     }, snap => {
+      // An empty cache is not proof that a task was deleted. While Firestore is
+      // offline or quota-blocked, wait for a server result (or the error callback)
+      // instead of flashing the destructive "task not found" state.
+      if (snap.empty && snap.metadata.fromCache) {
+        setError(null);
+        setLoading(true);
+        return;
+      }
       const docs = snap.docs.map(d => ({
         id: d.id,
-        ...d.data()
+        ...d.data({ serverTimestamps: 'estimate' })
       }));
       // Sort client-side by order ASC, fallback to createdAt asc
       docs.sort((a, b) => {
