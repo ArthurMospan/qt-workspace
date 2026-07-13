@@ -43,3 +43,5 @@ ag-stop-probe.json
 firestore-debug.log
 .firebase/
 .firebase-config/
+
+.vercel
