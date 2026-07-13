@@ -20,4 +20,5 @@ async function projectRequest(projectId, method, body = null) {
 
 export const archiveProject = projectId => projectRequest(projectId, 'PATCH', { action: 'archive' });
 export const restoreProject = projectId => projectRequest(projectId, 'PATCH', { action: 'restore' });
+export const updateProjectTeam = (projectId, team) => projectRequest(projectId, 'PATCH', { action: 'update-team', team });
 export const deleteProject = projectId => projectRequest(projectId, 'DELETE');

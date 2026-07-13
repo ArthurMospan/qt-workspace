@@ -102,11 +102,14 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
   if (pathname.startsWith('/workspace/team')) {
     return { mode: 'search', project: null, placeholder: 'Пошук по команді...' };
   }
+  if (pathname.startsWith('/workspace/sprints')) {
+    return { mode: 'search', project: null, placeholder: 'Пошук по спринтах і завданнях...' };
+  }
   if (pathname.startsWith('/workspace/chat')) {
     return { mode: 'chat', project: null };
   }
   if (pathname.startsWith('/workspace/analytics')) {
-    return { mode: 'minimal', label: 'Аналітика' };
+    return { mode: 'search', project: null, placeholder: 'Пошук в аналітиці...' };
   }
   if (pathname.startsWith('/workspace/settings')) {
     return { mode: 'minimal', label: 'Налаштування' };
@@ -381,17 +384,24 @@ export default function WorkspaceHeader() {
   const setChatSearch  = useWorkspaceStore(s => s.setChatSearch);
   const teamSearch     = useWorkspaceStore(s => s.teamSearch);
   const setTeamSearch  = useWorkspaceStore(s => s.setTeamSearch);
+  const workspaceSearch = useWorkspaceStore(s => s.workspaceSearch);
+  const setWorkspaceSearch = useWorkspaceStore(s => s.setWorkspaceSearch);
+  const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
+  const setMyTaskSearch = useWorkspaceStore(s => s.setMyTaskSearch);
+  const projectSearchQuery = useWorkspaceStore(s => s.projectSearch);
+  const setProjectSearchQuery = useWorkspaceStore(s => s.setProjectSearch);
+  const sprintSearch = useWorkspaceStore(s => s.sprintSearch);
+  const setSprintSearch = useWorkspaceStore(s => s.setSprintSearch);
+  const analyticsSearch = useWorkspaceStore(s => s.analyticsSearch);
+  const setAnalyticsSearch = useWorkspaceStore(s => s.setAnalyticsSearch);
 
   const router   = useRouter();
   const pathname = usePathname();
   const { mode, project, placeholder, label } = useHeaderMode(pathname, projects, breadcrumbs);
 
   const [projectSearch,   setProjectSearch]   = useState(false); // inline search toggle for project mode
-  const [projectQuery,    setProjectQuery]    = useState('');
   const [globalQuery,     setGlobalQuery]     = useState('');
   const [showSearch,      setShowSearch]      = useState(false);
-
-  const projSearchRef  = useRef(null);
 
   const { results: searchResults, loading: searchLoading, search } = useSearch();
   const { activeOrgId } = useAppContext();
@@ -401,40 +411,51 @@ export default function WorkspaceHeader() {
   // Client-side deadline reminders (24h before due + daily for overdue)
   useDeadlineReminders(uid, activeOrgId);
 
-  // Close dropdowns on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (projectSearch && !projSearchRef.current?.contains(e.target)) {
-        setProjectSearch(false);
-        setProjectQuery('');
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [projectSearch]);
-
   // Reset project search when leaving project page
   useEffect(() => {
     queueMicrotask(() => {
       setProjectSearch(false);
-      setProjectQuery('');
     });
   }, [pathname]);
+
+  const contextualSearchValue = projectSearch
+    ? projectSearchQuery
+    : mode === 'chat'
+      ? chatSearch
+      : pathname.startsWith('/workspace/team')
+        ? teamSearch
+        : pathname.startsWith('/workspace/my')
+          ? myTaskSearch
+          : pathname.startsWith('/workspace/sprints')
+            ? sprintSearch
+            : pathname.startsWith('/workspace/analytics')
+              ? analyticsSearch
+              : pathname === '/workspace' || pathname === '/workspace/'
+                ? workspaceSearch
+                : globalQuery;
 
   return (
     <>
       <TopHeader
         mode={mode}
         hideBorder={true}
-        searchValue={projectSearch ? projectQuery : (mode === 'chat' ? chatSearch : (pathname.startsWith('/workspace/team') ? teamSearch : globalQuery))}
+        searchValue={contextualSearchValue}
         searchPlaceholder={placeholder}
         onSearchChange={async (q) => {
           if (projectSearch) {
-            setProjectQuery(q);
+            setProjectSearchQuery(q);
           } else if (mode === 'chat') {
             setChatSearch(q);
           } else if (pathname.startsWith('/workspace/team')) {
             setTeamSearch(q);
+          } else if (pathname.startsWith('/workspace/my')) {
+            setMyTaskSearch(q);
+          } else if (pathname.startsWith('/workspace/sprints')) {
+            setSprintSearch(q);
+          } else if (pathname.startsWith('/workspace/analytics')) {
+            setAnalyticsSearch(q);
+          } else if (pathname === '/workspace' || pathname === '/workspace/') {
+            setWorkspaceSearch(q);
           } else {
             setGlobalQuery(q);
             if (q.trim() && activeOrgId) {
@@ -447,12 +468,20 @@ export default function WorkspaceHeader() {
         }}
         onSearchClear={() => {
           if (projectSearch) {
-            setProjectQuery('');
+            setProjectSearchQuery('');
             setProjectSearch(false);
           } else if (mode === 'chat') {
             setChatSearch('');
           } else if (pathname.startsWith('/workspace/team')) {
             setTeamSearch('');
+          } else if (pathname.startsWith('/workspace/my')) {
+            setMyTaskSearch('');
+          } else if (pathname.startsWith('/workspace/sprints')) {
+            setSprintSearch('');
+          } else if (pathname.startsWith('/workspace/analytics')) {
+            setAnalyticsSearch('');
+          } else if (pathname === '/workspace' || pathname === '/workspace/') {
+            setWorkspaceSearch('');
           } else {
             setGlobalQuery('');
             setShowSearch(false);

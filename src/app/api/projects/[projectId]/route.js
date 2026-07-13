@@ -17,12 +17,27 @@ export async function PATCH(request, context) {
     const { projectId } = await context.params;
     const loaded = await loadAuthorizedProject(request, projectId);
     if (loaded.error) return NextResponse.json({ error: loaded.error }, { status: loaded.status });
-    const { action } = await request.json();
-    if (!['archive', 'restore'].includes(action)) {
+    const { action, team } = await request.json();
+    if (!['archive', 'restore', 'update-team'].includes(action)) {
       return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
     const { db, ref, project } = loaded;
+    if (action === 'update-team') {
+      const requestedTeam = Array.isArray(team) ? [...new Set(team.filter(Boolean))].slice(0, 100) : [];
+      const nextTeam = project.createdBy && !requestedTeam.includes(project.createdBy)
+        ? [project.createdBy, ...requestedTeam]
+        : requestedTeam;
+      if (nextTeam.length > 0) {
+        const memberships = await db.getAll(...nextTeam.map(userId => db.collection('orgMemberships').doc(`${project.organizationId}_${userId}`)));
+        if (memberships.some((membership, index) => !membership.exists || membership.data().userId !== nextTeam[index])) {
+          return NextResponse.json({ error: 'У команді може бути лише учасник організації' }, { status: 400 });
+        }
+      }
+      await ref.update({ team: nextTeam, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return NextResponse.json({ success: true, team: nextTeam });
+    }
+
     const orgRef = db.collection('organizations').doc(project.organizationId);
     await db.runTransaction(async transaction => {
       const [freshProject, orgSnap] = await Promise.all([transaction.get(ref), transaction.get(orgRef)]);

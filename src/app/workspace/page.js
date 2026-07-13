@@ -610,7 +610,7 @@ export default function WorkspacePage() {
   const [issuesError, setIssuesError] = useState(null);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = useWorkspaceStore(s => s.workspaceSearch);
   const [selectedMember, setSelectedMember] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [sortOption, setSortOption] = useState('updated');

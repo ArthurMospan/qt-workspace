@@ -11,12 +11,13 @@ import React from 'react';
 
 export default function Segmented({ value, onChange, options = [], className = '' }) {
   return (
-    <div className={`flex items-center gap-[2px] p-[2px] rounded-[8px] shrink-0 ${className}`}>
+    <div role="group" aria-label="Вибір режиму" className={`flex items-center gap-[2px] p-[2px] rounded-[8px] shrink-0 ${className}`}>
       {options.map(o => (
         <button
           key={o.value}
           type="button"
           onClick={() => onChange?.(o.value)}
+          aria-pressed={value === o.value}
           className={`px-[10px] h-[26px] text-[12px] font-semibold rounded-[7px] transition-all cursor-pointer ${
             value === o.value
               ? 'bg-white text-ink shadow-sm'

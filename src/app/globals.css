@@ -36,8 +36,11 @@
 }
 
 @layer utilities {
-  /* Remove outlines */
-  *, *:focus, *:focus-visible, *:active { outline: none !important; }
+  *:focus:not(:focus-visible) { outline: none; }
+  *:focus-visible {
+    outline: 2px solid var(--color-ink) !important;
+    outline-offset: 2px;
+  }
 
   /* Sidebar glass (dark) */
   .sidebar-glass {

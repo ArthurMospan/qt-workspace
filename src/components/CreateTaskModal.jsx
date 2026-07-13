@@ -2,7 +2,7 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, CheckSquare } from 'lucide-react';
+import { X, Check, CheckSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -39,10 +39,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     if (isOpen) {
       queueMicrotask(() => setForm(f => ({
           ...f,
+          projectId: f.projectId || projects?.[0]?.id || '',
           status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
         })));
     }
-  }, [isOpen, initialStatus, visibleStatuses]);
+  }, [isOpen, initialStatus, visibleStatuses, projects]);
 
   useEffect(() => {
     if (isOpen && form.status) {
@@ -57,11 +58,12 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
-  const toggleAssignee = (uid) => {
-    set('assignees', form.assignees.includes(uid)
-      ? form.assignees.filter(a => a !== uid)
-      : [...form.assignees, uid]);
-  };
+  const toggleAssignee = (uid) => setForm(current => ({
+    ...current,
+    assignees: current.assignees.includes(uid)
+      ? current.assignees.filter(assignee => assignee !== uid)
+      : [...current.assignees, uid],
+  }));
 
   const toggleLabel = (labelId) => {
     set('labelIds', form.labelIds.includes(labelId)
@@ -101,19 +103,28 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       {/* Modal — mobile: bottom sheet */}
       <form
         onSubmit={handleSubmit}
-        className="relative bg-white rounded-t-[24px] sm:rounded-[24px] shadow-2xl w-full max-w-[520px] sm:mx-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-task-title"
+        className="relative bg-white rounded-t-[20px] sm:rounded-[16px] shadow-2xl w-full max-w-[880px] sm:mx-4 max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
-          <h2 className="text-[16px] font-bold text-ink">Нова завдання</h2>
-          <Button style="secondary" size="icon" icon={X} onClick={onClose} type="button">
+        <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-line shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-9 h-9 rounded-[10px] bg-ink text-white flex items-center justify-center shrink-0"><CheckSquare size={17} /></span>
+            <div className="min-w-0">
+              <h2 id="create-task-title" className="text-[17px] font-bold text-ink">Нове завдання</h2>
+              <p className="text-[11px] text-muted mt-[2px]">Заповніть основне, решту можна додати пізніше</p>
+            </div>
+          </div>
+          <Button style="ghost" size="icon" icon={X} onClick={onClose} type="button" aria-label="Закрити">
             Закрити
           </Button>
         </div>
 
-        <div className="p-6 flex flex-col gap-4 overflow-y-auto flex-1">
+        <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5 overflow-y-auto flex-1">
           {/* Title */}
-          <div>
+          <div className="lg:col-span-2">
             <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Назва *</label>
             <Input
               autoFocus
@@ -153,7 +164,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           )}
 
           {/* Description */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 lg:col-span-2">
             <label className="text-[12px] font-bold text-ink pl-1">Опис завдання</label>
             <MarkdownEditor 
               value={form.description}
@@ -231,7 +242,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Assignees */}
           {teamMembers.length > 0 && (
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Виконавці</label>
               <div className="flex flex-wrap gap-2">
                 {teamMembers.map(m => {
@@ -242,14 +253,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       key={uid}
                       type="button"
                       onClick={() => toggleAssignee(uid)}
+                      aria-pressed={selected}
                       className={`flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${
                         selected
                           ? 'bg-ink text-white border-ink'
                           : 'bg-white text-ink border-line hover:border-muted'
                       }`}
                     >
-                      <UserAvatar user={m} size={18} />
-                      {m.name || m.email}
+                      <span aria-hidden="true"><UserAvatar user={m} size={18} /></span>
+                      <span className="max-w-[180px] truncate">{m.name || m.email}</span>
+                      {selected && <Check size={12} className="shrink-0" />}
                     </button>
                   );
                 })}
@@ -259,7 +272,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Labels */}
           {availableLabels.length > 0 && (
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Мітки (Теги)</label>
               <div className="flex flex-wrap gap-2">
                 {availableLabels.map(l => {
@@ -287,12 +300,12 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           )}
 
           {error && (
-            <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2">{error}</p>
+            <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2 lg:col-span-2">{error}</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
+        <div className="px-5 sm:px-7 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
           <Button style="secondary" size="md" onClick={onClose} type="button">
             Скасувати
           </Button>

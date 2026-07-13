@@ -70,6 +70,18 @@ const useWorkspaceStore = create((set, get) => ({
   teamSearch: '',
   setTeamSearch: (q) => set({ teamSearch: q }),
 
+  // ── Page-context search ───────────────────────────────────────────
+  workspaceSearch: '',
+  setWorkspaceSearch: (q) => set({ workspaceSearch: q }),
+  myTaskSearch: '',
+  setMyTaskSearch: (q) => set({ myTaskSearch: q }),
+  projectSearch: '',
+  setProjectSearch: (q) => set({ projectSearch: q }),
+  sprintSearch: '',
+  setSprintSearch: (q) => set({ sprintSearch: q }),
+  analyticsSearch: '',
+  setAnalyticsSearch: (q) => set({ analyticsSearch: q }),
+
   // ── Chat online users (synced from chat page to header) ───────────
   chatOnlineUsers: [],
   setChatOnlineUsers: (users) => set({ chatOnlineUsers: users }),

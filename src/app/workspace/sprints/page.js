@@ -195,6 +195,7 @@ export default function GlobalSprintsPage() {
   const isDoneCol = (id) => doneStatusIds.includes(id);
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
+  const sprintSearch = useWorkspaceStore(s => s.sprintSearch);
   const confirmDialog = useConfirm();
 
   // No breadcrumbs for main pages
@@ -271,6 +272,14 @@ export default function GlobalSprintsPage() {
 
   // Filter & Sort issues
   const filteredIssues = issues.filter(i => {
+    const normalizedSearch = sprintSearch.trim().toLowerCase();
+    if (normalizedSearch) {
+      const projectName = projects.find(project => project.id === i.projectId)?.name || '';
+      const sprintName = sprints.find(sprint => sprint.id === i.sprintId)?.name || '';
+      const matches = [i.issueKey, i.title, i.description, projectName, sprintName]
+        .some(value => String(value || '').toLowerCase().includes(normalizedSearch));
+      if (!matches) return false;
+    }
     if (projectFilters.length > 0 && !projectFilters.includes(i.projectId)) return false;
     if (assigneeFilter !== 'all') {
       if (assigneeFilter === 'unassigned') {

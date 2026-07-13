@@ -1937,7 +1937,7 @@ export default function UIKitPage() {
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
 
       {/* ── Left Nav ──────────────────────────────────────────────────────── */}
-      <div className="w-[224px] shrink-0 h-full flex flex-col p-[12px] pr-[6px]">
+      <div className="hidden md:flex w-[224px] shrink-0 h-full flex-col p-[12px] pr-[6px]">
         <div className="bg-[#1f1f1f] rounded-[20px] h-full flex flex-col overflow-hidden">
           <div className="px-[20px] pt-[20px] pb-[16px] border-b border-white/10 shrink-0">
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-[2px]">Internal · Not in nav</div>
@@ -1977,19 +1977,27 @@ export default function UIKitPage() {
       </div>
 
       {/* ── Main Content ──────────────────────────────────────────────────── */}
-      <div className="flex-1 h-full flex flex-col overflow-hidden p-[12px] pl-[6px]">
-        <div className="flex-1 flex flex-col bg-white rounded-[24px] overflow-hidden border border-[#f0f0f0]">
-          <div className="flex items-center justify-between px-[32px] py-[18px] border-b border-[#f0f0f0] shrink-0">
-            <div>
+      <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden p-0 md:p-[12px] md:pl-[6px]">
+        <div className="flex-1 flex flex-col bg-white rounded-none md:rounded-[24px] overflow-hidden border border-[#f0f0f0]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 md:px-[32px] py-[14px] md:py-[18px] border-b border-[#f0f0f0] shrink-0">
+            <div className="min-w-0">
               <h1 className="text-[24px] font-bold text-[#1f1f1f]">{current?.label}</h1>
               <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Всі компоненти — живі. Зміни в src/components/ui/ відображаються тут і скрізь.</p>
             </div>
-            <div className="flex items-center gap-[6px] px-[12px] h-[28px] bg-[#f4f4f5] rounded-[8px]">
+            <select
+              aria-label="Секція UI Kit"
+              value={activeSection}
+              onChange={event => setActiveSection(event.target.value)}
+              className="md:hidden w-full h-10 px-3 bg-[#f4f4f5] border border-[#e2e2e4] rounded-[8px] text-[13px] font-semibold text-[#1f1f1f]"
+            >
+              {SECTIONS.map(section => <option key={section.id} value={section.id}>{section.label}</option>)}
+            </select>
+            <div className="hidden md:flex items-center gap-[6px] px-[12px] h-[28px] bg-[#f4f4f5] rounded-[8px]">
               <div className="w-[6px] h-[6px] rounded-full bg-[#10b981]" />
               <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">INTERNAL ONLY · /ui-kit</span>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-[32px] py-[32px]">
+          <div className="flex-1 overflow-y-auto px-4 py-5 md:px-[32px] md:py-[32px]">
             {SECTION_MAP[activeSection]}
           </div>
         </div>

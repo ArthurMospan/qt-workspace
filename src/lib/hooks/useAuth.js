@@ -9,11 +9,12 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setPersistence(auth, browserLocalPersistence).catch(console.error);
-
+    let cancelled = false;
     let intervalId;
     let unsubscribeProfile = () => {};
-    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
+    let unsubscribeAuth = () => {};
+
+    const handleAuthChange = async firebaseUser => {
       try {
       if (intervalId) clearInterval(intervalId);
       unsubscribeProfile();
@@ -85,9 +86,22 @@ export function useAuth() {
         setUser(null);
         setLoading(false);
       }
-    });
+    };
+
+    const initializeAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (error) {
+        console.error('[useAuth] Failed to configure persistence:', error);
+      }
+      if (cancelled) return;
+      unsubscribeAuth = onAuthStateChanged(auth, handleAuthChange);
+    };
+
+    initializeAuth();
     return () => {
-      unsubscribe();
+      cancelled = true;
+      unsubscribeAuth();
       unsubscribeProfile();
       if (intervalId) clearInterval(intervalId);
     };

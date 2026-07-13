@@ -83,6 +83,7 @@ export default function Tabs({
 
         return (
           <button
+            type="button"
             key={tab.id}
             onClick={() => onTabChange?.(tab.id)}
             className={classes}

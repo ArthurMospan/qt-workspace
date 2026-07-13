@@ -1,184 +1,70 @@
 'use client';
 
-// src/lib/hooks/useIssueLinks.js — Issue dependency/relationship links
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAppContext } from '@/lib/context/AppContext';
+import { useCallback, useEffect, useState } from 'react';
+import { auth } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
-// Inverse relation map
-const INVERSE = {
-  'blocks': 'is-blocked-by',
-  'is-blocked-by': 'blocks',
-  'duplicates': 'duplicates',
-  'relates-to': 'relates-to',
-  'subtask-of': 'subtask-of'
-};
+async function requestLinks(issueId, method = 'GET', body = null) {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Authentication required');
+  const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/links`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+    cache: 'no-store',
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Issue links request failed');
+  return result;
+}
+
 export function useIssueLinks(issueId) {
-  const {
-    activeOrgId
-  } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Keep two independent sets and merge them
-  const sourceLinksRef = useRef([]);
-  const targetLinksRef = useRef([]);
-  const merge = useCallback(() => {
-    const all = [...sourceLinksRef.current, ...targetLinksRef.current];
-    // Deduplicate by id
-    const seen = new Set();
-    const deduped = all.filter(l => {
-      if (seen.has(l.id)) return false;
-      seen.add(l.id);
-      return true;
-    });
-    setLinks(deduped);
-  }, []);
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if (!issueId) {
-      queueMicrotask(() => setLoading(false));
+      setLinks([]);
+      setLoading(false);
       return;
     }
-    let sourceReady = false;
-    let targetReady = false;
-    const checkReady = () => {
-      if (sourceReady && targetReady) setLoading(false);
-    };
-
-    // Query 1: links where this issue is the source
-    const q1 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', issueId));
-    const unsub1 = onSnapshot(q1, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      sourceLinksRef.current = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-      sourceReady = true;
-      checkReady();
-      merge();
-    }, err => {
-      console.error('[useIssueLinks] source query error', err);
-      sourceReady = true;
-      checkReady();
-    });
-
-    // Query 2: links where this issue is the target
-    const q2 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('targetIssueId', '==', issueId));
-    const unsub2 = onSnapshot(q2, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      targetLinksRef.current = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-      targetReady = true;
-      checkReady();
-      merge();
-    }, err => {
-      console.error('[useIssueLinks] target query error', err);
-      targetReady = true;
-      checkReady();
-    });
-    return () => {
-      unsub1();
-      unsub2();
-    };
-  }, [issueId, merge, activeOrgId]);
-
-  // -------------------------------------------------------------------------
-  // addLink — creates the primary link and an inverse link
-  // -------------------------------------------------------------------------
-  const addLink = useCallback(async (sourceId, targetId, relationType, userId) => {
-    // 1. Check for duplicate link
-    const { getDocs, query, collection, where, writeBatch, doc } = await import('firebase/firestore');
-    
-    const q1 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', sourceId), where('targetIssueId', '==', targetId));
-    const snap1 = await getDocs(q1);
-    
-    const q2 = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId), where('sourceIssueId', '==', targetId), where('targetIssueId', '==', sourceId));
-    const snap2 = await getDocs(q2);
-    
-    if (!snap1.empty || !snap2.empty) {
-      throw new Error('Зв\'язок між цими завданнями вже існує');
-    }
-
-    // 2. Atomic write using batch
-    const batch = writeBatch(db);
-    const base = {
-      organizationId: activeOrgId,
-      createdBy: userId || null,
-      createdAt: serverTimestamp()
-    };
-
-    const primaryRef = doc(collection(db, 'issueLinks'));
-    batch.set(primaryRef, {
-      ...base,
-      sourceIssueId: sourceId,
-      targetIssueId: targetId,
-      relationType
-    });
-
-    const inverseType = INVERSE[relationType] ?? 'relates-to';
-    const inverseRef = doc(collection(db, 'issueLinks'));
-    batch.set(inverseRef, {
-      ...base,
-      sourceIssueId: targetId,
-      targetIssueId: sourceId,
-      relationType: inverseType
-    });
-
-    await batch.commit();
-  }, [activeOrgId]);
-
-  // -------------------------------------------------------------------------
-  // removeLink — deletes a single link document
-  // -------------------------------------------------------------------------
-  const removeLink = useCallback(async linkId => {
+    setLoading(true);
     try {
-      const linkSnap = await getDoc(doc(db, 'issueLinks', linkId));
-      if (linkSnap.exists()) {
-        const { sourceIssueId, targetIssueId } = linkSnap.data();
-        const q = query(
-          collection(db, 'issueLinks'),
-          where('organizationId', '==', activeOrgId),
-          where('sourceIssueId', 'in', [sourceIssueId, targetIssueId]),
-          where('targetIssueId', 'in', [sourceIssueId, targetIssueId])
-        );
-        const snap = await getDocs(q);
-        const batch = writeBatch(db);
-        snap.docs.forEach(d => {
-          batch.delete(d.ref);
-        });
-        await batch.commit();
-      } else {
-        await deleteDoc(doc(db, 'issueLinks', linkId));
-      }
-    } catch (e) {
-      console.error('[useIssueLinks] removeLink error', e);
-      await deleteDoc(doc(db, 'issueLinks', linkId));
+      const result = await requestLinks(issueId);
+      setLinks(result.links || []);
+    } catch (error) {
+      console.error('[useIssueLinks]', error);
+      setLinks([]);
+    } finally {
+      setLoading(false);
     }
-  }, [activeOrgId]);
+  }, [issueId]);
 
-  // -------------------------------------------------------------------------
-  // hasBlocker — returns true if any open issue is blocking this one
-  // allIssues: Issue[] from useIssues
-  // -------------------------------------------------------------------------
+  useEffect(() => {
+    queueMicrotask(refresh);
+  }, [refresh]);
+
+  const addLink = useCallback(async (sourceId, targetId, relationType) => {
+    await requestLinks(sourceId, 'POST', { targetIssueId: targetId, relationType });
+    await refresh();
+  }, [refresh]);
+
+  const removeLink = useCallback(async linkId => {
+    await requestLinks(issueId, 'DELETE', { linkId });
+    await refresh();
+  }, [issueId, refresh]);
+
   const hasBlocker = useCallback((targetIssueId, allIssues) => {
-    const blockingLinks = links.filter(l => l.relationType === 'blocks' && l.targetIssueId === targetIssueId);
-    return blockingLinks.some(l => {
-      const blocker = allIssues.find(i => i.id === l.sourceIssueId);
+    const blockingLinks = links.filter(link => link.relationType === 'blocks' && link.targetIssueId === targetIssueId);
+    return blockingLinks.some(link => {
+      const blocker = allIssues.find(issue => issue.id === link.sourceIssueId);
       return blocker && !doneStatusIds.includes(blocker.columnId ?? blocker.status);
     });
   }, [links, doneStatusIds]);
-  return {
-    links,
-    loading,
-    addLink,
-    removeLink,
-    hasBlocker
-  };
+
+  return { links, loading, addLink, removeLink, hasBlocker };
 }

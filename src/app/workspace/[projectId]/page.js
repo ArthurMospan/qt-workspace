@@ -7,6 +7,7 @@ import { useAppContext }  from '@/lib/context/AppContext';
 import { useIssues }     from '@/lib/hooks/useIssues';
 import { useSprints }    from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
+import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
@@ -35,10 +36,12 @@ export default function BoardPage({ params }) {
   const loading = issuesLoading || sprintsLoading;
   const showToast   = useWorkspaceStore(s => s.showToast);
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
+  const projectSearch = useWorkspaceStore(s => s.projectSearch);
 
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
+  const { members: organizationMembers } = useOrganization();
 
   // Portal tab visible only when project is shared (synced to QT)
   const isShared = project?.visibility === 'shared';
@@ -82,6 +85,9 @@ export default function BoardPage({ params }) {
 
   const activeSprints = sprints.filter(s => s.status === 'active');
   const boardIssues = issues.filter(i => {
+    const normalizedSearch = projectSearch.trim().toLowerCase();
+    if (normalizedSearch && ![i.issueKey, i.title, i.description]
+      .some(value => String(value || '').toLowerCase().includes(normalizedSearch))) return false;
     // Sprint
     if (boardSprintFilter !== 'all') {
       if (boardSprintFilter === 'active') {
@@ -368,8 +374,11 @@ export default function BoardPage({ params }) {
       {activeTab === 'team' && (
         <ProjectTeamTab
           members={members}
+          allMembers={organizationMembers}
           issues={issues}
           projectId={projectId}
+          project={project}
+          canManage={can(orgRole, 'manage:team')}
         />
       )}
       </div>

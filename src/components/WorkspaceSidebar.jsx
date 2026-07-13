@@ -1,6 +1,6 @@
 'use client';
 // src/components/WorkspaceSidebar.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
+import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicators';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 
 import { can } from '@/lib/utils/can';
@@ -22,10 +23,20 @@ import { can } from '@/lib/utils/can';
 export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
-  const { projects, activeOrg, allOrgs, orgRole } = useAppContext();
+  const { projects, activeOrg, allOrgs, orgRole, currentUser } = useAppContext();
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const unreadChats = useUnreadChatCount();
+  const userId = currentUser?.id || currentUser?.uid;
+  const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId);
+
+  useEffect(() => {
+    const match = pathname.match(/^\/workspace\/([^/]+)/);
+    const projectId = match?.[1];
+    if (projectId && projects?.some(project => project.id === projectId)) {
+      markProjectRead(projectId).catch(error => console.error('[WorkspaceSidebar] mark project read', error));
+    }
+  }, [pathname, projects, markProjectRead]);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
@@ -159,7 +170,7 @@ export default function WorkspaceSidebar() {
                     <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                       <Folder size={16} className="shrink-0" />
                       {!collapsed && <span className="text-[13px] font-medium truncate">{p.name}</span>}
-                      {!collapsed && p.status === 'active' && (
+                      {!collapsed && !active && unreadProjectIds.has(p.id) && (
                         <Counter variant="dot" size="sm" status="info" className="ml-auto" dark />
                       )}
                     </div>

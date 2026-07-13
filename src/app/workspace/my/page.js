@@ -63,6 +63,7 @@ export default function MyTasksPage() {
   const { sprints, loading: sprintsLoading } = useSprints();
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
+  const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
   
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'sprints'
   const [sectionExpansion, setSectionExpansion] = useState({});
@@ -120,9 +121,13 @@ export default function MyTasksPage() {
     return acc;
   }, {});
 
+  const normalizedSearch = myTaskSearch.trim().toLowerCase();
   const filtered = filterTasks(tasks, filters, sprintMap).filter(t => {
     const p = projects.find(proj => proj.id === t.projectId);
-    return p && p.status !== 'archived';
+    if (!p || p.status === 'archived') return false;
+    if (!normalizedSearch) return true;
+    return [t.issueKey, t.title, t.description, p.name]
+      .some(value => String(value || '').toLowerCase().includes(normalizedSearch));
   });
 
   const activeSprintsList = (sprints || []).filter(s => s.status === 'active');

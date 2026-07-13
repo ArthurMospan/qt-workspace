@@ -23,6 +23,7 @@ import {
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { parseDueDate } from '@/lib/utils/date';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -272,6 +273,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
 // ── PAGE ─────────────────────────────────────────────────────────────
 export default function WorkspaceAnalyticsPage() {
   const { projects = [], orgRole, currentUser } = useAppContext();
+  const analyticsSearch = useWorkspaceStore(state => state.analyticsSearch);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Only admin/owner can see billing and other members' timesheets
@@ -321,8 +323,19 @@ export default function WorkspaceAnalyticsPage() {
     }
   }, []);
 
+  const searchQuery = analyticsSearch.trim().toLocaleLowerCase('uk-UA');
+  const searchMatchedProjectIds = useMemo(() => new Set(
+    projects
+      .filter(project => `${project.name || ''} ${project.description || ''}`.toLocaleLowerCase('uk-UA').includes(searchQuery))
+      .map(project => project.id)
+  ), [projects, searchQuery]);
+
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
+      if (searchQuery) {
+        const issueText = `${i.issueKey || ''} ${i.title || ''} ${i.description || ''}`.toLocaleLowerCase('uk-UA');
+        if (!issueText.includes(searchQuery) && !searchMatchedProjectIds.has(i.projectId)) return false;
+      }
       if (projectFilters.length > 0 && !projectFilters.includes(i.projectId)) return false;
       if (assigneeFilter !== 'all') {
         if (assigneeFilter === 'unassigned') {
@@ -335,24 +348,30 @@ export default function WorkspaceAnalyticsPage() {
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
-  }, [issues, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  }, [issues, searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+
+  const visibleProjects = useMemo(() => {
+    if (!searchQuery) return projects;
+    const issueProjectIds = new Set(filteredIssues.map(issue => issue.projectId));
+    return projects.filter(project => searchMatchedProjectIds.has(project.id) || issueProjectIds.has(project.id));
+  }, [projects, filteredIssues, searchMatchedProjectIds, searchQuery]);
 
   const filteredIssueIds = useMemo(() => new Set(filteredIssues.map(i => i.id)), [filteredIssues]);
 
   const filteredTimeLogs = useMemo(() => {
     return timeLogs.filter(log => {
       if (projectFilters.length > 0 && !projectFilters.includes(log.projectId)) return false;
-      if (assigneeFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all') {
+      if (searchQuery || assigneeFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all') {
         if (!filteredIssueIds.has(log.issueId)) return false;
       }
       return true;
     });
-  }, [timeLogs, projectFilters, assigneeFilter, priorityFilter, typeFilter, filteredIssueIds]);
+  }, [timeLogs, projectFilters, searchQuery, assigneeFilter, priorityFilter, typeFilter, filteredIssueIds]);
 
   // Табель фільтрується лише по проєктах — вимір «хто» задає селектор учасника
   const projectScopedTimeLogs = useMemo(
-    () => (projectFilters.length === 0 ? timeLogs : timeLogs.filter(l => projectFilters.includes(l.projectId))),
-    [timeLogs, projectFilters]
+    () => filteredTimeLogs,
+    [filteredTimeLogs]
   );
 
   const TABS = [
@@ -488,7 +507,7 @@ export default function WorkspaceAnalyticsPage() {
         {/* Content */}
         {activeTab === 'overview' && (
           <AnalyticsContent
-            projects={projects}
+            projects={visibleProjects}
             issues={filteredIssues}
             timeLogs={filteredTimeLogs}
             loading={loading}
@@ -499,10 +518,10 @@ export default function WorkspaceAnalyticsPage() {
 
         {activeTab === 'timesheet' && (
           <TimesheetTab
-            issues={issues}
+            issues={filteredIssues}
             timeLogs={projectScopedTimeLogs}
             members={members}
-            projects={projects}
+            projects={visibleProjects}
             member={effectiveTsMember}
             mode={tsMode}
             anchor={tsAnchor}
@@ -514,7 +533,7 @@ export default function WorkspaceAnalyticsPage() {
         )}
 
         {activeTab === 'velocity' && (
-          <VelocityTab issues={filteredIssues} projects={projects} period={period} />
+          <VelocityTab issues={filteredIssues} projects={visibleProjects} period={period} />
         )}
 
         {activeTab === 'workload' && (

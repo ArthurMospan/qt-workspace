@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
 
@@ -28,6 +28,8 @@ export default function Dialog({
   size = 'md', // sm, md, lg, xl
   showCloseButton = true,
 }) {
+  const titleId = useId();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -53,6 +55,9 @@ export default function Dialog({
     >
       {/* Mobile: bottom sheet (with safe-area padding for the home indicator); sm+: centered dialog */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
         className={`
           bg-white rounded-t-[24px] sm:rounded-[24px] shadow-[0_25px_50px_rgba(0,0,0,0.15)]
           w-full flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden
@@ -65,7 +70,7 @@ export default function Dialog({
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
-            <h2 className="text-[16px] font-bold text-ink">{title}</h2>
+            <h2 id={titleId} className="text-[16px] font-bold text-ink">{title}</h2>
             {showCloseButton && (
               <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
             )}

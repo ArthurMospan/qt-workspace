@@ -740,10 +740,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
       <div className={`w-full page-gutter ${isModal ? 'pt-[8px]' : 'pt-[56px]'} pb-[32px] flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] flex-1 min-h-0 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] lg:flex-1 lg:min-h-0 items-stretch">
 
           {/* LEFT SIDE (Data) */}
-          <div className="lg:col-span-2 flex flex-col gap-[16px] min-h-0 overflow-visible lg:overflow-hidden">
+          <div className="lg:col-span-2 flex flex-col gap-[16px] lg:min-h-0 overflow-visible lg:overflow-hidden">
         
             {/* TITLE & ACTIONS */}
             <div className="flex items-start justify-between gap-[16px] w-full pt-[12px]">
@@ -916,28 +916,29 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <Select disabled={isArchived} value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
                   </div>
 
-                  {/* Watchers */}
-                  <div className="flex-1 min-w-[110px] flex flex-col gap-[4px] p-2 -m-2">
-                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Спостерігачі</span>
-                    <div className="flex items-center gap-2 h-[22px]">
-                      <button
-                        onClick={toggleWatch}
-                        disabled={isArchived}
-                        className={`flex items-center gap-1 text-[12px] font-bold rounded-[8px] px-2 h-[22px] transition-colors ${
-                          isWatching ? 'bg-[#eef2ff] text-[#4f46e5]' : 'text-muted hover:text-ink hover:bg-[#ebebeb]'
-                        }`}
-                        title={isWatching ? 'Ви стежите за завданням' : 'Стежити за завданням'}
-                      >
-                        {isWatching ? <Eye size={13} /> : <EyeOff size={13} />}
-                        {isWatching ? 'Стежите' : 'Стежити'}
-                      </button>
-                      {watchers.length > 0 && (
-                        <div className="flex items-center -space-x-1">
-                          {watchers.slice(0, 3).map(m => <UserAvatar key={m.id || m.uid} user={m} size={20} className="ring-[1.5px] ring-white" />)}
-                          {watchers.length > 3 && <span className="text-[10px] text-muted pl-2">+{watchers.length - 3}</span>}
-                        </div>
-                      )}
-                    </div>
+                  {/* Watchers: compact toggle instead of a full metadata column */}
+                  <div className="flex-none flex items-end p-2 -m-2">
+                    <button
+                      type="button"
+                      onClick={toggleWatch}
+                      disabled={isArchived}
+                      aria-pressed={isWatching}
+                      aria-label={isWatching ? 'Припинити стежити за завданням' : 'Стежити за завданням'}
+                      className={`h-[34px] min-w-[34px] px-2 rounded-[8px] flex items-center justify-center gap-1.5 transition-colors ${
+                        isWatching ? 'bg-[#eef2ff] text-[#4f46e5]' : 'text-muted hover:text-ink hover:bg-[#ebebeb]'
+                      }`}
+                      title={isWatching ? 'Ви стежите за завданням' : 'Стежити за завданням'}
+                    >
+                      {isWatching ? <Eye size={15} /> : <EyeOff size={15} />}
+                      {watchers.length > 0 && <span className="text-[11px] font-bold tabular-nums">{watchers.length}</span>}
+                    </button>
+                    {watchers.length > 0 && (
+                      <div className="hidden xl:flex items-center -space-x-1 ml-1.5" aria-label={`Спостерігачів: ${watchers.length}`}>
+                        {watchers.slice(0, 2).map(member => (
+                          <UserAvatar key={member.id || member.uid} user={member} size={20} className="ring-[1.5px] ring-white" tooltip />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Sprint */}
@@ -1119,7 +1120,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             {/* MAIN SECTIONS PANEL */}
             <div className="bg-canvas rounded-[16px] p-4 sm:p-5 flex flex-col gap-5 w-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden">
               {/* Pill Tabs */}
-              <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-fit">
+              <div className="flex gap-1 p-1 bg-[#ebebeb] rounded-[10px] w-full overflow-x-auto custom-scrollbar">
                 {[
                   { id: 'description', label: 'Завдання' },
                   { id: 'attachments', label: 'Вкладення', count: (issue.attachments || []).length },
@@ -1129,7 +1130,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <button 
                     key={t.id} 
                     onClick={() => setActiveTab(t.id)} 
-                    className={`px-4 py-1.5 text-[13px] font-bold transition-all rounded-[8px] flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}
+                    className={`shrink-0 px-4 py-1.5 text-[13px] font-bold transition-all rounded-[8px] flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}
                   >
                     {t.label}
                     {t.count > 0 && (

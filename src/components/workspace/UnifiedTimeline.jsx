@@ -234,10 +234,10 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived }) {
                 <div className="flex items-center gap-[5px] text-muted text-[11px] font-medium">
                   <Activity size={10} className="shrink-0" />
                   <span>
-                    <strong className="text-ink">{item.byName || 'Система'}</strong>{' '}
-                    {item.action === 'update'
-                      ? `змінив ${item.field}${item.newValue ? ` → ${item.newValue}` : ''}`
-                      : 'зробив зміну'}
+                    Зміна від <strong className="text-ink">{item.byName || 'системи'}</strong>
+                    {(item.field || item.action?.startsWith('changed_'))
+                      ? `: ${item.field || item.action.replace('changed_', '')}${item.newValue || item.to ? ` → ${item.newValue || item.to}` : ''}`
+                      : ''}
                   </span>
                 </div>
               </div>
