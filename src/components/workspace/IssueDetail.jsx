@@ -742,7 +742,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             >
 
             {/* TITLE & ACTIONS */}
-            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-2 pt-[12px]">
+            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[24px] pt-[12px]">
               <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {isEditing ? (
               <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full" placeholder="Назва завдання..." />
@@ -977,7 +977,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         title={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
                         className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
                       >
-                        {isTimerMine ? <StopIcon size={10} className="block fill-current" /> : <Play size={11} strokeWidth={2.2} className="block fill-current" />}
+                        {isTimerMine ? <StopIcon size={10} className="block fill-current" /> : <Play size={11} strokeWidth={2.2} className="block fill-current translate-x-[1px]" />}
                       </button>
                       <button
                         type="button"

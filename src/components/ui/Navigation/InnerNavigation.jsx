@@ -33,17 +33,17 @@ export function InnerNavigation({
                   <Button
                     key={item.id}
                     onClick={() => onChange?.(item.id)}
-                    style="ghost"
-                    color={active ? 'dark' : item.danger ? 'red' : 'gray'}
+                    style={active ? 'primary' : 'ghost'}
+                    color={active ? 'dark' : item.danger ? 'red' : 'dark'}
                     size="md"
                     icon={Icon}
                     iconSize={15}
-                    className={`w-full justify-start font-medium transition-colors ${
+                    className={`w-full justify-start transition-colors ${
                       active
-                        ? 'bg-[#ebebeb] text-ink'
+                        ? 'font-bold shadow-sm'
                         : item.danger
-                        ? 'text-red-500 hover:bg-red-50'
-                        : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
+                        ? 'font-medium text-red-500 hover:bg-red-50'
+                        : 'font-medium text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
                     }`}
                   >
                     {item.label}

@@ -11,7 +11,7 @@ export const HeaderSearch = forwardRef(({
   ...props
 }, ref) => {
   return (
-    <div className={`relative flex items-center border-b border-transparent focus-within:border-ink w-full max-w-[320px] h-[36px] transition-colors ${className}`}>
+    <div className={`relative flex items-center border-b border-transparent focus-within:border-line w-full max-w-[320px] h-[36px] transition-colors ${className}`}>
       <Search size={14} className="text-muted absolute left-0 pointer-events-none" />
       <input
         ref={ref}

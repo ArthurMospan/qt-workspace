@@ -402,7 +402,9 @@ function ProjectStatsSection({ isLarge, members, issues = [], now }) {
         title: newestIssue.title,
         actor: actorName,
         actorAvatar,
-        time: newestIssue.updatedAt || newestIssue.createdAt
+        time: newestIssue.updatedAt || newestIssue.createdAt,
+        projectId: newestIssue.projectId,
+        id: newestIssue.id
       };
     }
 
@@ -453,7 +455,13 @@ function ProjectStatsSection({ isLarge, members, issues = [], now }) {
             </div>
             <p className="text-muted leading-tight line-clamp-1">
               оновив завдання{' '}
-              <span className="text-ink font-semibold underline">{stats.lastAction.issueKey}: {stats.lastAction.title}</span>
+              <Link
+                href={`/workspace/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-ink font-semibold underline cursor-pointer hover:text-[#6366f1] transition-colors no-nav"
+              >
+                {stats.lastAction.issueKey}: {stats.lastAction.title}
+              </Link>
             </p>
           </div>
         </div>

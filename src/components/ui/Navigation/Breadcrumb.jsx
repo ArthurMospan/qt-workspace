@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { ChevronRight, Copy, Search } from 'lucide-react';
 import { HeaderSearch } from '../Forms/HeaderSearch';
 
@@ -59,12 +60,12 @@ export function Breadcrumb({
 
               <li className="flex items-center min-w-0">
                 {isClickable ? (
-                  <a
+                  <Link
                     href={item.href}
                     className="text-muted hover:text-ink font-normal truncate transition-colors max-w-[140px]"
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ) : isAction ? (
                   <button
                     type="button"

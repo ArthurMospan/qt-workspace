@@ -101,19 +101,37 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
                   }}
                   className="bg-canvas rounded-[8px] p-5 flex flex-col gap-4 text-left hover:bg-[#eeeeef] transition-colors"
                 >
-                  <div className="flex items-center gap-4 w-full">
+                  <div className="flex items-start gap-4 w-full">
                     <UserAvatar user={member} size={48} />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-[14px] font-bold text-ink truncate">{member.name || 'Анонім'}</h3>
-                      {member.role && <p className="text-[12px] text-[#6366f1] font-medium mt-[2px] truncate">{member.role === 'admin' ? 'Адміністратор' : member.role === 'owner' ? 'Власник' : 'Учасник'}</p>}
-                      {member.email && <div className="flex items-center gap-[6px] text-muted mt-2"><Mail size={12} /><span className="text-[11px] truncate">{member.email}</span></div>}
-                      {member.phone && <div className="flex items-center gap-[6px] text-muted mt-1"><Phone size={12} /><span className="text-[11px] truncate">{member.phone}</span></div>}
+                    <div className="flex-1 min-w-0 flex flex-col pt-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-[14px] font-bold text-ink truncate">{member.name || 'Анонім'}</h3>
+                        {member.role && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted px-2 py-0.5 bg-[#f5f5f5] rounded-full">
+                            {member.role === 'admin' ? 'Адмін' : member.role === 'owner' ? 'Власник' : 'Учасник'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-[4px] mt-2">
+                        {member.email && (
+                          <div className="flex items-center gap-2 text-faint">
+                            <Mail size={12} className="shrink-0" />
+                            <span className="text-[11px] truncate font-medium">{member.email}</span>
+                          </div>
+                        )}
+                        {member.phone && (
+                          <div className="flex items-center gap-2 text-faint">
+                            <Phone size={12} className="shrink-0" />
+                            <span className="text-[11px] truncate font-medium">{member.phone}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 pt-4 border-t border-line w-full">
                     <div><span className="block text-[10px] text-muted">Відкриті</span><strong className="text-[14px] text-ink">{open}</strong></div>
-                    <div><span className="block text-[10px] text-muted">Завершено</span><strong className="text-[14px] text-[#166534]">{done}</strong></div>
-                    <div><span className="block text-[10px] text-muted">Час</span><strong className="text-[14px] text-[#3730a3]">{timeStr || '—'}</strong></div>
+                    <div><span className="block text-[10px] text-muted">Завершено</span><strong className="text-[14px] text-ink">{done}</strong></div>
+                    <div><span className="block text-[10px] text-muted">Час</span><strong className="text-[14px] text-ink">{timeStr || '—'}</strong></div>
                   </div>
                 </button>
               );

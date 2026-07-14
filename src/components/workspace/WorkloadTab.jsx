@@ -149,7 +149,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
             return (
               <div
                 key={uid}
-                className={`bg-canvas rounded-[24px] p-5 transition-all ${isOverloaded ? 'ring-1 ring-[#ef4444]/20' : ''}`}
+                className="bg-canvas rounded-[24px] p-5 transition-all"
               >
                 <div className="flex flex-wrap items-start gap-4 mb-4">
                   {/* Avatar + name */}

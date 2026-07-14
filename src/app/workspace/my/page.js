@@ -415,7 +415,7 @@ export default function MyTasksPage() {
               if (!hasAnyTasks) {
                 return (
                   <div className="text-center py-12 text-[13px] text-faint bg-canvas rounded-[16px]">
-                    Задач не знайдено
+                    Завдань не знайдено
                   </div>
                 );
               }

@@ -45,7 +45,7 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 export function useIssues(projectId, { includeLinks = true } = {}) {
   const {
-    activeOrgId
+    activeOrgId, currentUser
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
   const [issues, setIssues] = useState([]);
@@ -53,7 +53,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   useEffect(() => {
-    if (!projectId || !activeOrgId) {
+    if (!projectId || !activeOrgId || !currentUser) {
       queueMicrotask(() => {
         setIssues([]);
         setIssueLinks([]);
@@ -114,7 +114,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks]);
+  }, [projectId, activeOrgId, includeLinks, currentUser]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

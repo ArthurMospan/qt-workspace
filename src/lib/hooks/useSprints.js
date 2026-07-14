@@ -9,13 +9,13 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
 export function useSprints() {
   const {
-    activeOrgId
+    activeOrgId, currentUser
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!activeOrgId) {
+    if (!activeOrgId || !currentUser) {
       queueMicrotask(() => setLoading(false));
       return;
     }
@@ -40,7 +40,7 @@ export function useSprints() {
       setLoading(false);
     });
     return () => unsub();
-  }, [activeOrgId]);
+  }, [activeOrgId, currentUser]);
   const createSprint = useCallback(async data => {
     if (!activeOrgId) return;
 

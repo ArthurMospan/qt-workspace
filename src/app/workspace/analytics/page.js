@@ -217,13 +217,13 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                 const days = Math.floor((now - due.getTime()) / 86400000);
                 const proj = projects.find(p => p.id === issue.projectId);
                 return (
-                  <div key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] last:border-0">
+                  <Link href={`/workspace/${issue.projectId}/issue/${issue.id}`} key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] hover:bg-[#f9f9f9] transition-colors rounded-lg px-2 -mx-2 last:border-0">
                     <div className="min-w-0 flex-1">
                       <p className="text-[12px] font-medium text-ink truncate">{issue.title}</p>
                       <p className="text-[10px] text-muted">{proj?.name} · {issue.issueKey}</p>
                     </div>
-                    <span className="text-[11px] font-bold text-red-500 shrink-0">+{days}д</span>
-                  </div>
+                    <span className="text-[11px] font-bold text-red-500 shrink-0 mt-0.5">+{days}д</span>
+                  </Link>
                 );
               })}
             </Card>

@@ -1322,11 +1322,11 @@ export default function SettingsPage() {
         return (
           <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
             <Card className={`!border-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
-              <div className={`bg-gradient-to-r ${isPro ? 'from-[#fefce8] to-[#fffbeb]' : 'from-[#eef2ff] to-white'} px-6 py-6 border-b border-line`}>
+              <div className={`bg-white px-6 py-6 border-b border-line`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className={`inline-block px-[10px] py-[3px] ${isPro ? 'bg-[#eab308]' : 'bg-[#6366f1]'} text-white text-[10px] font-bold uppercase tracking-wider rounded-full mb-3 shadow-sm`}>
-                      {isPro ? 'PRO Plan' : 'Free Plan'}
+                    <span className={`inline-flex items-center px-[8px] py-[3px] rounded-md border border-line bg-canvas text-ink text-[11px] font-semibold mb-3`}>
+                      {isPro ? 'PRO PLAN' : 'FREE PLAN'}
                     </span>
                     <h3 className="text-[20px] font-bold text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
                     <p className="text-[13px] text-muted">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>

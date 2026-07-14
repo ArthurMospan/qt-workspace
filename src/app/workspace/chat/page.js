@@ -118,7 +118,7 @@ function MessageBubble({
             className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
             title="Переглянути профіль"
           >
-            <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
+            <UserAvatar user={{ name: msg.user, avatar: members?.find(m => (m.id || m.uid) === msg.senderId)?.avatar || msg.avatar }} size={36} />
           </button>
         ) : (
           <span className={`text-[10px] text-muted leading-[1.8] pt-1 transition-opacity ${showActions ? 'opacity-100' : 'opacity-0'}`}>
@@ -247,6 +247,7 @@ function MessageBubble({
                   skinTonesDisabled
                   width={300}
                   height={360}
+                  emojiStyle="native"
                 />
               </div>
             )}
@@ -429,6 +430,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
             skinTonesDisabled
             width={320}
             height={380}
+            emojiStyle="native"
           />
         </div>
       )}
@@ -586,7 +588,7 @@ function ThreadSidebar({
               <div className="w-8 shrink-0 flex justify-end items-start pt-0.5">
                 {showHead ? (
                   <div className="w-8 h-8 rounded-xl overflow-hidden">
-                    <UserAvatar user={{ name: reply.user, avatar: reply.avatar }} size={32} />
+                    <UserAvatar user={{ name: reply.user, avatar: members?.find(m => (m.id || m.uid) === reply.senderId)?.avatar || reply.avatar }} size={32} />
                   </div>
                 ) : (
                   <span className="text-[10px] text-muted opacity-0 group-hover:opacity-100 pt-1 transition-opacity">{reply.time}</span>
@@ -595,7 +597,10 @@ function ThreadSidebar({
               <div className="flex-1 min-w-0">
                 {showHead && (
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="font-semibold text-[13px] text-ink">{reply.user}</span>
+                    <span className="font-semibold text-[13px] text-ink flex items-center gap-1">
+                      {reply.user}
+                      {members?.find(m => (m.id || m.uid) === reply.senderId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === reply.senderId).statusEmoji}</span>}
+                    </span>
                     <span className="text-[10px] text-muted">{reply.time}</span>
                   </div>
                 )}
