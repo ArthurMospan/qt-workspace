@@ -2,9 +2,9 @@
 
 // src/lib/hooks/useAuth.js — Auth hook (copied & adapted from qt/)
 import { useState, useEffect, useRef } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { auth, db, googleProvider } from '@/lib/firebase';
+import { auth, db, githubProvider, googleProvider } from '@/lib/firebase';
 import { claimActivityHeartbeat } from '@/lib/utils/activity';
 
 const ACTIVITY_HEARTBEAT_MS = 60_000;
@@ -175,6 +175,21 @@ export function useAuth() {
       throw error;
     }
   };
+  const signInWithGitHub = async () => {
+    try {
+      return await signInWithPopup(auth, githubProvider);
+    } catch (error) {
+      if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(error.code)) {
+        const e = new Error('POPUP_BLOCKED');
+        e.code = 'custom/popup-blocked';
+        throw e;
+      }
+      throw error;
+    }
+  };
+  const signInWithAuthToken = async customToken => {
+    return await signInWithCustomToken(auth, customToken);
+  };
   const signOut = async () => {
     if (user?.id) {
       await setDoc(doc(db, 'users', user.id), {
@@ -194,7 +209,9 @@ export function useAuth() {
     user,
     loading,
     signInWithGoogle,
+    signInWithGitHub,
     signInWithEmail,
+    signInWithAuthToken,
     signOut
   };
 }

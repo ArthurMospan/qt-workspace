@@ -33,14 +33,14 @@ export function InnerNavigation({
                   <Button
                     key={item.id}
                     onClick={() => onChange?.(item.id)}
-                    style={active ? 'primary' : 'ghost'}
-                    color={active ? 'dark' : item.danger ? 'red' : 'dark'}
+                    style="ghost"
+                    color={item.danger ? 'red' : 'dark'}
                     size="md"
                     icon={Icon}
                     iconSize={15}
                     className={`w-full justify-start transition-colors ${
                       active
-                        ? 'font-bold shadow-sm'
+                        ? 'bg-[#ebebeb] text-ink font-semibold'
                         : item.danger
                         ? 'font-medium text-red-500 hover:bg-red-50'
                         : 'font-medium text-muted hover:bg-[#ebebeb]/50 hover:text-ink'

@@ -14,7 +14,16 @@ const INVITATION_CHECK_TTL = 5 * 60 * 1000;
 const PRESENCE_HEARTBEAT_MS = 60_000;
 
 // ─── Inner provider (has access to OrgContext) ────────────────────────────
-function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail, signOut, children }) {
+function AppProviderInner({
+  user,
+  authLoading,
+  signInWithGoogle,
+  signInWithGitHub,
+  signInWithEmail,
+  signInWithAuthToken,
+  signOut,
+  children,
+}) {
   const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, orgError, noOrg, switchOrg, setActiveOrgId } = useOrg();
   const userId = authLoading ? undefined : (user?.id || user?.uid || null);
   const invitationUid = user?.id || user?.uid;
@@ -78,7 +87,9 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
     orgLoading,
     orgError,
     signInWithGoogle,
+    signInWithGitHub,
     signInWithEmail,
+    signInWithAuthToken,
     signOut,
     currentUser: user,
     projects,
@@ -97,7 +108,15 @@ function AppProviderInner({ user, authLoading, signInWithGoogle, signInWithEmail
 
 // ─── Outer provider: sets up auth, wraps OrgProvider ─────────────────────
 export function AppProvider({ children }) {
-  const { user, loading: authLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    signInWithGoogle,
+    signInWithGitHub,
+    signInWithEmail,
+    signInWithAuthToken,
+    signOut,
+  } = useAuth();
 
   return (
     <OrgProvider user={user}>
@@ -105,7 +124,9 @@ export function AppProvider({ children }) {
         user={user}
         authLoading={authLoading}
         signInWithGoogle={signInWithGoogle}
+        signInWithGitHub={signInWithGitHub}
         signInWithEmail={signInWithEmail}
+        signInWithAuthToken={signInWithAuthToken}
         signOut={signOut}
       >
         {children}
@@ -125,7 +146,9 @@ export const useAppContext = () => {
       orgLoading: true,
       orgError: null,
       signInWithGoogle: async () => {},
+      signInWithGitHub: async () => {},
       signInWithEmail: async () => {},
+      signInWithAuthToken: async () => {},
       signOut: async () => {},
       currentUser: null,
       projects: [],

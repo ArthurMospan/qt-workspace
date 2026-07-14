@@ -1175,8 +1175,8 @@ export default function ChatPage() {
                           )}
                         </div>
                         <span className="text-[13px] flex-1 truncate flex items-center gap-1">
-                          {u.statusEmoji && <span>{u.statusEmoji}</span>}
                           {u.name}
+                          {u.statusEmoji && <span>{u.statusEmoji}</span>}
                         </span>
                         {u.online && !active && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0" />
@@ -1209,7 +1209,7 @@ export default function ChatPage() {
               ) : (
                 <div className="relative shrink-0">
                   <div className="w-8 h-8 rounded-full overflow-hidden">
-                    <UserAvatar user={{ name: dms.find(d => d.id === activeChannel.id)?.name }} size={32} />
+                    <UserAvatar user={dms.find(d => d.id === activeChannel.id)} size={32} />
                   </div>
                   {dms.find(d => d.id === activeChannel.id)?.online && (
                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#10b981] border-2 border-canvas" />
@@ -1222,8 +1222,8 @@ export default function ChatPage() {
                     ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
                     : (
                       <>
-                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && <span>{dms.find(d => d.id === activeChannel.id).statusEmoji}</span>}
                         {dms.find(d => d.id === activeChannel.id)?.name || 'Особисті'}
+                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && <span>{dms.find(d => d.id === activeChannel.id).statusEmoji}</span>}
                       </>
                     )}
                 </h2>

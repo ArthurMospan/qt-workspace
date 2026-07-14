@@ -129,9 +129,9 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 pt-4 border-t border-line w-full">
-                    <div><span className="block text-[10px] text-muted">Відкриті</span><strong className="text-[14px] text-ink">{open}</strong></div>
-                    <div><span className="block text-[10px] text-muted">Завершено</span><strong className="text-[14px] text-ink">{done}</strong></div>
-                    <div><span className="block text-[10px] text-muted">Час</span><strong className="text-[14px] text-ink">{timeStr || '—'}</strong></div>
+                    <div className="text-center"><span className="block text-[10px] text-muted">Відкриті</span><strong className="text-[14px] text-ink">{open}</strong></div>
+                    <div className="text-center"><span className="block text-[10px] text-muted">Завершено</span><strong className="text-[14px] text-ink">{done}</strong></div>
+                    <div className="text-center"><span className="block text-[10px] text-muted">Час</span><strong className="text-[14px] text-ink">{timeStr || '—'}</strong></div>
                   </div>
                 </button>
               );

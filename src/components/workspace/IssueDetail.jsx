@@ -1280,7 +1280,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 )}
 
                 {!isArchived && (
-                  <div className="relative flex flex-nowrap items-center gap-1.5">
+                  <div className="relative flex flex-nowrap items-center gap-1.5 mb-[24px]">
                     <button aria-label="Додати мітку" onClick={() => setShowLabelDropdown(value => !value)} className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
                       <Plus size={11} /><span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
                     </button>
