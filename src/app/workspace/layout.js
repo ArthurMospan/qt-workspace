@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/layout.js — Sidebar full-height, header only over main content
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
@@ -12,6 +12,8 @@ import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
+import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
+import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
@@ -39,11 +41,13 @@ export default function WorkspaceLayout({ children }) {
     if (authLoading || orgLoading) return;
     if (!currentUser) return;
     if (!activeOrg) return;
+    const requestedOrgId = new URLSearchParams(window.location.search).get('org');
+    if (requestedOrgId && requestedOrgId !== activeOrgId) return;
     const isOwnerOrAdmin = orgRole === 'owner' || orgRole === 'admin';
     if (isOwnerOrAdmin && activeOrg.onboarded !== true) {
       router.replace('/onboarding');
     }
-  }, [authLoading, orgLoading, currentUser, activeOrg, orgRole, router]);
+  }, [activeOrgId, authLoading, orgLoading, currentUser, activeOrg, orgRole, router]);
 
   // 3. Authenticated but not in any org → redirect immediately to onboarding
   useEffect(() => {
@@ -58,7 +62,8 @@ export default function WorkspaceLayout({ children }) {
     
     if (allOrgs?.length > 1) {
       const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
-      queueMicrotask(() => setNeedsOrgSelection(justLoggedIn));
+      const hasRequestedOrg = new URLSearchParams(window.location.search).has('org');
+      queueMicrotask(() => setNeedsOrgSelection(justLoggedIn && !hasRequestedOrg));
     } else {
       queueMicrotask(() => setNeedsOrgSelection(false));
     }
@@ -127,11 +132,19 @@ export default function WorkspaceLayout({ children }) {
 
   // 5. Needs org selection (Full screen Windows style login)
   if (needsOrgSelection) {
-    return <OrgSwitcherScreen />; // No onClose provided, meaning they MUST select an org or create one
+    return (
+      <>
+        <WorkspaceNotificationBridge />
+        <OrgSwitcherScreen />
+      </>
+    ); // No onClose provided, meaning they MUST select an org or create one
   }
 
   return (
     <ConfirmProvider>
+    <WorkspaceNotificationBridge />
+    <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
+    <WorkspaceOrganizationRouteGuard>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
       {/* Sidebar — full height, floating panel (desktop only; mobile uses MobileNav) */}
       {isMobile === false && (
@@ -166,6 +179,8 @@ export default function WorkspaceLayout({ children }) {
       <Toast />
       <ProfileModal />
     </div>
+    </WorkspaceOrganizationRouteGuard>
+    </Suspense>
     </ConfirmProvider>
   );
 }

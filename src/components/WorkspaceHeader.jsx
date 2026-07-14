@@ -1,9 +1,9 @@
 'use client';
 // src/components/WorkspaceHeader.jsx — Smart contextual header with 5 modes
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppContext }    from '@/lib/context/AppContext';
-import { useNotifications, requestNotifPermission } from '@/lib/hooks/useNotifications';
+import { requestNotifPermission } from '@/lib/hooks/useNotifications';
 import { useDeadlineReminders } from '@/lib/hooks/useDeadlineReminders';
 import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
@@ -132,26 +133,35 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
 }
 
 export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
-  const uid = currentUser?.id || currentUser?.uid;
   const router = useRouter();
-  
+  const { activeOrgId, allOrgs, switchOrg } = useAppContext();
   const liveNotif = useWorkspaceStore(s => s.liveNotif);
-  const showLiveNotif = useWorkspaceStore(s => s.showLiveNotif);
   const clearLiveNotif = useWorkspaceStore(s => s.clearLiveNotif);
-
-  const handleNewNotif = useCallback((n) => { showLiveNotif(n); }, [showLiveNotif]);
-  const {
-    notifications, unreadCount, markAllRead, markRead, markUnread, removeNotification, clearRead,
-  } = useNotifications(uid, { onNew: handleNewNotif });
+  const notifications = useWorkspaceStore(s => s.notifications);
+  const notificationActions = useWorkspaceStore(s => s.notificationActions);
+  const showToast = useWorkspaceStore(s => s.showToast);
+  const markAllRead = notificationActions?.markAllRead;
+  const markRead = notificationActions?.markRead;
+  const markUnread = notificationActions?.markUnread;
+  const removeNotification = notificationActions?.removeNotification;
+  const clearRead = notificationActions?.clearRead;
 
   const [bellOpen, setBellOpen] = useState(false);
+  const [notifScope, setNotifScope] = useState('current'); // 'current' | 'all'
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const [userOpen, setUserOpen] = useState(false);
   const bellRef = useRef(null);
   const userRef = useRef(null);
 
-  const shownNotifications = notifFilter === 'unread' ? notifications.filter(n => !n.read) : notifications;
-  const readCount = notifications.length - unreadCount;
+  const scopedNotifications = notifScope === 'all'
+    ? notifications
+    : notifications.filter(n => n.organizationId === activeOrgId);
+  const unreadCount = scopedNotifications.filter(n => !n.read).length;
+  const shownNotifications = notifFilter === 'unread'
+    ? scopedNotifications.filter(n => !n.read)
+    : scopedNotifications;
+  const readCount = scopedNotifications.length - unreadCount;
+  const orgName = organizationId => allOrgs.find(org => org.id === organizationId)?.name || 'Невідома організація';
   // Group by day, preserving the sorted order
   const notifGroups = [];
   shownNotifications.forEach(n => {
@@ -170,10 +180,31 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     return () => document.removeEventListener('mousedown', clickOut);
   }, [bellOpen, userOpen]);
 
-  const handleNotifClick = async (n) => {
-    if (!n.read) await markRead(n.id);
+  const handleNotifClick = (n) => {
+    if (n.organizationId && !allOrgs.some(org => org.id === n.organizationId)) {
+      showToast('Ви більше не маєте доступу до організації цього сповіщення', 'error');
+      return;
+    }
+    const link = withNotificationOrganization(n.link, n.organizationId);
+    if (!link) {
+      showToast('Посилання у сповіщенні недійсне', 'error');
+      return;
+    }
+    if (n.organizationId && n.organizationId !== activeOrgId) switchOrg(n.organizationId);
     setBellOpen(false);
-    if (n.link) router.push(n.link);
+    clearLiveNotif();
+    router.push(link);
+    if (!n.read) markRead?.(n.id).catch(() => showToast('Не вдалося позначити сповіщення прочитаним', 'error'));
+  };
+
+  const handleMarkAllRead = () => {
+    markAllRead?.(notifScope === 'current' ? activeOrgId : null)
+      .catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
+  };
+
+  const handleClearRead = () => {
+    clearRead?.(notifScope === 'current' ? activeOrgId : null)
+      .catch(() => showToast('Не вдалося очистити сповіщення', 'error'));
   };
 
   return (
@@ -211,7 +242,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 </div>
                 <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
-                    <button onClick={markAllRead} title="Позначити всі прочитаними"
+                    <button onClick={handleMarkAllRead} title="Позначити всі прочитаними"
                       className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
                       <CheckCheck size={14} />
                     </button>
@@ -226,7 +257,18 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               </div>
 
               {/* Filter */}
-              <div className="px-4 pt-[10px] pb-2">
+              <div className="px-4 pt-[10px] pb-2 flex flex-col gap-2">
+                {allOrgs.length > 1 && (
+                  <Segmented
+                    className="bg-canvas w-full"
+                    value={notifScope}
+                    onChange={setNotifScope}
+                    options={[
+                      { value: 'current', label: 'Ця організація' },
+                      { value: 'all', label: 'Усі організації' },
+                    ]}
+                  />
+                )}
                 <Segmented
                   className="bg-canvas w-max"
                   value={notifFilter}
@@ -261,7 +303,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                             {n.title}
                           </p>
                           {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
-                          <p className="text-[10px] text-faint mt-[3px]">{timeAgo(n.createdAt)}</p>
+                          <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
+                            {(notifScope === 'all' || n.organizationId !== activeOrgId) && (
+                              <span className="font-semibold text-[#6366f1] truncate max-w-[150px]">{orgName(n.organizationId)}</span>
+                            )}
+                            <span>{timeAgo(n.createdAt)}</span>
+                          </p>
                         </div>
                         {!n.read && (
                           <span className="w-[6px] h-[6px] bg-[#6366f1] rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
@@ -270,13 +317,20 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             title={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
-                            onClick={e => { e.stopPropagation(); n.read ? markUnread(n.id) : markRead(n.id); }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              const action = n.read ? markUnread : markRead;
+                              action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
+                            }}
                             className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-ink shadow-sm transition-colors">
                             {n.read ? <Mail size={12} /> : <Check size={12} />}
                           </button>
                           <button
                             title="Видалити"
-                            onClick={e => { e.stopPropagation(); removeNotification(n.id); }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
+                            }}
                             className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-red-500 shadow-sm transition-colors">
                             <Trash2 size={12} />
                           </button>
@@ -288,15 +342,15 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               </div>
 
               {/* Footer */}
-              {notifications.length > 0 && (
+              {scopedNotifications.length > 0 && (
                 <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-[#fafafa]">
                   <button
-                    onClick={clearRead}
+                    onClick={handleClearRead}
                     disabled={readCount === 0}
                     className="text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors">
                     Очистити прочитані{readCount > 0 ? ` (${readCount})` : ''}
                   </button>
-                  <span className="text-[10px] text-faint">останні {notifications.length}</span>
+                  <span className="text-[10px] text-faint">останні {scopedNotifications.length}</span>
                 </div>
               )}
             </div>
@@ -351,13 +405,18 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wide mb-[3px]"
                   style={{ color: cfg.color }}>{cfg.label}</p>
+                {liveNotif.organizationId && (
+                  <p className="text-[10px] font-semibold text-[#6366f1] mb-1 truncate">
+                    {orgName(liveNotif.organizationId)}
+                  </p>
+                )}
                 <p className="text-[13px] font-bold text-ink leading-snug">{liveNotif.title}</p>
                 {liveNotif.body && (
                   <p className="text-[11px] text-muted mt-1 line-clamp-2">{liveNotif.body}</p>
                 )}
                 {liveNotif.link && (
                   <button
-                    onClick={() => { router.push(liveNotif.link); clearLiveNotif(); }}
+                    onClick={() => handleNotifClick(liveNotif)}
                     className="mt-2 text-[11px] font-semibold text-[#6366f1] hover:underline"
                   >
                     Перейти

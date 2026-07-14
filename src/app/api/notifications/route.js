@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
 const PREF_DEFAULTS = { assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true };
@@ -56,7 +57,8 @@ export async function POST(request) {
     const issueId = cleanText(payload.issueId, 128);
     const dedupeKey = cleanText(payload.dedupeKey, 180);
     if (!userIds.length || !ALLOWED_TYPES.has(type) || !title || !body) return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
-    if (link && link !== '/workspace' && !link.startsWith('/workspace/') && !link.startsWith('/workspace?')) {
+    const scopedLink = link ? withNotificationOrganization(link, organizationId) : '';
+    if (link && !scopedLink) {
       return NextResponse.json({ error: 'Invalid notification link' }, { status: 400 });
     }
     if (dedupeKey && !/^[A-Za-z0-9_-]+$/.test(dedupeKey)) return NextResponse.json({ error: 'Invalid dedupe key' }, { status: 400 });
@@ -91,7 +93,7 @@ export async function POST(request) {
     }).filter(item => item.enabled);
 
     const notificationData = delivery => ({
-        userId: delivery.userId, type, title, body, link, issueId, projectId, organizationId,
+        userId: delivery.userId, type, title, body, link: scopedLink, issueId, projectId, organizationId,
         actorId: authorization.user.uid,
         actorName: sender.name || authorization.user.name || '',
         actorAvatar: sender.avatar || sender.photoURL || authorization.user.picture || '',
@@ -120,7 +122,7 @@ export async function POST(request) {
     }
     await Promise.allSettled(createdDeliveries
       .filter(item => item.prefs.emailEnabled && EMAIL_TYPES.has(type))
-      .map(item => sendEmail({ email: item.profile.email, type, title, body, link })));
+      .map(item => sendEmail({ email: item.profile.email, type, title, body, link: scopedLink })));
 
     return NextResponse.json({ delivered: createdDeliveries.length });
   } catch (error) {

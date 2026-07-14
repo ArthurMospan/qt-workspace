@@ -8,9 +8,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   collection, query, where, orderBy, limit, onSnapshot, updateDoc, deleteDoc,
-  doc, writeBatch, getDocs,
+  doc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 // Request browser notification permission once
 export async function requestNotifPermission() {
@@ -22,14 +23,15 @@ export async function requestNotifPermission() {
 }
 
 // Fire a browser native notification
-function fireBrowserNotif(title, body, link) {
+function fireBrowserNotif(notification) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const n = new Notification(title, {
-    body,
+  const n = new Notification(notification.title, {
+    body: notification.body,
     icon: '/logo.svg',
     badge: '/logo.svg',
     silent: false
   });
+  const link = withNotificationOrganization(notification.link, notification.organizationId);
   if (link) n.onclick = () => {
     window.focus();
     window.location.href = link;
@@ -113,7 +115,7 @@ export function useNotifications(userId, {
             seenIds.current.add(n.id);
             const prefs = prefsRef.current;
             // 1. Browser native notification (gated by browser permission)
-            fireBrowserNotif(n.title, n.body, n.link);
+            fireBrowserNotif(n);
             // 2. Sound chime
             if (prefs.sound !== false) playChime();
             // 3. In-app popup callback (goes to store)
@@ -128,17 +130,14 @@ export function useNotifications(userId, {
     return () => unsub();
   }, [userId]); // eslint-disable-line
 
-  const markAllRead = useCallback(async () => {
+  const markAllRead = useCallback(async (organizationId = null) => {
     if (!userId) return;
-    const q = query(collection(db, 'notifications'), where('userId', '==', userId), where('read', '==', false));
-    const snap = await getDocs(q);
-    if (snap.empty) return;
+    const targets = notifications.filter(item => !item.read && (!organizationId || item.organizationId === organizationId));
+    if (targets.length === 0) return;
     const batch = writeBatch(db);
-    snap.docs.forEach(d => batch.update(d.ref, {
-      read: true
-    }));
+    targets.forEach(item => batch.update(doc(db, 'notifications', item.id), { read: true }));
     await batch.commit();
-  }, [userId]);
+  }, [notifications, userId]);
 
   const markRead = useCallback(async id => {
     await updateDoc(doc(db, 'notifications', id), {
@@ -157,15 +156,23 @@ export function useNotifications(userId, {
   }, []);
 
   // Delete everything already read — keeps the center tidy
-  const clearRead = useCallback(async () => {
+  const clearRead = useCallback(async (organizationId = null) => {
     if (!userId) return;
-    const q = query(collection(db, 'notifications'), where('userId', '==', userId), where('read', '==', true));
-    const snap = await getDocs(q);
-    if (snap.empty) return;
+    const targets = notifications.filter(item => item.read && (!organizationId || item.organizationId === organizationId));
+    if (targets.length === 0) return;
     const batch = writeBatch(db);
-    snap.docs.forEach(d => batch.delete(d.ref));
+    targets.forEach(item => batch.delete(doc(db, 'notifications', item.id)));
     await batch.commit();
-  }, [userId]);
+  }, [notifications, userId]);
+
+  const markProjectRead = useCallback(async (projectId, organizationId = null) => {
+    const targets = notifications.filter(item =>
+      !item.read && item.projectId === projectId && (!organizationId || item.organizationId === organizationId));
+    if (targets.length === 0) return;
+    const batch = writeBatch(db);
+    targets.forEach(item => batch.update(doc(db, 'notifications', item.id), { read: true }));
+    await batch.commit();
+  }, [notifications]);
 
   return {
     notifications,
@@ -175,7 +182,8 @@ export function useNotifications(userId, {
     markRead,
     markUnread,
     removeNotification,
-    clearRead
+    clearRead,
+    markProjectRead,
   };
 }
 

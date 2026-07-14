@@ -23,12 +23,14 @@ import { can } from '@/lib/utils/can';
 export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
-  const { projects, activeOrg, allOrgs, orgRole, currentUser } = useAppContext();
+  const { projects, activeOrg, activeOrgId, orgRole, currentUser } = useAppContext();
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const unreadChats = useUnreadChatCount();
   const userId = currentUser?.id || currentUser?.uid;
-  const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId);
+  const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId, activeOrgId);
+  const notifications = useWorkspaceStore(s => s.notifications);
+  const otherOrgUnreadCount = notifications.filter(item => !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   useEffect(() => {
     const match = pathname.match(/^\/workspace\/([^/]+)/);
@@ -90,6 +92,11 @@ export default function WorkspaceSidebar() {
                     className="flex items-center gap-[4px] text-muted mt-[2px] cursor-pointer hover:text-white transition-colors w-fit"
                   >
                     <span className="text-[12px] font-medium truncate max-w-[120px]">{activeOrg?.name || 'Company name'}</span>
+                    {otherOrgUnreadCount > 0 && (
+                      <span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#6366f1] text-white text-[9px] font-bold flex items-center justify-center">
+                        {otherOrgUnreadCount > 99 ? '99+' : otherOrgUnreadCount}
+                      </span>
+                    )}
                     <ChevronsUpDown size={12} className="shrink-0" />
                   </div>
                 </div>

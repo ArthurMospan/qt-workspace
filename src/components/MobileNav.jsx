@@ -59,13 +59,16 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
 export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { projects, activeOrg, orgRole } = useAppContext();
+  const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
   const unreadChats = useUnreadChatCount();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
+  const notifications = useWorkspaceStore(s => s.notifications);
+  const otherOrgUnreadCount = notifications.filter(item =>
+    !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   // Close the sheet on navigation
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
@@ -129,6 +132,11 @@ export default function MobileNav() {
           {activeTimer && (
             <span className="absolute top-[7px] left-[calc(50%+6px)] w-[8px] h-[8px] bg-[#ef4444] rounded-full animate-pulse" />
           )}
+          {otherOrgUnreadCount > 0 && !activeTimer && (
+            <span className="absolute top-[5px] left-[calc(50%+4px)]">
+              <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
+            </span>
+          )}
         </button>
       </nav>
 
@@ -149,6 +157,9 @@ export default function MobileNav() {
                   onClick={() => setShowOrgSwitcher(true)}
                   className="flex items-center gap-[6px] text-white min-w-0">
                   <span className="text-[15px] font-bold truncate">{activeOrg?.name || 'QuickTeam'}</span>
+                  {otherOrgUnreadCount > 0 && (
+                    <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
+                  )}
                   <ChevronsUpDown size={14} className="text-muted shrink-0" />
                 </button>
                 <button onClick={() => setMoreOpen(false)} className="text-muted p-[6px] -mr-[6px]">

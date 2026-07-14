@@ -58,6 +58,22 @@ const useWorkspaceStore = create((set, get) => ({
   },
   clearLiveNotif: () => set({ liveNotif: null }),
 
+  // One shared notification stream for the whole workspace. This avoids
+  // separate Firestore listeners in the header, sidebar and org switcher.
+  notifications: [],
+  notificationsLoading: true,
+  notificationActions: null,
+  setNotificationCenter: (notifications, loading, actions) => set({
+    notifications,
+    notificationsLoading: loading,
+    notificationActions: actions,
+  }),
+  clearNotificationCenter: () => set({
+    notifications: [],
+    notificationsLoading: false,
+    notificationActions: null,
+  }),
+
   // ── Breadcrumbs (set by each page) ────────────────────────────────
   breadcrumbs: [],   // [{ label, href? }]
   setBreadcrumbs: (crumbs) => set({ breadcrumbs: crumbs }),

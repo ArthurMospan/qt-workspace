@@ -6,8 +6,9 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useRouter } from 'next/navigation';
 import { Plus, X } from 'lucide-react';
 import AuthLayout from '@/components/AuthLayout';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
-function OrgBigCard({ org, role, onClick }) {
+function OrgBigCard({ org, role, unreadCount, onClick }) {
   const firstLetter = (org.name || 'О')[0].toUpperCase();
 
   return (
@@ -15,12 +16,19 @@ function OrgBigCard({ org, role, onClick }) {
       onClick={(e) => onClick(e, org.id)}
       className="flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100"
     >
-      <div id={`org-circle-${org.id}`} className="w-[110px] h-[110px] rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-[#2a2a2a] border-[3px] border-transparent group-hover/item:border-white shadow-xl transition-all duration-300 relative z-10">
-        {(org.logo || org.logoUrl) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={org.logo || org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-[40px] font-medium text-white">{firstLetter}</span>
+      <div className="relative">
+        <div id={`org-circle-${org.id}`} className="w-[110px] h-[110px] rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-[#2a2a2a] border-[3px] border-transparent group-hover/item:border-white shadow-xl transition-all duration-300 relative z-10">
+          {(org.logo || org.logoUrl) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={org.logo || org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-[40px] font-medium text-white">{firstLetter}</span>
+          )}
+        </div>
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 z-20 min-w-[25px] h-[25px] px-1.5 rounded-full bg-[#6366f1] border-[3px] border-[#171717] text-white text-[10px] font-bold flex items-center justify-center">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
       </div>
       <div className="flex flex-col items-center min-w-0 w-full text-center mt-2">
@@ -35,6 +43,13 @@ export default function OrgSwitcherScreen({ onClose }) {
   const { allOrgs, switchOrg, currentUser } = useAppContext();
   const router = useRouter();
   const [expandingOrg, setExpandingOrg] = useState(null);
+  const notifications = useWorkspaceStore(state => state.notifications);
+  const unreadByOrg = notifications.reduce((counts, item) => {
+    if (!item.read && item.organizationId) {
+      counts[item.organizationId] = (counts[item.organizationId] || 0) + 1;
+    }
+    return counts;
+  }, {});
 
   const handleSelect = (e, org) => {
     const circle = document.getElementById(`org-circle-${org.id}`);
@@ -89,6 +104,7 @@ export default function OrgSwitcherScreen({ onClose }) {
                 key={org.id}
                 org={org}
                 role={getRoleInOrg(org)}
+                unreadCount={unreadByOrg[org.id] || 0}
                 onClick={(e) => handleSelect(e, org)}
               />
             ))}
