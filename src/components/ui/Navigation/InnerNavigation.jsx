@@ -40,7 +40,7 @@ export function InnerNavigation({
                     iconSize={15}
                     className={`w-full justify-start transition-colors ${
                       active
-                        ? 'bg-[#ebebeb] text-ink font-semibold'
+                        ? '!bg-[#ebebeb] !text-ink !font-bold !border-transparent'
                         : item.danger
                         ? 'font-medium text-red-500 hover:bg-red-50'
                         : 'font-medium text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
