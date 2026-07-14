@@ -228,7 +228,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
-    router.push(`/workspace/${project.id}`);
+    router.push(`/${project.id}`);
   };
 
   return (
@@ -456,7 +456,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now }) {
             <p className="text-muted leading-tight line-clamp-1">
               оновив завдання{' '}
               <Link
-                href={`/workspace/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
+                href={`/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="text-ink font-semibold underline cursor-pointer hover:text-[#6366f1] transition-colors no-nav"
               >
@@ -540,7 +540,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
-          <Button onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }} style="primary" color="blue" size="md" className="w-full">Перейти на PRO →</Button>
+          <Button onClick={() => { onClose(); window.location.href = '/settings#billing'; }} style="primary" color="blue" size="md" className="w-full">Перейти на PRO →</Button>
           <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
       ) : (
@@ -568,7 +568,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
               <span className="font-semibold">{error}</span>
               {error.includes('Pro') && (
                 <button 
-                  onClick={() => { onClose(); window.location.href = '/workspace/settings#billing'; }}
+                  onClick={() => { onClose(); window.location.href = '/settings#billing'; }}
                   className="bg-red-600 text-white font-bold px-3 py-1.5 rounded-[6px] w-fit hover:bg-red-700 transition-colors"
                 >
                   Перейти на PRO →
@@ -633,7 +633,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (searchParams?.get('new') === '1') {
       queueMicrotask(() => setShowNewProject(true));
-      router.replace('/workspace', { scroll: false });
+      router.replace('/', { scroll: false });
     }
   }, [searchParams, router]);
 

@@ -85,7 +85,7 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
 
   // Explicitly check for breadcrumbs first to support any custom/nested page breadcrumbs
   if (breadcrumbs && breadcrumbs.length > 0) {
-    const projectMatch = pathname.match(/^\/workspace\/([a-zA-Z0-9_-]+)(\/|$)/);
+    const projectMatch = pathname.match(/^\/([a-zA-Z0-9_-]+)(\/|$)/);
     let project = null;
     if (projectMatch && !EXCLUDED.includes(projectMatch[1])) {
       const projectId = projectMatch[1];
@@ -94,30 +94,30 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
     return { mode: 'breadcrumbs', project };
   }
 
-  if (pathname === '/workspace' || pathname === '/workspace/') {
+  if (pathname === '/') {
     return { mode: 'search', project: null, placeholder: 'Пошук...' };
   }
-  if (pathname.startsWith('/workspace/my')) {
+  if (pathname.startsWith('/my')) {
     return { mode: 'search', project: null, placeholder: 'Пошук по моїх завданнях...' };
   }
-  if (pathname.startsWith('/workspace/team')) {
+  if (pathname.startsWith('/team')) {
     return { mode: 'search', project: null, placeholder: 'Пошук по команді...' };
   }
-  if (pathname.startsWith('/workspace/sprints')) {
+  if (pathname.startsWith('/sprints')) {
     return { mode: 'search', project: null, placeholder: 'Пошук по спринтах і завданнях...' };
   }
-  if (pathname.startsWith('/workspace/chat')) {
+  if (pathname.startsWith('/chat')) {
     return { mode: 'chat', project: null };
   }
-  if (pathname.startsWith('/workspace/analytics')) {
+  if (pathname.startsWith('/analytics')) {
     return { mode: 'search', project: null, placeholder: 'Пошук в аналітиці...' };
   }
-  if (pathname.startsWith('/workspace/settings')) {
+  if (pathname.startsWith('/settings')) {
     return { mode: 'minimal', label: 'Налаштування' };
   }
 
   // Project pages
-  const projectMatch = pathname.match(/^\/workspace\/([a-zA-Z0-9_-]+)(\/|$)/);
+  const projectMatch = pathname.match(/^\/([a-zA-Z0-9_-]+)(\/|$)/);
   if (projectMatch && !EXCLUDED.includes(projectMatch[1])) {
     const projectId = projectMatch[1];
     const isIssuePage = pathname.includes('/issue/');
@@ -134,7 +134,7 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
 
 export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const router = useRouter();
-  const { activeOrgId, allOrgs, switchOrg } = useAppContext();
+  const { activeOrgId, allOrgs } = useAppContext();
   const liveNotif = useWorkspaceStore(s => s.liveNotif);
   const clearLiveNotif = useWorkspaceStore(s => s.clearLiveNotif);
   const notifications = useWorkspaceStore(s => s.notifications);
@@ -147,15 +147,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const clearRead = notificationActions?.clearRead;
 
   const [bellOpen, setBellOpen] = useState(false);
-  const [notifScope, setNotifScope] = useState('current'); // 'current' | 'all'
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const [userOpen, setUserOpen] = useState(false);
   const bellRef = useRef(null);
   const userRef = useRef(null);
 
-  const scopedNotifications = notifScope === 'all'
-    ? notifications
-    : notifications.filter(n => n.organizationId === activeOrgId);
+  const scopedNotifications = notifications.filter(n => n.organizationId === activeOrgId);
   const unreadCount = scopedNotifications.filter(n => !n.read).length;
   const shownNotifications = notifFilter === 'unread'
     ? scopedNotifications.filter(n => !n.read)
@@ -190,7 +187,6 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       showToast('Посилання у сповіщенні недійсне', 'error');
       return;
     }
-    if (n.organizationId && n.organizationId !== activeOrgId) switchOrg(n.organizationId);
     setBellOpen(false);
     clearLiveNotif();
     router.push(link);
@@ -198,12 +194,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   };
 
   const handleMarkAllRead = () => {
-    markAllRead?.(notifScope === 'current' ? activeOrgId : null)
+    markAllRead?.(activeOrgId)
       .catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
   };
 
   const handleClearRead = () => {
-    clearRead?.(notifScope === 'current' ? activeOrgId : null)
+    clearRead?.(activeOrgId)
       .catch(() => showToast('Не вдалося очистити сповіщення', 'error'));
   };
 
@@ -248,7 +244,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                     </button>
                   )}
                   <button
-                    onClick={() => { setBellOpen(false); router.push('/workspace/settings?section=notifications'); }}
+                    onClick={() => { setBellOpen(false); router.push('/settings?section=notifications'); }}
                     title="Налаштування сповіщень"
                     className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
                     <Settings size={13} />
@@ -257,18 +253,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               </div>
 
               {/* Filter */}
-              <div className="px-4 pt-[10px] pb-2 flex flex-col gap-2">
-                {allOrgs.length > 1 && (
-                  <Segmented
-                    className="bg-canvas w-full"
-                    value={notifScope}
-                    onChange={setNotifScope}
-                    options={[
-                      { value: 'current', label: 'Ця організація' },
-                      { value: 'all', label: 'Усі організації' },
-                    ]}
-                  />
-                )}
+              <div className="px-4 pt-[10px] pb-2">
                 <Segmented
                   className="bg-canvas w-max"
                   value={notifFilter}
@@ -304,9 +289,6 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                           </p>
                           {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
                           <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
-                            {(notifScope === 'all' || n.organizationId !== activeOrgId) && (
-                              <span className="font-semibold text-[#6366f1] truncate max-w-[150px]">{orgName(n.organizationId)}</span>
-                            )}
                             <span>{timeAgo(n.createdAt)}</span>
                           </p>
                         </div>
@@ -377,7 +359,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <p className="text-[13px] font-bold text-ink truncate">{currentUser?.name}</p>
                 <p className="text-[11px] text-muted truncate">{currentUser?.email}</p>
               </div>
-              <button onClick={() => { router.push('/workspace/settings'); setUserOpen(false); }}
+              <button onClick={() => { router.push('/settings'); setUserOpen(false); }}
                 className="flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium">
                 Налаштування
               </button>
@@ -481,15 +463,15 @@ export default function WorkspaceHeader() {
     ? projectSearchQuery
     : mode === 'chat'
       ? chatSearch
-      : pathname.startsWith('/workspace/team')
+      : pathname.startsWith('/team')
         ? teamSearch
-        : pathname.startsWith('/workspace/my')
+        : pathname.startsWith('/my')
           ? myTaskSearch
-          : pathname.startsWith('/workspace/sprints')
+          : pathname.startsWith('/sprints')
             ? sprintSearch
-            : pathname.startsWith('/workspace/analytics')
+            : pathname.startsWith('/analytics')
               ? analyticsSearch
-              : pathname === '/workspace' || pathname === '/workspace/'
+              : pathname === '/'
                 ? workspaceSearch
                 : globalQuery;
 
@@ -505,15 +487,15 @@ export default function WorkspaceHeader() {
             setProjectSearchQuery(q);
           } else if (mode === 'chat') {
             setChatSearch(q);
-          } else if (pathname.startsWith('/workspace/team')) {
+          } else if (pathname.startsWith('/team')) {
             setTeamSearch(q);
-          } else if (pathname.startsWith('/workspace/my')) {
+          } else if (pathname.startsWith('/my')) {
             setMyTaskSearch(q);
-          } else if (pathname.startsWith('/workspace/sprints')) {
+          } else if (pathname.startsWith('/sprints')) {
             setSprintSearch(q);
-          } else if (pathname.startsWith('/workspace/analytics')) {
+          } else if (pathname.startsWith('/analytics')) {
             setAnalyticsSearch(q);
-          } else if (pathname === '/workspace' || pathname === '/workspace/') {
+          } else if (pathname === '/') {
             setWorkspaceSearch(q);
           } else {
             setGlobalQuery(q);
@@ -531,15 +513,15 @@ export default function WorkspaceHeader() {
             setProjectSearch(false);
           } else if (mode === 'chat') {
             setChatSearch('');
-          } else if (pathname.startsWith('/workspace/team')) {
+          } else if (pathname.startsWith('/team')) {
             setTeamSearch('');
-          } else if (pathname.startsWith('/workspace/my')) {
+          } else if (pathname.startsWith('/my')) {
             setMyTaskSearch('');
-          } else if (pathname.startsWith('/workspace/sprints')) {
+          } else if (pathname.startsWith('/sprints')) {
             setSprintSearch('');
-          } else if (pathname.startsWith('/workspace/analytics')) {
+          } else if (pathname.startsWith('/analytics')) {
             setAnalyticsSearch('');
-          } else if (pathname === '/workspace' || pathname === '/workspace/') {
+          } else if (pathname === '/') {
             setWorkspaceSearch('');
           } else {
             setGlobalQuery('');

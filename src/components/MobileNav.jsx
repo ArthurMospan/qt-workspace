@@ -19,16 +19,16 @@ import {
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 
 const TABS = [
-  { href: '/workspace',           icon: Folder,        label: 'Проєкти', exact: true },
-  { href: '/workspace/my',        icon: CheckCircle2,  label: 'Мої' },
-  { href: '/workspace/chat',      icon: MessageSquare, label: 'Чат' },
-  { href: '/workspace/analytics', icon: PieChart,      label: 'Аналітика' },
+  { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
+  { href: '/my',        icon: CheckCircle2,  label: 'Мої' },
+  { href: '/chat',      icon: MessageSquare, label: 'Чат' },
+  { href: '/analytics', icon: PieChart,      label: 'Аналітика' },
 ];
 
 const MORE_NAV = [
-  { href: '/workspace/sprints',  icon: Zap,      label: 'Спринти' },
-  { href: '/workspace/team',     icon: Users,    label: 'Команда' },
-  { href: '/workspace/settings', icon: Settings, label: 'Налаштування' },
+  { href: '/sprints',  icon: Zap,      label: 'Спринти' },
+  { href: '/team',     icon: Users,    label: 'Команда' },
+  { href: '/settings', icon: Settings, label: 'Налаштування' },
 ];
 
 // Separate component so the store's 1-second timerElapsed tick re-renders
@@ -89,13 +89,13 @@ export default function MobileNav() {
     setMoreOpen(false);
     if (result?.projectId) {
       const suffix = result.minutes > 0 ? `?logTime=${result.minutes}` : '';
-      router.push(`/workspace/${result.projectId}/issue/${result.issueId}${suffix}`);
+      router.push(`/${result.projectId}/issue/${result.issueId}${suffix}`);
     }
   };
 
   const handleTimerNavigate = (timer) => {
     setMoreOpen(false);
-    if (timer.projectId) router.push(`/workspace/${timer.projectId}/issue/${timer.issueId}`);
+    if (timer.projectId) router.push(`/${timer.projectId}/issue/${timer.issueId}`);
   };
 
   return (
@@ -194,7 +194,7 @@ export default function MobileNav() {
               <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider">Проєкти</p>
               {can(orgRole, 'create:project') && (
                 <button
-                  onClick={() => { setMoreOpen(false); router.push('/workspace?new=1'); }}
+                  onClick={() => { setMoreOpen(false); router.push('/?new=1'); }}
                   className="text-[#666666] p-[4px] -mr-[4px]" title="Новий проєкт">
                   <Plus size={16} />
                 </button>
@@ -204,9 +204,9 @@ export default function MobileNav() {
               {(projects || [])
                 .filter(p => p.status !== 'archived')
                 .map(p => {
-                  const active = pathname.startsWith(`/workspace/${p.id}`);
+                  const active = pathname.startsWith(`/${p.id}`);
                   return (
-                    <Link key={p.id} href={`/workspace/${p.id}`}
+                    <Link key={p.id} href={`/${p.id}`}
                       className={`flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] transition-colors ${
                         active ? 'bg-[#333333] text-white' : 'text-muted'
                       }`}>

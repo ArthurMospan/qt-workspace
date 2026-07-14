@@ -89,7 +89,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
       return;
     }
     if (projectId && task.id) {
-      router.push(`/workspace/${projectId}/issue/${task.id}`);
+      router.push(`/${projectId}/issue/${task.id}`);
     }
   };
 

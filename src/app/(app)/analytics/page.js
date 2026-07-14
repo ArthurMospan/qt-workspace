@@ -191,7 +191,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                       </td>
                       <td className="py-3 pr-4 text-[12px] text-muted">{fmtH(minutes)}</td>
                       <td className="py-3">
-                        <Link href={`/workspace/${p.id}`}
+                        <Link href={`/${p.id}`}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-faint hover:text-ink flex items-center gap-1 text-[11px] font-medium">
                           Відкрити <ArrowRight size={11} />
                         </Link>
@@ -217,7 +217,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
                 const days = Math.floor((now - due.getTime()) / 86400000);
                 const proj = projects.find(p => p.id === issue.projectId);
                 return (
-                  <Link href={`/workspace/${issue.projectId}/issue/${issue.id}`} key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] hover:bg-[#f9f9f9] transition-colors rounded-lg px-2 -mx-2 last:border-0">
+                  <Link href={`/${issue.projectId}/issue/${issue.id}`} key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] hover:bg-[#f9f9f9] transition-colors rounded-lg px-2 -mx-2 last:border-0">
                     <div className="min-w-0 flex-1">
                       <p className="text-[12px] font-medium text-ink truncate">{issue.title}</p>
                       <p className="text-[10px] text-muted">{proj?.name} · {issue.issueKey}</p>

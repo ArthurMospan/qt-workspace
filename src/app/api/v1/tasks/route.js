@@ -108,7 +108,7 @@ export async function POST(req) {
       data: {
         taskId: issueRef.id,
         issueKey: payload.issueKey,
-        taskUrl: payload.projectId ? `/workspace/${payload.projectId}/issue/${issueRef.id}` : `/workspace`
+        taskUrl: payload.projectId ? `/${payload.projectId}/issue/${issueRef.id}` : `/`
       },
       message: 'Task created successfully in QuickTeam'
     });

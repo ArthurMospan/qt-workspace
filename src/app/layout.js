@@ -5,9 +5,8 @@ import AutoFix from '@/components/AutoFix';
 import Script from 'next/script';
 
 export const metadata = {
-  title: 'QuickTeam Workspace',
+  title: 'QuickTeam',
   description: 'Internal task manager for the QuickTeam team',
-  icons: { icon: '/favicon.png' },
 };
 
 export default function RootLayout({ children }) {
@@ -28,4 +27,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-

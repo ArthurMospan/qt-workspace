@@ -5,17 +5,17 @@ import {
   withNotificationOrganization,
 } from '../src/lib/utils/notificationNavigation.mjs';
 
-test('adds organization context to workspace links', () => {
+test('adds organization context to app links', () => {
   assert.equal(
-    withNotificationOrganization('/workspace/project-1/issue/issue-1', 'org-2'),
-    '/workspace/project-1/issue/issue-1?org=org-2',
+    withNotificationOrganization('/project-1/issue/issue-1', 'org-2'),
+    '/project-1/issue/issue-1?org=org-2',
   );
 });
 
 test('preserves other query parameters and replaces stale organization context', () => {
   assert.equal(
-    withNotificationOrganization('/workspace/project-1/issue/issue-1?logTime=5&org=old', 'org new'),
-    '/workspace/project-1/issue/issue-1?logTime=5&org=org+new',
+    withNotificationOrganization('/project-1/issue/issue-1?logTime=5&org=old', 'org new'),
+    '/project-1/issue/issue-1?logTime=5&org=org+new',
   );
 });
 
@@ -26,6 +26,7 @@ test('rejects links outside the workspace', () => {
   }
 });
 
-test('keeps safe links usable when an old notification has no organization id', () => {
-  assert.equal(withNotificationOrganization('/workspace?new=1', ''), '/workspace?new=1');
+test('normalizes legacy workspace links', () => {
+  assert.equal(withNotificationOrganization('/workspace/project-1/issue/issue-1', ''), '/project-1/issue/issue-1');
+  assert.equal(withNotificationOrganization('/workspace?new=1', ''), '/?new=1');
 });

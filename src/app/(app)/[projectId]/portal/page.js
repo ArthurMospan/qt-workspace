@@ -9,9 +9,9 @@ import { Input, Textarea, Button, Alert, LoadingSpinner, Card, EmptyState, PageH
 import { MessageSquare, Image as ImageIcon, FileCheck, Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Send, LayoutGrid, Users, BarChart2 } from 'lucide-react';
 
 const TABS = (projectId) => [
-  { id: 'board',      label: 'Дошка',     icon: LayoutGrid, href: `/workspace/${projectId}` },
-  { id: 'team',       label: 'Команда',   icon: Users, href: `/workspace/${projectId}` },
-  { id: 'analytics',  label: 'Аналітика', icon: BarChart2, href: `/workspace/${projectId}` },
+  { id: 'board',      label: 'Дошка',     icon: LayoutGrid, href: `/${projectId}` },
+  { id: 'team',       label: 'Команда',   icon: Users, href: `/${projectId}` },
+  { id: 'analytics',  label: 'Аналітика', icon: BarChart2, href: `/${projectId}` },
 ];
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';

@@ -1,17 +1,24 @@
 const WORKSPACE_ORIGIN = 'https://quickteam.local';
+const BLOCKED_NOTIFICATION_DESTINATIONS = ['/api', '/login', '/oauth2'];
 
 export function normalizeNotificationLink(link) {
   if (typeof link !== 'string') return '';
   const value = link.trim();
-  if (!value || value.includes('\\') || value.startsWith('//')) return '';
-  if (value !== '/workspace' && !value.startsWith('/workspace/') && !value.startsWith('/workspace?')) return '';
+  if (!value || value.includes('\\') || !value.startsWith('/') || value.startsWith('//')) return '';
 
   try {
     const url = new URL(value, WORKSPACE_ORIGIN);
-    if (url.origin !== WORKSPACE_ORIGIN || (url.pathname !== '/workspace' && !url.pathname.startsWith('/workspace/'))) {
-      return '';
-    }
-    return `${url.pathname}${url.search}${url.hash}`;
+    if (url.origin !== WORKSPACE_ORIGIN) return '';
+    const pathname = url.pathname === '/workspace'
+      ? '/'
+      : url.pathname.startsWith('/workspace/')
+        ? url.pathname.slice('/workspace'.length)
+        : url.pathname;
+    const isBlocked = BLOCKED_NOTIFICATION_DESTINATIONS.some(prefix =>
+      pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
+    if (isBlocked) return '';
+    return `${pathname}${url.search}${url.hash}`;
   } catch {
     return '';
   }

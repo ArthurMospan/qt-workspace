@@ -17,7 +17,7 @@ export default function WorkspaceError({ error, unstable_retry, reset }) {
         <div className="w-[48px] h-[48px] rounded-[14px] bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle size={24} />
         </div>
-        <h1 className="text-[20px] font-bold text-ink mb-2">Workspace не завантажився</h1>
+        <h1 className="text-[20px] font-bold text-ink mb-2">QuickTeam не завантажився</h1>
         <p className="text-[14px] text-muted leading-relaxed mb-5">
           Дані не вдалося відрендерити. Спробуйте повторити завантаження сторінки.
         </p>

@@ -9,8 +9,14 @@ import {
   upsertEmailAuthUser,
 } from '@/lib/server/emailOtp';
 
+const EMAIL_LOGIN_ENABLED = process.env.EMAIL_LOGIN_ENABLED === 'true';
+
 export async function POST(request) {
   try {
+    if (!EMAIL_LOGIN_ENABLED) {
+      return NextResponse.json({ error: 'Email login is temporarily disabled' }, { status: 503 });
+    }
+
     const { email: rawEmail, token: rawToken } = await request.json();
     const email = normalizeEmail(rawEmail);
     const token = typeof rawToken === 'string' ? rawToken.replace(/\D/g, '') : '';

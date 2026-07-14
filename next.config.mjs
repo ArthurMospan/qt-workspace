@@ -3,9 +3,9 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/',
-        destination: '/workspace',
-        permanent: false,
+        source: '/workspace/:path*',
+        destination: '/:path*',
+        permanent: true,
       },
     ];
   },

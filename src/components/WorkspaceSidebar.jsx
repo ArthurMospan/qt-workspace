@@ -33,7 +33,7 @@ export default function WorkspaceSidebar() {
   const otherOrgUnreadCount = notifications.filter(item => !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   useEffect(() => {
-    const match = pathname.match(/^\/workspace\/([^/]+)/);
+    const match = pathname.match(/^\/([^/]+)/);
     const projectId = match?.[1];
     if (projectId && projects?.some(project => project.id === projectId)) {
       markProjectRead(projectId).catch(error => console.error('[WorkspaceSidebar] mark project read', error));
@@ -50,9 +50,9 @@ export default function WorkspaceSidebar() {
     e.stopPropagation();
     const result = stopTimer();
     if (result && result.minutes > 0 && result.projectId) {
-      router.push(`/workspace/${result.projectId}/issue/${result.issueId}?logTime=${result.minutes}`);
+      router.push(`/${result.projectId}/issue/${result.issueId}?logTime=${result.minutes}`);
     } else if (result && result.projectId) {
-      router.push(`/workspace/${result.projectId}/issue/${result.issueId}`);
+      router.push(`/${result.projectId}/issue/${result.issueId}`);
     }
   };
 
@@ -60,13 +60,13 @@ export default function WorkspaceSidebar() {
     exact ? pathname === href : pathname.startsWith(href);
 
   const topNav = [
-    { href: '/workspace',            icon: Folder,        label: 'Проєкти',     exact: true },
-    { href: '/workspace/my',         icon: CheckCircle2,  label: 'Мої завдання' },
-    { href: '/workspace/sprints',    icon: Zap,           label: 'Спринти' },
-    { href: '/workspace/chat',       icon: MessageSquare, label: 'Чат' },
-    { href: '/workspace/team',       icon: Users,         label: 'Команда' },
-    { href: '/workspace/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
-    { href: '/workspace/settings',   icon: Settings,      label: 'Налаштування' },
+    { href: '/',            icon: Folder,        label: 'Проєкти',     exact: true },
+    { href: '/my',         icon: CheckCircle2,  label: 'Мої завдання' },
+    { href: '/sprints',    icon: Zap,           label: 'Спринти' },
+    { href: '/chat',       icon: MessageSquare, label: 'Чат' },
+    { href: '/team',       icon: Users,         label: 'Команда' },
+    { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
+    { href: '/settings',   icon: Settings,      label: 'Налаштування' },
   ];
 
   return (
@@ -80,11 +80,11 @@ export default function WorkspaceSidebar() {
           {!collapsed ? (
             <>
               <div className="flex items-start min-w-0 flex-1">
-                <Link href="/workspace" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
+                <Link href="/" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
                   <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                 </Link>
                 <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
-                  <Link href="/workspace" className="hover:opacity-80 transition-opacity">
+                  <Link href="/" className="hover:opacity-80 transition-opacity">
                      <h1 className="text-white text-[18px] font-bold tracking-tight leading-tight truncate">QuickTeam</h1>
                   </Link>
                   <div 
@@ -156,7 +156,7 @@ export default function WorkspaceSidebar() {
             <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider">ПРОЄКТИ</p>
             {can(orgRole, 'create:project') && (
               <button
-                onClick={() => router.push('/workspace?new=1')}
+                onClick={() => router.push('/?new=1')}
                 className="text-[#666666] hover:text-white transition-colors" title="Новий проєкт">
                 <Plus size={16} />
               </button>
@@ -167,9 +167,9 @@ export default function WorkspaceSidebar() {
           {(projects || [])
             .filter(p => p.status !== 'archived')
             .map(p => {
-              const active = pathname.startsWith(`/workspace/${p.id}`);
+              const active = pathname.startsWith(`/${p.id}`);
               return (
-                <Link key={p.id} href={`/workspace/${p.id}`} title={collapsed ? undefined : p.name}
+                <Link key={p.id} href={`/${p.id}`} title={collapsed ? undefined : p.name}
                   className={`flex items-center mx-[8px] h-[32px] rounded-[8px] transition-all ${
                     active ? 'bg-[#333333] text-white' : 'text-[#777777] hover:text-white hover:bg-white/[0.04]'
                   }`}>
@@ -194,7 +194,7 @@ export default function WorkspaceSidebar() {
           <div 
             onClick={() => {
               if (activeTimer.projectId) {
-                router.push(`/workspace/${activeTimer.projectId}/issue/${activeTimer.issueId}`);
+                router.push(`/${activeTimer.projectId}/issue/${activeTimer.issueId}`);
               }
             }}
             className={`bg-[#333333] hover:bg-[#404040] transition-colors rounded-[12px] flex items-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}

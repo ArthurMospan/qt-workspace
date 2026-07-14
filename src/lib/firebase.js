@@ -37,6 +37,10 @@ export const auth = getAuth(app);
 export const db = createFirestore();
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
-export const githubProvider = new GithubAuthProvider();
-githubProvider.addScope('read:user');
-githubProvider.addScope('user:email');
+
+export function createGitHubProvider() {
+  const provider = new GithubAuthProvider();
+  provider.addScope('read:user');
+  provider.addScope('user:email');
+  return provider;
+}

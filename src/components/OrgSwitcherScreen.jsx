@@ -77,7 +77,7 @@ export default function OrgSwitcherScreen({ onClose }) {
       sessionStorage.removeItem('just_logged_in');
       switchOrg(org.id);
       onClose?.();
-      router.push('/workspace');
+      router.push('/');
     }, 700); // 700ms for smooth transition
   };
 

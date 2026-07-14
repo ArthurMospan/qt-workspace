@@ -6,13 +6,21 @@ import { useNotifications } from '@/lib/hooks/useNotifications';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 export default function WorkspaceNotificationBridge() {
-  const { currentUser } = useAppContext();
+  const { currentUser, activeOrgId } = useAppContext();
   const userId = currentUser?.id || currentUser?.uid;
   const showLiveNotif = useWorkspaceStore(state => state.showLiveNotif);
+  const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
   const clearNotificationCenter = useWorkspaceStore(state => state.clearNotificationCenter);
   const handleNew = useCallback(notification => showLiveNotif(notification), [showLiveNotif]);
-  const notificationCenter = useNotifications(userId, { onNew: handleNew });
+  const notificationCenter = useNotifications(userId, {
+    activeOrganizationId: activeOrgId,
+    onNew: handleNew,
+  });
+
+  useEffect(() => {
+    clearLiveNotif();
+  }, [activeOrgId, clearLiveNotif]);
   const actions = useMemo(() => ({
     markAllRead: notificationCenter.markAllRead,
     markRead: notificationCenter.markRead,

@@ -48,7 +48,7 @@ export default function TopHeader({
 
     if (mode === 'project') {
       const projectCrumbs = [
-        { label: 'Проєкти', href: '/workspace' },
+        { label: 'Проєкти', href: '/' },
         { label: projectName, href: null },
       ];
       return (

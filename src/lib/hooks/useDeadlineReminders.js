@@ -72,7 +72,7 @@ export function useDeadlineReminders(userId, activeOrgId) {
             type: 'deadline',
             title,
             body: iss.title || '',
-            link: `/workspace/${iss.projectId}/issue/${d.id}`,
+            link: `/${iss.projectId}/issue/${d.id}`,
             issueId: d.id,
             projectId: iss.projectId || '',
             organizationId: activeOrgId,

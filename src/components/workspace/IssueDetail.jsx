@@ -430,7 +430,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   }, [searchParams, pathname, router]);
 
   const copyIssueLink = useCallback(async () => {
-    const issueUrl = `${window.location.origin}/workspace/${projectId}/issue/${issueId}`;
+    const issueUrl = `${window.location.origin}/${projectId}/issue/${issueId}`;
     try {
       await navigator.clipboard.writeText(issueUrl);
       showToast('Посилання на завдання скопійовано');
@@ -444,8 +444,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (isModal) return;
     useWorkspaceStore.setState({
       breadcrumbs: [
-        { label: 'Проєкти', href: '/workspace' },
-        { label: project?.name || '...', href: `/workspace/${projectId}` },
+        { label: 'Проєкти', href: '/' },
+        { label: project?.name || '...', href: `/${projectId}` },
         { label: issue?.issueKey || '...', href: null, onClick: copyIssueLink, title: 'Копіювати посилання на завдання' },
       ]
     });
@@ -458,7 +458,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'Escape') {
         if (isEditing) { setIsEditing(false); return; }
-        router.push(`/workspace/${projectId}`);
+        router.push(`/${projectId}`);
       }
     };
     window.addEventListener('keydown', fn);
@@ -479,7 +479,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
         ) : (
           <div className="text-center">
             <p className="text-[16px] font-bold text-ink mb-2">Задачу не знайдено</p>
-            <Link href={`/workspace/${projectId}`} className="text-[13px] text-[#6366f1] hover:underline">← Повернутись</Link>
+            <Link href={`/${projectId}`} className="text-[13px] text-[#6366f1] hover:underline">← Повернутись</Link>
           </div>
         )}
       </div>
@@ -577,7 +577,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (!cur.includes(uid) && uid !== (currentUser?.id || currentUser?.uid))
       await sendNotification({ userIds: [uid], type: 'assigned',
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
-        link: `/workspace/${projectId}/issue/${issueId}`, issueId, projectId,
+        link: `/${projectId}/issue/${issueId}`, issueId, projectId,
         actor: { id: currentUser?.id || currentUser?.uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
       }).catch(() => {});
   };
@@ -713,7 +713,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       confirmText: 'Видалити', danger: true,
     }))) return;
     await deleteIssue(issueId);
-    router.push(`/workspace/${projectId}`);
+    router.push(`/${projectId}`);
   };
 
   // ════════════════════════════════════════════════════════════════
@@ -776,7 +776,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       Переглянути профіль
                     </button>
                     <Link
-                      href={`/workspace/chat?user=${reporter.id || reporter.uid}`}
+                      href={`/chat?user=${reporter.id || reporter.uid}`}
                       onClick={() => setShowReporterDropdown(false)}
                       className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
                     >
@@ -881,7 +881,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   icon={Maximize2}
                   onClick={() => {
                     onClose();
-                    router.push(`/workspace/${projectId}/issue/${issueId}`);
+                    router.push(`/${projectId}/issue/${issueId}`);
                   }}
                   aria-label="Відкрити на повній сторінці"
                   title="Відкрити на повній сторінці"
@@ -1453,7 +1453,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             {relationLabel}
                           </span>
                           <Link
-                            href={`/workspace/${projectId}/issue/${targetIssue.id}`}
+                            href={`/${projectId}/issue/${targetIssue.id}`}
                             className="text-[13px] font-semibold text-ink hover:text-[#6366f1] hover:underline truncate"
                           >
                             <span className="text-muted font-medium mr-1 uppercase">{targetIssue.issueKey}</span>

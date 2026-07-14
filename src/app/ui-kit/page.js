@@ -1021,8 +1021,8 @@ function HeadersSection() {
           <TopHeader 
             mode="breadcrumbs" 
             breadcrumbs={[
-              { label: 'Проєкти', href: '/workspace' },
-              { label: 'Mobile App Redesign', href: '/workspace/project-1' },
+              { label: 'Проєкти', href: '/' },
+              { label: 'Mobile App Redesign', href: '/project-1' },
               { label: 'QT-104: Зворотній звʼязок', href: null },
             ]}
             unreadCount={2}
@@ -1568,13 +1568,13 @@ function BreadcrumbsSection() {
   const [projectQuery, setProjectQuery] = useState('');
 
   const projectCrumbs = [
-    { label: 'Проєкти', href: '/workspace' },
+    { label: 'Проєкти', href: '/' },
     { label: 'Mobile App Redesign', href: null },
   ];
 
   const taskCrumbs = [
-    { label: 'Проєкти', href: '/workspace' },
-    { label: 'Mobile App Redesign', href: '/workspace/project-1' },
+    { label: 'Проєкти', href: '/' },
+    { label: 'Mobile App Redesign', href: '/project-1' },
     { label: 'QT-104: Зворотній звʼязок', href: null },
   ];
 

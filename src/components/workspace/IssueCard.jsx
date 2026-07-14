@@ -90,7 +90,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
         {...provided.dragHandleProps}
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
-        onClick={() => { if (!isDraggingRef.current) router.push(`/workspace/${projectId}/issue/${issue.id}`); }}
+        onClick={() => { if (!isDraggingRef.current) router.push(`/${projectId}/issue/${issue.id}`); }}
         className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''} shrink-0`}
         style={{
           ...provided.draggableProps?.style,

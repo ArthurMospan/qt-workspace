@@ -70,6 +70,7 @@ function playChime() {
 export const CHANNEL_DEFAULTS = { sound: true, popup: true, emailEnabled: false };
 
 export function useNotifications(userId, {
+  activeOrganizationId,
   onNew
 } = {}) {
   const [notifications, setNotifications] = useState([]);
@@ -78,6 +79,11 @@ export function useNotifications(userId, {
   const seenIds = useRef(new Set());
   const isFirstLoad = useRef(true);
   const prefsRef = useRef(CHANNEL_DEFAULTS);
+  const activeOrganizationIdRef = useRef(activeOrganizationId);
+
+  useEffect(() => {
+    activeOrganizationIdRef.current = activeOrganizationId;
+  }, [activeOrganizationId]);
 
   // Live-follow the user's channel preferences so toggles apply instantly
   useEffect(() => {
@@ -113,6 +119,7 @@ export function useNotifications(userId, {
         docs.forEach(n => {
           if (!seenIds.current.has(n.id)) {
             seenIds.current.add(n.id);
+            if (n.organizationId !== activeOrganizationIdRef.current) return;
             const prefs = prefsRef.current;
             // 1. Browser native notification (gated by browser permission)
             fireBrowserNotif(n);

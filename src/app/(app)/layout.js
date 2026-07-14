@@ -24,14 +24,14 @@ export default function WorkspaceLayout({ children }) {
   const isMobile = useIsMobile();
 
   const pathname = usePathname();
-  const isChat = pathname?.startsWith('/workspace/chat');
-  const isSettings = pathname?.startsWith('/workspace/settings');
+  const isChat = pathname?.startsWith('/chat');
+  const isSettings = pathname?.startsWith('/settings');
   const hideHeader = isSettings;
 
   useEffect(() => {
     if (!authLoading && !currentUser) {
       const currentLocation = `${window.location.pathname}${window.location.search}`;
-      const returnTo = currentLocation.startsWith('/workspace') ? currentLocation : '/workspace';
+      const returnTo = currentLocation.startsWith('/') ? currentLocation : '/';
       router.replace(`/login?next=${encodeURIComponent(returnTo)}`);
     }
   }, [currentUser, authLoading, pathname, router]);
@@ -85,7 +85,7 @@ export default function WorkspaceLayout({ children }) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
         <div className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
-          <h1 className="text-[18px] font-bold text-ink mb-2">Workspace тимчасово недоступний</h1>
+          <h1 className="text-[18px] font-bold text-ink mb-2">QuickTeam тимчасово недоступний</h1>
           <p className="text-[13px] text-muted mb-5">Не вдалося прочитати дані організації. Ваші дані не видалені.</p>
           <button onClick={() => window.location.reload()} className="rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-ink-hover">Спробувати ще раз</button>
         </div>

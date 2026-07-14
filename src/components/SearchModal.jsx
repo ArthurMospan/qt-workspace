@@ -31,7 +31,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
   if (!isOpen) return null;
 
   const handleResultClick = (issueId, projectId) => {
-    router.push(`/workspace/${projectId}/issue/${issueId}`);
+    router.push(`/${projectId}/issue/${issueId}`);
     onClose();
   };
 

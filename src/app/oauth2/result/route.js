@@ -7,6 +7,7 @@ import {
 } from '@/lib/server/oauthTokenCookie';
 import { getSafeAuthRedirect } from '@/lib/utils/authRedirect';
 import { normalizeEmail } from '@/lib/server/emailOtp';
+import { getOneBRedirectUri } from '@/lib/utils/oneb';
 
 const ONEB_API_URI = (process.env.ONEB_API_URI || 'https://account.oneb.app/s/').replace(/\/?$/, '/');
 const ONEB_SYNTHETIC_EMAIL_DOMAIN = 'oneb.quickteam.app';
@@ -17,8 +18,16 @@ function redirectWithError(origin, error) {
   return NextResponse.redirect(loginUrl);
 }
 
-function parseRedirect(stateRaw) {
-  if (!stateRaw) return '/workspace';
+function redirectSettingsWithError(origin, error) {
+  const settingsUrl = new URL('/settings', origin);
+  settingsUrl.searchParams.set('section', 'auth-methods');
+  settingsUrl.searchParams.set('authError', error);
+  return NextResponse.redirect(settingsUrl);
+}
+
+function parseState(stateRaw) {
+  const fallback = { redirectTo: '/', mode: 'login' };
+  if (!stateRaw) return fallback;
   const candidates = [stateRaw];
   try {
     const decoded = decodeURIComponent(stateRaw);
@@ -28,10 +37,13 @@ function parseRedirect(stateRaw) {
   for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate);
-      return getSafeAuthRedirect(parsed?.r, '/workspace');
+      return {
+        redirectTo: getSafeAuthRedirect(parsed?.r, '/'),
+        mode: parsed?.mode === 'link' ? 'link' : 'login',
+      };
     } catch {}
   }
-  return '/workspace';
+  return fallback;
 }
 
 function onebHash(accountId) {
@@ -108,14 +120,38 @@ async function getOrCreateOneBUser(profile, resolvedEmail) {
   return updateOneBUser(created, profile, resolvedEmail, displayName, photoURL);
 }
 
-async function updateOneBUser(userRecord, profile, resolvedEmail, displayName, photoURL) {
+async function findOneBLinkedUid(accountId) {
+  const snap = await getAdminDb().collection('users')
+    .where('onebId', '==', accountId)
+    .where('onebConnected', '==', true)
+    .limit(1)
+    .get();
+  return snap.empty ? null : snap.docs[0].id;
+}
+
+async function getSessionUser(request) {
+  const sessionCookie = request.cookies.get('qt_session')?.value;
+  if (!sessionCookie) return null;
+  try {
+    const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true);
+    return await getAdminAuth().getUser(decoded.uid);
+  } catch {
+    return null;
+  }
+}
+
+async function updateOneBUser(userRecord, profile, resolvedEmail, displayName, photoURL, options = {}) {
   const auth = getAdminAuth();
   const update = {
     emailVerified: true,
-    displayName,
   };
-  if (photoURL) update.photoURL = photoURL;
+  const nextDisplayName = options.preserveProfile && userRecord.displayName
+    ? userRecord.displayName
+    : displayName;
+  if (nextDisplayName) update.displayName = nextDisplayName;
+  if (photoURL && !(options.preserveProfile && userRecord.photoURL)) update.photoURL = photoURL;
   if (
+    (!options.preserveEmail || !userRecord.email) &&
     resolvedEmail &&
     userRecord.email !== resolvedEmail &&
     (!userRecord.email || !isSyntheticOneBEmail(resolvedEmail))
@@ -140,13 +176,18 @@ async function updateOneBUser(userRecord, profile, resolvedEmail, displayName, p
 
   const userRef = getAdminDb().collection('users').doc(nextUserRecord.uid);
   const userSnap = await userRef.get();
+  const existingProfile = userSnap.exists ? userSnap.data() : {};
   const nowIso = new Date().toISOString();
   const profileData = {
     id: nextUserRecord.uid,
-    name: displayName,
+    name: options.preserveProfile && existingProfile.name ? existingProfile.name : displayName,
     email: nextUserRecord.email || resolvedEmail,
-    avatar: photoURL || nextUserRecord.photoURL || `https://i.pravatar.cc/150?u=${nextUserRecord.uid}`,
-    photoURL: photoURL || nextUserRecord.photoURL || null,
+    avatar: options.preserveProfile && existingProfile.avatar
+      ? existingProfile.avatar
+      : (photoURL || nextUserRecord.photoURL || `https://i.pravatar.cc/150?u=${nextUserRecord.uid}`),
+    photoURL: options.preserveProfile && existingProfile.photoURL
+      ? existingProfile.photoURL
+      : (photoURL || nextUserRecord.photoURL || null),
     onebId: profile.accountId,
     onebConnected: true,
     onebAlias: profile.alias ?? null,
@@ -178,13 +219,13 @@ function normalizeUrl(value) {
 export async function GET(request) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
-  const redirectTo = parseRedirect(searchParams.get('state') || '');
+  const { redirectTo, mode } = parseState(searchParams.get('state') || '');
 
   if (!code) return redirectWithError(origin, 'oneb_no_code');
 
   const clientId = process.env.NEXT_PUBLIC_ONEB_CLIENT_ID;
   const clientSecret = process.env.ONEB_CLIENT_SECRET;
-  const redirectUri = `${origin}/oauth2/result`;
+  const redirectUri = getOneBRedirectUri(origin);
 
   if (!clientId || clientId === 'dummy_client_id') {
     console.error('[OneB] NEXT_PUBLIC_ONEB_CLIENT_ID is not configured');
@@ -229,6 +270,29 @@ export async function GET(request) {
     }
 
     const resolvedEmail = normalizeEmail(profile.email) || syntheticOneBEmail(profile.accountId);
+    if (mode === 'link') {
+      const sessionUser = await getSessionUser(request);
+      if (!sessionUser) return redirectSettingsWithError(origin, 'oneb_session');
+
+      const linkedUid = await findOneBLinkedUid(profile.accountId);
+      if (linkedUid && linkedUid !== sessionUser.uid) {
+        return redirectSettingsWithError(origin, 'oneb_already_linked');
+      }
+
+      await updateOneBUser(
+        sessionUser,
+        profile,
+        sessionUser.email || resolvedEmail,
+        profile.name || profile.alias || sessionUser.displayName || 'OneB User',
+        normalizeUrl(profile.photoUrl),
+        { preserveEmail: true, preserveProfile: true }
+      );
+      const settingsUrl = new URL(redirectTo, origin);
+      settingsUrl.searchParams.set('section', 'auth-methods');
+      settingsUrl.searchParams.set('auth', 'oneb_connected');
+      return NextResponse.redirect(settingsUrl);
+    }
+
     const userRecord = await getOrCreateOneBUser(profile, resolvedEmail);
     const customToken = await getAdminAuth().createCustomToken(userRecord.uid, {
       auth_provider: 'oneb',

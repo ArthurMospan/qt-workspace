@@ -1,6 +1,7 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
@@ -8,7 +9,8 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
-import { auth, db } from '@/lib/firebase';
+import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
+import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
@@ -17,7 +19,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical,
-  Archive, ArchiveRestore, Bug, LayoutTemplate
+  Archive, ArchiveRestore, Bug
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -40,10 +42,10 @@ import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
+import { getOneBRedirectUri } from '@/lib/utils/oneb';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
-
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
@@ -89,6 +91,7 @@ const COLOR_PALETTE = [
 
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
+  { id: 'auth-methods',  label: 'Способи входу',     icon: Link2,        group: 'Особисте' },
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
   { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
@@ -131,6 +134,113 @@ function Section({ title, desc, rightAction, children }) {
       </div>
       <div className="flex flex-col gap-[24px]">
         {children}
+      </div>
+    </div>
+  );
+}
+
+function GitHubLogo({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+    </svg>
+  );
+}
+
+function GoogleLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
+
+function OneBMark() {
+  return <Image src="/oneb-logo.png" alt="OneB" width={18} height={18} className="object-contain rounded-[4px]" />;
+}
+
+function ProviderStatus({ primary, connected, soon }) {
+  if (soon) {
+    return (
+      <span className="inline-flex items-center text-[11px] font-bold text-[#b45309] bg-[#fffbeb] px-[8px] py-[4px] rounded-full">
+        Soon
+      </span>
+    );
+  }
+  if (primary) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#6366f1] bg-[#f0f0ff] px-[8px] py-[4px] rounded-full">
+        <Check size={12} /> Основний
+      </span>
+    );
+  }
+  if (connected) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#10b981] bg-[#ecfdf5] px-[8px] py-[4px] rounded-full">
+        <Check size={12} /> Активно
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center text-[11px] font-bold text-muted bg-canvas px-[8px] py-[4px] rounded-full">
+      Не підключено
+    </span>
+  );
+}
+
+function LoginMethodItem({
+  icon,
+  title,
+  detail,
+  connected,
+  primary,
+  loading,
+  disabled,
+  soon = false,
+  staticMethod = false,
+  onConnect,
+  onDisconnect,
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-[14px]">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold text-ink leading-snug">{title}</p>
+          <p className="text-[12px] text-muted mt-[2px] leading-snug truncate">{detail}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between sm:justify-end gap-3 min-w-[190px]">
+        <ProviderStatus primary={primary} connected={connected} soon={soon} />
+        {staticMethod ? null : connected ? (
+          <Button
+            onClick={onDisconnect}
+            disabled={disabled || primary}
+            loading={loading}
+            style="ghost"
+            color="red"
+            size="sm"
+            className="min-w-[96px]"
+          >
+            Відключити
+          </Button>
+        ) : (
+          <Button
+            onClick={onConnect}
+            disabled={disabled}
+            loading={loading}
+            style="secondary"
+            size="sm"
+            className="min-w-[96px]"
+          >
+            Підключити
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -391,14 +501,27 @@ export default function SettingsPage() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const sec = searchParams.get('section');
+      const authSuccess = searchParams.get('auth');
+      const authError = searchParams.get('authError');
       if (sec) {
         queueMicrotask(() => {
           setActiveSection(sec);
           setMobilePane('content'); // deep link opens the section directly on mobile
         });
       }
+      if (authSuccess === 'oneb_connected') {
+        queueMicrotask(() => showToast('OneB підключено'));
+      }
+      if (authError) {
+        const message = authError === 'oneb_already_linked'
+          ? 'Цей OneB акаунт уже підключений до іншого користувача'
+          : authError === 'oneb_session'
+            ? 'Не вдалося підтвердити сесію. Увійдіть ще раз і повторіть підключення OneB'
+            : 'Не вдалося підключити OneB';
+        queueMicrotask(() => showToast(message, 'error'));
+      }
     }
-  }, []);
+  }, [showToast]);
 
   // ── Workflow ──
   const [statuses,   setStatuses]   = useState(DEFAULT_STATUSES);
@@ -488,6 +611,29 @@ export default function SettingsPage() {
   const [inviteRole,  setInviteRole]  = useState('member');
   const [showInviteModal, setShowInviteModal] = useState(false);
 
+  // ─── Auth methods ───
+  const [authProviderIds, setAuthProviderIds] = useState([]);
+  const [authMethodLoading, setAuthMethodLoading] = useState(null);
+  const hasGithubAuth = authProviderIds.includes('github.com');
+  const hasGoogleAuth = authProviderIds.includes('google.com');
+  const hasOneBAuth = Boolean(currentUser?.onebId && currentUser?.onebConnected !== false);
+  const isPrimaryGitHub = hasGithubAuth && !hasGoogleAuth && !hasOneBAuth;
+  const isPrimaryGoogle = hasGoogleAuth && !hasGithubAuth && !hasOneBAuth;
+  const isPrimaryOneB = hasOneBAuth && !hasGithubAuth && !hasGoogleAuth;
+  const isPrimaryEmail = false;
+
+  const refreshAuthProviders = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      setAuthProviderIds([]);
+      return [];
+    }
+    await firebaseUser.reload().catch(() => {});
+    const providerIds = firebaseUser.providerData.map(provider => provider.providerId);
+    setAuthProviderIds(providerIds);
+    return providerIds;
+  };
+
   // Sync from Firestore (initial only)
   useEffect(() => {
     if (currentUser) {
@@ -516,6 +662,10 @@ export default function SettingsPage() {
       if (org?.logo && !orgLogo) setOrgLogo(org.logo);
     });
   }, [currentUser?.name, org?.name, org?.logo]); // eslint-disable-line
+
+  useEffect(() => {
+    queueMicrotask(() => refreshAuthProviders());
+  }, [currentUser?.id, currentUser?.uid]);
 
   // ── Breadcrumbs ──
   // Removed breadcrumbs to avoid duplicate 'Налаштування' in WorkspaceHeader
@@ -616,6 +766,156 @@ export default function SettingsPage() {
       triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
     setLocSaving(false);
+  };
+
+  const handleConnectGitHub = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    setAuthMethodLoading('github-connect');
+    try {
+      await linkWithPopup(firebaseUser, createGitHubProvider());
+      await refreshAuthProviders();
+      showToast('GitHub підключено');
+    } catch (error) {
+      console.warn('[settings] GitHub connect failed:', error);
+      const providerIds = await refreshAuthProviders();
+      if (providerIds.includes('github.com')) {
+        showToast('GitHub підключено');
+        return;
+      }
+      const message = error.code === 'auth/provider-already-linked'
+        ? 'GitHub уже підключено'
+        : error.code === 'auth/credential-already-in-use'
+          ? 'Цей GitHub уже підключений до іншого акаунта'
+          : error.code === 'auth/operation-not-allowed'
+            ? 'GitHub треба увімкнути у Firebase Authentication'
+            : error.code === 'auth/invalid-credential' || error.message?.includes('Bad credentials')
+              ? 'GitHub відхилив OAuth-ключ. Оновіть Client ID і Client Secret у Firebase'
+            : 'Не вдалося підключити GitHub';
+      showToast(message, 'error');
+    } finally {
+      setAuthMethodLoading(null);
+    }
+  };
+
+  const handleConnectGoogle = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    setAuthMethodLoading('google-connect');
+    try {
+      await linkWithPopup(firebaseUser, googleProvider);
+      await refreshAuthProviders();
+      showToast('Google підключено');
+    } catch (error) {
+      console.error('[settings] Google connect failed:', error);
+      const message = error.code === 'auth/provider-already-linked'
+        ? 'Google уже підключено'
+        : error.code === 'auth/credential-already-in-use'
+          ? 'Цей Google акаунт уже підключений до іншого користувача'
+          : error.code === 'auth/operation-not-allowed'
+            ? 'Google треба увімкнути у Firebase Authentication'
+            : error.code === 'auth/requires-recent-login'
+              ? 'Увійдіть повторно і спробуйте підключити Google ще раз'
+              : 'Не вдалося підключити Google';
+      showToast(message, 'error');
+    } finally {
+      setAuthMethodLoading(null);
+    }
+  };
+
+  const handleDisconnectGitHub = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    if (!hasGoogleAuth && !hasOneBAuth) {
+      return showToast('Спочатку підключіть Google або OneB, щоб не втратити доступ', 'error');
+    }
+    setAuthMethodLoading('github-disconnect');
+    try {
+      await unlink(firebaseUser, 'github.com');
+      await refreshAuthProviders();
+      showToast('GitHub відключено');
+    } catch (error) {
+      console.error('[settings] GitHub disconnect failed:', error);
+      showToast(error.code === 'auth/no-such-provider' ? 'GitHub не підключено' : 'Не вдалося відключити GitHub', 'error');
+    } finally {
+      setAuthMethodLoading(null);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    if (!hasGithubAuth && !hasOneBAuth) {
+      return showToast('Спочатку підключіть GitHub або OneB, щоб не втратити доступ', 'error');
+    }
+    setAuthMethodLoading('google-disconnect');
+    try {
+      await unlink(firebaseUser, 'google.com');
+      await refreshAuthProviders();
+      showToast('Google відключено');
+    } catch (error) {
+      console.error('[settings] Google disconnect failed:', error);
+      showToast(error.code === 'auth/no-such-provider' ? 'Google не підключено' : 'Не вдалося відключити Google', 'error');
+    } finally {
+      setAuthMethodLoading(null);
+    }
+  };
+
+  const handleConnectOneB = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    const clientId = process.env.NEXT_PUBLIC_ONEB_CLIENT_ID || 'dummy_client_id';
+    if (clientId === 'dummy_client_id') {
+      return showToast('OneB Client ID не налаштований', 'error');
+    }
+    setAuthMethodLoading('oneb-connect');
+    try {
+      const idToken = await firebaseUser.getIdToken(true);
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (!sessionResponse.ok) throw new Error('Failed to refresh server session');
+
+      const redirectUri = getOneBRedirectUri(window.location.origin);
+      const state = JSON.stringify({
+        mode: 'link',
+        r: '/settings?section=auth-methods',
+        n: Math.random().toString(36).slice(2),
+      });
+      const scopes = process.env.NEXT_PUBLIC_ONEB_SCOPES ?? '';
+      const scopeParam = scopes ? `&scope=${encodeURIComponent(scopes)}` : '';
+      window.location.href = `https://account.oneb.app/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}${scopeParam}&state=${encodeURIComponent(state)}`;
+    } catch (error) {
+      console.error('[settings] OneB connect failed:', error);
+      showToast('Не вдалося почати підключення OneB', 'error');
+      setAuthMethodLoading(null);
+    }
+  };
+
+  const handleDisconnectOneB = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    if (!hasGithubAuth && !hasGoogleAuth) {
+      return showToast('Спочатку підключіть GitHub або Google, щоб не втратити доступ', 'error');
+    }
+    setAuthMethodLoading('oneb-disconnect');
+    try {
+      const idToken = await firebaseUser.getIdToken(true);
+      const response = await fetch('/api/auth/oneb/unlink', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || result.error || 'Failed to unlink OneB');
+      await firebaseUser.getIdToken(true);
+      showToast('OneB відключено');
+    } catch (error) {
+      console.error('[settings] OneB disconnect failed:', error);
+      showToast(error.message || 'Не вдалося відключити OneB', 'error');
+    } finally {
+      setAuthMethodLoading(null);
+    }
   };
 
   const saveWorkspace = async () => {
@@ -981,6 +1281,63 @@ export default function SettingsPage() {
         </Section>
       );
 
+      case 'auth-methods': return (
+        <Section title="Способи входу" desc="Керуйте сервісами, через які можна входити у QuickTeam">
+          <Card variant="white" padding="lg" className="!border-none">
+            <div className="divide-y divide-canvas">
+              <LoginMethodItem
+                icon={<GitHubLogo size={18} />}
+                title="GitHub"
+                detail={hasGithubAuth ? 'Підключено до поточного акаунта' : 'Вхід через GitHub OAuth'}
+                connected={hasGithubAuth}
+                primary={isPrimaryGitHub}
+                loading={authMethodLoading === 'github-connect' || authMethodLoading === 'github-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectGitHub}
+                onDisconnect={handleDisconnectGitHub}
+              />
+              <LoginMethodItem
+                icon={<GoogleLogo size={18} />}
+                title="Google"
+                detail={hasGoogleAuth ? 'Підключено до поточного акаунта' : 'Вхід через Google OAuth'}
+                connected={hasGoogleAuth}
+                primary={isPrimaryGoogle}
+                loading={authMethodLoading === 'google-connect' || authMethodLoading === 'google-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectGoogle}
+                onDisconnect={handleDisconnectGoogle}
+              />
+              <LoginMethodItem
+                icon={<OneBMark />}
+                title="OneB"
+                detail={hasOneBAuth
+                  ? (currentUser?.onebAlias || currentUser?.onebWorkspace || 'Підключено до екосистеми OneB')
+                  : 'Вхід через OneB OAuth'}
+                connected={hasOneBAuth}
+                primary={isPrimaryOneB}
+                loading={authMethodLoading === 'oneb-connect' || authMethodLoading === 'oneb-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectOneB}
+                onDisconnect={handleDisconnectOneB}
+              />
+              <LoginMethodItem
+                icon={<Mail size={18} />}
+                title="Email"
+                detail="Вхід по email-коду тимчасово вимкнений"
+                connected={false}
+                primary={isPrimaryEmail}
+                soon
+                loading={false}
+                disabled
+                staticMethod
+                onConnect={() => {}}
+                onDisconnect={() => {}}
+              />
+            </div>
+          </Card>
+        </Section>
+      );
+
       // ──────────────────────────────────────────────────────────────
       case 'notifications': return (
         <Section title="Сповіщення" desc="Канали доставки та події, про які тебе повідомляти" rightAction={saveButton}>
@@ -1170,8 +1527,8 @@ export default function SettingsPage() {
             {/* QT Portal — головна інтеграція */}
             <Card variant="white" padding="lg" className="mb-4 !border-none">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-[10px] bg-[#6366f1] flex items-center justify-center shrink-0">
-                  <LayoutTemplate size={16} className="text-white" />
+                <div className="w-10 h-10 rounded-[10px] bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
+                  <Image src="/quickteam.png" alt="" width={30} height={30} className="object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4 mb-1">
@@ -1217,14 +1574,8 @@ export default function SettingsPage() {
             {/* BuggyBag Portal */}
             <Card variant="white" padding="lg" className="mb-4 !border-none">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-[10px] bg-[#fdf2f8] flex items-center justify-center shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 194 194" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#db2777]">
-                    <path d="M10.7365 18.4947C-0.604524 20.9451 -6.27503 -5.19299 10.7365 0.933186C24.3457 5.83418 36.659 21.4903 41.1144 28.7056L42.7999 31.4049C54.7817 28.0012 71.5545 27.9996 97.0001 27.9996C122.445 27.9996 139.218 28.0014 151.199 31.4049L152.886 28.7056C157.341 21.4903 169.655 5.83418 183.264 0.933186C200.275 -5.19278 194.605 20.9448 183.264 18.4947C174.191 16.5343 165.982 22.0348 163.012 25.0299L157.341 31.1558L156.075 33.0904C159.532 34.5302 162.546 36.377 165.248 38.7467C166.669 39.9929 168.008 41.3305 169.254 42.7515C180 55.0055 180 73.6704 180 111C180 148.329 180 166.994 169.254 179.248C168.008 180.669 166.669 182.007 165.248 183.253C152.994 194 134.33 194 97.0001 194C59.6708 194 41.006 194 28.7521 183.253C27.331 182.007 25.9925 180.669 24.7462 179.248C14.0002 166.994 14.0001 148.329 14.0001 111C14.0001 73.6703 13.9999 55.0054 24.7462 42.7515C25.9925 41.3304 27.331 39.9929 28.7521 38.7467C31.454 36.3772 34.4674 34.5302 37.924 33.0904L36.6593 31.1558L30.9884 25.0299C28.0181 22.0348 19.8093 16.5343 10.7365 18.4947Z" fill="currentColor"/>
-                    <path d="M30.6001 102.7C30.6001 86.6564 43.6062 73.6503 59.6501 73.6503C75.6939 73.6503 88.7001 86.6564 88.7001 102.7V106.85C88.7001 122.894 75.6939 135.9 59.6501 135.9C43.6062 135.9 30.6001 122.894 30.6001 106.85V102.7Z" fill="white"/>
-                    <path d="M105.3 102.7C105.3 86.6564 118.306 73.6503 134.35 73.6503C150.394 73.6503 163.4 86.6564 163.4 102.7V106.85C163.4 122.894 150.394 135.9 134.35 135.9C118.306 135.9 105.3 122.894 105.3 106.85V102.7Z" fill="white"/>
-                    <path d="M126.05 97.512C126.05 88.917 133.018 81.9495 141.613 81.9495C150.208 81.9495 157.175 88.917 157.175 97.512C157.175 106.107 150.208 113.074 141.613 113.074C133.018 113.074 126.05 106.107 126.05 97.512Z" fill="currentColor"/>
-                    <path d="M51.3501 97.512C51.3501 88.917 58.3176 81.9495 66.9126 81.9495C75.5075 81.9495 82.4751 88.917 82.4751 97.512C82.4751 106.107 75.5075 113.074 66.9126 113.074C58.3176 113.074 51.3501 106.107 51.3501 97.512Z" fill="currentColor"/>
-                  </svg>
+                <div className="w-10 h-10 rounded-[10px] bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
+                  <Image src="/bug-logo.png" alt="" width={30} height={30} className="object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4 mb-1">

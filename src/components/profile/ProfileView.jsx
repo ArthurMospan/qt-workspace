@@ -56,13 +56,13 @@ export default function ProfileView({ user, onClose }) {
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();
-    router.push(`/workspace/${task.projectId}?issue=${task.issueKey || task.id}`);
+    router.push(`/${task.projectId}?issue=${task.issueKey || task.id}`);
   };
 
   const handleEmergencyCall = async () => {
     try {
       const emergencyText = `🆘 ЕКСТРЕННИЙ ВИКЛИК від ${currentUser?.name || 'Учасника'}!`;
-      const link = `/workspace/chat?user=${currentUser?.id || currentUser?.uid}`;
+      const link = `/chat?user=${currentUser?.id || currentUser?.uid}`;
 
       await sendNotification({
         userIds: [uid],
@@ -98,8 +98,8 @@ export default function ProfileView({ user, onClose }) {
   ];
 
   const adminMenu = [
-    { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/workspace/settings?section=team&user=${uid}`); } },
-    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/workspace/analytics?tab=workload&member=${uid}`); } }
+    { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/settings?section=team&user=${uid}`); } },
+    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&member=${uid}`); } }
   ];
 
   return (
@@ -142,7 +142,7 @@ export default function ProfileView({ user, onClose }) {
               <Button
                 onClick={() => {
                   if (onClose) onClose();
-                  router.push(`/workspace/chat?user=${uid}`);
+                  router.push(`/chat?user=${uid}`);
                 }}
                 style="secondary"
                 color="dark"

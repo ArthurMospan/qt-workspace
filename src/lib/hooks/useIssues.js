@@ -145,7 +145,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         type: 'assigned',
         title: `${userName || 'Колега'} призначив вам нове завдання`,
         body: data.title || '',
-        link: `/workspace/${projectId}/issue/${result.id}`,
+        link: `/${projectId}/issue/${result.id}`,
         issueId: result.id,
         projectId,
         actor: { id: userId || '', name: userName || '' }
@@ -288,7 +288,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
           type: 'status_changed',
           title: `${issue.issueKey || 'Задача'}: статус змінено`,
           body: `${issue.title || ''} → ${COLUMN_LABELS[newColumnId] || newColumnId}`,
-          link: `/workspace/${projectId}/issue/${issueId}`,
+          link: `/${projectId}/issue/${issueId}`,
           issueId,
           projectId,
           actor: { id: userId || '', name: userName || '' }

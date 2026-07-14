@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { AtSign } from 'lucide-react';
 import AnimatedLogo from '@/components/AnimatedLogo';
 import AuthLayout from '@/components/AuthLayout';
 import { useAppContext } from '@/lib/context/AppContext';
 import { getSafeAuthRedirect } from '@/lib/utils/authRedirect';
+import { getOneBRedirectUri } from '@/lib/utils/oneb';
 
 function GitHubIcon() {
   return (
@@ -29,9 +29,9 @@ function GoogleIcon() {
 }
 
 function getRequestedDestination() {
-  if (typeof window === 'undefined') return '/workspace';
+  if (typeof window === 'undefined') return '/';
   const params = new URLSearchParams(window.location.search);
-  return getSafeAuthRedirect(params.get('next') || params.get('redirect'), '/workspace');
+  return getSafeAuthRedirect(params.get('next') || params.get('redirect'), '/');
 }
 
 function getInitialOneBLoading() {
@@ -40,23 +40,32 @@ function getInitialOneBLoading() {
   return Boolean(params.get('code')) || params.get('oneb') === 'success';
 }
 
+function authErrorMessage(code) {
+  if (code === 'oauth') return 'Не вдалося увійти через OAuth. Спробуйте ще раз.';
+  if (code === 'oneb_token') return 'Помилка авторизації в OneB: перевірте Client ID, Secret і redirect URI.';
+  if (code === 'oneb_no_client_id') return 'OneB Client ID не налаштований.';
+  if (code === 'oneb_no_client_secret') return 'OneB Client Secret не налаштований.';
+  if (code === 'oneb_already_linked') return 'Цей OneB акаунт уже підключений до іншого користувача.';
+  if (code === 'oneb_session') return 'Не вдалося підтвердити поточну сесію. Увійдіть ще раз і повторіть підключення OneB.';
+  if (code?.startsWith('oneb_')) return 'Щось пішло не так під час входу через OneB.';
+  return '';
+}
+
 function getInitialError() {
   if (typeof window === 'undefined') return '';
   const params = new URLSearchParams(window.location.search);
   return authErrorMessage(params.get('error'));
 }
 
-function authErrorMessage(code) {
-  if (code === 'oauth') return 'Не вдалося увійти через OAuth. Спробуйте ще раз.';
-  if (code === 'oneb_token') return 'Помилка авторизації в OneB: перевірте Client ID, Secret і redirect URI.';
-  if (code === 'oneb_no_client_id') return 'OneB Client ID не налаштований.';
-  if (code === 'oneb_no_client_secret') return 'OneB Client Secret не налаштований.';
-  if (code?.startsWith('oneb_')) return 'Щось пішло не так під час входу через OneB.';
-  return '';
-}
-
 function providerErrorMessage(error, providerName) {
   if (error?.code === 'custom/popup-blocked') return 'Дозвольте popup-вікно у браузері та спробуйте ще раз.';
+  if (providerName === 'GitHub' && (
+    error?.code === 'auth/invalid-credential' ||
+    error?.message?.includes('api.github.com/user') ||
+    error?.message?.includes('Bad credentials')
+  )) {
+    return 'GitHub відхилив OAuth-ключ. Потрібно оновити Client ID і Client Secret провайдера GitHub у Firebase.';
+  }
   if (error?.code === 'auth/account-exists-with-different-credential') {
     return 'Акаунт із цією поштою уже має інший спосіб входу.';
   }
@@ -76,15 +85,10 @@ export default function LoginPage() {
     authLoading,
   } = useAppContext();
 
-  const [email, setEmail] = useState('');
-  const [step, setStep] = useState('idle');
-  const [token, setToken] = useState('');
-  const [emailLoading, setEmailLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [onebLoading, setOnebLoading] = useState(getInitialOneBLoading);
   const [error, setError] = useState(getInitialError);
-  const [debugCode, setDebugCode] = useState('');
   const hasForwardedOneBCode = useRef(false);
   const hasConsumedOauthToken = useRef(false);
 
@@ -102,11 +106,8 @@ export default function LoginPage() {
     hasForwardedOneBCode.current = true;
     const callbackParams = new URLSearchParams({ code });
     const state = params.get('state');
-    if (state) {
-      callbackParams.set('state', state);
-    } else {
-      callbackParams.set('state', JSON.stringify({ r: getRequestedDestination() }));
-    }
+    if (state) callbackParams.set('state', state);
+    else callbackParams.set('state', JSON.stringify({ r: getRequestedDestination() }));
     window.location.href = `/oauth2/result?${callbackParams.toString()}`;
   }, []);
 
@@ -119,9 +120,7 @@ export default function LoginPage() {
       try {
         const response = await fetch('/api/auth/oauth-token', { credentials: 'include' });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.customToken) {
-          throw new Error(data.error || 'Missing custom token');
-        }
+        if (!response.ok || !data.customToken) throw new Error(data.error || 'Missing custom token');
         await signInWithAuthToken(data.customToken);
         sessionStorage.setItem('just_logged_in', 'true');
       } catch (err) {
@@ -140,7 +139,7 @@ export default function LoginPage() {
       await signInWithGitHub();
       sessionStorage.setItem('just_logged_in', 'true');
     } catch (err) {
-      console.error('[Login] GitHub sign-in failed:', err);
+      console.warn('[Login] GitHub sign-in failed:', err);
       setError(providerErrorMessage(err, 'GitHub'));
       setGithubLoading(false);
     }
@@ -168,7 +167,7 @@ export default function LoginPage() {
     }
 
     setOnebLoading(true);
-    const redirectUri = `${window.location.origin}/oauth2/result`;
+    const redirectUri = getOneBRedirectUri(window.location.origin);
     const state = JSON.stringify({
       r: getRequestedDestination(),
       n: Math.random().toString(36).slice(2),
@@ -178,53 +177,7 @@ export default function LoginPage() {
     window.location.href = `https://account.oneb.app/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}${scopeParam}&state=${encodeURIComponent(state)}`;
   };
 
-  const handleSendEmailCode = async event => {
-    event.preventDefault();
-    setError('');
-    setDebugCode('');
-    setEmailLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/email/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Failed to send code');
-      if (data.debugCode) setDebugCode(data.debugCode);
-      setStep('otp');
-    } catch (err) {
-      console.error('[Login] Email code send failed:', err);
-      setError(err.message || 'Не вдалося надіслати код.');
-    } finally {
-      setEmailLoading(false);
-    }
-  };
-
-  const handleVerifyEmailCode = async event => {
-    event.preventDefault();
-    setError('');
-    setEmailLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/email/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, token }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.customToken) throw new Error(data.error || 'Invalid code');
-      await signInWithAuthToken(data.customToken);
-      sessionStorage.setItem('just_logged_in', 'true');
-    } catch (err) {
-      console.error('[Login] Email code verify failed:', err);
-      setError(err.message || 'Невірний код. Спробуйте ще раз.');
-      setEmailLoading(false);
-    }
-  };
-
-  const anyLoading = emailLoading || githubLoading || googleLoading || onebLoading;
+  const anyLoading = githubLoading || googleLoading || onebLoading;
 
   if (authLoading) {
     return (
@@ -241,12 +194,9 @@ export default function LoginPage() {
           <AnimatedLogo />
         </div>
 
-        <h1 className="text-white text-[28px] font-black tracking-tight mb-[10px]">
+        <h1 className="text-white text-[28px] font-black tracking-tight mb-[30px]">
           Увійти або зареєструватися
         </h1>
-        <p className="text-white/50 text-[15px] leading-relaxed max-w-[300px] mb-[30px]">
-          QuickTeam Workspace
-        </p>
 
         <div className="w-full flex flex-col gap-3">
           <button
@@ -269,103 +219,16 @@ export default function LoginPage() {
             {onebLoading ? 'Перенаправлення...' : 'Увійти через OneB'}
           </button>
 
-          {step === 'idle' ? (
-            <button
-              type="button"
-              onClick={() => {
-                setError('');
-                setStep('email');
-              }}
-              disabled={anyLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white text-[#1f1f1f] py-[14px] px-6 rounded-full text-[15px] font-bold hover:bg-[#e9e9e9] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl"
-            >
-              <AtSign size={18} strokeWidth={2.5} />
-              Увійти через Email
-            </button>
-          ) : (
-            <div className="w-full flex flex-col gap-4 mt-1">
-              <div className="flex items-center gap-3 w-full my-1">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[12px] font-medium text-white/40">через Email</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {step === 'email' ? (
-                <form onSubmit={handleSendEmailCode} className="w-full flex flex-col gap-3">
-                  <input
-                    type="email"
-                    placeholder="Email адреса"
-                    value={email}
-                    onChange={event => setEmail(event.target.value)}
-                    required
-                    disabled={emailLoading}
-                    autoComplete="email"
-                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-[16px] text-center text-white text-[15px] font-medium outline-none focus:border-white/40 focus:bg-white/10 transition-all placeholder:text-white/30"
-                  />
-                  <button
-                    type="submit"
-                    disabled={anyLoading || !email.trim()}
-                    className="w-full flex items-center justify-center gap-3 rounded-full bg-white/10 px-6 py-4 text-[14px] font-semibold text-white transition-all hover:bg-white/20 active:scale-[0.98] border border-white/10 disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {emailLoading ? 'Надсилаємо код...' : 'Продовжити'}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyEmailCode} className="w-full flex flex-col gap-3">
-                  <p className="text-[13px] text-white/70 text-center leading-relaxed">
-                    Код надіслано на <strong className="text-white">{email}</strong>
-                    <br />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setToken('');
-                        setError('');
-                        setStep('email');
-                      }}
-                      className="text-white hover:underline mt-2 inline-block"
-                    >
-                      Змінити email
-                    </button>
-                  </p>
-                  <input
-                    type="text"
-                    placeholder="Введіть код"
-                    value={token}
-                    onChange={event => setToken(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                    required
-                    disabled={emailLoading}
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-[16px] text-center text-white text-lg tracking-[0.2em] font-medium outline-none focus:border-white/40 focus:bg-white/10 transition-all placeholder:text-white/30 placeholder:tracking-normal"
-                  />
-                  <button
-                    type="submit"
-                    disabled={anyLoading || token.length < 6}
-                    className="w-full flex items-center justify-center gap-3 rounded-full bg-white/10 px-6 py-4 text-[14px] font-semibold text-white transition-all hover:bg-white/20 active:scale-[0.98] border border-white/10 disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {emailLoading ? 'Перевіряємо...' : 'Підтвердити вхід'}
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-
           <button
             type="button"
             onClick={handleGoogle}
             disabled={anyLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white/5 text-white py-[12px] px-6 rounded-full text-[14px] font-semibold hover:bg-white/10 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all border border-white/10"
+            className="w-full flex items-center justify-center gap-3 bg-white text-[#1f1f1f] py-[14px] px-6 rounded-full text-[15px] font-bold hover:bg-[#e9e9e9] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl"
           >
             <GoogleIcon />
             {googleLoading ? 'Перенаправлення...' : 'Увійти через Google'}
           </button>
         </div>
-
-        {debugCode && (
-          <p className="mt-4 text-white/40 text-[12px]">
-            Dev code: <span className="text-white font-bold tracking-[0.2em]">{debugCode}</span>
-          </p>
-        )}
 
         {error && (
           <p className="mt-5 text-red-400 text-[13px] font-medium leading-relaxed bg-red-400/10 border border-red-400/20 px-4 py-3 rounded-[12px] w-full">

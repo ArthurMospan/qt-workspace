@@ -123,7 +123,7 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
                 <div key={issueId} className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
-                      <Link href={`/workspace/${issue.projectId}/issue/${issueId}`}
+                      <Link href={`/${issue.projectId}/issue/${issueId}`}
                         className="text-[12px] font-bold text-[#6366f1] hover:underline truncate uppercase">
                         {issue.issueKey || issueId.slice(0, 6)}
                       </Link>

@@ -38,7 +38,7 @@ export default function WorkspaceOrganizationRouteGuard({ children }) {
           Сповіщення веде до організації, учасником якої ви більше не є. Задачу не було видалено через цю помилку.
         </p>
         <button
-          onClick={() => router.replace('/workspace')}
+          onClick={() => router.replace('/')}
           className="rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-ink-hover"
         >
           Повернутися до поточної організації

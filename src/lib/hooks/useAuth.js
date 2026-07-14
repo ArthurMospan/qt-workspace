@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { auth, db, githubProvider, googleProvider } from '@/lib/firebase';
+import { auth, db, createGitHubProvider, googleProvider } from '@/lib/firebase';
 import { claimActivityHeartbeat } from '@/lib/utils/activity';
 
 const ACTIVITY_HEARTBEAT_MS = 60_000;
@@ -177,7 +177,7 @@ export function useAuth() {
   };
   const signInWithGitHub = async () => {
     try {
-      return await signInWithPopup(auth, githubProvider);
+      return await signInWithPopup(auth, createGitHubProvider());
     } catch (error) {
       if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(error.code)) {
         const e = new Error('POPUP_BLOCKED');

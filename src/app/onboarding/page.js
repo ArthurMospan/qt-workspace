@@ -45,7 +45,7 @@ function OnboardingPageContent() {
   useEffect(() => {
     if (isNewOrg) return;
     if (!authLoading && !orgLoading && currentUser && orgRole && orgRole !== 'owner' && orgRole !== 'admin') {
-      router.replace('/workspace');
+      router.replace('/');
     }
   }, [authLoading, orgLoading, currentUser, orgRole, router, isNewOrg]);
 
@@ -53,7 +53,7 @@ function OnboardingPageContent() {
   useEffect(() => {
     if (isNewOrg) return;
     if (!authLoading && !orgLoading && activeOrg?.onboarded === true) {
-      router.replace('/workspace');
+      router.replace('/');
     }
   }, [authLoading, orgLoading, activeOrg, router, isNewOrg]);
 
@@ -110,7 +110,7 @@ function OnboardingPageContent() {
       sessionStorage.setItem('qt_org_selected_this_session', '1');
       
       setTimeout(() => {
-        router.replace('/workspace');
+        router.replace('/');
       }, 100);
     } catch (err) {
       console.error('[Onboarding] saveOrg error:', err);
@@ -121,7 +121,7 @@ function OnboardingPageContent() {
   return (
     <AuthLayout 
       hideCreateOrg={true}
-      onClose={isNewOrg ? () => router.replace('/workspace') : undefined}
+      onClose={isNewOrg ? () => router.replace('/') : undefined}
     >
       <div className={`w-full ${step === 1 ? 'max-w-[860px]' : 'max-w-[480px]'} flex flex-col items-center z-10 relative transition-all duration-500 pb-16`}>
 

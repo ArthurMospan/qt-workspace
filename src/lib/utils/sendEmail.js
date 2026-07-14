@@ -22,7 +22,7 @@ export function generateEmailTemplate({
   issueKey = escapeHtml(issueKey);
   projectName = escapeHtml(projectName);
   userName = escapeHtml(userName);
-  link = typeof link === 'string' && link.startsWith('/workspace') ? link : '/workspace';
+  link = typeof link === 'string' && link.startsWith('/') ? link : '/';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const fullLink = baseUrl + link;
 
@@ -73,7 +73,7 @@ export function generateEmailTemplate({
         <hr style="border: none; border-top: 1px solid #e9e9e9; margin: 30px 0;">
         <p style="font-size: 12px; color: #9a9a9a;">
           Це автоматичне повідомлення від QuickTeam.
-          <a href="${baseUrl}/workspace/settings">Керування сповіщеннями</a>
+          <a href="${baseUrl}/settings">Керування сповіщеннями</a>
         </p>
       </div>
     </body>
