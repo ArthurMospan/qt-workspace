@@ -124,6 +124,15 @@ service cloud.firestore {
       match /settings/{settingsDoc} {
         allow read, write: if signedIn() && request.auth.uid == uid;
       }
+
+      // Written only by the Admin SDK in /api/integrations/qtplus/*. Holds the
+      // sealed QuickTeam+ refresh token: readable by nobody, including the
+      // account's own owner, who has no use for it. Default-deny already covers
+      // this — stated explicitly so a future wildcard under users/{uid} cannot
+      // silently expose a live credential. Mirrors organizations/{orgId}/private.
+      match /private/{privateDoc} {
+        allow read, write: if false;
+      }
     }
 
     // ── invitations/{id} ────────────────────────────────────────────────
