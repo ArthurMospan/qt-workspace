@@ -42,7 +42,6 @@ import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
-import { getOneBRedirectUri } from '@/lib/utils/oneb';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
@@ -517,7 +516,9 @@ export default function SettingsPage() {
           ? 'Цей OneB акаунт уже підключений до іншого користувача'
           : authError === 'oneb_session'
             ? 'Не вдалося підтвердити сесію. Увійдіть ще раз і повторіть підключення OneB'
-            : 'Не вдалося підключити OneB';
+            : authError === 'oneb_state'
+              ? 'Термін дії посилання минув або воно відкрите не в тому браузері. Спробуйте підключити OneB заново'
+              : 'Не вдалося підключити OneB';
         queueMicrotask(() => showToast(message, 'error'));
       }
     }
@@ -877,15 +878,10 @@ export default function SettingsPage() {
       });
       if (!sessionResponse.ok) throw new Error('Failed to refresh server session');
 
-      const redirectUri = getOneBRedirectUri(window.location.origin);
-      const state = JSON.stringify({
-        mode: 'link',
-        r: '/settings?section=auth-methods',
-        n: Math.random().toString(36).slice(2),
-      });
-      const scopes = process.env.NEXT_PUBLIC_ONEB_SCOPES ?? '';
-      const scopeParam = scopes ? `&scope=${encodeURIComponent(scopes)}` : '';
-      window.location.href = `https://account.oneb.app/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}${scopeParam}&state=${encodeURIComponent(state)}`;
+      // The server builds the authorize URL: it is the only side that can set
+      // the httpOnly nonce cookie the callback checks against.
+      const params = new URLSearchParams({ mode: 'link', r: '/settings?section=auth-methods' });
+      window.location.href = `/api/auth/oneb/start?${params.toString()}`;
     } catch (error) {
       console.error('[settings] OneB connect failed:', error);
       showToast('Не вдалося почати підключення OneB', 'error');

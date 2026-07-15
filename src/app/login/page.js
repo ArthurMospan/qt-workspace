@@ -7,7 +7,6 @@ import AnimatedLogo from '@/components/AnimatedLogo';
 import AuthLayout from '@/components/AuthLayout';
 import { useAppContext } from '@/lib/context/AppContext';
 import { getSafeAuthRedirect } from '@/lib/utils/authRedirect';
-import { getOneBRedirectUri } from '@/lib/utils/oneb';
 
 function GitHubIcon() {
   return (
@@ -47,6 +46,7 @@ function authErrorMessage(code) {
   if (code === 'oneb_no_client_secret') return 'OneB Client Secret не налаштований.';
   if (code === 'oneb_already_linked') return 'Цей OneB акаунт уже підключений до іншого користувача.';
   if (code === 'oneb_session') return 'Не вдалося підтвердити поточну сесію. Увійдіть ще раз і повторіть підключення OneB.';
+  if (code === 'oneb_state') return 'Термін дії посилання для входу минув або воно відкрите не в тому браузері. Почніть вхід через OneB заново.';
   if (code?.startsWith('oneb_')) return 'Щось пішло не так під час входу через OneB.';
   return '';
 }
@@ -105,9 +105,11 @@ export default function LoginPage() {
 
     hasForwardedOneBCode.current = true;
     const callbackParams = new URLSearchParams({ code });
+    // Forward `state` untouched: it is the only thing tying this code to a flow
+    // this browser started. Inventing one when it is missing, as this used to
+    // do, just forges a state the callback has to reject anyway.
     const state = params.get('state');
     if (state) callbackParams.set('state', state);
-    else callbackParams.set('state', JSON.stringify({ r: getRequestedDestination() }));
     window.location.href = `/oauth2/result?${callbackParams.toString()}`;
   }, []);
 
@@ -167,14 +169,10 @@ export default function LoginPage() {
     }
 
     setOnebLoading(true);
-    const redirectUri = getOneBRedirectUri(window.location.origin);
-    const state = JSON.stringify({
-      r: getRequestedDestination(),
-      n: Math.random().toString(36).slice(2),
-    });
-    const scopes = process.env.NEXT_PUBLIC_ONEB_SCOPES ?? '';
-    const scopeParam = scopes ? `&scope=${encodeURIComponent(scopes)}` : '';
-    window.location.href = `https://account.oneb.app/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}${scopeParam}&state=${encodeURIComponent(state)}`;
+    // The server builds the authorize URL: it is the only side that can set the
+    // httpOnly nonce cookie the callback checks against.
+    const params = new URLSearchParams({ r: getRequestedDestination() });
+    window.location.href = `/api/auth/oneb/start?${params.toString()}`;
   };
 
   const anyLoading = githubLoading || googleLoading || onebLoading;
