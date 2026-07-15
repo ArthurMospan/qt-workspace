@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -45,6 +45,9 @@ import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
+// Інлайниться на білді, тому зміна цієї змінної потребує redeploy, не просто
+// рестарту.
+const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
@@ -91,6 +94,15 @@ const COLOR_PALETTE = [
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
   { id: 'auth-methods',  label: 'Способи входу',     icon: Link2,        group: 'Особисте' },
+  // Персональне підключення, а не org-налаштування: секція "Інтеграції" нижче
+  // adminOnly, а підключати свій акаунт QT+ має кожен учасник сам.
+  //
+  // Показуємо лише коли інтеграцію налаштовано на сервері. Ненастроєна
+  // інтеграція має бути невидимою, а не кнопкою, яка падає: NEXT_PUBLIC_QTPLUS_URL
+  // з'являється лише разом із секретами обміну.
+  ...(QTPLUS_CONFIGURED
+    ? [{ id: 'qtplus', label: 'QuickTeam+', icon: PlugZap, group: 'Особисте' }]
+    : []),
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
   { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
@@ -511,6 +523,21 @@ export default function SettingsPage() {
       if (authSuccess === 'oneb_connected') {
         queueMicrotask(() => showToast('OneB підключено'));
       }
+      const qtplus = searchParams.get('qtplus');
+      const qtplusError = searchParams.get('qtplusError');
+      if (qtplus === 'connected') {
+        queueMicrotask(() => showToast('QuickTeam+ підключено'));
+      }
+      if (qtplusError) {
+        const message = qtplusError === 'state'
+          ? 'Термін дії посилання минув або воно відкрите не в тому браузері. Спробуйте ще раз'
+          : qtplusError === 'session'
+            ? 'Не вдалося підтвердити сесію. Увійдіть ще раз і повторіть підключення'
+            : qtplusError === 'not_configured'
+              ? 'Інтеграцію QuickTeam+ не налаштовано на сервері'
+              : 'Не вдалося підключити QuickTeam+';
+        queueMicrotask(() => showToast(message, 'error'));
+      }
       if (authError) {
         const message = authError === 'oneb_already_linked'
           ? 'Цей OneB акаунт уже підключений до іншого користувача'
@@ -557,6 +584,8 @@ export default function SettingsPage() {
 
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
+  const [qtPlusLink,     setQtPlusLink]     = useState(null);
+  const [qtPlusLoading,  setQtPlusLoading]  = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [qtSaving,       setQtSaving]       = useState(false);
 
@@ -859,6 +888,72 @@ export default function SettingsPage() {
       showToast(error.code === 'auth/no-such-provider' ? 'Google не підключено' : 'Не вдалося відключити Google', 'error');
     } finally {
       setAuthMethodLoading(null);
+    }
+  };
+
+  const loadQtPlusStatus = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const response = await fetch('/api/integrations/qtplus', {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (!response.ok) throw new Error('status');
+      setQtPlusLink(await response.json());
+    } catch (error) {
+      console.error('[settings] QuickTeam+ status failed:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // queueMicrotask, як і в refreshAuthProviders вище: тримає setState поза
+    // тілом ефекту (react-hooks/set-state-in-effect).
+    if (currentUser) queueMicrotask(() => loadQtPlusStatus());
+  }, [currentUser, loadQtPlusStatus]);
+
+  const handleConnectQtPlus = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    setQtPlusLoading(true);
+    try {
+      // Колбек автентифікується кукою qt_session, тому вона має бути свіжою
+      // до того, як ми покинемо SPA — та сама причина, що й у handleConnectOneB.
+      const idToken = await firebaseUser.getIdToken(true);
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (!sessionResponse.ok) throw new Error('Failed to refresh server session');
+
+      // URL авторизації будує сервер: лише він може поставити httpOnly-куку
+      // з nonce, яку звіряє колбек.
+      window.location.href = '/api/integrations/qtplus/connect';
+    } catch (error) {
+      console.error('[settings] QuickTeam+ connect failed:', error);
+      showToast('Не вдалося почати підключення QuickTeam+', 'error');
+      setQtPlusLoading(false);
+    }
+  };
+
+  const handleDisconnectQtPlus = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
+    setQtPlusLoading(true);
+    try {
+      const idToken = await firebaseUser.getIdToken(true);
+      const response = await fetch('/api/integrations/qtplus', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (!response.ok) throw new Error('disconnect');
+      setQtPlusLink({ connected: false });
+      showToast('QuickTeam+ відключено');
+    } catch (error) {
+      console.error('[settings] QuickTeam+ disconnect failed:', error);
+      showToast('Не вдалося відключити QuickTeam+', 'error');
+    } finally {
+      setQtPlusLoading(false);
     }
   };
 
@@ -1496,6 +1591,36 @@ export default function SettingsPage() {
 
 
       // ──────────────────────────────────────────────────────────────
+      case 'qtplus':
+        return (
+          <Section
+            title="QuickTeam+"
+            desc="Підключи свій акаунт QuickTeam+, щоб бачити проєкти клієнтського порталу тут"
+          >
+            <Card variant="white" padding="lg" className="!border-none">
+              {!qtEnabled ? (
+                <p className="text-[13px] text-muted py-2 leading-relaxed">
+                  Інтеграцію з QuickTeam+ вимкнено для цієї організації.
+                  Зверніться до адміністратора, щоб увімкнути її в розділі «Інтеграції».
+                </p>
+              ) : (
+                <LoginMethodItem
+                  icon={<Image src="/quickteam.png" alt="" width={20} height={20} className="object-contain" />}
+                  title="QuickTeam+"
+                  detail={qtPlusLink?.connected
+                    ? (qtPlusLink.email || 'Акаунт підключено')
+                    : 'Підключіть свій акаунт QuickTeam+'}
+                  connected={Boolean(qtPlusLink?.connected)}
+                  loading={qtPlusLoading}
+                  disabled={qtPlusLoading}
+                  onConnect={handleConnectQtPlus}
+                  onDisconnect={handleDisconnectQtPlus}
+                />
+              )}
+            </Card>
+          </Section>
+        );
+
       case 'integrations': {
         const buggyBagKey = apiKeys.find(k => k.name === 'BuggyBag Integration');
         const buggyBagEnabled = !!buggyBagKey;

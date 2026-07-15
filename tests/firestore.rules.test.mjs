@@ -249,3 +249,49 @@ test('issues and project lifecycle mutations cannot bypass server APIs', async (
   await assertFails(deleteDoc(doc(adminDb, 'projects', 'project-a')));
   await assertSucceeds(updateDoc(doc(adminDb, 'projects', 'project-a'), { name: 'Renamed' }));
 });
+
+// users/{uid}/private/qtplus holds a sealed QuickTeam+ refresh token. It is
+// written only by the Admin SDK in /api/integrations/qtplus/*, and is denied to
+// every client — including the account's own owner, who has no use for it.
+test('the sealed QuickTeam+ token is unreachable even for the account owner', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertFails(getDoc(doc(db, 'users', 'member-a', 'private', 'qtplus')));
+  await assertFails(setDoc(doc(db, 'users', 'member-a', 'private', 'qtplus'), { qtUserId: 'x' }));
+  await assertFails(deleteDoc(doc(db, 'users', 'member-a', 'private', 'qtplus')));
+});
+
+test('the sealed QuickTeam+ token is unreachable for anyone else', async () => {
+  const db = environment.authenticatedContext('admin-a').firestore();
+  await assertFails(getDoc(doc(db, 'users', 'member-a', 'private', 'qtplus')));
+  await assertFails(setDoc(doc(db, 'users', 'member-a', 'private', 'qtplus'), { qtUserId: 'x' }));
+});
+
+test('locking users/{uid}/private did not lock users/{uid}/settings', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(setDoc(doc(db, 'users', 'member-a', 'settings', 'prefs'), { theme: 'dark' }));
+  await assertSucceeds(getDoc(doc(db, 'users', 'member-a', 'settings', 'prefs')));
+});
+
+// The QuickTeam+ personal card gates on this flag, so members must be able to
+// read it; flipping it is an admin decision. No rule was added for this — the
+// existing organizations/{orgId}/settings rule already says exactly that, and
+// this test is here to keep it true.
+test('a member reads the QuickTeam+ org flag but cannot flip it', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(getDoc(doc(memberDb, 'organizations', 'org-a', 'settings', 'integrations')));
+  await assertFails(setDoc(doc(memberDb, 'organizations', 'org-a', 'settings', 'integrations'), {
+    qtPortalEnabled: true,
+  }));
+});
+
+test('an org admin can flip the QuickTeam+ org flag', async () => {
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  await assertSucceeds(setDoc(doc(adminDb, 'organizations', 'org-a', 'settings', 'integrations'), {
+    qtPortalEnabled: true,
+  }));
+});
+
+test('an outsider cannot read the QuickTeam+ org flag', async () => {
+  const db = environment.authenticatedContext('outsider').firestore();
+  await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'settings', 'integrations')));
+});
