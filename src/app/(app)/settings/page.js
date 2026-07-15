@@ -1609,7 +1609,7 @@ export default function SettingsPage() {
                       )}
 
                       <a
-                        href="http://localhost:3000/projects"
+                        href="https://buggy-bag.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
