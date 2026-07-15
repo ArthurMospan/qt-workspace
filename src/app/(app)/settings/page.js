@@ -45,6 +45,9 @@ import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
+// Інлайниться на білді, тому зміна цієї змінної потребує redeploy, не просто
+// рестарту.
+const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
@@ -93,7 +96,13 @@ const NAV = [
   { id: 'auth-methods',  label: 'Способи входу',     icon: Link2,        group: 'Особисте' },
   // Персональне підключення, а не org-налаштування: секція "Інтеграції" нижче
   // adminOnly, а підключати свій акаунт QT+ має кожен учасник сам.
-  { id: 'qtplus',        label: 'QuickTeam+',        icon: PlugZap,      group: 'Особисте' },
+  //
+  // Показуємо лише коли інтеграцію налаштовано на сервері. Ненастроєна
+  // інтеграція має бути невидимою, а не кнопкою, яка падає: NEXT_PUBLIC_QTPLUS_URL
+  // з'являється лише разом із секретами обміну.
+  ...(QTPLUS_CONFIGURED
+    ? [{ id: 'qtplus', label: 'QuickTeam+', icon: PlugZap, group: 'Особисте' }]
+    : []),
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
   { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
