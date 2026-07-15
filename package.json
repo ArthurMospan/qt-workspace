@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:markdown": "node --test tests/markdown-editor.test.mjs",
     "test:notifications": "node --test tests/notification-navigation.test.mjs",
+    "test:oauth-state": "node --test tests/oauth-state.test.mjs",
     "test:rules": "node --test tests/firestore.rules.test.mjs",
     "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\""
   },

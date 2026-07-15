@@ -8,6 +8,11 @@ import {
 import { getSafeAuthRedirect } from '@/lib/utils/authRedirect';
 import { normalizeEmail } from '@/lib/server/emailOtp';
 import { getOneBRedirectUri } from '@/lib/utils/oneb';
+import {
+  getStateCookieOptions,
+  OAUTH_STATE_COOKIE,
+  verifyOneBState,
+} from '@/lib/server/oauthState.mjs';
 
 const ONEB_API_URI = (process.env.ONEB_API_URI || 'https://account.oneb.app/s/').replace(/\/?$/, '/');
 const ONEB_SYNTHETIC_EMAIL_DOMAIN = 'oneb.quickteam.app';
@@ -23,27 +28,6 @@ function redirectSettingsWithError(origin, error) {
   settingsUrl.searchParams.set('section', 'auth-methods');
   settingsUrl.searchParams.set('authError', error);
   return NextResponse.redirect(settingsUrl);
-}
-
-function parseState(stateRaw) {
-  const fallback = { redirectTo: '/', mode: 'login' };
-  if (!stateRaw) return fallback;
-  const candidates = [stateRaw];
-  try {
-    const decoded = decodeURIComponent(stateRaw);
-    if (decoded !== stateRaw) candidates.push(decoded);
-  } catch {}
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate);
-      return {
-        redirectTo: getSafeAuthRedirect(parsed?.r, '/'),
-        mode: parsed?.mode === 'link' ? 'link' : 'login',
-      };
-    } catch {}
-  }
-  return fallback;
 }
 
 function onebHash(accountId) {
@@ -217,11 +201,34 @@ function normalizeUrl(value) {
 }
 
 export async function GET(request) {
+  const response = await handleOneBCallback(request);
+  // The nonce is single use. Clearing it on every outcome — including failures
+  // and the 500 path — stops a captured callback URL from being replayed.
+  response.cookies.set(OAUTH_STATE_COOKIE, '', getStateCookieOptions(0));
+  return response;
+}
+
+async function handleOneBCallback(request) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
-  const { redirectTo, mode } = parseState(searchParams.get('state') || '');
 
   if (!code) return redirectWithError(origin, 'oneb_no_code');
+
+  // Refuse any callback we cannot tie to a flow this browser actually started.
+  // Without this, an attacker's `code` + hand-written `state` rode in on the
+  // victim's session cookie and linked the attacker's OneB identity onto the
+  // victim's account — a full account takeover from one click.
+  const state = verifyOneBState(
+    searchParams.get('state') || '',
+    request.cookies.get(OAUTH_STATE_COOKIE)?.value || ''
+  );
+  if (!state) {
+    console.warn('[OneB] Rejected callback: state did not match the nonce cookie');
+    return redirectWithError(origin, 'oneb_state');
+  }
+
+  const { mode } = state;
+  const redirectTo = getSafeAuthRedirect(state.redirectTo, '/');
 
   const clientId = process.env.NEXT_PUBLIC_ONEB_CLIENT_ID;
   const clientSecret = process.env.ONEB_CLIENT_SECRET;
