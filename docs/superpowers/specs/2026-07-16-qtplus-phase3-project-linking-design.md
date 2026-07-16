@@ -112,9 +112,21 @@ helper (Component C) so it can be tested.
 `src/lib/hooks/useQtPlusEnabled.js`. A small real-time listener on
 `organizations/{orgId}/settings/integrations`, returning
 `enabled = snap.exists() && snap.data().qtPortalEnabled !== false`. This mirrors the exact
-semantics the settings page uses (`settings/page.js:799-802`), so the project tab's gating
-always agrees with the settings card's "Інтеграцію вимкнено для організації" state. Returns
-`{ enabled, loading }`; `enabled` is `false` while loading or when `orgId` is absent.
+semantics the settings page uses (`settings/page.js:799-802,1233`), so the project tab's gating
+agrees with the settings card's "Інтеграцію вимкнено для організації" state. Returns
+`{ enabled, loading }`; `enabled` is `false` while loading, when `orgId` is absent, or on a
+read error (fail-closed).
+
+**Read-scope decision (robustness):** `qtEnabled` gates **only the owner/admin branch** of the
+tab (see Component F). Owner/admin reading this doc is a proven path — the Phase 2 connect flow
+already required it (the settings connect UI only renders when `qtEnabled` is true, and Phase 2
+was verified in prod). **Members never read this doc**; their tab visibility keys off
+`project.qtplusLink` (the project doc, readable by every org member via `firestore.rules:150`).
+This is deliberate: the workspace repo `firestore.rules` currently has **no** rule for
+`organizations/{orgId}/settings/{doc}` (the `settings` match at `firestore.rules:124` is under
+`users/{uid}`, not organizations), so the deployed ruleset is drifted from the repo file. Keeping
+members off this read means member gating cannot silently break if that drift is ever "fixed" by
+redeploying the repo rules. See Known limitations.
 
 ### C. `qtplusLinkModel.mjs` — pure view-model helpers (new, AUTOTESTED)
 
@@ -204,10 +216,17 @@ build + E2E.
 - `const { enabled: qtEnabled } = useQtPlusEnabled(project?.organizationId)`;
 - `const qtplusLinked = Boolean(project?.qtplusLink?.projectId)`;
 - `const canManageQtPlus = can(orgRole, 'edit:project_settings')`;
-- `const showQtPlusTab = QTPLUS_CONFIGURED && qtEnabled && (canManageQtPlus || qtplusLinked)`;
-- conditionally append `{ id: 'qtplus', label: 'QuickTeam+', icon: Plug }` to `TABS`;
+- `const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked)`;
+  - owner/admin see the tab (to link) when the org integration is enabled;
+  - anyone (owner/admin **or** member) sees the tab once the project is linked — the member
+    path relies only on `project.qtplusLink`, never on the org-settings read (see Component B);
+- conditionally append `{ id: 'qtplus', label: 'QuickTeam+', icon: Plug }` to `TABS`
+  (build the tabs array in-component — `TABS(projectId)` is a module-scope function that cannot
+  see component state; append the qtplus entry after `TABS(projectId)` when `showQtPlusTab`);
 - render `<QtPlusProjectTab project={project} orgRole={orgRole} currentUser={currentUser} />`
-  when `activeTab === 'qtplus'`.
+  when `activeTab === 'qtplus'`. A pre-existing legacy `isShared` "QuickTeam+" `<Link>` to
+  `/${projectId}/portal` lives in the header `actions` (`[projectId]/page.js:197-208`, an old
+  same-DB portal, route no longer present); it is **left untouched** and is orthogonal to this tab.
 
 ## Data flow
 
@@ -245,6 +264,18 @@ Project page (workspace)
 - **`staleAccess` hint depends on the viewer:** it reflects whether *this* owner/admin can see
   the linked QT+ project, not whether it still exists globally. That distinction is fine for a
   test deployment.
+- **Disabling the org integration does not retroactively hide linked tabs:** turning the org
+  QuickTeam+ toggle off hides the tab on **unlinked** projects and stops new linking, but a
+  project that is already linked keeps a read-only tab until an owner/admin unlinks it. This is
+  a direct consequence of the robustness decision to gate the linked case on `project.qtplusLink`
+  (member-readable) rather than the org-settings doc. Cleaner than orphaning a visible link the
+  moment a toggle flips; the admin can unlink to fully remove it.
+- **Repo vs. deployed rules drift (pre-existing, not fixed here):** `firestore.rules` in this
+  repo has no `organizations/{orgId}/settings/{doc}` rule, yet the deployed ruleset evidently
+  allows at least the owner to read `settings/integrations` (Phase 2's connect flow, gated on
+  `qtEnabled === true`, works in prod). Phase 3 does not touch rules; it only relies on the
+  owner/admin read (proven) and avoids the member read entirely. Reconciling repo rules with prod
+  is its own ticket.
 
 ## Testing
 
@@ -259,11 +290,14 @@ Project page (workspace)
   async IIFEs / event handlers, per the Phase 2 lesson).
 - **Browser E2E (human — no agent can drive the portal login):**
   1. As a connected owner/admin, open a project → QuickTeam+ tab → pick a project → "Привʼязано
-     до <назва>" appears.
-  2. A regular member of the same org sees the tab (read-only linked state) only because it is
-     linked.
-  3. Unlink → picker returns; the member's tab disappears.
-  4. Toggle the org QuickTeam+ integration off in Settings → the tab disappears for everyone.
+     до <назва>" appears. (This also confirms the owner/admin `settings/integrations` read works
+     — the tab would not appear on an unlinked project otherwise.)
+  2. A regular member of the same org opens the same project → sees the tab in read-only linked
+     state. (Confirms the member path keys off `project.qtplusLink`, not the org-settings read.)
+  3. Unlink → picker returns for the owner/admin; the member's tab disappears (unlinked + member).
+  4. Toggle the org QuickTeam+ integration off in Settings → on an **unlinked** project the tab
+     disappears for owner/admin (linking is gated off); a **linked** project keeps its read-only
+     tab until unlinked (see Known limitations).
 
 ## Out of scope (explicit)
 
