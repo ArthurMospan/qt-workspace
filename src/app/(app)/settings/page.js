@@ -10,7 +10,7 @@ import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
-import { linkWithPopup, unlink } from 'firebase/auth';
+import { linkWithPopup, unlink, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
@@ -44,6 +44,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
+import { getPortalAuth } from '@/lib/portal/firebase';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
@@ -489,6 +490,17 @@ function PositionItem({ item, onSave, onDelete }) {
   );
 }
 
+// Ukrainian plural agreement for "проєкт" (count noun forms):
+// 11-14 -> проєктів; ends in 1 -> проєкт; ends in 2-4 -> проєкти; else -> проєктів.
+function pluralProjects(n) {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return 'проєктів';
+  if (mod10 === 1) return 'проєкт';
+  if (mod10 >= 2 && mod10 <= 4) return 'проєкти';
+  return 'проєктів';
+}
+
 // Phase 2 proof: counts the connected user's QuickTeam+ projects, read straight
 // from quickteam-portal-prod under QT+'s own Firestore rules. Kept as its own
 // component so the portal hooks only run while the QuickTeam+ card is on screen.
@@ -503,7 +515,7 @@ function QtPlusProjectsProbe() {
     return <p className="text-[13px] text-red-500">Підключення застаріло — підключіть QuickTeam+ заново.</p>;
   }
   if (sessionError || count === null) return null; // not connected / not configured -> show nothing extra
-  return <p className="text-[13px] text-muted">Доступно {count} проєктів QuickTeam+.</p>;
+  return <p className="text-[13px] text-muted">Доступно {count} {pluralProjects(count)} QuickTeam+</p>;
 }
 
 // ── MAIN PAGE ────────────────────────────────────────────────────────
@@ -966,6 +978,12 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (!response.ok) throw new Error('disconnect');
+      // Best-effort: also sign out of the named portal Firebase app so the
+      // browser doesn't keep a live, auto-refreshing quickteam-portal-prod
+      // session around (browserLocalPersistence) after disconnect. Must never
+      // block/throw out of the disconnect flow.
+      const pAuth = getPortalAuth();
+      if (pAuth) { try { await signOut(pAuth); } catch { /* best-effort: portal sign-out must not block disconnect */ } }
       setQtPlusLink({ connected: false });
       showToast('QuickTeam+ відключено');
     } catch (error) {
