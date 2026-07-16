@@ -10,7 +10,7 @@ import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
-import { linkWithPopup, unlink, signOut } from 'firebase/auth';
+import { linkWithPopup, unlink, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
@@ -983,7 +983,7 @@ export default function SettingsPage() {
       // session around (browserLocalPersistence) after disconnect. Must never
       // block/throw out of the disconnect flow.
       const pAuth = getPortalAuth();
-      if (pAuth) { try { await signOut(pAuth); } catch { /* best-effort: portal sign-out must not block disconnect */ } }
+      if (pAuth) { try { await firebaseSignOut(pAuth); } catch { /* best-effort: portal sign-out must not block disconnect */ } }
       setQtPlusLink({ connected: false });
       showToast('QuickTeam+ відключено');
     } catch (error) {
