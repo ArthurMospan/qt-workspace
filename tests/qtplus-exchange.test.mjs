@@ -51,3 +51,17 @@ test('network throw -> upstream', async () => {
   });
   assert.deepEqual(res, { ok: false, code: 'upstream' });
 });
+
+test('400 without invalid_grant -> upstream', async () => {
+  const res = await exchangeGrantForToken({
+    ...base, fetchImpl: fetchReturning(400, {}),
+  });
+  assert.deepEqual(res, { ok: false, code: 'upstream' });
+});
+
+test('200 without customToken -> upstream', async () => {
+  const res = await exchangeGrantForToken({
+    ...base, fetchImpl: fetchReturning(200, { qtUserId: 'uid-7' }),
+  });
+  assert.deepEqual(res, { ok: false, code: 'upstream' });
+});
