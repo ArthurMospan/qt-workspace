@@ -45,6 +45,22 @@ export async function writeLink(uid, { qtUserId, email, refreshToken }) {
   });
 }
 
+/**
+ * Server-only: opens the sealed refresh token for relaying to QT+. Returns the
+ * plaintext token or null. Deliberately separate from readLink, which never
+ * exposes the token to anything user-facing.
+ */
+export async function readSealedRefreshToken(uid) {
+  const snap = await linkRef(uid).get();
+  if (!snap.exists) return null;
+  try {
+    return open(snap.data().refreshTokenBox);
+  } catch (error) {
+    console.error('[qtplus] could not open sealed token:', error.message);
+    return null;
+  }
+}
+
 /** Returns the token once so the caller can revoke it in QT+, then drops the doc. */
 export async function deleteLink(uid) {
   const snap = await linkRef(uid).get();
