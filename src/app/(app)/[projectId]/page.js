@@ -2,7 +2,7 @@
 // src/app/workspace/[projectId]/page.js
 // Project page: Board | Backlog | Аналітика
 // Portal tab — shown only when project.visibility === 'shared' (synced to QT)
-import { use, useState, useCallback, useEffect } from 'react';
+import { use, useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useIssues }     from '@/lib/hooks/useIssues';
 import { useSprints }    from '@/lib/hooks/useSprints';
@@ -15,18 +15,21 @@ import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
 import { PageHeader } from '@/components/ui';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, Filter, Layers } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, Filter, Layers, Plug } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { can } from '@/lib/utils/can';
+import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
+import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 
 const TABS = (projectId) => [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
   { id: 'team',       label: 'Команда',   icon: Users },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
 ];
+const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
 
 export default function BoardPage({ params }) {
   const { projectId } = use(params);
@@ -70,6 +73,23 @@ export default function BoardPage({ params }) {
   });
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
+
+  const canManageQtPlus = can(orgRole, 'edit:project_settings');
+  const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
+  const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
+  const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked);
+
+  const tabs = useMemo(() => {
+    const base = TABS(projectId);
+    return showQtPlusTab ? [...base, { id: 'qtplus', label: 'QuickTeam+', icon: Plug }] : base;
+  }, [projectId, showQtPlusTab]);
+
+  // If the qtplus tab was active and just became hidden (e.g. unlinked), fall back.
+  useEffect(() => {
+    if (activeTab === 'qtplus' && !showQtPlusTab) {
+      queueMicrotask(() => setActiveTab('board'));
+    }
+  }, [activeTab, showQtPlusTab]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -189,7 +209,7 @@ export default function BoardPage({ params }) {
             {isArchived && <span className="text-[10px] uppercase tracking-wider font-bold bg-[#f3f4f6] text-muted px-2 py-1 rounded-md">В архіві</span>}
           </div>
         }
-        tabs={TABS(projectId)}
+        tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         actions={
@@ -379,6 +399,15 @@ export default function BoardPage({ params }) {
           projectId={projectId}
           project={project}
           canManage={can(orgRole, 'manage:team')}
+        />
+      )}
+
+      {activeTab === 'qtplus' && showQtPlusTab && (
+        <QtPlusProjectTab
+          project={project}
+          orgRole={orgRole}
+          currentUser={currentUser}
+          allProjects={projects}
         />
       )}
       </div>
