@@ -16,10 +16,11 @@ export function usePortalSession() {
 
   useEffect(() => {
     let cancelled = false;
-    const portalAuth = getPortalAuth();
-    if (!portalAuth) { setLoading(false); return; } // integration not configured
 
     (async () => {
+      const portalAuth = getPortalAuth();
+      if (!portalAuth) { if (!cancelled) setLoading(false); return; } // integration not configured
+
       try {
         const firebaseUser = auth.currentUser;
         if (!firebaseUser) { if (!cancelled) setLoading(false); return; }
