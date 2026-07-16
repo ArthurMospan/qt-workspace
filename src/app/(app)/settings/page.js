@@ -42,6 +42,8 @@ import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
+import { usePortalSession } from '@/lib/portal/usePortalSession';
+import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
@@ -485,6 +487,23 @@ function PositionItem({ item, onSave, onDelete }) {
       </div>
     </div>
   );
+}
+
+// Phase 2 proof: counts the connected user's QuickTeam+ projects, read straight
+// from quickteam-portal-prod under QT+'s own Firestore rules. Kept as its own
+// component so the portal hooks only run while the QuickTeam+ card is on screen.
+function QtPlusProjectsProbe() {
+  const { portalUser, loading: sessionLoading, error: sessionError } = usePortalSession();
+  const { count, loading: projectsLoading } = usePortalProjects(portalUser);
+
+  if (sessionLoading || projectsLoading) {
+    return <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>;
+  }
+  if (sessionError === 'grant_invalid') {
+    return <p className="text-[13px] text-red-500">Підключення застаріло — підключіть QuickTeam+ заново.</p>;
+  }
+  if (sessionError || count === null) return null; // not connected / not configured -> show nothing extra
+  return <p className="text-[13px] text-muted">Доступно {count} проєктів QuickTeam+.</p>;
 }
 
 // ── MAIN PAGE ────────────────────────────────────────────────────────
@@ -1604,18 +1623,25 @@ export default function SettingsPage() {
                   Зверніться до адміністратора, щоб увімкнути її в розділі «Інтеграції».
                 </p>
               ) : (
-                <LoginMethodItem
-                  icon={<Image src="/quickteam.png" alt="" width={20} height={20} className="object-contain" />}
-                  title="QuickTeam+"
-                  detail={qtPlusLink?.connected
-                    ? (qtPlusLink.email || 'Акаунт підключено')
-                    : 'Підключіть свій акаунт QuickTeam+'}
-                  connected={Boolean(qtPlusLink?.connected)}
-                  loading={qtPlusLoading}
-                  disabled={qtPlusLoading}
-                  onConnect={handleConnectQtPlus}
-                  onDisconnect={handleDisconnectQtPlus}
-                />
+                <>
+                  <LoginMethodItem
+                    icon={<Image src="/quickteam.png" alt="" width={20} height={20} className="object-contain" />}
+                    title="QuickTeam+"
+                    detail={qtPlusLink?.connected
+                      ? (qtPlusLink.email || 'Акаунт підключено')
+                      : 'Підключіть свій акаунт QuickTeam+'}
+                    connected={Boolean(qtPlusLink?.connected)}
+                    loading={qtPlusLoading}
+                    disabled={qtPlusLoading}
+                    onConnect={handleConnectQtPlus}
+                    onDisconnect={handleDisconnectQtPlus}
+                  />
+                  {qtPlusLink?.connected && (
+                    <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
+                      <QtPlusProjectsProbe />
+                    </div>
+                  )}
+                </>
               )}
             </Card>
           </Section>
