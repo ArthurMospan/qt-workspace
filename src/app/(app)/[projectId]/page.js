@@ -74,9 +74,9 @@ export default function BoardPage({ params }) {
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
 
-  const { enabled: qtEnabled } = useQtPlusEnabled(project?.organizationId);
-  const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
   const canManageQtPlus = can(orgRole, 'edit:project_settings');
+  const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
+  const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
   const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked);
 
   const tabs = useMemo(() => {
