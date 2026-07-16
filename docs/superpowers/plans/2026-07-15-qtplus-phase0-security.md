@@ -338,6 +338,12 @@ Expected: FAIL — `Failed to resolve import ... firebaseAdmin.js`
 
 - [ ] **Step 3: Реалізувати**
 
+> ⚠️ **Код нижче дефектний — виправлено під час виконання (коміт `bffa107`).** Рев'ю знайшло два fail-open:
+> 1. `if (expectedProjectId && ...)` пропускав перевірку, коли `NEXT_PUBLIC_FIREBASE_PROJECT_ID` не заданий — тобто рівно в кейсі `node clear.js`, проти якого guard і писався.
+> 2. `getApps()[0]` підхоплював чужий вже ініціалізований застосунок в обхід перевірки.
+>
+> Правильна поведінка: **fail closed скрізь** — кидати помилку, якщо очікуваний project id відсутній; шукати застосунок за іменем `qt-portal`, а не за індексом. Дивись фактичний `src/lib/server/firebaseAdmin.js` у репо, а не цей блок.
+
 Create `src/lib/server/firebaseAdmin.js`:
 
 ```js

@@ -5,7 +5,12 @@
       "Bash(xargs grep -l \"nodemailer\\\\|sendEmail\\\\|mail\\\\|email\")",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
+      "mcp__plugin_vercel_vercel__list_teams",
+      "mcp__plugin_vercel_vercel__list_projects",
+      "mcp__plugin_vercel_vercel__list_deployments",
+      "Read(//c/Users/Arthu/QuickTeam/qt/**)",
+      "Bash(npx next *)"
     ]
   }
 }
