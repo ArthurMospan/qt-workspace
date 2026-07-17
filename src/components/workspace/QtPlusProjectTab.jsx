@@ -10,6 +10,7 @@ import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
+import QtPlusStagesView from '@/components/workspace/QtPlusStagesView';
 
 function LinkedRow({ name, stale, readOnly }) {
   return (
@@ -93,8 +94,9 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
   if (!canManage) {
     if (!view.linked) return null;
     return (
-      <div className="flex-1 min-h-[240px] py-6">
+      <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
         <LinkedRow name={view.linkedName} readOnly />
+        {portalUser && <QtPlusStagesView qtProjectId={link.projectId} />}
       </div>
     );
   }
@@ -173,6 +175,8 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           </div>
         </div>
       )}
+
+      {view.linked && portalUser && <QtPlusStagesView qtProjectId={link.projectId} />}
     </div>
   );
 }
