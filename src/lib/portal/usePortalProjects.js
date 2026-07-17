@@ -4,11 +4,13 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getPortalDb } from '@/lib/portal/firebase';
 
 /**
- * One-shot count of the connected user's QuickTeam+ projects — the Phase 2 proof
- * that data actually flows. QT+ rules authorize the read by team membership.
+ * The connected user's QuickTeam+ projects. QT+ rules authorize the read by team
+ * membership. Returns the raw list [{ id, name }] (for the project-link picker)
+ * and its count (used by the settings-card probe). `projects` is null until the
+ * first successful read.
  */
 export function usePortalProjects(portalUser) {
-  const [count, setCount] = useState(null);
+  const [projects, setProjects] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,7 +26,10 @@ export function usePortalProjects(portalUser) {
         const snap = await getDocs(
           query(collection(db, 'projects'), where('team', 'array-contains', portalUser.uid)),
         );
-        if (!cancelled) { setCount(snap.size); setLoading(false); }
+        if (!cancelled) {
+          setProjects(snap.docs.map((d) => ({ id: d.id, name: d.data().name })));
+          setLoading(false);
+        }
       } catch (err) {
         console.error('[qtplus] portal projects read failed:', err);
         if (!cancelled) { setError('read_failed'); setLoading(false); }
@@ -34,5 +39,5 @@ export function usePortalProjects(portalUser) {
     return () => { cancelled = true; };
   }, [portalUser]);
 
-  return { count, loading, error };
+  return { projects, count: projects?.length ?? null, loading, error };
 }
