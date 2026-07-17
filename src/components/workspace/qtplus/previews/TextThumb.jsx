@@ -25,7 +25,7 @@ export default function TextThumb({ url, onFailed }) {
       }
     })();
     return () => { canceled = true; };
-  }, [url]);
+  }, [url, onFailed]);
 
   if (failed) return null;
   if (content === null) {

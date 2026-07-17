@@ -40,7 +40,7 @@ export default function PdfThumb({ url, onFailed }) {
       }
     })();
     return () => { canceled = true; };
-  }, [url]);
+  }, [url, onFailed]);
 
   if (failed) return null;
   if (!thumb) {

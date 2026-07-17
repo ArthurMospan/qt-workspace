@@ -673,7 +673,7 @@ export default function PdfThumb({ url, onFailed }) {
       }
     })();
     return () => { canceled = true; };
-  }, [url]);
+  }, [url, onFailed]);
 
   if (failed) return null;
   if (!thumb) {
@@ -719,7 +719,7 @@ export default function TextThumb({ url, onFailed }) {
       }
     })();
     return () => { canceled = true; };
-  }, [url]);
+  }, [url, onFailed]);
 
   if (failed) return null;
   if (content === null) {
@@ -892,7 +892,7 @@ git commit -m "feat(qtplus): full-screen media lightbox"
 
 ```jsx
 'use client';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Download, FileText, Image as ImageIcon, Film, File } from 'lucide-react';
 import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import PdfThumb from '../previews/PdfThumb';
@@ -905,6 +905,7 @@ const OPENS_LIGHTBOX = ['image', 'pdf', 'video', 'text'];
 
 export default function FileCard({ view, onOpen }) {
   const [thumbFailed, setThumbFailed] = useState(false);
+  const handleThumbFailed = useCallback(() => setThumbFailed(true), []);
   const Icon = FALLBACK_ICON[view.kind] || File;
 
   const handleDownload = async (e) => {
@@ -925,13 +926,13 @@ export default function FileCard({ view, onOpen }) {
   let thumb = null;
   if (view.url && !thumbFailed) {
     if (view.kind === 'image') {
-      thumb = <img src={view.url} alt={view.title} onError={() => setThumbFailed(true)} className="w-full h-[160px] object-cover" />;
+      thumb = <img src={view.url} alt={view.title} onError={handleThumbFailed} className="w-full h-[160px] object-cover" />;
     } else if (view.kind === 'pdf') {
-      thumb = <PdfThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
+      thumb = <PdfThumb url={view.url} onFailed={handleThumbFailed} />;
     } else if (view.kind === 'video') {
       thumb = <video src={view.url} className="w-full h-[160px] object-cover bg-ink" preload="metadata" />;
     } else if (view.kind === 'text') {
-      thumb = <TextThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
+      thumb = <TextThumb url={view.url} onFailed={handleThumbFailed} />;
     } else if (view.kind === 'office') {
       thumb = <OfficeThumb url={view.url} title={view.title} />;
     }
