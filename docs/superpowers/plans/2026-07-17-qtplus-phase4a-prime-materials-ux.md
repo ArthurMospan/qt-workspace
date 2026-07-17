@@ -616,7 +616,7 @@ Expected: `package.json` і `package-lock.json` оновлено.
 
 ```jsx
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Мініатюра першої сторінки PDF. pdfjs-dist з npm, не з CDN (портал інжектить
@@ -627,10 +627,14 @@ import { useEffect, useRef, useState } from 'react';
 export default function PdfThumb({ url }) {
   const [thumb, setThumb] = useState(null);
   const [failed, setFailed] = useState(false);
-  const canceled = useRef(false);
 
   useEffect(() => {
-    canceled.current = false;
+    // ЛОКАЛЬНА змінна, НЕ useRef. Ref спільний для всіх перезапусків ефекту:
+    // при зміні url cleanup поставив би canceled=true, а новий ефект одразу
+    // скинув би ТОЙ САМИЙ ref назад у false — і стара обіцянка записала б
+    // мініатюру чужого файлу. Локальний let приватний для свого виклику,
+    // тож скасований виклик уже нічим не «розскасувати». Так само в TextThumb.
+    let canceled = false;
     (async () => {
       try {
         const pdfjs = await import('pdfjs-dist');
@@ -647,12 +651,12 @@ export default function PdfThumb({ url }) {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        if (!canceled.current) setThumb(canvas.toDataURL('image/jpeg', 0.85));
+        if (!canceled) setThumb(canvas.toDataURL('image/jpeg', 0.85));
       } catch {
-        if (!canceled.current) setFailed(true);
+        if (!canceled) setFailed(true);
       }
     })();
-    return () => { canceled.current = true; };
+    return () => { canceled = true; };
   }, [url]);
 
   if (failed) return null;
