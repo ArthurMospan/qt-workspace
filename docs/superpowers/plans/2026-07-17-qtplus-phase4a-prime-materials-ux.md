@@ -15,7 +15,12 @@
 - **У портальну БД не пишемо нічого.** Заборонені в `src/lib/portal/**` і `src/components/workspace/qtplus/**`: `addDoc`, `updateDoc`, `deleteDoc`, `setDoc`, `deleteField`, `writeBatch`. Виняток — наявний `src/lib/portal/qtplusProjectLink.js` (Фаза 3), який пише у **воркспейсну** БД.
 - **`firestore.rules` не чіпаємо** в жодному репозиторії. Репозиторний файл дрейфує від задеплоєних правил — він не джерело істини.
 - **Репозиторій `qt` не чіпаємо.**
-- **Бренд-токени, не сирий hex:** `bg-ink` / `text-ink` / `bg-canvas` / `bg-surface` / `border-line` / `text-muted` / `text-faint`. Джерело — `@theme` у `src/app/globals.css`. Виняток — кольори типів файлів (PDF-червоний тощо): це не бренд, вони централізовані у `badgeFor()` і ніде більше не дублюються.
+- **Бренд-токени, не сирий hex:** `bg-ink` / `text-ink` / `bg-canvas` / `bg-surface` / `border-line` / `text-muted` / `text-faint`. Джерело — `@theme` у `src/app/globals.css`.
+  Сирий hex дозволений **рівно у двох місцях**, бо це семантичні кольори, а не бренд-палітра, і в токенах їх немає:
+  1. `badgeFor()` у `qtplusMaterialView.mjs` — кольори типів файлів (PDF-червоний тощо);
+  2. `TONE_DOT` у `StageStepper.jsx` — зелений `#10b981` для статусу «Завершено».
+
+  Більше ніде. Якщо знадобився третій — це сигнал заводити токен, а не копіювати hex.
 - **`react-hooks/set-state-in-effect` форситься:** жодного синхронного `setState` у тілі ефекту. Патерн — `queueMicrotask` або async-IIFE, як у `src/lib/hooks/useProjects.js`.
 - **Мова інтерфейсу — українська.**
 - **Імпорти через `@/`**, не відносні.
@@ -906,8 +911,21 @@ export default function FileCard({ view, onOpen }) {
           </div>
         )}
 
+        {/* ПОРЯДОК ВАЖЛИВИЙ: оверлей «відкрити» йде ПЕРШИМ, а бейдж і кнопка
+            скачування — після нього й з z-10. Обидва елементи абсолютні; при
+            рівному z-index виграє той, що пізніше в DOM. Якщо оверлей поставити
+            останнім, він накриє кнопку ⤓ і скачування не спрацює НІКОЛИ. */}
+        {view.url && (
+          <button
+            type="button"
+            onClick={handleClick}
+            aria-label={`Відкрити ${view.title}`}
+            className="absolute inset-0 cursor-pointer"
+          />
+        )}
+
         <span
-          className="absolute top-2 left-2 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-[4px]"
+          className="absolute top-2 left-2 z-10 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-[4px] pointer-events-none"
           style={{ backgroundColor: view.badge.bg, color: view.badge.color }}
         >
           {view.badge.label}
@@ -918,19 +936,10 @@ export default function FileCard({ view, onOpen }) {
             type="button"
             onClick={handleDownload}
             aria-label={`Завантажити ${view.title}`}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/70"
+            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/70"
           >
             <Download size={13} />
           </button>
-        )}
-
-        {view.url && (
-          <button
-            type="button"
-            onClick={handleClick}
-            aria-label={`Відкрити ${view.title}`}
-            className="absolute inset-0 cursor-pointer"
-          />
         )}
       </div>
 
