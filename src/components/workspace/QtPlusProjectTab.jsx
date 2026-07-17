@@ -11,7 +11,7 @@ import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
-import QtPlusStagesView from '@/components/workspace/qtplus/QtPlusStagesView';
+import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
 
 function LinkedRow({ name, stale, menuItems }) {
   return (
@@ -114,7 +114,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
     return (
       <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
         <LinkedRow name={view.linkedName} />
-        {portalUser && <QtPlusStagesView qtProjectId={link.projectId} />}
+        {portalUser && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
       </div>
     );
   }
@@ -154,7 +154,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             </div>
           )}
 
-          {portalUser && !view.staleAccess && <QtPlusStagesView qtProjectId={link.projectId} />}
+          {portalUser && !view.staleAccess && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
         </>
       ) : sessionLoading || projectsLoading ? (
         <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>
