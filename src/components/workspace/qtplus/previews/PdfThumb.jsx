@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
  * файл нікуди не надсилається. import() динамічний: воркер важкий, тягнемо
  * лише коли PDF реально є на екрані.
  */
-export default function PdfThumb({ url }) {
+export default function PdfThumb({ url, onFailed }) {
   const [thumb, setThumb] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -36,7 +36,7 @@ export default function PdfThumb({ url }) {
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         if (!canceled) setThumb(canvas.toDataURL('image/jpeg', 0.85));
       } catch {
-        if (!canceled) setFailed(true);
+        if (!canceled) { setFailed(true); onFailed?.(); }
       }
     })();
     return () => { canceled = true; };

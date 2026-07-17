@@ -542,11 +542,20 @@ git commit -m "feat(qtplus): stage model helpers (locks, default stage, progress
 ```js
 'use client';
 
+import useWorkspaceStore from '@/store/useWorkspaceStore';
+
 /**
  * Качає матеріал порталу. Патерн порталу (qt/src/components/MaterialsGrid.jsx:1120):
  * fetch -> blob -> <a download> -> revoke. Фолбек критичний: Cloudinary може не
  * віддати CORS-заголовки для деяких типів, тоді fetch падає — і файл усе одно
  * має дістатись користувачеві, хай і в новій вкладці.
+ *
+ * Фолбек `window.open` викликається ПІСЛЯ `await fetch`, тобто вже поза
+ * user-gesture тасков — Chrome/Safari можуть заблокувати попап. Перевіряємо
+ * повернене значення й повідомляємо користувача в обох випадках: інакше клік
+ * на «Завантажити» іноді не робить рівним рахунком нічого.
+ *
+ * Повертає: 'downloaded' | 'opened' | 'blocked' | 'skipped'.
  *
  * Нічого не пише — читання плюс DOM.
  */
@@ -566,8 +575,15 @@ export async function downloadMaterial(url, filename) {
     URL.revokeObjectURL(blobUrl);
     return 'downloaded';
   } catch {
-    window.open(url, '_blank', 'noopener,noreferrer');
-    return 'opened';
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (win) {
+      try { useWorkspaceStore.getState().showToast('Відкриваємо у новій вкладці'); } catch { /* тост не критичний */ }
+      return 'opened';
+    }
+    try {
+      useWorkspaceStore.getState().showToast('Не вдалося завантажити файл. Дозвольте спливні вікна для цього сайту.', 'error');
+    } catch { /* тост не критичний */ }
+    return 'blocked';
   }
 }
 ```
@@ -624,7 +640,7 @@ import { useEffect, useState } from 'react';
  * файл нікуди не надсилається. import() динамічний: воркер важкий, тягнемо
  * лише коли PDF реально є на екрані.
  */
-export default function PdfThumb({ url }) {
+export default function PdfThumb({ url, onFailed }) {
   const [thumb, setThumb] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -653,7 +669,7 @@ export default function PdfThumb({ url }) {
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         if (!canceled) setThumb(canvas.toDataURL('image/jpeg', 0.85));
       } catch {
-        if (!canceled) setFailed(true);
+        if (!canceled) { setFailed(true); onFailed?.(); }
       }
     })();
     return () => { canceled = true; };
@@ -679,8 +695,14 @@ export default function PdfThumb({ url }) {
 'use client';
 import { useEffect, useState } from 'react';
 
-/** Перші 500 байтів текстового/кодового файлу. Тільки читання. */
-export default function TextThumb({ url }) {
+/**
+ * Якщо на екрані видно лише 500 символів, навіщо тягнути весь файл? Бо
+ * fetch тут — не Range-запит: сервер (Cloudinary) віддає повне тіло, і
+ * лише після цього ми ріжемо рядок локально. Для мініатюри це прийнятно;
+ * для файлів у десятки мегабайтів — можливе майбутнє покращення через
+ * заголовок Range, щоб не качати зайве.
+ */
+export default function TextThumb({ url, onFailed }) {
   const [content, setContent] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -693,7 +715,7 @@ export default function TextThumb({ url }) {
         const text = await res.text();
         if (!canceled) setContent(text.slice(0, 500));
       } catch {
-        if (!canceled) setFailed(true);
+        if (!canceled) { setFailed(true); onFailed?.(); }
       }
     })();
     return () => { canceled = true; };
@@ -882,7 +904,7 @@ const FALLBACK_ICON = { image: ImageIcon, video: Film, pdf: FileText, text: File
 const OPENS_LIGHTBOX = ['image', 'pdf', 'video', 'text'];
 
 export default function FileCard({ view, onOpen }) {
-  const [imgFailed, setImgFailed] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const Icon = FALLBACK_ICON[view.kind] || File;
 
   const handleDownload = async (e) => {
@@ -896,16 +918,20 @@ export default function FileCard({ view, onOpen }) {
     else window.open(view.url, '_blank', 'noopener,noreferrer');
   };
 
+  // thumb тримає JSX-елемент, а не значення — він завжди truthy, тому провал
+  // прев'ю (PdfThumb/TextThumb повертають null усередині себе) не спрацював би
+  // через `thumb || <fallback/>` нижче. Тому будь-яка невдача підіймається сюди
+  // через onFailed і гейтить сам вибір прев'ю через thumbFailed.
   let thumb = null;
-  if (view.url) {
-    if (view.kind === 'image' && !imgFailed) {
-      thumb = <img src={view.url} alt={view.title} onError={() => setImgFailed(true)} className="w-full h-[160px] object-cover" />;
+  if (view.url && !thumbFailed) {
+    if (view.kind === 'image') {
+      thumb = <img src={view.url} alt={view.title} onError={() => setThumbFailed(true)} className="w-full h-[160px] object-cover" />;
     } else if (view.kind === 'pdf') {
-      thumb = <PdfThumb url={view.url} />;
+      thumb = <PdfThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
     } else if (view.kind === 'video') {
       thumb = <video src={view.url} className="w-full h-[160px] object-cover bg-ink" preload="metadata" />;
     } else if (view.kind === 'text') {
-      thumb = <TextThumb url={view.url} />;
+      thumb = <TextThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
     } else if (view.kind === 'office') {
       thumb = <OfficeThumb url={view.url} title={view.title} />;
     }
@@ -920,10 +946,11 @@ export default function FileCard({ view, onOpen }) {
           </div>
         )}
 
-        {/* ПОРЯДОК ВАЖЛИВИЙ: оверлей «відкрити» йде ПЕРШИМ, а бейдж і кнопка
-            скачування — після нього й з z-10. Обидва елементи абсолютні; при
-            рівному z-index виграє той, що пізніше в DOM. Якщо оверлей поставити
-            останнім, він накриє кнопку ⤓ і скачування не спрацює НІКОЛИ. */}
+        {/* Бейдж і кнопка скачування лежать НАД повнокартковим оверлеєм
+            «відкрити» тому, що в них явний z-10, а в оверлея z-index: auto.
+            Додатний z-index завжди виграє в auto — незалежно від порядку
+            в DOM (CSS 2.1 Appendix E). Порядок елементів нижче ні на що
+            не впливає, покладатись на нього не можна. */}
         {view.url && (
           <button
             type="button"

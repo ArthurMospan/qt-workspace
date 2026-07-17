@@ -1,8 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-/** Перші 500 байтів текстового/кодового файлу. Тільки читання. */
-export default function TextThumb({ url }) {
+/**
+ * Якщо на екрані видно лише 500 символів, навіщо тягнути весь файл? Бо
+ * fetch тут — не Range-запит: сервер (Cloudinary) віддає повне тіло, і
+ * лише після цього ми ріжемо рядок локально. Для мініатюри це прийнятно;
+ * для файлів у десятки мегабайтів — можливе майбутнє покращення через
+ * заголовок Range, щоб не качати зайве.
+ */
+export default function TextThumb({ url, onFailed }) {
   const [content, setContent] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -15,7 +21,7 @@ export default function TextThumb({ url }) {
         const text = await res.text();
         if (!canceled) setContent(text.slice(0, 500));
       } catch {
-        if (!canceled) setFailed(true);
+        if (!canceled) { setFailed(true); onFailed?.(); }
       }
     })();
     return () => { canceled = true; };

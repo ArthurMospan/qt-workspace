@@ -11,7 +11,7 @@ const FALLBACK_ICON = { image: ImageIcon, video: Film, pdf: FileText, text: File
 const OPENS_LIGHTBOX = ['image', 'pdf', 'video', 'text'];
 
 export default function FileCard({ view, onOpen }) {
-  const [imgFailed, setImgFailed] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const Icon = FALLBACK_ICON[view.kind] || File;
 
   const handleDownload = async (e) => {
@@ -25,16 +25,20 @@ export default function FileCard({ view, onOpen }) {
     else window.open(view.url, '_blank', 'noopener,noreferrer');
   };
 
+  // thumb тримає JSX-елемент, а не значення — він завжди truthy, тому провал
+  // прев'ю (PdfThumb/TextThumb повертають null усередині себе) не спрацював би
+  // через `thumb || <fallback/>` нижче. Тому будь-яка невдача підіймається сюди
+  // через onFailed і гейтить сам вибір прев'ю через thumbFailed.
   let thumb = null;
-  if (view.url) {
-    if (view.kind === 'image' && !imgFailed) {
-      thumb = <img src={view.url} alt={view.title} onError={() => setImgFailed(true)} className="w-full h-[160px] object-cover" />;
+  if (view.url && !thumbFailed) {
+    if (view.kind === 'image') {
+      thumb = <img src={view.url} alt={view.title} onError={() => setThumbFailed(true)} className="w-full h-[160px] object-cover" />;
     } else if (view.kind === 'pdf') {
-      thumb = <PdfThumb url={view.url} />;
+      thumb = <PdfThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
     } else if (view.kind === 'video') {
       thumb = <video src={view.url} className="w-full h-[160px] object-cover bg-ink" preload="metadata" />;
     } else if (view.kind === 'text') {
-      thumb = <TextThumb url={view.url} />;
+      thumb = <TextThumb url={view.url} onFailed={() => setThumbFailed(true)} />;
     } else if (view.kind === 'office') {
       thumb = <OfficeThumb url={view.url} title={view.title} />;
     }
@@ -49,10 +53,11 @@ export default function FileCard({ view, onOpen }) {
           </div>
         )}
 
-        {/* ПОРЯДОК ВАЖЛИВИЙ: оверлей «відкрити» йде ПЕРШИМ, а бейдж і кнопка
-            скачування — після нього й з z-10. Обидва елементи абсолютні; при
-            рівному z-index виграє той, що пізніше в DOM. Якщо оверлей поставити
-            останнім, він накриє кнопку ⤓ і скачування не спрацює НІКОЛИ. */}
+        {/* Бейдж і кнопка скачування лежать НАД повнокартковим оверлеєм
+            «відкрити» тому, що в них явний z-10, а в оверлея z-index: auto.
+            Додатний z-index завжди виграє в auto — незалежно від порядку
+            в DOM (CSS 2.1 Appendix E). Порядок елементів нижче ні на що
+            не впливає, покладатись на нього не можна. */}
         {view.url && (
           <button
             type="button"
