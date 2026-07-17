@@ -66,6 +66,20 @@ test('kindOf: аудіо за type або за розширенням', () => {
   assert.equal(kindOf({ type: 'file', title: 'memo.mp3' }), 'audio');
 });
 
+test('kindOf: аудіозапис із type:audio перемагає webm/mp4-розширення (регресія: показувало «відео»)', () => {
+  // Портальний диктофон (qt FunctionalModals.jsx:1515-1533) кодує запис через
+  // MediaRecorder у audio/webm або audio/mp4 і зберігає title='audio-recording-MM-SS.webm'
+  // з type:'audio' + audioUrl. webm/mp4 також у списку ВІДЕО, тож розширення хибно
+  // перемагало явний type -> картка казала «відео» на аудіозаписі.
+  assert.equal(kindOf({ type: 'audio', title: 'audio-recording-01-30.webm', audioUrl: 'https://res.cloudinary.com/x/a.webm' }), 'audio');
+  assert.equal(kindOf({ type: 'audio', title: 'audio-recording-00-42.mp4', audioUrl: 'https://res.cloudinary.com/x/a.mp4' }), 'audio');
+  // Сигнал audioUrl теж достатній сам по собі (файли-відео мають previewUrl, не audioUrl).
+  assert.equal(kindOf({ type: 'file', title: 'clip.webm', audioUrl: 'https://res.cloudinary.com/x/a.webm' }), 'audio');
+  // РЕГРЕС-ЗАХИСТ: справжнє відео (type:'file' + previewUrl, без audioUrl) лишається відео.
+  assert.equal(kindOf({ type: 'file', title: 'promo.webm', previewUrl: 'https://res.cloudinary.com/x/v.webm' }), 'video');
+  assert.equal(kindOf({ type: 'file', title: 'promo.mp4', previewUrl: 'https://res.cloudinary.com/x/v.mp4' }), 'video');
+});
+
 test('kindOf: нефайлові типи проходять як є', () => {
   assert.equal(kindOf({ type: 'link', title: 'Figma' }), 'link');
   assert.equal(kindOf({ type: 'checklist', title: 'Здача' }), 'checklist');

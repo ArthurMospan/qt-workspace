@@ -57,6 +57,12 @@ export function resolveMaterialUrl(raw) {
 export function kindOf(raw) {
   const m = raw && typeof raw === 'object' ? raw : {};
   if (PASSTHROUGH_KINDS.includes(m.type)) return m.type;
+  // Явний сигнал аудіо перемагає розширення й мусить стояти ПЕРЕД відео: диктофон
+  // порталу кодує запис через MediaRecorder у audio/webm або audio/mp4 і зберігає
+  // title='audio-recording-*.webm' — а webm/mp4 також у списку відео. Тому на
+  // розширення покладатись не можна; type:'audio' та audioUrl однозначні (у відео
+  // їх немає — воно приходить як type:'file' з previewUrl).
+  if (m.type === 'audio' || (typeof m.audioUrl === 'string' && m.audioUrl)) return 'audio';
   const ext = extOf(m.title);
   if (AUDIO_EXT.includes(ext)) return 'audio';
   if (IMAGE_EXT.includes(ext)) return 'image';
@@ -64,7 +70,6 @@ export function kindOf(raw) {
   if (ext === 'pdf') return 'pdf';
   if (OFFICE_EXT.includes(ext)) return 'office';
   if (TEXT_EXT.includes(ext)) return 'text';
-  if (m.type === 'audio') return 'audio';
   if (m.type === 'image') return 'image';
   return 'file';
 }
