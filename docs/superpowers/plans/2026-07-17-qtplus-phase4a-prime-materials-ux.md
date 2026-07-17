@@ -1792,11 +1792,20 @@ Expected: PASS, 0 fail. Має бути ≥ Фази 4a (53) плюс нові �
 
 - [ ] **Step 2: Гейт read-only**
 
-Run:
+Наївний grep по теці дає **фальшиву тривогу**: `src/lib/portal/qtplusProjectLink.js` (Фаза 3) законно викликає `updateDoc`/`deleteField` — але у **воркспейсну** БД (`db` з `@/lib/firebase`), не в портальну. Значення має не тека, а яку базу файл торкається. Тому перевіряємо саме це:
+
 ```bash
-grep -rnE "addDoc|updateDoc|deleteDoc|setDoc|deleteField|writeBatch" src/lib/portal src/components/workspace/qtplus
+# Жоден файл, що працює з портальною БД, не сміє писати.
+for f in $(grep -rln "getPortalDb" src/); do
+  grep -nE "addDoc|updateDoc|deleteDoc|setDoc|deleteField|writeBatch" "$f" && echo "!!! WRITE IN $f !!!"
+done
 ```
 Expected: **порожньо**. Будь-яке влучання — стоп: у портал писати заборонено.
+
+Додатково підтвердити, що виняток і далі бʼє у воркспейсну базу:
+```bash
+grep -n "from '@/lib/firebase'" src/lib/portal/qtplusProjectLink.js
+```
 
 - [ ] **Step 3: Портал і правила не зачеплені**
 
