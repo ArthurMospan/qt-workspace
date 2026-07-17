@@ -12,6 +12,7 @@
     "test:oauth-state": "node --test tests/oauth-state.test.mjs",
     "test:qtplus-exchange": "node --test tests/qtplus-exchange.test.mjs",
     "test:qtplus-link-model": "node --test tests/qtplus-link-model.test.mjs",
+    "test:qtplus-material-view": "node --test tests/qtplus-material-view.test.mjs",
     "test:secret-box": "node --test tests/secret-box.test.mjs",
     "test:rules": "node --test tests/firestore.rules.test.mjs",
     "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\""
@@ -26,6 +27,7 @@
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
+    "pdfjs-dist": "^4.10.38",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",

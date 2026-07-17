@@ -1,28 +1,45 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Plug, ExternalLink } from 'lucide-react';
+import { Plug, ExternalLink, MoreVertical, Link2, Unlink } from 'lucide-react';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import ContextMenu from '@/components/ui/ContextMenu';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
+import QtPlusStagesView from '@/components/workspace/qtplus/QtPlusStagesView';
 
-function LinkedRow({ name, stale, readOnly }) {
+function LinkedRow({ name, stale, menuItems }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <Plug size={15} className="text-muted shrink-0" />
-        <span className="text-[13px] text-ink font-medium">
-          Привʼязано до: <span className="font-semibold">«{name || 'Без назви'}»</span>
+        <Plug size={14} className="text-muted shrink-0" />
+        <span className="text-[13px] text-ink truncate">
+          Привʼязано до <span className="font-semibold">«{name || 'Без назви'}»</span>
         </span>
-        {readOnly && <span className="text-[12px] text-muted">(лише для читання)</span>}
+        {menuItems && (
+          <div className="ml-auto shrink-0">
+            <ContextMenu
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Дії з привʼязкою"
+                  className="w-7 h-7 rounded-full text-muted flex items-center justify-center hover:bg-canvas hover:text-ink transition-colors"
+                >
+                  <MoreVertical size={15} />
+                </button>
+              }
+              items={menuItems}
+            />
+          </div>
+        )}
       </div>
       {stale && (
-        <p className="text-[12px] text-muted pl-[23px]">
+        <p className="text-[12px] text-muted pl-[22px]">
           Цей проєкт QuickTeam+ зараз недоступний для вашого акаунта.
         </p>
       )}
@@ -39,6 +56,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
 
   const [pendingId, setPendingId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [changing, setChanging] = useState(false);
 
   const link = project?.qtplusLink || null;
   const optionsLoaded = Boolean(portalUser) && !projectsLoading && Array.isArray(portalProjects);
@@ -68,6 +86,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
     try {
       await linkQtPlusProject(project.id, chosen, currentUser?.uid || null);
       setPendingId('');
+      setChanging(false);
       showToast('Проєкт QuickTeam+ привʼязано');
     } catch (err) {
       console.error('[qtplus] link failed:', err);
@@ -93,22 +112,31 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
   if (!canManage) {
     if (!view.linked) return null;
     return (
-      <div className="flex-1 min-h-[240px] py-6">
-        <LinkedRow name={view.linkedName} readOnly />
+      <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
+        <LinkedRow name={view.linkedName} />
+        {portalUser && <QtPlusStagesView qtProjectId={link.projectId} />}
       </div>
     );
   }
 
   // ── Owner/admin ──
   return (
-    <div className="flex-1 min-h-[240px] py-6 max-w-[560px] flex flex-col gap-4">
-      {view.linked && <LinkedRow name={view.linkedName} stale={view.staleAccess} />}
-
+    <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
       {view.linked ? (
-        <div className="flex flex-col gap-3">
-          {portalUser && options.length > 0 && (
-            <>
-              <p className="text-[13px] text-muted">Змінити привʼязку:</p>
+        <>
+          <LinkedRow
+            name={view.linkedName}
+            stale={view.staleAccess}
+            menuItems={[
+              ...(portalUser && options.length > 0
+                ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]
+                : []),
+              { label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true },
+            ]}
+          />
+
+          {changing && portalUser && options.length > 0 && (
+            <div className="max-w-[560px] flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <Select
                   value={selectValue}
@@ -116,23 +144,18 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
                   options={selectOptions}
                   placeholder="Оберіть проєкт QuickTeam+"
                 />
-                <Button
-                  style="secondary"
-                  size="lg"
-                  onClick={doLink}
-                  disabled={saving || !selectValue || selectValue === view.linkedId}
-                >
+                <Button style="secondary" size="lg" onClick={doLink} disabled={saving || !selectValue || selectValue === view.linkedId}>
                   Змінити
                 </Button>
+                <Button style="ghost" size="lg" onClick={() => { setChanging(false); setPendingId(''); }} disabled={saving}>
+                  Скасувати
+                </Button>
               </div>
-            </>
+            </div>
           )}
-          <div>
-            <Button style="ghost" size="lg" onClick={doUnlink} disabled={saving}>
-              Відвʼязати
-            </Button>
-          </div>
-        </div>
+
+          {portalUser && !view.staleAccess && <QtPlusStagesView qtProjectId={link.projectId} />}
+        </>
       ) : sessionLoading || projectsLoading ? (
         <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>
       ) : (!portalUser || sessionError === 'not_connected') ? (
@@ -156,7 +179,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
       ) : options.length === 0 ? (
         <p className="text-[13px] text-muted">У вашому акаунті QuickTeam+ немає доступних проєктів.</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="max-w-[560px] flex flex-col gap-3">
           <p className="text-[13px] text-muted">
             Оберіть проєкт QuickTeam+, щоб привʼязати його до цього проєкту.
           </p>
