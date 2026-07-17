@@ -115,7 +115,10 @@ ogImage/ogTitle/ogDescription: string?  // link
 
 ```
 src/lib/portal/
-  qtplusMaterialView.mjs        [ПЕРЕПИСАТИ]  чистий view-model: resolveUrl, kind, ext, badge
+  qtplusMaterialView.mjs        [ПЕРЕПИСАТИ]  чистий view-model матеріалу: resolveUrl, kind, ext, badge
+  qtplusStageModel.mjs          [НОВИЙ]  чисті хелпери етапів: progress, statusMeta,
+                                canAccessStage, defaultStageId (переїжджають зі старого
+                                qtplusMaterialView.mjs — етапи це не «material view»)
   usePortalStages.js            [без змін]
   usePortalStageMaterials.js    [без змін]
   downloadMaterial.js           [НОВИЙ]  fetch→blob→a[download] + фолбек
