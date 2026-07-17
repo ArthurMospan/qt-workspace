@@ -57,6 +57,37 @@ export default function AudioCard({ view }) {
     el.currentTime = ((e.clientX - rect.left) / rect.width) * el.duration;
   };
 
+  const seekTo = (time) => {
+    const el = audioRef.current;
+    if (!el || !Number.isFinite(el.duration)) return;
+    el.currentTime = Math.min(Math.max(time, 0), el.duration);
+  };
+
+  const onSeekKeyDown = (e) => {
+    const el = audioRef.current;
+    if (!el || !Number.isFinite(el.duration)) return;
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        seekTo(el.currentTime - 5);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        seekTo(el.currentTime + 5);
+        break;
+      case 'Home':
+        e.preventDefault();
+        seekTo(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        seekTo(el.duration);
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group">
       {view.url && <audio ref={audioRef} src={view.url} preload="metadata" playsInline />}
@@ -89,7 +120,17 @@ export default function AudioCard({ view }) {
         )}
       </div>
 
-      <div className="h-[6px] w-full bg-canvas rounded-full cursor-pointer relative" onClick={seek}>
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Перемотка"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress)}
+        onClick={seek}
+        onKeyDown={onSeekKeyDown}
+        className="h-[6px] w-full bg-canvas rounded-full cursor-pointer relative focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+      >
         <div className="absolute top-0 left-0 h-full bg-ink rounded-full" style={{ width: `${progress}%` }} />
       </div>
     </div>
