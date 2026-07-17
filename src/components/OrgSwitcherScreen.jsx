@@ -8,8 +8,19 @@ import { Plus, X } from 'lucide-react';
 import AuthLayout from '@/components/AuthLayout';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
+// Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
+// пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
+// брендингу, якщо власник обрав свій колір сайдбару.
+function orgLogoBackdrop(org) {
+  if (org?.customBranding && org?.sidebarTheme === 'custom' && org?.sidebarColor) {
+    return org.sidebarColor;
+  }
+  return '#ffffff';
+}
+
 function OrgBigCard({ org, role, unreadCount, onClick }) {
   const firstLetter = (org.name || 'О')[0].toUpperCase();
+  const hasLogo = Boolean(org.logo || org.logoUrl);
 
   return (
     <button
@@ -17,8 +28,12 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
       className="flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100"
     >
       <div className="relative">
-        <div id={`org-circle-${org.id}`} className="w-[110px] h-[110px] rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-[#2a2a2a] border-[3px] border-transparent group-hover/item:border-white shadow-xl transition-all duration-300 relative z-10">
-          {(org.logo || org.logoUrl) ? (
+        <div
+          id={`org-circle-${org.id}`}
+          className="w-[110px] h-[110px] rounded-full flex items-center justify-center shrink-0 overflow-hidden border-[3px] border-transparent group-hover/item:border-white shadow-xl transition-all duration-300 relative z-10"
+          style={{ backgroundColor: hasLogo ? orgLogoBackdrop(org) : '#2a2a2a' }}
+        >
+          {hasLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={org.logo || org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
           ) : (
@@ -122,7 +137,9 @@ export default function OrgSwitcherScreen({ onClose }) {
               height: 110,
               transform: `translate(-50%, -50%) scale(${expandingOrg.active ? 1.2 : 1})`,
               boxShadow: expandingOrg.active ? '0 0 0 150vw #ffffff' : '0 0 0 3px #ffffff',
-              backgroundColor: '#2a2a2a',
+              backgroundColor: (expandingOrg.org.logo || expandingOrg.org.logoUrl)
+                ? orgLogoBackdrop(expandingOrg.org)
+                : '#2a2a2a',
             }}
           >
             {(expandingOrg.org.logo || expandingOrg.org.logoUrl) ? (

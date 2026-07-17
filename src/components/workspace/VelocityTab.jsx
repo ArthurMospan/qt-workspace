@@ -270,7 +270,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         {/* Charts row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Daily Activity */}
-          <div className="md:col-span-2 bg-canvas rounded-[16px] p-5">
+          <div className="md:col-span-2 bg-white rounded-[16px] p-5">
             <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Активність ({period} днів)
             </h3>
@@ -278,7 +278,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
           </div>
 
           {/* By type */}
-          <div className="bg-canvas rounded-[16px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">По типах</h3>
             {stats.byType.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Немає даних</p>
@@ -293,7 +293,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                       </span>
                       <span className="text-[11px] text-muted">{done}/{total}</span>
                     </div>
-                    <div className="h-[5px] bg-white rounded-full overflow-hidden">
+                    <div className="h-[5px] bg-canvas rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
                         style={{ width: `${pct}%`, background: color }} />
                     </div>
@@ -305,7 +305,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Burndown */}
-        <div className="bg-canvas rounded-[16px] p-5 mb-6">
+        <div className="bg-white rounded-[16px] p-5 mb-6">
           <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
             Burndown Chart ({period} днів)
           </h3>
@@ -314,7 +314,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
         {/* Weekly velocity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-canvas rounded-[16px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)
             </h3>
@@ -323,7 +323,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
           {/* By project */}
           {stats.byProject.length > 0 && (
-            <div className="bg-canvas rounded-[16px] p-5">
+            <div className="bg-white rounded-[16px] p-5">
               <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
                 По проєктах (закрито за {period}д)
               </h3>
@@ -331,7 +331,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                 {stats.byProject.slice(0, 6).map(({ p, count, total }) => (
                   <div key={p.id} className="flex items-center gap-3">
                     <span className="text-[12px] font-medium text-[#6a6a6a] truncate flex-1 max-w-[120px]">{p.name}</span>
-                    <div className="flex-1 h-[5px] bg-white rounded-full overflow-hidden">
+                    <div className="flex-1 h-[5px] bg-canvas rounded-full overflow-hidden">
                       <div className="h-full bg-[#6366f1] rounded-full transition-all"
                         style={{ width: `${total > 0 ? (count / Math.max(...stats.byProject.map(x => x.count), 1)) * 100 : 0}%` }} />
                     </div>
@@ -344,7 +344,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Recent done issues */}
-        <div className="bg-canvas rounded-[16px] p-5">
+        <div className="bg-white rounded-[16px] p-5">
           <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
             Нещодавно закриті завдання
           </h3>

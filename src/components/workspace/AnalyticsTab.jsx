@@ -120,7 +120,8 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
   return (
     <div className="flex-1 flex flex-col pb-8">
-      <div className="w-full pt-[8px] flex flex-col gap-5">
+      {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
+      <div className="w-full mt-[8px] bg-canvas rounded-[16px] p-[16px] flex flex-col gap-4">
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -141,7 +142,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Бюджет часу</SectionTitle>
               <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
@@ -152,7 +153,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
                 {stats.burnPct}% використано
               </span>
             </div>
-            <div className="h-[8px] bg-white rounded-full overflow-hidden mb-3">
+            <div className="h-[8px] bg-canvas rounded-full overflow-hidden mb-3">
               <div className={`h-full rounded-full transition-all ${
                 stats.burnPct >= 90 ? 'bg-red-500' : stats.burnPct >= 70 ? 'bg-yellow-400' : 'bg-ink'
               }`} style={{ width: `${stats.burnPct}%` }} />
@@ -176,7 +177,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <SectionTitle>Завдання по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Задач немає</p>
@@ -185,7 +186,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
                 {stats.byStatus.map(({ col, count, label, color }) => (
                   <div key={col} className="flex items-center gap-3">
                     <span className="w-[100px] text-[11px] font-medium text-muted shrink-0 truncate">{label}</span>
-                    <div className="flex-1 h-[6px] bg-white rounded-full overflow-hidden">
+                    <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${(count / maxStatus) * 100}%`, background: color }} />
                     </div>
                     <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
@@ -195,7 +196,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
             )}
           </div>
 
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Немає відкритих завдань</p>
@@ -210,7 +211,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
                         style={{ background: colors[p] + '18', color: colors[p] }}>
                         {labels[p]}
                       </span>
-                      <div className="flex-1 h-[6px] bg-white rounded-full overflow-hidden">
+                      <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: colors[p] }} />
                       </div>
                       <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
@@ -224,12 +225,12 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="text-red-500" />
               <SectionTitle>Прострочені завдання ({stats.overdue.length})</SectionTitle>
             </div>
-            <div className="flex flex-col gap-0 divide-y divide-white">
+            <div className="flex flex-col gap-0 divide-y divide-line">
               {stats.overdue.slice(0, 8).map(issue => {
                 const due = issue.dueDate?.toDate ? issue.dueDate.toDate() : new Date(issue.dueDate);
                 const daysOver = Math.floor((now - due.getTime()) / 86400000);
@@ -262,18 +263,18 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-white">
+                  <tr className="border-b border-line">
                     {['Учасник','Всього','Виконано','Відкрито','Прострочено','Час'].map(h => (
                       <th key={h} className="pb-3 text-[10px] font-bold text-muted uppercase tracking-wide pr-6 last:pr-0">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white">
+                <tbody className="divide-y divide-line">
                   {stats.memberStats.map(({ m, total, done, open, overdue: od, minutes }) => (
                     <tr key={m.id || m.uid}>
                       <td className="py-3 pr-6">
@@ -302,7 +303,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Warnings ─────────────────────────────────────────────── */}
         {(stats.noAssignee.length > 0 || stats.unestimated.length > 0 || stats.blocked > 0) && (
-          <div className="bg-canvas rounded-[24px] p-5">
+          <div className="bg-white rounded-[16px] p-5">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blocked > 0 && (

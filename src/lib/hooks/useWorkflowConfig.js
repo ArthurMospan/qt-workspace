@@ -16,6 +16,12 @@ import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } 
 // from here instead of keeping its own copy, so the icon set can't drift.
 export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
 export const TYPE_ICONS = { epic: Zap, feature: Star, task: CheckSquare, bug: Bug };
+// Canonical default workflow for an org that has never saved
+// settings/workflow. Must stay in sync with the id lists in
+// src/app/api/issues/route.js (server can't import this client module) and
+// must keep 'backlog' (new issues default there) and 'done' (terminal
+// fallback in getDoneStatusIds). Settings imports these too — the board,
+// the settings page and the API must always describe the same workflow.
 export const DEFAULT_STATUSES = [{
   id: 'backlog',
   label: 'Backlog',
@@ -28,18 +34,6 @@ export const DEFAULT_STATUSES = [{
   id: 'in-progress',
   label: 'In Progress',
   color: '#0891b2'
-}, {
-  id: 'code-review',
-  label: 'Code Review',
-  color: '#d97706'
-}, {
-  id: 'qa',
-  label: 'QA',
-  color: '#7c3aed'
-}, {
-  id: 'client-approval',
-  label: 'Client Approval',
-  color: '#db2777'
 }, {
   id: 'done',
   label: 'Done',
