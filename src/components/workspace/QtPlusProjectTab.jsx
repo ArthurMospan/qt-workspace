@@ -10,7 +10,7 @@ import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
-import QtPlusStagesView from '@/components/workspace/QtPlusStagesView';
+import QtPlusStagesView from '@/components/workspace/qtplus/QtPlusStagesView';
 
 function LinkedRow({ name, stale, readOnly }) {
   return (
