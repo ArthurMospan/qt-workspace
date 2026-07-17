@@ -1,70 +1,147 @@
 /**
- * Pure, dependency-free view-model helpers for the QuickTeam+ stages/materials
- * (Phase 4a). No `server-only`/Firebase import — runs under plain `node --test`.
+ * Чисті view-model хелпери матеріалів QuickTeam+ (Фаза 4a′).
+ * Без `server-only` / Firebase — виконується під `node --test`.
+ *
+ * Схема матеріалу — з РЕАЛЬНОГО порталу (qt/src/components/MaterialsGrid.jsx,
+ * qt/src/lib/hooks/useMaterials.js):
+ *   previewUrl — файли/зображення/відео/PDF/документи (Cloudinary)
+ *   audioUrl   — аудіо (Cloudinary)
+ *   url        — ТІЛЬКИ type='link'
+ * Фаза 4a читала `url` для всього й тому рендерила файли без посилання.
  */
 
-const FILE_ICON = { file: 'file', audio: 'audio', image: 'image' };
+const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'heif', 'tiff', 'bmp', 'avif'];
+const VIDEO_EXT = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+const AUDIO_EXT = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
+const OFFICE_EXT = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp'];
+const TEXT_EXT = ['txt', 'md', 'js', 'jsx', 'ts', 'tsx', 'css', 'html', 'htm', 'json', 'py', 'go', 'php', 'c', 'cpp', 'h', 'java', 'swift', 'kt', 'sql', 'yaml', 'yml', 'xml', 'csv'];
 
-function sum(arr) {
-  return (Array.isArray(arr) ? arr : []).reduce((a, b) => a + (Number(b) || 0), 0);
+const PASSTHROUGH_KINDS = ['link', 'checklist', 'poll', 'note'];
+
+const BADGE = {
+  pdf:    { label: 'PDF',   color: '#ef4444', bg: '#fee2e2' },
+  image:  { label: 'IMG',   color: '#3b82f6', bg: '#dbeafe' },
+  video:  { label: 'VIDEO', color: '#f97316', bg: '#ffedd5' },
+  audio:  { label: 'AUDIO', color: '#1f1f1f', bg: '#f5f5f5' },
+  office: { label: 'DOC',   color: '#3b82f6', bg: '#dbeafe' },
+  text:   { label: 'TXT',   color: '#64748b', bg: '#f1f5f9' },
+  file:   { label: 'FILE',  color: '#9a9a9a', bg: '#f5f5f5' },
+};
+
+/** Розширення з назви: 'logo.PNG' -> 'png'. */
+export function extOf(title) {
+  if (typeof title !== 'string') return '';
+  const i = title.lastIndexOf('.');
+  if (i <= 0 || i === title.length - 1) return '';
+  return title.slice(i + 1).toLowerCase();
 }
 
-/** Normalize a raw QuickTeam+ material doc into a render-ready view model. */
-export function toMaterialView(m) {
-  const raw = m && typeof m === 'object' ? m : {};
-  const type = typeof raw.type === 'string' ? raw.type : '';
-  const title = (typeof raw.title === 'string' && raw.title.trim()) || 'Без назви';
-  const subtitle = raw.desc || raw.source || null;
-  const href = raw.url || null;
+/**
+ * URL матеріалу за правилами порталу. Пропускаємо лише http(s) —
+ * javascript:/data: у href дали б XSS через дані порталу.
+ */
+export function resolveMaterialUrl(raw) {
+  const m = raw && typeof raw === 'object' ? raw : {};
+  const candidate = [m.audioUrl, m.previewUrl, m.url].find((v) => typeof v === 'string' && v);
+  if (!candidate) return null;
+  let parsed;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    return null;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? candidate : null;
+}
 
-  let kind = 'unknown';
-  let icon = 'unknown';
-  if (type === 'link') { kind = 'link'; icon = 'link'; }
-  else if (type === 'checklist') { kind = 'checklist'; icon = 'checklist'; }
-  else if (type === 'poll') { kind = 'poll'; icon = 'poll'; }
-  else if (type === 'note') { kind = 'note'; icon = 'note'; }
-  else if (Object.prototype.hasOwnProperty.call(FILE_ICON, type)) { kind = 'file'; icon = FILE_ICON[type]; }
+/** Вид матеріалу. Розширення важливіше за `type`: портал кладе відео як type='file'. */
+export function kindOf(raw) {
+  const m = raw && typeof raw === 'object' ? raw : {};
+  if (PASSTHROUGH_KINDS.includes(m.type)) return m.type;
+  const ext = extOf(m.title);
+  if (AUDIO_EXT.includes(ext)) return 'audio';
+  if (IMAGE_EXT.includes(ext)) return 'image';
+  if (VIDEO_EXT.includes(ext)) return 'video';
+  if (ext === 'pdf') return 'pdf';
+  if (OFFICE_EXT.includes(ext)) return 'office';
+  if (TEXT_EXT.includes(ext)) return 'text';
+  if (m.type === 'audio') return 'audio';
+  if (m.type === 'image') return 'image';
+  return 'file';
+}
+
+/** Бейдж типу: підпис + кольори. Єдине місце з сирим hex — це не бренд-палітра. */
+export function badgeFor(raw) {
+  const m = raw && typeof raw === 'object' ? raw : {};
+  const kind = kindOf(m);
+  const ext = extOf(m.title);
+  const base = BADGE[kind] || BADGE.file;
+  if (kind === 'office' || kind === 'text' || kind === 'file') {
+    return { ...base, label: ext ? ext.toUpperCase() : base.label };
+  }
+  return base;
+}
+
+function domainOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+/** Сирий док матеріалу -> готова до рендеру модель. */
+export function toMaterialView(raw) {
+  const m = raw && typeof raw === 'object' ? raw : {};
+  const kind = kindOf(m);
+  const url = resolveMaterialUrl(m);
+  const title = (typeof m.title === 'string' && m.title.trim()) || 'Без назви';
+
+  let checklist = null;
+  if (kind === 'checklist') {
+    const items = Array.isArray(m.items) ? m.items : [];
+    const checkedItems = Array.isArray(m.checkedItems) ? m.checkedItems : [];
+    const total = items.length;
+    const done = checkedItems.length;
+    checklist = { items, checkedItems, done, total, percent: total ? Math.round((done / total) * 100) : 0 };
+  }
+
+  let poll = null;
+  if (kind === 'poll') {
+    const options = Array.isArray(m.options) ? m.options : [];
+    const votes = Array.isArray(m.votes) ? m.votes : [];
+    const total = votes.reduce((a, b) => a + (Number(b) || 0), 0);
+    poll = {
+      total,
+      results: options.map((option, i) => {
+        const count = Number(votes[i]) || 0;
+        return { option, count, percent: total ? Math.round((count / total) * 100) : 0 };
+      }),
+    };
+  }
+
+  const note = kind === 'note'
+    ? { content: typeof m.content === 'string' ? m.content : '', source: m.source || null }
+    : null;
+
+  const link = kind === 'link'
+    ? {
+        domain: domainOf(typeof m.url === 'string' ? m.url : ''),
+        image: m.ogImage || null,
+        title: m.ogTitle || title,
+        description: m.ogDescription || null,
+      }
+    : null;
 
   return {
-    id: raw.id || null,
-    type,
+    id: m.id || null,
     kind,
-    icon,
     title,
-    subtitle,
-    href,
-    checklist: kind === 'checklist'
-      ? {
-          items: Array.isArray(raw.items) ? raw.items : [],
-          checkedItems: Array.isArray(raw.checkedItems) ? raw.checkedItems : [],
-        }
-      : null,
-    poll: kind === 'poll'
-      ? {
-          options: Array.isArray(raw.options) ? raw.options : [],
-          votes: Array.isArray(raw.votes) ? raw.votes : [],
-          total: sum(raw.votes),
-        }
-      : null,
-    note: kind === 'note'
-      ? { content: typeof raw.content === 'string' ? raw.content : '', source: raw.source || null }
-      : null,
+    subtitle: m.desc || m.source || null,
+    url,
+    badge: badgeFor(m),
+    checklist,
+    poll,
+    note,
+    link,
   };
-}
-
-/** Overall progress across a project's stages. */
-export function stageProgress(stages) {
-  const list = Array.isArray(stages) ? stages : [];
-  const total = list.length;
-  const done = list.filter((s) => s && s.status === 'done').length;
-  const percent = total ? Math.round((done / total) * 100) : 0;
-  return { done, total, percent };
-}
-
-/** UA label + tone key for a stage status. */
-export function stageStatusMeta(status) {
-  if (status === 'todo') return { label: 'Заплановано', tone: 'muted' };
-  if (status === 'in-progress') return { label: 'В роботі', tone: 'active' };
-  if (status === 'done') return { label: 'Завершено', tone: 'done' };
-  return { label: '—', tone: 'muted' };
 }
