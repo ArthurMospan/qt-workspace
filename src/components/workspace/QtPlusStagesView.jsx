@@ -34,7 +34,7 @@ function MaterialCard({ material }) {
   );
 
   return (
-    <div className="rounded-[10px] border border-line px-3 py-2 bg-white">
+    <div className="rounded-[10px] border border-line px-3 py-2 bg-surface">
       {v.href ? (
         <a href={v.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80">
           {head}
@@ -47,7 +47,7 @@ function MaterialCard({ material }) {
             const checked = v.checklist.checkedItems.includes(i);
             return (
               <li key={i} className="flex items-center gap-2 text-[12px]">
-                <span className={`w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center shrink-0 ${checked ? 'bg-[#10b981] border-[#10b981]' : 'border-line bg-white'}`}>
+                <span className={`w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center shrink-0 ${checked ? 'bg-[#10b981] border-[#10b981]' : 'border-line bg-surface'}`}>
                   {checked && <Check size={10} className="text-white" />}
                 </span>
                 <span className={checked ? 'text-muted line-through' : 'text-ink'}>{item}</span>
@@ -90,7 +90,15 @@ function MaterialCard({ material }) {
 function StageMaterials({ stageId }) {
   const { materials, loading, error } = usePortalStageMaterials(stageId);
   if (loading) return <div className="py-2 pl-1"><Spinner /></div>;
-  if (error) return <p className="text-[12px] text-muted py-2 pl-1">Немає доступу до матеріалів.</p>;
+  if (error) {
+    return (
+      <p className="text-[12px] text-muted py-2 pl-1">
+        {error === 'no_access'
+          ? 'Немає доступу до матеріалів.'
+          : 'Не вдалося завантажити матеріали. Спробуйте пізніше.'}
+      </p>
+    );
+  }
   if (materials.length === 0) return <p className="text-[12px] text-muted py-2 pl-1">Ще немає матеріалів.</p>;
   return (
     <div className="flex flex-col gap-2 py-2">
@@ -104,7 +112,15 @@ export default function QtPlusStagesView({ qtProjectId }) {
   const [expanded, setExpanded] = useState(null);
 
   if (loading) return <div className="py-3"><Spinner /></div>;
-  if (error) return <p className="text-[13px] text-muted py-3">Немає доступу до цього проєкту QuickTeam+ вашим акаунтом.</p>;
+  if (error) {
+    return (
+      <p className="text-[13px] text-muted py-3">
+        {error === 'no_access'
+          ? 'Немає доступу до цього проєкту QuickTeam+ вашим акаунтом.'
+          : 'Не вдалося завантажити етапи. Спробуйте пізніше.'}
+      </p>
+    );
+  }
   if (stages.length === 0) return <p className="text-[13px] text-muted py-3">Ще немає етапів.</p>;
 
   const { done, total, percent } = stageProgress(stages);
