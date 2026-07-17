@@ -27,7 +27,7 @@ export default function MediaLightbox({ view, onClose }) {
     >
       <button
         type="button"
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
         aria-label="Закрити"
         className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
       >
@@ -35,16 +35,21 @@ export default function MediaLightbox({ view, onClose }) {
       </button>
 
       <div className="max-w-[90vw] max-h-[90vh] flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
-        {view.kind === 'image' && (
+        {!view.url && view.kind !== 'note' && (
+          <div className="bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center">
+            <p className="text-[13px] text-muted">Файл недоступний.</p>
+          </div>
+        )}
+        {view.kind === 'image' && view.url && (
           <img src={view.url} alt={view.title} className="max-w-[90vw] max-h-[80vh] object-contain rounded-[12px]" />
         )}
-        {view.kind === 'video' && (
+        {view.kind === 'video' && view.url && (
           <video src={view.url} controls autoPlay className="max-w-[90vw] max-h-[80vh] rounded-[12px]" />
         )}
-        {view.kind === 'pdf' && (
+        {view.kind === 'pdf' && view.url && (
           <iframe src={view.url} title={view.title} className="w-[90vw] h-[80vh] rounded-[12px] bg-white border-0" />
         )}
-        {view.kind === 'text' && (
+        {view.kind === 'text' && view.url && (
           <iframe src={view.url} title={view.title} className="w-[70vw] h-[80vh] rounded-[12px] bg-white border-0" />
         )}
         {view.kind === 'note' && (
