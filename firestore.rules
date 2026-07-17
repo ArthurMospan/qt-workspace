@@ -193,9 +193,13 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if isOrgMember(issueOrg(issueId));
         allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.authorId == request.auth.uid;
-        allow update: if isOrgMember(issueOrg(issueId)) &&
-          resource.data.authorId == request.auth.uid &&
-          request.resource.data.authorId == resource.data.authorId;
+        // The author may edit their own comment; any org member may mark it read
+        // (read receipts) — that write touches only `readBy` and nothing else.
+        allow update: if isOrgMember(issueOrg(issueId)) && (
+          (resource.data.authorId == request.auth.uid &&
+           request.resource.data.authorId == resource.data.authorId) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+        );
         allow delete: if isOrgMember(issueOrg(issueId)) &&
           resource.data.authorId == request.auth.uid;
       }

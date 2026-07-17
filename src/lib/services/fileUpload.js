@@ -66,3 +66,29 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
     throw err;
   }
 }
+
+/**
+ * Deletes a previously uploaded Cloudinary asset via the signed server route.
+ * Best-effort: a failure here must not block removing the message itself, so
+ * callers may swallow the rejection. Needs the attachment's storagePath
+ * (Cloudinary public_id) and resourceType captured at upload time.
+ */
+export async function deleteFileFromCloudinary(storagePath, resourceType = 'image') {
+  if (!storagePath) return false;
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Authentication is required to delete files');
+
+  const res = await fetch('/api/upload/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ storagePath, resourceType }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.error || `Cloudinary delete failed: ${res.statusText}`);
+  }
+  return true;
+}

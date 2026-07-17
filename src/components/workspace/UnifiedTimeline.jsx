@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, FileText, Paperclip, Pencil, Reply, Send, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, Eye, FileText, Paperclip, Pencil, Reply, Send, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
@@ -254,7 +254,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
 
-  const { comments, addComment, updateComment, deleteComment } = useComments(issueId);
+  const { comments, addComment, updateComment, deleteComment, markCommentsRead } = useComments(issueId);
   const { entries: auditLogs } = useAuditLog(issueId);
   const { logs: timeLogs } = useTimeLogs(issueId);
 
@@ -329,15 +329,18 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   };
 
   const handleDelete = async comment => {
+    const hasFiles = Array.isArray(comment.attachments) && comment.attachments.length > 0;
     const confirmed = await confirmDialog({
       title: 'Видалити повідомлення?',
-      message: 'Цю дію неможливо скасувати.',
+      message: hasFiles
+        ? 'Повідомлення та прикріплені файли буде видалено остаточно, зокрема зі сховища.'
+        : 'Цю дію неможливо скасувати.',
       confirmText: 'Видалити',
       danger: true,
     });
     if (!confirmed) return;
     try {
-      await deleteComment(comment.id);
+      await deleteComment(comment.id, comment.attachments);
       if (editingComment?.id === comment.id || replyTo?.id === comment.id) resetComposer();
     } catch (error) {
       showToast(`Не вдалося видалити повідомлення: ${error.message}`, 'error');
@@ -390,6 +393,17 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [timeline.length]);
+
+  // Read receipts: while the chat is open, mark every visible comment from
+  // other people that this user hasn't read yet. Best-effort (see hook).
+  const myId = currentUser?.uid || currentUser?.id;
+  useEffect(() => {
+    if (!myId) return;
+    const unread = comments
+      .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
+      .map(comment => comment.id);
+    if (unread.length) markCommentsRead(unread, myId);
+  }, [comments, myId, markCommentsRead]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
@@ -453,7 +467,8 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                 </button>
                 <div className={`flex max-w-[84%] min-w-0 flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{item.authorName}</span>}
-                  <div className={`max-w-full break-words rounded-[12px] px-3 py-2.5 text-[13px] leading-5 ${isMe ? 'bg-ink text-white' : 'bg-white text-ink'}`}>
+                  {/* Асиметричний кут-«хвостик» до аватара — як у QuickTeam+ */}
+                  <div className={`max-w-full break-words px-3 py-2.5 text-[13px] leading-5 ${isMe ? 'rounded-[14px] rounded-tr-[4px] bg-ink text-white' : 'rounded-[14px] rounded-tl-[4px] bg-white text-ink'}`}>
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
                     {item.text && <div className="whitespace-pre-wrap">{item.text}</div>}
                     <CommentAttachments attachments={item.attachments} dark={isMe} onOpen={setViewerAttachment} />
@@ -462,6 +477,12 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                     <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
                       {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
+                    {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими */}
+                    {isMe && (
+                      (item.readBy || []).some(readerId => readerId !== item.authorId)
+                        ? <CheckCheck size={13} className="text-[#6366f1]" aria-label="Прочитано" />
+                        : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />
+                    )}
                     {!isArchived && (
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
                         <button type="button" onClick={() => beginReply(item)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Відповісти" title="Відповісти"><Reply size={12} /></button>
