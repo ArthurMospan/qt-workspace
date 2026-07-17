@@ -4,7 +4,7 @@
 // Primary destinations live in the bar; everything else from the desktop
 // sidebar (спринти, команда, налаштування, список проєктів, таймер) —
 // у висувній шторці «Ще».
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -17,6 +17,7 @@ import {
   Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown,
 } from 'lucide-react';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
+import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -71,6 +72,26 @@ export default function MobileNav() {
     !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   // Close the sheet on navigation
+  const sidebarPreview = useWorkspaceStore(s => s.sidebarPreview);
+  const isBranded = sidebarPreview
+    ? Boolean(sidebarPreview.customBranding && sidebarPreview.logo)
+    : Boolean(activeOrg?.customBranding && activeOrg?.logo);
+
+  const theme = useMemo(() => {
+    const source = sidebarPreview || (isBranded ? {
+      theme: activeOrg?.sidebarTheme || 'dark',
+      color: activeOrg?.sidebarColor || SIDEBAR_PRESETS.dark,
+    } : null);
+
+    if (!source) return computeSidebarTheme(SIDEBAR_PRESETS.dark);
+
+    const bgColor = source.theme === 'light' ? SIDEBAR_PRESETS.light
+      : source.theme === 'custom' ? (source.color || SIDEBAR_PRESETS.dark)
+      : SIDEBAR_PRESETS.dark;
+
+    return computeSidebarTheme(bgColor);
+  }, [isBranded, activeOrg?.sidebarTheme, activeOrg?.sidebarColor, sidebarPreview]);
+
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 
   // Lock body scroll while the sheet is open
@@ -102,15 +123,23 @@ export default function MobileNav() {
     <>
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 bg-ink flex items-stretch"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--sb-bg)] flex items-stretch border-t border-[var(--sb-border)]"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          '--sb-bg': theme.bg,
+          '--sb-text': theme.text,
+          '--sb-muted': theme.muted,
+          '--sb-hover': theme.hover,
+          '--sb-active': theme.active,
+          '--sb-border': theme.border,
+        }}
       >
         {TABS.map(({ href, icon: Icon, label, exact }) => {
           const active = isActive(href, exact);
           return (
             <Link key={href} href={href}
               className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${
-                active ? 'text-white' : 'text-[#8a8a8a]'
+                active ? 'text-[var(--sb-text)]' : 'text-[var(--sb-muted)] hover:text-[var(--sb-hover)]'
               }`}>
               <Icon size={20} />
               <span className="text-[10px] font-semibold leading-none">{label}</span>
@@ -125,7 +154,7 @@ export default function MobileNav() {
         <button
           onClick={() => setMoreOpen(o => !o)}
           className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${
-            moreOpen || moreActive ? 'text-white' : 'text-[#8a8a8a]'
+            moreOpen || moreActive ? 'text-[var(--sb-text)]' : 'text-[var(--sb-muted)] hover:text-[var(--sb-hover)]'
           }`}>
           <Menu size={20} />
           <span className="text-[10px] font-semibold leading-none">Ще</span>
@@ -146,16 +175,24 @@ export default function MobileNav() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
             onClick={e => e.stopPropagation()}
-            className="absolute bottom-0 left-0 right-0 bg-ink rounded-t-[24px] max-h-[80vh] overflow-y-auto"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+            className="absolute bottom-0 left-0 right-0 bg-[var(--sb-bg)] rounded-t-[24px] max-h-[80vh] overflow-y-auto"
+            style={{
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+              '--sb-bg': theme.bg,
+              '--sb-text': theme.text,
+              '--sb-muted': theme.muted,
+              '--sb-hover': theme.hover,
+              '--sb-active': theme.active,
+              '--sb-border': theme.border,
+            }}
           >
             {/* Handle + org row */}
-            <div className="sticky top-0 bg-ink pt-[10px] pb-[4px]">
-              <div className="w-[36px] h-[4px] bg-white/20 rounded-full mx-auto mb-[12px]" />
+            <div className="sticky top-0 bg-[var(--sb-bg)] pt-[10px] pb-[4px]">
+              <div className="w-[36px] h-[4px] bg-[var(--sb-text)] opacity-20 rounded-full mx-auto mb-[12px]" />
               <div className="flex items-center justify-between px-[20px] pb-[8px]">
                 <button
                   onClick={() => setShowOrgSwitcher(true)}
-                  className="flex items-center gap-[6px] text-white min-w-0">
+                  className="flex items-center gap-[6px] text-[var(--sb-text)] min-w-0">
                   <span className="text-[15px] font-bold truncate">{activeOrg?.name || 'QuickTeam'}</span>
                   {otherOrgUnreadCount > 0 && (
                     <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
@@ -178,7 +215,7 @@ export default function MobileNav() {
                 return (
                   <Link key={href} href={href}
                     className={`flex items-center gap-[14px] h-[44px] px-[12px] rounded-[12px] transition-colors ${
-                      active ? 'bg-[#333333] text-white' : 'text-[#c9c9c9]'
+                      active ? 'bg-[var(--sb-active)] text-[var(--sb-text)]' : 'text-[var(--sb-muted)] hover:text-[var(--sb-hover)]'
                     }`}>
                     <Icon size={19} />
                     <span className="text-[14px] font-medium">{label}</span>

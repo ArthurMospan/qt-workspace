@@ -444,7 +444,6 @@ export default function GlobalSprintsPage() {
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
-                className="w-[200px]"
                 variant="ghost"
               />
               <Select

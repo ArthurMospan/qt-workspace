@@ -207,15 +207,6 @@ export default function BoardPage({ params }) {
                 )}
               </Link>
             )}
-            {!isArchived && can(orgRole, 'edit:board_columns') && (
-              <Button
-                onClick={() => setShowConfigModal(true)}
-                icon={Settings2}
-                size="icon-lg"
-                style="secondary"
-                title="Налаштування дошки"
-              />
-            )}
             {!isArchived && (
               <Button
                 onClick={() => setShowCreateTaskModal(true)}
@@ -232,9 +223,10 @@ export default function BoardPage({ params }) {
         }
         filters={
           activeTab === 'board' ? (
-            <FilterBar>
-              <Select
-                value={boardSprintFilter}
+            <>
+              <FilterBar>
+                <Select
+                  value={boardSprintFilter}
                   onChange={setBoardSprintFilter}
                   options={[
                     { value: 'all', label: 'Всі спринти' },
@@ -290,6 +282,18 @@ export default function BoardPage({ params }) {
                   variant="ghost"
                 />
               </FilterBar>
+              {!isArchived && can(orgRole, 'edit:board_columns') && (
+                <div className="ml-auto">
+                  <Button
+                    onClick={() => setShowConfigModal(true)}
+                    icon={Settings2}
+                    size="icon-lg"
+                    style="secondary"
+                    title="Налаштування дошки"
+                  />
+                </div>
+              )}
+            </>
           ) : activeTab === 'analytics' ? (
             <FilterBar>
               <Select

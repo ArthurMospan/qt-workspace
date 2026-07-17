@@ -177,7 +177,7 @@ function AddMemberModal({ project, allMembers, onClose }) {
 }
 
 // ── Project Card ─────────────────────────────────────────────────────────────
-const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false }) => {
+const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
   const router = useRouter();
   const { currentUser, activeOrgId } = useAppContext();
   const confirmDialog = useConfirm();
@@ -334,7 +334,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
         </div>
 
         {/* Real-time stats and Dynamic content */}
-        <ProjectStatsSection isLarge={isLarge} members={members} issues={issues} now={now} />
+        <ProjectStatsSection isLarge={isLarge} members={members} issues={issues} now={now} currentUser={currentUser} orgLoading={orgLoading} />
       </div>
 
       {/* Modals */}
@@ -346,7 +346,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 };
 
 // Helper Component for Real-time project statistics and details
-function ProjectStatsSection({ isLarge, members, issues = [], now }) {
+function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const inProgressStatusIds = useMemo(
     () => statuses.slice(1).filter(status => !doneStatusIds.includes(status.id)).map(status => status.id),
@@ -382,30 +382,37 @@ function ProjectStatsSection({ isLarge, members, issues = [], now }) {
       let actorUser = null;
       if (newestIssue.updatedBy) {
         actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
+        if (!actorUser && (newestIssue.updatedBy === currentUser?.id || newestIssue.updatedBy === currentUser?.uid)) actorUser = currentUser;
       } else if (newestIssue.reporterId) {
         actorUser = members.find(m => (m.id || m.uid) === newestIssue.reporterId);
+        if (!actorUser && (newestIssue.reporterId === currentUser?.id || newestIssue.reporterId === currentUser?.uid)) actorUser = currentUser;
       } else if (newestIssue.reporterName) {
         actorUser = members.find(m => m.email && m.email.toLowerCase() === newestIssue.reporterName.toLowerCase());
+        if (!actorUser && currentUser?.email && currentUser.email.toLowerCase() === newestIssue.reporterName.toLowerCase()) actorUser = currentUser;
       }
 
-      if (actorUser) {
-        actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
-        actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
-      } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
-        actorName = 'BuggyBag';
-      } else if (newestIssue.reporterName) {
-        actorName = newestIssue.reporterName;
-      }
+      if (!actorUser && orgLoading) {
+        lastActionStr = null;
+      } else {
+        if (actorUser) {
+          actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
+          actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
+        } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
+          actorName = 'BuggyBag';
+        } else if (newestIssue.reporterName) {
+          actorName = newestIssue.reporterName;
+        }
 
-      lastActionStr = {
-        issueKey: newestIssue.issueKey || 'Задачу',
-        title: newestIssue.title,
-        actor: actorName,
-        actorAvatar,
-        time: newestIssue.updatedAt || newestIssue.createdAt,
-        projectId: newestIssue.projectId,
-        id: newestIssue.id
-      };
+        lastActionStr = {
+          issueKey: newestIssue.issueKey || 'Задачу',
+          title: newestIssue.title,
+          actor: actorName,
+          actorAvatar,
+          time: newestIssue.updatedAt || newestIssue.createdAt,
+          projectId: newestIssue.projectId,
+          id: newestIssue.id
+        };
+      }
     }
 
     return {
@@ -606,7 +613,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
 export default function WorkspacePage() {
   const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
-  const { members } = useOrganization();
+  const { members, loading: orgLoading } = useOrganization();
   const { labels, doneStatusIds } = useWorkflowConfig();
   const { sprints } = useSprints();
   const searchParams = useSearchParams();
@@ -892,6 +899,7 @@ export default function WorkspacePage() {
                     allOrgMembers={members}
                     issues={issuesByProject[p.id] || []}
                     isLarge={index === 0 && selectedMember === 'all' && dateFilter === 'all'}
+                    orgLoading={orgLoading}
                   />
                 ))}
               </div>

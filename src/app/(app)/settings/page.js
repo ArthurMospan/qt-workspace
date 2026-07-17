@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -36,11 +36,14 @@ import {
   PageHeader,
   Dialog,
   Surface,
-  useConfirm
+  useConfirm,
+  Popover
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
+import { Colorful } from '@uiw/react-color';
 import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
 import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
@@ -534,6 +537,29 @@ export default function SettingsPage() {
   const isOwner = myRole === 'owner';
 
   const [activeSection, setActiveSection] = useState('profile');
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [workspaceIsDirty, setWorkspaceIsDirty] = useState(false);
+  const [workflowIsDirty, setWorkflowIsDirty] = useState(false);
+
+  const handleSectionChange = async (newSection) => {
+    if (newSection === activeSection) return true;
+    if (profileIsDirty || workspaceIsDirty || workflowIsDirty) {
+      if (!(await confirmDialog({
+        title: 'Незбережені зміни',
+        message: 'У вас є незбережені зміни. Ви впевнені, що хочете перейти без збереження?',
+        confirmText: 'Перейти',
+        danger: true,
+      }))) {
+        return false;
+      }
+    }
+    setProfileIsDirty(false);
+    setWorkspaceIsDirty(false);
+    setWorkflowIsDirty(false);
+    setActiveSection(newSection);
+    return true;
+  };
+
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
   // Системний «назад» на телефоні повертає до списку розділів
@@ -600,6 +626,7 @@ export default function SettingsPage() {
 
   // ── Profile ──
   const [displayName,   setDisplayName]   = useState('');
+  const [customAvatar,  setCustomAvatar]  = useState('');
   const [bio,           setBio]           = useState('');
   const [telegram,      setTelegram]      = useState('');
   const [phone,         setPhone]         = useState('');
@@ -610,8 +637,27 @@ export default function SettingsPage() {
   // ── Workspace ──
   const [orgName,         setOrgName]         = useState('');
   const [orgLogo,         setOrgLogo]         = useState('');
+  const [orgCustomBranding, setOrgCustomBranding] = useState(false);
+  const [sidebarTheme,    setSidebarTheme]    = useState('dark');     // 'dark' | 'light' | 'custom'
+  const [sidebarColor,    setSidebarColor]    = useState('#1f1f1f');  // HEX for custom theme
   const [inviteEmail,     setInviteEmail]     = useState('');
   const [workspaceSaving, setWorkspaceSaving] = useState(false);
+  const setSidebarPreview = useWorkspaceStore(s => s.setSidebarPreview);
+  const clearSidebarPreview = useWorkspaceStore(s => s.clearSidebarPreview);
+
+  // Live preview: push changes to sidebar in real-time
+  useEffect(() => {
+    if (orgCustomBranding) {
+      setSidebarPreview({
+        theme: sidebarTheme,
+        color: sidebarColor,
+        customBranding: true,
+        logo: orgLogo
+      });
+    } else {
+      clearSidebarPreview();
+    }
+  }, [orgCustomBranding, sidebarTheme, sidebarColor, orgLogo, setSidebarPreview, clearSidebarPreview]);
 
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
@@ -700,6 +746,7 @@ export default function SettingsPage() {
     if (currentUser) {
       queueMicrotask(() => {
         if (currentUser.name && !displayName) setDisplayName(currentUser.name);
+        if (currentUser.customAvatar && !customAvatar) setCustomAvatar(currentUser.customAvatar);
         setBio(currentUser.bio || '');
         setTelegram(currentUser.telegram || '');
         setPhone(currentUser.phone || '');
@@ -721,8 +768,11 @@ export default function SettingsPage() {
       if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
       if (org?.name && !orgName) setOrgName(org.name);
       if (org?.logo && !orgLogo) setOrgLogo(org.logo);
+      if (org?.customBranding !== undefined) setOrgCustomBranding(Boolean(org.customBranding));
+      if (org?.sidebarTheme) setSidebarTheme(org.sidebarTheme);
+      if (org?.sidebarColor) setSidebarColor(org.sidebarColor);
     });
-  }, [currentUser?.name, org?.name, org?.logo]); // eslint-disable-line
+  }, [currentUser?.name, org?.name, org?.logo, org?.customBranding, org?.sidebarTheme, org?.sidebarColor]); // eslint-disable-line
 
   useEffect(() => {
     queueMicrotask(() => refreshAuthProviders());
@@ -780,6 +830,45 @@ export default function SettingsPage() {
 
   // ── Handlers ─────────────────────────────────────────────────────
 
+  const initialMountNotif = useRef(true);
+  useEffect(() => {
+    if (initialMountNotif.current) {
+      initialMountNotif.current = false;
+      return;
+    }
+    const saveNotifEffect = async () => {
+      const uid = currentUser?.uid || currentUser?.id;
+      if (!uid) return;
+      try {
+        await setDoc(doc(db, 'users', uid, 'settings', 'notifications'), { ...notif, updatedAt: serverTimestamp() });
+        showToast('Налаштування оновлено');
+      } catch { showToast('Помилка збереження', 'error'); }
+    };
+    saveNotifEffect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notif, showToast]);
+
+  const initialMountLoc = useRef(true);
+  useEffect(() => {
+    if (initialMountLoc.current) {
+      initialMountLoc.current = false;
+      return;
+    }
+    const saveLocEffect = async () => {
+      const uid = currentUser?.uid || currentUser?.id;
+      if (!uid) return;
+      try {
+        await updateDoc(doc(db, 'users', uid), {
+          localization: { dateFormat, firstDayOfWeek, timeFormat, timezone, language },
+          updatedAt: serverTimestamp()
+        });
+        showToast('Налаштування оновлено');
+      } catch { showToast('Помилка збереження', 'error'); }
+    };
+    saveLocEffect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFormat, firstDayOfWeek, timeFormat, timezone, language, showToast]);
+
   const saveProfile = async () => {
     const uid = currentUser?.uid || currentUser?.id;
     if (!uid) return;
@@ -797,8 +886,10 @@ export default function SettingsPage() {
         phone: phone.trim(),
         location: location.trim(),
         skills: skillsArray,
+        customAvatar: customAvatar,
         updatedAt: serverTimestamp(),
       });
+      setProfileIsDirty(false);
       showToast('Профіль збережено');
       triggerSavedSuccess();
     } catch (e) {
@@ -1050,11 +1141,18 @@ export default function SettingsPage() {
     if (!activeOrgId) return;
     setWorkspaceSaving(true);
     try {
+      // If branding is being enabled but no logo is set, disable it
+      const brandingValue = orgCustomBranding && orgLogo.trim() ? true : false;
       await updateDoc(doc(db, 'organizations', activeOrgId), { 
         name: orgName.trim(), 
         logo: orgLogo.trim(),
+        customBranding: brandingValue,
+        sidebarTheme: brandingValue ? sidebarTheme : 'dark',
+        sidebarColor: brandingValue && sidebarTheme === 'custom' ? sidebarColor : '#1f1f1f',
         updatedAt: serverTimestamp() 
       });
+      clearSidebarPreview();
+      setWorkspaceIsDirty(false);
       showToast('Налаштування організації збережено');
       triggerSavedSuccess();
     } catch { showToast('Помилка збереження', 'error'); }
@@ -1073,6 +1171,7 @@ export default function SettingsPage() {
         labels: clean(labels),
         positions: clean(positions)
       }, { merge: true });
+      setWorkflowIsDirty(false);
       showToast('Налаштування збережено');
       triggerSavedSuccess();
     } catch (e) { 
@@ -1231,8 +1330,8 @@ export default function SettingsPage() {
 
   // ── Workflow helpers ─────────────────────────────────────────────
   const makeUpdater = setter => ({
-    onSave:   updated => setter(prev => prev.map(i => i.id === updated.id ? updated : i)),
-    onDelete: id      => setter(prev => prev.filter(i => i.id !== id)),
+    onSave:   updated => { setter(prev => prev.map(i => i.id === updated.id ? updated : i)); setWorkflowIsDirty(true); },
+    onDelete: id      => { setter(prev => prev.filter(i => i.id !== id)); setWorkflowIsDirty(true); },
   });
   const stA = makeUpdater(setStatuses);
   const tpA = makeUpdater(setTypes);
@@ -1250,6 +1349,7 @@ export default function SettingsPage() {
       if (done.has(id)) done.delete(id); else done.add(id);
       return prev.map(s => ({ ...s, isDone: done.has(s.id) }));
     });
+    setWorkflowIsDirty(true);
   };
 
   const handleStatusDeleteClick = async (id) => {
@@ -1302,8 +1402,6 @@ export default function SettingsPage() {
   const getSaveAction = () => {
     switch (activeSection) {
       case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
-      case 'notifications': return { handler: saveNotifications, loading: notifSaving, label: 'Зберегти сповіщення' };
-      case 'localization': return { handler: saveLocalization, loading: locSaving, label: 'Зберегти локалізацію' };
       case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
       case 'statuses':
       case 'types':
@@ -1322,6 +1420,7 @@ export default function SettingsPage() {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     setList(items);
+    setWorkflowIsDirty(true);
   };
 
   // ── Section renderer ─────────────────────────────────────────────
@@ -1372,8 +1471,17 @@ export default function SettingsPage() {
       case 'profile': return (
         <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, завданнях та чаті" rightAction={saveButton}>
           <Card variant="white" padding="lg" className="!border-none">
+            <Row label="Аватар" desc="Завантажте власне фото (рекомендовано 1:1)">
+              <ImageUpload
+                value={customAvatar || currentUser?.avatar || ''}
+                onChange={v => { setCustomAvatar(v); setProfileIsDirty(true); }}
+                theme="light"
+                showLabel={false}
+                showHint={false}
+              />
+            </Row>
             <Row label="Ім'я" desc="Показується в завданнях і чаті">
-              <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-[200px]" />
+              <Input value={displayName} onChange={e => { setDisplayName(e.target.value); setProfileIsDirty(true); }} className="w-[200px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-muted">{currentUser?.email}</span>
@@ -1384,23 +1492,23 @@ export default function SettingsPage() {
               </span>
             </Row>
             <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
-              <Input value={telegram} onChange={e => setTelegram(e.target.value)} placeholder="username" className="w-[200px]" />
+              <Input value={telegram} onChange={e => { setTelegram(e.target.value); setProfileIsDirty(true); }} placeholder="username" className="w-[200px]" />
             </Row>
             <Row label="Телефон" desc="Контактний номер">
-              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+380..." className="w-[200px]" />
+              <Input value={phone} onChange={e => { setPhone(e.target.value); setProfileIsDirty(true); }} placeholder="+380..." className="w-[200px]" />
             </Row>
             <Row label="Локація" desc="Місто, країна">
-              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Київ, Україна" className="w-[200px]" />
+              <Input value={location} onChange={e => { setLocation(e.target.value); setProfileIsDirty(true); }} placeholder="Київ, Україна" className="w-[200px]" />
             </Row>
             <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
-              <Input value={skillsInput} onChange={e => setSkillsInput(e.target.value)} placeholder="React, Node.js, Design" className="w-[300px]" />
+              <Input value={skillsInput} onChange={e => { setSkillsInput(e.target.value); setProfileIsDirty(true); }} placeholder="React, Node.js, Design" className="w-[300px]" />
             </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <label className="text-[13px] font-medium text-ink">Про себе</label>
               <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
               <Textarea
                 value={bio}
-                onChange={e => setBio(e.target.value)}
+                onChange={e => { setBio(e.target.value); setProfileIsDirty(true); }}
                 placeholder="Розкажіть трохи про себе..."
                 className="w-full mt-1 text-[13px] h-[80px]"
               />
@@ -1508,11 +1616,7 @@ export default function SettingsPage() {
             <Row label="Email" desc="Найважливіше (призначення, згадки, дедлайни) — дублювати на пошту">
               <ToggleSwitch checked={notif.emailEnabled} onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))} size="sm" />
             </Row>
-            <Row label="Перевірка" desc="Надішли собі тестове сповіщення — перевір звук, попап і push разом">
-              <Button style="secondary" size="md" icon={Bell} onClick={sendTestNotification}>
-                Надіслати тест
-              </Button>
-            </Row>
+
           </Card>
 
           {/* Події */}
@@ -1599,14 +1703,27 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
-      case 'workspace': return (
+      case 'workspace': {
+        const handleBrandingToggle = (val) => { setOrgCustomBranding(val); setWorkspaceIsDirty(true); };
+        const handleThemeChange = (newTheme) => { setSidebarTheme(newTheme); setWorkspaceIsDirty(true); };
+        const handleColorChange = (newColor) => { setSidebarColor(newColor); setWorkspaceIsDirty(true); };
+
+        const THEME_OPTIONS = [
+          { id: 'dark',   label: 'Темна',     bg: SIDEBAR_PRESETS.dark },
+          { id: 'light',  label: 'Світла',    bg: SIDEBAR_PRESETS.light },
+          { id: 'custom', label: 'Ваш колір', bg: sidebarColor },
+        ];
+
+        return (
         <Section title="Загальні" desc="Загальні налаштування вашої організації" rightAction={saveButton}>
+          {/* Zone 1: Organization */}
           <Card variant="white" padding="lg" className="!border-none">
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Організація</p>
             <Row label="Назва організації" desc="Видима всім у вашій організації">
-              <Input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-[200px]" />
+              <Input value={orgName} onChange={e => { setOrgName(e.target.value); setWorkspaceIsDirty(true); }} className="w-[200px]" />
             </Row>
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
-              <ImageUpload value={orgLogo} onChange={setOrgLogo} theme="light" showLabel={false} showHint={false} />
+              <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); setWorkspaceIsDirty(true); }} theme="light" showLabel={false} showHint={false} />
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
@@ -1622,8 +1739,115 @@ export default function SettingsPage() {
               </div>
             </Row>
           </Card>
+
+          {/* Zone 2: Branding */}
+          <Card variant="white" padding="lg" className={`!border-none transition-opacity ${!orgLogo ? 'opacity-50 pointer-events-none' : ''}`}>
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Брендинг</p>
+            {!orgLogo && (
+              <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
+            )}
+            <Row label="Брендинг у сайдбарі" desc="Замінити логотип QuickTeam на логотип вашої організації для всіх учасників">
+              <div className="flex items-center gap-[12px]">
+                {/* Show org logo preview when branding is on */}
+                {orgCustomBranding && orgLogo && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={orgLogo}
+                    alt="Логотип"
+                    className="w-[32px] h-[32px] rounded-[8px] object-cover border border-line"
+                  />
+                )}
+                <ToggleSwitch
+                  checked={orgCustomBranding}
+                  onChange={handleBrandingToggle}
+                  disabled={!orgLogo}
+                />
+              </div>
+            </Row>
+
+            {/* Theme picker — visible only when branding is ON */}
+            {orgCustomBranding && orgLogo && (
+              <>
+                <div className="pt-[12px]">
+                  <p className="text-[13px] font-medium text-ink mb-[2px]">Тема сайдбару</p>
+                  <p className="text-[12px] text-muted mb-[12px]">Оберіть колірну схему бічної панелі</p>
+                  <div className="flex gap-[16px]">
+                    {THEME_OPTIONS.map(opt => {
+                      const isActive = sidebarTheme === opt.id;
+                      const isCustomUnselected = opt.id === 'custom' && !isActive;
+
+                      const buttonNode = (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            handleThemeChange(opt.id);
+                          }}
+                          className="flex flex-col items-center gap-[6px] group/theme"
+                        >
+                          <div
+                            className={`w-[44px] h-[44px] rounded-full transition-all ${
+                              isActive
+                                ? 'ring-2 ring-ink ring-offset-2'
+                                : 'ring-1 ring-line hover:ring-muted'
+                            }`}
+                            style={isCustomUnselected
+                              ? { background: 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)' }
+                              : {
+                                  backgroundColor: opt.bg,
+                                  border: opt.id === 'light' && !isActive ? '1px solid #e0e0e0' : 'none',
+                                }
+                            }
+                          />
+                          <span className={`text-[11px] font-medium transition-colors ${isActive ? 'text-ink' : 'text-muted group-hover/theme:text-ink'}`}>{opt.label}</span>
+                        </button>
+                      );
+
+                      if (opt.id === 'custom') {
+                        return (
+                          <Popover
+                            key={opt.id}
+                            position="top"
+                            trigger={buttonNode}
+                          >
+                            <div className="flex flex-col gap-[16px] w-[220px]">
+                              <Colorful
+                                color={sidebarColor}
+                                onChange={(color) => handleColorChange(color.hex)}
+                                disableAlpha={true}
+                              />
+                              <div className="flex items-center gap-[10px]">
+                                <div
+                                  className="w-[28px] h-[28px] rounded-[6px] shrink-0 border border-line"
+                                  style={{ backgroundColor: sidebarColor }}
+                                />
+                                <Input
+                                  value={sidebarColor}
+                                  onChange={e => {
+                                    const v = e.target.value;
+                                    setSidebarColor(v);
+                                    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
+                                      handleColorChange(v);
+                                    }
+                                  }}
+                                  className="w-full font-mono text-[13px] h-[32px]"
+                                  placeholder="#1a365d"
+                                />
+                              </div>
+                            </div>
+                          </Popover>
+                        );
+                      }
+
+                      return buttonNode;
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </Card>
         </Section>
       );
+      }
 
 
 
@@ -2212,9 +2436,9 @@ export default function SettingsPage() {
   // ── Layout ───────────────────────────────────────────────────
   const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin);
 
-  const handleNavChange = (id) => {
-    setActiveSection(id);
-    setMobilePane('content');
+  const handleNavChange = async (id) => {
+    const success = await handleSectionChange(id);
+    if (success) setMobilePane('content');
   };
 
   const sidebarContent = (

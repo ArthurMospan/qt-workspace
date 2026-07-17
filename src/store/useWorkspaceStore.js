@@ -105,6 +105,11 @@ const useWorkspaceStore = create((set, get) => ({
   // ── Localization ──────────────────────────────────────────────────
   localization: null,
   setLocalization: (loc) => set({ localization: loc }),
+
+  // ── Sidebar theme live-preview (settings page → sidebar) ─────────
+  sidebarPreview: null,  // { theme: 'dark'|'light'|'custom', color: '#hex' } | null
+  setSidebarPreview: (preview) => set({ sidebarPreview: preview }),
+  clearSidebarPreview: () => set({ sidebarPreview: null }),
 }));
 
 export default useWorkspaceStore;

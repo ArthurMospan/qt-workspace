@@ -77,12 +77,12 @@ export function useAuth() {
           };
 
           const resolvedName = firebaseUser.displayName || storedProfile?.name || 'Користувач';
-          const resolvedAvatar = firebaseUser.photoURL || storedProfile?.avatar || fallbackProfile.avatar;
+          const resolvedAvatar = storedProfile?.customAvatar || firebaseUser.photoURL || storedProfile?.avatar || fallbackProfile.avatar;
           let reactiveProfile;
           if (snap.exists()) {
             const profileUpdates = {};
             if (storedProfile.name !== resolvedName) profileUpdates.name = resolvedName;
-            if (storedProfile.avatar !== resolvedAvatar) profileUpdates.avatar = resolvedAvatar;
+            if (storedProfile.avatar !== resolvedAvatar && !storedProfile.customAvatar) profileUpdates.avatar = resolvedAvatar;
             if (Object.keys(profileUpdates).length > 0) {
               await setDoc(userRef, profileUpdates, { merge: true });
             }

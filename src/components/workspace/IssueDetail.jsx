@@ -738,11 +738,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             className={`flex flex-col overflow-visible ${isModal ? '' : 'custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
           >
             <div
-              className={`sticky ${isModal ? 'top-0' : 'top-[56px] lg:top-0'} z-[80]`}
+              className={`sticky ${isModal ? 'top-0' : 'top-[56px] lg:top-0'} z-[30]`}
             >
 
             {/* TITLE & ACTIONS */}
-            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[24px] pt-[12px]">
+            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
               <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {isEditing ? (
               <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full" placeholder="Назва завдання..." />
@@ -823,11 +823,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </>
             ) : (
               <>
-              {!isArchived && <Button style="secondary" size="icon" icon={Pencil} onClick={enterEdit} aria-label="Редагувати завдання" title="Редагувати завдання" />}
+              {!isArchived && <Button style="secondary" size="icon-lg" icon={Pencil} onClick={enterEdit} aria-label="Редагувати завдання" title="Редагувати завдання" />}
               <div className="relative" ref={actionsDropdownRef}>
                 <Button 
                   style="secondary" 
-                  size="icon" 
+                  size="icon-lg" 
                   icon={MoreHorizontal}
                   onClick={() => setShowActionsDropdown(!showActionsDropdown)}
                   title="Опції"

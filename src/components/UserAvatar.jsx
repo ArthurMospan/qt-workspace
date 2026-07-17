@@ -10,7 +10,7 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
     </div>
   );
 
-  const avatarUrl = user.avatar || user.photoURL;
+  const avatarUrl = user.customAvatar || user.avatar || user.photoURL;
   const name = user.name || user.email || '?';
   const initials = name.charAt(0).toUpperCase();
 

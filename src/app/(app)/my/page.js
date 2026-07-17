@@ -214,13 +214,6 @@ export default function MyTasksPage() {
           actions={
             <div className="flex gap-2">
               <Button
-                onClick={() => setShowSettingsModal(true)}
-                icon={Settings2}
-                size="icon-lg"
-                style="secondary"
-                title="Налаштування дошки"
-              />
-              <Button
                 onClick={() => { setCreateTaskStatus(null); setShowCreateTaskModal(true); }}
                 icon={Plus}
                 size="lg"
@@ -281,15 +274,25 @@ export default function MyTasksPage() {
               />
             </FilterBar>
             
-            <Tabs
-              tabs={[
-                { id: 'kanban', icon: Kanban },
-                { id: 'list', icon: List }
-              ]}
-              activeTab={viewMode}
-              onTabChange={setViewMode}
-              className="ml-auto"
-            />
+            <div className="flex items-center gap-2 ml-auto">
+              {viewMode === 'kanban' && (
+                <Button
+                  onClick={() => setShowSettingsModal(true)}
+                  icon={Settings2}
+                  size="icon-lg"
+                  style="secondary"
+                  title="Налаштування дошки"
+                />
+              )}
+              <Tabs
+                tabs={[
+                  { id: 'kanban', icon: Kanban },
+                  { id: 'list', icon: List }
+                ]}
+                activeTab={viewMode}
+                onTabChange={setViewMode}
+              />
+            </div>
           </div>
           }
         />
