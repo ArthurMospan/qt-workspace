@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
+import InviteLinkSection from '@/components/InviteLinkSection';
 import { Select } from '@/components/ui/Select';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
@@ -66,11 +67,13 @@ function InviteModal({ isOpen, onClose, inviteMember }) {
     >
       <div className="flex flex-col gap-4 min-h-[200px]">
         <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+        {/* 'owner' is intentionally not offered: the API only ever assigns
+            member/admin, so offering it here was a lie. */}
         <Select value={inviteRole} onChange={setInviteRole} options={[
-          {value: 'owner', label: 'Власник'},
           {value: 'admin', label: 'Адміністратор'},
           {value: 'member', label: 'Учасник'}
         ]} label="Роль" />
+        <InviteLinkSection role={inviteRole} />
       </div>
     </Dialog>
   );

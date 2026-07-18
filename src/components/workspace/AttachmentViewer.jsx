@@ -2,10 +2,20 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ExternalLink, FileText, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, ExternalLink, FileText, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 function getUrl(attachment) {
   return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
+}
+
+// Cloudinary forces a download (rather than inline view) when the delivery URL
+// carries the fl_attachment flag. For any other host we fall back to the raw
+// URL + the download attribute.
+function downloadUrlFor(url) {
+  if (typeof url === 'string' && url.includes('/upload/') && url.includes('res.cloudinary.com')) {
+    return url.replace('/upload/', '/upload/fl_attachment/');
+  }
+  return url;
 }
 
 function getKind(attachment) {
@@ -57,6 +67,7 @@ export default function AttachmentViewer({ attachment, onClose }) {
             <button type="button" onClick={() => setScale(value => Math.min(3, value + 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Збільшити"><ZoomIn size={17} /></button>
           </div>
         )}
+        <a href={downloadUrlFor(url)} download={name} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Завантажити" title="Завантажити"><Download size={17} /></a>
         <a href={url} target="_blank" rel="noopener noreferrer" className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Відкрити оригінал" title="Відкрити оригінал"><ExternalLink size={17} /></a>
         <button type="button" onClick={onClose} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Закрити"><X size={19} /></button>
       </header>

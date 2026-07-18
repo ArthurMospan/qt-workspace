@@ -25,8 +25,12 @@ import { colors, spacing, sizing, shadows, transitions, zIndex } from '@/lib/des
  *   <div>Popover content goes here</div>
  * </Popover>
  */
-export function Popover({ trigger, children, position = 'bottom', className = '' }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function Popover({ trigger, children, position = 'bottom', className = '', hideCloseIcon = false, onOpenChange }) {
+  const [isOpen, setIsOpenState] = useState(false);
+  const setIsOpen = (value) => {
+    setIsOpenState(value);
+    onOpenChange?.(value);
+  };
   const containerRef = useRef(null);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
@@ -132,8 +136,9 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
             }}
           />
 
-          {/* Close button */}
-          <button
+          {/* Close button — content may opt out (hideCloseIcon) and render its
+              own cancel/apply controls via function-children instead */}
+          {!hideCloseIcon && <button
             type="button"
             onClick={() => setIsOpen(false)}
             style={{
@@ -159,11 +164,11 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
             }}
           >
             <X size={16} />
-          </button>
+          </button>}
 
           {/* Content */}
-          <div style={{ paddingTop: spacing.sm }}>
-            {children}
+          <div style={{ paddingTop: hideCloseIcon ? 0 : spacing.sm }}>
+            {typeof children === 'function' ? children({ close: () => setIsOpen(false) }) : children}
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@
     "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
     "@hello-pangea/dnd": "^18.0.1",
     "@uiw/react-color": "^2.10.3",
     "cloudinary": "^2.10.0",

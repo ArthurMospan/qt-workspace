@@ -60,7 +60,8 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
 
   return (
     <div className="flex-1 flex flex-col pb-8">
-      <div className="w-full pt-[8px]">
+      {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
+      <div className="w-full mt-[8px] bg-canvas rounded-[16px] p-[16px]">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-[16px] font-bold text-ink">Команда проєкту</h2>
@@ -99,7 +100,7 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
                     params.set('member', uid);
                     router.push(`${pathname}?${params.toString()}`);
                   }}
-                  className="bg-canvas rounded-[8px] p-5 flex flex-col gap-4 text-left hover:bg-[#eeeeef] transition-colors"
+                  className="bg-white rounded-[12px] p-5 flex flex-col gap-4 text-left hover:ring-4 hover:ring-[#ECECEC] transition-all"
                 >
                   <div className="flex items-start gap-4 w-full">
                     <UserAvatar user={member} size={48} />

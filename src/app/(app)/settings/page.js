@@ -44,7 +44,15 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { Colorful } from '@uiw/react-color';
-import { getDoneStatusIds } from '@/lib/hooks/useWorkflowConfig';
+import InviteLinkSection from '@/components/InviteLinkSection';
+import {
+  getDoneStatusIds,
+  DEFAULT_STATUSES,
+  DEFAULT_TYPES,
+  DEFAULT_PRIORITIES,
+  DEFAULT_LABELS,
+  DEFAULT_POSITIONS,
+} from '@/lib/hooks/useWorkflowConfig';
 import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { getPortalAuth } from '@/lib/portal/firebase';
@@ -63,34 +71,10 @@ const ASSIGNABLE_ROLE_OPTIONS = Object.entries(ROLE_LABELS)
   .filter(([role]) => role !== 'owner')
   .map(([value, label]) => ({ value, label }));
 
-const DEFAULT_STATUSES = [
-  { id: 'todo',            label: 'To Do',           color: '#6366f1' },
-  { id: 'in-progress',     label: 'In Progress',     color: '#0891b2' },
-  { id: 'done',            label: 'Done',            color: '#10b981' },
-];
-const DEFAULT_TYPES = [
-  { id: 'epic',    label: 'Epic',    color: '#8b5cf6' },
-  { id: 'feature', label: 'Feature', color: '#0891b2' },
-  { id: 'task',    label: 'Task',    color: '#059669' },
-  { id: 'bug',     label: 'Bug',     color: '#dc2626' },
-];
-const DEFAULT_PRIORITIES = [
-  { id: 'blocker', label: 'Blocker', color: '#ef4444' },
-  { id: 'high',    label: 'High',    color: '#f97316' },
-  { id: 'medium',  label: 'Medium',  color: '#eab308' },
-  { id: 'low',     label: 'Low',     color: '#9a9a9a' },
-];
-const DEFAULT_LABELS = [
-  { id: 'bug',      label: 'Bug',      color: '#ef4444' },
-  { id: 'frontend', label: 'Frontend', color: '#3b82f6' },
-  { id: 'design',   label: 'Design',   color: '#db2777' },
-];
-const DEFAULT_POSITIONS = [
-  { id: 'dev',      label: 'Розробник', hourlyRate: 30 },
-  { id: 'designer', label: 'Дизайнер',   hourlyRate: 35 },
-  { id: 'pm',       label: 'PM',         hourlyRate: 40 },
-  { id: 'qa',       label: 'QA',         hourlyRate: 25 },
-];
+// Workflow defaults live in useWorkflowConfig (single source of truth for
+// the board, this page and every other consumer) — never redeclare them here:
+// a local copy is exactly the bug where Settings showed one set of statuses
+// and the kanban another.
 const COLOR_PALETTE = [
   '#dc2626','#f97316','#eab308','#22c55e','#10b981',
   '#0891b2','#6366f1','#8b5cf6','#db2777','#1f1f1f',
@@ -698,6 +682,10 @@ export default function SettingsPage() {
     sound: true, popup: true, emailEnabled: false,
   });
   const [notifSaving, setNotifSaving] = useState(false);
+  // Last notif/localization value known to match Firestore (JSON) — see the
+  // auto-save effects below. null until the first render establishes it.
+  const notifBaseline = useRef(null);
+  const locBaseline = useRef(null);
   const [pushPerm, setPushPerm] = useState('default'); // browser Notification.permission
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -753,11 +741,19 @@ export default function SettingsPage() {
         setLocation(currentUser.location || '');
         setSkillsInput(Array.isArray(currentUser.skills) ? currentUser.skills.join(', ') : '');
         if (currentUser.localization) {
-          setDateFormat(currentUser.localization.dateFormat || 'DD.MM.YYYY');
-          setFirstDayOfWeek(currentUser.localization.firstDayOfWeek || 'Monday');
-          setTimeFormat(currentUser.localization.timeFormat || '24h');
-          setTimezone(currentUser.localization.timezone || 'Europe/Kyiv');
-          setLanguage(currentUser.localization.language || 'ua');
+          const loc = {
+            dateFormat: currentUser.localization.dateFormat || 'DD.MM.YYYY',
+            firstDayOfWeek: currentUser.localization.firstDayOfWeek || 'Monday',
+            timeFormat: currentUser.localization.timeFormat || '24h',
+            timezone: currentUser.localization.timezone || 'Europe/Kyiv',
+            language: currentUser.localization.language || 'ua',
+          };
+          locBaseline.current = JSON.stringify(loc);
+          setDateFormat(loc.dateFormat);
+          setFirstDayOfWeek(loc.firstDayOfWeek);
+          setTimeFormat(loc.timeFormat);
+          setTimezone(loc.timezone);
+          setLanguage(loc.language);
         }
       });
     }
@@ -820,7 +816,13 @@ export default function SettingsPage() {
         const uid = currentUser?.uid || currentUser?.id;
         if (uid) {
           const notifSnap = await getDoc(doc(db, 'users', uid, 'settings', 'notifications'));
-          if (notifSnap.exists()) setNotif(p => ({ ...p, ...notifSnap.data() }));
+          if (notifSnap.exists()) {
+            setNotif(p => {
+              const merged = { ...p, ...notifSnap.data() };
+              notifBaseline.current = JSON.stringify(merged);
+              return merged;
+            });
+          }
         }
       } catch {}
       setWfLoading(false);
@@ -830,10 +832,16 @@ export default function SettingsPage() {
 
   // ── Handlers ─────────────────────────────────────────────────────
 
-  const initialMountNotif = useRef(true);
+  // Auto-save saves what the USER changed — but hydration from Firestore also
+  // lands in the same state, so a "skip first render" guard was not enough:
+  // loading saved prefs re-saved them and toasted «Налаштування оновлено» the
+  // moment the page opened. The baseline refs hold the last value known to
+  // match Firestore (updated on hydration and after each save); the effects
+  // only write when the state actually differs from that baseline.
   useEffect(() => {
-    if (initialMountNotif.current) {
-      initialMountNotif.current = false;
+    const json = JSON.stringify(notif);
+    if (notifBaseline.current === null || notifBaseline.current === json) {
+      notifBaseline.current = json;
       return;
     }
     const saveNotifEffect = async () => {
@@ -841,6 +849,7 @@ export default function SettingsPage() {
       if (!uid) return;
       try {
         await setDoc(doc(db, 'users', uid, 'settings', 'notifications'), { ...notif, updatedAt: serverTimestamp() });
+        notifBaseline.current = json;
         showToast('Налаштування оновлено');
       } catch { showToast('Помилка збереження', 'error'); }
     };
@@ -848,10 +857,10 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notif, showToast]);
 
-  const initialMountLoc = useRef(true);
   useEffect(() => {
-    if (initialMountLoc.current) {
-      initialMountLoc.current = false;
+    const json = JSON.stringify({ dateFormat, firstDayOfWeek, timeFormat, timezone, language });
+    if (locBaseline.current === null || locBaseline.current === json) {
+      locBaseline.current = json;
       return;
     }
     const saveLocEffect = async () => {
@@ -862,6 +871,7 @@ export default function SettingsPage() {
           localization: { dateFormat, firstDayOfWeek, timeFormat, timezone, language },
           updatedAt: serverTimestamp()
         });
+        locBaseline.current = json;
         showToast('Налаштування оновлено');
       } catch { showToast('Помилка збереження', 'error'); }
     };
@@ -1808,32 +1818,48 @@ export default function SettingsPage() {
                             key={opt.id}
                             position="top"
                             trigger={buttonNode}
+                            hideCloseIcon
                           >
-                            <div className="flex flex-col gap-[16px] w-[220px]">
-                              <Colorful
-                                color={sidebarColor}
-                                onChange={(color) => handleColorChange(color.hex)}
-                                disableAlpha={true}
-                              />
-                              <div className="flex items-center gap-[10px]">
-                                <div
-                                  className="w-[28px] h-[28px] rounded-[6px] shrink-0 border border-line"
-                                  style={{ backgroundColor: sidebarColor }}
+                            {({ close }) => (
+                              <div className="flex flex-col gap-[16px] w-[220px]">
+                                <Colorful
+                                  color={sidebarColor}
+                                  onChange={(color) => handleColorChange(color.hex)}
+                                  disableAlpha={true}
                                 />
-                                <Input
-                                  value={sidebarColor}
-                                  onChange={e => {
-                                    const v = e.target.value;
-                                    setSidebarColor(v);
-                                    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
-                                      handleColorChange(v);
-                                    }
-                                  }}
-                                  className="w-full font-mono text-[13px] h-[32px]"
-                                  placeholder="#1a365d"
-                                />
+                                <div className="flex items-center gap-[10px]">
+                                  <div
+                                    className="w-[28px] h-[28px] rounded-[6px] shrink-0 border border-line"
+                                    style={{ backgroundColor: sidebarColor }}
+                                  />
+                                  <Input
+                                    value={sidebarColor}
+                                    onChange={e => {
+                                      const v = e.target.value;
+                                      setSidebarColor(v);
+                                      if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
+                                        handleColorChange(v);
+                                      }
+                                    }}
+                                    className="w-full font-mono text-[13px] h-[32px]"
+                                    placeholder="#1a365d"
+                                  />
+                                </div>
+                                {/* «Скасувати» повертає збережений колір організації;
+                                    хрестика зверху немає — він наїжджав на пікер */}
+                                <div className="flex gap-[8px]">
+                                  <Button
+                                    style="secondary" size="sm" className="flex-1"
+                                    onClick={() => { handleColorChange(org?.sidebarColor || '#1f1f1f'); close(); }}
+                                  >
+                                    Скасувати
+                                  </Button>
+                                  <Button style="primary" size="sm" className="flex-1" onClick={close}>
+                                    Готово
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </Popover>
                         );
                       }
@@ -2482,6 +2508,7 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-4 min-h-[200px]">
           <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
           <Select value={inviteRole} onChange={setInviteRole} options={ASSIGNABLE_ROLE_OPTIONS} label="Роль" />
+          <InviteLinkSection role={inviteRole} />
         </div>
       </Dialog>
     </SidebarLayout>

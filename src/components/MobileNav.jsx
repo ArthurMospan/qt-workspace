@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
+import { useCachedOrgBranding } from '@/lib/hooks/useCachedOrgBranding';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -73,14 +74,16 @@ export default function MobileNav() {
 
   // Close the sheet on navigation
   const sidebarPreview = useWorkspaceStore(s => s.sidebarPreview);
+  // Кеш брендингу — без мигання стандартної теми, поки org завантажується.
+  const orgBrand = useCachedOrgBranding(activeOrgId, activeOrg);
   const isBranded = sidebarPreview
     ? Boolean(sidebarPreview.customBranding && sidebarPreview.logo)
-    : Boolean(activeOrg?.customBranding && activeOrg?.logo);
+    : Boolean(orgBrand?.customBranding && orgBrand?.logo);
 
   const theme = useMemo(() => {
     const source = sidebarPreview || (isBranded ? {
-      theme: activeOrg?.sidebarTheme || 'dark',
-      color: activeOrg?.sidebarColor || SIDEBAR_PRESETS.dark,
+      theme: orgBrand?.sidebarTheme || 'dark',
+      color: orgBrand?.sidebarColor || SIDEBAR_PRESETS.dark,
     } : null);
 
     if (!source) return computeSidebarTheme(SIDEBAR_PRESETS.dark);
@@ -90,7 +93,7 @@ export default function MobileNav() {
       : SIDEBAR_PRESETS.dark;
 
     return computeSidebarTheme(bgColor);
-  }, [isBranded, activeOrg?.sidebarTheme, activeOrg?.sidebarColor, sidebarPreview]);
+  }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 

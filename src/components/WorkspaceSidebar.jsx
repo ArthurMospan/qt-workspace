@@ -11,13 +11,14 @@ import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon
+  Zap, Clock, Square as StopIcon, Sparkles
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicators';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
+import { useCachedOrgBranding } from '@/lib/hooks/useCachedOrgBranding';
 
 import { can } from '@/lib/utils/can';
 
@@ -37,11 +38,14 @@ export default function WorkspaceSidebar() {
   const sidebarPreview = useWorkspaceStore(s => s.sidebarPreview);
 
   // ── Custom branding ──
+  // orgBrand віддає кешований брендинг, поки документ організації ще
+  // завантажується — без мигання стандартної теми при перезавантаженні.
+  const orgBrand = useCachedOrgBranding(activeOrgId, activeOrg);
   const isBranded = sidebarPreview
     ? Boolean(sidebarPreview.customBranding && sidebarPreview.logo)
-    : Boolean(activeOrg?.customBranding && activeOrg?.logo);
-  
-  const orgLogoToUse = sidebarPreview?.logo || activeOrg?.logo;
+    : Boolean(orgBrand?.customBranding && orgBrand?.logo);
+
+  const orgLogoToUse = sidebarPreview?.logo || orgBrand?.logo;
   const [flipped, setFlipped] = useState(false);
   const flipTimeoutRef = useRef(null);
 
@@ -60,10 +64,10 @@ export default function WorkspaceSidebar() {
 
 
   const theme = useMemo(() => {
-    // Priority: live preview from settings > org data > default dark
+    // Priority: live preview from settings > org data (or its cache) > default dark
     const source = sidebarPreview || (isBranded ? {
-      theme: activeOrg?.sidebarTheme || 'dark',
-      color: activeOrg?.sidebarColor || SIDEBAR_PRESETS.dark,
+      theme: orgBrand?.sidebarTheme || 'dark',
+      color: orgBrand?.sidebarColor || SIDEBAR_PRESETS.dark,
     } : null);
 
     if (!source) return computeSidebarTheme(SIDEBAR_PRESETS.dark);
@@ -73,7 +77,7 @@ export default function WorkspaceSidebar() {
       : SIDEBAR_PRESETS.dark;
 
     return computeSidebarTheme(bgColor);
-  }, [isBranded, activeOrg?.sidebarTheme, activeOrg?.sidebarColor, sidebarPreview]);
+  }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
   useEffect(() => {
     const match = pathname.match(/^\/([^/]+)/);
@@ -109,6 +113,7 @@ export default function WorkspaceSidebar() {
     { href: '/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
+    { href: '/ai-call',    icon: Sparkles,      label: 'Дзвінок → задачі' },
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
   ];
 

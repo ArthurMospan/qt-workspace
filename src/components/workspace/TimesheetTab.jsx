@@ -170,7 +170,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
   const dayTotals = days.map(d => rows.reduce((s, r) => s + (r.byDay[dayKey(d)] || 0), 0));
 
   return (
-    <div className="bg-canvas rounded-[24px] overflow-y-hidden overflow-x-auto">
+    <div className="bg-white rounded-[16px] overflow-y-hidden overflow-x-auto">
       <table className="w-full text-left border-collapse min-w-[760px] md:min-w-0">
         <thead>
           <tr className="border-b border-line bg-[#fafafa]">
