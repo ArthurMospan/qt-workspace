@@ -113,7 +113,9 @@ export default function WorkspaceSidebar() {
     { href: '/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
-    { href: '/ai-call',    icon: Sparkles,      label: 'Дзвінок → задачі' },
+    // «Дзвінок → задачі» (/ai-call) на паузі за рішенням власника — сторінка і
+    // API готові, повернути = розкоментувати рядок нижче (і додати ключі).
+    // { href: '/ai-call', icon: Sparkles, label: 'Дзвінок → задачі' },
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
   ];
 
