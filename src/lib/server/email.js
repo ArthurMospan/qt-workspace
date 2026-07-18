@@ -1,9 +1,33 @@
-// Server-side transactional email via Resend. Single delivery point so every
-// route (invitations, notifications, OTP) talks to the provider the same way.
-// Missing RESEND_API_KEY is a soft no-op: features must degrade, not crash.
+// Server-side transactional email. Single delivery point for every route
+// (invitations, notifications, OTP login), with two interchangeable providers:
+//
+//   RESEND_API_KEY  → Resend (https://resend.com) — потребує власний домен,
+//                     *.vercel.app верифікувати неможливо (публічний суфікс).
+//   BREVO_API_KEY   → Brevo (https://brevo.com) — працює БЕЗ домену: досить
+//                     верифікувати одну адресу відправника (300 листів/день
+//                     безкоштовно). EMAIL_FROM має бути саме ця адреса.
+//
+// Якщо задано обидва ключі, перевага у Resend. Без жодного ключа відправка —
+// м'який no-op: фічі мають деградувати, а не падати.
 
-export async function deliverEmail({ to, subject, html }) {
-  if (!process.env.RESEND_API_KEY || !to) return false;
+function parseFrom() {
+  const raw = process.env.EMAIL_FROM || 'QuickTeam <notifications@quickteam.com>';
+  const match = raw.match(/^(.*)<([^>]+)>\s*$/);
+  if (match) {
+    return {
+      name: match[1].trim().replace(/^"|"$/g, '') || 'QuickTeam',
+      email: match[2].trim(),
+    };
+  }
+  return { name: 'QuickTeam', email: raw.trim() };
+}
+
+export function emailConfigured() {
+  return Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY);
+}
+
+async function sendViaResend({ to, subject, html }) {
+  const from = parseFrom();
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -11,17 +35,46 @@ export async function deliverEmail({ to, subject, html }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'notifications@quickteam.com',
+      from: `${from.name} <${from.email}>`,
       to: [to],
       subject,
       html,
     }),
   });
   if (!response.ok) {
-    console.error('[email] provider rejected request', await response.text());
+    console.error('[email][resend] provider rejected request', await response.text());
     return false;
   }
   return true;
+}
+
+async function sendViaBrevo({ to, subject, html }) {
+  const from = parseFrom();
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: from.name, email: from.email },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  if (!response.ok) {
+    console.error('[email][brevo] provider rejected request', await response.text());
+    return false;
+  }
+  return true;
+}
+
+export async function deliverEmail({ to, subject, html }) {
+  if (!to) return false;
+  if (process.env.RESEND_API_KEY) return sendViaResend({ to, subject, html });
+  if (process.env.BREVO_API_KEY) return sendViaBrevo({ to, subject, html });
+  return false;
 }
 
 const escapeHtml = value => String(value ?? '')

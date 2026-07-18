@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createHash, createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { admin, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { deliverEmail, emailConfigured } from '@/lib/server/email';
 
 export const EMAIL_OTP_TTL_SECONDS = 10 * 60;
 export const EMAIL_OTP_MAX_ATTEMPTS = 5;
@@ -46,7 +47,7 @@ export function getEmailOtpRef(email) {
 export async function sendEmailOtp(email, code) {
   const debugPayload = process.env.NODE_ENV !== 'production' ? { debugCode: code } : {};
 
-  if (!process.env.RESEND_API_KEY) {
+  if (!emailConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[auth-email] OTP for ${email}: ${code}`);
       return debugPayload;
@@ -54,29 +55,21 @@ export async function sendEmailOtp(email, code) {
     throw new Error('Email delivery is not configured');
   }
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'notifications@quickteam.com',
-      to: [email],
-      subject: 'QuickTeam login code',
-      html: `
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f1f1f;line-height:1.5">
-          <h1 style="font-size:20px;margin:0 0 12px">QuickTeam login code</h1>
-          <p style="margin:0 0 16px">Use this code to sign in or create your QuickTeam account.</p>
-          <div style="font-size:28px;font-weight:800;letter-spacing:8px;padding:16px 20px;background:#f4f4f5;border-radius:12px;display:inline-block">${code}</div>
-          <p style="margin:16px 0 0;color:#71717a;font-size:13px">The code expires in 10 minutes.</p>
-        </div>
-      `,
-    }),
+  const delivered = await deliverEmail({
+    to: email,
+    subject: 'QuickTeam login code',
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f1f1f;line-height:1.5">
+        <h1 style="font-size:20px;margin:0 0 12px">QuickTeam login code</h1>
+        <p style="margin:0 0 16px">Use this code to sign in or create your QuickTeam account.</p>
+        <div style="font-size:28px;font-weight:800;letter-spacing:8px;padding:16px 20px;background:#f4f4f5;border-radius:12px;display:inline-block">${code}</div>
+        <p style="margin:16px 0 0;color:#71717a;font-size:13px">The code expires in 10 minutes.</p>
+      </div>
+    `,
   });
 
-  if (!response.ok) {
-    throw new Error(`Email provider rejected request: ${await response.text()}`);
+  if (!delivered) {
+    throw new Error('Email provider rejected request');
   }
 
   return debugPayload;

@@ -11,7 +11,7 @@ import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon
+  Zap, Clock, Square as StopIcon, Sparkles
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
@@ -113,6 +113,7 @@ export default function WorkspaceSidebar() {
     { href: '/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
+    { href: '/ai-call',    icon: Sparkles,      label: 'Дзвінок → задачі' },
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
   ];
 

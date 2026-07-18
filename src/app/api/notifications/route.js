@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
+import { deliverEmail } from '@/lib/server/email';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
@@ -10,19 +11,14 @@ const EMAIL_TYPES = new Set(['assigned', 'mentioned', 'deadline', 'alert']);
 const ALLOWED_TYPES = new Set(['assigned', 'commented', 'status_changed', 'mentioned', 'deadline', 'alert', 'test']);
 const cleanText = (value, maxLength) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 
+// Delivery (provider choice, no-op without keys) lives in lib/server/email.
 async function sendEmail({ email, type, title, body, link }) {
-  if (!process.env.RESEND_API_KEY || !email) return;
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'notifications@quickteam.com',
-      to: [email],
-      subject: title,
-      html: generateEmailTemplate({ type, title, body, link }),
-    }),
+  if (!email) return;
+  await deliverEmail({
+    to: email,
+    subject: title,
+    html: generateEmailTemplate({ type, title, body, link }),
   });
-  if (!response.ok) console.error('[notifications] email provider rejected request', await response.text());
 }
 
 export async function POST(request) {
