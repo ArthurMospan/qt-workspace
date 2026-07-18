@@ -18,7 +18,7 @@ import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicators';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
-import { useCachedOrgBranding } from '@/lib/hooks/useCachedOrgBranding';
+import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 
 import { can } from '@/lib/utils/can';
 
@@ -79,6 +79,9 @@ export default function WorkspaceSidebar() {
     return computeSidebarTheme(bgColor);
   }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
+  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
+  useSidebarThemeBoot(theme, Boolean(activeOrg));
+
   useEffect(() => {
     const match = pathname.match(/^\/([^/]+)/);
     const projectId = match?.[1];
@@ -120,6 +123,7 @@ export default function WorkspaceSidebar() {
 
   return (
     <aside
+      data-app-sb
       style={{
         width: collapsed ? 68 : 260,
         backgroundColor: theme.bg,

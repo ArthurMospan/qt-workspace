@@ -572,8 +572,8 @@ export default function BillingTab({ issues = [], members = [], project, project
     <div className="flex-1 overflow-y-auto custom-scrollbar">
       <div className="w-full pb-16 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
-        {/* LEFT: invoice form & task selection */}
-        <div className="lg:col-span-2 flex flex-col gap-4 min-w-0">
+        {/* LEFT: invoice form & task selection — біла картка на сірій панелі аналітики */}
+        <div className="lg:col-span-2 flex flex-col gap-4 min-w-0 bg-white rounded-[16px] p-5">
           <Tabs
             tabs={[
               { id: 'details', label: 'Деталі' },
@@ -744,8 +744,8 @@ export default function BillingTab({ issues = [], members = [], project, project
           )}
         </div>
 
-        {/* RIGHT: always-visible invoice summary rail */}
-        <Card variant="gray" padding="lg" className="lg:col-span-1 flex flex-col gap-4">
+        {/* RIGHT: always-visible invoice summary rail — біла на сірій панелі */}
+        <Card variant="white" padding="lg" className="lg:col-span-1 flex flex-col gap-4 !border-none">
           <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider">
             Рахунок · {project?.name || 'Проєкт'}
           </h3>
@@ -769,13 +769,13 @@ export default function BillingTab({ issues = [], members = [], project, project
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-[12px] p-3 border border-line">
+            <div className="bg-canvas rounded-[12px] p-3">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Обрано завдань</p>
               <p className="text-[18px] font-bold text-ink mt-[2px]">
                 {checkedCount}<span className="text-[12px] text-faint font-semibold"> / {issues.length}</span>
               </p>
             </div>
-            <div className="bg-white rounded-[12px] p-3 border border-line">
+            <div className="bg-canvas rounded-[12px] p-3">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Списано часу</p>
               <p className="text-[18px] font-bold text-ink mt-[2px]">{fmtMin(totalLoggedMin)}</p>
             </div>

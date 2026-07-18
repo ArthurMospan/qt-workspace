@@ -9,7 +9,8 @@ import { useTimeLogs }         from '@/lib/hooks/useTimeLogs';
 import { useTeamMembers }      from '@/lib/hooks/useTeamMembers';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { useSprints } from '@/lib/hooks/useSprints';
-import { usePortalChat }       from '@/lib/hooks/usePortalIntegration';
+import { usePortalSession }    from '@/lib/portal/usePortalSession';
+import QtPlusChatPanel from '@/components/workspace/qtplus/chat/QtPlusChatPanel';
 import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
 import { useIssueLinks }       from '@/lib/hooks/useIssueLinks';
 import MarkdownEditor from '@/components/MarkdownEditor';
@@ -44,6 +45,29 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 // Statuses are now loaded dynamically via useWorkflowConfig.
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
+
+// Таб «QuickTeam+» у чаті завдання. Окремий компонент, щоб usePortalSession
+// (обмін токена з порталом) запускався лише коли таб реально відкрито.
+function IssueQtPlusChat({ qtProjectId, currentUser }) {
+  const { portalUser, loading } = usePortalSession();
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-[12px] text-muted">Підключаємо QuickTeam+…</p>
+      </div>
+    );
+  }
+  if (!portalUser) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6 text-center">
+        <p className="text-[12px] text-muted">
+          Підключіть свій акаунт QuickTeam+ у <Link href="/settings" className="font-semibold text-ink underline">Налаштуваннях</Link>, щоб бачити цей чат.
+        </p>
+      </div>
+    );
+  }
+  return <QtPlusChatPanel qtProjectId={qtProjectId} portalUser={portalUser} currentUser={currentUser} embedded />;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -348,8 +372,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const isArchived = project?.status === 'archived';
 
   const { stages }   = useStagesForProject(projectId);
-  const { messages } = usePortalChat(projectId);
   const { sprints = [] } = useSprints();
+
+  // Чат завдання отримує другий таб «QuickTeam+», коли проєкт звʼязано з
+  // проєктом порталу — портальний чат просто як додатковий (IssueQtPlusChat
+  // монтується лише при відкритті таба, щоб не смикати сесію QT+ даремно).
+  const qtplusLink = project?.qtplusLink || null;
+  const [chatView, setChatView] = useState('chat');
 
   const { logs: timeLogs, totalMinutes: loggedMinutes, addTimeLog, updateTimeLog, deleteTimeLog } = useTimeLogs(issueId);
   const { links = [], addLink, removeLink } = useIssueLinks(issueId);
@@ -1639,7 +1668,40 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           {!isModal && (
             <div className="mb-[32px] h-[65dvh] min-h-0 lg:sticky lg:top-0 lg:mb-0 lg:h-full lg:pb-[32px]">
               <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
-                <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} org={activeOrg} members={members} />
+                {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
+                {qtplusLink?.projectId && (
+                  <div className="flex shrink-0 items-center gap-1 border-b border-black/[0.05] px-3 py-2">
+                    {[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setChatView(tab.id)}
+                        className={`rounded-full px-3 py-[5px] text-[12px] font-semibold transition-colors ${
+                          chatView === tab.id ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                    {process.env.NEXT_PUBLIC_QTPLUS_URL && (
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${qtplusLink.projectId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto rounded-[6px] p-1.5 text-muted transition-colors hover:bg-black/[0.06] hover:text-ink"
+                        title="Відкрити проєкт у QuickTeam+"
+                        aria-label="Відкрити проєкт у QuickTeam+"
+                      >
+                        <ExternalLink size={13} />
+                      </a>
+                    )}
+                  </div>
+                )}
+                {chatView === 'qtplus' && qtplusLink?.projectId ? (
+                  <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
+                ) : (
+                  <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} org={activeOrg} members={members} />
+                )}
               </div>
             </div>
             )}

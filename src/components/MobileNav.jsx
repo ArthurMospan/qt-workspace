@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
-import { useCachedOrgBranding } from '@/lib/hooks/useCachedOrgBranding';
+import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -95,6 +95,9 @@ export default function MobileNav() {
     return computeSidebarTheme(bgColor);
   }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
+  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
+  useSidebarThemeBoot(theme, Boolean(activeOrg));
+
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 
   // Lock body scroll while the sheet is open
@@ -126,6 +129,7 @@ export default function MobileNav() {
     <>
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
       <nav
+        data-app-sb
         className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--sb-bg)] flex items-stretch border-t border-[var(--sb-border)]"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)',

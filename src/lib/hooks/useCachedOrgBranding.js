@@ -48,3 +48,17 @@ export function useCachedOrgBranding(activeOrgId, activeOrg) {
   if (activeOrg) return normalizeBrand(activeOrg);
   return cached;
 }
+
+// Друга половина анти-мигання (перша — інлайн boot-скрипт у src/app/layout.js,
+// що фарбує [data-app-sb] кешованою темою ДО першого кадру). Тут: щойно
+// приїхали живі дані організації — записуємо застосовану тему в кеш для
+// наступного перезавантаження і прибираємо boot-стиль, віддаючи владу React.
+export function useSidebarThemeBoot(theme, ready) {
+  useEffect(() => {
+    if (!ready || !theme?.bg) return;
+    try {
+      localStorage.setItem('qt_sidebar_theme', JSON.stringify(theme));
+    } catch {}
+    document.getElementById('sb-boot-theme')?.remove();
+  }, [theme, ready]);
+}

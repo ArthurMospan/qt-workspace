@@ -18,7 +18,7 @@ import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
-  Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader, KpiCard, Segmented,
+  Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader, KpiCard, Segmented, Surface,
 } from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -142,7 +142,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
 
         {/* Statuses + Projects */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card variant="white" padding="lg">
+          <Card variant="white" padding="lg" className="!border-none">
             <SectionTitle>По статусах</SectionTitle>
             <div className="flex flex-col gap-[10px]">
               {stats.byStatus.map(({ id, label, color, count }) => (
@@ -157,7 +157,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
             </div>
           </Card>
 
-          <Card variant="white" padding="lg" className="md:col-span-2">
+          <Card variant="white" padding="lg" className="md:col-span-2 !border-none">
             <SectionTitle>По проєктах</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -207,7 +207,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
         {/* Overdue + Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
-            <Card variant="white" padding="lg">
+            <Card variant="white" padding="lg" className="!border-none">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle size={13} className="text-red-500" />
                 <SectionTitle>Прострочені ({stats.overdue.length})</SectionTitle>
@@ -228,7 +228,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
               })}
             </Card>
           )}
-          <Card variant="white" padding="lg">
+          <Card variant="white" padding="lg" className="!border-none">
             <SectionTitle>Інсайти</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.blockers > 0 && (
@@ -390,7 +390,7 @@ export default function WorkspaceAnalyticsPage() {
   const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
 
   return (
-    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-canvas">
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
       <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 min-h-full pb-[120px]">
 
         <PageHeader
@@ -504,7 +504,9 @@ export default function WorkspaceAnalyticsPage() {
           }
         />
 
-        {/* Content */}
+        {/* Content — сіра панель з відступами і скругленнями, як на сторінці
+            проєктів; на ній білі картки без обводок */}
+        <Surface variant="panel" padding="lg" className="flex-1 flex flex-col min-h-[420px]">
         {activeTab === 'overview' && (
           <AnalyticsContent
             projects={visibleProjects}
@@ -548,6 +550,7 @@ export default function WorkspaceAnalyticsPage() {
             projectId={billingProject?.id}
           />
         )}
+        </Surface>
       </div>
     </div>
   );

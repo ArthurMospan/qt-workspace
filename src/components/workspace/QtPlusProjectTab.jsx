@@ -13,7 +13,7 @@ import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLink
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
 import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
 
-function LinkedRow({ name, stale, menuItems }) {
+function LinkedRow({ name, stale, menuItems, href }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
@@ -21,6 +21,19 @@ function LinkedRow({ name, stale, menuItems }) {
         <span className="text-[13px] text-ink truncate">
           Привʼязано до <span className="font-semibold">«{name || 'Без назви'}»</span>
         </span>
+        {/* Прямий перехід на цей проєкт у самому QuickTeam+ */}
+        {href && (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-[#ececec]"
+            title="Відкрити цей проєкт у QuickTeam+"
+          >
+            <ExternalLink size={11} />
+            Відкрити в QuickTeam+
+          </a>
+        )}
         {menuItems && (
           <div className="ml-auto shrink-0">
             <ContextMenu
@@ -108,12 +121,16 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
     setSaving(false);
   };
 
+  const portalProjectUrl = process.env.NEXT_PUBLIC_QTPLUS_URL && link?.projectId
+    ? `${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${link.projectId}`
+    : null;
+
   // ── Member (read-only). Members only reach this tab when linked; guard anyway. ──
   if (!canManage) {
     if (!view.linked) return null;
     return (
       <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
-        <LinkedRow name={view.linkedName} />
+        <LinkedRow name={view.linkedName} href={portalProjectUrl} />
         {portalUser && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
       </div>
     );
@@ -127,6 +144,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           <LinkedRow
             name={view.linkedName}
             stale={view.staleAccess}
+            href={portalProjectUrl}
             menuItems={[
               ...(portalUser && options.length > 0
                 ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]

@@ -23,7 +23,9 @@ function DayDivider({ label }) {
  * portalUser + currentUser приходять від QtPlusProjectTab; qtProjectId — id проєкту
  * в ПОРТАЛІ (link.projectId). Панель read+write у портальну БД (див. usePortalChat).
  */
-export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser }) {
+// embedded: режим для вбудовування в чужий контейнер (таб чату в завданні) —
+// без власної рамки/заголовка, на всю висоту батька.
+export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, embedded = false }) {
   const uid = portalUser?.uid || null;
   const { messages, loading, error, typingUsers, sendMessage, setTyping, markAllRead, deleteMessage } =
     usePortalChat(qtProjectId, portalUser);
@@ -62,16 +64,20 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser }
   const avatarUrl = currentUser?.avatar || null;
 
   return (
-    <div className="flex flex-col h-[520px] max-h-[70vh] rounded-[12px] border border-line bg-surface overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-line shrink-0">
-        <MessagesSquare size={15} className="text-muted" />
-        <span className="text-[13px] text-ink font-semibold">Чат</span>
-        {unread > 0 && (
-          <span className="ml-auto text-[11px] font-semibold text-white bg-[#6366f1] rounded-full px-2 py-[1px]">
-            {unread}
-          </span>
-        )}
-      </div>
+    <div className={embedded
+      ? 'flex flex-col h-full min-h-0 bg-surface overflow-hidden'
+      : 'flex flex-col h-[520px] max-h-[70vh] rounded-[12px] border border-line bg-surface overflow-hidden'}>
+      {!embedded && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-line shrink-0">
+          <MessagesSquare size={15} className="text-muted" />
+          <span className="text-[13px] text-ink font-semibold">Чат</span>
+          {unread > 0 && (
+            <span className="ml-auto text-[11px] font-semibold text-white bg-[#6366f1] rounded-full px-2 py-[1px]">
+              {unread}
+            </span>
+          )}
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
         {loading ? (
