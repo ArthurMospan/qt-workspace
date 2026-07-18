@@ -113,9 +113,8 @@ export default function WorkspaceSidebar() {
     { href: '/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
-    // «Дзвінок → задачі» (/ai-call) на паузі за рішенням власника — сторінка і
-    // API готові, повернути = розкоментувати рядок нижче (і додати ключі).
-    // { href: '/ai-call', icon: Sparkles, label: 'Дзвінок → задачі' },
+    // «Дзвінок → задачі» (/ai-call) свідомо НЕ в сайдбарі: це допоміжна
+    // функція створення задач, вхід — кнопка в CreateTaskModal.
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
   ];
 

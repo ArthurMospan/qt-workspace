@@ -4,7 +4,7 @@
 // зробить саммарі, витягне рішення і чернетки задач; підтверджені задачі
 // створюються через звичайний /api/issues.
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, Upload, FileAudio, ListChecks, X } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -29,12 +29,17 @@ export default function AiCallPage() {
   const { members } = useOrganization();
   const showToast = useWorkspaceStore(s => s.showToast);
 
+  const searchParams = useSearchParams();
   const activeProjects = useMemo(
     () => projects.filter(p => p.status !== 'archived'),
     [projects],
   );
   const [projectId, setProjectId] = useState('');
-  const effectiveProjectId = projectId || activeProjects[0]?.id || '';
+  // ?project= передає модалка створення задачі — звідти сюди і потрапляють
+  const requestedProjectId = searchParams.get('project') || '';
+  const effectiveProjectId = projectId
+    || (activeProjects.some(p => p.id === requestedProjectId) ? requestedProjectId : '')
+    || activeProjects[0]?.id || '';
   const project = activeProjects.find(p => p.id === effectiveProjectId);
 
   const [transcript, setTranscript] = useState('');
@@ -176,15 +181,15 @@ export default function AiCallPage() {
               ) : (
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#cfcfcf] bg-canvas px-4 py-6 text-[13px] font-medium text-muted transition-colors hover:border-muted hover:text-ink">
                   <Upload size={15} />
-                  Обрати аудіофайл (mp3, m4a, webm, wav — до 25 МБ)
+                  Обрати аудіофайл (mp3, m4a, webm, wav — до 14 МБ)
                   <input
                     type="file"
                     accept="audio/*,video/webm,video/mp4"
                     className="hidden"
                     onChange={event => {
                       const file = event.target.files?.[0];
-                      if (file && file.size > 25 * 1024 * 1024) {
-                        showToast('Файл завеликий — ліміт 25 МБ', 'error');
+                      if (file && file.size > 14 * 1024 * 1024) {
+                        showToast('Файл завеликий — ліміт 14 МБ', 'error');
                       } else if (file) {
                         setAudioFile(file);
                       }

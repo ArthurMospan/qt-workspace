@@ -2506,7 +2506,12 @@ export default function SettingsPage() {
         }
       >
         <div className="flex flex-col gap-4 min-h-[200px]">
-          <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+          <div>
+            <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+            <p className="mt-1.5 text-[11px] text-muted">
+              ✉️ Лист-сповіщення — в розробці. Запрошення спрацює автоматично, коли людина увійде з цією поштою, або скористайтесь посиланням/QR нижче.
+            </p>
+          </div>
           <Select value={inviteRole} onChange={setInviteRole} options={ASSIGNABLE_ROLE_OPTIONS} label="Роль" />
           <InviteLinkSection role={inviteRole} />
         </div>

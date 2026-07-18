@@ -1,8 +1,9 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, Check, CheckSquare } from 'lucide-react';
+import { X, Check, CheckSquare, Sparkles } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -15,6 +16,7 @@ import { fromDateInput } from '@/lib/utils/date';
 
 export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, sprints = [], initialStatus = null, epics = [] }) {
   const { currentUser } = useAppContext();
+  const router = useRouter();
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
 
   const [form, setForm] = useState({
@@ -117,9 +119,23 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <p className="text-[11px] text-muted mt-[2px]">Заповніть основне, решту можна додати пізніше</p>
             </div>
           </div>
-          <Button style="ghost" size="icon" icon={X} onClick={onClose} type="button" aria-label="Закрити">
-            Закрити
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* ШІ-імпорт живе тут (а не в сайдбарі) — це допоміжна функція
+                створення задач: із запису дзвінка → чернетки задач */}
+            <Button
+              style="ghost" size="sm" icon={Sparkles} type="button"
+              onClick={() => {
+                onClose();
+                router.push(`/ai-call${form.projectId ? `?project=${form.projectId}` : ''}`);
+              }}
+              title="Створити задачі з запису дзвінка за допомогою ШІ"
+            >
+              <span className="hidden sm:inline">З дзвінка (ШІ)</span>
+            </Button>
+            <Button style="ghost" size="icon" icon={X} onClick={onClose} type="button" aria-label="Закрити">
+              Закрити
+            </Button>
+          </div>
         </div>
 
         <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5 overflow-y-auto flex-1">

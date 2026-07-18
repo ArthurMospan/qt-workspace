@@ -66,7 +66,14 @@ function InviteModal({ isOpen, onClose, inviteMember }) {
       }
     >
       <div className="flex flex-col gap-4 min-h-[200px]">
-        <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+        <div>
+          <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
+          {/* Відправка листів ще не налаштована в проді — запрошення при цьому
+              працює: людина потрапить у команду, щойно увійде з цією поштою. */}
+          <p className="mt-1.5 text-[11px] text-muted">
+            ✉️ Лист-сповіщення — в розробці. Запрошення спрацює автоматично, коли людина увійде з цією поштою, або скористайтесь посиланням/QR нижче.
+          </p>
+        </div>
         {/* 'owner' is intentionally not offered: the API only ever assigns
             member/admin, so offering it here was a lie. */}
         <Select value={inviteRole} onChange={setInviteRole} options={[
