@@ -477,6 +477,9 @@ function PositionItem({ item, onSave, onDelete }) {
   );
 }
 
+// Strips the transient `isNew` UI flag before a workflow item is persisted.
+const cleanWorkflowItems = arr => (arr || []).map(({ isNew, ...rest }) => rest);
+
 // Ukrainian plural agreement for "проєкт" (count noun forms):
 // 11-14 -> проєктів; ends in 1 -> проєкт; ends in 2-4 -> проєкти; else -> проєктів.
 function pluralProjects(n) {
@@ -523,11 +526,12 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('profile');
   const [profileIsDirty, setProfileIsDirty] = useState(false);
   const [workspaceIsDirty, setWorkspaceIsDirty] = useState(false);
-  const [workflowIsDirty, setWorkflowIsDirty] = useState(false);
 
   const handleSectionChange = async (newSection) => {
     if (newSection === activeSection) return true;
-    if (profileIsDirty || workspaceIsDirty || workflowIsDirty) {
+    // Process settings (statuses/types/…) auto-save, so only the button-based
+    // sections (profile, organization) can hold unsaved changes.
+    if (profileIsDirty || workspaceIsDirty) {
       if (!(await confirmDialog({
         title: 'Незбережені зміни',
         message: 'У вас є незбережені зміни. Ви впевнені, що хочете перейти без збереження?',
@@ -539,7 +543,6 @@ export default function SettingsPage() {
     }
     setProfileIsDirty(false);
     setWorkspaceIsDirty(false);
-    setWorkflowIsDirty(false);
     setActiveSection(newSection);
     return true;
   };
@@ -599,7 +602,6 @@ export default function SettingsPage() {
   const [labels,     setLabels]     = useState(DEFAULT_LABELS);
   const [positions,  setPositions]  = useState([]);
   const [wfLoading,  setWfLoading]  = useState(true);
-  const [wfSaving,   setWfSaving]   = useState(false);
   const [showSavedCheck, setShowSavedCheck] = useState(false);
 
   const triggerSavedSuccess = () => {
@@ -686,6 +688,9 @@ export default function SettingsPage() {
   // auto-save effects below. null until the first render establishes it.
   const notifBaseline = useRef(null);
   const locBaseline = useRef(null);
+  // Last workflow value known to match Firestore — process settings auto-save
+  // (no manual button), so this guards against re-writing freshly hydrated data.
+  const wfBaseline = useRef(null);
   const [pushPerm, setPushPerm] = useState('default'); // browser Notification.permission
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -806,12 +811,15 @@ export default function SettingsPage() {
         if (isAdmin) {
           const keyResult = await apiKeysRequest();
           setApiKeys(keyResult.keys || []);
-        }
 
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
-        const projQuery = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
-        const projSnap = await getDocs(projQuery);
-        setProjectsCount(projSnap.docs.length);
+          // Plan-limit count is admin-only (billing). Under team-gated project
+          // reads a plain member can't run an org-wide projects query, so this
+          // stays behind isAdmin — admins may read every project in the org.
+          const { collection, query, where, getDocs } = await import('firebase/firestore');
+          const projQuery = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
+          const projSnap = await getDocs(projQuery);
+          setProjectsCount(projSnap.docs.length);
+        }
 
         const uid = currentUser?.uid || currentUser?.id;
         if (uid) {
@@ -878,6 +886,52 @@ export default function SettingsPage() {
     saveLocEffect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFormat, firstDayOfWeek, timeFormat, timezone, language, showToast]);
+
+  // ── Unsaved-changes guard ────────────────────────────────────────
+  // Process settings auto-save, so only Profile/Organization can be "dirty".
+  // Switching sections is already guarded by handleSectionChange; this covers
+  // LEAVING the settings page: a hard navigation (beforeunload) and in-app
+  // <Link> clicks (sidebar → Проєкти etc.), intercepted in the capture phase so
+  // we run before Next's Link handler and can cancel it.
+  useEffect(() => {
+    const hasUnsaved = () => profileIsDirty || workspaceIsDirty;
+
+    const onBeforeUnload = (e) => {
+      if (!hasUnsaved()) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    const onClickCapture = (e) => {
+      if (!hasUnsaved()) return;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = e.target?.closest?.('a[href]');
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== '_self') return;      // opens a new tab
+      const url = new URL(anchor.href, window.location.origin);
+      if (url.origin !== window.location.origin) return;           // external → beforeunload handles it
+      if (url.pathname === window.location.pathname) return;        // same page / in-page anchor
+      e.preventDefault();
+      e.stopPropagation();
+      confirmDialog({
+        title: 'Незбережені зміни',
+        message: 'У вас є незбережені зміни. Ви впевнені, що хочете піти без збереження?',
+        confirmText: 'Піти', danger: true,
+      }).then(ok => {
+        if (!ok) return;
+        setProfileIsDirty(false);
+        setWorkspaceIsDirty(false);
+        router.push(url.pathname + url.search + url.hash);
+      });
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('click', onClickCapture, true);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('click', onClickCapture, true);
+    };
+  }, [profileIsDirty, workspaceIsDirty, confirmDialog, router]);
 
   const saveProfile = async () => {
     const uid = currentUser?.uid || currentUser?.id;
@@ -1169,27 +1223,39 @@ export default function SettingsPage() {
     setWorkspaceSaving(false);
   };
 
-  const saveWorkflow = async () => {
-    if (!activeOrgId) return;
-    setWfSaving(true);
-    try {
-      const clean = arr => arr.map(({ isNew, ...rest }) => rest);
-      await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'), {
-        statuses: clean(statuses),
-        types: clean(types),
-        priorities: clean(priorities),
-        labels: clean(labels),
-        positions: clean(positions)
-      }, { merge: true });
-      setWorkflowIsDirty(false);
-      showToast('Налаштування збережено');
-      triggerSavedSuccess();
-    } catch (e) { 
-      console.error('Workflow Save Error:', e);
-      showToast(e.message || 'Помилка збереження', 'error'); 
+  // Process settings auto-save: persist workflow changes in real time — no
+  // manual "Save" button. The baseline ref keeps the initial hydration (and org
+  // switches, which re-load state) from writing freshly loaded data back and
+  // toasting on open. Debounced so a burst of inline edits or a drag-reorder
+  // collapses into a single write.
+  useEffect(() => {
+    if (wfLoading) return;
+    const payload = {
+      statuses: cleanWorkflowItems(statuses),
+      types: cleanWorkflowItems(types),
+      priorities: cleanWorkflowItems(priorities),
+      labels: cleanWorkflowItems(labels),
+      positions: cleanWorkflowItems(positions),
+    };
+    const json = JSON.stringify(payload);
+    if (wfBaseline.current === null || wfBaseline.current === json) {
+      wfBaseline.current = json;
+      return;
     }
-    setWfSaving(false);
-  };
+    if (!activeOrgId) return;
+    const timer = setTimeout(async () => {
+      try {
+        await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'), payload, { merge: true });
+        wfBaseline.current = json;
+        showToast('Налаштування оновлено');
+      } catch (e) {
+        console.error('Workflow autosave error:', e);
+        showToast(e.message || 'Помилка збереження', 'error');
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statuses, types, priorities, labels, positions, wfLoading, activeOrgId]);
 
   const saveNotifications = async () => {
     const uid = currentUser?.uid || currentUser?.id;
@@ -1340,8 +1406,8 @@ export default function SettingsPage() {
 
   // ── Workflow helpers ─────────────────────────────────────────────
   const makeUpdater = setter => ({
-    onSave:   updated => { setter(prev => prev.map(i => i.id === updated.id ? updated : i)); setWorkflowIsDirty(true); },
-    onDelete: id      => { setter(prev => prev.filter(i => i.id !== id)); setWorkflowIsDirty(true); },
+    onSave:   updated => setter(prev => prev.map(i => i.id === updated.id ? updated : i)),
+    onDelete: id      => setter(prev => prev.filter(i => i.id !== id)),
   });
   const stA = makeUpdater(setStatuses);
   const tpA = makeUpdater(setTypes);
@@ -1359,7 +1425,6 @@ export default function SettingsPage() {
       if (done.has(id)) done.delete(id); else done.add(id);
       return prev.map(s => ({ ...s, isDone: done.has(s.id) }));
     });
-    setWorkflowIsDirty(true);
   };
 
   const handleStatusDeleteClick = async (id) => {
@@ -1409,16 +1474,12 @@ export default function SettingsPage() {
   };
 
   // ── Sticky Save Action ───────────────────────────────────────────
+  // Only button-based sections appear here. Process settings (statuses/types/
+  // priorities/labels/positions) auto-save — no button, no header status.
   const getSaveAction = () => {
     switch (activeSection) {
       case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
       case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
-      case 'statuses':
-      case 'types':
-      case 'priorities':
-      case 'labels':
-      case 'positions':
-        return { handler: saveWorkflow, loading: wfSaving, label: 'Зберегти зміни' };
       default: return null;
     }
   };
@@ -1430,7 +1491,6 @@ export default function SettingsPage() {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     setList(items);
-    setWorkflowIsDirty(true);
   };
 
   // ── Section renderer ─────────────────────────────────────────────
@@ -1439,25 +1499,6 @@ export default function SettingsPage() {
     if (!saveAction) return null;
     return (
       <div className="flex items-center gap-2 no-nav">
-        {['statuses', 'types', 'priorities', 'labels', 'positions'].includes(activeSection) && (
-          <Button 
-            onClick={async () => {
-              if (!(await confirmDialog({
-                title: 'Скинути налаштування цієї секції до стандартних?',
-                confirmText: 'Скинути', danger: true,
-              }))) return;
-              if (activeSection === 'statuses') setStatuses(DEFAULT_STATUSES);
-              if (activeSection === 'types') setTypes(DEFAULT_TYPES);
-              if (activeSection === 'priorities') setPriorities(DEFAULT_PRIORITIES);
-              if (activeSection === 'labels') setLabels(DEFAULT_LABELS);
-              if (activeSection === 'positions') setPositions(DEFAULT_POSITIONS);
-            }} 
-            style="ghost" size={size}
-            className="px-4"
-          >
-            Скинути
-          </Button>
-        )}
         <Button
           onClick={saveAction.handler}
           loading={saveAction.loading}
@@ -1473,6 +1514,45 @@ export default function SettingsPage() {
     );
   };
   const saveButton = renderSaveButton();
+
+  // Process settings auto-save (no Save button, no status pill — same silent
+  // behaviour as Notifications/Localization). Each section gets a reset-to-
+  // defaults footer at the very bottom instead, with a short explanation.
+  const workflowResetConfig = {
+    statuses:   { noun: 'статуси',    apply: () => setStatuses(DEFAULT_STATUSES) },
+    types:      { noun: 'типи',       apply: () => setTypes(DEFAULT_TYPES) },
+    priorities: { noun: 'пріоритети', apply: () => setPriorities(DEFAULT_PRIORITIES) },
+    labels:     { noun: 'мітки',      apply: () => setLabels(DEFAULT_LABELS) },
+    positions:  { noun: 'посади',     apply: () => setPositions(DEFAULT_POSITIONS) },
+  };
+  const renderWorkflowResetFooter = () => {
+    const cfg = workflowResetConfig[activeSection];
+    if (!cfg) return null;
+    return (
+      <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-[12px] bg-canvas px-4 py-3">
+        <p className="text-[12px] text-muted leading-relaxed">
+          Повернути {cfg.noun} до стандартного набору QuickTeam. Ваші поточні зміни в цій секції буде замінено.
+        </p>
+        <Button
+          style="secondary"
+          color="red"
+          size="sm"
+          icon={RefreshCw}
+          className="shrink-0"
+          onClick={async () => {
+            if (!(await confirmDialog({
+              title: `Скинути ${cfg.noun}?`,
+              message: `Усі ваші ${cfg.noun} в цій секції буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.`,
+              confirmText: 'Скинути', cancelText: 'Залишити', danger: true,
+            }))) return;
+            cfg.apply();
+          }}
+        >
+          Скинути до стандартних
+        </Button>
+      </div>
+    );
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -2214,7 +2294,7 @@ export default function SettingsPage() {
       case 'statuses': {
         const doneIds = getDoneStatusIds(statuses);
         return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг." rightAction={saveButton}>
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг." rightAction={workflowActions}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2265,7 +2345,7 @@ export default function SettingsPage() {
       }
 
       case 'types': return (
-        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
+        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів" rightAction={workflowActions}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2289,7 +2369,7 @@ export default function SettingsPage() {
       );
 
       case 'priorities': return (
-        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів" rightAction={saveButton}>
+        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів" rightAction={workflowActions}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2313,7 +2393,7 @@ export default function SettingsPage() {
       );
 
       case 'labels': return (
-        <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань" rightAction={saveButton}>
+        <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань" rightAction={workflowActions}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2337,7 +2417,7 @@ export default function SettingsPage() {
       );
 
       case 'positions': return (
-        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців" rightAction={saveButton}>
+        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців" rightAction={workflowActions}>
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2387,7 +2467,7 @@ export default function SettingsPage() {
                   setTypes(DEFAULT_TYPES);
                   setPriorities(DEFAULT_PRIORITIES);
                   setLabels(DEFAULT_LABELS);
-                  await saveWorkflow();
+                  // Auto-save persists these changes; no manual save needed.
                 }}
                 style="ghost" color="red" size="lg"
                 icon={RefreshCw} iconSize={13}

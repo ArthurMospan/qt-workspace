@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAppContext }        from '@/lib/context/AppContext';
 import { useIssues }           from '@/lib/hooks/useIssues';
 import { useTimeLogs }         from '@/lib/hooks/useTimeLogs';
-import { useTeamMembers }      from '@/lib/hooks/useTeamMembers';
+import { useOrganization }     from '@/lib/hooks/useOrganization';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { usePortalSession }    from '@/lib/portal/usePortalSession';
@@ -368,7 +368,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
-  const { members } = useTeamMembers(teamUids);
+  // Resolve author/assignee names from ALL organization members, not just the
+  // project team. Scoping this to `project.team` was the "Автор: Невідомо" /
+  // blank-assignee bug: anyone off the team (e.g. the creator of a task in a
+  // project they aren't a team member of) was unresolvable and rendered empty.
+  const { members } = useOrganization();
   const isArchived = project?.status === 'archived';
 
   const { stages }   = useStagesForProject(projectId);
@@ -601,9 +605,20 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
   const toggleAssignee = async (uid) => {
     const cur  = issue.assigneeIds || [];
-    const next = cur.includes(uid) ? cur.filter(a => a !== uid) : [...cur, uid];
+    const adding = !cur.includes(uid);
+    const next = adding ? [...cur, uid] : cur.filter(a => a !== uid);
     await update({ assigneeIds: next });
-    if (!cur.includes(uid) && uid !== (currentUser?.id || currentUser?.uid))
+    // Under team-gated project visibility, an assignee who isn't on the
+    // project team could not open the task they were just given. Add them to
+    // the team so the assignment is actually usable. Best-effort: only
+    // owners/admins may write `team` (Firestore rules), so a member assigner's
+    // write is denied and swallowed — the assignment itself still stands.
+    if (adding && !teamUids.includes(uid)) {
+      try {
+        await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(uid) });
+      } catch { /* member assigner lacks team-write permission — non-fatal */ }
+    }
+    if (adding && uid !== (currentUser?.id || currentUser?.uid))
       await sendNotification({ userIds: [uid], type: 'assigned',
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
         link: `/${projectId}/issue/${issueId}`, issueId, projectId,

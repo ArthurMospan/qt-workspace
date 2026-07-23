@@ -57,6 +57,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Project does not belong to this organization' }, { status: 400 });
     }
 
+    // Per-project access: a plain member may only create tasks in projects they
+    // belong to. Owners/admins can create in any project of the org. This is the
+    // server-side counterpart to the team-gated `projects` read rule — without it
+    // a member could POST an issue into a project they can't even see.
+    const role = authorization.membership?.role;
+    const isPrivileged = role === 'owner' || role === 'admin';
+    const projectTeam = projectSnap.data().team;
+    if (!isPrivileged && !(Array.isArray(projectTeam) && projectTeam.includes(authorization.user.uid))) {
+      return NextResponse.json({ error: 'You are not a member of this project' }, { status: 403 });
+    }
+
     const assigneeIds = Array.isArray(data.assigneeIds) ? [...new Set(data.assigneeIds)].slice(0, 20) : [];
     if (assigneeIds.length) {
       const refs = assigneeIds.map(uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`));

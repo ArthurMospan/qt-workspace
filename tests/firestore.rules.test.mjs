@@ -250,6 +250,32 @@ test('issues and project lifecycle mutations cannot bypass server APIs', async (
   await assertSucceeds(updateDoc(doc(adminDb, 'projects', 'project-a'), { name: 'Renamed' }));
 });
 
+test('project reads are gated by team membership for plain members', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'project-team'), {
+      organizationId: 'org-a', name: 'Team Project', status: 'active', team: ['member-a'],
+    });
+    await setDoc(doc(db, 'projects', 'project-foreign'), {
+      organizationId: 'org-a', name: 'Foreign Project', status: 'active', team: ['owner-a'],
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+
+  // A plain member may read only projects whose `team` contains them…
+  await assertSucceeds(getDoc(doc(memberDb, 'projects', 'project-team')));
+  await assertFails(getDoc(doc(memberDb, 'projects', 'project-foreign')));
+  // …and a legacy project with no `team` field is invisible until backfilled.
+  await assertFails(getDoc(doc(memberDb, 'projects', 'project-a')));
+
+  // Owners and admins see every project regardless of team membership.
+  await assertSucceeds(getDoc(doc(adminDb, 'projects', 'project-foreign')));
+  await assertSucceeds(getDoc(doc(adminDb, 'projects', 'project-a')));
+  await assertSucceeds(getDoc(doc(ownerDb, 'projects', 'project-foreign')));
+});
+
 // users/{uid}/private/qtplus holds a sealed QuickTeam+ refresh token. It is
 // written only by the Admin SDK in /api/integrations/qtplus/*, and is denied to
 // every client — including the account's own owner, who has no use for it.

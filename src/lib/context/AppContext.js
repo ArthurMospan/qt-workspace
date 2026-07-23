@@ -28,7 +28,7 @@ function AppProviderInner({
   const userId = authLoading ? undefined : (user?.id || user?.uid || null);
   const invitationUid = user?.id || user?.uid;
   const invitationEmail = user?.email;
-  const { projects, loading: projectsLoading, error: projectsError } = useProjects(userId, activeOrgId);
+  const { projects, loading: projectsLoading, error: projectsError } = useProjects(userId, activeOrgId, orgRole);
 
   useEffect(() => {
     if (user?.localization) {

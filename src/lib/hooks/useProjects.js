@@ -2,14 +2,23 @@
 
 // src/lib/hooks/useProjects.js — Real-time projects for authenticated user
 // Filters by organizationId for multi-tenancy.
-// Project visibility:
+//
+// Access model (per-project membership):
+//   - owner/admin  → see every project in the organization
+//   - member       → see only projects whose `team` array contains their uid
+//     (the same `project.team` managed by ProjectTeamTab and seeded with the
+//      creator at /api/projects). This mirrors the authoritative Firestore
+//      rule, which is why the member query MUST carry `array-contains` — rules
+//      are not filters, so a broad org-wide query would be permission-denied.
+//
+// Project visibility (client portal, orthogonal to team access):
 //   - 'internal' → only visible in qt-workspace (team only)
 //   - 'shared'   → visible in both qt (client portal) and qt-workspace
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
-export function useProjects(userId, activeOrgId) {
+export function useProjects(userId, activeOrgId, orgRole) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
   // Start as loading=true so callers don't flash an empty state
@@ -37,7 +46,17 @@ export function useProjects(userId, activeOrgId) {
       return;
     }
     queueMicrotask(() => setLoading(true));
-    const q = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
+    // Privileged roles see all org projects; everyone else (including an
+    // as-yet-unresolved role) gets the restrictive team-scoped query so we
+    // never over-expose while orgRole is still loading.
+    const isPrivileged = orgRole === 'owner' || orgRole === 'admin';
+    const q = isPrivileged
+      ? query(collection(db, 'projects'), where('organizationId', '==', activeOrgId))
+      : query(
+          collection(db, 'projects'),
+          where('organizationId', '==', activeOrgId),
+          where('team', 'array-contains', userId),
+        );
     const unsub = onSnapshot(q, {
       includeMetadataChanges: true,
     }, snap => {
@@ -66,7 +85,7 @@ export function useProjects(userId, activeOrgId) {
       setLoading(false);
     });
     return () => unsub();
-  }, [userId, activeOrgId]);
+  }, [userId, activeOrgId, orgRole]);
   return {
     projects,
     loading,

@@ -147,7 +147,15 @@ service cloud.firestore {
     // ── projects/{projectId} — created only via Admin SDK (/api/projects,
     //    which enforces plan limits); client can read/update/delete ──────
     match /projects/{projectId} {
-      allow read: if isOrgMember(resource.data.organizationId);
+      // Per-project access: owners/admins see everything; a plain member may
+      // only read a project they are a `team` member of. `team is list` guards
+      // legacy docs written before the field existed (the backfill migration
+      // stamps them). Rules are not filters, so the member client query must
+      // use `where('team','array-contains', uid)` to match this exactly.
+      allow read: if isOrgMember(resource.data.organizationId) && (
+        isOrgAdminOrOwner(resource.data.organizationId) ||
+        (resource.data.team is list && request.auth.uid in resource.data.team)
+      );
       allow create: if false;
       allow update: if request.resource.data.organizationId == resource.data.organizationId && (
         (isOrgAdminOrOwner(resource.data.organizationId) && request.resource.data.status == resource.data.status) ||
