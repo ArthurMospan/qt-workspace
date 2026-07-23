@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 let environment;
 
@@ -274,6 +274,30 @@ test('project reads are gated by team membership for plain members', async () =>
   await assertSucceeds(getDoc(doc(adminDb, 'projects', 'project-foreign')));
   await assertSucceeds(getDoc(doc(adminDb, 'projects', 'project-a')));
   await assertSucceeds(getDoc(doc(ownerDb, 'projects', 'project-foreign')));
+});
+
+test('a member on NO project team can still load the workspace without a permission error', async () => {
+  // Reproduces the reported "invited member" case: valid org member, added to
+  // no project. Their team-scoped projects query must return empty (not denied),
+  // and the org-wide issues query the home page runs must be allowed.
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'proj-owner-only'), {
+      organizationId: 'org-a', name: 'Owner Only', status: 'active', team: ['owner-a'],
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  // Team-scoped projects query (what the client runs for a member) → empty, allowed.
+  await assertSucceeds(getDocs(query(
+    collection(memberDb, 'projects'),
+    where('organizationId', '==', 'org-a'),
+    where('team', 'array-contains', 'member-a'),
+  )));
+  // Org-wide issues query (workspace home) → allowed for any org member.
+  await assertSucceeds(getDocs(query(
+    collection(memberDb, 'issues'),
+    where('organizationId', '==', 'org-a'),
+  )));
 });
 
 // users/{uid}/private/qtplus holds a sealed QuickTeam+ refresh token. It is

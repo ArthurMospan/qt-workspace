@@ -154,7 +154,7 @@ service cloud.firestore {
       // use `where('team','array-contains', uid)` to match this exactly.
       allow read: if isOrgMember(resource.data.organizationId) && (
         isOrgAdminOrOwner(resource.data.organizationId) ||
-        (resource.data.team is list && request.auth.uid in resource.data.team)
+        request.auth.uid in resource.data.team
       );
       allow create: if false;
       allow update: if request.resource.data.organizationId == resource.data.organizationId && (

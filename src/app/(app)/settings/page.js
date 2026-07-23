@@ -140,6 +140,37 @@ function Section({ title, desc, rightAction, children }) {
   );
 }
 
+// Inline-editable field: shows compact save/cancel icons to the right only
+// while the value differs from what's saved. Enter saves, Escape cancels.
+function InlineEditField({ value, onChange, saved, onSave, placeholder = '', type = 'text', className = 'w-[220px]' }) {
+  const dirty = (value ?? '') !== (saved ?? '');
+  const [saving, setSaving] = useState(false);
+  const commit = async () => {
+    if (!dirty || saving) return;
+    setSaving(true);
+    try { await onSave(); } finally { setSaving(false); }
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <Input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape' && dirty) onChange(saved ?? '');
+        }}
+        className={className}
+      />
+      <div className={`flex items-center gap-0.5 shrink-0 transition-opacity ${dirty ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <Button onClick={commit} loading={saving} style="ghost" size="icon" icon={Check} iconSize={15} title="Зберегти" className="!text-emerald-600" />
+        <Button onClick={() => onChange(saved ?? '')} style="ghost" size="icon" icon={X} iconSize={15} title="Скасувати" />
+      </div>
+    </div>
+  );
+}
+
 function GitHubLogo({ size = 16 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
@@ -524,26 +555,6 @@ export default function SettingsPage() {
   const isOwner = myRole === 'owner';
 
   const [activeSection, setActiveSection] = useState('profile');
-  const [profileIsDirty, setProfileIsDirty] = useState(false);
-
-  const handleSectionChange = async (newSection) => {
-    if (newSection === activeSection) return true;
-    // Process settings and Organization auto-save (branding on change, org name
-    // on blur), so only Profile can hold unsaved changes.
-    if (profileIsDirty) {
-      if (!(await confirmDialog({
-        title: 'Незбережені зміни',
-        message: 'У вас є незбережені зміни. Ви впевнені, що хочете перейти без збереження?',
-        confirmText: 'Перейти',
-        danger: true,
-      }))) {
-        return false;
-      }
-    }
-    setProfileIsDirty(false);
-    setActiveSection(newSection);
-    return true;
-  };
 
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
@@ -616,7 +627,17 @@ export default function SettingsPage() {
   const [phone,         setPhone]         = useState('');
   const [location,      setLocation]      = useState('');
   const [skillsInput,   setSkillsInput]   = useState('');
-  const [profileSaving, setProfileSaving] = useState(false);
+
+  // Saved values + whether any profile field is unsaved (for the leave guard).
+  const savedSkills = Array.isArray(currentUser?.skills) ? currentUser.skills.join(', ') : '';
+  const profileDirty =
+    displayName !== (currentUser?.name || '') ||
+    customAvatar !== (currentUser?.customAvatar || '') ||
+    bio !== (currentUser?.bio || '') ||
+    telegram !== (currentUser?.telegram || '') ||
+    phone !== (currentUser?.phone || '') ||
+    location !== (currentUser?.location || '') ||
+    skillsInput !== savedSkills;
 
   // ── Workspace ──
   const [orgName,         setOrgName]         = useState('');
@@ -897,7 +918,7 @@ export default function SettingsPage() {
   // <Link> clicks (sidebar → Проєкти etc.), intercepted in the capture phase so
   // we run before Next's Link handler and can cancel it.
   useEffect(() => {
-    const hasUnsaved = () => profileIsDirty;
+    const hasUnsaved = () => profileDirty;
 
     const onBeforeUnload = (e) => {
       if (!hasUnsaved()) return;
@@ -922,7 +943,6 @@ export default function SettingsPage() {
         confirmText: 'Піти', danger: true,
       }).then(ok => {
         if (!ok) return;
-        setProfileIsDirty(false);
         router.push(url.pathname + url.search + url.hash);
       });
     };
@@ -933,48 +953,37 @@ export default function SettingsPage() {
       window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('click', onClickCapture, true);
     };
-  }, [profileIsDirty, confirmDialog, router]);
+  }, [profileDirty, confirmDialog, router]);
 
-  const saveProfile = async () => {
+  // Persist a single profile field inline (each field has its own save/cancel).
+  const saveProfileField = async (field, rawValue) => {
     const uid = currentUser?.uid || currentUser?.id;
     if (!uid) return;
-    setProfileSaving(true);
+    let value = rawValue;
+    if (field === 'skills') value = String(rawValue).split(',').map(s => s.trim()).filter(Boolean);
+    else if (typeof rawValue === 'string') value = rawValue.trim();
     try {
-      const skillsArray = skillsInput
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
-
-      await updateDoc(doc(db, 'users', uid), {
-        name: displayName.trim(),
-        bio: bio.trim(),
-        telegram: telegram.trim(),
-        phone: phone.trim(),
-        location: location.trim(),
-        skills: skillsArray,
-        customAvatar: customAvatar,
-        updatedAt: serverTimestamp(),
-      });
-      setProfileIsDirty(false);
-      showToast('Профіль збережено');
-      triggerSavedSuccess();
-    } catch (e) {
-      console.error('Error saving profile:', e);
-      showToast('Помилка збереження', 'error');
-    }
-    setProfileSaving(false);
+      await updateDoc(doc(db, 'users', uid), { [field]: value, updatedAt: serverTimestamp() });
+      showToast('Збережено');
+    } catch { showToast('Помилка збереження', 'error'); }
   };
 
-  // Discard unsaved profile edits — resets every field back to the saved value.
-  const revertProfile = () => {
-    setDisplayName(currentUser?.name || '');
-    setCustomAvatar(currentUser?.customAvatar || '');
-    setBio(currentUser?.bio || '');
-    setTelegram(currentUser?.telegram || '');
-    setPhone(currentUser?.phone || '');
-    setLocation(currentUser?.location || '');
-    setSkillsInput(Array.isArray(currentUser?.skills) ? currentUser.skills.join(', ') : '');
-    setProfileIsDirty(false);
+  const handleSectionChange = async (newSection) => {
+    if (newSection === activeSection) return true;
+    // Everything auto-saves except individual profile fields (which save inline
+    // per-field), so warn only when a profile field is left unsaved.
+    if (profileDirty) {
+      if (!(await confirmDialog({
+        title: 'Незбережені зміни',
+        message: 'У вас є незбережені зміни у профілі. Перейти без збереження?',
+        confirmText: 'Перейти',
+        danger: true,
+      }))) {
+        return false;
+      }
+    }
+    setActiveSection(newSection);
+    return true;
   };
 
   const saveLocalization = async () => {
@@ -1498,17 +1507,6 @@ export default function SettingsPage() {
     setWfLoading(false);
   };
 
-  // ── Sticky Save Action ───────────────────────────────────────────
-  // Only button-based sections appear here. Process settings (statuses/types/
-  // priorities/labels/positions) auto-save — no button, no header status.
-  const getSaveAction = () => {
-    switch (activeSection) {
-      case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
-      default: return null;
-    }
-  };
-  const saveAction = getSaveAction();
-
   const handleDragEnd = (result, list, setList) => {
     if (!result.destination) return;
     const items = Array.from(list);
@@ -1518,39 +1516,11 @@ export default function SettingsPage() {
   };
 
   // ── Section renderer ─────────────────────────────────────────────
-
-  const renderSaveButton = (size = "md") => {
-    if (!saveAction) return null;
-    // Profile is the only button-based section. Its Save/Cancel bar is
-    // contextual — it appears only when there are unsaved edits (GitHub-style),
-    // so the section header is clean the rest of the time.
-    if (activeSection === 'profile' && !profileIsDirty) {
-      return showSavedCheck ? (
-        <span className="text-[12px] font-medium text-emerald-600 flex items-center gap-1.5 no-nav"><Check size={12} /> Збережено</span>
-      ) : null;
-    }
-    return (
-      <div className="flex items-center gap-2 no-nav">
-        {activeSection === 'profile' && (
-          <Button onClick={revertProfile} style="secondary" size={size} disabled={saveAction.loading}>
-            Скасувати
-          </Button>
-        )}
-        <Button
-          onClick={saveAction.handler}
-          loading={saveAction.loading}
-          style="primary"
-          color="dark"
-          size={size}
-          icon={showSavedCheck ? Check : undefined}
-          className={`px-6 transition-all duration-300 ${showSavedCheck ? '!bg-emerald-600 !hover:bg-emerald-700 text-white' : ''}`}
-        >
-          {showSavedCheck ? 'Збережено!' : (saveAction.loading ? 'Збереження...' : saveAction.label)}
-        </Button>
-      </div>
-    );
-  };
-  const saveButton = renderSaveButton();
+  // Every section now saves without a header button (process settings & org
+  // branding auto-save; profile saves inline per field), so section headers no
+  // longer carry a Save button. Kept as null so existing rightAction props are
+  // harmless no-ops.
+  const saveButton = null;
 
   // Process settings auto-save (no Save button, no status pill — same silent
   // behaviour as Notifications/Localization). Each section gets a reset-to-
@@ -1601,14 +1571,14 @@ export default function SettingsPage() {
             <Row label="Аватар" desc="Завантажте власне фото (рекомендовано 1:1)">
               <ImageUpload
                 value={customAvatar || currentUser?.avatar || ''}
-                onChange={v => { setCustomAvatar(v); setProfileIsDirty(true); }}
+                onChange={v => { setCustomAvatar(v); saveProfileField('customAvatar', v); }}
                 theme="light"
                 showLabel={false}
                 showHint={false}
               />
             </Row>
             <Row label="Ім'я" desc="Показується в завданнях і чаті">
-              <Input value={displayName} onChange={e => { setDisplayName(e.target.value); setProfileIsDirty(true); }} className="w-[200px]" />
+              <InlineEditField value={displayName} onChange={setDisplayName} saved={currentUser?.name || ''} onSave={() => saveProfileField('name', displayName)} className="w-[200px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-muted">{currentUser?.email}</span>
@@ -1619,26 +1589,32 @@ export default function SettingsPage() {
               </span>
             </Row>
             <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
-              <Input value={telegram} onChange={e => { setTelegram(e.target.value); setProfileIsDirty(true); }} placeholder="username" className="w-[200px]" />
+              <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[200px]" />
             </Row>
             <Row label="Телефон" desc="Контактний номер">
-              <Input value={phone} onChange={e => { setPhone(e.target.value); setProfileIsDirty(true); }} placeholder="+380..." className="w-[200px]" />
+              <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[200px]" />
             </Row>
             <Row label="Локація" desc="Місто, країна">
-              <Input value={location} onChange={e => { setLocation(e.target.value); setProfileIsDirty(true); }} placeholder="Київ, Україна" className="w-[200px]" />
+              <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[200px]" />
             </Row>
             <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
-              <Input value={skillsInput} onChange={e => { setSkillsInput(e.target.value); setProfileIsDirty(true); }} placeholder="React, Node.js, Design" className="w-[300px]" />
+              <InlineEditField value={skillsInput} onChange={setSkillsInput} saved={savedSkills} onSave={() => saveProfileField('skills', skillsInput)} placeholder="React, Node.js, Design" className="w-[300px]" />
             </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <label className="text-[13px] font-medium text-ink">Про себе</label>
               <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
               <Textarea
                 value={bio}
-                onChange={e => { setBio(e.target.value); setProfileIsDirty(true); }}
+                onChange={e => setBio(e.target.value)}
                 placeholder="Розкажіть трохи про себе..."
                 className="w-full mt-1 text-[13px] h-[80px]"
               />
+              {bio !== (currentUser?.bio || '') && (
+                <div className="flex items-center justify-end gap-2">
+                  <Button onClick={() => setBio(currentUser?.bio || '')} style="secondary" size="sm">Скасувати</Button>
+                  <Button onClick={() => saveProfileField('bio', bio)} style="primary" color="dark" size="sm" icon={Check} iconSize={14}>Зберегти</Button>
+                </div>
+              )}
             </div>
           </Card>
         </Section>

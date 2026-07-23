@@ -168,20 +168,18 @@ export default function WorkspaceSidebar() {
                     title="На головну — наведіть, щоб побачити QuickTeam"
                     aria-label="На головну"
                   >
-                    <div className="logo-flip-inner">
-                      {/* Front: org logo */}
-                      <div className="logo-flip-front">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={orgLogoToUse}
-                          alt={activeOrg?.name || 'Logo'}
-                          className="w-[32px] h-[32px] rounded-[8px] object-cover"
-                        />
-                      </div>
-                      {/* Back: original QT logo */}
-                      <div className="logo-flip-back">
-                        <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
-                      </div>
+                    {/* Default: org logo */}
+                    <div className="logo-flip-front">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={orgLogoToUse}
+                        alt={activeOrg?.name || 'Logo'}
+                        className="w-[32px] h-[32px] rounded-[8px] object-cover"
+                      />
+                    </div>
+                    {/* On hover: QuickTeam mark */}
+                    <div className="logo-flip-back">
+                      <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                     </div>
                   </Link>
                 ) : (

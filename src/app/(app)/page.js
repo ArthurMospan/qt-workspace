@@ -855,11 +855,11 @@ export default function WorkspacePage() {
           <div className="flex flex-col items-start gap-2">
             <Alert
               variant="error"
-              title="Не вдалося завантажити дані workspace"
-              description="Перезавантажте сторінку. Якщо помилка повториться, перевірте доступ до організації або Firestore rules."
+              title="Не вдалося завантажити проєкти"
+              description="Перевірте підключення до інтернету та спробуйте ще раз."
             />
             <Button onClick={() => window.location.reload()} style="secondary" size="sm">
-              Перезавантажити
+              Спробувати ще раз
             </Button>
           </div>
         )}
