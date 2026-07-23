@@ -201,20 +201,6 @@ export default function ProfileView({ user, onClose }) {
               </div>
             )}
 
-            {/* Навички */}
-            {details.skills && details.skills.length > 0 && (
-              <div className="flex flex-col gap-3">
-                <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Навички</h3>
-                <div className="flex flex-wrap gap-2">
-                  {details.skills.map(skill => (
-                    <Badge key={skill} variant="gray" className="text-[13px] px-3 py-1 bg-canvas text-ink border-transparent font-medium">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Анкета */}
             <div className="flex flex-col gap-4">
               <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Контакти</h3>

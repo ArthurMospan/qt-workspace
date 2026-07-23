@@ -168,13 +168,13 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10">
           <button
             type="button" onClick={commit} disabled={saving} title="Зберегти"
-            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] bg-ink text-white hover:bg-ink/90 transition-colors disabled:opacity-50"
           >
             <Check size={15} />
           </button>
           <button
             type="button" onClick={() => onChange(saved ?? '')} title="Скасувати"
-            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] text-muted hover:bg-canvas transition-colors"
+            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] bg-canvas text-muted hover:bg-line transition-colors"
           >
             <X size={15} />
           </button>
@@ -1611,22 +1611,14 @@ export default function SettingsPage() {
             <Row label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-muted">{currentUser?.email}</span>
             </Row>
-            <Row label="Роль">
-              <span className="text-[11px] font-semibold px-[8px] py-[3px] bg-[#f0f0f0] text-[#4a4a4a] rounded-full">
-                {ROLE_LABELS[myRole] || myRole}
-              </span>
-            </Row>
             <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
-              <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[240px]" />
+              <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[260px]" />
             </Row>
             <Row label="Телефон" desc="Контактний номер">
-              <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[240px]" />
+              <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[260px]" />
             </Row>
             <Row label="Локація" desc="Місто, країна">
-              <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[240px]" />
-            </Row>
-            <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
-              <InlineEditField value={skillsInput} onChange={setSkillsInput} saved={savedSkills} onSave={() => saveProfileField('skills', skillsInput)} placeholder="React, Node.js, Design" className="w-[320px]" />
+              <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[260px]" />
             </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <label className="text-[13px] font-medium text-ink">Про себе</label>
@@ -1769,7 +1761,78 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
-      case 'localization': return (
+      case 'localization': {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        
+        const hours24Num = now.getHours();
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        const hours24Str = String(hours24Num).padStart(2, '0');
+        const hours12Num = hours24Num % 12 || 12;
+        const ampm = hours24Num >= 12 ? 'PM' : 'AM';
+        
+        const COMMON_TIMEZONES = [
+          'UTC',
+          'Pacific/Midway',
+          'Pacific/Honolulu',
+          'America/Anchorage',
+          'America/Los_Angeles',
+          'America/Denver',
+          'America/Chicago',
+          'America/New_York',
+          'America/Caracas',
+          'America/Buenos_Aires',
+          'America/Sao_Paulo',
+          'Atlantic/South_Georgia',
+          'Atlantic/Azores',
+          'Europe/London',
+          'Europe/Paris',
+          'Europe/Berlin',
+          'Europe/Kyiv',
+          'Europe/Helsinki',
+          'Europe/Istanbul',
+          'Asia/Jerusalem',
+          'Asia/Dubai',
+          'Asia/Tehran',
+          'Asia/Kabul',
+          'Asia/Karachi',
+          'Asia/Kolkata',
+          'Asia/Kathmandu',
+          'Asia/Dhaka',
+          'Asia/Yangon',
+          'Asia/Bangkok',
+          'Asia/Shanghai',
+          'Asia/Hong_Kong',
+          'Asia/Tokyo',
+          'Australia/Perth',
+          'Australia/Adelaide',
+          'Australia/Sydney',
+          'Pacific/Noumea',
+          'Pacific/Auckland',
+          'Pacific/Fiji',
+          'Pacific/Tongatapu'
+        ];
+
+        const tzOptions = COMMON_TIMEZONES.map(tz => {
+          try {
+            const date = new Date();
+            const timeStr = date.toLocaleTimeString('uk-UA', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+            let gmtStr = '';
+            try {
+              const str = date.toLocaleString('en-GB', { timeZone: tz, timeZoneName: 'shortOffset' });
+              const match = str.match(/GMT([+-]\d+(?::\d+)?)/);
+              gmtStr = match ? `GMT${match[1]}` : 'GMT+0';
+            } catch (e) {}
+            
+            return { value: tz, label: `${tz} (${gmtStr}, ${timeStr})` };
+          } catch(e) {
+            return { value: tz, label: tz };
+          }
+        });
+
+        return (
         <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону" rightAction={saveButton}>
           <Card variant="white" padding="lg" className="!border-none">
             <Row label="Мова інтерфейсу" desc="Виберіть мову відображення">
@@ -1787,9 +1850,9 @@ export default function SettingsPage() {
                 value={dateFormat}
                 onChange={setDateFormat}
                 options={[
-                  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (13.05.2026)' },
-                  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2026-05-13)' },
-                  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (05/13/2026)' }
+                  { value: 'DD.MM.YYYY', label: `DD.MM.YYYY (${dd}.${mm}.${yyyy})` },
+                  { value: 'YYYY-MM-DD', label: `YYYY-MM-DD (${yyyy}-${mm}-${dd})` },
+                  { value: 'MM/DD/YYYY', label: `MM/DD/YYYY (${mm}/${dd}/${yyyy})` }
                 ]}
                 className="w-[240px]"
               />
@@ -1810,8 +1873,8 @@ export default function SettingsPage() {
                 value={timeFormat}
                 onChange={setTimeFormat}
                 options={[
-                  { value: '24h', label: '24-годинний (14:30)' },
-                  { value: '12h', label: '12-годинний (2:30 PM)' }
+                  { value: '24h', label: `24-годинний (${hours24Str}:${mins})` },
+                  { value: '12h', label: `12-годинний (${hours12Num}:${mins} ${ampm})` }
                 ]}
                 className="w-[240px]"
               />
@@ -1820,18 +1883,14 @@ export default function SettingsPage() {
               <Select
                 value={timezone}
                 onChange={setTimezone}
-                options={[
-                  { value: 'Europe/Kyiv', label: 'Europe/Kyiv (GMT+3)' },
-                  { value: 'UTC', label: 'UTC (GMT+0)' },
-                  { value: 'America/New_York', label: 'America/New_York (GMT-4)' },
-                  { value: 'Europe/London', label: 'Europe/London (GMT+1)' }
-                ]}
+                options={tzOptions}
                 className="w-[240px]"
               />
             </Row>
           </Card>
         </Section>
       );
+      }
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': {

@@ -164,23 +164,25 @@ export default function WorkspaceSidebar() {
                        click goes home ── */
                   <Link
                     href="/"
-                    className="group relative block w-[32px] h-[32px] shrink-0"
+                    className="group/logo relative block w-[32px] h-[32px] shrink-0 [perspective:1000px]"
                     title="На головну — наведіть, щоб побачити QuickTeam"
                     aria-label="На головну"
                   >
-                    {/* Default: org logo — fades out on hover */}
-                    <span className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 group-hover:opacity-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={orgLogoToUse}
-                        alt={activeOrg?.name || 'Logo'}
-                        className="w-[32px] h-[32px] rounded-[8px] object-cover"
-                      />
-                    </span>
-                    {/* On hover: QuickTeam mark — fades in */}
-                    <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
-                    </span>
+                    <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] group-hover/logo:[transform:rotateY(180deg)]">
+                      {/* Front: org logo */}
+                      <span className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={orgLogoToUse}
+                          alt={activeOrg?.name || 'Logo'}
+                          className="w-[32px] h-[32px] rounded-[8px] object-cover"
+                        />
+                      </span>
+                      {/* Back: QuickTeam mark */}
+                      <span className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                        <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
+                      </span>
+                    </div>
                   </Link>
                 ) : (
                   <Link href="/" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
