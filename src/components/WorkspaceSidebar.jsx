@@ -58,15 +58,15 @@ export default function WorkspaceSidebar() {
   const [flipped, setFlipped] = useState(false);
   const flipTimeoutRef = useRef(null);
 
-  const handleLogoFlip = useCallback((e) => {
+  // Click the branded org logo to briefly flip it and reveal the QuickTeam
+  // mark (attribution easter egg — matches the tooltip). It flips in place and
+  // auto-reverts; it must NOT navigate, which is what made it feel "broken"
+  // (a 50ms router.push whisked you to "/" before the flip was visible).
+  const handleLogoFlip = useCallback(() => {
     if (!isBranded || flipped) return;
-    e.preventDefault();
     setFlipped(true);
-    setTimeout(() => {
-      router.push('/');
-    }, 50);
-    flipTimeoutRef.current = setTimeout(() => setFlipped(false), 1000);
-  }, [isBranded, flipped, router]);
+    flipTimeoutRef.current = setTimeout(() => setFlipped(false), 1600);
+  }, [isBranded, flipped]);
 
   useEffect(() => {
     return () => {
@@ -178,30 +178,30 @@ export default function WorkspaceSidebar() {
                     </div>
                   </>
                 ) : isBranded ? (
-                  /* ── Branded logo with coin-flip ── */
-                  <Link href="/" className="shrink-0 hover:opacity-80 transition-opacity">
-                    <div
-                      className="logo-flip-container cursor-pointer"
-                      onClick={handleLogoFlip}
-                      title="Натисни, щоб побачити QuickTeam"
-                    >
-                      <div className={`logo-flip-inner ${flipped ? 'flipped' : ''}`}>
-                        {/* Front: org logo */}
-                        <div className="logo-flip-front">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={orgLogoToUse}
-                            alt={activeOrg?.name || 'Logo'}
-                            className="w-[32px] h-[32px] rounded-[8px] object-cover"
-                          />
-                        </div>
-                        {/* Back: original QT logo */}
-                        <div className="logo-flip-back">
-                          <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
-                        </div>
+                  /* ── Branded logo with coin-flip (in-place reveal, no nav) ── */
+                  <button
+                    type="button"
+                    onClick={handleLogoFlip}
+                    className="logo-flip-container cursor-pointer shrink-0 hover:opacity-80 transition-opacity"
+                    title="Натисни, щоб побачити QuickTeam"
+                    aria-label="Показати логотип QuickTeam"
+                  >
+                    <div className={`logo-flip-inner ${flipped ? 'flipped' : ''}`}>
+                      {/* Front: org logo */}
+                      <div className="logo-flip-front">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={orgLogoToUse}
+                          alt={activeOrg?.name || 'Logo'}
+                          className="w-[32px] h-[32px] rounded-[8px] object-cover"
+                        />
+                      </div>
+                      {/* Back: original QT logo */}
+                      <div className="logo-flip-back">
+                        <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                       </div>
                     </div>
-                  </Link>
+                  </button>
                 ) : (
                   <Link href="/" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
                     <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />

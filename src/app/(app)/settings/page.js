@@ -525,13 +525,12 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState('profile');
   const [profileIsDirty, setProfileIsDirty] = useState(false);
-  const [workspaceIsDirty, setWorkspaceIsDirty] = useState(false);
 
   const handleSectionChange = async (newSection) => {
     if (newSection === activeSection) return true;
-    // Process settings (statuses/types/…) auto-save, so only the button-based
-    // sections (profile, organization) can hold unsaved changes.
-    if (profileIsDirty || workspaceIsDirty) {
+    // Process settings and Organization auto-save (branding on change, org name
+    // on blur), so only Profile can hold unsaved changes.
+    if (profileIsDirty) {
       if (!(await confirmDialog({
         title: 'Незбережені зміни',
         message: 'У вас є незбережені зміни. Ви впевнені, що хочете перейти без збереження?',
@@ -542,7 +541,6 @@ export default function SettingsPage() {
       }
     }
     setProfileIsDirty(false);
-    setWorkspaceIsDirty(false);
     setActiveSection(newSection);
     return true;
   };
@@ -627,7 +625,6 @@ export default function SettingsPage() {
   const [sidebarTheme,    setSidebarTheme]    = useState('dark');     // 'dark' | 'light' | 'custom'
   const [sidebarColor,    setSidebarColor]    = useState('#1f1f1f');  // HEX for custom theme
   const [inviteEmail,     setInviteEmail]     = useState('');
-  const [workspaceSaving, setWorkspaceSaving] = useState(false);
   const setSidebarPreview = useWorkspaceStore(s => s.setSidebarPreview);
   const clearSidebarPreview = useWorkspaceStore(s => s.clearSidebarPreview);
 
@@ -644,6 +641,10 @@ export default function SettingsPage() {
       clearSidebarPreview();
     }
   }, [orgCustomBranding, sidebarTheme, sidebarColor, orgLogo, setSidebarPreview, clearSidebarPreview]);
+
+  // Leaving Settings drops the live preview so the sidebar falls back to the
+  // saved org document (which branding auto-save has already persisted).
+  useEffect(() => () => clearSidebarPreview(), [clearSidebarPreview]);
 
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
@@ -688,6 +689,8 @@ export default function SettingsPage() {
   // auto-save effects below. null until the first render establishes it.
   const notifBaseline = useRef(null);
   const locBaseline = useRef(null);
+  // Debounces the branding colour picker, which fires continuously while dragging.
+  const brandColorTimer = useRef(null);
   // Last workflow value known to match Firestore — process settings auto-save
   // (no manual button), so this guards against re-writing freshly hydrated data.
   const wfBaseline = useRef(null);
@@ -894,7 +897,7 @@ export default function SettingsPage() {
   // <Link> clicks (sidebar → Проєкти etc.), intercepted in the capture phase so
   // we run before Next's Link handler and can cancel it.
   useEffect(() => {
-    const hasUnsaved = () => profileIsDirty || workspaceIsDirty;
+    const hasUnsaved = () => profileIsDirty;
 
     const onBeforeUnload = (e) => {
       if (!hasUnsaved()) return;
@@ -920,7 +923,6 @@ export default function SettingsPage() {
       }).then(ok => {
         if (!ok) return;
         setProfileIsDirty(false);
-        setWorkspaceIsDirty(false);
         router.push(url.pathname + url.search + url.hash);
       });
     };
@@ -931,7 +933,7 @@ export default function SettingsPage() {
       window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('click', onClickCapture, true);
     };
-  }, [profileIsDirty, workspaceIsDirty, confirmDialog, router]);
+  }, [profileIsDirty, confirmDialog, router]);
 
   const saveProfile = async () => {
     const uid = currentUser?.uid || currentUser?.id;
@@ -1201,26 +1203,37 @@ export default function SettingsPage() {
     }
   };
 
-  const saveWorkspace = async () => {
+  // Org name is text → deliberate save on blur (no button, no writes while you
+  // type). Only writes when the name actually changed.
+  const saveOrgName = async () => {
     if (!activeOrgId) return;
-    setWorkspaceSaving(true);
+    const trimmed = orgName.trim();
+    if (!trimmed || trimmed === (org?.name || '')) return;
     try {
-      // If branding is being enabled but no logo is set, disable it
-      const brandingValue = orgCustomBranding && orgLogo.trim() ? true : false;
-      await updateDoc(doc(db, 'organizations', activeOrgId), { 
-        name: orgName.trim(), 
-        logo: orgLogo.trim(),
-        customBranding: brandingValue,
-        sidebarTheme: brandingValue ? sidebarTheme : 'dark',
-        sidebarColor: brandingValue && sidebarTheme === 'custom' ? sidebarColor : '#1f1f1f',
-        updatedAt: serverTimestamp() 
-      });
-      clearSidebarPreview();
-      setWorkspaceIsDirty(false);
-      showToast('Налаштування організації збережено');
-      triggerSavedSuccess();
+      await updateDoc(doc(db, 'organizations', activeOrgId), { name: trimmed, updatedAt: serverTimestamp() });
+      showToast('Назву організації збережено');
     } catch { showToast('Помилка збереження', 'error'); }
-    setWorkspaceSaving(false);
+  };
+
+  // Branding (logo / toggle / theme / colour) persists the instant you change
+  // it — it already live-previews in the sidebar, so a Save button was just
+  // friction. Writes fire only from explicit user actions (never an effect), so
+  // there is no spurious save on load. Takes current state + the just-changed
+  // value and writes the derived document. The colour picker is debounced by
+  // its caller because it fires continuously while dragging.
+  const persistBranding = async (patch = {}) => {
+    if (!activeOrgId) return;
+    const next = { orgCustomBranding, orgLogo, sidebarTheme, sidebarColor, ...patch };
+    const brandingValue = next.orgCustomBranding && (next.orgLogo || '').trim() ? true : false;
+    try {
+      await updateDoc(doc(db, 'organizations', activeOrgId), {
+        logo: (next.orgLogo || '').trim(),
+        customBranding: brandingValue,
+        sidebarTheme: brandingValue ? next.sidebarTheme : 'dark',
+        sidebarColor: brandingValue && next.sidebarTheme === 'custom' ? next.sidebarColor : '#1f1f1f',
+        updatedAt: serverTimestamp(),
+      });
+    } catch { showToast('Помилка збереження', 'error'); }
   };
 
   // Process settings auto-save: persist workflow changes in real time — no
@@ -1479,7 +1492,6 @@ export default function SettingsPage() {
   const getSaveAction = () => {
     switch (activeSection) {
       case 'profile': return { handler: saveProfile, loading: profileSaving, label: 'Зберегти профіль' };
-      case 'workspace': return { handler: saveWorkspace, loading: workspaceSaving, label: 'Зберегти налаштування' };
       default: return null;
     }
   };
@@ -1794,9 +1806,13 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': {
-        const handleBrandingToggle = (val) => { setOrgCustomBranding(val); setWorkspaceIsDirty(true); };
-        const handleThemeChange = (newTheme) => { setSidebarTheme(newTheme); setWorkspaceIsDirty(true); };
-        const handleColorChange = (newColor) => { setSidebarColor(newColor); setWorkspaceIsDirty(true); };
+        const handleBrandingToggle = (val) => { setOrgCustomBranding(val); persistBranding({ orgCustomBranding: val }); };
+        const handleThemeChange = (newTheme) => { setSidebarTheme(newTheme); persistBranding({ sidebarTheme: newTheme }); };
+        const handleColorChange = (newColor) => {
+          setSidebarColor(newColor);
+          if (brandColorTimer.current) clearTimeout(brandColorTimer.current);
+          brandColorTimer.current = setTimeout(() => persistBranding({ sidebarColor: newColor }), 400);
+        };
 
         const THEME_OPTIONS = [
           { id: 'dark',   label: 'Темна',     bg: SIDEBAR_PRESETS.dark },
@@ -1809,11 +1825,11 @@ export default function SettingsPage() {
           {/* Zone 1: Organization */}
           <Card variant="white" padding="lg" className="!border-none">
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Організація</p>
-            <Row label="Назва організації" desc="Видима всім у вашій організації">
-              <Input value={orgName} onChange={e => { setOrgName(e.target.value); setWorkspaceIsDirty(true); }} className="w-[200px]" />
+            <Row label="Назва організації" desc="Зберігається автоматично, коли ви завершуєте редагування">
+              <Input value={orgName} onChange={e => setOrgName(e.target.value)} onBlur={saveOrgName} className="w-[200px]" />
             </Row>
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
-              <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); setWorkspaceIsDirty(true); }} theme="light" showLabel={false} showHint={false} />
+              <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); persistBranding({ orgLogo: v }); }} theme="light" showLabel={false} showHint={false} />
             </Row>
             <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
               <div className="flex items-center gap-2">
