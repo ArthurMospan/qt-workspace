@@ -146,7 +146,7 @@ function OnboardingPageContent() {
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && orgName.trim()) handleNext(); }}
-                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-[12px] px-4 py-[14px] text-white text-[15px] placeholder:text-white/30 focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1] transition-all"
+                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-[12px] px-4 py-[14px] text-white text-[15px] placeholder:text-white/30 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all"
                 />
               </div>
             </div>

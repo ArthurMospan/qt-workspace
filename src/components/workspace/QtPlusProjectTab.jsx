@@ -183,7 +183,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           </p>
           <Link
             href="/settings?section=qtplus"
-            className="inline-flex items-center gap-1 text-[13px] text-[#6366f1] font-semibold hover:underline"
+            className="inline-flex items-center gap-1 text-[13px] text-ink font-semibold hover:underline"
           >
             Перейти до Налаштувань <ExternalLink size={12} />
           </Link>

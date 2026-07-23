@@ -128,7 +128,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
           <KpiCard icon={Target}       label="Завершено завдань" color="#10b981"
             value={`${stats.done} / ${stats.total}`}
             sub={`${stats.completionPct}% завершення`} />
-          <KpiCard icon={Zap}          label="Velocity (7 днів)" color="#6366f1"
+          <KpiCard icon={Zap}          label="Velocity (7 днів)" color="#1f1f1f"
             value={stats.recentDone}
             sub="завдань закрито за тиждень"
             trend={stats.velocityTrend} />
@@ -323,9 +323,9 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
                 </div>
               )}
               {stats.unestimated.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-[#eef2ff] rounded-[12px]">
-                  <Clock size={14} className="text-[#6366f1] shrink-0" />
-                  <p className="text-[12px] font-medium text-[#3730a3]">
+                <div className="flex items-center gap-3 p-3 bg-canvas rounded-[12px]">
+                  <Clock size={14} className="text-muted shrink-0" />
+                  <p className="text-[12px] font-medium text-ink">
                     <span className="font-bold">{stats.unestimated.length}</span> завдань без оцінки часу
                   </p>
                 </div>

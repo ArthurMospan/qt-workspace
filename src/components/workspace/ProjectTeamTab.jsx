@@ -157,10 +157,10 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
               const locked = uid === project?.createdBy;
               return (
                 <button key={uid} type="button" onClick={() => toggleMember(uid)} disabled={locked}
-                  className={`flex items-center gap-3 p-3 rounded-[8px] text-left transition-colors ${active ? 'bg-[#eef2ff]' : 'hover:bg-canvas'} disabled:cursor-default`}>
+                  className={`flex items-center gap-3 p-3 rounded-[8px] text-left transition-colors ${active ? 'bg-canvas' : 'hover:bg-canvas'} disabled:cursor-default`}>
                   <UserAvatar user={member} size={36} />
                   <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-ink truncate">{member.name || member.email}</p><p className="text-[11px] text-muted truncate">{locked ? 'Власник проєкту' : member.email}</p></div>
-                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center ${active ? 'bg-[#6366f1] border-[#6366f1]' : 'border-line'}`}>{active && <Check size={12} className="text-white" />}</span>
+                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center ${active ? 'bg-ink border-ink' : 'border-line'}`}>{active && <Check size={12} className="text-white" />}</span>
                 </button>
               );
             })}

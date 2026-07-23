@@ -93,7 +93,7 @@ export default function MessageContent({ text, members, searchTerm }) {
                     href={part}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#6366f1] hover:underline break-all inline-flex items-center gap-1"
+                    className="text-ink hover:underline break-all inline-flex items-center gap-1"
                   >
                     {part}
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="inline">

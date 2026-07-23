@@ -38,13 +38,13 @@ function CapacityBar({ open, done, overdue, max = 10 }) {
           className="h-full transition-all"
           style={{
             width: `${openPct}%`,
-            background: overloaded ? '#ef4444' : '#6366f1',
+            background: overloaded ? '#ef4444' : '#1f1f1f',
           }}
         />
       </div>
       <div className="flex items-center gap-2 shrink-0 text-[11px]">
         <span className="font-semibold text-[#10b981]">{done}✓</span>
-        <span className="font-semibold text-[#6366f1]">{open}</span>
+        <span className="font-semibold text-ink">{open}</span>
         {overdue > 0 && <span className="font-bold text-red-500">!{overdue}</span>}
       </div>
     </div>
@@ -132,7 +132,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <KpiCard icon={Users} color="#6366f1"
+          <KpiCard icon={Users} color="#1f1f1f"
             value={stats.memberStats.length} label="Учасників із завданнями" />
           <KpiCard icon={Circle} color="#0891b2"
             value={stats.memberStats.reduce((s, m) => s + m.open, 0)} label="Відкритих завдань"
@@ -182,7 +182,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
                       <p className="text-[9px] font-bold text-faint uppercase">Готово · {period}д</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[16px] font-bold text-[#6366f1]">{open}</p>
+                      <p className="text-[16px] font-bold text-ink">{open}</p>
                       <p className="text-[9px] font-bold text-faint uppercase">Відкрито</p>
                     </div>
                     {minutes > 0 && (
@@ -240,7 +240,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
             <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block" /> Завершено
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="w-3 h-3 rounded-full bg-[#6366f1] inline-block" /> Відкрито
+            <span className="w-3 h-3 rounded-full bg-ink inline-block" /> Відкрито
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="w-3 h-3 rounded-full bg-[#ef4444] inline-block" /> Перевантажений

@@ -124,7 +124,7 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
                       <Link href={`/${issue.projectId}/issue/${issueId}`}
-                        className="text-[12px] font-bold text-[#6366f1] hover:underline truncate uppercase">
+                        className="text-[12px] font-bold text-ink hover:underline truncate uppercase">
                         {issue.issueKey || issueId.slice(0, 6)}
                       </Link>
                     ) : (

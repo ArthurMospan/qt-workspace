@@ -165,11 +165,11 @@ export default function BacklogTab({ projectId, project, currentUser }) {
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                         onClick={() => setActiveIssue(issue)}
-                        className={`bg-white cursor-pointer transition-all duration-200 group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-[#6366f1]' : 'hover:bg-[#fcfcfc] hover:ring-4 hover:ring-ink/5'}`}
+                        className={`bg-white cursor-pointer transition-all duration-200 group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-ink/30' : 'hover:bg-[#fcfcfc] hover:ring-4 hover:ring-ink/5'}`}
                         style={provided.draggableProps.style}
                       >
                         <td className="px-4 py-3 w-[100px] first:rounded-l-[16px] border-y border-l border-[#efefef]">
-                          <span className="font-mono text-[11px] font-bold text-muted group-hover:text-[#6366f1] transition-colors">{issue.issueKey || '—'}</span>
+                          <span className="font-mono text-[11px] font-bold text-muted group-hover:text-ink transition-colors">{issue.issueKey || '—'}</span>
                         </td>
                         <td className="px-4 py-3 max-w-[280px] border-y border-[#efefef]">
                           <div className="flex items-center gap-2">

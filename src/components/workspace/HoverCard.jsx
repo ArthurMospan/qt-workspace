@@ -56,7 +56,7 @@ export default function HoverCard({ type, value, children, members }) {
       onMouseLeave={() => setShow(false)}
     >
       <span className={`px-1 rounded-sm font-medium cursor-pointer ${
-        type === 'user' ? 'bg-[#eef2ff] text-[#6366f1]' : 'bg-[#fdf4ff] text-[#c026d3]'
+        type === 'user' ? 'bg-canvas text-ink' : 'bg-[#fdf4ff] text-[#c026d3]'
       }`}>
         {children}
       </span>

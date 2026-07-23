@@ -163,7 +163,7 @@ function AddMemberModal({ project, allMembers, onClose }) {
                   <p className="text-[12px] text-muted truncate">{m.email}</p>
                 </div>
                 <div className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center shrink-0 ${
-                  isIn ? 'bg-[#6366f1] border-[#6366f1]' : 'border-line'
+                  isIn ? 'bg-ink border-ink' : 'border-line'
                 }`}>
                   {isIn && <Check size={11} strokeWidth={3} className="text-white" />}
                 </div>
@@ -465,7 +465,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
               <Link
                 href={`/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="text-ink font-semibold underline cursor-pointer hover:text-[#6366f1] transition-colors no-nav"
+                className="text-ink font-semibold underline cursor-pointer hover:text-ink-hover transition-colors no-nav"
               >
                 {stats.lastAction.issueKey}: {stats.lastAction.title}
               </Link>
@@ -560,7 +560,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
       {limitReached ? (
         <div className="flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
-            <Lock size={28} className="text-[#6366f1]" />
+            <Lock size={28} className="text-muted" />
           </div>
           <h3 className="text-[17px] font-bold text-ink mb-2">Ліміт Free плану</h3>
           <p className="text-[13px] text-muted leading-relaxed">

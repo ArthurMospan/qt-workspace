@@ -217,7 +217,7 @@ export default function BoardPage({ params }) {
             {isShared && (
               <Link
                 href={`/${projectId}/portal`}
-                className={`relative flex items-center justify-center gap-[6px] w-[36px] h-[36px] p-0 sm:w-auto sm:h-auto sm:px-[14px] sm:py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-canvas text-muted hover:text-[#6366f1] hover:bg-[#6366f1]/8`}
+                className={`relative flex items-center justify-center gap-[6px] w-[36px] h-[36px] p-0 sm:w-auto sm:h-auto sm:px-[14px] sm:py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-canvas text-muted hover:text-ink hover:bg-ink/8`}
                 title="QuickTeam+"
               >
                 <MessageSquare size={13} />

@@ -88,7 +88,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         <code className="text-[11px] font-semibold text-muted shrink-0">
                           {issue.issueKey || `WS-${issue.id.slice(0, 5)}`}
                         </code>
-                        <span className="text-[13px] font-semibold text-ink truncate group-hover:text-[#6366f1] transition-colors">
+                        <span className="text-[13px] font-semibold text-ink truncate group-hover:underline transition-colors">
                           {issue.title}
                         </span>
                       </div>

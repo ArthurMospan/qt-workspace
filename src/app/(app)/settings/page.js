@@ -173,7 +173,7 @@ function ProviderStatus({ primary, connected, soon }) {
   }
   if (primary) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#6366f1] bg-[#f0f0ff] px-[8px] py-[4px] rounded-full">
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ink bg-ink/8 px-[8px] py-[4px] rounded-full">
         <Check size={12} /> Основний
       </span>
     );
@@ -2056,7 +2056,7 @@ export default function SettingsPage() {
                         href={PORTAL_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold hover:underline"
+                        className="flex items-center gap-1 text-[12px] text-ink font-semibold hover:underline"
                       >
                         Відкрити портал <ExternalLink size={11} />
                       </a>
@@ -2107,7 +2107,7 @@ export default function SettingsPage() {
                         href="https://buggy-bag.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[12px] text-[#6366f1] font-semibold cursor-pointer hover:underline"
+                        className="flex items-center gap-1 text-[12px] text-ink font-semibold cursor-pointer hover:underline"
                       >
                         Відкрити BuggyBag <ExternalLink size={11} />
                       </a>

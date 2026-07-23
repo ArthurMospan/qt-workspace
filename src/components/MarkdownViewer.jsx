@@ -40,7 +40,7 @@ export default function MarkdownViewer({ content, className = '', onTaskToggle }
               <li className="" {...props}>{children}</li>
             </TaskLineContext.Provider>
           ),
-          a: ({node, ...props}) => <a className="text-[#6366f1] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+          a: ({node, ...props}) => <a className="text-ink hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
           img: ({node, alt = '', ...props}) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img alt={alt} className="my-5 max-h-[560px] w-auto max-w-full rounded-[8px] border border-line object-contain" loading="lazy" {...props} />

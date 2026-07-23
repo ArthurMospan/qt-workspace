@@ -91,7 +91,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
         onClick={() => { if (!isDraggingRef.current) router.push(`/${projectId}/issue/${issue.id}`); }}
-        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''} shrink-0`}
+        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0`}
         style={{
           ...provided.draggableProps?.style,
           borderWidth: '1px',
@@ -136,7 +136,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
             </span>
 
             {isTimerActive && (
-              <span className="w-[5px] h-[5px] bg-[#6366f1] rounded-full animate-pulse ml-1 shrink-0" />
+              <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
             )}
 
             <div className="ml-auto flex items-center justify-center w-[18px] h-[18px] rounded-full shrink-0"
@@ -252,8 +252,8 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
               {/* Chat count indicator: totally flat, no background, no border, no shadow */}
               {msgCount > 0 && (
-                <div className="flex items-center gap-[4px] text-[#4f46e5] text-[11px] font-bold select-none" title={`${msgCount} повідомлень в чаті`}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-[#4f46e5]/10">
+                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${msgCount} повідомлень в чаті`}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-muted/10">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                   <span className="font-mono">{msgCount}</span>

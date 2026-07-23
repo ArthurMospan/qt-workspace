@@ -306,7 +306,7 @@ export const DatePicker = forwardRef(({
                   key={preset.id}
                   type="button"
                   onClick={() => handlePreset(preset.id)}
-                  className="text-[11px] font-bold text-[#6366f1] hover:bg-[#eef2ff] rounded-[6px] py-1 transition-colors"
+                  className="text-[11px] font-bold text-ink hover:bg-canvas rounded-[6px] py-1 transition-colors"
                 >
                   {preset.label}
                 </button>

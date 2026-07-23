@@ -122,7 +122,7 @@ export default function TopHeader({
             >
               <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-[#6366f1] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
+                <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}

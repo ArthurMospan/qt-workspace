@@ -137,7 +137,7 @@ function MessageBubble({
             </span>
             <span className="text-[11px] text-muted">{msg.time}</span>
             {msg.isPinned && (
-              <span className="text-[10px] font-bold text-[#6366f1] bg-[#eef2ff] px-2 py-0.5 rounded-full">📌 Закріплено</span>
+              <span className="text-[10px] font-bold text-ink bg-canvas px-2 py-0.5 rounded-full">📌 Закріплено</span>
             )}
           </div>
         )}
@@ -152,12 +152,12 @@ function MessageBubble({
                 if (e.key === 'Escape') { setEditing(false); setEditText(msg.text); }
               }}
               autoFocus
-              className="w-full bg-white border border-ink/20 focus:border-[#6366f1] rounded-xl p-3 text-[14px] outline-none resize-none transition-colors"
+              className="w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-3 text-[14px] outline-none resize-none transition-colors"
               rows={2}
             />
             <div className="flex items-center gap-2 text-[12px]">
               <span className="text-muted">Enter — зберегти, Esc — скасувати</span>
-              <button onClick={() => { onEdit(msg.id, editText); setEditing(false); }} className="font-semibold text-[#6366f1] hover:underline">Зберегти</button>
+              <button onClick={() => { onEdit(msg.id, editText); setEditing(false); }} className="font-semibold text-ink hover:underline">Зберегти</button>
               <button onClick={() => { setEditing(false); setEditText(msg.text); }} className="font-semibold text-muted hover:text-ink">Скасувати</button>
             </div>
           </div>
@@ -200,7 +200,7 @@ function MessageBubble({
                       onClick={() => onReact(msg.id, emoji)}
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] border transition-all hover:scale-105 active:scale-95 ${
                         reacted
-                          ? 'bg-[#eef2ff] border-[#6366f1]/40 text-[#4f46e5]'
+                          ? 'bg-canvas border-ink/20 text-ink'
                           : 'bg-white border-line text-ink hover:border-muted'
                       }`}
                     >
@@ -216,7 +216,7 @@ function MessageBubble({
             {!isThread && msg.replyCount > 0 && (
               <button
                 onClick={() => onThread(msg.id)}
-                className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#6366f1] hover:text-[#4f46e5] hover:underline transition-colors"
+                className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-ink hover:underline transition-colors"
               >
                 <MessageSquare size={12} />
                 {msg.replyCount} {msg.replyCount === 1 ? 'відповідь' : msg.replyCount < 5 ? 'відповіді' : 'відповідей'}
@@ -267,7 +267,7 @@ function MessageBubble({
             <Button
               onClick={() => onPin(msg.id, !msg.isPinned)}
               style="ghost" size="icon-sm" icon={Pin} iconSize={15}
-              className={msg.isPinned ? '!text-[#6366f1] !bg-[#eef2ff]' : ''}
+              className={msg.isPinned ? '!text-ink !bg-canvas' : ''}
               title={msg.isPinned ? 'Відкріпити' : 'Закріпити'}
             />
           )}
@@ -479,7 +479,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
             <button
               ref={emojiBtnRef}
               onClick={() => setShowEmoji(v => !v)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${showEmoji ? 'bg-[#eef2ff] text-[#6366f1]' : 'text-muted hover:bg-canvas hover:text-ink'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${showEmoji ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'}`}
               title="Emoji"
             >
               <Smile size={17} />
@@ -537,7 +537,7 @@ function ThreadSidebar({
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
         <div className="flex items-center gap-2">
-          <MessageSquare size={16} className="text-[#6366f1]" />
+          <MessageSquare size={16} className="text-muted" />
           <h3 className="font-bold text-[14px] text-ink">Гілка</h3>
           {replies.length > 0 && (
             <span className="text-[11px] text-muted bg-white px-2 py-0.5 rounded-full">
@@ -736,7 +736,7 @@ function ChannelInfoSidebar({
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
         <div className="flex items-center gap-2">
-          <Info size={16} className="text-[#6366f1]" />
+          <Info size={16} className="text-muted" />
           <h3 className="font-bold text-[14px] text-ink">Про канал</h3>
         </div>
         <button
@@ -752,7 +752,7 @@ function ChannelInfoSidebar({
         {/* Basic Info */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <Hash size={18} className="text-[#6366f1] shrink-0" />
+            <Hash size={18} className="text-ink shrink-0" />
             <h4 className="font-bold text-[16px] text-ink truncate">
               {channel.name}
             </h4>
@@ -765,12 +765,12 @@ function ChannelInfoSidebar({
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full bg-white border border-ink/20 focus:border-[#6366f1] rounded-xl p-2.5 text-[13px] outline-none resize-none transition-colors"
+                  className="w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-2.5 text-[13px] outline-none resize-none transition-colors"
                   rows={2}
                 />
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setIsEditingDesc(false)} className="text-[12px] font-semibold text-muted hover:text-ink">Скасувати</button>
-                  <button onClick={handleSaveDescription} className="text-[12px] font-semibold text-[#6366f1] hover:underline">Зберегти</button>
+                  <button onClick={handleSaveDescription} className="text-[12px] font-semibold text-ink hover:underline">Зберегти</button>
                 </div>
               </div>
             ) : (
@@ -795,7 +795,7 @@ function ChannelInfoSidebar({
             {isAdminOrOwner && (
               <button
                 onClick={() => setShowAddMembers(v => !v)}
-                className="text-[11px] font-semibold text-[#6366f1] hover:text-[#4f46e5] flex items-center gap-1"
+                className="text-[11px] font-semibold text-ink hover:underline flex items-center gap-1"
               >
                 <UserPlus size={13} />
                 Додати
@@ -807,7 +807,7 @@ function ChannelInfoSidebar({
             <div className="mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2">
               <button
                 onClick={handleAddAllMembers}
-                className="w-full text-center py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-xl text-[12px] font-semibold transition-colors"
+                className="w-full text-center py-2 bg-ink hover:bg-ink-hover text-white rounded-xl text-[12px] font-semibold transition-colors"
               >
                 Додати всіх учасників
               </button>
@@ -1104,7 +1104,7 @@ export default function ChatPage() {
                     onKeyDown={handleCreateChannel}
                     onBlur={() => { setIsCreatingChannel(false); setNewChannelName(''); }}
                     placeholder="назва-каналу"
-                    className="w-full text-[13px] bg-white border border-line focus:border-[#6366f1] rounded-xl px-3 py-2 outline-none transition-colors"
+                    className="w-full text-[13px] bg-white border border-line focus:border-ink rounded-xl px-3 py-2 outline-none transition-colors"
                   />
                 </div>
               )}
@@ -1133,12 +1133,12 @@ export default function ChatPage() {
                             : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
                         }`}
                       >
-                        <Hash size={14} className={active ? 'text-[#6366f1]' : 'text-muted'} />
+                        <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />
                         <span className={`text-[13px] flex-1 truncate ${hasUnread && !active ? 'font-bold text-ink' : ''}`}>
                           {c.name}
                         </span>
                         {hasUnread && !active && (
-                          <span className="w-2 h-2 rounded-full bg-[#6366f1] shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-ink shrink-0" />
                         )}
                       </button>
                     );
@@ -1205,7 +1205,7 @@ export default function ChatPage() {
                 <ArrowLeft size={18} />
               </button>
               {activeChannel.type === 'channel' ? (
-                <Hash size={17} className="text-[#6366f1] shrink-0" />
+                <Hash size={17} className="text-ink shrink-0" />
               ) : (
                 <div className="relative shrink-0">
                   <div className="w-8 h-8 rounded-full overflow-hidden">
@@ -1241,7 +1241,7 @@ export default function ChatPage() {
 
               {/* Pinned message count */}
               {activeChannel.type === 'channel' && messages.filter(m => m.isPinned).length > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-xl border border-line text-[12px] font-medium text-[#6366f1]">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-xl border border-line text-[12px] font-medium text-ink">
                   <Pin size={12} />
                   <span>{messages.filter(m => m.isPinned).length} закріплено</span>
                 </div>
@@ -1256,7 +1256,7 @@ export default function ChatPage() {
                   }}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
                     showChannelInfo
-                      ? 'text-[#6366f1] bg-[#eef2ff]'
+                      ? 'text-ink bg-canvas'
                       : 'text-muted hover:text-ink hover:bg-canvas'
                   }`}
                   title="Про канал"
@@ -1285,7 +1285,7 @@ export default function ChatPage() {
             >
               {loading && messages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center h-full">
-                  <div className="w-8 h-8 border-3 border-line border-t-[#6366f1] rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-3 border-line border-t-ink rounded-full animate-spin" />
                 </div>
               ) : displayMessages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center h-full">

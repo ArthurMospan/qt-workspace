@@ -72,7 +72,7 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
           <MessagesSquare size={15} className="text-muted" />
           <span className="text-[13px] text-ink font-semibold">Чат</span>
           {unread > 0 && (
-            <span className="ml-auto text-[11px] font-semibold text-white bg-[#6366f1] rounded-full px-2 py-[1px]">
+            <span className="ml-auto text-[11px] font-semibold text-white bg-ink rounded-full px-2 py-[1px]">
               {unread}
             </span>
           )}

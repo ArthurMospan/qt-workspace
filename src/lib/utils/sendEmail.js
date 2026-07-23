@@ -63,7 +63,7 @@ export function generateEmailTemplate({
       <meta charset="utf-8">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1f1f1f; line-height: 1.6; }
-        a { color: #6366f1; text-decoration: none; }
+        a { color: #1f1f1f; text-decoration: none; }
         code { background: #f4f4f5; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
       </style>
     </head>

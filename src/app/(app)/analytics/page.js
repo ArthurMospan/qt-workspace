@@ -132,7 +132,7 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <KpiCard icon={Target} label="Всі завдання" color="#10b981"
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
-          <KpiCard icon={Zap} label={`Закрито за ${period}д`} color="#6366f1" onClick={() => onTabChange('velocity')}
+          <KpiCard icon={Zap} label={`Закрито за ${period}д`} color="#1f1f1f" onClick={() => onTabChange('velocity')}
             value={stats.recentDone} sub="тренди — у Продуктивності" />
           <KpiCard icon={Clock} label={`Списано часу · ${period}д`} color="#0891b2" onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />

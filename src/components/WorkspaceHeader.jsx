@@ -218,7 +218,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
           >
             <Bell size={18} />
             {unreadCount > 0 && (
-              <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-[#6366f1] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
+              <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -231,7 +231,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <div className="flex items-center gap-2">
                   <h3 className="text-[14px] font-bold text-ink">Сповіщення</h3>
                   {unreadCount > 0 && (
-                    <span className="text-[9px] font-bold px-[6px] py-[2px] bg-[#6366f1]/10 text-[#6366f1] rounded-full">
+                    <span className="text-[9px] font-bold px-[6px] py-[2px] bg-ink/8 text-ink rounded-full">
                       {unreadCount} нових
                     </span>
                   )}
@@ -293,7 +293,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                           </p>
                         </div>
                         {!n.read && (
-                          <span className="w-[6px] h-[6px] bg-[#6366f1] rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
+                          <span className="w-[6px] h-[6px] bg-ink rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
                         )}
                         {/* Hover actions */}
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -388,7 +388,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <p className="text-[10px] font-bold uppercase tracking-wide mb-[3px]"
                   style={{ color: cfg.color }}>{cfg.label}</p>
                 {liveNotif.organizationId && (
-                  <p className="text-[10px] font-semibold text-[#6366f1] mb-1 truncate">
+                  <p className="text-[10px] font-semibold text-ink mb-1 truncate">
                     {orgName(liveNotif.organizationId)}
                   </p>
                 )}
@@ -399,7 +399,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 {liveNotif.link && (
                   <button
                     onClick={() => handleNotifClick(liveNotif)}
-                    className="mt-2 text-[11px] font-semibold text-[#6366f1] hover:underline"
+                    className="mt-2 text-[11px] font-semibold text-ink hover:underline"
                   >
                     Перейти
                   </button>

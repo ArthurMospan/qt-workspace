@@ -16,7 +16,7 @@ export default function Avatar({
 
   return (
     <div
-      className={`flex items-center justify-center rounded-full bg-[#6366f1] text-white font-bold shrink-0 ${sizes[size]} ${className}`}
+      className={`flex items-center justify-center rounded-full bg-ink text-white font-bold shrink-0 ${sizes[size]} ${className}`}
       title={name}
     >
       {src ? (

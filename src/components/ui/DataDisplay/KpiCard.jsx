@@ -7,7 +7,7 @@ export default function KpiCard({
   label,
   value,
   sub,
-  color = '#6366f1',
+  color = '#1f1f1f',
   trend,
   onClick,
   className = '',

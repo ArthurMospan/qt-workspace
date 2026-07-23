@@ -8,7 +8,7 @@ export default function Progress({
   className = '',
 }) {
   const variants = {
-    default: 'bg-[#6366f1]',
+    default: 'bg-ink',
     success: 'bg-[#10b981]',
     warning: 'bg-[#eab308]',
     danger: 'bg-[#ef4444]',

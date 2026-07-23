@@ -44,7 +44,7 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
           <div className="flex items-center gap-1 mt-[2px] pr-1">
             {time && <span className="text-[10px] text-faint">{time}</span>}
             {readByOthers
-              ? <CheckCheck size={12} className="text-[#6366f1]" />
+              ? <CheckCheck size={12} className="text-muted" />
               : <Check size={12} className="text-faint" />}
             {onDelete && (
               confirming ? (

@@ -328,7 +328,7 @@ function MediaViewer({ mat, onClose }) {
             <p>Превʼю недоступне</p>
             {PORTAL_URL && (
               <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer"
-                className="text-[#6366f1] hover:underline text-[13px] mt-2 inline-block">Відкрити в порталі →</a>
+                className="text-ink hover:underline text-[13px] mt-2 inline-block">Відкрити в порталі →</a>
             )}
           </div>
         )}
@@ -507,12 +507,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           <div className="max-w-[360px] px-6 text-center">
             <p className="text-[16px] font-bold text-ink mb-2">Не вдалося завантажити задачу</p>
             <p className="text-[13px] text-muted mb-4">Дані не видалені. Сервіс бази тимчасово недоступний.</p>
-            <button onClick={() => window.location.reload()} className="text-[13px] font-semibold text-[#6366f1] hover:underline">Спробувати ще раз</button>
+            <button onClick={() => window.location.reload()} className="text-[13px] font-semibold text-ink hover:underline">Спробувати ще раз</button>
           </div>
         ) : (
           <div className="text-center">
             <p className="text-[16px] font-bold text-ink mb-2">Задачу не знайдено</p>
-            <Link href={`/${projectId}`} className="text-[13px] text-[#6366f1] hover:underline">← Повернутись</Link>
+            <Link href={`/${projectId}`} className="text-[13px] text-ink hover:underline">← Повернутись</Link>
           </div>
         )}
       </div>
@@ -548,7 +548,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const spentMin  = loggedMinutes;
   const estimMin  = isEditing ? (draft.estimateMinutes ?? issue.estimateMinutes ?? 0) : (issue.estimateMinutes || 0);
   const timePct   = estimMin > 0 ? Math.round((spentMin / estimMin) * 100) : 0;
-  const timeColor = timePct >= 100 ? '#dc2626' : timePct >= 75 ? '#f97316' : '#6366f1';
+  const timeColor = timePct >= 100 ? '#dc2626' : timePct >= 75 ? '#f97316' : '#1f1f1f';
 
   const isTimerMine    = activeTimer?.issueId === issueId;
   const allMaterials   = stages.flatMap(s => (s.materials || []).map(m => ({ ...m, stageName: s.title || s.name })));
@@ -1357,7 +1357,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                                 className={`flex w-full items-center justify-between px-4 py-2 text-left text-[12px] transition-colors hover:bg-canvas ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
                               >
                                 <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: label.color }} />{label.label || label.name}</span>
-                                {active && <CheckSquare size={12} className="text-[#6366f1]" />}
+                                {active && <CheckSquare size={12} className="text-ink" />}
                               </button>
                             );
                           })}
@@ -1498,7 +1498,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                           </span>
                           <Link
                             href={`/${projectId}/issue/${targetIssue.id}`}
-                            className="text-[13px] font-semibold text-ink hover:text-[#6366f1] hover:underline truncate"
+                            className="text-[13px] font-semibold text-ink hover:underline truncate"
                           >
                             <span className="text-muted font-medium mr-1 uppercase">{targetIssue.issueKey}</span>
                             {targetIssue.title}
@@ -1657,7 +1657,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 {timeLogs.length > timeLogsPage * TIME_LOGS_PER_PAGE && (
                   <button
                     onClick={() => setTimeLogsPage(p => p + 1)}
-                    className="mt-2 text-[12px] font-bold text-[#6366f1] hover:text-[#4f46e5] transition-colors py-2 text-center w-full rounded-[8px] hover:bg-[#e0e7ff]"
+                    className="mt-2 text-[12px] font-bold text-ink hover:text-ink-hover transition-colors py-2 text-center w-full rounded-[8px] hover:bg-canvas"
                   >
                     Показати ще
                   </button>

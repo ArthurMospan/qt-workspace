@@ -75,7 +75,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
             <div className="h-[3px] bg-line rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
-                  issue.spentMinutes > issue.estimateMinutes ? 'bg-red-500' : 'bg-[#6366f1]'
+                  issue.spentMinutes > issue.estimateMinutes ? 'bg-red-500' : 'bg-ink'
                 }`}
                 style={{ width: `${Math.min((issue.spentMinutes / issue.estimateMinutes) * 100, 100)}%` }}
               />
@@ -87,9 +87,9 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
       {/* Timer button */}
       {isThisTimer ? (
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 bg-[#6366f1]/10 rounded-[10px] px-3 py-2">
-            <span className="w-[6px] h-[6px] bg-[#6366f1] rounded-full animate-pulse shrink-0" />
-            <span className="font-mono text-[14px] font-bold text-[#6366f1]">
+          <div className="flex items-center gap-2 bg-ink/8 rounded-[10px] px-3 py-2">
+            <span className="w-[6px] h-[6px] bg-ink rounded-full animate-pulse shrink-0" />
+            <span className="font-mono text-[14px] font-bold text-ink">
               {formatSeconds(timerElapsed)}
             </span>
           </div>
@@ -102,7 +102,7 @@ export default function TimeTracker({ issue, userId, onLogTime }) {
         <button
           onClick={() => startTimer(issue.id)}
           disabled={!!activeTimer}
-          className="flex items-center gap-2 w-full px-3 py-2 bg-[#6366f1] text-white rounded-[10px] text-[12px] font-bold hover:bg-[#4f46e5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-2">
+          className="flex items-center gap-2 w-full px-3 py-2 bg-ink text-white rounded-[10px] text-[12px] font-bold hover:bg-ink-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-2">
           <Play size={12} /> Запустити таймер
         </button>
       )}

@@ -480,7 +480,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                     {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими */}
                     {isMe && (
                       (item.readBy || []).some(readerId => readerId !== item.authorId)
-                        ? <CheckCheck size={13} className="text-[#6366f1]" aria-label="Прочитано" />
+                        ? <CheckCheck size={13} className="text-muted" aria-label="Прочитано" />
                         : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />
                     )}
                     {!isArchived && (

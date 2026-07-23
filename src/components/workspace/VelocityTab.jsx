@@ -12,7 +12,7 @@ function fmtShortDate(date) {
 }
 
 // ── Mini Bar Chart ────────────────────────────────────────────────────────────
-function BarChart({ data, colorA = '#6366f1', colorB = '#10b981', labelA = 'Створено', labelB = 'Закрито', height = 120 }) {
+function BarChart({ data, colorA = '#1f1f1f', colorB = '#10b981', labelA = 'Створено', labelB = 'Закрито', height = 120 }) {
   const maxVal = Math.max(...data.map(d => Math.max(d.a, d.b ?? 0)), 1);
   return (
     <div>
@@ -99,7 +99,7 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
           <polyline
             points={data.map((d, i) => `${i},${100 - (d.remaining / maxVal) * 100}`).join(' ')}
             fill="none"
-            stroke="#6366f1"
+            stroke="#1f1f1f"
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
@@ -110,7 +110,7 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
               `${data.length - 1},100`,
               `0,100`
             ].join(' ')}
-            fill="#6366f1"
+            fill="#1f1f1f"
             fillOpacity="0.08"
           />
         </svg>
@@ -125,7 +125,7 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
           Ідеальний темп
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-muted">
-          <span className="inline-block w-6 border-t-2 border-[#6366f1]" />
+          <span className="inline-block w-6 border-t-2 border-ink" />
           Фактичний
         </span>
       </div>
@@ -154,7 +154,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
     });
   }, [issues, weeksBack, doneSet, now]);
 
-  return <BarChart data={data} colorA="#6366f1" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />;
+  return <BarChart data={data} colorA="#1f1f1f" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Zap} color="#6366f1" trend={stats.velocityTrend ?? undefined}
+          <KpiCard icon={Zap} color="#1f1f1f" trend={stats.velocityTrend ?? undefined}
             value={stats.donePeriod} label={`Закрито за ${period}д`} sub="vs попередній період" />
           <KpiCard icon={CheckCircle2} color="#10b981"
             value={stats.totalDone} label="Всього закрито" sub={`${stats.completionPct}% від всіх завдань`} />
@@ -274,7 +274,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
             <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
               Активність ({period} днів)
             </h3>
-            <BarChart data={stats.days} colorA="#6366f1" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />
+            <BarChart data={stats.days} colorA="#1f1f1f" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />
           </div>
 
           {/* By type */}
@@ -332,7 +332,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                   <div key={p.id} className="flex items-center gap-3">
                     <span className="text-[12px] font-medium text-[#6a6a6a] truncate flex-1 max-w-[120px]">{p.name}</span>
                     <div className="flex-1 h-[5px] bg-canvas rounded-full overflow-hidden">
-                      <div className="h-full bg-[#6366f1] rounded-full transition-all"
+                      <div className="h-full bg-ink rounded-full transition-all"
                         style={{ width: `${total > 0 ? (count / Math.max(...stats.byProject.map(x => x.count), 1)) * 100 : 0}%` }} />
                     </div>
                     <span className="text-[12px] font-bold text-ink w-6 text-right shrink-0">{count}</span>

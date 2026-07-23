@@ -55,7 +55,7 @@ export default function CommentText({ text, members = [] }) {
             key={i}
             className={`font-bold ${
               part.isMember
-                ? 'text-[#6366f1] bg-[#6366f1]/10 px-[2px] rounded-[3px]'
+                ? 'text-ink bg-ink/8 px-[2px] rounded-[3px]'
                 : 'text-muted'
             }`}
           >

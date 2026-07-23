@@ -41,7 +41,7 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
           )}
         </div>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 z-20 min-w-[25px] h-[25px] px-1.5 rounded-full bg-[#6366f1] border-[3px] border-[#171717] text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 z-20 min-w-[25px] h-[25px] px-1.5 rounded-full bg-white border-[3px] border-[#171717] text-[#171717] text-[10px] font-bold flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-white/80 py-[60px] px-6 relative overflow-hidden select-none">
       {/* Decorative dark glows */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#6366f1]/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-white/[0.03] blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#0891b2]/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-[680px] mx-auto z-10 relative">
@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
         {/* Card wrapper */}
         <div className="backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] p-8 md:p-10 rounded-[32px] shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
           <div className="w-12 h-12 bg-white/[0.04] border border-white/[0.08] rounded-[16px] flex items-center justify-center mb-6">
-            <Shield size={22} className="text-[#6366f1]" />
+            <Shield size={22} className="text-white/50" />
           </div>
 
           <h1 className="text-white text-[28px] font-black tracking-tight mb-2">

@@ -96,7 +96,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   return (
     <div
       onClick={handleRowClick}
-      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-[#6366f1]/35' : ''}`}
+      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
       {/* Priority Left Indicator Bar - Rounded Pill */}
       <div 
@@ -144,7 +144,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
             )}
 
             {isTimerActive && (
-              <span className="w-[5px] h-[5px] bg-[#6366f1] rounded-full animate-pulse shrink-0" />
+              <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse shrink-0" />
             )}
           </div>
 

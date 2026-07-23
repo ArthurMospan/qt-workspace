@@ -26,7 +26,16 @@ export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
   const { projects, activeOrg, activeOrgId, orgRole, currentUser, orgLoading } = useAppContext();
-  const [collapsed, setCollapsed] = useState(false);
+  // Особиста преференція цього браузера/пристрою — НЕ дані організації, тому
+  // ніяк не синхронізується і не видно іншим учасникам команди.
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try { return localStorage.getItem('qt_sidebar_collapsed') === '1'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('qt_sidebar_collapsed', collapsed ? '1' : '0'); } catch {}
+  }, [collapsed]);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const unreadChats = useUnreadChatCount();
   const userId = currentUser?.id || currentUser?.uid;
@@ -81,6 +90,11 @@ export default function WorkspaceSidebar() {
 
   // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
   useSidebarThemeBoot(theme, Boolean(activeOrg));
+
+  // Поки не приїхали живі дані (чи live-preview з налаштувань) — лого й назва
+  // організації невідомі. Замість того щоб на мить показати "Company name" /
+  // биту картинку, показуємо скелетон; логотип рендериться лише коли готово.
+  const brandingReady = Boolean(sidebarPreview) || Boolean(activeOrg);
 
   useEffect(() => {
     const match = pathname.match(/^\/([^/]+)/);
@@ -143,7 +157,24 @@ export default function WorkspaceSidebar() {
           {!collapsed ? (
             <>
               <div className="flex items-start min-w-0 flex-1">
-                {isBranded ? (
+                {!brandingReady ? (
+                  /* ── Skeleton: доки не приїхали дані організації, краще
+                     нічого не показувати, ніж "Company name" / бите лого ── */
+                  <>
+                    <div className="w-[32px] h-[32px] rounded-[8px] shrink-0 animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                    {/* Той самий розклад висот (16px + 20px), що й у реального
+                        контенту нижче — щоб перехід скелетон → справжні дані
+                        не смикав layout ні на піксель. */}
+                    <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
+                      <div className="h-[16px] flex items-center">
+                        <div className="h-[10px] w-[84px] rounded-full animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                      </div>
+                      <div className="h-[20px] flex items-center">
+                        <div className="h-[10px] w-[56px] rounded-full animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                      </div>
+                    </div>
+                  </>
+                ) : isBranded ? (
                   /* ── Branded logo with coin-flip ── */
                   <Link href="/" className="shrink-0 hover:opacity-80 transition-opacity">
                     <div
@@ -163,45 +194,50 @@ export default function WorkspaceSidebar() {
                         </div>
                         {/* Back: original QT logo */}
                         <div className="logo-flip-back">
-                          <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
+                          <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                         </div>
                       </div>
                     </div>
                   </Link>
                 ) : (
                   <Link href="/" className="flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
-                    <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
+                    <Image src={theme.isDark ? '/logo-min.svg' : '/logo-min-dark.svg'} alt="QT" width={32} height={32} loading="eager" className="object-contain" />
                   </Link>
                 )}
-                <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
-                  <Link href="/" className="hover:opacity-80 transition-opacity">
-                     <h1
-                       className="tracking-tight leading-tight truncate transition-all"
-                       style={{ color: isBranded ? (theme.mutedHeader || theme.muted) : theme.text, fontSize: isBranded ? 12 : 16, fontWeight: isBranded ? 500 : 700 }}
-                     >QuickTeam</h1>
-                  </Link>
-                  <div 
-                    onClick={() => setShowOrgSwitcher(true)}
-                    className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit"
-                    style={{ color: isBranded ? theme.text : theme.muted }}
-                  >
-                    <span
-                      className="truncate max-w-[120px] transition-all"
-                      style={{ fontSize: isBranded ? 16 : 12, fontWeight: isBranded ? 700 : 500 }}
-                    >{activeOrg?.name || 'Company name'}</span>
-                    {otherOrgUnreadCount > 0 && (
-                      <span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#6366f1] text-white text-[9px] font-bold flex items-center justify-center">
-                        {otherOrgUnreadCount > 99 ? '99+' : otherOrgUnreadCount}
-                      </span>
-                    )}
-                    <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
+                {brandingReady && (
+                  <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
+                    {/* line-height фіксований (16px / 20px) незалежно від
+                        isBranded — інакше рядки міняються розміром шрифту
+                        місцями, а висота блоку "стрибає" на 1-2px. */}
+                    <Link href="/" className="hover:opacity-80 transition-opacity">
+                       <h1
+                         className="tracking-tight truncate transition-all h-[16px]"
+                         style={{ color: isBranded ? (theme.mutedHeader || theme.muted) : theme.text, fontSize: isBranded ? 12 : 16, lineHeight: '16px', fontWeight: isBranded ? 500 : 700 }}
+                       >QuickTeam</h1>
+                    </Link>
+                    <div
+                      onClick={() => setShowOrgSwitcher(true)}
+                      className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit h-[20px]"
+                      style={{ color: isBranded ? theme.text : theme.muted }}
+                    >
+                      <span
+                        className="truncate max-w-[120px] transition-all"
+                        style={{ fontSize: isBranded ? 16 : 12, lineHeight: '20px', fontWeight: isBranded ? 700 : 500 }}
+                      >{activeOrg?.name || 'Company name'}</span>
+                      {otherOrgUnreadCount > 0 && (
+                        <span className="min-w-[16px] h-[16px] px-1 rounded-full bg-ink text-white text-[9px] font-bold flex items-center justify-center">
+                          {otherOrgUnreadCount > 99 ? '99+' : otherOrgUnreadCount}
+                        </span>
+                      )}
+                      <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <button
                 onClick={() => setCollapsed(true)}
                 className="mt-1 transition-colors shrink-0 ml-[8px]"
-                style={{ color: theme.muted }}
+                style={{ color: 'var(--sb-muted)' }}
                 title="Сховати панель"
               >
                 <PanelLeftClose size={20} />
@@ -213,7 +249,7 @@ export default function WorkspaceSidebar() {
                 <button
                   onClick={() => setCollapsed(false)}
                   className="transition-colors"
-                  style={{ color: theme.muted }}
+                  style={{ color: 'var(--sb-muted)' }}
                 >
                   <PanelLeftOpen size={20} />
                 </button>
@@ -231,8 +267,8 @@ export default function WorkspaceSidebar() {
             <Link key={href} href={href} title={collapsed ? undefined : label}
               className="flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all"
               style={{
-                backgroundColor: active ? theme.active : 'transparent',
-                color: active ? theme.text : theme.muted,
+                backgroundColor: active ? 'var(--sb-active)' : 'transparent',
+                color: active ? 'var(--sb-text)' : 'var(--sb-muted)',
               }}
               onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = theme.hover; e.currentTarget.style.color = theme.text; } }}
               onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = theme.muted; } }}
@@ -251,18 +287,18 @@ export default function WorkspaceSidebar() {
         })}
       </nav>
 
-      <div className="mx-[12px] mt-[16px] mb-[16px]" style={{ borderTop: `1px solid ${theme.border}` }} />
+      <div className="mx-[12px] mt-[16px] mb-[16px]" style={{ borderTop: '1px solid var(--sb-border)' }} />
 
       {/* Projects Section */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {!collapsed && (
           <div className="flex items-center justify-between px-[16px] mb-[16px]">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.mutedHeader || theme.muted }}>ПРОЄКТИ</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--sb-muted-header)' }}>ПРОЄКТИ</p>
             {can(orgRole, 'create:project') && (
               <button
                 onClick={() => router.push('/?new=1')}
                 className="transition-colors" title="Новий проєкт"
-                style={{ color: theme.mutedHeader || theme.muted }}
+                style={{ color: 'var(--sb-muted-header)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = theme.text; }}
                 onMouseLeave={e => { e.currentTarget.style.color = theme.mutedHeader || theme.muted; }}
               >
@@ -280,8 +316,8 @@ export default function WorkspaceSidebar() {
                 <Link key={p.id} href={`/${p.id}`} title={collapsed ? undefined : p.name}
                   className="flex items-center mx-[8px] h-[32px] rounded-[8px] transition-all"
                   style={{
-                    backgroundColor: active ? theme.active : 'transparent',
-                    color: active ? theme.text : (theme.mutedProject || theme.muted),
+                    backgroundColor: active ? 'var(--sb-active)' : 'transparent',
+                    color: active ? 'var(--sb-text)' : 'var(--sb-muted-project)',
                   }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = theme.hover; e.currentTarget.style.color = theme.text; } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = (theme.mutedProject || theme.muted); } }}
