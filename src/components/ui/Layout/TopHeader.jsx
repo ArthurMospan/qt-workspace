@@ -41,22 +41,22 @@ export default function TopHeader({
   hideBorder = false,
 }) {
   const renderOnlineUsers = () => (
-    <div className="flex items-center -space-x-2">
+    <div className="flex items-center -space-x-2.5">
       {onlineUsers.slice(0, 5).map((u, i) => (
         <Tooltip key={u.id || u.uid || i} content={u.name || u.email || 'Учасник'} position="bottom">
           <button
             type="button"
             onClick={() => onOnlineUserClick(u)}
-            className="relative w-8 h-8 rounded-[10px] border-2 border-white bg-gray-100 flex items-center justify-center shrink-0 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+            className="relative w-8 h-8 flex items-center justify-center shrink-0 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:rounded-full"
             aria-label={`Відкрити чат з ${u.name || u.email || 'учасником'}`}
           >
-            <span className="overflow-hidden rounded-[8px]"><UserAvatar user={u} size={26} /></span>
+            <span className="overflow-hidden rounded-full ring-2 ring-white"><UserAvatar user={u} size={28} /></span>
             <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
           </button>
         </Tooltip>
       ))}
       {onlineUsers.length > 5 && (
-        <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-gray-100 flex items-center justify-center z-10 text-[10px] font-bold text-gray-600">
+        <div className="w-8 h-8 rounded-full border-2 border-white bg-white flex items-center justify-center z-10 text-[10px] font-bold text-gray-600 shadow-sm">
           +{onlineUsers.length - 5}
         </div>
       )}

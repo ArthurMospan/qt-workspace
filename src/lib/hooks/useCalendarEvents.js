@@ -20,6 +20,49 @@ async function calendarRequest(path, options = {}) {
   return result;
 }
 
+function addRecurrence(date, frequency, interval) {
+  const next = new Date(date);
+  if (frequency === 'daily') next.setDate(next.getDate() + interval);
+  if (frequency === 'weekly') next.setDate(next.getDate() + 7 * interval);
+  if (frequency === 'monthly') next.setMonth(next.getMonth() + interval);
+  return next;
+}
+
+function expandRecurringEvents(sourceEvents) {
+  const horizonEnd = new Date();
+  horizonEnd.setFullYear(horizonEnd.getFullYear() + 2);
+  return sourceEvents.flatMap(event => {
+    const frequency = event.recurrence?.frequency || 'none';
+    if (frequency === 'none') return [event];
+    const interval = Math.max(1, Number(event.recurrence?.interval) || 1);
+    const originalStart = new Date(event.startAt);
+    const duration = new Date(event.endAt).getTime() - originalStart.getTime();
+    const configuredUntil = event.recurrence?.until
+      ? new Date(`${event.recurrence.until}T23:59:59`)
+      : horizonEnd;
+    const until = configuredUntil < horizonEnd ? configuredUntil : horizonEnd;
+    const occurrences = [];
+    let occurrenceStart = originalStart;
+    let index = 0;
+    while (occurrenceStart <= until && index < 400) {
+      const startAt = occurrenceStart.toISOString();
+      occurrences.push({
+        ...event,
+        id: `${event.id}::${startAt}`,
+        sourceEventId: event.id,
+        seriesStartAt: event.startAt,
+        seriesEndAt: event.endAt,
+        recurrenceIndex: index,
+        startAt,
+        endAt: new Date(occurrenceStart.getTime() + duration).toISOString(),
+      });
+      occurrenceStart = addRecurrence(occurrenceStart, frequency, interval);
+      index += 1;
+    }
+    return occurrences;
+  });
+}
+
 export function useCalendarEvents() {
   const { activeOrgId } = useAppContext();
   const [events, setEvents] = useState([]);
@@ -41,7 +84,7 @@ export function useCalendarEvents() {
       const result = await calendarRequest(
         `/api/calendar/events?organizationId=${encodeURIComponent(activeOrgId)}`,
       );
-      setEvents(result.events || []);
+      setEvents(expandRecurringEvents(result.events || []));
       setDeadlines(result.deadlines || []);
       setError(null);
     } catch (requestError) {
@@ -61,25 +104,25 @@ export function useCalendarEvents() {
       method: 'POST',
       body: JSON.stringify({ ...data, organizationId: activeOrgId }),
     });
-    setEvents(previous => [...previous, result.event]);
+    await refresh();
     return result.event;
-  }, [activeOrgId]);
+  }, [activeOrgId, refresh]);
 
   const updateEvent = useCallback(async (eventId, data) => {
     const result = await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
-    setEvents(previous => previous.map(event => event.id === eventId ? result.event : event));
+    await refresh();
     return result.event;
-  }, []);
+  }, [refresh]);
 
   const removeEvent = useCallback(async eventId => {
     await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
       method: 'DELETE',
     });
-    setEvents(previous => previous.filter(event => event.id !== eventId));
-  }, []);
+    await refresh();
+  }, [refresh]);
 
   const respondToEvent = useCallback(async (eventId, response) => {
     return updateEvent(eventId, { response });

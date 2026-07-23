@@ -27,6 +27,7 @@ import {
   Select,
   Surface,
 } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/Select';
 import CalendarEventDialog from '@/components/workspace/calendar/CalendarEventDialog';
 
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
@@ -38,6 +39,10 @@ const TYPE_CONFIG = {
   absence: { label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
   release: { label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
 };
+
+function FilterDivider() {
+  return <span className="mx-[2px] h-[16px] w-px shrink-0 bg-[#e3e3e3]" />;
+}
 
 function startOfDay(value) {
   const date = new Date(value);
@@ -393,7 +398,7 @@ export default function CalendarPage() {
   const [view, setView] = useState('week');
   const [anchor, setAnchor] = useState(() => new Date());
   const [typeFilter, setTypeFilter] = useState('all');
-  const [projectFilter, setProjectFilter] = useState('all');
+  const [projectFilters, setProjectFilters] = useState([]);
   const [memberFilter, setMemberFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -403,24 +408,24 @@ export default function CalendarPage() {
     const search = calendarSearch.trim().toLowerCase();
     if (search && !`${event.title || ''} ${event.description || ''} ${event.location || ''}`.toLowerCase().includes(search)) return false;
     if (typeFilter !== 'all' && typeFilter !== event.type) return false;
-    if (projectFilter !== 'all' && event.projectId !== projectFilter) return false;
+    if (projectFilters.length && !projectFilters.includes(event.projectId)) return false;
     if (memberFilter !== 'all' && !event.participantIds?.includes(memberFilter)) return false;
     return true;
-  }), [calendarSearch, events, memberFilter, projectFilter, typeFilter]);
+  }), [calendarSearch, events, memberFilter, projectFilters, typeFilter]);
   const filteredDeadlines = useMemo(() => deadlines.filter(deadline => {
     const search = calendarSearch.trim().toLowerCase();
     if (search && !`${deadline.issueKey || ''} ${deadline.title || ''}`.toLowerCase().includes(search)) return false;
     if (typeFilter !== 'all' && typeFilter !== 'deadline') return false;
-    if (projectFilter !== 'all' && deadline.projectId !== projectFilter) return false;
+    if (projectFilters.length && !projectFilters.includes(deadline.projectId)) return false;
     if (memberFilter !== 'all' && !deadline.assigneeIds?.includes(memberFilter)) return false;
     return true;
-  }), [calendarSearch, deadlines, memberFilter, projectFilter, typeFilter]);
+  }), [calendarSearch, deadlines, memberFilter, projectFilters, typeFilter]);
 
   useEffect(() => {
     if (!events.length) return;
     const eventId = new URLSearchParams(window.location.search).get('event');
     if (!eventId) return;
-    const matching = events.find(event => event.id === eventId);
+    const matching = events.find(event => event.id === eventId || event.sourceEventId === eventId);
     if (matching) {
       queueMicrotask(() => {
         setSelectedEvent(matching);
@@ -453,21 +458,21 @@ export default function CalendarPage() {
   };
 
   const handleSave = async data => {
-    if (selectedEvent) await updateEvent(selectedEvent.id, data);
+    if (selectedEvent) await updateEvent(selectedEvent.sourceEventId || selectedEvent.id, data);
     else await createEvent(data);
     setDialogOpen(false);
     showToast(selectedEvent ? 'Подію оновлено' : 'Подію створено, запрошення надіслано', 'success');
   };
 
   const handleDelete = async () => {
-    await removeEvent(selectedEvent.id);
+    await removeEvent(selectedEvent.sourceEventId || selectedEvent.id);
     setDialogOpen(false);
     showToast('Подію скасовано', 'success');
   };
 
   const handleRespond = async response => {
-    const updated = await respondToEvent(selectedEvent.id, response);
-    setSelectedEvent(updated);
+    const updated = await respondToEvent(selectedEvent.sourceEventId || selectedEvent.id, response);
+    setSelectedEvent(previous => ({ ...previous, participantResponses: updated.participantResponses }));
     showToast('Відповідь збережено', 'success');
   };
 
@@ -481,7 +486,6 @@ export default function CalendarPage() {
     { value: 'deadline', label: 'Дедлайни задач', dotColor: '#ef4444' },
   ];
   const projectOptions = [
-    { value: 'all', label: 'Усі проєкти' },
     ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
   ];
   const memberOptions = [
@@ -511,13 +515,21 @@ export default function CalendarPage() {
             <>
               <FilterBar className="overflow-visible">
                 <Select variant="ghost" value={typeFilter} onChange={setTypeFilter} options={filterOptions} className="w-[136px]" />
-                <Select variant="ghost" value={projectFilter} onChange={setProjectFilter} options={projectOptions} className="w-[148px]" />
+                <MultiSelect
+                  variant="ghost"
+                  value={projectFilters}
+                  onChange={setProjectFilters}
+                  options={projectOptions}
+                  placeholder="Всі проєкти"
+                  searchPlaceholder="Пошук проєкту..."
+                  className="w-[200px]"
+                />
                 <Select variant="ghost" value={memberFilter} onChange={setMemberFilter} options={memberOptions} className="w-[148px]" />
-              </FilterBar>
-              <FilterBar className="overflow-visible">
+                <FilterDivider />
                 <Button style="ghost" size="icon-sm" icon={ChevronLeft} onClick={() => movePeriod(-1)} aria-label="Попередній період" />
                 <Button style="ghost" size="sm" onClick={() => setAnchor(new Date())}>Сьогодні</Button>
                 <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => movePeriod(1)} aria-label="Наступний період" />
+                <FilterDivider />
                 <span className="max-w-[260px] truncate px-2 text-[12px] font-bold text-ink">{periodTitle(anchor, view)}</span>
               </FilterBar>
               <span className="hidden xl:inline text-[11px] text-muted">Дедлайни із задач додаються автоматично</span>

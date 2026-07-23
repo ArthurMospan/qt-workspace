@@ -83,6 +83,24 @@ export function useComments(issueId) {
         lastCommentReadBy: authorId ? [authorId] : [],
       });
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('quickteam:issue-activity', {
+        detail: {
+          issueId,
+          updatedAt: new Date(),
+          lastActivityAt: new Date(),
+          lastActivityType: 'comment',
+          lastActivityActorId: authorId,
+          lastActivityActorName: user.name || user.displayName || user.email?.split('@')[0] || 'Невідомо',
+          lastActivityActorAvatar: user.avatar || user.photoURL || null,
+          lastActivityText: text?.trim().slice(0, 240) || 'Вкладення',
+          lastCommentAt: new Date(),
+          lastCommentAuthorId: authorId,
+          lastCommentMentionIds: options.mentionedUserIds || [],
+          lastCommentReadBy: authorId ? [authorId] : [],
+        },
+      }));
+    }
   }, []);
 
   const updateComment = useCallback(async (commentId, text) => {

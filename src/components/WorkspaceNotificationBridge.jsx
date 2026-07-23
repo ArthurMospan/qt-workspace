@@ -5,6 +5,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { auth } from '@/lib/firebase';
 
 export default function WorkspaceNotificationBridge() {
   const { currentUser, activeOrgId } = useAppContext();
@@ -31,6 +32,33 @@ export default function WorkspaceNotificationBridge() {
   useEffect(() => {
     clearLiveNotif();
   }, [activeOrgId, clearLiveNotif]);
+
+  useEffect(() => {
+    if (!activeOrgId || !userId) return undefined;
+    let cancelled = false;
+    const checkCalendarReminders = async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token || cancelled) return;
+        await fetch('/api/calendar/reminders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ organizationId: activeOrgId }),
+        });
+      } catch {
+        // Best-effort poll: the next interval safely retries deterministic reminders.
+      }
+    };
+    checkCalendarReminders();
+    const timer = window.setInterval(checkCalendarReminders, 45_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeOrgId, userId]);
   const actions = useMemo(() => ({
     markAllRead: notificationCenter.markAllRead,
     markRead: notificationCenter.markRead,

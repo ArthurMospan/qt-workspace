@@ -106,8 +106,12 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
         const isWeekend = i >= 5;
         return (
           <div key={key}
-            className={`rounded-[16px] p-[8px] flex flex-col gap-[8px] min-h-[260px] ${
-              isToday ? 'bg-[#f0fdf4]' : isWeekend ? 'bg-[#fafafa]' : 'bg-canvas'
+            className={`rounded-[16px] border p-[8px] flex flex-col gap-[8px] min-h-[260px] transition-colors ${
+              isToday
+                ? 'border-emerald-200 bg-white ring-2 ring-emerald-100'
+                : isWeekend
+                  ? 'border-black/[0.05] bg-white'
+                  : 'border-black/[0.05] bg-white'
             }`}>
             {/* Day header */}
             <div className="flex items-center justify-between px-[4px] pt-[2px]">
@@ -173,10 +177,10 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
     <div className="bg-white rounded-[16px] overflow-y-hidden overflow-x-auto">
       <table className="w-full text-left border-collapse min-w-[760px] md:min-w-0">
         <thead>
-          <tr className="border-b border-line bg-[#fafafa]">
+          <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className={`px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#f0fdf4]' : ''}`}>
+              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-emerald-50/70' : 'bg-white'}`}>
                 <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#15803d]' : 'text-muted'}`}>
                   {DAY_LABELS[i]} {d.getDate()}
                 </span>
@@ -188,7 +192,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
         <tbody className="divide-y divide-[#eeeeee]">
           {rows.map(({ m, uid, byDay, total }) => (
             <tr key={uid} onClick={() => onSelectMember?.(uid)}
-              className="hover:bg-[#efefef] transition-colors cursor-pointer" title="Відкрити табель учасника">
+              className="bg-white hover:bg-[#fafafa] transition-colors cursor-pointer" title="Відкрити табель учасника">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size={26} />
@@ -198,7 +202,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className={`px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f0fdf4]' : ''}`}>
+                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-emerald-50/70' : 'bg-white'}`}>
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
@@ -211,10 +215,10 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
             </tr>
           ))}
           {/* Team totals */}
-          <tr className="bg-[#ececec]">
+          <tr className="border-t border-line bg-white">
             <td className="px-5 py-3 text-right text-[11px] font-bold text-[#4a4a4a] uppercase tracking-wider">Разом</td>
             {dayTotals.map((min, i) => (
-              <td key={i} className="px-2 py-3 text-center">
+              <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center">
                 <span className={`text-[12px] font-bold ${min > 0 ? 'text-ink' : 'text-muted'}`}>{min > 0 ? fmtMin(min) : '—'}</span>
               </td>
             ))}

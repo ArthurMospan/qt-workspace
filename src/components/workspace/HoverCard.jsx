@@ -22,8 +22,26 @@ export default function HoverCard({ type, value, children, members }) {
     
     // For user, data is usually already in members array
     if (type === 'user') {
-      const u = members.find(m => (m.name || m.email)?.replace(/\s+/g, '_') === value);
-      if (u) queueMicrotask(() => { if (!cancelled) setData(u); });
+      const normalizedValue = decodeURIComponent(String(value || ''))
+        .replace(/^@/, '')
+        .replace(/_/g, ' ')
+        .trim()
+        .toLocaleLowerCase('uk-UA');
+      const u = (members || []).find(member => {
+        const candidates = [
+          member.id,
+          member.uid,
+          member.name,
+          member.displayName,
+          member.email,
+        ].filter(Boolean);
+        return candidates.some(candidate =>
+          String(candidate).replace(/_/g, ' ').trim().toLocaleLowerCase('uk-UA') === normalizedValue
+        );
+      });
+      queueMicrotask(() => {
+        if (!cancelled) setData(u || { notFound: true });
+      });
       return;
     }
 
@@ -64,7 +82,7 @@ export default function HoverCard({ type, value, children, members }) {
       {show && (
         <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">
           {type === 'user' ? (
-            data ? (
+            data && !data.notFound ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <UserAvatar user={data} size={40} />
@@ -74,8 +92,8 @@ export default function HoverCard({ type, value, children, members }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-1">
-                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (now - new Date(data.lastActive).getTime() < 120000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
-                  {data.lastActive && (now - new Date(data.lastActive).getTime() < 120000) ? 'Онлайн' : 'Не в мережі'}
+                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (now - new Date(data.lastActive).getTime() < 15 * 60 * 1000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
+                  {data.lastActive && (now - new Date(data.lastActive).getTime() < 15 * 60 * 1000) ? 'Онлайн' : 'Не в мережі'}
                 </div>
               </div>
             ) : (

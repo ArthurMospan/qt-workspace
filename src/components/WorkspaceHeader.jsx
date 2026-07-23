@@ -20,6 +20,7 @@ import {
 import Button from '@/components/ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { auth } from '@/lib/firebase';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
@@ -32,6 +33,7 @@ const TYPE_CFG = {
   emergency:      { icon: Zap,            color: '#dc2626', label: 'Екстрений виклик' },
   calendar_invite:{ icon: CalendarClock,  color: '#2563eb', label: 'Запрошення в календар' },
   calendar_changed:{ icon: CalendarDays,  color: '#525252', label: 'Календар оновлено' },
+  calendar_reminder:{ icon: CalendarClock, color: '#111827', label: 'Нагадування' },
   test:           { icon: Bell,           color: '#6366f1', label: 'Тест' },
 };
 
@@ -156,6 +158,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const [bellOpen, setBellOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const [userOpen, setUserOpen] = useState(false);
+  const [calendarResponses, setCalendarResponses] = useState({});
+  const [respondingNotificationId, setRespondingNotificationId] = useState('');
   const bellRef = useRef(null);
   const userRef = useRef(null);
 
@@ -204,6 +208,33 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const handleMarkAllRead = () => {
     markAllRead?.(activeOrgId)
       .catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
+  };
+
+  const handleCalendarResponse = async (notification, response, event) => {
+    event?.stopPropagation();
+    if (!notification.calendarEventId || respondingNotificationId) return;
+    setRespondingNotificationId(notification.id);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Потрібно увійти знову');
+      const result = await fetch(`/api/calendar/events/${encodeURIComponent(notification.calendarEventId)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ response }),
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || 'Не вдалося зберегти відповідь');
+      setCalendarResponses(previous => ({ ...previous, [notification.id]: response }));
+      if (!notification.read) await markRead?.(notification.id);
+      showToast(response === 'accepted' ? 'Участь підтверджено' : response === 'tentative' ? 'Відповідь «Можливо» збережено' : 'Відмову збережено', 'success');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося відповісти на запрошення', 'error');
+    } finally {
+      setRespondingNotificationId('');
+    }
   };
 
   const handleClearRead = () => {
@@ -298,6 +329,29 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                             {n.title}
                           </p>
                           {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
+                          {n.type === 'calendar_invite' && n.calendarEventId && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              {[
+                                ['accepted', 'Буду'],
+                                ['tentative', 'Можливо'],
+                                ['declined', 'Не буду'],
+                              ].map(([value, label]) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={event => handleCalendarResponse(n, value, event)}
+                                  disabled={respondingNotificationId === n.id}
+                                  className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
+                                    calendarResponses[n.id] === value
+                                      ? 'bg-ink text-white'
+                                      : 'bg-white text-muted ring-1 ring-black/[0.07] hover:text-ink'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
                             <span>{timeAgo(n.createdAt)}</span>
                           </p>
@@ -407,6 +461,29 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <p className="text-[13px] font-bold text-ink leading-snug">{liveNotif.title}</p>
                 {liveNotif.body && (
                   <p className="text-[11px] text-muted mt-1 line-clamp-2">{liveNotif.body}</p>
+                )}
+                {liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId && (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    {[
+                      ['accepted', 'Буду'],
+                      ['tentative', 'Можливо'],
+                      ['declined', 'Не буду'],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={event => handleCalendarResponse(liveNotif, value, event)}
+                        disabled={respondingNotificationId === liveNotif.id}
+                        className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
+                          calendarResponses[liveNotif.id] === value
+                            ? 'bg-ink text-white'
+                            : 'bg-canvas text-muted hover:text-ink'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 )}
                 {liveNotif.link && (
                   <button

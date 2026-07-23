@@ -363,7 +363,10 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         inProgressCount++;
       }
 
-      const updatedAtTime = issue.lastActivityAt?.toMillis?.() || issue.updatedAt?.toMillis?.() || issue.createdAt?.toMillis?.() || 0;
+      const activityTimestamp = issue.lastActivityAt || issue.updatedAt || issue.createdAt;
+      const updatedAtTime = activityTimestamp?.toMillis?.()
+        || (activityTimestamp ? new Date(activityTimestamp).getTime() : 0)
+        || 0;
       if (updatedAtTime > newestTime) {
         newestTime = updatedAtTime;
         newestIssue = issue;
@@ -675,8 +678,11 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (!activeOrgId) return;
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data({ serverTimestamps: 'estimate' }),
+      }));
       setAllIssues(list);
       setIssuesError(null);
     }, (err) => {
@@ -685,6 +691,18 @@ export default function WorkspacePage() {
     });
     return () => unsubscribe();
   }, [activeOrgId]);
+
+  useEffect(() => {
+    const handleIssueActivity = event => {
+      const detail = event.detail;
+      if (!detail?.issueId) return;
+      setAllIssues(previous => previous.map(issue =>
+        issue.id === detail.issueId ? { ...issue, ...detail } : issue
+      ));
+    };
+    window.addEventListener('quickteam:issue-activity', handleIssueActivity);
+    return () => window.removeEventListener('quickteam:issue-activity', handleIssueActivity);
+  }, []);
 
   // Real progress per project: % of issues in a terminal status (the stored
   // `progress` field is never updated). Terminal statuses come from the config.

@@ -12,6 +12,8 @@ export const CALENDAR_EVENT_TYPES = new Set([
 ]);
 
 export const CALENDAR_VISIBILITIES = new Set(['team', 'participants']);
+export const CALENDAR_RECURRENCES = new Set(['none', 'daily', 'weekly', 'monthly']);
+export const CALENDAR_REMINDERS = new Set([0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080]);
 
 const cleanText = (value, maxLength) =>
   typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -57,12 +59,33 @@ export function normalizedCalendarEventInput(input, current = null) {
     (Array.isArray(input.participantIds) ? input.participantIds : current?.participantIds || [])
       .filter(item => typeof item === 'string' && item.length > 0),
   )].slice(0, 50);
+  const rawRecurrence = input.recurrence ?? current?.recurrence ?? {};
+  const recurrenceFrequency = cleanText(rawRecurrence.frequency, 16) || 'none';
+  const recurrenceInterval = Math.max(1, Math.min(12, Number(rawRecurrence.interval) || 1));
+  const recurrenceUntil = cleanText(rawRecurrence.until, 32);
+  const recurrence = {
+    frequency: recurrenceFrequency,
+    interval: recurrenceInterval,
+    until: recurrenceUntil,
+  };
+  const reminderMinutes = [...new Set(
+    (Array.isArray(input.reminderMinutes) ? input.reminderMinutes : current?.reminderMinutes || [15])
+      .map(value => Number(value))
+      .filter(value => CALENDAR_REMINDERS.has(value)),
+  )].sort((a, b) => a - b).slice(0, 5);
 
   if (!title) return { error: 'Вкажіть назву події' };
   if (!CALENDAR_EVENT_TYPES.has(type)) return { error: 'Невідомий тип події' };
   if (!CALENDAR_VISIBILITIES.has(visibility)) return { error: 'Невідома видимість події' };
+  if (!CALENDAR_RECURRENCES.has(recurrence.frequency)) return { error: 'Невідомий тип повторення' };
   if (!startAt || !endAt || startAt === undefined || endAt === undefined) {
     return { error: 'Вкажіть коректні дату й час' };
+  }
+  if (recurrence.until) {
+    const untilDate = new Date(`${recurrence.until}T23:59:59`);
+    if (!Number.isFinite(untilDate.getTime()) || untilDate.getTime() < startAt.toMillis()) {
+      return { error: 'Дата завершення повторення має бути після початку події' };
+    }
   }
   if (endAt.toMillis() <= startAt.toMillis()) {
     return { error: 'Завершення має бути пізніше за початок' };
@@ -84,6 +107,8 @@ export function normalizedCalendarEventInput(input, current = null) {
       endAt,
       allDay,
       participantIds,
+      recurrence,
+      reminderMinutes,
     },
   };
 }
