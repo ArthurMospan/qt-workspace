@@ -17,7 +17,7 @@ import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationR
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
-  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgError, orgRole, noOrg, signOut, allOrgs } = useAppContext();
+  const { currentUser, authLoading, activeOrgId, activeOrg, orgLoading, orgError, orgRole, noOrg, signOut, allOrgs, invitationChecked } = useAppContext();
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
   // null on first render, then the matching nav is mounted. This prevents the
   // hidden nav variant from briefly opening its own Firestore subscriptions.
@@ -49,12 +49,14 @@ export default function WorkspaceLayout({ children }) {
     }
   }, [activeOrgId, authLoading, orgLoading, currentUser, activeOrg, orgRole, router]);
 
-  // 3. Authenticated but not in any org → redirect immediately to onboarding
+  // 3. Authenticated but not in any org → onboarding. Gated on invitationChecked
+  //    so a freshly-invited user isn't bounced to "create an org" while their
+  //    membership is still being created by the invite-acceptance call.
   useEffect(() => {
-    if (noOrg && !orgLoading && !authLoading) {
+    if (noOrg && !orgLoading && !authLoading && invitationChecked) {
       router.replace('/onboarding');
     }
-  }, [noOrg, orgLoading, authLoading, router]);
+  }, [noOrg, orgLoading, authLoading, invitationChecked, router]);
 
   // 4. Intercept for full-screen Org Selector
   useEffect(() => {

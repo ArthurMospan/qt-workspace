@@ -1,6 +1,6 @@
 'use client';
 // src/lib/context/AppContext.js
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth }         from '@/lib/hooks/useAuth';
 import { useProjects }     from '@/lib/hooks/useProjects';
 import { acceptPendingInvitation } from '@/lib/hooks/useOrganization';
@@ -36,26 +36,35 @@ function AppProviderInner({
     }
   }, [user?.localization]);
 
-  // When user signs in: init org if needed + accept pending invitations
+  // When user signs in: accept pending invitations. `invitationChecked` gates
+  // the onboarding redirect so a freshly-invited user (whose membership is being
+  // created by /api/invitations/accept) is never bounced to "create an org"
+  // during that race — see WorkspaceLayout.
+  const [invitationChecked, setInvitationChecked] = useState(false);
   useEffect(() => {
-    if (!invitationUid) return;
+    if (!invitationUid) { queueMicrotask(() => setInvitationChecked(false)); return; }
 
+    let cancelled = false;
+    const done = () => { if (!cancelled) setInvitationChecked(true); };
     (async () => {
       const uid = invitationUid;
       const email = invitationEmail;
-      if (!uid || !email) return;
+      if (!uid || !email) { done(); return; }
 
       const storageKey = `qt:invitation-check:${uid}`;
       try {
         const lastCheck = Number(window.localStorage.getItem(storageKey) || 0);
-        if (Date.now() - lastCheck < INVITATION_CHECK_TTL) return;
+        if (Date.now() - lastCheck < INVITATION_CHECK_TTL) { done(); return; }
         window.localStorage.setItem(storageKey, String(Date.now()));
         await acceptPendingInvitation(uid, email);
       } catch (err) {
         window.localStorage.removeItem(storageKey);
         console.error('[AppContext] init error:', err);
+      } finally {
+        done();
       }
     })();
+    return () => { cancelled = true; };
   }, [invitationEmail, invitationUid]);
 
   // Update presence
@@ -101,6 +110,7 @@ function AppProviderInner({
     allOrgs,
     switchOrg,
     setActiveOrgId,
+    invitationChecked,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -159,6 +169,7 @@ export const useAppContext = () => {
       allOrgs: [],
       switchOrg: () => {},
       setActiveOrgId: () => {},
+      invitationChecked: false,
     };
   }
   return ctx;

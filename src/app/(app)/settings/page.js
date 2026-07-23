@@ -965,6 +965,18 @@ export default function SettingsPage() {
     setProfileSaving(false);
   };
 
+  // Discard unsaved profile edits — resets every field back to the saved value.
+  const revertProfile = () => {
+    setDisplayName(currentUser?.name || '');
+    setCustomAvatar(currentUser?.customAvatar || '');
+    setBio(currentUser?.bio || '');
+    setTelegram(currentUser?.telegram || '');
+    setPhone(currentUser?.phone || '');
+    setLocation(currentUser?.location || '');
+    setSkillsInput(Array.isArray(currentUser?.skills) ? currentUser.skills.join(', ') : '');
+    setProfileIsDirty(false);
+  };
+
   const saveLocalization = async () => {
     const uid = currentUser?.uid || currentUser?.id;
     if (!uid) return;
@@ -1509,8 +1521,21 @@ export default function SettingsPage() {
 
   const renderSaveButton = (size = "md") => {
     if (!saveAction) return null;
+    // Profile is the only button-based section. Its Save/Cancel bar is
+    // contextual — it appears only when there are unsaved edits (GitHub-style),
+    // so the section header is clean the rest of the time.
+    if (activeSection === 'profile' && !profileIsDirty) {
+      return showSavedCheck ? (
+        <span className="text-[12px] font-medium text-emerald-600 flex items-center gap-1.5 no-nav"><Check size={12} /> Збережено</span>
+      ) : null;
+    }
     return (
       <div className="flex items-center gap-2 no-nav">
+        {activeSection === 'profile' && (
+          <Button onClick={revertProfile} style="secondary" size={size} disabled={saveAction.loading}>
+            Скасувати
+          </Button>
+        )}
         <Button
           onClick={saveAction.handler}
           loading={saveAction.loading}

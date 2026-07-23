@@ -852,11 +852,16 @@ export default function WorkspacePage() {
         />
 
         {(projectsError || issuesError) && (
-          <Alert
-            variant="error"
-            title="Не вдалося завантажити дані workspace"
-            description="Перезавантажте сторінку. Якщо помилка повториться, перевірте доступ до організації або Firestore rules."
-          />
+          <div className="flex flex-col items-start gap-2">
+            <Alert
+              variant="error"
+              title="Не вдалося завантажити дані workspace"
+              description="Перезавантажте сторінку. Якщо помилка повториться, перевірте доступ до організації або Firestore rules."
+            />
+            <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+              Перезавантажити
+            </Button>
+          </div>
         )}
 
         {/* Projects Panel */}
