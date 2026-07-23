@@ -89,33 +89,6 @@
       padding-right: var(--page-px, 24px);
     }
   }
-
-  /* ── Sidebar branded logo: on hover, cross-fade the org logo to the
-        QuickTeam mark. Click navigates home. ── */
-  .logo-flip-container {
-    position: relative;
-    width: 32px;
-    height: 32px;
-    display: block;
-  }
-  .logo-flip-front,
-  .logo-flip-back {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.2s ease;
-  }
-  .logo-flip-back {
-    opacity: 0;
-  }
-  .logo-flip-container:hover .logo-flip-front {
-    opacity: 0;
-  }
-  .logo-flip-container:hover .logo-flip-back {
-    opacity: 1;
-  }
 }
 
 /* Thin scrollbars globally — outside @layer to avoid Turbopack specificity issues */

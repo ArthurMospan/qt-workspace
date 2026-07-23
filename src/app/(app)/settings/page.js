@@ -140,9 +140,10 @@ function Section({ title, desc, rightAction, children }) {
   );
 }
 
-// Inline-editable field: shows compact save/cancel icons to the right only
-// while the value differs from what's saved. Enter saves, Escape cancels.
-function InlineEditField({ value, onChange, saved, onSave, placeholder = '', type = 'text', className = 'w-[220px]' }) {
+// Inline-editable field: save/cancel icons live INSIDE the field on the right,
+// shown only while the value differs from what's saved (no reserved gap, no
+// layout shift). Enter saves, Escape cancels.
+function InlineEditField({ value, onChange, saved, onSave, placeholder = '', type = 'text', className = 'w-[240px]' }) {
   const dirty = (value ?? '') !== (saved ?? '');
   const [saving, setSaving] = useState(false);
   const commit = async () => {
@@ -151,7 +152,7 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
     try { await onSave(); } finally { setSaving(false); }
   };
   return (
-    <div className="flex items-center gap-1.5">
+    <div className={`relative ${className}`}>
       <Input
         type={type}
         value={value}
@@ -161,12 +162,24 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
           if (e.key === 'Enter') { e.preventDefault(); commit(); }
           else if (e.key === 'Escape' && dirty) onChange(saved ?? '');
         }}
-        className={className}
+        className={dirty ? '!pr-[54px]' : ''}
       />
-      <div className={`flex items-center gap-0.5 shrink-0 transition-opacity ${dirty ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <Button onClick={commit} loading={saving} style="ghost" size="icon" icon={Check} iconSize={15} title="Зберегти" className="!text-emerald-600" />
-        <Button onClick={() => onChange(saved ?? '')} style="ghost" size="icon" icon={X} iconSize={15} title="Скасувати" />
-      </div>
+      {dirty && (
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10">
+          <button
+            type="button" onClick={commit} disabled={saving} title="Зберегти"
+            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+          >
+            <Check size={15} />
+          </button>
+          <button
+            type="button" onClick={() => onChange(saved ?? '')} title="Скасувати"
+            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] text-muted hover:bg-canvas transition-colors"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -639,6 +652,19 @@ export default function SettingsPage() {
     location !== (currentUser?.location || '') ||
     skillsInput !== savedSkills;
 
+  // Discard unsaved profile edits (used when the user chooses to leave without
+  // saving — otherwise the derived profileDirty stays true and the guard would
+  // re-prompt on every navigation).
+  const revertProfile = useCallback(() => {
+    setDisplayName(currentUser?.name || '');
+    setCustomAvatar(currentUser?.customAvatar || '');
+    setBio(currentUser?.bio || '');
+    setTelegram(currentUser?.telegram || '');
+    setPhone(currentUser?.phone || '');
+    setLocation(currentUser?.location || '');
+    setSkillsInput(Array.isArray(currentUser?.skills) ? currentUser.skills.join(', ') : '');
+  }, [currentUser]);
+
   // ── Workspace ──
   const [orgName,         setOrgName]         = useState('');
   const [orgLogo,         setOrgLogo]         = useState('');
@@ -943,6 +969,7 @@ export default function SettingsPage() {
         confirmText: 'Піти', danger: true,
       }).then(ok => {
         if (!ok) return;
+        revertProfile(); // discard so we don't re-prompt on the next click
         router.push(url.pathname + url.search + url.hash);
       });
     };
@@ -953,7 +980,7 @@ export default function SettingsPage() {
       window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('click', onClickCapture, true);
     };
-  }, [profileDirty, confirmDialog, router]);
+  }, [profileDirty, confirmDialog, router, revertProfile]);
 
   // Persist a single profile field inline (each field has its own save/cancel).
   const saveProfileField = async (field, rawValue) => {
@@ -981,6 +1008,7 @@ export default function SettingsPage() {
       }))) {
         return false;
       }
+      revertProfile(); // chose to leave → discard so the guard stops prompting
     }
     setActiveSection(newSection);
     return true;
@@ -1578,7 +1606,7 @@ export default function SettingsPage() {
               />
             </Row>
             <Row label="Ім'я" desc="Показується в завданнях і чаті">
-              <InlineEditField value={displayName} onChange={setDisplayName} saved={currentUser?.name || ''} onSave={() => saveProfileField('name', displayName)} className="w-[200px]" />
+              <InlineEditField value={displayName} onChange={setDisplayName} saved={currentUser?.name || ''} onSave={() => saveProfileField('name', displayName)} className="w-[260px]" />
             </Row>
             <Row label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-muted">{currentUser?.email}</span>
@@ -1589,16 +1617,16 @@ export default function SettingsPage() {
               </span>
             </Row>
             <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
-              <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[200px]" />
+              <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[240px]" />
             </Row>
             <Row label="Телефон" desc="Контактний номер">
-              <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[200px]" />
+              <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[240px]" />
             </Row>
             <Row label="Локація" desc="Місто, країна">
-              <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[200px]" />
+              <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[240px]" />
             </Row>
             <Row label="Навички" desc="Вкажіть через кому (наприклад: React, UI Design, QA)">
-              <InlineEditField value={skillsInput} onChange={setSkillsInput} saved={savedSkills} onSave={() => saveProfileField('skills', skillsInput)} placeholder="React, Node.js, Design" className="w-[300px]" />
+              <InlineEditField value={skillsInput} onChange={setSkillsInput} saved={savedSkills} onSave={() => saveProfileField('skills', skillsInput)} placeholder="React, Node.js, Design" className="w-[320px]" />
             </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <label className="text-[13px] font-medium text-ink">Про себе</label>
@@ -1826,8 +1854,8 @@ export default function SettingsPage() {
           {/* Zone 1: Organization */}
           <Card variant="white" padding="lg" className="!border-none">
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Організація</p>
-            <Row label="Назва організації" desc="Зберігається автоматично, коли ви завершуєте редагування">
-              <Input value={orgName} onChange={e => setOrgName(e.target.value)} onBlur={saveOrgName} className="w-[200px]" />
+            <Row label="Назва організації" desc="Видима всім у вашій організації">
+              <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
             </Row>
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
               <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); persistBranding({ orgLogo: v }); }} theme="light" showLabel={false} showHint={false} />
