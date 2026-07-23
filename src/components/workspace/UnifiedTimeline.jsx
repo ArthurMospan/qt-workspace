@@ -1,10 +1,11 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, Check, CheckCheck, Eye, FileText, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { ArrowUp, Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import Button from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
@@ -76,109 +77,6 @@ function dayLabel(timestamp) {
     month: 'long',
     ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
   });
-}
-
-function attachmentUrl(attachment) {
-  return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
-}
-
-function isImageAttachment(attachment) {
-  const declaredType = (attachment?.resourceType || attachment?.mimeType || attachment?.type || '').toLowerCase();
-  if (declaredType === 'image' || declaredType.startsWith('image/')) return true;
-  return /\.(png|jpe?g|gif|webp|avif|bmp|svg|heic|heif|tiff?)(?:[?#]|$)/i.test(`${attachment?.name || ''} ${attachmentUrl(attachment)}`);
-}
-
-function fmtBytes(bytes) {
-  if (!bytes || bytes < 0) return '';
-  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
-  let value = bytes;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-  return `${value.toFixed(unitIndex > 0 && value < 10 ? 1 : 0)} ${units[unitIndex]}`;
-}
-
-function AttachmentPreview({ attachment, dark = false, previewUrl, onRemove, onOpen }) {
-  const url = previewUrl || attachmentUrl(attachment);
-  const name = attachment.name || 'Файл';
-  const image = isImageAttachment(attachment) && url;
-  const sizeLabel = fmtBytes(attachment.size);
-
-  if (image) {
-    const imageContent = (
-      <>
-        <span className="relative block h-[140px] w-full overflow-hidden bg-canvas">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-          {!onRemove && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/10 group-hover:opacity-100">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white"><Eye size={15} /></span>
-            </span>
-          )}
-          {onRemove && (
-            <button type="button" onClick={onRemove} aria-label={`Прибрати ${name}`} className="absolute right-2 top-2 z-10 rounded-[7px] bg-black/55 p-1.5 text-white hover:bg-black/70"><X size={14} /></button>
-          )}
-        </span>
-        <span className={`flex items-center gap-2 px-3 py-2 ${dark ? 'bg-white/10' : 'bg-white/90'}`}>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12px] font-semibold">{name}</span>
-            {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
-          </span>
-          {!onRemove && <Eye size={14} className={dark ? 'text-white/55' : 'text-faint'} />}
-        </span>
-      </>
-    );
-
-    const imageClassName = `group block w-full overflow-hidden rounded-[10px] border text-left transition-colors ${dark ? 'border-white/10 text-white hover:border-white/20' : 'border-black/[0.06] text-ink hover:border-[#d7d7d7]'}`;
-    return onRemove
-      ? <div className={imageClassName}>{imageContent}</div>
-      : <button type="button" onClick={() => onOpen?.({ ...attachment, previewUrl: url })} className={imageClassName} aria-label={`Переглянути ${name}`}>{imageContent}</button>;
-  }
-
-  const className = `flex min-w-0 w-full items-center gap-3 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${dark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-white/80 text-ink hover:border-[#d7d7d7] hover:bg-white'}`;
-  const content = (
-    <>
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ${dark ? 'bg-white/10' : 'bg-canvas'}`}>
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="h-full w-full object-cover" />
-        ) : <FileText size={16} className={dark ? 'text-white/65' : 'text-muted'} />}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12px] font-semibold">{name}</span>
-        {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
-      </span>
-      {onRemove ? (
-        <button type="button" onClick={onRemove} aria-label={`Прибрати ${name}`} className={`shrink-0 rounded-[6px] p-1 ${dark ? 'text-white/55 hover:bg-white/10 hover:text-white' : 'text-faint hover:bg-canvas hover:text-ink'}`}><X size={13} /></button>
-      ) : <Eye size={14} className={`shrink-0 ${dark ? 'text-white/45' : 'text-faint'}`} />}
-    </>
-  );
-
-  return url && !onRemove ? (
-    <button type="button" onClick={() => onOpen?.({ ...attachment, previewUrl: url })} className={className} aria-label={`Переглянути ${name}`}>{content}</button>
-  ) : <div className={className}>{content}</div>;
-}
-
-function PendingAttachmentPreview({ file, onRemove }) {
-  const [previewUrl] = useState(() => file?.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
-  useEffect(() => {
-    if (!previewUrl) return undefined;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
-  return <AttachmentPreview attachment={file} previewUrl={previewUrl} onRemove={onRemove} />;
-}
-
-function CommentAttachments({ attachments = [], dark = false, onOpen }) {
-  if (attachments.length === 0) return null;
-  return (
-    <div className="mt-2 flex min-w-[210px] max-w-[280px] flex-col gap-1.5">
-      {attachments.map((attachment, index) => (
-        <AttachmentPreview key={`${attachment.name || 'file'}-${index}`} attachment={attachment} dark={dark} onOpen={onOpen} />
-      ))}
-    </div>
-  );
 }
 
 function parseArrayValue(value) {
@@ -533,7 +431,13 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                         <MentionText text={item.text} members={members} dark={isMe} />
                       </div>
                     )}
-                    <CommentAttachments attachments={item.attachments} dark={isMe} onOpen={setViewerAttachment} />
+                    <ChatAttachmentList
+                      attachments={item.attachments}
+                      dark={isMe}
+                      compact
+                      className="max-w-[280px]"
+                      onOpen={setViewerAttachment}
+                    />
                   </div>
                   <div className={`mt-1 flex items-center gap-1 ${isMe ? 'flex-row-reverse' : ''}`}>
                     <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
@@ -607,18 +511,19 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             </div>
           )}
 
-          {pendingFiles.length > 0 && (
-            <div className="mb-2 flex max-w-[320px] flex-col gap-1.5">
-              {pendingFiles.map((file, index) => (
-                <PendingAttachmentPreview key={`${file.name}-${index}`} file={file} onRemove={() => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))} />
-              ))}
-            </div>
-          )}
-
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
-          <div className="flex min-h-[44px] items-end gap-1 rounded-[24px] bg-white p-1 ring-1 ring-black/[0.04] transition-all focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
-            {!editingComment && <Button className="self-center" style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
-            <textarea
+          <div className="overflow-hidden rounded-[18px] bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
+            {pendingFiles.length > 0 && (
+              <div className="border-b border-black/[0.05] p-2">
+                <PendingChatAttachments
+                  files={pendingFiles}
+                  onRemove={index => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))}
+                />
+              </div>
+            )}
+            <div className="flex min-h-[44px] items-end gap-1 p-1">
+              {!editingComment && <Button className="self-center" style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
+              <textarea
               ref={inputRef}
               rows={1}
               value={input}
@@ -656,16 +561,17 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
               placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
               className="custom-scrollbar min-h-[36px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[14px] leading-5 text-ink outline-none placeholder:text-muted"
               style={{ height: '32px' }}
-            />
-            <button
+              />
+              <button
               type="button"
               disabled={(!input.trim() && pendingFiles.length === 0) || sending}
               onClick={handleSend}
               aria-label={editingComment ? 'Зберегти зміни' : 'Надіслати'}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100"
-            >
-              <ArrowUp size={16} />
-            </button>
+              >
+                <ArrowUp size={16} />
+              </button>
+            </div>
           </div>
         </div>
       )}

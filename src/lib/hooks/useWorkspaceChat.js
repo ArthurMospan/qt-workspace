@@ -1,8 +1,8 @@
 'use client';
 
 // src/lib/hooks/useWorkspaceChat.js
-import { useState, useEffect } from 'react';
-import { collection, doc, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, where, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { collection, doc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove, increment, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -21,10 +21,23 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
   const [loading, setLoading] = useState(true);
   const [readState, setReadState] = useState({}); // { channelId: Timestamp }
   const [activeDMs, setActiveDMs] = useState([]); // [uid, ...]
+  const typingStateRef = useRef(false);
 
   // Thread state
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [threadMessages, setThreadMessages] = useState([]);
+
+  useEffect(() => {
+    typingStateRef.current = false;
+    if (!channelId || !activeOrgId || !currentUser) return undefined;
+    const uid = currentUser.id || currentUser.uid;
+    const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
+    return () => {
+      if (!typingStateRef.current) return;
+      typingStateRef.current = false;
+      void updateDoc(channelRef, { typing: arrayRemove(uid) }).catch(() => {});
+    };
+  }, [activeOrgId, channelId, currentUser]);
 
   // Fetch read state for all channels (per-user cursor tracking)
   useEffect(() => {
@@ -218,20 +231,25 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     try {
       const uid = currentUser.id || currentUser.uid;
       const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
-      // Keep channel metadata compatible with the deployed Firestore rules.
-      // Extra DM fields here used to make every send fail with
-      // "Missing or insufficient permissions".
-      await setDoc(channelRef, {
-        name: channelType === 'channel' ? channelId : 'DM',
-        type: channelType === 'channel' ? 'public' : 'dm',
+      const messagesRef = collection(channelRef, 'messages');
+      const messageRef = doc(messagesRef);
+      const batch = writeBatch(db);
+      const channelMetadata = {
         lastMessageAt: serverTimestamp(),
         lastMessageText: text.trim().slice(0, 80),
         lastMessageSender: currentUser.name || 'Користувач',
-      }, {
-        merge: true
-      });
-      const messagesRef = collection(channelRef, 'messages');
-      const messageRef = await addDoc(messagesRef, {
+        lastMessageSenderId: uid,
+        messageCount: increment(1),
+      };
+      if (channelType === 'dm') {
+        channelMetadata.name = 'DM';
+        channelMetadata.type = 'dm';
+      } else if (channelId === 'general') {
+        channelMetadata.name = 'general';
+        channelMetadata.type = 'public';
+      }
+      batch.set(channelRef, channelMetadata, { merge: true });
+      batch.set(messageRef, {
         text: text.trim(),
         attachments: attachments,
         senderId: uid,
@@ -240,21 +258,20 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         createdAt: serverTimestamp(),
         readBy: [uid]
       });
-      // Mark this channel as read by the sender
-      await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`), {
+      batch.set(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`), {
         lastReadAt: serverTimestamp(),
         channelId,
         userId: uid,
-      }, {
-        merge: true
-      });
+      }, { merge: true });
+      await batch.commit();
 
       // The current Firestore rules allow the sender to add themselves only to
       // the recipient's active-DM document. Keep this best-effort so a sidebar
       // bookkeeping failure can never cancel an already-sent message.
       if (channelType === 'dm') {
         if (dmPartnerId) {
-          try {
+          void (async () => {
+            try {
             const recipientDMRef = doc(db, 'organizations', activeOrgId, 'activeDMs', dmPartnerId);
             await setDoc(recipientDMRef, {
               partners: arrayUnion(uid)
@@ -280,6 +297,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
           } catch (notificationError) {
             console.error('[workspace-chat] DM notification failed:', notificationError);
           }
+          })();
         }
       }
     } catch (error) {
@@ -294,6 +312,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       await deleteDoc(msgRef);
     } catch (e) {
       console.error('Error deleting message:', e);
+      throw e;
     }
   };
   const editMessage = async (msgId, newText) => {
@@ -307,19 +326,14 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       });
     } catch (e) {
       console.error('Error editing message:', e);
+      throw e;
     }
   };
-  const toggleReaction = async (msgId, emoji) => {
+  const toggleReaction = async (msgId, emoji, hasReacted = false) => {
     if (!channelId || !activeOrgId || !currentUser) return;
     const uid = currentUser.id || currentUser.uid;
     try {
       const msgRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', msgId);
-
-      // First check if user already reacted
-      const snap = await getDoc(msgRef);
-      if (!snap.exists()) return;
-      const reactions = snap.data().reactions || {};
-      const hasReacted = (reactions[emoji] || []).includes(uid);
 
       // Use atomic arrayUnion/arrayRemove to avoid race conditions
       const update = {};
@@ -327,6 +341,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       await updateDoc(msgRef, update);
     } catch (e) {
       console.error('Error toggling reaction:', e);
+      throw e;
     }
   };
   const createChannel = async name => {
@@ -345,6 +360,8 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
   };
   const setTyping = async isTyping => {
     if (!channelId || !activeOrgId || !currentUser) return;
+    if (typingStateRef.current === isTyping) return;
+    typingStateRef.current = isTyping;
     const uid = currentUser.id || currentUser.uid;
     try {
       const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
@@ -353,13 +370,17 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       }, {
         merge: true
       });
-    } catch (e) {}
+    } catch (e) {
+      typingStateRef.current = !isTyping;
+    }
   };
   const sendThreadMessage = async (text, attachments = []) => {
     if (!text.trim() && attachments.length === 0 || !currentUser || !channelId || !activeThreadId) return;
     try {
-      const repliesRef = collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId, 'replies');
-      await addDoc(repliesRef, {
+      const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId);
+      const replyRef = doc(collection(parentRef, 'replies'));
+      const batch = writeBatch(db);
+      batch.set(replyRef, {
         text: text.trim(),
         attachments: attachments,
         senderId: currentUser.id || currentUser.uid,
@@ -367,12 +388,13 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         avatar: currentUser.avatar || null,
         createdAt: serverTimestamp()
       });
-      const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId);
-      await updateDoc(parentRef, {
+      batch.update(parentRef, {
         replyCount: increment(1)
       });
+      await batch.commit();
     } catch (e) {
       console.error(e);
+      throw e;
     }
   };
   const markAsRead = async cId => {
@@ -396,15 +418,16 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     if (!channelId || !activeOrgId || !parentMsgId || !replyId) return;
     try {
       const replyRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId, 'replies', replyId);
-      await deleteDoc(replyRef);
-
-      // Decrement reply count on parent message
       const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId);
-      await updateDoc(parentRef, {
+      const batch = writeBatch(db);
+      batch.delete(replyRef);
+      batch.update(parentRef, {
         replyCount: increment(-1)
       });
+      await batch.commit();
     } catch (e) {
       console.error('Error deleting reply:', e);
+      throw e;
     }
   };
   const openThread = msgId => setActiveThreadId(msgId);

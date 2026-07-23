@@ -12,12 +12,14 @@ export default function MessageContent({ text, members, searchTerm }) {
 
   const highlightText = (content) => {
     if (!searchTerm) return content;
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedSearchTerm})`, 'gi');
     const parts = content.split(regex);
+    const normalizedSearchTerm = searchTerm.toLocaleLowerCase('uk-UA');
     return (
       <>
         {parts.map((p, i) =>
-          regex.test(p) ? (
+          p.toLocaleLowerCase('uk-UA') === normalizedSearchTerm ? (
             <mark key={i} className="bg-yellow-200/60 text-black px-0.5 rounded font-medium">
               {p}
             </mark>

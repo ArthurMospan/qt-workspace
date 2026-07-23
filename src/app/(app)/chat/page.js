@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
-  Trash2, X, Pin, ChevronDown, Info, Users, UserPlus, ArrowLeft
+  Trash2, X, Pin, ChevronDown, Info, UserPlus, ArrowLeft, Search
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
@@ -16,6 +16,8 @@ import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MessageContent from '@/components/workspace/MessageContent';
+import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import { db } from '@/lib/firebase';
 import {
   collection, query, where, onSnapshot, updateDoc, doc, setDoc
@@ -25,6 +27,11 @@ import EmojiPicker from 'emoji-picker-react';
 import { channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import {
+  collectChatAttachments,
+  isChatMediaAttachment,
+  messageMatchesChatSearch,
+} from '@/lib/utils/chatAttachments.mjs';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function timeAgo(ts) {
@@ -60,7 +67,7 @@ function isSameDay(a, b) {
 // ─── Message Bubble ─────────────────────────────────────────────────────────
 function MessageBubble({
   msg, prevMsg, myUid, members, onReact, onEdit, onDelete, onThread,
-  onPin, channelId, orgId, isThread = false, sprints = [], searchTerm = ''
+  onPin, onOpenAttachment, isThread = false, searchTerm = ''
 }) {
   const [showActions, setShowActions] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -177,25 +184,10 @@ function MessageBubble({
             </div>
 
             {/* Attachments */}
-            {msg.attachments && msg.attachments.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {msg.attachments.map((att, i) => (
-                  att.type?.startsWith('image/') ? (
-                    <a key={i} href={att.url} target="_blank" rel="noopener">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={att.url} alt={att.name} className="rounded-xl border border-line max-h-[240px] max-w-[360px] object-cover hover:opacity-90 transition-opacity cursor-zoom-in" />
-                    </a>
-                  ) : (
-                    <a key={i} href={att.url} target="_blank" rel="noopener"
-                      className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-line rounded-xl text-[13px] hover:bg-canvas transition-colors">
-                      <Paperclip size={14} className="text-muted shrink-0" />
-                      <span className="font-medium text-ink truncate max-w-[200px]">{att.name}</span>
-                      {att.size && <span className="text-muted text-[11px] shrink-0">{Math.round(att.size / 1024)}KB</span>}
-                    </a>
-                  )
-                ))}
-              </div>
-            )}
+            <ChatAttachmentList
+              attachments={msg.attachments}
+              onOpen={onOpenAttachment}
+            />
 
             {/* Reactions */}
             {msg.reactions && Object.keys(msg.reactions).length > 0 && (
@@ -205,7 +197,7 @@ function MessageBubble({
                   return (
                     <button
                       key={emoji}
-                      onClick={() => onReact(msg.id, emoji)}
+                      onClick={() => onReact(msg.id, emoji, reacted)}
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] border transition-all hover:scale-105 active:scale-95 ${
                         reacted
                           ? 'bg-canvas border-ink/20 text-ink'
@@ -305,7 +297,13 @@ function MessageBubble({
 }
 
 // ─── Message Input ───────────────────────────────────────────────────────────
-function MessageInput({ onSend, onTyping, placeholder = 'Написати повідомлення...', members = [] }) {
+function MessageInput({
+  onSend,
+  onTyping,
+  onError,
+  placeholder = 'Написати повідомлення...',
+  members = [],
+}) {
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -380,9 +378,10 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
     let uploaded = [];
     if (attachments.length > 0) {
       try {
-        uploaded = await Promise.all(attachments.map(a => uploadFile(a.file, 'chat/attachments')));
+        uploaded = await Promise.all(attachments.map(file => uploadFile(file, 'chat/attachments')));
       } catch (e) {
         console.error('Upload error', e);
+        onError?.('Не вдалося завантажити вкладення');
         setUploading(false);
         sendingRef.current = false;
         return;
@@ -396,6 +395,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     } catch (error) {
       console.error('[workspace-chat] Send failed:', error);
+      onError?.('Не вдалося надіслати повідомлення');
     } finally {
       setUploading(false);
       sendingRef.current = false;
@@ -405,7 +405,14 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
   const handleFiles = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    setAttachments(prev => [...prev, ...files.map(f => ({ file: f, url: URL.createObjectURL(f), type: f.type, name: f.name, size: f.size }))]);
+    const roomLeft = Math.max(0, 5 - attachments.length);
+    const accepted = files
+      .filter(file => file.size <= 20 * 1024 * 1024)
+      .slice(0, roomLeft);
+    if (accepted.length !== files.length) {
+      onError?.('До 5 файлів, максимум 20 МБ кожен');
+    }
+    setAttachments(previous => [...previous, ...accepted]);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -461,29 +468,14 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
       )}
 
       {/* Input card */}
-      <div className={`bg-white rounded-2xl border transition-colors ${text.trim() || attachments.length > 0 ? 'border-[#d0d0d0]' : 'border-line'}`}>
+      <div className="overflow-hidden rounded-2xl border border-line bg-white transition-all hover:border-[#cfcfcf] focus-within:border-[#cfcfcf] focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]">
         {/* Attachment previews */}
         {attachments.length > 0 && (
-          <div className="px-4 pt-3 flex flex-wrap gap-2">
-            {attachments.map((att, i) => (
-              <div key={i} className="relative">
-                {att.type.startsWith('image/') ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={att.url} alt={att.name} className="h-16 rounded-xl object-cover border border-line" />
-                ) : (
-                  <div className="h-12 px-3 flex items-center gap-2 bg-canvas rounded-xl border border-line">
-                    <Paperclip size={14} className="text-muted" />
-                    <span className="text-[12px] font-medium text-ink max-w-[120px] truncate">{att.name}</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-ink rounded-full flex items-center justify-center text-white hover:bg-[#ef4444] transition-colors"
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            ))}
+          <div className="border-b border-black/[0.05] p-2">
+            <PendingChatAttachments
+              files={attachments}
+              onRemove={index => setAttachments(previous => previous.filter((_, itemIndex) => itemIndex !== index))}
+            />
           </div>
         )}
 
@@ -502,6 +494,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
         <div className="flex items-center justify-between px-3 pb-3 border-t border-[#f0f0f0] pt-2">
           <div className="flex items-center gap-1">
             <button
+              type="button"
               ref={emojiBtnRef}
               onClick={() => setShowEmoji(v => !v)}
               className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${showEmoji ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'}`}
@@ -511,6 +504,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
             </button>
             <input type="file" multiple ref={fileRef} onChange={handleFiles} className="hidden" />
             <button
+              type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors disabled:opacity-40"
@@ -521,6 +515,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
           </div>
 
           <button
+            type="button"
             onClick={handleSend}
             disabled={!canSend}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-all ${
@@ -544,7 +539,16 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
 
 // ─── Thread Sidebar ──────────────────────────────────────────────────────────
 function ThreadSidebar({
-  parentMsg, replies, myUid, members, onSend, onDeleteReply, onClose, loading
+  parentMsg,
+  replies,
+  myUid,
+  members,
+  onSend,
+  onDeleteReply,
+  onOpenAttachment,
+  onError,
+  onClose,
+  loading,
 }) {
   const scrollRef = useRef(null);
   const confirmDialog = useConfirm();
@@ -571,8 +575,11 @@ function ThreadSidebar({
           )}
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white transition-colors"
+          aria-label="Закрити гілку"
+          title="Закрити"
         >
           <X size={16} />
         </button>
@@ -630,31 +637,22 @@ function ThreadSidebar({
                   </div>
                 )}
                 <p className="text-[13px] text-ink leading-relaxed">{reply.text}</p>
-                {reply.attachments?.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {reply.attachments.map((att, j) => (
-                      att.type?.startsWith('image/') ? (
-                        <a key={j} href={att.url} target="_blank" rel="noopener">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={att.url} alt={att.name} className="rounded-xl border border-line max-h-[120px] object-cover" />
-                        </a>
-                      ) : (
-                        <a key={j} href={att.url} target="_blank" rel="noopener"
-                          className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-line rounded-xl text-[11px] hover:bg-canvas transition-colors">
-                          <Paperclip size={11} className="text-muted" />
-                          <span className="font-medium text-ink">{att.name}</span>
-                        </a>
-                      )
-                    ))}
-                  </div>
-                )}
+                <ChatAttachmentList
+                  attachments={reply.attachments}
+                  compact
+                  className="max-w-[260px] sm:grid-cols-1"
+                  onOpen={onOpenAttachment}
+                />
               </div>
               {reply.senderId === myUid && (
                 <button
+                  type="button"
                   onClick={async () => {
                     if (await confirmDialog({ title: 'Видалити відповідь?', confirmText: 'Видалити', danger: true })) onDeleteReply(reply.id);
                   }}
                   className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-lg text-muted hover:text-[#ef4444] hover:bg-red-50 transition-all shrink-0"
+                  aria-label="Видалити відповідь"
+                  title="Видалити"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -666,7 +664,12 @@ function ThreadSidebar({
 
       {/* Thread Input */}
       <div className="px-4 pb-4 shrink-0">
-        <MessageInput onSend={onSend} placeholder="Відповісти в гілку..." members={members} />
+        <MessageInput
+          onSend={onSend}
+          onError={onError}
+          placeholder="Відповісти в гілку..."
+          members={members}
+        />
       </div>
     </div>
   );
@@ -676,6 +679,12 @@ function ThreadSidebar({
 function ChannelInfoSidebar({
   channel,
   members,
+  messages,
+  activeTab,
+  onTabChange,
+  onOpenAttachment,
+  onJumpToMessage,
+  onError,
   onClose,
   activeOrgId,
   isAdminOrOwner
@@ -683,9 +692,21 @@ function ChannelInfoSidebar({
   const [description, setDescription] = useState(channel?.description || '');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
-  
+  const [materialSearch, setMaterialSearch] = useState('');
+  const [materialFilter, setMaterialFilter] = useState('all');
+
   const channelMembers = channel?.members || [];
-  const myUid = doc.id; // not used directly, safe
+  const pinnedMessages = messages.filter(message => message.isPinned);
+  const attachments = collectChatAttachments(messages);
+  const visibleAttachments = attachments.filter(attachment => {
+    if (materialFilter === 'media' && !isChatMediaAttachment(attachment)) return false;
+    if (materialFilter === 'files' && isChatMediaAttachment(attachment)) return false;
+    const queryValue = materialSearch.trim().toLocaleLowerCase('uk-UA');
+    if (!queryValue) return true;
+    return `${attachment.name || ''} ${attachment.senderName || ''}`
+      .toLocaleLowerCase('uk-UA')
+      .includes(queryValue);
+  });
   
   // Calculate who is in and who is out
   const membersInChannel = members.filter(m => {
@@ -709,6 +730,7 @@ function ChannelInfoSidebar({
       setIsEditingDesc(false);
     } catch (e) {
       console.error(e);
+      onError?.('Не вдалося оновити опис каналу');
     }
   };
 
@@ -726,6 +748,7 @@ function ChannelInfoSidebar({
       }, { merge: true });
     } catch (e) {
       console.error(e);
+      onError?.('Не вдалося додати учасника');
     }
   };
 
@@ -738,6 +761,7 @@ function ChannelInfoSidebar({
       setShowAddMembers(false);
     } catch (e) {
       console.error(e);
+      onError?.('Не вдалося додати учасників');
     }
   };
 
@@ -748,11 +772,16 @@ function ChannelInfoSidebar({
         currentList = members.map(m => m.id || m.uid);
       }
       const updatedList = currentList.filter(id => id !== uid);
+      if (updatedList.length === 0) {
+        onError?.('У каналі має залишитися хоча б один учасник');
+        return;
+      }
       await setDoc(doc(db, 'organizations', activeOrgId, 'channels', channel.id), {
         members: updatedList
       }, { merge: true });
     } catch (e) {
       console.error(e);
+      onError?.('Не вдалося видалити учасника');
     }
   };
 
@@ -765,15 +794,39 @@ function ChannelInfoSidebar({
           <h3 className="font-bold text-[14px] text-ink">Про канал</h3>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white transition-colors"
+          aria-label="Закрити інформацію про канал"
+          title="Закрити"
         >
           <X size={16} />
         </button>
       </div>
 
+      <div className="flex shrink-0 gap-1 border-b border-line/70 px-3 py-2">
+        {[
+          ['info', 'Про канал'],
+          ['pinned', `Закріплені${pinnedMessages.length ? ` · ${pinnedMessages.length}` : ''}`],
+          ['materials', `Матеріали${attachments.length ? ` · ${attachments.length}` : ''}`],
+        ].map(([tabId, label]) => (
+          <button
+            key={tabId}
+            type="button"
+            onClick={() => onTabChange(tabId)}
+            className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
+              activeTab === tabId ? 'bg-white text-ink' : 'text-muted hover:bg-white/60 hover:text-ink'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-6">
+        {activeTab === 'info' && (
+          <>
         {/* Basic Info */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
@@ -875,6 +928,95 @@ function ChannelInfoSidebar({
             ))}
           </div>
         </div>
+          </>
+        )}
+
+        {activeTab === 'pinned' && (
+          <div className="flex flex-col gap-2">
+            {pinnedMessages.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <Pin size={28} className="mb-3 text-faint" />
+                <p className="text-[13px] font-semibold text-muted">Немає закріплених повідомлень</p>
+              </div>
+            ) : pinnedMessages.map(message => (
+              <button
+                key={message.id}
+                type="button"
+                onClick={() => onJumpToMessage(message.id)}
+                className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]"
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="truncate text-[11px] font-semibold text-muted">{message.user}</span>
+                  <span className="shrink-0 text-[10px] text-faint">{message.time}</span>
+                </div>
+                <p className="line-clamp-3 text-[12px] leading-5 text-ink">
+                  {message.text || (message.attachments?.length ? 'Вкладення' : 'Повідомлення')}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'materials' && (
+          <div className="flex flex-col gap-3">
+            <label className="relative block">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                value={materialSearch}
+                onChange={event => setMaterialSearch(event.target.value)}
+                placeholder="Пошук матеріалів..."
+                className="w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-[#cfcfcf] focus:border-[#cfcfcf]"
+              />
+            </label>
+            <div className="flex gap-1">
+              {[
+                ['all', 'Усі'],
+                ['media', 'Медіа'],
+                ['files', 'Файли'],
+              ].map(([filterId, label]) => (
+                <button
+                  key={filterId}
+                  type="button"
+                  onClick={() => setMaterialFilter(filterId)}
+                  className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+                    materialFilter === filterId ? 'bg-ink text-white' : 'bg-white text-muted hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {visibleAttachments.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <Paperclip size={28} className="mb-3 text-faint" />
+                <p className="text-[13px] font-semibold text-muted">
+                  {materialSearch ? 'Матеріали не знайдено' : 'У чаті ще немає матеріалів'}
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {visibleAttachments.map(attachment => (
+                  <div key={attachment.chatAttachmentKey} className="rounded-xl border border-line/70 bg-white p-2">
+                    <ChatAttachmentList
+                      attachments={[attachment]}
+                      compact
+                      className="mt-0 min-w-0 max-w-none sm:grid-cols-1"
+                      onOpen={onOpenAttachment}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onJumpToMessage(attachment.messageId)}
+                      className="mt-1 w-full truncate px-1 text-left text-[10px] text-muted hover:text-ink"
+                    >
+                      {attachment.senderName || 'Учасник'} · перейти до повідомлення
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -906,6 +1048,8 @@ export default function ChatPage() {
   const [unreadBadge, setUnreadBadge] = useState(0);
   const [lastMsgCount, setLastMsgCount] = useState(0);
   const [showChannelInfo, setShowChannelInfo] = useState(false);
+  const [channelInfoTab, setChannelInfoTab] = useState('info');
+  const [viewerAttachment, setViewerAttachment] = useState(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -932,6 +1076,8 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
+  const composerRef = useRef(null);
+  const messageRefs = useRef(new Map());
   const typingRef = useRef(null);
   const channelInputRef = useRef(null);
 
@@ -984,12 +1130,34 @@ export default function ChatPage() {
   useEffect(() => {
     const count = messages.length;
     if (!isScrolledUp) {
-      messagesEndRef.current?.scrollIntoView({ behavior: count <= 1 ? 'instant' : 'smooth' });
+      const scrollElement = chatScrollRef.current;
+      if (scrollElement) {
+        scrollElement.scrollTo({
+          top: scrollElement.scrollHeight,
+          behavior: count <= 1 ? 'instant' : 'smooth',
+        });
+      }
     } else if (count > lastMsgCount && lastMsgCount > 0) {
       queueMicrotask(() => setUnreadBadge(v => v + (count - lastMsgCount)));
     }
     queueMicrotask(() => setLastMsgCount(count));
   }, [messages.length]); // eslint-disable-line
+
+  // Keep the last message visible when attachment previews or a growing
+  // textarea change the composer height.
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      if (isScrolledUp) return;
+      requestAnimationFrame(() => {
+        const scrollElement = chatScrollRef.current;
+        scrollElement?.scrollTo({ top: scrollElement.scrollHeight, behavior: 'instant' });
+      });
+    });
+    observer.observe(composer);
+    return () => observer.disconnect();
+  }, [isScrolledUp]);
 
   // Mark as read + scroll to bottom when switching channel
   useEffect(() => {
@@ -1108,6 +1276,39 @@ export default function ChatPage() {
       showToast(pin ? 'Повідомлення закріплено ✓' : 'Знято з закріплення');
     } catch (e) {
       console.error(e);
+      showToast('Не вдалося змінити закріплення', 'error');
+    }
+  };
+
+  const handleReaction = async (msgId, emoji, hasReacted) => {
+    try {
+      await toggleReaction(msgId, emoji, hasReacted);
+    } catch {
+      showToast('Не вдалося змінити реакцію', 'error');
+    }
+  };
+
+  const handleEditMessage = async (msgId, text) => {
+    try {
+      await editMessage(msgId, text);
+    } catch {
+      showToast('Не вдалося відредагувати повідомлення', 'error');
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await deleteMessage(msgId);
+    } catch {
+      showToast('Не вдалося видалити повідомлення', 'error');
+    }
+  };
+
+  const handleDeleteReply = async (replyId) => {
+    try {
+      await deleteReply(activeThreadId, replyId);
+    } catch {
+      showToast('Не вдалося видалити відповідь', 'error');
     }
   };
 
@@ -1136,8 +1337,7 @@ export default function ChatPage() {
       if (activeChannel.type === 'channel') {
         const mentionedUserIds = extractMentionedUserIds(text, mentionMembers, myUid);
         if (mentionedUserIds.length) {
-          try {
-            await sendNotification({
+          void sendNotification({
               userIds: mentionedUserIds,
               type: 'mentioned',
               title: `${currentUser?.name || 'Колега'} згадав вас у чаті`,
@@ -1145,11 +1345,10 @@ export default function ChatPage() {
               link: `/chat?channel=${encodeURIComponent(activeChannel.id)}`,
               organizationId: activeOrgId,
               dedupeKey: `channel_mention_${activeChannel.id}_${Date.now()}`,
-            });
-          } catch (notificationError) {
+            }).catch(notificationError => {
             console.error('[workspace-chat] Mention notification failed:', notificationError);
             showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
-          }
+            });
         }
       }
     } catch (error) {
@@ -1161,12 +1360,6 @@ export default function ChatPage() {
       );
       throw error;
     }
-  };
-
-  const handleTyping = () => {
-    setTyping(true);
-    clearTimeout(typingRef.current);
-    typingRef.current = setTimeout(() => setTyping(false), 2000);
   };
 
   const handleSendThread = async (text, attachments) => {
@@ -1181,7 +1374,7 @@ export default function ChatPage() {
 
   // Display messages (filtered by search)
   const displayMessages = chatSearch.trim()
-    ? messages.filter(m => m.text?.toLowerCase().includes(chatSearch.toLowerCase()))
+    ? messages.filter(message => messageMatchesChatSearch(message, chatSearch))
     : messages;
 
   const typingUsers = (activeChannelData?.typing || [])
@@ -1193,8 +1386,36 @@ export default function ChatPage() {
     openThread(msgId);
   };
 
+  const handleOpenChannelInfo = (tab = 'info') => {
+    setChannelInfoTab(tab);
+    setShowChannelInfo(true);
+    closeThread();
+  };
+
+  const handleJumpToMessage = (messageId) => {
+    setChatSearch('');
+    setShowChannelInfo(false);
+    requestAnimationFrame(() => {
+      const element = messageRefs.current.get(messageId);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element?.animate(
+        [
+          { backgroundColor: 'rgba(31, 31, 31, 0.12)' },
+          { backgroundColor: 'transparent' },
+        ],
+        { duration: 1200, easing: 'ease-out' },
+      );
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
+      {viewerAttachment && (
+        <AttachmentViewer
+          attachment={viewerAttachment}
+          onClose={() => setViewerAttachment(null)}
+        />
+      )}
       {/* Two-zone layout */}
       <div className="flex-1 flex overflow-hidden gap-3 p-[12px] pt-[56px]">
 
@@ -1320,7 +1541,7 @@ export default function ChatPage() {
           <div className="flex-1 bg-canvas rounded-[16px] flex flex-col overflow-hidden min-w-0 relative">
             
             {/* Chat header */}
-            <div className="flex items-center gap-3 px-4 md:px-6 h-14 shrink-0 border-b border-line/70">
+            <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line/70 px-4">
               <button
                 onClick={requestPaneClose}
                 className="md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0"
@@ -1372,10 +1593,14 @@ export default function ChatPage() {
 
               {/* Pinned message count */}
               {activeChannel.type === 'channel' && messages.filter(m => m.isPinned).length > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-xl border border-line text-[12px] font-medium text-ink">
+                <button
+                  type="button"
+                  onClick={() => handleOpenChannelInfo('pinned')}
+                  className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]"
+                >
                   <Pin size={12} />
                   <span>{messages.filter(m => m.isPinned).length} закріплено</span>
-                </div>
+                </button>
               )}
 
               {/* Conversation info */}
@@ -1385,8 +1610,11 @@ export default function ChatPage() {
                       router.push(`/chat?dm=${encodeURIComponent(activeChannel.id)}&member=${encodeURIComponent(activeChannel.id)}`);
                       return;
                     }
-                    setShowChannelInfo(v => !v);
-                    closeThread();
+                    if (showChannelInfo) {
+                      setShowChannelInfo(false);
+                    } else {
+                      handleOpenChannelInfo('info');
+                    }
                   }}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
                     showChannelInfo
@@ -1414,7 +1642,7 @@ export default function ChatPage() {
             {/* Messages list */}
             <div
               ref={chatScrollRef}
-              className="flex-1 overflow-y-auto custom-scrollbar px-4 py-2"
+              className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-6 pt-2 scroll-pb-6"
             >
               {loading && messages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center h-full">
@@ -1433,7 +1661,13 @@ export default function ChatPage() {
                   const prev = i > 0 ? displayMessages[i - 1] : null;
                   const showDateSep = !isSameDay(prev?.createdAt, msg.createdAt);
                   return (
-                    <React.Fragment key={msg.id}>
+                    <div
+                      key={msg.id}
+                      ref={element => {
+                        if (element) messageRefs.current.set(msg.id, element);
+                        else messageRefs.current.delete(msg.id);
+                      }}
+                    >
                       {showDateSep && msg.createdAt && (
                         <div className="flex items-center gap-3 my-4">
                           <div className="flex-1 h-px bg-line" />
@@ -1448,16 +1682,15 @@ export default function ChatPage() {
                         prevMsg={prev}
                         myUid={myUid}
                         members={members}
-                        onReact={toggleReaction}
-                        onEdit={editMessage}
-                        onDelete={deleteMessage}
+                        onReact={handleReaction}
+                        onEdit={handleEditMessage}
+                        onDelete={handleDeleteMessage}
                         onThread={handleOpenThread}
                         onPin={handlePin}
-                        channelId={getRoomId()}
-                        orgId={activeOrgId}
+                        onOpenAttachment={setViewerAttachment}
                         searchTerm={chatSearch}
                       />
-                    </React.Fragment>
+                    </div>
                   );
                 })
               )}
@@ -1496,14 +1729,17 @@ export default function ChatPage() {
             )}
 
             {/* Input */}
-            <MessageInput
-              onSend={handleSendMessage}
-              onTyping={handleMainTyping}
-              placeholder={activeChannel.type === 'channel'
-                ? `Написати в #${channels.find(c => c.id === activeChannel.id)?.name || 'general'}...`
-                : 'Написати повідомлення...'}
-              members={mentionMembers}
-            />
+            <div ref={composerRef} className="shrink-0">
+              <MessageInput
+                onSend={handleSendMessage}
+                onTyping={handleMainTyping}
+                onError={message => showToast(message, 'error')}
+                placeholder={activeChannel.type === 'channel'
+                  ? `Написати в #${channels.find(c => c.id === activeChannel.id)?.name || 'general'}...`
+                  : 'Написати повідомлення...'}
+                members={mentionMembers}
+              />
+            </div>
           </div>
 
           {/* Thread sidebar */}
@@ -1514,7 +1750,9 @@ export default function ChatPage() {
               myUid={myUid}
               members={mentionMembers}
               onSend={handleSendThread}
-              onDeleteReply={(replyId) => deleteReply(activeThreadId, replyId)}
+              onDeleteReply={handleDeleteReply}
+              onOpenAttachment={setViewerAttachment}
+              onError={message => showToast(message, 'error')}
               onClose={closeThread}
               loading={loading}
             />
@@ -1523,11 +1761,18 @@ export default function ChatPage() {
           {/* Channel Info sidebar */}
           {showChannelInfo && activeChannel.type === 'channel' && (
             <ChannelInfoSidebar
+              key={activeChannel.id}
               channel={{
                 id: activeChannel.id,
                 ...(activeChannelData || channels.find(c => c.id === activeChannel.id) || { name: activeChannel.id, type: 'public', description: activeChannel.id === 'general' ? 'Загальний канал для всієї команди' : '', members: [] })
               }}
               members={members}
+              messages={messages}
+              activeTab={channelInfoTab}
+              onTabChange={setChannelInfoTab}
+              onOpenAttachment={setViewerAttachment}
+              onJumpToMessage={handleJumpToMessage}
+              onError={message => showToast(message, 'error')}
               onClose={() => setShowChannelInfo(false)}
               activeOrgId={activeOrgId}
               isAdminOrOwner={isAdminOrOwner}

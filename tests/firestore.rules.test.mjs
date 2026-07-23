@@ -220,6 +220,7 @@ test('chat members cannot edit another author message', async () => {
   const memberMessage = doc(memberDb, 'organizations', 'org-a', 'channels', 'general', 'messages', 'owner-message');
   await assertFails(updateDoc(memberMessage, { text: 'Forged' }));
   await assertSucceeds(updateDoc(memberMessage, { reactions: { '👍': ['member-a'] } }));
+  await assertSucceeds(updateDoc(memberMessage, { isPinned: true }));
   await assertSucceeds(updateDoc(
     doc(ownerDb, 'organizations', 'org-a', 'channels', 'general', 'messages', 'owner-message'),
     { text: 'Edited by owner' },
@@ -227,6 +228,20 @@ test('chat members cannot edit another author message', async () => {
   await assertFails(setDoc(doc(memberDb, 'organizations', 'org-a', 'channels', 'unauthorized'), {
     name: 'unauthorized', type: 'public',
   }));
+});
+
+test('chat send metadata supports unread counts without opening channel settings', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const channel = doc(memberDb, 'organizations', 'org-a', 'channels', 'general');
+
+  await assertSucceeds(updateDoc(channel, {
+    lastMessageAt: new Date(),
+    lastMessageText: 'Hello',
+    lastMessageSender: 'Member',
+    lastMessageSenderId: 'member-a',
+    messageCount: 1,
+  }));
+  await assertFails(updateDoc(channel, { description: 'Bypass settings permission' }));
 });
 
 test('a member can send a DM using only the metadata allowed by deployed rules', async () => {
