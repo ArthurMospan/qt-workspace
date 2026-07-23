@@ -2294,7 +2294,7 @@ export default function SettingsPage() {
       case 'statuses': {
         const doneIds = getDoneStatusIds(statuses);
         return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг." rightAction={workflowActions}>
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2340,12 +2340,13 @@ export default function SettingsPage() {
               </Button>
             </Card>
           )}
+          {!wfLoading && renderWorkflowResetFooter()}
         </Section>
         );
       }
 
       case 'types': return (
-        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів" rightAction={workflowActions}>
+        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2365,11 +2366,12 @@ export default function SettingsPage() {
               </Button>
             </Card>
           )}
+          {!wfLoading && renderWorkflowResetFooter()}
         </Section>
       );
 
       case 'priorities': return (
-        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів" rightAction={workflowActions}>
+        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2389,11 +2391,12 @@ export default function SettingsPage() {
               </Button>
             </Card>
           )}
+          {!wfLoading && renderWorkflowResetFooter()}
         </Section>
       );
 
       case 'labels': return (
-        <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань" rightAction={workflowActions}>
+        <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2413,11 +2416,12 @@ export default function SettingsPage() {
               </Button>
             </Card>
           )}
+          {!wfLoading && renderWorkflowResetFooter()}
         </Section>
       );
 
       case 'positions': return (
-        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців" rightAction={workflowActions}>
+        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2437,6 +2441,7 @@ export default function SettingsPage() {
               </Button>
             </Card>
           )}
+          {!wfLoading && renderWorkflowResetFooter()}
         </Section>
       );
 
@@ -2461,7 +2466,8 @@ export default function SettingsPage() {
                 onClick={async () => {
                   if (!(await confirmDialog({
                     title: 'Скинути всі workflow налаштування?',
-                    confirmText: 'Скинути', danger: true,
+                    message: 'Статуси, типи, пріоритети та мітки буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.',
+                    confirmText: 'Скинути', cancelText: 'Залишити', danger: true,
                   }))) return;
                   setStatuses(DEFAULT_STATUSES);
                   setTypes(DEFAULT_TYPES);
