@@ -1,0 +1,143 @@
+'use client';
+
+import { Briefcase, Check, Crown, Shield, Trash2, UserRound } from 'lucide-react';
+import Dialog from '@/components/ui/Dialog';
+import Button from '@/components/ui/Button';
+import UserAvatar from '@/components/UserAvatar';
+
+const ROLES = [
+  { value: 'member', label: 'Учасник', description: 'Працює із завданнями та проєктами.', icon: UserRound },
+  { value: 'admin', label: 'Адміністратор', description: 'Керує командою та налаштуваннями.', icon: Shield },
+];
+
+function OptionCard({ active, icon: Icon, title, description, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex w-full items-center gap-3 rounded-[14px] border-2 p-3 text-left transition-all disabled:cursor-default disabled:opacity-55 ${
+        active ? 'border-ink bg-canvas' : 'border-transparent bg-canvas hover:bg-[#efefef]'
+      }`}
+    >
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'bg-white text-muted'}`}>
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-bold text-ink">{title}</span>
+        {description && <span className="mt-0.5 block text-[11px] leading-4 text-muted">{description}</span>}
+      </span>
+      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'border border-[#cfcfcf]'}`}>
+        {active && <Check size={12} />}
+      </span>
+    </button>
+  );
+}
+
+export default function TeamMemberSettingsDialog({
+  member,
+  positions = [],
+  currentUserId,
+  isOwner,
+  isAdmin,
+  onClose,
+  onRoleChange,
+  onPositionChange,
+  onTransferOwnership,
+  onRemove,
+}) {
+  if (!member) return null;
+  const uid = member.id || member.uid;
+  const isMe = uid === currentUserId;
+  const canChangeRole = isOwner && !isMe && member.role !== 'owner';
+  const canChangePosition = isAdmin;
+
+  return (
+    <Dialog isOpen onClose={onClose} title="Налаштування учасника" size="md">
+      <div className="flex flex-col gap-7">
+        <div className="flex items-center gap-3 rounded-[16px] bg-canvas p-4">
+          <UserAvatar user={member} size={48} />
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-bold text-ink">{member.name || member.email}</p>
+            <p className="truncate text-[12px] text-muted">{member.email}</p>
+          </div>
+          {isMe && <span className="ml-auto rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted">Ви</span>}
+        </div>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Роль і доступ</p>
+            {!canChangeRole && <span className="text-[10px] text-faint">{member.role === 'owner' ? 'Роль власника фіксована' : 'Лише власник може змінювати'}</span>}
+          </div>
+          <div className="grid gap-2">
+            {member.role === 'owner' ? (
+              <OptionCard active icon={Crown} title="Власник" description="Повний контроль над організацією." disabled />
+            ) : ROLES.map(role => (
+              <OptionCard
+                key={role.value}
+                active={member.role === role.value}
+                icon={role.icon}
+                title={role.label}
+                description={role.description}
+                disabled={!canChangeRole}
+                onClick={() => onRoleChange(uid, role.value)}
+              />
+            ))}
+          </div>
+          {isOwner && !isMe && member.role === 'admin' && (
+            <Button
+              style="secondary"
+              size="md"
+              icon={Crown}
+              onClick={() => onTransferOwnership(uid)}
+              className="mt-3 w-full"
+            >
+              Передати права власника
+            </Button>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Посада</p>
+            {!canChangePosition && <span className="text-[10px] text-faint">Потрібні права адміністратора</span>}
+          </div>
+          <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+            <OptionCard
+              active={!member.positionId}
+              icon={Briefcase}
+              title="Без посади"
+              disabled={!canChangePosition}
+              onClick={() => onPositionChange(uid, '')}
+            />
+            {positions.map(position => (
+              <OptionCard
+                key={position.id}
+                active={member.positionId === position.id}
+                icon={Briefcase}
+                title={position.label}
+                disabled={!canChangePosition}
+                onClick={() => onPositionChange(uid, position.id)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {isAdmin && !isMe && (
+          <div className="border-t border-line pt-5">
+            <Button
+              style="outline"
+              color="red"
+              size="md"
+              icon={Trash2}
+              onClick={() => onRemove(uid)}
+              className="w-full"
+            >
+              Видалити з команди
+            </Button>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  );
+}

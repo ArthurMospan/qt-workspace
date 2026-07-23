@@ -7,8 +7,8 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 
 const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
 const PREF_DEFAULTS = { assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true };
-const EMAIL_TYPES = new Set(['assigned', 'mentioned', 'deadline', 'alert']);
-const ALLOWED_TYPES = new Set(['assigned', 'commented', 'status_changed', 'mentioned', 'deadline', 'alert', 'test']);
+const EMAIL_TYPES = new Set(['assigned', 'mentioned', 'deadline', 'alert', 'emergency']);
+const ALLOWED_TYPES = new Set(['assigned', 'commented', 'status_changed', 'mentioned', 'deadline', 'chat_message', 'alert', 'emergency', 'calendar_invite', 'calendar_changed', 'test']);
 const cleanText = (value, maxLength) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 
 // Delivery (provider choice, no-op without keys) lives in lib/server/email.

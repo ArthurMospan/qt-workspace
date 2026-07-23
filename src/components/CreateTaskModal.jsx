@@ -1,9 +1,8 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, Check, CheckSquare, Sparkles } from 'lucide-react';
+import { X, Check, CheckSquare, ListTodo, Mic2 } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -11,13 +10,15 @@ import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { fromDateInput } from '@/lib/utils/date';
+import Tabs from '@/components/ui/Tabs';
+import AudioTaskPanel from '@/components/AudioTaskPanel';
 
 
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, sprints = [], initialStatus = null, epics = [] }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, epics = [] }) {
   const { currentUser } = useAppContext();
-  const router = useRouter();
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
+  const [mode, setMode] = useState('task');
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'todo',
@@ -39,11 +40,14 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   useEffect(() => {
     if (isOpen) {
-      queueMicrotask(() => setForm(f => ({
+      queueMicrotask(() => {
+        setMode('task');
+        setForm(f => ({
           ...f,
           projectId: f.projectId || projects?.[0]?.id || '',
           status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
-        })));
+        }));
+      });
     }
   }, [isOpen, initialStatus, visibleStatuses, projects]);
 
@@ -98,7 +102,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-end">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
@@ -108,36 +112,33 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-task-title"
-        className="relative bg-white rounded-t-[20px] sm:rounded-[16px] shadow-2xl w-full max-w-[880px] sm:mx-4 max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
+        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:w-[min(760px,92vw)] sm:rounded-none sm:rounded-l-[24px] sm:pb-0"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-line shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="w-9 h-9 rounded-[10px] bg-ink text-white flex items-center justify-center shrink-0"><CheckSquare size={17} /></span>
-            <div className="min-w-0">
-              <h2 id="create-task-title" className="text-[17px] font-bold text-ink">Нове завдання</h2>
-              <p className="text-[11px] text-muted mt-[2px]">Заповніть основне, решту можна додати пізніше</p>
-            </div>
+          <div className="min-w-0">
+            <h2 id="create-task-title" className="text-[18px] font-bold text-ink">Нове завдання</h2>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* ШІ-імпорт живе тут (а не в сайдбарі) — це допоміжна функція
-                створення задач: із запису дзвінка → чернетки задач */}
-            <Button
-              style="ghost" size="sm" icon={Sparkles} type="button"
-              onClick={() => {
-                onClose();
-                router.push(`/ai-call${form.projectId ? `?project=${form.projectId}` : ''}`);
-              }}
-              title="Створити задачі з запису дзвінка за допомогою ШІ"
-            >
-              <span className="hidden sm:inline">З дзвінка (ШІ)</span>
-            </Button>
             <Button style="ghost" size="icon" icon={X} onClick={onClose} type="button" aria-label="Закрити">
               Закрити
             </Button>
           </div>
         </div>
 
+        <div className="border-b border-line px-5 py-3 sm:px-7">
+          <Tabs
+            tabs={[
+              { id: 'task', label: 'Завдання', icon: ListTodo },
+              { id: 'audio', label: 'Аудіо-завдання (AI)', icon: Mic2 },
+            ]}
+            activeTab={mode}
+            onTabChange={setMode}
+            className="w-full [&>button]:flex-1"
+          />
+        </div>
+
+        {mode === 'task' ? (
         <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5 overflow-y-auto flex-1">
           {/* Title */}
           <div className="lg:col-span-2">
@@ -319,8 +320,20 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2 lg:col-span-2">{error}</p>
           )}
         </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-5 sm:p-7">
+            <AudioTaskPanel
+              projects={projects || []}
+              projectContext={projectContext}
+              teamMembers={teamMembers}
+              onSubmit={onSubmit}
+              onFinished={onClose}
+            />
+          </div>
+        )}
 
         {/* Footer */}
+        {mode === 'task' && (
         <div className="px-5 sm:px-7 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
           <Button style="secondary" size="md" onClick={onClose} type="button">
             Скасувати
@@ -335,6 +348,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             {loading ? 'Створення...' : 'Створити завдання'}
           </Button>
         </div>
+        )}
       </form>
     </div>
   );

@@ -41,7 +41,7 @@ export function useComments(issueId) {
   // addComment
   // user: { uid, displayName, photoURL }
   // -------------------------------------------------------------------------
-  const addComment = useCallback(async (issueId, text, user = {}, attachments = [], replyTo = null) => {
+  const addComment = useCallback(async (issueId, text, user = {}, attachments = [], replyTo = null, options = {}) => {
     if (!text?.trim() && attachments.length === 0) throw new Error('Comment cannot be empty');
     const commentRef = doc(collection(db, 'issues', issueId, 'comments'));
     const issueRef = doc(db, 'issues', issueId);
@@ -71,6 +71,16 @@ export function useComments(issueId) {
           ? increment(1)
           : existingCount.data().count + 1,
         updatedAt: serverTimestamp(),
+        lastActivityType: 'comment',
+        lastActivityAt: serverTimestamp(),
+        lastActivityActorId: authorId,
+        lastActivityActorName: user.name || user.displayName || user.email?.split('@')[0] || 'Невідомо',
+        lastActivityActorAvatar: user.avatar || user.photoURL || null,
+        lastActivityText: text?.trim().slice(0, 240) || 'Вкладення',
+        lastCommentAt: serverTimestamp(),
+        lastCommentAuthorId: authorId,
+        lastCommentMentionIds: options.mentionedUserIds || [],
+        lastCommentReadBy: authorId ? [authorId] : [],
       });
     });
   }, []);
@@ -118,6 +128,9 @@ export function useComments(issueId) {
         batch.update(doc(db, 'issues', issueId, 'comments', commentId), {
           readBy: arrayUnion(userId),
         });
+      });
+      batch.update(doc(db, 'issues', issueId), {
+        lastCommentReadBy: arrayUnion(userId),
       });
       await batch.commit();
     } catch (error) {

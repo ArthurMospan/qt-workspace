@@ -27,10 +27,10 @@ test('toChatMessageView: чуже повідомлення не mine', () => {
   assert.equal(v.senderName, 'Оля');
 });
 
-test('toChatMessageView: системне/AI ніколи не mine', () => {
+test('toChatMessageView: системна дія з реальним автором зберігає сторону автора', () => {
   assert.equal(toChatMessageView({ role: 'system', text: 'Етап завершено', senderId: 'u1' }, 'u1').system, true);
-  assert.equal(toChatMessageView({ role: 'system', text: 'x', senderId: 'u1' }, 'u1').mine, false);
-  assert.equal(toChatMessageView({ role: 'ai', text: 'x', senderId: 'u1' }, 'u1').mine, false);
+  assert.equal(toChatMessageView({ role: 'system', text: 'x', senderId: 'u1' }, 'u1').mine, true);
+  assert.equal(toChatMessageView({ role: 'ai', text: 'x', senderId: 'assistant' }, 'u1').mine, false);
 });
 
 test('toChatMessageView: без імені -> Я / Учасник', () => {

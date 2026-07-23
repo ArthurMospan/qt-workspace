@@ -25,8 +25,10 @@ export default function Dialog({
   children,
   footer,
   className = '',
+  bodyClassName = '',
   size = 'md', // sm, md, lg, xl
   showCloseButton = true,
+  presentation = 'sheet', // sheet | dialog
 }) {
   const titleId = useId();
 
@@ -42,26 +44,33 @@ export default function Dialog({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-[480px]',
-    md: 'max-w-[640px]',
-    lg: 'max-w-[900px]',
-    xl: 'max-w-[1200px]',
+    sm: 'sm:w-[440px]',
+    md: 'sm:w-[560px]',
+    lg: 'sm:w-[720px]',
+    xl: 'sm:w-[960px]',
   };
+  const isSheet = presentation === 'sheet';
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4"
+      className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${
+        isSheet
+          ? 'items-end justify-end sm:items-stretch'
+          : 'items-end justify-center p-0 sm:items-center sm:p-4'
+      }`}
       onClick={onClose}
     >
-      {/* Mobile: bottom sheet (with safe-area padding for the home indicator); sm+: centered dialog */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         className={`
-          bg-white rounded-t-[24px] sm:rounded-[24px] shadow-[0_25px_50px_rgba(0,0,0,0.15)]
-          w-full flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden
+          bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)]
+          w-full flex flex-col overflow-hidden
           pb-[env(safe-area-inset-bottom)] sm:pb-0
+          ${isSheet
+            ? 'max-h-[94dvh] rounded-t-[24px] sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-[24px]'
+            : 'max-h-[92vh] rounded-t-[24px] sm:max-h-[90vh] sm:rounded-[24px]'}
           ${sizeClasses[size]}
           ${className}
         `}
@@ -78,7 +87,7 @@ export default function Dialog({
         )}
 
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto flex-1">
+        <div className={`px-6 py-5 overflow-y-auto flex-1 ${bodyClassName}`}>
           {children}
         </div>
 

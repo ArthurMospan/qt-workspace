@@ -14,7 +14,7 @@ import { Counter } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
   Folder, CheckCircle2, MessageSquare, PieChart, Menu, X,
-  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown,
+  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CalendarDays,
 } from 'lucide-react';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
@@ -28,6 +28,7 @@ const TABS = [
 ];
 
 const MORE_NAV = [
+  { href: '/calendar', icon: CalendarDays, label: 'Календар' },
   { href: '/sprints',  icon: Zap,      label: 'Спринти' },
   { href: '/team',     icon: Users,    label: 'Команда' },
   { href: '/settings', icon: Settings, label: 'Налаштування' },
@@ -69,6 +70,9 @@ export default function MobileNav() {
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
   const notifications = useWorkspaceStore(s => s.notifications);
+  const unreadChatNotifications = notifications.filter(item =>
+    !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
+  const displayedUnreadChats = unreadChatNotifications || unreadChats;
   const otherOrgUnreadCount = notifications.filter(item =>
     !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
@@ -150,9 +154,9 @@ export default function MobileNav() {
               }`}>
               <Icon size={20} />
               <span className="text-[10px] font-semibold leading-none">{label}</span>
-              {label === 'Чат' && unreadChats > 0 && (
+              {label === 'Чат' && displayedUnreadChats > 0 && (
                 <span className="absolute top-[6px] left-[calc(50%+4px)]">
-                  <Counter value={unreadChats} size="sm" status="info" dark />
+                  <Counter value={displayedUnreadChats} size="sm" status="muted" dark />
                 </span>
               )}
             </Link>

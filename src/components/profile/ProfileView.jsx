@@ -56,33 +56,22 @@ export default function ProfileView({ user, onClose }) {
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();
-    router.push(`/${task.projectId}?issue=${task.issueKey || task.id}`);
+    router.push(`/${task.projectId}/issue/${task.id}`);
   };
 
   const handleEmergencyCall = async () => {
     try {
       const emergencyText = `🆘 ЕКСТРЕННИЙ ВИКЛИК від ${currentUser?.name || 'Учасника'}!`;
-      const link = `/chat?user=${currentUser?.id || currentUser?.uid}`;
+      const link = `/chat?dm=${encodeURIComponent(currentUser?.id || currentUser?.uid || '')}`;
 
       await sendNotification({
         userIds: [uid],
-        type: 'alert',
+        type: 'emergency',
         title: '🆘 Екстрений виклик',
         body: emergencyText,
         link,
         organizationId: activeOrgId,
-        actor: {
-          id: currentUser?.id || currentUser?.uid,
-          name: currentUser?.name || '',
-          avatar: currentUser?.avatar || '',
-        },
       });
-      
-      if (typeof Audio !== 'undefined') {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-        audio.volume = 0.2;
-        audio.play().catch(() => {});
-      }
 
       useWorkspaceStore.getState().showToast(`Виклик надіслано ${user.name || 'користувачу'}`, 'success');
       if (onClose) onClose();
@@ -142,7 +131,7 @@ export default function ProfileView({ user, onClose }) {
               <Button
                 onClick={() => {
                   if (onClose) onClose();
-                  router.push(`/chat?user=${uid}`);
+                  router.push(`/chat?dm=${encodeURIComponent(uid)}`);
                 }}
                 style="secondary"
                 color="dark"

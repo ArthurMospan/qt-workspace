@@ -3,6 +3,7 @@ import { Search, ChevronRight, X, Bell, Hash } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { HeaderSearch } from '../Forms/HeaderSearch';
 import { Breadcrumb } from '../Navigation/Breadcrumb';
+import Tooltip from '../Navigation/Tooltip';
 
 export default function TopHeader({
   mode = 'search', // 'search', 'project', 'breadcrumbs', 'chat'
@@ -23,6 +24,7 @@ export default function TopHeader({
 
   // Chat Props
   onlineUsers = [],
+  onOnlineUserClick = () => {},
 
   // Right Side Props
   showNotifications = true,
@@ -38,6 +40,28 @@ export default function TopHeader({
   // Styling
   hideBorder = false,
 }) {
+  const renderOnlineUsers = () => (
+    <div className="flex items-center -space-x-2">
+      {onlineUsers.slice(0, 5).map((u, i) => (
+        <Tooltip key={u.id || u.uid || i} content={u.name || u.email || 'Учасник'} position="bottom">
+          <button
+            type="button"
+            onClick={() => onOnlineUserClick(u)}
+            className="relative w-8 h-8 rounded-[10px] border-2 border-white bg-gray-100 flex items-center justify-center shrink-0 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+            aria-label={`Відкрити чат з ${u.name || u.email || 'учасником'}`}
+          >
+            <span className="overflow-hidden rounded-[8px]"><UserAvatar user={u} size={26} /></span>
+            <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+          </button>
+        </Tooltip>
+      ))}
+      {onlineUsers.length > 5 && (
+        <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-gray-100 flex items-center justify-center z-10 text-[10px] font-bold text-gray-600">
+          +{onlineUsers.length - 5}
+        </div>
+      )}
+    </div>
+  );
 
   const renderLeft = () => {
     if (mode === 'breadcrumbs') {
@@ -67,7 +91,7 @@ export default function TopHeader({
 
     if (mode === 'chat') {
       return (
-        <div className="flex items-center gap-4 w-full">
+        <div className="flex items-center w-full">
           <HeaderSearch
             value={searchValue}
             onChange={onSearchChange}
@@ -75,23 +99,6 @@ export default function TopHeader({
             placeholder="Пошук по чатах..."
             className="w-[240px]"
           />
-          
-          <div className="h-4 w-[1px] bg-line"></div>
-          
-          {/* Online Users Avatars */}
-          <div className="flex items-center -space-x-2">
-            {onlineUsers.slice(0, 5).map((u, i) => (
-              <div key={i} className="relative w-7 h-7 rounded-[10px] border-2 border-white overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
-                <UserAvatar user={u} size={24} />
-                <div className="absolute bottom-[-2px] right-[-2px] w-2.5 h-2.5 bg-green-500 border-[1.5px] border-white rounded-full"></div>
-              </div>
-            ))}
-            {onlineUsers.length > 5 && (
-              <div className="w-7 h-7 rounded-[10px] border-2 border-white bg-gray-100 flex items-center justify-center z-10 text-[10px] font-bold text-gray-600">
-                +{onlineUsers.length - 5}
-              </div>
-            )}
-          </div>
         </div>
       );
     }
@@ -112,6 +119,10 @@ export default function TopHeader({
       <div className="flex-1 min-w-0 flex items-center">
         {renderLeft()}
       </div>
+
+      {mode === 'chat' && onlineUsers.length > 0 && (
+        <div className="ml-3 mr-2 shrink-0">{renderOnlineUsers()}</div>
+      )}
 
       {rightContent ? rightContent : (
         <div className="flex items-center gap-[6px] shrink-0 ml-4 z-50">

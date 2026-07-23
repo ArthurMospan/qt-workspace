@@ -5,13 +5,14 @@ import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import UserAvatar from '@/components/UserAvatar';
 import {
   Clock, CheckCircle2, AlertCircle, TrendingUp, TrendingDown,
-  Users, Target, Zap, BarChart2, Calendar, AlertTriangle
+  Users, Target, Zap, BarChart2, Calendar, AlertTriangle, ClipboardList
 } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { useWorkflowConfig, DEFAULT_PRIORITIES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 import { parseDueDate } from '@/lib/utils/date';
+import EmptyState from '@/components/ui/Feedback/EmptyState';
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
@@ -118,10 +119,25 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
 
+  if (filteredIssues.length === 0) {
+    return (
+      <div className="flex-1 pb-8">
+        <div className="min-h-[360px] rounded-[16px] bg-canvas p-[16px]">
+          <EmptyState
+            icon={ClipboardList}
+            title="Немає даних для аналітики"
+            description="Створіть завдання або змініть активні фільтри — показники з’являться автоматично."
+            className="min-h-[328px] rounded-[12px] bg-white"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col pb-8">
       {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
-      <div className="w-full mt-[8px] bg-canvas rounded-[16px] p-[16px] flex flex-col gap-4">
+      <div className="w-full bg-canvas rounded-[16px] p-[16px] flex flex-col gap-4">
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

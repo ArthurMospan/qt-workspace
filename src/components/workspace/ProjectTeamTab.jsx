@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
-import { Check, Mail, Phone, Search, UserPlus } from 'lucide-react';
+import { Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { updateProjectTeam } from '@/lib/services/projects';
@@ -11,8 +11,12 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
+import EmptyState from '@/components/ui/Feedback/EmptyState';
+import FilterBar from '@/components/ui/FilterBar';
+import { Select } from '@/components/ui/Select';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
 
-export default function ProjectTeamTab({ members = [], allMembers = [], issues = [], projectId, project, canManage = false }) {
+export default function ProjectTeamTab({ members = [], allMembers = [], issues = [], projectId, project, canManage = false, inviteMember }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -21,7 +25,10 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
   const { doneStatusIds } = useWorkflowConfig();
   const doneSet = new Set(doneStatusIds);
   const [manageOpen, setManageOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [workloadFilter, setWorkloadFilter] = useState('all');
   const [selected, setSelected] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -31,6 +38,16 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
     return allMembers.filter(member => [member.name, member.email]
       .some(value => String(value || '').toLowerCase().includes(query)));
   }, [allMembers, search]);
+  const visibleMembers = useMemo(() => members.filter(member => {
+    const uid = member.id || member.uid;
+    const completedStatuses = new Set(doneStatusIds);
+    const assigned = issues.some(issue =>
+      issue.assigneeIds?.includes(uid) && !completedStatuses.has(issue.columnId || issue.status));
+    if (roleFilter !== 'all' && member.role !== roleFilter) return false;
+    if (workloadFilter === 'assigned' && !assigned) return false;
+    if (workloadFilter === 'available' && assigned) return false;
+    return true;
+  }), [doneStatusIds, issues, members, roleFilter, workloadFilter]);
 
   const toggleMember = userId => {
     if (userId === project?.createdBy) return;
@@ -59,29 +76,57 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
   };
 
   return (
-    <div className="flex-1 flex flex-col pb-8">
-      {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
-      <div className="w-full mt-[8px] bg-canvas rounded-[16px] p-[16px]">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-[16px] font-bold text-ink">Команда проєкту</h2>
-            <p className="text-[12px] text-muted mt-1">{members.length} {members.length === 1 ? 'учасник' : 'учасників'}</p>
-          </div>
+    <div className="flex flex-1 flex-col gap-2 pb-8">
+      <div className="flex items-center justify-between gap-3">
+          <FilterBar>
+            <Select
+              value={roleFilter}
+              onChange={setRoleFilter}
+              variant="ghost"
+              options={[
+                { value: 'all', label: 'Усі ролі' },
+                { value: 'owner', label: 'Власники' },
+                { value: 'admin', label: 'Адміністратори' },
+                { value: 'member', label: 'Учасники' },
+              ]}
+            />
+            <Select
+              value={workloadFilter}
+              onChange={setWorkloadFilter}
+              variant="ghost"
+              options={[
+                { value: 'all', label: 'Усе навантаження' },
+                { value: 'assigned', label: 'Є активні завдання' },
+                { value: 'available', label: 'Без активних завдань' },
+              ]}
+            />
+          </FilterBar>
           {canManage && (
             <Button icon={UserPlus} style="secondary" size="md" onClick={openManager}>
               Керувати
             </Button>
           )}
-        </div>
+      </div>
 
+      {/* Same filter → gap → content-panel rhythm as Analytics. */}
+      <div className="w-full rounded-[16px] bg-canvas p-[16px]">
         {members.length === 0 ? (
-          <div className="min-h-[240px] flex flex-col items-center justify-center text-center">
-            <UserPlus size={28} className="text-faint mb-3" />
-            <p className="text-[13px] text-muted font-medium">У цьому проєкті ще немає учасників.</p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="У проєкті ще немає команди"
+            description="Додайте учасників організації, щоб призначати їм завдання та бачити навантаження."
+            action={canManage ? 'Додати учасників' : null}
+            onAction={canManage ? openManager : null}
+          />
+        ) : visibleMembers.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Немає учасників за цими фільтрами"
+            description="Змініть роль або фільтр навантаження."
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {members.map(member => {
+            {visibleMembers.map(member => {
               const uid = member.id || member.uid;
               const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
               const done = memberIssues.filter(issue => doneSet.has(issue.columnId || issue.status)).length;
@@ -149,6 +194,22 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
         footer={<><Button style="secondary" size="md" onClick={() => setManageOpen(false)}>Скасувати</Button><Button size="md" onClick={saveTeam} loading={saving}>Зберегти ({selected.length})</Button></>}
       >
         <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              setManageOpen(false);
+              setInviteOpen(true);
+            }}
+            className="flex items-center gap-3 rounded-[14px] bg-canvas p-4 text-left transition-colors hover:bg-[#ededed]"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink">
+              <UserPlus size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-bold text-ink">Запросити нового учасника</span>
+              <span className="mt-0.5 block text-[11px] text-muted">Email, посилання або QR-код</span>
+            </span>
+          </button>
           <Input value={search} onChange={event => setSearch(event.target.value)} icon={Search} placeholder="Ім’я або email учасника" autoFocus />
           <div className="max-h-[420px] overflow-y-auto flex flex-col gap-1">
             {filteredMembers.map(member => {
@@ -167,6 +228,12 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
           </div>
         </div>
       </Dialog>
+
+      <InviteMemberDialog
+        isOpen={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        inviteMember={inviteMember}
+      />
     </div>
   );
 }

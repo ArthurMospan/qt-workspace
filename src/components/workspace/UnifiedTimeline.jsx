@@ -1,18 +1,22 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, Eye, FileText, Paperclip, Pencil, Reply, Send, Trash2, X } from 'lucide-react';
+import { ArrowUp, Check, CheckCheck, Eye, FileText, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import Button from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui';
+import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import MentionText from '@/components/workspace/MentionText';
+import { sendNotification } from '@/lib/hooks/useNotifications';
+import { extractMentionedUserIds } from '@/lib/utils/mentions';
 
 const FIELD_LABELS = {
   status: 'статус',
@@ -220,16 +224,38 @@ function ReplyQuote({ replyTo, dark = false }) {
   );
 }
 
-function EventMessage({ text, time, actor }) {
+function StatusEmoji({ member }) {
+  if (!member?.statusEmoji) return null;
   return (
-    <div className="flex items-end gap-2.5">
-      <div className="mb-5 shrink-0"><UserAvatar user={actor} size={28} /></div>
-      <div className="flex max-w-[84%] min-w-0 flex-col items-start">
-        <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{actor?.name || 'Система'}</span>
-        <div className="max-w-full rounded-[12px] bg-white/75 px-3 py-2.5 text-[12px] leading-5 text-[#555]">
+    <span
+      className="cursor-help"
+      title={member.status || 'Статус користувача'}
+      aria-label={member.status || 'Статус користувача'}
+    >
+      {member.statusEmoji}
+    </span>
+  );
+}
+
+function EventMessage({ text, time, actor, isMine = false }) {
+  return (
+    <div className={`flex items-end gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+      {!isMine && <div className="mb-5 shrink-0"><UserAvatar user={actor} size={28} /></div>}
+      <div className={`flex max-w-[84%] min-w-0 flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+        {!isMine && (
+          <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
+            {actor?.name || 'Система'}
+            <StatusEmoji member={actor} />
+          </span>
+        )}
+        <div className={`max-w-full rounded-[16px] px-3 py-2.5 text-[14px] leading-[22px] ${
+          isMine
+            ? 'rounded-br-none bg-[#303030] text-white'
+            : 'rounded-bl-none bg-[#f2f2f7] text-ink'
+        }`}>
           {text}
         </div>
-        <span className="mt-1 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
+        <span className="mt-1 px-1 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
       </div>
     </div>
   );
@@ -239,10 +265,10 @@ function DaySeparator({ timestamp }) {
   const label = dayLabel(timestamp);
   if (!label) return null;
   return (
-    <div className="flex items-center gap-3 py-1" aria-label={`Дата: ${label}`}>
-      <span className="h-px flex-1 bg-black/[0.06]" />
-      <span className="text-[10px] font-semibold text-[#999]">{label}</span>
-      <span className="h-px flex-1 bg-black/[0.06]" />
+    <div className="flex justify-center py-3" aria-label={`Дата: ${label}`}>
+      <span className="rounded-full bg-white/75 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
+        {label}
+      </span>
     </div>
   );
 }
@@ -350,16 +376,22 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   const checkMentions = (text, cursorPosition) => {
     setMentionState(previous => {
       const lastAtIndex = text.lastIndexOf('@', cursorPosition - 1);
-      if (lastAtIndex === -1) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
-      const textBetween = text.slice(lastAtIndex, cursorPosition);
-      if (/\s/.test(textBetween)) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
-      if (previous.ignoreIndex === lastAtIndex) return previous;
+      const lastQuoteIndex = text.lastIndexOf('"', cursorPosition - 1);
+      const triggerIndex = Math.max(lastAtIndex, lastQuoteIndex);
+      if (triggerIndex === -1) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      const precedingChar = triggerIndex > 0 ? text[triggerIndex - 1] : '';
+      if (precedingChar && !/[\s([{]/.test(precedingChar)) {
+        return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      }
+      const textBetween = text.slice(triggerIndex + 1, cursorPosition);
+      if (/[\n@"]/.test(textBetween)) return { active: false, query: '', startIndex: -1, cursorIndex: -1, selectedIndex: 0, ignoreIndex: -1 };
+      if (previous.ignoreIndex === triggerIndex) return previous;
       return {
         active: true,
-        query: textBetween.slice(1),
-        startIndex: lastAtIndex,
+        query: textBetween,
+        startIndex: triggerIndex,
         cursorIndex: cursorPosition,
-        selectedIndex: previous.active && previous.startIndex === lastAtIndex ? previous.selectedIndex : 0,
+        selectedIndex: previous.active && previous.startIndex === triggerIndex ? previous.selectedIndex : 0,
         ignoreIndex: -1,
       };
     });
@@ -423,7 +455,25 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
         const folder = `organizations/${project?.organizationId || 'shared'}/comments`;
         const attachments = [];
         for (const file of pendingFiles) attachments.push(await uploadFile(file, folder));
-        await addComment(issueId, text, currentUser, attachments, replyTo);
+        const mentionedUserIds = extractMentionedUserIds(text, members, myId);
+        await addComment(issueId, text, currentUser, attachments, replyTo, { mentionedUserIds });
+        if (mentionedUserIds.length > 0) {
+          try {
+            await sendNotification({
+              userIds: mentionedUserIds,
+              type: 'mentioned',
+              title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
+              body: text.slice(0, 500),
+              link: `/${projectId}/issue/${issueId}`,
+              issueId,
+              projectId,
+              organizationId: project?.organizationId || org?.id || '',
+            });
+          } catch (notificationError) {
+            console.error('[task-chat] mention notification failed:', notificationError);
+            showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
+          }
+        }
       }
       resetComposer();
     } catch (error) {
@@ -438,9 +488,12 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
       {viewerAttachment && <AttachmentViewer attachment={viewerAttachment} onClose={() => setViewerAttachment(null)} />}
       <div ref={scrollRef} className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
         {timeline.length === 0 && (
-          <div className="flex flex-1 items-center justify-center py-12 text-center">
-            <p className="text-[12px] font-medium text-muted">Поки що немає повідомлень</p>
-          </div>
+          <EmptyState
+            icon={MessageSquare}
+            title="Ще немає повідомлень"
+            description="Почніть обговорення завдання з командою."
+            className="flex-1"
+          />
         )}
 
         {timeline.map((item, index) => {
@@ -453,24 +506,33 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
 
           if (item._type === 'comment') {
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
+            const authorMember = members.find(candidate => (candidate.id || candidate.uid) === item.authorId);
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
               <div className={`group flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
                 <button
                   type="button"
-                  className="mb-6 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                  className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
                   onClick={() => router.push(`?member=${item.authorId}`)}
                   aria-label={`Профіль: ${item.authorName || 'учасник'}`}
                 >
                   <UserAvatar user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }} size={28} />
                 </button>
                 <div className={`flex max-w-[84%] min-w-0 flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  {!isMe && <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{item.authorName}</span>}
-                  {/* Асиметричний кут-«хвостик» до аватара — як у QuickTeam+ */}
-                  <div className={`max-w-full break-words px-3 py-2.5 text-[13px] leading-5 ${isMe ? 'rounded-[14px] rounded-tr-[4px] bg-ink text-white' : 'rounded-[14px] rounded-tl-[4px] bg-white text-ink'}`}>
+                  {!isMe && (
+                    <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
+                      {item.authorName}
+                      <StatusEmoji member={authorMember} />
+                    </span>
+                  )}
+                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'}`}>
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
-                    {item.text && <div className="whitespace-pre-wrap">{item.text}</div>}
+                    {item.text && (
+                      <div className="whitespace-pre-wrap">
+                        <MentionText text={item.text} members={members} dark={isMe} />
+                      </div>
+                    )}
                     <CommentAttachments attachments={item.attachments} dark={isMe} onOpen={setViewerAttachment} />
                   </div>
                   <div className={`mt-1 flex items-center gap-1 ${isMe ? 'flex-row-reverse' : ''}`}>
@@ -503,7 +565,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             const actor = member
               ? { ...member, id: member.id || member.uid, avatar: member.avatar || member.photoURL }
               : { id: item.userId, name: item.userName || 'Учасник' };
-            return <Fragment key={`time-${item.id}`}>{separator}<EventMessage text={text} time={fmtClock(item.loggedAt)} actor={actor} /></Fragment>;
+            return <Fragment key={`time-${item.id}`}>{separator}<EventMessage text={text} time={fmtClock(item.loggedAt)} actor={actor} isMine={item.userId === myId} /></Fragment>;
           }
 
           if (item._type === 'audit') {
@@ -511,14 +573,14 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             const actor = item.userId
               ? { ...member, id: item.userId, name: item.userName || member?.name || 'Учасник', avatar: member?.avatar || member?.photoURL }
               : { id: org?.id, name: org?.name || 'Організація', avatar: org?.logo || org?.logoUrl };
-            return <Fragment key={`audit-${item.id}`}>{separator}<EventMessage text={formatAuditEvent(item, members)} time={fmtClock(item.createdAt)} actor={actor} /></Fragment>;
+            return <Fragment key={`audit-${item.id}`}>{separator}<EventMessage text={formatAuditEvent(item, members)} time={fmtClock(item.createdAt)} actor={actor} isMine={item.userId === myId} /></Fragment>;
           }
           return null;
         })}
       </div>
 
       {!isArchived && (
-        <div className="relative shrink-0 bg-canvas px-3 pb-3 pt-2" ref={wrapperRef}>
+        <div className="relative shrink-0 bg-gradient-to-b from-transparent via-canvas/90 via-[45%] to-canvas px-4 pb-5 pt-3" ref={wrapperRef}>
           {mentionState.active && filteredMembers.length > 0 && (
             <div className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
               {filteredMembers.map((member, index) => (
@@ -554,8 +616,8 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
           )}
 
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
-          <div className="flex items-center gap-1 rounded-[16px] border-[4px] border-[#e3e3e3] bg-white p-1 transition-colors focus-within:border-[#d8d8d8]">
-            {!editingComment && <Button style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
+          <div className="flex min-h-[44px] items-end gap-1 rounded-[24px] bg-white p-1 ring-1 ring-black/[0.04] transition-all focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
+            {!editingComment && <Button className="self-center" style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
             <textarea
               ref={inputRef}
               rows={1}
@@ -592,10 +654,18 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                 }
               }}
               placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
-              className="custom-scrollbar min-h-[32px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-1 py-[6px] text-[13px] font-medium leading-5 text-ink outline-none placeholder:text-[#a1a1aa]"
+              className="custom-scrollbar min-h-[36px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[14px] leading-5 text-ink outline-none placeholder:text-muted"
               style={{ height: '32px' }}
             />
-            <Button style="primary" size="icon" disabled={(!input.trim() && pendingFiles.length === 0) || sending} loading={sending} onClick={handleSend} icon={Send} aria-label={editingComment ? 'Зберегти зміни' : 'Надіслати'} />
+            <button
+              type="button"
+              disabled={(!input.trim() && pendingFiles.length === 0) || sending}
+              onClick={handleSend}
+              aria-label={editingComment ? 'Зберегти зміни' : 'Надіслати'}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100"
+            >
+              <ArrowUp size={16} />
+            </button>
           </div>
         </div>
       )}

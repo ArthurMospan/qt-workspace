@@ -5,6 +5,7 @@ import { usePortalChat } from '@/lib/portal/usePortalChat';
 import { toChatMessageView, dayLabel, unreadCount } from '@/lib/portal/qtplusChatView.mjs';
 import ChatMessage from './ChatMessage';
 import ChatComposer from './ChatComposer';
+import EmptyState from '@/components/ui/Feedback/EmptyState';
 
 function Spinner() {
   return <div className="w-4 h-4 border-2 border-line border-t-ink rounded-full animate-spin" />;
@@ -12,8 +13,8 @@ function Spinner() {
 
 function DayDivider({ label }) {
   return (
-    <div className="flex items-center justify-center py-1">
-      <span className="text-[10px] text-faint bg-surface px-2">{label}</span>
+    <div className="flex items-center justify-center py-3">
+      <span className="rounded-full bg-white/75 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">{label}</span>
     </div>
   );
 }
@@ -65,8 +66,8 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
 
   return (
     <div className={embedded
-      ? 'flex flex-col h-full min-h-0 bg-surface overflow-hidden'
-      : 'flex flex-col h-[520px] max-h-[70vh] rounded-[12px] border border-line bg-surface overflow-hidden'}>
+      ? 'flex flex-col h-full min-h-0 bg-canvas overflow-hidden'
+      : 'flex flex-col h-[520px] max-h-[70vh] rounded-[16px] bg-canvas overflow-hidden'}>
       {!embedded && (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-line shrink-0">
           <MessagesSquare size={15} className="text-muted" />
@@ -79,7 +80,7 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4">
         {loading ? (
           <div className="flex-1 flex items-center justify-center"><Spinner /></div>
         ) : error ? (
@@ -89,14 +90,19 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
               : 'Не вдалося завантажити чат. Спробуйте пізніше.'}
           </p>
         ) : views.length === 0 ? (
-          <p className="text-[12px] text-muted m-auto text-center">Повідомлень ще немає.<br />Напишіть перше.</p>
+          <EmptyState
+            icon={MessagesSquare}
+            title="Ще немає повідомлень"
+            description="Напишіть перше повідомлення."
+            className="m-auto !py-8"
+          />
         ) : (
           views.map((v, i) => {
             const prev = views[i - 1];
             const label = dayLabel(v.createdAtMs);
             const showDay = label && (!prev || dayLabel(prev.createdAtMs) !== label);
             return (
-              <div key={v.id || i} className="flex flex-col gap-2">
+              <div key={v.id || i} className="flex flex-col gap-4">
                 {showDay && <DayDivider label={label} />}
                 <ChatMessage view={v} othersCount={othersCount} onDelete={v.mine ? deleteMessage : null} />
               </div>

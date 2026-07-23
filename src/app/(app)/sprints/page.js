@@ -157,6 +157,7 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
       onClose={onClose}
       title={`Завершити спринт: ${sprint.name}`}
       size="sm"
+      presentation="dialog"
       footer={
         <>
           <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
@@ -444,6 +445,7 @@ export default function GlobalSprintsPage() {
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
+                className="w-[200px]"
                 variant="ghost"
               />
               <Select

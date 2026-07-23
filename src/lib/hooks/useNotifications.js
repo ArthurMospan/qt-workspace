@@ -11,7 +11,7 @@ import {
   doc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 // Request browser notification permission once
 export async function requestNotifPermission() {
@@ -29,15 +29,17 @@ function fireBrowserNotif(notification) {
     body: notification.body,
     icon: '/logo.svg',
     badge: '/logo.svg',
-    silent: false
+    silent: notification.type === 'emergency',
+    requireInteraction: notification.type === 'emergency',
+    tag: notification.type === 'emergency' ? `emergency-${notification.id || 'alert'}` : undefined,
   });
-  const link = withNotificationOrganization(notification.link, notification.organizationId);
+  const link = notificationDestinationWithOrganization(notification);
   if (link) n.onclick = () => {
     window.focus();
     window.location.href = link;
     n.close();
   };
-  setTimeout(() => n.close(), 8000);
+  if (notification.type !== 'emergency') setTimeout(() => n.close(), 8000);
 }
 
 // Soft two-tone chime via WebAudio — no external audio asset needed
@@ -60,9 +62,16 @@ function playChime() {
       osc.start(ctx.currentTime + at);
       osc.stop(ctx.currentTime + at + dur + 0.05);
     };
-    note(880, 0, 0.3);        // A5
-    note(1174.66, 0.1, 0.35); // D6
-    setTimeout(() => { ctx.close().catch(() => {}); }, 900);
+    const schedule = () => {
+      note(880, 0, 0.3);        // A5
+      note(1174.66, 0.1, 0.35); // D6
+      setTimeout(() => { ctx.close().catch(() => {}); }, 900);
+    };
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(schedule).catch(() => ctx.close().catch(() => {}));
+    } else {
+      schedule();
+    }
   } catch { /* audio not available — silently skip */ }
 }
 
@@ -124,7 +133,7 @@ export function useNotifications(userId, {
             // 1. Browser native notification (gated by browser permission)
             fireBrowserNotif(n);
             // 2. Sound chime
-            if (prefs.sound !== false) playChime();
+            if (prefs.sound !== false && n.type !== 'emergency') playChime();
             // 3. In-app popup callback (goes to store)
             if (prefs.popup !== false && onNew) onNew(n);
           }

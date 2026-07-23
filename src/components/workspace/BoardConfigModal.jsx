@@ -54,8 +54,8 @@ export default function BoardConfigModal({ project, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-t-[24px] sm:rounded-[24px] shadow-2xl w-full max-w-[480px] overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] pb-[env(safe-area-inset-bottom)] sm:pb-0">
+    <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/40 backdrop-blur-sm">
+      <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:w-[480px] sm:rounded-none sm:rounded-l-[24px] sm:pb-0">
         
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <h2 className="text-[16px] font-bold text-ink">Налаштування дошки проєкту</h2>

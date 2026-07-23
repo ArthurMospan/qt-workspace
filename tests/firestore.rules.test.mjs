@@ -229,6 +229,34 @@ test('chat members cannot edit another author message', async () => {
   }));
 });
 
+test('a member can send a DM using only the metadata allowed by deployed rules', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const channel = doc(memberDb, 'organizations', 'org-a', 'channels', 'member-a_owner-a');
+
+  await assertSucceeds(setDoc(channel, { name: 'DM', type: 'dm' }));
+  await assertSucceeds(updateDoc(channel, {
+    lastMessageAt: new Date(),
+    lastMessageText: 'Hello',
+    lastMessageSender: 'Member',
+  }));
+  await assertSucceeds(setDoc(
+    doc(memberDb, 'organizations', 'org-a', 'channels', 'member-a_owner-a', 'messages', 'message-a'),
+    { senderId: 'member-a', text: 'Hello' },
+  ));
+  await assertSucceeds(setDoc(
+    doc(memberDb, 'organizations', 'org-a', 'activeDMs', 'owner-a'),
+    { partners: ['member-a'] },
+  ));
+
+  // These are the two writes the old sender loop attempted and that caused
+  // "Missing or insufficient permissions" after the message itself was sent.
+  await assertFails(updateDoc(channel, { participants: ['member-a', 'owner-a'] }));
+  await assertFails(setDoc(
+    doc(memberDb, 'organizations', 'org-a', 'activeDMs', 'member-a'),
+    { partners: ['owner-a'] },
+  ));
+});
+
 test('organization bootstrap still allows the first owner membership', async () => {
   const db = environment.authenticatedContext('founder').firestore();
   await assertSucceeds(setDoc(doc(db, 'organizations', 'org-new'), {

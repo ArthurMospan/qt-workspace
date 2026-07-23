@@ -11,7 +11,7 @@ import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon, Sparkles
+  Zap, Clock, Square as StopIcon, Sparkles, CalendarDays
 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
@@ -41,6 +41,9 @@ export default function WorkspaceSidebar() {
   const userId = currentUser?.id || currentUser?.uid;
   const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId, activeOrgId);
   const notifications = useWorkspaceStore(s => s.notifications);
+  const unreadChatNotifications = notifications.filter(item =>
+    !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
+  const displayedUnreadChats = unreadChatNotifications || unreadChats;
   const otherOrgUnreadCount = notifications.filter(item => !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   // ── Sidebar theme & Preview ──
@@ -112,6 +115,7 @@ export default function WorkspaceSidebar() {
     { href: '/',            icon: Folder,        label: 'Проєкти',     exact: true },
     { href: '/my',         icon: CheckCircle2,  label: 'Мої завдання' },
     { href: '/sprints',    icon: Zap,           label: 'Спринти' },
+    { href: '/calendar',   icon: CalendarDays,  label: 'Календар' },
     { href: '/chat',       icon: MessageSquare, label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
@@ -262,8 +266,8 @@ export default function WorkspaceSidebar() {
                 <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                   <Icon size={18} className="shrink-0" />
                   {!collapsed && <span className="text-[13px] font-medium">{label}</span>}
-                  {!collapsed && label === 'Чат' && unreadChats > 0 && (
-                    <Counter value={unreadChats} size="sm" status="info" className="ml-auto" dark={theme.isDark} />
+                  {!collapsed && label === 'Чат' && displayedUnreadChats > 0 && (
+                    <Counter value={displayedUnreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
                   )}
                 </div>
               </Tooltip>

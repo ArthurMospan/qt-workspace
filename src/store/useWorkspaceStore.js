@@ -97,6 +97,8 @@ const useWorkspaceStore = create((set, get) => ({
   setSprintSearch: (q) => set({ sprintSearch: q }),
   analyticsSearch: '',
   setAnalyticsSearch: (q) => set({ analyticsSearch: q }),
+  calendarSearch: '',
+  setCalendarSearch: (q) => set({ calendarSearch: q }),
 
   // ── Chat online users (synced from chat page to header) ───────────
   chatOnlineUsers: [],

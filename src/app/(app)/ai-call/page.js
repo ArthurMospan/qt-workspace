@@ -88,6 +88,7 @@ export default function AiCallPage() {
           organizationId: activeOrgId,
           transcript: transcript.trim() || undefined,
           audioUrl,
+          audioMimeType: audioFile?.type || undefined,
           memberNames: members.map(m => m.name).filter(Boolean),
           projectName: project?.name,
         }),

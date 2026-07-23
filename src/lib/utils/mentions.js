@@ -61,3 +61,19 @@ export function formatMentions(text) {
   if (!text) return text;
   return text.replace(/@(\w+)/g, '<strong>@$1</strong>');
 }
+
+/**
+ * Resolve mentions produced by the member picker. Unlike the legacy
+ * `parseMentions`, this intentionally supports display names with spaces.
+ */
+export function extractMentionedUserIds(text, members = [], currentUserId = '') {
+  if (!text) return [];
+  return [...new Set(members
+    .filter(member => {
+      if (!member?.name) return false;
+      const escapedName = member.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`@${escapedName}(?=\\s|[.,!?;:]|$)`).test(text);
+    })
+    .map(member => member.id || member.uid)
+    .filter(userId => userId && userId !== currentUserId))];
+}

@@ -14,7 +14,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { PageHeader } from '@/components/ui';
-import { Plus, ChevronDown, ChevronRight, ChevronLeft, Calendar, Settings2, X, EyeOff, Eye, LayoutGrid, List, Kanban } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, ChevronLeft, Settings2, X, EyeOff, Eye, LayoutGrid, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
@@ -65,7 +65,7 @@ export default function MyTasksPage() {
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
   
-  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'sprints'
+  const [viewMode, setViewMode] = useState('kanban'); // kanban | list
   const [sectionExpansion, setSectionExpansion] = useState({});
   const [filters, setFilters] = useState({
     projects: [],
@@ -236,6 +236,7 @@ export default function MyTasksPage() {
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
+                className="w-[200px]"
               />
               <Select
                 variant="ghost"
@@ -287,7 +288,7 @@ export default function MyTasksPage() {
               <Tabs
                 tabs={[
                   { id: 'kanban', icon: Kanban },
-                  { id: 'list', icon: List }
+                  { id: 'list', icon: List },
                 ]}
                 activeTab={viewMode}
                 onTabChange={setViewMode}
@@ -504,8 +505,8 @@ export default function MyTasksPage() {
       />
 
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[480px] overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/40 backdrop-blur-sm">
+          <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[480px] sm:rounded-none sm:rounded-l-[24px]">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <h2 className="text-[16px] font-bold text-ink">Налаштування дошки</h2>

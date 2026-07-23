@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Send } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 
 const TYPING_IDLE_MS = 3000;
 
@@ -56,26 +56,28 @@ export default function ChatComposer({ onSend, onTyping, disabled }) {
   };
 
   return (
-    <div className="flex items-end gap-2 border-t border-line px-3 py-2">
-      <textarea
-        value={text}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onBlur={stopTyping}
-        disabled={disabled}
-        rows={1}
-        placeholder={disabled ? 'Немає доступу' : 'Напишіть повідомлення…'}
-        className="flex-1 resize-none max-h-[96px] text-[13px] text-ink placeholder:text-faint bg-transparent outline-none py-1 disabled:opacity-50"
-      />
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!text.trim() || sending || disabled}
-        aria-label="Надіслати"
-        className="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center shrink-0 disabled:opacity-30 hover:bg-ink-hover transition-colors"
-      >
-        <Send size={15} />
-      </button>
+    <div className="shrink-0 px-4 pb-5 pt-3">
+      <div className="flex min-h-[44px] items-end gap-1 rounded-[24px] bg-white p-1 ring-1 ring-black/[0.04] transition-all focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
+        <textarea
+          value={text}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onBlur={stopTyping}
+          disabled={disabled}
+          rows={1}
+          placeholder={disabled ? 'Немає доступу' : 'Повідомлення…'}
+          className="max-h-[120px] min-h-[36px] flex-1 resize-none bg-transparent px-3 py-2 text-[14px] leading-5 text-ink outline-none placeholder:text-muted disabled:opacity-50"
+        />
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!text.trim() || sending || disabled}
+          aria-label="Надіслати"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100"
+        >
+          <ArrowUp size={16} />
+        </button>
+      </div>
     </div>
   );
 }

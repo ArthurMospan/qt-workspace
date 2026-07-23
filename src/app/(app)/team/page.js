@@ -7,88 +7,20 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { Plus, Search, Users, X, User, ArrowLeft } from 'lucide-react';
+import { Plus, User, ArrowLeft } from 'lucide-react';
 import { 
-  Button, 
-  Dialog, 
-  Input, 
   Surface, 
   LoadingSpinner, 
   EmptyState,
-  ListItem,
-  SearchInput
 } from '@/components/ui';
 import UserAvatar from '@/components/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
-import InviteLinkSection from '@/components/InviteLinkSection';
-import { Select } from '@/components/ui/Select';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
-function InviteModal({ isOpen, onClose, inviteMember }) {
-  const { currentUser } = useAppContext();
-  const showToast = useWorkspaceStore(s => s.showToast);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('member');
-  const [inviting, setInviting] = useState(false);
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    try {
-      setInviting(true);
-      const uid = currentUser?.id || currentUser?.uid;
-      const res = await inviteMember(inviteEmail.trim().toLowerCase(), uid, inviteRole);
-      if (res.type === 'added_directly') {
-        showToast('Користувача додано до команди ✓', 'success');
-      } else {
-        showToast('Запрошення успішно надіслано ✓', 'success');
-      }
-      setInviteEmail('');
-      setInviteRole('member');
-      onClose();
-    } catch (err) {
-      showToast(err.message || 'Помилка при запрошенні', 'error');
-    } finally {
-      setInviting(false);
-    }
-  };
-
-  return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Запросити нового учасника"
-      size="md"
-      footer={
-        <>
-          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
-          <Button onClick={handleInvite} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" size="md">Надіслати запрошення</Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4 min-h-[200px]">
-        <div>
-          <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
-          {/* Відправка листів ще не налаштована в проді — запрошення при цьому
-              працює: людина потрапить у команду, щойно увійде з цією поштою. */}
-          <p className="mt-1.5 text-[11px] text-muted">
-            ✉️ Лист-сповіщення — в розробці. Запрошення спрацює автоматично, коли людина увійде з цією поштою, або скористайтесь посиланням/QR нижче.
-          </p>
-        </div>
-        {/* 'owner' is intentionally not offered: the API only ever assigns
-            member/admin, so offering it here was a lie. */}
-        <Select value={inviteRole} onChange={setInviteRole} options={[
-          {value: 'admin', label: 'Адміністратор'},
-          {value: 'member', label: 'Учасник'}
-        ]} label="Роль" />
-        <InviteLinkSection role={inviteRole} />
-      </div>
-    </Dialog>
-  );
-}
-
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function TeamPage() {
-  const { currentUser, orgRole } = useAppContext();
+  const { orgRole } = useAppContext();
   const { members, loading, inviteMember } = useOrganization();
   const { positions = [] } = useWorkflowConfig();
   
@@ -153,9 +85,12 @@ export default function TeamPage() {
               <LoadingSpinner size="sm" />
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-[13px] text-muted">
-              Нікого не знайдено
-            </div>
+            <EmptyState
+              icon={User}
+              title="Нікого не знайдено"
+              description="Спробуйте змінити пошуковий запит."
+              className="!px-3 !py-8"
+            />
           ) : (
             filteredMembers.map(member => {
               const uid = member.id || member.uid;
@@ -219,11 +154,10 @@ export default function TeamPage() {
       </div>
 
       {/* Modals */}
-      <InviteModal
+      <InviteMemberDialog
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         inviteMember={inviteMember}
-        currentUser={currentUser}
       />
     </div>
   );

@@ -95,14 +95,24 @@ function audioUrlAllowed(url) {
     url.startsWith(`https://res.cloudinary.com/${cloud}/`);
 }
 
-async function fetchAudio(audioUrl) {
+const ALLOWED_AUDIO_MIME_TYPES = new Set([
+  'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/wav',
+  'audio/x-wav', 'audio/webm', 'audio/ogg', 'audio/aac', 'audio/flac',
+  'video/webm', 'video/mp4',
+]);
+
+async function fetchAudio(audioUrl, declaredMimeType = '') {
   const response = await fetch(audioUrl);
   if (!response.ok) return { error: 'Не вдалося завантажити аудіофайл' };
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.length > MAX_AUDIO_BYTES) {
     return { error: 'Аудіо завелике для аналізу (ліміт ~14 МБ). Вставте текст транскрипту.' };
   }
-  const mimeType = response.headers.get('content-type')?.split(';')[0] || 'audio/mpeg';
+  const responseMimeType = response.headers.get('content-type')?.split(';')[0] || '';
+  const safeDeclaredMimeType = ALLOWED_AUDIO_MIME_TYPES.has(declaredMimeType) ? declaredMimeType : '';
+  const mimeType = ALLOWED_AUDIO_MIME_TYPES.has(responseMimeType)
+    ? responseMimeType
+    : safeDeclaredMimeType || 'audio/mpeg';
   return { buffer, mimeType };
 }
 
@@ -184,7 +194,7 @@ async function analyzeWithClaude({ prompt, transcript }) {
 
 export async function POST(request) {
   try {
-    const { organizationId, transcript, audioUrl, memberNames = [], projectName } = await request.json();
+    const { organizationId, transcript, audioUrl, audioMimeType, memberNames = [], projectName } = await request.json();
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
@@ -205,7 +215,7 @@ export async function POST(request) {
       if (!audioUrlAllowed(audioUrl)) {
         return NextResponse.json({ error: 'Недозволений URL аудіо' }, { status: 400 });
       }
-      const fetched = await fetchAudio(audioUrl);
+      const fetched = await fetchAudio(audioUrl, audioMimeType);
       if (fetched.error) return NextResponse.json({ error: fetched.error }, { status: 400 });
       audio = fetched;
     }

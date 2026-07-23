@@ -19,7 +19,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical,
-  Archive, ArchiveRestore, Bug
+  Archive, ArchiveRestore, Bug, SlidersHorizontal
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -44,7 +44,8 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { Colorful } from '@uiw/react-color';
-import InviteLinkSection from '@/components/InviteLinkSection';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
+import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
 import {
   getDoneStatusIds,
   DEFAULT_STATUSES,
@@ -67,10 +68,6 @@ const ROLE_LABELS = {
   admin: 'Адміністратор',
   member: 'Учасник'
 };
-const ASSIGNABLE_ROLE_OPTIONS = Object.entries(ROLE_LABELS)
-  .filter(([role]) => role !== 'owner')
-  .map(([value, label]) => ({ value, label }));
-
 // Workflow defaults live in useWorkflowConfig (single source of truth for
 // the board, this page and every other consumer) — never redeclare them here:
 // a local copy is exactly the bug where Settings showed one set of statuses
@@ -671,7 +668,6 @@ export default function SettingsPage() {
   const [orgCustomBranding, setOrgCustomBranding] = useState(false);
   const [sidebarTheme,    setSidebarTheme]    = useState('dark');     // 'dark' | 'light' | 'custom'
   const [sidebarColor,    setSidebarColor]    = useState('#1f1f1f');  // HEX for custom theme
-  const [inviteEmail,     setInviteEmail]     = useState('');
   const setSidebarPreview = useWorkspaceStore(s => s.setSidebarPreview);
   const clearSidebarPreview = useWorkspaceStore(s => s.clearSidebarPreview);
 
@@ -757,9 +753,8 @@ export default function SettingsPage() {
   const [locSaving, setLocSaving] = useState(false);
 
   // ── Team invite ──
-  const [inviting,    setInviting]    = useState(false);
-  const [inviteRole,  setInviteRole]  = useState('member');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [memberSettingsId, setMemberSettingsId] = useState(null);
 
   // ─── Auth methods ───
   const [authProviderIds, setAuthProviderIds] = useState([]);
@@ -1406,18 +1401,6 @@ export default function SettingsPage() {
     } catch (e) {
       showToast('Помилка видалення ключа', 'error');
     }
-  };
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    try {
-      const uid = currentUser?.uid || currentUser?.id;
-      const result = await inviteMember(inviteEmail.trim().toLowerCase(), uid, inviteRole);
-      showToast(result.type === 'added_directly' ? 'Учасника додано' : 'Запрошення надіслано');
-      setInviteEmail('');
-    } catch (err) { showToast(err.message || 'Помилка', 'error'); }
-    setInviting(false);
   };
 
   const handleRoleChange = async (uid, role) => {
@@ -2332,59 +2315,36 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'team': return (
-        <Section title="Учасники команди" desc="Керування учасниками організації та їхніми ролями" rightAction={
+        <Section title="Учасники команди" rightAction={
           <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
         }>
-          <Surface variant="card" className="!rounded-[12px] p-0 overflow-visible relative z-10">
-            <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[12px]">
+          <Surface variant="card" className="!rounded-[16px] p-0 overflow-hidden relative z-10">
+            <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[16px]">
               {members.map((member, i) => {
                 const isMe = member.id === (currentUser?.uid || currentUser?.id);
+                const positionLabel = positions.find(position => position.id === member.positionId)?.label || 'Без посади';
                 return (
-                  <div key={member.id} className={`p-4 px-6 flex items-center justify-between hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[12px]' : ''} ${i === members.length - 1 ? 'rounded-b-[12px]' : ''}`}>
-                    <div className="flex items-center gap-3">
+                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === members.length - 1 ? 'rounded-b-[16px]' : ''}`}>
+                    <div className="flex min-w-0 items-center gap-3">
                       <UserAvatar user={member} size={40} />
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold text-ink">{member.name || member.email}</p>
+                          <p className="truncate text-[14px] font-bold text-ink">{member.name || member.email}</p>
                           {isMe && <span className="text-[10px] font-bold text-muted uppercase tracking-wider bg-canvas px-1.5 py-0.5 rounded-md">Ти</span>}
                         </div>
-                        <p className="text-[12px] text-muted">{member.email}</p>
+                        <p className="truncate text-[12px] text-muted">{member.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      {/* Position */}
-                      <Select
-                        value={member.positionId || ''}
-                        onChange={(val) => handlePositionChange(member.id, val)}
-                        options={[{value: '', label: 'Без посади'}, ...positions.map(p => ({value: p.id, label: p.label}))]}
-                        className="w-[160px]"
-                        buttonClassName="bg-canvas rounded-[10px] px-[12px] h-[36px]"
-                        disabled={!isAdmin}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="hidden rounded-full bg-canvas px-3 py-1.5 text-[11px] font-semibold text-muted sm:inline">{positionLabel}</span>
+                      <span className="rounded-full bg-canvas px-3 py-1.5 text-[11px] font-semibold text-ink">{ROLE_LABELS[member.role] || member.role}</span>
+                      <Button
+                        onClick={() => setMemberSettingsId(member.id || member.uid)}
+                        style="secondary"
+                        size="icon"
+                        icon={SlidersHorizontal}
+                        title="Налаштувати учасника"
                       />
-                      
-                      {/* Role */}
-                      <Select
-                        value={member.role}
-                        onChange={(val) => handleRoleChange(member.id, val)}
-                        options={member.role === 'owner'
-                          ? [{ value: 'owner', label: ROLE_LABELS.owner }]
-                          : ASSIGNABLE_ROLE_OPTIONS}
-                        className="w-[140px]"
-                        buttonClassName="bg-canvas rounded-[10px] px-[12px] h-[36px]"
-                        disabled={!(isOwner && !isMe)}
-                      />
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 w-[68px] justify-end">
-                        {isAdmin && !isMe && (
-                          <>
-                            {isOwner && member.role === 'admin' && (
-                              <Button onClick={() => handleTransferOwnership(member.id)} style="ghost" size="icon" title="Передати права власника" icon={Shield} className="text-orange-500 hover:text-orange-600" />
-                            )}
-                            <Button onClick={() => handleRemoveMember(member.id)} style="ghost" color="red" size="icon" icon={Trash2} />
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
                 );
@@ -2683,29 +2643,29 @@ export default function SettingsPage() {
 
 
 
-      <Dialog
+      <InviteMemberDialog
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        title="Запросити нового учасника"
-        size="md"
-        footer={
-          <>
-            <Button onClick={() => setShowInviteModal(false)} style="secondary" size="md">Скасувати</Button>
-            <Button onClick={async () => { await handleInvite(); setShowInviteModal(false); }} loading={inviting} disabled={inviting || !inviteEmail.trim()} style="primary" size="md">Надіслати запрошення</Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-4 min-h-[200px]">
-          <div>
-            <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@example.com" label="Email учасника" />
-            <p className="mt-1.5 text-[11px] text-muted">
-              ✉️ Лист-сповіщення — в розробці. Запрошення спрацює автоматично, коли людина увійде з цією поштою, або скористайтесь посиланням/QR нижче.
-            </p>
-          </div>
-          <Select value={inviteRole} onChange={setInviteRole} options={ASSIGNABLE_ROLE_OPTIONS} label="Роль" />
-          <InviteLinkSection role={inviteRole} />
-        </div>
-      </Dialog>
+        inviteMember={inviteMember}
+      />
+      <TeamMemberSettingsDialog
+        member={members.find(member => (member.id || member.uid) === memberSettingsId)}
+        positions={positions}
+        currentUserId={currentUser?.uid || currentUser?.id}
+        isOwner={isOwner}
+        isAdmin={isAdmin}
+        onClose={() => setMemberSettingsId(null)}
+        onRoleChange={handleRoleChange}
+        onPositionChange={handlePositionChange}
+        onTransferOwnership={async uid => {
+          await handleTransferOwnership(uid);
+          setMemberSettingsId(null);
+        }}
+        onRemove={async uid => {
+          await handleRemoveMember(uid);
+          setMemberSettingsId(null);
+        }}
+      />
     </SidebarLayout>
   );
 }

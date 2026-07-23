@@ -24,7 +24,7 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
-import { TaskAttributesPanel, Tooltip, useConfirm } from '@/components/ui';
+import { TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
@@ -622,6 +622,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       await sendNotification({ userIds: [uid], type: 'assigned',
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
         link: `/${projectId}/issue/${issueId}`, issueId, projectId,
+        organizationId: activeOrg?.id || activeOrg?.organizationId || '',
         actor: { id: currentUser?.id || currentUser?.uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
       }).catch(() => {});
   };
@@ -820,7 +821,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       Переглянути профіль
                     </button>
                     <Link
-                      href={`/chat?user=${reporter.id || reporter.uid}`}
+                      href={`/chat?dm=${encodeURIComponent(reporter.id || reporter.uid)}`}
                       onClick={() => setShowReporterDropdown(false)}
                       className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
                     >
@@ -1113,8 +1114,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
             {/* LOG TIME FORM MODAL */}
             {logForm && (
-              <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4" onClick={() => setLogForm(null)}>
-                <div className="bg-white rounded-t-[20px] sm:rounded-[16px] shadow-2xl w-full max-w-[560px] max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden" onClick={event => event.stopPropagation()}>
+              <div className="fixed inset-0 z-[100] flex items-end justify-end bg-black/40 backdrop-blur-sm" onClick={() => setLogForm(null)}>
+                <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none sm:rounded-l-[24px]" onClick={event => event.stopPropagation()}>
                   <div className="px-5 sm:px-6 py-4 border-b border-line flex items-center justify-between shrink-0">
                     <h3 className="text-[16px] font-bold text-ink">Трекінг часу</h3>
                     <Button style="secondary" size="icon" icon={X} onClick={() => setLogForm(null)} aria-label="Закрити" />
@@ -1685,25 +1686,18 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
                 {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
                 {qtplusLink?.projectId && (
-                  <div className="flex shrink-0 items-center gap-1 border-b border-black/[0.05] px-3 py-2">
-                    {[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }].map(tab => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setChatView(tab.id)}
-                        className={`rounded-full px-3 py-[5px] text-[12px] font-semibold transition-colors ${
-                          chatView === tab.id ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                    {process.env.NEXT_PUBLIC_QTPLUS_URL && (
+                  <div className="relative flex shrink-0 items-center justify-center bg-canvas px-4 pb-2 pt-3">
+                    <Tabs
+                      tabs={[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }]}
+                      activeTab={chatView}
+                      onTabChange={setChatView}
+                    />
+                    {chatView === 'qtplus' && process.env.NEXT_PUBLIC_QTPLUS_URL && (
                       <a
                         href={`${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${qtplusLink.projectId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-auto rounded-[6px] p-1.5 text-muted transition-colors hover:bg-black/[0.06] hover:text-ink"
+                        className="absolute right-4 rounded-[8px] p-2 text-muted transition-colors hover:bg-white hover:text-ink"
                         title="Відкрити проєкт у QuickTeam+"
                         aria-label="Відкрити проєкт у QuickTeam+"
                       >
@@ -1712,11 +1706,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     )}
                   </div>
                 )}
-                {chatView === 'qtplus' && qtplusLink?.projectId ? (
-                  <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
-                ) : (
-                  <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} org={activeOrg} members={members} />
-                )}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {chatView === 'qtplus' && qtplusLink?.projectId ? (
+                    <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
+                  ) : (
+                    <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} org={activeOrg} members={members} />
+                  )}
+                </div>
               </div>
             </div>
             )}

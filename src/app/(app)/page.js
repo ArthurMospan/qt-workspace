@@ -363,7 +363,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         inProgressCount++;
       }
 
-      const updatedAtTime = issue.updatedAt?.toMillis?.() || issue.createdAt?.toMillis?.() || 0;
+      const updatedAtTime = issue.lastActivityAt?.toMillis?.() || issue.updatedAt?.toMillis?.() || issue.createdAt?.toMillis?.() || 0;
       if (updatedAtTime > newestTime) {
         newestTime = updatedAtTime;
         newestIssue = issue;
@@ -380,7 +380,10 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
       let actorName = 'Команда';
       let actorAvatar = null;
       let actorUser = null;
-      if (newestIssue.updatedBy) {
+      if (newestIssue.lastActivityActorId) {
+        actorUser = members.find(m => (m.id || m.uid) === newestIssue.lastActivityActorId);
+        if (!actorUser && (newestIssue.lastActivityActorId === currentUser?.id || newestIssue.lastActivityActorId === currentUser?.uid)) actorUser = currentUser;
+      } else if (newestIssue.updatedBy) {
         actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
         if (!actorUser && (newestIssue.updatedBy === currentUser?.id || newestIssue.updatedBy === currentUser?.uid)) actorUser = currentUser;
       } else if (newestIssue.reporterId) {
@@ -397,6 +400,9 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         if (actorUser) {
           actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
           actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
+        } else if (newestIssue.lastActivityActorName) {
+          actorName = newestIssue.lastActivityActorName;
+          actorAvatar = newestIssue.lastActivityActorAvatar || null;
         } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
           actorName = 'BuggyBag';
         } else if (newestIssue.reporterName) {
@@ -408,7 +414,8 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           title: newestIssue.title,
           actor: actorName,
           actorAvatar,
-          time: newestIssue.updatedAt || newestIssue.createdAt,
+          action: newestIssue.lastActivityType === 'comment' ? 'написав у чаті завдання' : 'оновив завдання',
+          time: newestIssue.lastActivityAt || newestIssue.updatedAt || newestIssue.createdAt,
           projectId: newestIssue.projectId,
           id: newestIssue.id
         };
@@ -421,7 +428,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
       comments: commentsCount,
       lastAction: lastActionStr
     };
-  }, [issues, members, inProgressStatusIds]);
+  }, [currentUser, inProgressStatusIds, issues, members, orgLoading]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -461,7 +468,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
               )}
             </div>
             <p className="text-muted leading-tight line-clamp-1">
-              оновив завдання{' '}
+              {stats.lastAction.action}{' '}
               <Link
                 href={`/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
                 onClick={(e) => e.stopPropagation()}
@@ -498,11 +505,12 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 }
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
+function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [] }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
   const [saving,      setSaving]      = useState(false);
+  const [team,        setTeam]        = useState([]);
 
   const isFree      = orgPlan !== 'pro';
   const limitReached = isFree && activeProjectsCount >= 3;
@@ -519,6 +527,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
         description: description.trim(),
         visibility,
         organizationId: orgId,
+        team,
       };
 
       const token = await auth.currentUser?.getIdToken();
@@ -603,6 +612,24 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount }) {
               rows={3}
               className="w-full text-[14px] bg-canvas rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-ink transition-colors resize-none"
             />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Учасники</label>
+            <MultiSelect
+              value={team}
+              onChange={setTeam}
+              options={members.map(member => ({
+                value: member.id || member.uid,
+                label: member.name || member.displayName || member.email || 'Учасник',
+                avatar: member.avatar || member.photoURL || '',
+              }))}
+              placeholder="Додати учасників одразу"
+              searchPlaceholder="Знайти учасника..."
+              className="w-full"
+              dropdownClassName="!w-full !max-w-none"
+              triggerIcon={Users}
+            />
+            <p className="mt-1.5 text-[11px] text-muted">Ви як автор проєкту будете додані автоматично.</p>
           </div>
         </div>
       )}
@@ -884,15 +911,18 @@ export default function WorkspacePage() {
               </div>
             </Surface>
           ) : filteredProjects.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+            <Surface variant="panel" padding="md" className="w-full">
               <EmptyState
                 icon={Folder}
-                title="Проєкти не знайдені"
-                description="Спробуйте змінити параметри фільтрації"
+                title={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Ще немає проєктів' : 'Проєкти не знайдені'}
+                description={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Створіть перший проєкт, щоб організувати завдання та роботу команди.' : 'Спробуйте змінити параметри фільтрації.'}
+                action={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? 'Створити проєкт' : null}
+                onAction={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? () => setShowNewProject(true) : null}
+                className="min-h-[328px]"
               />
-            </div>
+            </Surface>
           ) : (
-            <Surface variant="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
+            <Surface variant="panel" padding="lg" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {filteredProjects.map((p, index) => (
                   <ProjectCard 
@@ -921,6 +951,7 @@ export default function WorkspacePage() {
         orgId={activeOrgId}
         orgPlan={activeOrg?.plan}
         activeProjectsCount={stats.total}
+        members={members}
       />
     )}
 

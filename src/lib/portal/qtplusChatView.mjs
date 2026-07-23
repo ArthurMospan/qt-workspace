@@ -28,7 +28,9 @@ export function toChatMessageView(raw, currentUid) {
   const role = typeof m.role === 'string' ? m.role : 'user';
   const system = role === 'system' || role === 'ai';
   const senderId = m.senderId || null;
-  const mine = !system && !!senderId && !!currentUid && senderId === currentUid;
+  // System activity can still have a real actor. QUICKTEAM+ aligns an action
+  // performed by the current user to the right, just like a regular message.
+  const mine = !!senderId && !!currentUid && senderId === currentUid;
   return {
     id: m.id || null,
     text: typeof m.text === 'string' ? m.text : '',

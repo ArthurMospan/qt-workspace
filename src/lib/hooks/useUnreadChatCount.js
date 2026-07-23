@@ -7,6 +7,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { channelUnreadCount, isVisibleChatChannel } from '@/lib/utils/workspaceChat.mjs';
 
 export function useUnreadChatCount() {
   const { currentUser, activeOrgId } = useAppContext();
@@ -21,7 +22,10 @@ export function useUnreadChatCount() {
       const state = {};
       snap.forEach(d => {
         const data = d.data();
-        state[data.channelId] = data.lastReadAt;
+        state[data.channelId] = {
+          lastReadAt: data.lastReadAt,
+          messageCount: Number(data.messageCount || 0),
+        };
       });
       setReadState(state);
     }, err => {
@@ -42,12 +46,10 @@ export function useUnreadChatCount() {
   }, [activeOrgId]);
 
   return useMemo(() => {
-    if (!readState) return 0;
-    return channels.filter(c => {
-      // Same exclusions as useWorkspaceChat: DM pseudo-channel, project channels, test channels
-      if (c.id === 'DM' || c.id?.startsWith('project_') || /^\d+$/.test(c.id)) return false;
-      if (!c.lastMessageAt || !readState[c.id]) return false;
-      return (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
-    }).length;
-  }, [channels, readState]);
+    if (!readState || !currentUser) return 0;
+    const uid = currentUser.id || currentUser.uid;
+    return channels
+      .filter(channel => isVisibleChatChannel(channel, uid))
+      .reduce((total, channel) => total + channelUnreadCount(channel, readState[channel.id], uid), 0);
+  }, [channels, currentUser, readState]);
 }

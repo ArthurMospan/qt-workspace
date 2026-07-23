@@ -15,7 +15,13 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
     let resource_type = 'raw';
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'heif', 'tiff', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
       resource_type = 'image';
-    } else if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext) || file.type.startsWith('video/')) {
+    } else if (
+      ['mp4', 'mov', 'avi', 'mkv', 'webm', 'mp3', 'm4a', 'wav', 'ogg', 'oga', 'aac', 'flac'].includes(ext)
+      || file.type.startsWith('video/')
+      || file.type.startsWith('audio/')
+    ) {
+      // Cloudinary serves audio through the `video` resource type. Uploading
+      // OGG as `raw` loses the useful audio content-type and Gemini rejects it.
       resource_type = 'video';
     }
 

@@ -6,10 +6,10 @@ import { formatMsgTime } from '@/lib/portal/qtplusChatView.mjs';
 function Avatar({ name, url }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase();
   if (url) {
-    return <img src={url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />;
+    return <img src={url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />;
   }
   return (
-    <div className="w-7 h-7 rounded-full bg-canvas text-muted text-[11px] font-semibold flex items-center justify-center shrink-0">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-muted">
       {initial}
     </div>
   );
@@ -23,9 +23,28 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
   const [confirming, setConfirming] = useState(false);
 
   if (view.system) {
+    const time = formatMsgTime(view.createdAtMs);
+    if (view.senderId) {
+      return (
+        <div className={`flex items-end gap-3 ${view.mine ? 'flex-row-reverse' : ''}`}>
+          {!view.mine && <div className="mb-5"><Avatar name={view.senderName} url={view.avatarUrl} /></div>}
+          <div className={`flex max-w-[85%] min-w-0 flex-col ${view.mine ? 'items-end' : 'items-start'}`}>
+            {!view.mine && <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{view.senderName}</span>}
+            <div className={`rounded-[16px] p-3 text-[14px] leading-[22px] ${
+              view.mine
+                ? 'rounded-br-none bg-[#303030] text-white'
+                : 'rounded-bl-none bg-[#f2f2f7] text-ink'
+            }`}>
+              <p className="whitespace-pre-wrap break-words">{view.text}</p>
+            </div>
+            {time && <span className="mt-1 px-1 text-[10px] font-medium text-faint">{time}</span>}
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex justify-center py-1">
-        <span className="text-[11px] text-muted bg-canvas rounded-full px-3 py-1 max-w-[80%] text-center">{view.text}</span>
+        <span className="max-w-[80%] rounded-full bg-white/75 px-3 py-1 text-center text-[11px] text-muted">{view.text}</span>
       </div>
     );
   }
@@ -36,13 +55,13 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
 
   if (view.mine) {
     return (
-      <div className="flex justify-end gap-2 group">
-        <div className="flex flex-col items-end max-w-[78%] min-w-0">
-          <div className="rounded-[14px] rounded-tr-[4px] bg-ink text-white px-3 py-2">
-            <p className="text-[13px] whitespace-pre-wrap break-words">{view.text}</p>
+      <div className="group flex flex-row-reverse gap-3">
+        <div className="flex max-w-[85%] min-w-0 flex-col items-end">
+          <div className="rounded-[16px] rounded-br-none bg-[#303030] p-3 text-white">
+            <p className="whitespace-pre-wrap break-words text-[14px] leading-[22px]">{view.text}</p>
           </div>
-          <div className="flex items-center gap-1 mt-[2px] pr-1">
-            {time && <span className="text-[10px] text-faint">{time}</span>}
+          <div className="mt-1 flex items-center gap-1.5">
+            {time && <span className="text-[10px] font-medium text-faint">{time}</span>}
             {readByOthers
               ? <CheckCheck size={12} className="text-muted" />
               : <Check size={12} className="text-faint" />}
@@ -74,14 +93,14 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
   }
 
   return (
-    <div className="flex gap-2">
-      <Avatar name={view.senderName} url={view.avatarUrl} />
-      <div className="flex flex-col items-start max-w-[78%] min-w-0">
-        {othersCount > 1 && <span className="text-[11px] text-muted mb-[1px] pl-1">{view.senderName}</span>}
-        <div className="rounded-[14px] rounded-tl-[4px] bg-canvas text-ink px-3 py-2">
-          <p className="text-[13px] whitespace-pre-wrap break-words">{view.text}</p>
+    <div className="flex items-end gap-3">
+      <div className="mb-5"><Avatar name={view.senderName} url={view.avatarUrl} /></div>
+      <div className="flex max-w-[85%] min-w-0 flex-col items-start">
+        {othersCount > 1 && <span className="mb-1 ml-1 text-[11px] font-bold text-ink">{view.senderName}</span>}
+        <div className="rounded-[16px] rounded-bl-none bg-white p-3 text-ink">
+          <p className="whitespace-pre-wrap break-words text-[14px] leading-[22px]">{view.text}</p>
         </div>
-        {time && <span className="text-[10px] text-faint mt-[2px] pl-1">{time}</span>}
+        {time && <span className="mt-1 pl-1 text-[10px] font-medium text-faint">{time}</span>}
       </div>
     </div>
   );

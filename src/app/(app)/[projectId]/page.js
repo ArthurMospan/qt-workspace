@@ -12,10 +12,11 @@ import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import { PageHeader } from '@/components/ui';
+import { EmptyState, PageHeader, Surface, Tabs } from '@/components/ui';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, Filter, Layers, Plug } from 'lucide-react';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, List, ClipboardList, Plug, Kanban } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -44,7 +45,7 @@ export default function BoardPage({ params }) {
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
-  const { members: organizationMembers } = useOrganization();
+  const { members: organizationMembers, inviteMember } = useOrganization();
 
   // Portal tab visible only when project is shared (synced to QT)
   const isShared = project?.visibility === 'shared';
@@ -73,6 +74,11 @@ export default function BoardPage({ params }) {
   });
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
+  const [boardView, setBoardView] = useState(() => {
+    if (typeof window === 'undefined') return 'kanban';
+    const stored = localStorage.getItem(`qt_project_view_${projectId}`);
+    return stored === 'list' ? 'list' : 'kanban';
+  });
 
   const canManageQtPlus = can(orgRole, 'edit:project_settings');
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
@@ -98,8 +104,9 @@ export default function BoardPage({ params }) {
       localStorage.setItem(`qt_board_assignee_${projectId}`, boardAssigneeFilter);
       localStorage.setItem(`qt_board_priority_${projectId}`, boardPriorityFilter);
       localStorage.setItem(`qt_board_type_${projectId}`, boardTypeFilter);
+      localStorage.setItem(`qt_project_view_${projectId}`, boardView);
     }
-  }, [boardSprintFilter, boardSwimlane, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, projectId]);
+  }, [boardSprintFilter, boardSwimlane, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, projectId]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -180,6 +187,7 @@ export default function BoardPage({ params }) {
       showToast('Задачу створено ✓');
     } catch (err) {
       showToast('Помилка: ' + err.message, 'error');
+      throw err;
     }
   }, [createIssue, showToast]); // eslint-disable-line
 
@@ -194,7 +202,7 @@ export default function BoardPage({ params }) {
     }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
-  const isBoard = activeTab === 'board';
+  const isBoard = activeTab === 'board' && boardView === 'kanban';
 
   return (
     <div className={`flex-1 h-full bg-transparent ${isBoard ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
@@ -302,8 +310,8 @@ export default function BoardPage({ params }) {
                   variant="ghost"
                 />
               </FilterBar>
-              {!isArchived && can(orgRole, 'edit:board_columns') && (
-                <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-2">
+                {!isArchived && boardView === 'kanban' && can(orgRole, 'edit:board_columns') && (
                   <Button
                     onClick={() => setShowConfigModal(true)}
                     icon={Settings2}
@@ -311,8 +319,16 @@ export default function BoardPage({ params }) {
                     style="secondary"
                     title="Налаштування дошки"
                   />
-                </div>
-              )}
+                )}
+                <Tabs
+                  tabs={[
+                    { id: 'kanban', icon: Kanban },
+                    { id: 'list', icon: List },
+                  ]}
+                  activeTab={boardView}
+                  onTabChange={setBoardView}
+                />
+              </div>
             </>
           ) : activeTab === 'analytics' ? (
             <FilterBar>
@@ -351,22 +367,48 @@ export default function BoardPage({ params }) {
           <div className="flex-1 flex items-center justify-center">
             <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>
-        ) : (
+        ) : boardView === 'kanban' ? (
           <div className="flex-1 min-h-[500px] flex flex-col">
-
-              <AgileBoard
-                issues={boardIssues}
-                members={members}
-                projectId={projectId}
-                project={project}
-                activeTimerIssueId={activeTimer?.issueId}
-                swimlane={boardSwimlane}
-                onAddIssue={handleAddIssue}
-                onMoveIssue={handleMoveIssue}
-                issueLinks={issueLinks}
-                isArchived={isArchived}
-              />
+            <AgileBoard
+              issues={boardIssues}
+              members={members}
+              projectId={projectId}
+              project={project}
+              activeTimerIssueId={activeTimer?.issueId}
+              swimlane={boardSwimlane}
+              onAddIssue={handleAddIssue}
+              onMoveIssue={handleMoveIssue}
+              issueLinks={issueLinks}
+              isArchived={isArchived}
+            />
           </div>
+        ) : (
+          <Surface variant="panel" padding="md" className="w-full">
+            {boardIssues.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="Завдань не знайдено"
+                description="Змініть фільтри або створіть нове завдання."
+                className="min-h-[328px] rounded-[12px] bg-white"
+              />
+            ) : (
+              <div className="flex flex-col gap-2">
+                {boardIssues.map(issue => (
+                  <TaskRow
+                    key={issue.id}
+                    issue={issue}
+                    issues={issues}
+                    issueLinks={issueLinks}
+                    members={members}
+                    sprints={sprints}
+                    projectId={projectId}
+                    projectName={project?.name}
+                    isTimerActive={activeTimer?.issueId === issue.id}
+                  />
+                ))}
+              </div>
+            )}
+          </Surface>
         )
       )}
 
@@ -381,6 +423,7 @@ export default function BoardPage({ params }) {
         onSubmit={handleCreateFullIssue}
         stages={project?.stages || []}
         teamMembers={members}
+        projectContext={project ? { id: project.id, name: project.name } : null}
         epics={issues.filter(i => i.type === 'epic')}
         sprints={sprints}
       />
@@ -403,6 +446,7 @@ export default function BoardPage({ params }) {
           projectId={projectId}
           project={project}
           canManage={can(orgRole, 'manage:team')}
+          inviteMember={inviteMember}
         />
       )}
 

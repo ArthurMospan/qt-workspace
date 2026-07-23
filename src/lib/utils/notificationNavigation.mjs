@@ -33,3 +33,23 @@ export function withNotificationOrganization(link, organizationId) {
   url.searchParams.set('org', organizationId.trim());
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+export function notificationDestination(notification) {
+  if (!notification || typeof notification !== 'object') return '';
+  const projectId = typeof notification.projectId === 'string' ? notification.projectId.trim() : '';
+  const issueId = typeof notification.issueId === 'string' ? notification.issueId.trim() : '';
+  if (projectId && issueId) {
+    return `/${encodeURIComponent(projectId)}/issue/${encodeURIComponent(issueId)}`;
+  }
+  const explicitLink = normalizeNotificationLink(notification.link);
+  if (explicitLink) return explicitLink;
+  if (projectId) return `/${encodeURIComponent(projectId)}`;
+  return '';
+}
+
+export function notificationDestinationWithOrganization(notification) {
+  return withNotificationOrganization(
+    notificationDestination(notification),
+    notification?.organizationId,
+  );
+}

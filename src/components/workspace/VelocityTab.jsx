@@ -3,7 +3,7 @@
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
-import { KpiCard } from '@/components/ui';
+import { EmptyState, KpiCard } from '@/components/ui';
 import { useWorkflowConfig, DEFAULT_TYPES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -244,6 +244,18 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       byProject,
     };
   }, [issues, projects, period, doneSet, now]);
+
+  if (issues.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <EmptyState
+          icon={Zap}
+          title="Немає даних про швидкість"
+          description="Завершені завдання сформують velocity, cycle time та інші тренди."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">

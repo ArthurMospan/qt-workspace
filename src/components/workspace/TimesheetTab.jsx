@@ -274,11 +274,11 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
             return (
               <button key={key} type="button" onClick={() => onSelectDay?.(d)}
                 title="Відкрити тиждень"
-                className={`rounded-[14px] p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${
-                  !inMonth ? 'bg-[#fafafa] opacity-45'
-                    : isToday ? 'bg-[#f0fdf4] hover:bg-[#e3f9ea]'
-                    : isWeekend ? 'bg-[#fafafa] hover:bg-[#f0f0f0]'
-                    : 'bg-canvas hover:bg-[#ececec]'
+                className={`rounded-[14px] border p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${
+                  !inMonth ? 'border-black/[0.03] bg-white/60 opacity-45'
+                    : isToday ? 'border-emerald-200 bg-white ring-2 ring-emerald-100 hover:border-emerald-300'
+                    : isWeekend ? 'border-black/[0.05] bg-white hover:border-black/10'
+                    : 'border-black/[0.05] bg-white hover:border-black/10 hover:shadow-sm'
                 }`}>
                 <span className={`text-[12px] font-bold ${isToday ? 'text-[#15803d]' : inMonth ? 'text-ink' : 'text-muted'}`}>
                   {d.getDate()}

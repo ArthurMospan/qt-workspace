@@ -30,7 +30,7 @@ export default function Counter({
 
     return (
       <span
-        className={`inline-block rounded-full shrink-0 animate-pulse ${dotSizes[size]} ${dotColors[status]} ${className}`}
+        className={`inline-block rounded-full shrink-0 ${dotSizes[size]} ${dotColors[status]} ${className}`}
       />
     );
   }
@@ -42,17 +42,9 @@ export default function Counter({
     lg: 'min-w-[24px] h-[24px] px-[8px] text-[11px] font-bold',
   };
 
-  const statusStyles = dark ? {
-    info: 'bg-[#818cf8] text-white',
-    danger: 'bg-[#f87171] text-white',
-    success: 'bg-[#4ade80] text-white',
-    muted: 'bg-[#a3a3a3] text-white',
-  } : {
-    info: 'bg-[#6366f1] text-white',
-    danger: 'bg-[#ef4444] text-white',
-    success: 'bg-[#10b981] text-white',
-    muted: 'bg-muted text-white',
-  };
+  const statusStyles = dark
+    ? { info: 'bg-white text-ink', danger: 'bg-white text-ink', success: 'bg-white text-ink', muted: 'bg-white text-ink' }
+    : { info: 'bg-ink text-white', danger: 'bg-ink text-white', success: 'bg-ink text-white', muted: 'bg-ink text-white' };
 
   // Format value (e.g. 99+)
   const displayValue = typeof value === 'number' && value > 99 ? '99+' : value;

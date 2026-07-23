@@ -9,6 +9,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import { useAppContext } from '@/lib/context/AppContext';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -28,6 +29,8 @@ function hexToRgba(hex, alpha) {
 
 export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive, isArchived }) {
   const router   = useRouter();
+  const { currentUser } = useAppContext();
+  const currentUserId = currentUser?.uid || currentUser?.id;
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();
@@ -82,6 +85,12 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
   const renderCardContent = (provided = {}, isDragging = false) => {
     const msgCount = issue.commentCount || issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
+    const hasUnreadChat = Boolean(
+      issue.lastCommentAt &&
+      issue.lastCommentAuthorId !== currentUserId &&
+      !(issue.lastCommentReadBy || []).includes(currentUserId)
+    );
+    const isMentioned = hasUnreadChat && (issue.lastCommentMentionIds || []).includes(currentUserId);
 
     return (
       <div
@@ -252,10 +261,12 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
               {/* Chat count indicator: totally flat, no background, no border, no shadow */}
               {msgCount > 0 && (
-                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${msgCount} повідомлень в чаті`}>
+                <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-muted/10">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
+                  {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
+                  {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                   <span className="font-mono">{msgCount}</span>
                 </div>
               )}

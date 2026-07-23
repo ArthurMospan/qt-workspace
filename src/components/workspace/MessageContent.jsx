@@ -1,8 +1,14 @@
 import React from 'react';
 import HoverCard from './HoverCard';
+import UserAvatar from '@/components/UserAvatar';
 
 export default function MessageContent({ text, members, searchTerm }) {
   if (!text) return null;
+  const memberNames = (members || [])
+    .map(member => member.name || member.displayName || member.email)
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  const escapedMemberNames = memberNames.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
   const highlightText = (content) => {
     if (!searchTerm) return content;
@@ -47,7 +53,10 @@ export default function MessageContent({ text, members, searchTerm }) {
         // We need to parse **, *, _, ~, `, @user, #issue, URLs
         // A simple regex approach that splits the string
 
-        const tokenRegex = /(\*\*.*?\*\*|\*.*?\*|_.*?_|~.*?~|`[^`]+`|@[a-zA-Zа-яА-ЯіІїЇєЄ0-9_]+|#[a-zA-Z0-9-]+|https?:\/\/[^\s]+)/g;
+        const mentionPattern = escapedMemberNames.length
+          ? `@(?:${escapedMemberNames.join('|')})`
+          : '@[^\\s]+';
+        const tokenRegex = new RegExp(`(\\*\\*.*?\\*\\*|\\*.*?\\*|_.*?_|~.*?~|\\x60[^\\x60]+\\x60|${mentionPattern}|#[a-zA-Z0-9-]+|https?:\\/\\/[^\\s]+)`, 'g');
         const parts = line.split(tokenRegex);
 
         return (
@@ -71,10 +80,17 @@ export default function MessageContent({ text, members, searchTerm }) {
                 return <code key={pIdx} className="bg-[#f0f0f0] text-[#e01e5a] px-1 py-0.5 rounded text-[13px] font-mono">{part.slice(1, -1)}</code>;
               }
               if (part.startsWith('@')) {
+                const memberName = part.slice(1);
+                const member = (members || []).find(item =>
+                  [item.name, item.displayName, item.email]
+                    .filter(Boolean)
+                    .some(value => value.toLowerCase() === memberName.toLowerCase())
+                );
                 return (
-                  <HoverCard key={pIdx} type="user" value={part.slice(1)} members={members}>
-                    <span className="bg-ink/10 text-ink font-bold px-1 rounded cursor-pointer hover:bg-ink/20 transition-colors">
-                      {part}
+                  <HoverCard key={pIdx} type="user" value={memberName} members={members}>
+                    <span className="inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink cursor-pointer hover:bg-black/[0.12] transition-colors">
+                      <span className="shrink-0"><UserAvatar user={member || { name: memberName }} size={18} /></span>
+                      <span className="truncate">{memberName}</span>
                     </span>
                   </HoverCard>
                 );

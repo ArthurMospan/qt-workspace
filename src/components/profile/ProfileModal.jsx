@@ -28,7 +28,8 @@ export default function ProfileModal() {
       isOpen={isOpen}
       onClose={handleClose}
       size="lg"
-      className="p-0 overflow-hidden" // removes padding to let ProfileView stretch — ProfileView renders its own close button
+      className="overflow-hidden"
+      bodyClassName="!p-0"
     >
       <div className="w-full h-[80vh] flex flex-col relative">
         {user ? (

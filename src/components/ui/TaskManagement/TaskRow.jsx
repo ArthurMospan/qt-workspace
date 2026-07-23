@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
+import { useAppContext } from '@/lib/context/AppContext';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -31,6 +32,8 @@ function fmtDate(raw) {
 
 export default function TaskRow({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], projectId, projectName, isTimerActive, onClick }) {
   const router = useRouter();
+  const { currentUser } = useAppContext();
+  const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();
 
@@ -59,6 +62,12 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   const subDone = (task.subtasks || []).filter(s => s.done).length;
 
   const msgCount = task.commentCount || task.commentsCount || task.comments?.length || (task.hasUnreadChat ? 1 : 0);
+  const hasUnreadChat = Boolean(
+    task.lastCommentAt &&
+    task.lastCommentAuthorId !== currentUserId &&
+    !(task.lastCommentReadBy || []).includes(currentUserId)
+  );
+  const isMentioned = hasUnreadChat && (task.lastCommentMentionIds || []).includes(currentUserId);
 
   // Generate dynamic, readable project prefix instead of generic WS-
   const getDisplayKey = () => {
@@ -156,10 +165,12 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
 
             {/* Chat Count */}
             {msgCount > 0 && (
-              <div className="flex items-center gap-[4px] text-[#4f46e5] text-[11px] font-bold select-none shrink-0" title={`${msgCount} повідомлень в чаті`}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-[#4f46e5]/10">
+              <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-black/5">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
+                {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
+                {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                 <span className="font-mono text-[10px]">{msgCount}</span>
               </div>
             )}

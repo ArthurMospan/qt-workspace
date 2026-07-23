@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  notificationDestination,
+  notificationDestinationWithOrganization,
   normalizeNotificationLink,
   withNotificationOrganization,
 } from '../src/lib/utils/notificationNavigation.mjs';
@@ -29,4 +31,36 @@ test('rejects links outside the workspace', () => {
 test('normalizes legacy workspace links', () => {
   assert.equal(withNotificationOrganization('/workspace/project-1/issue/issue-1', ''), '/project-1/issue/issue-1');
   assert.equal(withNotificationOrganization('/workspace?new=1', ''), '/?new=1');
+});
+
+test('task metadata wins over a stale notification link', () => {
+  assert.equal(
+    notificationDestination({
+      link: '/project-1?issue=OLD-1',
+      projectId: 'project-1',
+      issueId: 'issue-1',
+    }),
+    '/project-1/issue/issue-1',
+  );
+});
+
+test('derives a scoped task destination when an old notification has no link', () => {
+  assert.equal(
+    notificationDestinationWithOrganization({
+      projectId: 'project-1',
+      issueId: 'issue-1',
+      organizationId: 'org-1',
+    }),
+    '/project-1/issue/issue-1?org=org-1',
+  );
+});
+
+test('keeps a calendar event deep link scoped to the right organization', () => {
+  assert.equal(
+    notificationDestinationWithOrganization({
+      link: '/calendar?event=event-42',
+      organizationId: 'org-1',
+    }),
+    '/calendar?event=event-42&org=org-1',
+  );
 });

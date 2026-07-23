@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Users, AlertTriangle, Circle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
-import { KpiCard } from '@/components/ui';
+import { EmptyState, KpiCard } from '@/components/ui';
 import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 
@@ -116,12 +116,12 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
 
   if (stats.memberStats.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <Users size={36} className="text-line mx-auto mb-3" />
-          <p className="text-[14px] font-semibold text-faint">Немає даних про команду</p>
-          <p className="text-[12px] text-[#e0e0e0] mt-1">Призначте виконавців на завдання</p>
-        </div>
+      <div className="flex flex-1 items-center justify-center">
+        <EmptyState
+          icon={Users}
+          title="Немає даних про команду"
+          description="Призначте виконавців на завдання, щоб побачити їхнє навантаження."
+        />
       </div>
     );
   }

@@ -6,13 +6,17 @@ import { collection, doc, query, orderBy, onSnapshot, addDoc, serverTimestamp, s
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
-export function useWorkspaceChat(channelId, channelType = 'channel') {
+import { sendNotification } from '@/lib/hooks/useNotifications';
+import { channelUnreadCount } from '@/lib/utils/workspaceChat.mjs';
+
+export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId = null) {
   const {
     currentUser,
     activeOrgId
   } = useAppContext();
   const [messages, setMessages] = useState([]);
   const [channels, setChannels] = useState([]);
+  const [dmChannels, setDmChannels] = useState([]);
   const [activeChannelData, setActiveChannelData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [readState, setReadState] = useState({}); // { channelId: Timestamp }
@@ -31,7 +35,10 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
       const state = {};
       snap.forEach(doc => {
         const data = doc.data();
-        state[data.channelId] = data.lastReadAt;
+        state[data.channelId] = {
+          lastReadAt: data.lastReadAt,
+          messageCount: Number(data.messageCount || 0),
+        };
       });
       setReadState(state);
     }, err => {
@@ -62,13 +69,16 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     if (!activeOrgId) return;
     const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
     const unsubChannels = onSnapshot(qChannels, snap => {
-      // Filter out invalid/test channels
-      let channels = snap.docs.map(d => ({
+      const allChannels = snap.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })).filter(c => {
+      }));
+      setDmChannels(allChannels.filter(channel => channel.type === 'dm'));
+
+      // Filter out DMs, invalid/test channels and auto-generated project rooms.
+      let channels = allChannels.filter(c => {
         // Skip DM as channel, project channels, and obviously invalid names
-        if (c.id === 'DM' || c.id?.startsWith('project_')) return false;
+        if (c.type === 'dm' || c.id === 'DM' || c.id?.startsWith('project_')) return false;
         if (!c.name || c.name.length === 0) return false;
         // Skip test channels (single digit IDs like "1", "11")
         if (/^\d+$/.test(c.id)) return false;
@@ -208,19 +218,20 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     try {
       const uid = currentUser.id || currentUser.uid;
       const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
-
-      // Ensure channel exists and update metadata
+      // Keep channel metadata compatible with the deployed Firestore rules.
+      // Extra DM fields here used to make every send fail with
+      // "Missing or insufficient permissions".
       await setDoc(channelRef, {
         name: channelType === 'channel' ? channelId : 'DM',
         type: channelType === 'channel' ? 'public' : 'dm',
         lastMessageAt: serverTimestamp(),
         lastMessageText: text.trim().slice(0, 80),
-        lastMessageSender: currentUser.name || 'Користувач'
+        lastMessageSender: currentUser.name || 'Користувач',
       }, {
         merge: true
       });
       const messagesRef = collection(channelRef, 'messages');
-      await addDoc(messagesRef, {
+      const messageRef = await addDoc(messagesRef, {
         text: text.trim(),
         attachments: attachments,
         senderId: uid,
@@ -229,30 +240,51 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
         createdAt: serverTimestamp(),
         readBy: [uid]
       });
-
       // Mark this channel as read by the sender
       await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`), {
         lastReadAt: serverTimestamp(),
         channelId,
-        userId: uid
+        userId: uid,
       }, {
         merge: true
       });
 
-      // If DM, update activeDMs for both participants
+      // The current Firestore rules allow the sender to add themselves only to
+      // the recipient's active-DM document. Keep this best-effort so a sidebar
+      // bookkeeping failure can never cancel an already-sent message.
       if (channelType === 'dm') {
-        const parts = channelId.split('_');
-        for (const partnerId of parts) {
-          const others = parts.filter(p => p !== partnerId);
-          await setDoc(doc(db, 'organizations', activeOrgId, 'activeDMs', partnerId), {
-            partners: arrayUnion(...others)
-          }, {
-            merge: true
-          });
+        if (dmPartnerId) {
+          try {
+            const recipientDMRef = doc(db, 'organizations', activeOrgId, 'activeDMs', dmPartnerId);
+            await setDoc(recipientDMRef, {
+              partners: arrayUnion(uid)
+            }, {
+              merge: true
+            });
+          } catch (activeDMError) {
+            console.error('[workspace-chat] Failed to update recipient DM list:', activeDMError);
+          }
+
+          // Notification delivery is intentionally independent from Firestore
+          // sidebar state, otherwise one denied write suppresses the alert.
+          try {
+            await sendNotification({
+              userIds: [dmPartnerId],
+              type: 'chat_message',
+              title: currentUser.name || 'Нове приватне повідомлення',
+              body: text.trim() || 'Надіслано вкладення',
+              link: `/chat?dm=${encodeURIComponent(uid)}`,
+              organizationId: activeOrgId,
+              dedupeKey: `chat_${messageRef.id}`,
+            });
+          } catch (notificationError) {
+            console.error('[workspace-chat] DM notification failed:', notificationError);
+          }
         }
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
     }
   };
   const deleteMessage = async msgId => {
@@ -347,10 +379,12 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
     if (!currentUser || !activeOrgId || !cId) return;
     const uid = currentUser.id || currentUser.uid;
     try {
+      const channelSnapshot = await getDoc(doc(db, 'organizations', activeOrgId, 'channels', cId));
       await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${cId}`), {
         lastReadAt: serverTimestamp(),
         channelId: cId,
-        userId: uid
+        userId: uid,
+        messageCount: Number(channelSnapshot.data()?.messageCount || 0),
       }, {
         merge: true
       });
@@ -378,12 +412,12 @@ export function useWorkspaceChat(channelId, channelType = 'channel') {
 
   // Compute unread count for a channel
   const getUnreadCount = cId => {
-    if (!readState[cId]) return messages.length;
-    const lastReadAt = readState[cId]?.toMillis?.() ?? 0;
-    return messages.filter(m => (m.createdAt?.toMillis?.() ?? 0) > lastReadAt).length;
+    const channel = [...channels, ...dmChannels].find(item => item.id === cId);
+    return channelUnreadCount(channel, readState[cId], currentUser?.id || currentUser?.uid);
   };
   return {
     channels,
+    dmChannels,
     messages,
     loading,
     activeChannelData,

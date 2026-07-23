@@ -13,13 +13,13 @@ import SearchModal          from '@/components/SearchModal';
 import TopHeader            from '@/components/ui/Layout/TopHeader';
 import Segmented            from '@/components/ui/Segmented';
 import {
-  Bell, Search, Check, CheckCheck, MessageSquare, GitPullRequest,
-  UserCheck, AlertCircle, AtSign, CalendarClock, Settings, Trash2, Mail,
+  Bell, Search, Check, CheckCheck, MessageSquare, GitPullRequest, Zap,
+  UserCheck, AlertCircle, AtSign, CalendarClock, CalendarDays, Settings, Trash2, Mail,
   ChevronRight, X, Hash, ArrowLeft,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
-import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
@@ -27,7 +27,11 @@ const TYPE_CFG = {
   status_changed: { icon: GitPullRequest, color: '#10b981', label: 'Статус змінено' },
   mentioned:      { icon: AtSign,         color: '#f97316', label: 'Згадано' },
   deadline:       { icon: CalendarClock,  color: '#d97706', label: 'Дедлайн' },
+  chat_message:   { icon: MessageSquare,  color: '#525252', label: 'Повідомлення' },
   alert:          { icon: AlertCircle,    color: '#dc2626', label: 'Тривога' },
+  emergency:      { icon: Zap,            color: '#dc2626', label: 'Екстрений виклик' },
+  calendar_invite:{ icon: CalendarClock,  color: '#2563eb', label: 'Запрошення в календар' },
+  calendar_changed:{ icon: CalendarDays,  color: '#525252', label: 'Календар оновлено' },
   test:           { icon: Bell,           color: '#6366f1', label: 'Тест' },
 };
 
@@ -79,7 +83,7 @@ function NotifIcon({ n, size = 28 }) {
 
 // ── Detect header mode from pathname ────────────────────────────────
 function useHeaderMode(pathname, projects, breadcrumbs = []) {
-  const EXCLUDED = ['my', 'team', 'analytics', 'chat', 'settings', 'sprints'];
+  const EXCLUDED = ['my', 'team', 'analytics', 'calendar', 'chat', 'settings', 'sprints'];
 
   if (!pathname) return { mode: 'default', project: null };
 
@@ -111,6 +115,9 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
   }
   if (pathname.startsWith('/analytics')) {
     return { mode: 'search', project: null, placeholder: 'Пошук в аналітиці...' };
+  }
+  if (pathname.startsWith('/calendar')) {
+    return { mode: 'search', project: null, placeholder: 'Пошук у календарі...' };
   }
   if (pathname.startsWith('/settings')) {
     return { mode: 'minimal', label: 'Налаштування' };
@@ -154,6 +161,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
   const scopedNotifications = notifications.filter(n => n.organizationId === activeOrgId);
   const unreadCount = scopedNotifications.filter(n => !n.read).length;
+  const hasEmergency = scopedNotifications.some(n => n.type === 'emergency' && !n.read);
   const shownNotifications = notifFilter === 'unread'
     ? scopedNotifications.filter(n => !n.read)
     : scopedNotifications;
@@ -182,7 +190,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       showToast('Ви більше не маєте доступу до організації цього сповіщення', 'error');
       return;
     }
-    const link = withNotificationOrganization(n.link, n.organizationId);
+    const link = notificationDestinationWithOrganization(n);
     if (!link) {
       showToast('Посилання у сповіщенні недійсне', 'error');
       return;
@@ -216,8 +224,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               bellOpen ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'
             } ${unreadCount > 0 ? 'animate-[bellShake_0.4s_ease]' : ''}`}
           >
-            <Bell size={18} />
-            {unreadCount > 0 && (
+            {hasEmergency ? <span className="animate-bounce text-[16px]">🔥</span> : <Bell size={18} />}
+            {unreadCount > 0 && !hasEmergency && (
               <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
@@ -281,7 +289,9 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                     </p>
                     {group.items.map(n => (
                       <div key={n.id} onClick={() => handleNotifClick(n)}
-                        className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${!n.read ? 'bg-[#f5f7ff]' : ''}`}>
+                        className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
+                          n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
+                        }`}>
                         <NotifIcon n={n} />
                         <div className="flex-1 min-w-0">
                           <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
@@ -379,7 +389,9 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         const cfg = TYPE_CFG[liveNotif.type] || TYPE_CFG.assigned;
         return (
           <div
-            className="fixed bottom-[72px] md:bottom-5 right-[12px] md:right-[24px] z-[100] w-[min(320px,calc(100vw-24px))] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+            className={`fixed bottom-[72px] md:bottom-5 right-[12px] md:right-[24px] z-[100] w-[min(320px,calc(100vw-24px))] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden ${
+              liveNotif.type === 'emergency' ? 'border-2 border-red-500' : 'border border-[#f0f0f0]'
+            }`}
             style={{ animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)' }}
           >
             <div className="flex items-start gap-3 px-4 py-4">
@@ -435,6 +447,9 @@ export default function WorkspaceHeader() {
   const setSprintSearch = useWorkspaceStore(s => s.setSprintSearch);
   const analyticsSearch = useWorkspaceStore(s => s.analyticsSearch);
   const setAnalyticsSearch = useWorkspaceStore(s => s.setAnalyticsSearch);
+  const calendarSearch = useWorkspaceStore(s => s.calendarSearch);
+  const setCalendarSearch = useWorkspaceStore(s => s.setCalendarSearch);
+  const chatOnlineUsers = useWorkspaceStore(s => s.chatOnlineUsers);
 
   const router   = useRouter();
   const pathname = usePathname();
@@ -452,12 +467,34 @@ export default function WorkspaceHeader() {
   // Client-side deadline reminders (24h before due + daily for overdue)
   useDeadlineReminders(uid, activeOrgId);
 
-  // Reset project search when leaving project page
+  // A search belongs to the page where it was entered. Clear every contextual
+  // query on navigation so text from Chat/Team/Analytics never leaks into the
+  // next screen and silently filters unrelated content.
   useEffect(() => {
     queueMicrotask(() => {
       setProjectSearch(false);
+      setProjectSearchQuery('');
+      setChatSearch('');
+      setTeamSearch('');
+      setWorkspaceSearch('');
+      setMyTaskSearch('');
+      setSprintSearch('');
+      setAnalyticsSearch('');
+      setCalendarSearch('');
+      setGlobalQuery('');
+      setShowSearch(false);
     });
-  }, [pathname]);
+  }, [
+    pathname,
+    setAnalyticsSearch,
+    setCalendarSearch,
+    setChatSearch,
+    setMyTaskSearch,
+    setProjectSearchQuery,
+    setSprintSearch,
+    setTeamSearch,
+    setWorkspaceSearch,
+  ]);
 
   const contextualSearchValue = projectSearch
     ? projectSearchQuery
@@ -471,6 +508,8 @@ export default function WorkspaceHeader() {
             ? sprintSearch
             : pathname.startsWith('/analytics')
               ? analyticsSearch
+              : pathname.startsWith('/calendar')
+                ? calendarSearch
               : pathname === '/'
                 ? workspaceSearch
                 : globalQuery;
@@ -495,6 +534,8 @@ export default function WorkspaceHeader() {
             setSprintSearch(q);
           } else if (pathname.startsWith('/analytics')) {
             setAnalyticsSearch(q);
+          } else if (pathname.startsWith('/calendar')) {
+            setCalendarSearch(q);
           } else if (pathname === '/') {
             setWorkspaceSearch(q);
           } else {
@@ -521,6 +562,8 @@ export default function WorkspaceHeader() {
             setSprintSearch('');
           } else if (pathname.startsWith('/analytics')) {
             setAnalyticsSearch('');
+          } else if (pathname.startsWith('/calendar')) {
+            setCalendarSearch('');
           } else if (pathname === '/') {
             setWorkspaceSearch('');
           } else {
@@ -532,7 +575,8 @@ export default function WorkspaceHeader() {
         projectSearchActive={projectSearch}
         onProjectSearchToggle={() => setProjectSearch(true)}
         breadcrumbs={breadcrumbs}
-        onlineUsers={useWorkspaceStore.getState().chatOnlineUsers || []}
+        onlineUsers={chatOnlineUsers}
+        onOnlineUserClick={user => router.push(`/chat?dm=${encodeURIComponent(user.id || user.uid)}`)}
         rightContent={<WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} mode={mode} />}
       />
 

@@ -5,10 +5,10 @@ import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
   Trash2, X, Pin, ChevronDown, Info, Users, UserPlus, ArrowLeft
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import Button from '@/components/ui/Button';
-import { useConfirm, EmptyState } from '@/components/ui';
+import { useConfirm, EmptyState, Counter } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -22,6 +22,9 @@ import {
 } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
+import { channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
+import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function timeAgo(ts) {
@@ -75,6 +78,7 @@ function MessageBubble({
     || ((msg.createdAt?.toMillis?.() ?? 0) - (prevMsg.createdAt?.toMillis?.() ?? 0) > 300000);
 
   const isMe = msg.senderId === myUid;
+  const senderMember = members?.find(member => (member.id || member.uid) === msg.senderId);
 
   // Close emoji picker on outside click
   useEffect(() => {
@@ -118,7 +122,7 @@ function MessageBubble({
             className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
             title="Переглянути профіль"
           >
-            <UserAvatar user={{ name: msg.user, avatar: members?.find(m => (m.id || m.uid) === msg.senderId)?.avatar || msg.avatar }} size={36} />
+            <UserAvatar user={{ name: msg.user, avatar: senderMember?.avatar || msg.avatar }} size={36} />
           </button>
         ) : (
           <span className={`text-[10px] text-muted leading-[1.8] pt-1 transition-opacity ${showActions ? 'opacity-100' : 'opacity-0'}`}>
@@ -133,7 +137,11 @@ function MessageBubble({
           <div className="flex items-baseline gap-2 mb-0.5">
             <span className="font-semibold text-[14px] text-ink flex items-center gap-1">
               {msg.user}
-              {members?.find(m => (m.id || m.uid) === msg.senderId)?.statusEmoji && <span>{members.find(m => (m.id || m.uid) === msg.senderId).statusEmoji}</span>}
+              {senderMember?.statusEmoji && (
+                <span className="cursor-help" title={senderMember.status || 'Статус користувача'}>
+                  {senderMember.statusEmoji}
+                </span>
+              )}
             </span>
             <span className="text-[11px] text-muted">{msg.time}</span>
             {msg.isPinned && (
@@ -240,7 +248,7 @@ function MessageBubble({
               <Smile size={15} />
             </button>
             {showEmoji && (
-              <div ref={emojiPickerRef} className="absolute right-0 top-[calc(100%+8px)] z-50 shadow-2xl rounded-2xl overflow-hidden">
+              <div ref={emojiPickerRef} className="absolute right-0 bottom-[calc(100%+8px)] z-[70] shadow-2xl rounded-2xl overflow-hidden">
                 <EmojiPicker
                   onEmojiClick={(d) => { onReact(msg.id, d.emoji); setShowEmoji(false); setShowActions(false); }}
                   autoFocusSearch={false}
@@ -305,10 +313,12 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
   const [mentionType, setMentionType] = useState(null);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionCursor, setMentionCursor] = useState(0);
+  const [mentionStart, setMentionStart] = useState(-1);
   const textareaRef = useRef(null);
   const fileRef = useRef(null);
   const emojiRef = useRef(null);
   const emojiBtnRef = useRef(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     if (!showEmoji) return;
@@ -332,20 +342,27 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
     // Mention detection
     const cursor = e.target.selectionStart;
     const before = val.slice(0, cursor);
-    const matchUser = before.match(/@([a-zA-Zа-яА-ЯіІїЇєЄ0-9_]*)$/);
+    const matchUser = before.match(/(?:^|[\s([{])([@"])([^@\n"]*)$/u);
     if (matchUser) {
       setMentionType('user');
-      setMentionQuery(matchUser[1].toLowerCase());
+      setMentionQuery(matchUser[2].toLowerCase());
       setMentionCursor(cursor);
+      setMentionStart(cursor - matchUser[2].length - 1);
     } else {
       setMentionType(null);
       setMentionQuery('');
+      setMentionStart(-1);
     }
     // Notify parent about typing
     if (onTyping) onTyping();
   };
 
   const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && mentionType === 'user' && filteredMembers.length > 0) {
+      e.preventDefault();
+      insertMention(filteredMembers[0]);
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -357,7 +374,8 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
   };
 
   const handleSend = async () => {
-    if (!text.trim() && attachments.length === 0) return;
+    if ((!text.trim() && attachments.length === 0) || sendingRef.current) return;
+    sendingRef.current = true;
     setUploading(true);
     let uploaded = [];
     if (attachments.length > 0) {
@@ -366,15 +384,22 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
       } catch (e) {
         console.error('Upload error', e);
         setUploading(false);
+        sendingRef.current = false;
         return;
       }
     }
-    await onSend(text, uploaded);
-    setText('');
-    setAttachments([]);
-    setUploading(false);
-    setMentionType(null);
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    try {
+      await onSend(text, uploaded);
+      setText('');
+      setAttachments([]);
+      setMentionType(null);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    } catch (error) {
+      console.error('[workspace-chat] Send failed:', error);
+    } finally {
+      setUploading(false);
+      sendingRef.current = false;
+    }
   };
 
   const handleFiles = (e) => {
@@ -386,7 +411,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
 
   const insertMention = (member) => {
     const name = member.name || member.email;
-    const before = text.slice(0, mentionCursor - mentionQuery.length - 1);
+    const before = text.slice(0, mentionStart);
     const after = text.slice(mentionCursor);
     const newText = `${before}@${name} ${after}`;
     setText(newText);
@@ -395,7 +420,7 @@ function MessageInput({ onSend, onTyping, placeholder = 'Написати пов
   };
 
   const filteredMembers = mentionType === 'user'
-    ? members.filter(m => (m.name || m.email || '').toLowerCase().includes(mentionQuery))
+    ? members.filter(m => `${m.name || m.displayName || ''} ${m.email || ''}`.toLowerCase().includes(mentionQuery.trim()))
     : [];
 
   const canSend = (text.trim() || attachments.length > 0) && !uploading;
@@ -858,11 +883,15 @@ function ChannelInfoSidebar({
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ChatPage() {
   const { currentUser, projects, activeOrgId } = useAppContext();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { members } = useOrganization();
   const showToast = useWorkspaceStore(s => s.showToast);
   const chatSearch = useWorkspaceStore(s => s.chatSearch);
   const setChatSearch = useWorkspaceStore(s => s.setChatSearch);
   const setChatOnlineUsers = useWorkspaceStore(s => s.setChatOnlineUsers);
+  const notifications = useWorkspaceStore(s => s.notifications);
+  const markNotificationRead = useWorkspaceStore(s => s.notificationActions?.markRead);
 
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   // Mobile single-pane mode: 'list' (channels) або 'chat' (розмова); md+ показує обидві панелі
@@ -890,23 +919,33 @@ export default function ChatPage() {
 
   const getRoomId = useCallback(() => {
     if (activeChannel.type === 'channel') return activeChannel.id;
-    const other = activeChannel.id;
-    if (!myUid || !other) return 'general';
-    return [myUid, other].sort().join('_');
+    return directMessageRoomId(myUid, activeChannel.id) || 'general';
   }, [activeChannel, myUid]);
 
   const {
-    channels, messages, loading, activeChannelData,
+    channels, dmChannels, messages, loading, activeChannelData,
     activeThreadId, threadMessages, activeDMs, readState,
     sendMessage, deleteMessage, editMessage, toggleReaction,
     createChannel, setTyping, openThread, closeThread,
     sendThreadMessage, markAsRead, deleteReply
-  } = useWorkspaceChat(getRoomId(), activeChannel.type);
+  } = useWorkspaceChat(getRoomId(), activeChannel.type, activeChannel.type === 'dm' ? activeChannel.id : null);
 
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const typingRef = useRef(null);
   const channelInputRef = useRef(null);
+
+  // Notification links open the exact conversation instead of dropping the
+  // user on #general.
+  useEffect(() => {
+    const dmUserId = searchParams.get('dm');
+    const channelId = searchParams.get('channel');
+    if (dmUserId && dmUserId !== myUid) {
+      queueMicrotask(() => openChannel({ id: dmUserId, type: 'dm' }));
+    } else if (channelId) {
+      queueMicrotask(() => openChannel({ id: channelId, type: 'channel' }));
+    }
+  }, [myUid, searchParams]);
 
   // Presence
   useEffect(() => {
@@ -966,7 +1005,39 @@ export default function ChatPage() {
     }, 100);
   }, [activeChannel.id, activeChannel.type]); // eslint-disable-line
 
+  // Messages received while the conversation is already open are read
+  // immediately; they must not reappear as a phantom sidebar badge.
+  useEffect(() => {
+    if (!messages.length || document.visibilityState !== 'visible') return;
+    markAsRead(getRoomId());
+  }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (activeChannel.type !== 'dm' || document.visibilityState !== 'visible' || !markNotificationRead) return;
+    const unreadForConversation = notifications.filter(notification =>
+      notification.type === 'chat_message'
+      && !notification.read
+      && notification.organizationId === activeOrgId
+      && notification.actorId === activeChannel.id);
+    if (unreadForConversation.length === 0) return;
+    Promise.allSettled(unreadForConversation.map(notification => markNotificationRead(notification.id)));
+  }, [activeChannel.id, activeChannel.type, activeOrgId, markNotificationRead, notifications]);
+
   // DMs list
+  const unreadDMNotifications = useMemo(() => {
+    const counts = new Map();
+    notifications.forEach(notification => {
+      if (
+        notification.type !== 'chat_message'
+        || notification.read
+        || notification.organizationId !== activeOrgId
+        || !notification.actorId
+      ) return;
+      counts.set(notification.actorId, (counts.get(notification.actorId) || 0) + 1);
+    });
+    return counts;
+  }, [activeOrgId, notifications]);
+
   const dms = useMemo(() => {
     const activeDMSet = new Set(activeDMs);
     if (activeChannel.type === 'dm') activeDMSet.add(activeChannel.id);
@@ -979,10 +1050,19 @@ export default function ChatPage() {
       return {
         id,
         name: m.name || m.email,
-        online: lastActive && (now - new Date(lastActive).getTime() < 120000),
+        online: lastActive && (now - new Date(lastActive).getTime() < 15 * 60 * 1000),
         avatar: m.avatar,
         isActive: activeDMSet.has(id),
-        statusEmoji: m.statusEmoji
+        statusEmoji: m.statusEmoji,
+        status: m.status,
+        unreadCount: Math.max(
+          unreadDMNotifications.get(id) || 0,
+          channelUnreadCount(
+            dmChannels.find(channel => channel.id === directMessageRoomId(myUid, id)),
+            readState[directMessageRoomId(myUid, id)],
+            myUid,
+          ),
+        ),
       };
     })
     .sort((a, b) => {
@@ -990,16 +1070,31 @@ export default function ChatPage() {
       if (a.isActive !== b.isActive) return b.isActive ? 1 : -1;
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [activeDMs, activeChannel.id, activeChannel.type, members, myUid, now, presenceMap]);
+  }, [activeDMs, activeChannel.id, activeChannel.type, dmChannels, members, myUid, now, presenceMap, readState, unreadDMNotifications]);
 
   const isActive = (id) => activeChannel.id === id;
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
   const currentChannel = channels.find(c => c.id === activeChannel.id);
+  const mentionMembers = useMemo(() => {
+    if (activeChannel.type === 'dm') {
+      return members.filter(member => (member.id || member.uid) === activeChannel.id);
+    }
+    if (currentChannel?.members?.length) {
+      return members.filter(member => currentChannel.members.includes(member.id || member.uid));
+    }
+    return members;
+  }, [activeChannel.id, activeChannel.type, currentChannel, members]);
 
   // Sync online users to global header
   const onlineUsersForHeader = useMemo(() => dms
       .filter(u => u.online)
-      .map(u => ({ name: u.name, avatar: u.avatar })), [dms]);
+      .map(u => ({
+        id: u.id,
+        name: u.name,
+        avatar: u.avatar,
+        status: u.status,
+        statusEmoji: u.statusEmoji,
+      })), [dms]);
   useEffect(() => {
     setChatOnlineUsers(onlineUsersForHeader);
   }, [onlineUsersForHeader, setChatOnlineUsers]);
@@ -1036,7 +1131,36 @@ export default function ChatPage() {
   const handleSendMessage = async (text, attachments) => {
     clearTimeout(typingRef.current);
     setTyping(false);
-    await sendMessage(text, attachments);
+    try {
+      await sendMessage(text, attachments);
+      if (activeChannel.type === 'channel') {
+        const mentionedUserIds = extractMentionedUserIds(text, mentionMembers, myUid);
+        if (mentionedUserIds.length) {
+          try {
+            await sendNotification({
+              userIds: mentionedUserIds,
+              type: 'mentioned',
+              title: `${currentUser?.name || 'Колега'} згадав вас у чаті`,
+              body: text.trim().slice(0, 500),
+              link: `/chat?channel=${encodeURIComponent(activeChannel.id)}`,
+              organizationId: activeOrgId,
+              dedupeKey: `channel_mention_${activeChannel.id}_${Date.now()}`,
+            });
+          } catch (notificationError) {
+            console.error('[workspace-chat] Mention notification failed:', notificationError);
+            showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
+          }
+        }
+      }
+    } catch (error) {
+      showToast(
+        error?.code === 'permission-denied'
+          ? 'Немає дозволу на надсилання в цей чат'
+          : 'Не вдалося надіслати повідомлення',
+        'error',
+      );
+      throw error;
+    }
   };
 
   const handleTyping = () => {
@@ -1120,8 +1244,8 @@ export default function ChatPage() {
                     return true;
                   })
                   .map(c => {
-                    const hasUnread = readState[c.id] && c.lastMessageAt &&
-                      (c.lastMessageAt?.toMillis?.() ?? 0) > (readState[c.id]?.toMillis?.() ?? 0);
+                    const unreadCount = channelUnreadCount(c, readState[c.id], myUid);
+                    const hasUnread = unreadCount > 0;
                     const active = isActive(c.id);
                     return (
                       <button
@@ -1138,7 +1262,7 @@ export default function ChatPage() {
                           {c.name}
                         </span>
                         {hasUnread && !active && (
-                          <span className="w-2 h-2 rounded-full bg-ink shrink-0" />
+                          <Counter value={unreadCount} size="sm" status="muted" className="shrink-0" />
                         )}
                       </button>
                     );
@@ -1176,10 +1300,10 @@ export default function ChatPage() {
                         </div>
                         <span className="text-[13px] flex-1 truncate flex items-center gap-1">
                           {u.name}
-                          {u.statusEmoji && <span>{u.statusEmoji}</span>}
+                          {u.statusEmoji && <span className="cursor-help" title={u.status || 'Статус користувача'}>{u.statusEmoji}</span>}
                         </span>
-                        {u.online && !active && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0" />
+                        {u.unreadCount > 0 && !active && (
+                          <Counter value={u.unreadCount} size="sm" status="muted" className="shrink-0" />
                         )}
                       </button>
                     );
@@ -1223,7 +1347,14 @@ export default function ChatPage() {
                     : (
                       <>
                         {dms.find(d => d.id === activeChannel.id)?.name || 'Особисті'}
-                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && <span>{dms.find(d => d.id === activeChannel.id).statusEmoji}</span>}
+                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && (
+                          <span
+                            className="cursor-help"
+                            title={dms.find(d => d.id === activeChannel.id)?.status || 'Статус користувача'}
+                          >
+                            {dms.find(d => d.id === activeChannel.id).statusEmoji}
+                          </span>
+                        )}
                       </>
                     )}
                 </h2>
@@ -1247,10 +1378,13 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {/* Channel Info Toggle Button */}
-              {activeChannel.type === 'channel' && (
-                <button
+              {/* Conversation info */}
+              <button
                   onClick={() => {
+                    if (activeChannel.type === 'dm') {
+                      router.push(`/chat?dm=${encodeURIComponent(activeChannel.id)}&member=${encodeURIComponent(activeChannel.id)}`);
+                      return;
+                    }
                     setShowChannelInfo(v => !v);
                     closeThread();
                   }}
@@ -1259,11 +1393,10 @@ export default function ChatPage() {
                       ? 'text-ink bg-canvas'
                       : 'text-muted hover:text-ink hover:bg-canvas'
                   }`}
-                  title="Про канал"
+                  title={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
                 >
                   <Info size={16} />
                 </button>
-              )}
             </div>
 
             {/* Search Results Banner */}
@@ -1366,8 +1499,10 @@ export default function ChatPage() {
             <MessageInput
               onSend={handleSendMessage}
               onTyping={handleMainTyping}
-              placeholder={`Написати в ${activeChannel.type === 'channel' ? '#' : ''}${activeChannel.type === 'channel' ? (channels.find(c => c.id === activeChannel.id)?.name || 'general') : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті')}...`}
-              members={members}
+              placeholder={activeChannel.type === 'channel'
+                ? `Написати в #${channels.find(c => c.id === activeChannel.id)?.name || 'general'}...`
+                : 'Написати повідомлення...'}
+              members={mentionMembers}
             />
           </div>
 
@@ -1377,7 +1512,7 @@ export default function ChatPage() {
               parentMsg={activeThreadParent}
               replies={threadMessages}
               myUid={myUid}
-              members={members}
+              members={mentionMembers}
               onSend={handleSendThread}
               onDeleteReply={(replyId) => deleteReply(activeThreadId, replyId)}
               onClose={closeThread}

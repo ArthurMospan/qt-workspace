@@ -1,6 +1,5 @@
 'use client';
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Plug, ExternalLink, MoreVertical, Link2, Unlink } from 'lucide-react';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
@@ -12,6 +11,7 @@ import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
 import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
+import EmptyState from '@/components/ui/Feedback/EmptyState';
 
 function LinkedRow({ name, stale, menuItems, href }) {
   return (
@@ -129,7 +129,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
   if (!canManage) {
     if (!view.linked) return null;
     return (
-      <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
+      <div className="flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] bg-canvas p-[16px]">
         <LinkedRow name={view.linkedName} href={portalProjectUrl} />
         {portalUser && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
       </div>
@@ -138,7 +138,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
 
   // ── Owner/admin ──
   return (
-    <div className="flex-1 min-h-[240px] py-6 flex flex-col gap-4">
+    <div className="flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] bg-canvas p-[16px]">
       {view.linked ? (
         <>
           <LinkedRow
@@ -177,17 +177,12 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
       ) : sessionLoading || projectsLoading ? (
         <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>
       ) : (!portalUser || sessionError === 'not_connected') ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-[13px] text-muted">
-            Підключіть свій акаунт QuickTeam+, щоб привʼязати проєкт.
-          </p>
-          <Link
-            href="/settings?section=qtplus"
-            className="inline-flex items-center gap-1 text-[13px] text-ink font-semibold hover:underline"
-          >
-            Перейти до Налаштувань <ExternalLink size={12} />
-          </Link>
-        </div>
+        <EmptyState
+          icon={Plug}
+          title="Підключіть QuickTeam+"
+          description="Підключіть акаунт, щоб прив’язати проєкт і працювати з матеріалами та чатом."
+          className="min-h-[280px] rounded-[12px] bg-white"
+        />
       ) : sessionError === 'grant_invalid' ? (
         <p className="text-[13px] text-red-500">
           Підключення застаріло — підключіть QuickTeam+ заново в Налаштуваннях.
@@ -195,7 +190,12 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
       ) : sessionError ? (
         <p className="text-[13px] text-muted">Не вдалося зʼєднатися з QuickTeam+. Спробуйте пізніше.</p>
       ) : options.length === 0 ? (
-        <p className="text-[13px] text-muted">У вашому акаунті QuickTeam+ немає доступних проєктів.</p>
+        <EmptyState
+          icon={Plug}
+          title="Немає доступних проєктів"
+          description="У підключеному акаунті QuickTeam+ поки немає проєктів, які можна прив’язати."
+          className="min-h-[280px] rounded-[12px] bg-white"
+        />
       ) : (
         <div className="max-w-[560px] flex flex-col gap-3">
           <p className="text-[13px] text-muted">

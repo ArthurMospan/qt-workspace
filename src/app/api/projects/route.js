@@ -5,7 +5,7 @@ import { routeErrorResponse } from '@/lib/server/apiErrors';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { name, description, visibility, organizationId } = body;
+    const { name, description, visibility, organizationId, team = [] } = body;
 
     if (!name || !organizationId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -21,6 +21,16 @@ export async function POST(req) {
 
     const userId = authorization.user.uid;
     const db = getAdminDb();
+    const requestedTeam = [...new Set(
+      (Array.isArray(team) ? team : [])
+        .filter(memberId => typeof memberId === 'string' && memberId.trim())
+        .map(memberId => memberId.trim())
+    )].slice(0, 100);
+    const memberRefs = requestedTeam.map(memberId =>
+      db.collection('organizations').doc(organizationId).collection('members').doc(memberId)
+    );
+    const memberSnaps = memberRefs.length ? await db.getAll(...memberRefs) : [];
+    const validTeam = memberSnaps.filter(snapshot => snapshot.exists).map(snapshot => snapshot.id);
 
     const orgRef = db.collection('organizations').doc(organizationId);
     const projectRef = db.collection('projects').doc();
@@ -29,7 +39,7 @@ export async function POST(req) {
       description: description ? description.trim() : '',
       visibility: visibility === 'shared' ? 'shared' : 'internal',
       organizationId,
-      team: [userId],
+      team: [...new Set([userId, ...validTeam])],
       status: 'active',
       stagesCount: 4,
       issueCounter: 0,

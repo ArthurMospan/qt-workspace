@@ -148,6 +148,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         link: `/${projectId}/issue/${result.id}`,
         issueId: result.id,
         projectId,
+        organizationId: activeOrgId,
         actor: { id: userId || '', name: userName || '' }
       }).catch(() => {});
     }
@@ -291,6 +292,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
           link: `/${projectId}/issue/${issueId}`,
           issueId,
           projectId,
+          organizationId: activeOrgId,
           actor: { id: userId || '', name: userName || '' }
         }).catch(() => {});
       }
@@ -307,7 +309,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [issues, projectId, doneStatusIds]);
+  }, [activeOrgId, issues, projectId, doneStatusIds]);
   return {
     issues,
     issueLinks,

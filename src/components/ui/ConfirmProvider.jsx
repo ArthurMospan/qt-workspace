@@ -59,6 +59,7 @@ export function ConfirmProvider({ children }) {
         onClose={handleCancel}
         title={title}
         size="sm"
+        presentation="dialog"
         footer={
           <>
             <Button style="secondary" size="md" onClick={handleCancel}>{cancelText}</Button>
