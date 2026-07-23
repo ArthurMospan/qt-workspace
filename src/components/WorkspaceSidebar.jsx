@@ -62,8 +62,11 @@ export default function WorkspaceSidebar() {
     if (!isBranded || flipped) return;
     e.preventDefault();
     setFlipped(true);
+    setTimeout(() => {
+      router.push('/');
+    }, 50);
     flipTimeoutRef.current = setTimeout(() => setFlipped(false), 1000);
-  }, [isBranded, flipped]);
+  }, [isBranded, flipped, router]);
 
   useEffect(() => {
     return () => {
@@ -270,8 +273,8 @@ export default function WorkspaceSidebar() {
                 backgroundColor: active ? 'var(--sb-active)' : 'transparent',
                 color: active ? 'var(--sb-text)' : 'var(--sb-muted)',
               }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = theme.hover; e.currentTarget.style.color = theme.text; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = theme.muted; } }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = 'var(--sb-hover)'; e.currentTarget.style.color = 'var(--sb-text)'; } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--sb-muted)'; } }}
             >
               <Tooltip content={collapsed ? label : null} position="right" className="w-full h-full flex items-center">
                 <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
@@ -299,8 +302,8 @@ export default function WorkspaceSidebar() {
                 onClick={() => router.push('/?new=1')}
                 className="transition-colors" title="Новий проєкт"
                 style={{ color: 'var(--sb-muted-header)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = theme.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = theme.mutedHeader || theme.muted; }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--sb-text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--sb-muted-header)'; }}
               >
                 <Plus size={16} />
               </button>
@@ -319,8 +322,8 @@ export default function WorkspaceSidebar() {
                     backgroundColor: active ? 'var(--sb-active)' : 'transparent',
                     color: active ? 'var(--sb-text)' : 'var(--sb-muted-project)',
                   }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = theme.hover; e.currentTarget.style.color = theme.text; } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = (theme.mutedProject || theme.muted); } }}
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = 'var(--sb-hover)'; e.currentTarget.style.color = 'var(--sb-text)'; } }}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--sb-muted-project)'; } }}
                 >
                   <Tooltip content={collapsed ? p.name : null} position="right" className="w-full h-full flex items-center">
                     <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
@@ -339,7 +342,7 @@ export default function WorkspaceSidebar() {
 
       {/* Global Timer Capsule */}
       {activeTimer && (
-        <div className={`shrink-0 ${collapsed ? 'p-[12px]' : 'p-[16px]'}`} style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.bg }}>
+        <div className={`shrink-0 ${collapsed ? 'p-[12px]' : 'p-[16px]'}`} style={{ borderTop: '1px solid var(--sb-border)', backgroundColor: theme.bg }}>
           <div 
             onClick={() => {
               if (activeTimer.projectId) {
@@ -347,18 +350,18 @@ export default function WorkspaceSidebar() {
               }
             }}
             className={`transition-colors rounded-[12px] flex items-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}
-            style={{ backgroundColor: theme.active }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = theme.hover; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = theme.active; }}
+            style={{ backgroundColor: 'var(--sb-active)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--sb-hover)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--sb-active)'; }}
           >
             {!collapsed && (
               <div className="flex items-center gap-[8px]">
                 <Clock size={14} className="text-[#3b82f6] animate-pulse" />
-                <span className="text-[13px] font-mono font-medium" style={{ color: theme.text }}>{formatElapsed(timerElapsed)}</span>
+                <span className="text-[13px] font-mono font-medium" style={{ color: 'var(--sb-text)' }}>{formatElapsed(timerElapsed)}</span>
               </div>
             )}
             {collapsed && (
-              <span className="text-[10px] font-mono font-medium" style={{ color: theme.text }}>{formatElapsed(timerElapsed)}</span>
+              <span className="text-[10px] font-mono font-medium" style={{ color: 'var(--sb-text)' }}>{formatElapsed(timerElapsed)}</span>
             )}
             <button
               onClick={handleStopGlobalTimer}
