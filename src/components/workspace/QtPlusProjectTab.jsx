@@ -15,23 +15,22 @@ import EmptyState from '@/components/ui/Feedback/EmptyState';
 
 function LinkedRow({ name, stale, menuItems, href }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 rounded-[12px] bg-white p-3">
       <div className="flex items-center gap-2">
-        <Plug size={14} className="text-muted shrink-0" />
-        <span className="text-[13px] text-ink truncate">
-          Привʼязано до <span className="font-semibold">«{name || 'Без назви'}»</span>
-        </span>
-        {/* Прямий перехід на цей проєкт у самому QuickTeam+ */}
+        <Plug size={16} className="text-muted shrink-0" />
+        <h2 className="min-w-0 flex-1 truncate text-[18px] font-bold tracking-tight text-ink">
+          {name || 'Без назви'}
+        </h2>
         {href && (
           <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-[#ececec]"
+            className="inline-flex h-[32px] shrink-0 items-center gap-1.5 rounded-[10px] bg-canvas px-3 text-[12px] font-bold text-ink transition-colors hover:bg-[#e8e8e8]"
             title="Відкрити цей проєкт у QuickTeam+"
           >
-            <ExternalLink size={11} />
-            Відкрити в QuickTeam+
+            <ExternalLink size={13} />
+            Перейти
           </a>
         )}
         {menuItems && (
@@ -52,7 +51,7 @@ function LinkedRow({ name, stale, menuItems, href }) {
         )}
       </div>
       {stale && (
-        <p className="text-[12px] text-muted pl-[22px]">
+        <p className="pl-[24px] text-[12px] text-muted">
           Цей проєкт QuickTeam+ зараз недоступний для вашого акаунта.
         </p>
       )}
@@ -129,50 +128,86 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
   if (!canManage) {
     if (!view.linked) return null;
     return (
-      <div className="flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] bg-canvas p-[16px]">
-        <LinkedRow name={view.linkedName} href={portalProjectUrl} />
-        {portalUser && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
+      <div className="flex min-h-[240px] flex-1 flex-col">
+        {portalUser ? (
+          <QtPlusLinkedContent
+            qtProjectId={link.projectId}
+            portalUser={portalUser}
+            currentUser={currentUser}
+            header={<LinkedRow name={view.linkedName} href={portalProjectUrl} />}
+          />
+        ) : (
+          <div className="rounded-[16px] bg-canvas p-4">
+            <LinkedRow name={view.linkedName} href={portalProjectUrl} />
+          </div>
+        )}
       </div>
     );
   }
 
   // ── Owner/admin ──
   return (
-    <div className="flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] bg-canvas p-[16px]">
+    <div className={`flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] ${view.linked ? 'bg-transparent' : 'bg-canvas p-[16px]'}`}>
       {view.linked ? (
         <>
-          <LinkedRow
-            name={view.linkedName}
-            stale={view.staleAccess}
-            href={portalProjectUrl}
-            menuItems={[
-              ...(portalUser && options.length > 0
-                ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]
-                : []),
-              { label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true },
-            ]}
-          />
-
-          {changing && portalUser && options.length > 0 && (
-            <div className="max-w-[560px] flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Select
-                  value={selectValue}
-                  onChange={setPendingId}
-                  options={selectOptions}
-                  placeholder="Оберіть проєкт QuickTeam+"
-                />
-                <Button style="secondary" size="lg" onClick={doLink} disabled={saving || !selectValue || selectValue === view.linkedId}>
-                  Змінити
-                </Button>
-                <Button style="ghost" size="lg" onClick={() => { setChanging(false); setPendingId(''); }} disabled={saving}>
-                  Скасувати
-                </Button>
-              </div>
+          {portalUser && !view.staleAccess && (
+            <QtPlusLinkedContent
+              qtProjectId={link.projectId}
+              portalUser={portalUser}
+              currentUser={currentUser}
+              header={(
+                <div className="flex flex-col gap-3">
+                  <LinkedRow
+                    name={view.linkedName}
+                    stale={view.staleAccess}
+                    href={portalProjectUrl}
+                    menuItems={[
+                      ...(portalUser && options.length > 0
+                        ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]
+                        : []),
+                      { label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true },
+                    ]}
+                  />
+                  {changing && options.length > 0 && (
+                    <div className="flex max-w-[640px] flex-wrap items-center gap-2">
+                      <Select
+                        value={selectValue}
+                        onChange={setPendingId}
+                        options={selectOptions}
+                        placeholder="Оберіть проєкт QuickTeam+"
+                        className="min-w-[260px] flex-1"
+                      />
+                      <Button style="secondary" size="lg" onClick={doLink} disabled={saving || !selectValue || selectValue === view.linkedId}>
+                        Змінити
+                      </Button>
+                      <Button style="ghost" size="lg" onClick={() => { setChanging(false); setPendingId(''); }} disabled={saving}>
+                        Скасувати
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            />
+          )}
+          {view.staleAccess && (
+            <div className="rounded-[16px] bg-canvas p-4">
+              <LinkedRow
+                name={view.linkedName}
+                stale
+                href={portalProjectUrl}
+                menuItems={[{ label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true }]}
+              />
             </div>
           )}
-
-          {portalUser && !view.staleAccess && <QtPlusLinkedContent qtProjectId={link.projectId} portalUser={portalUser} currentUser={currentUser} />}
+          {!portalUser && !view.staleAccess && (
+            <div className="rounded-[16px] bg-canvas p-4">
+              <LinkedRow
+                name={view.linkedName}
+                href={portalProjectUrl}
+                menuItems={[{ label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true }]}
+              />
+            </div>
+          )}
         </>
       ) : sessionLoading || projectsLoading ? (
         <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>

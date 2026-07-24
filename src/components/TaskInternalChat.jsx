@@ -2,6 +2,7 @@
 // src/components/TaskInternalChat.jsx — Team-only comment thread
 import { useState, useRef, useEffect } from 'react';
 import UserAvatar from './UserAvatar';
+import ChatComposerDock from './ui/ChatComposerDock';
 import { useTaskChat } from '@/lib/hooks/useTaskChat';
 import { useAppContext } from '@/lib/context/AppContext';
 
@@ -11,6 +12,7 @@ export default function TaskInternalChat({ taskId }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,7 +43,7 @@ export default function TaskInternalChat({ taskId }) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-[12px] pr-[2px]">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-[12px] pb-[48px] pr-[2px]">
         {comments.length === 0 && (
           <div className="flex flex-col items-center justify-center py-[40px] text-center">
             <div className="text-[30px] mb-[8px]">💬</div>
@@ -80,7 +82,13 @@ export default function TaskInternalChat({ taskId }) {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="flex gap-[8px] mt-[12px]">
+      <ChatComposerDock
+        as="form"
+        scrollRef={scrollRef}
+        onSubmit={handleSend}
+        className="flex gap-[8px] pt-[12px]"
+        style={{ '--chat-composer-surface': '#171717' }}
+      >
         <UserAvatar user={currentUser} className="w-[28px] h-[28px] shrink-0" />
         <div className="flex-1 flex items-center gap-[8px] bg-white/[0.05] border border-white/[0.08] rounded-[10px] px-[11px] py-[7px]">
           <input
@@ -96,7 +104,7 @@ export default function TaskInternalChat({ taskId }) {
             </svg>
           </button>
         </div>
-      </form>
+      </ChatComposerDock>
     </div>
   );
 }

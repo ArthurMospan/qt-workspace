@@ -7,8 +7,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
-  BarChart2, AlertTriangle, Clock, Users, Zap, Target, Receipt, ArrowRight,
-  ChevronLeft, ChevronRight, Plus,
+  BarChart2, AlertTriangle, CalendarDays, Clock, Users, Zap, Target, Receipt, ArrowRight,
+  ChevronLeft, ChevronRight, Plus, StickyNote, Video,
 } from 'lucide-react';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
@@ -24,6 +24,7 @@ import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { parseDueDate } from '@/lib/utils/date';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -43,7 +44,7 @@ function FilterDivider() {
 // ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
 // Детальні графіки активності/трендів живуть у «Продуктивності»,
 // а навантаження по людях — у «Команді»; тут їх свідомо немає.
-function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabChange }) {
+function AnalyticsContent({ projects, issues, timeLogs, events, loading, period, onTabChange }) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const firstStatusId = statuses?.[0]?.id;
@@ -52,6 +53,35 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
+  const calendarStats = useMemo(() => {
+    const periodStart = now - period * 24 * 3600 * 1000;
+    const periodEnd = now + period * 24 * 3600 * 1000;
+    const completedWindow = events.filter(event => {
+      const start = new Date(event.startAt).getTime();
+      return Number.isFinite(start) && start >= periodStart && start <= now;
+    });
+    const durationMinutes = event => Math.max(
+      0,
+      (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()) / 60_000,
+    );
+    return {
+      upcoming: events.filter(event => {
+        const start = new Date(event.startAt).getTime();
+        return event.type !== 'birthday' && start >= now && start <= periodEnd;
+      }).length,
+      meetings: completedWindow.filter(event => event.type === 'meeting').length,
+      meetingMinutes: completedWindow
+        .filter(event => event.type === 'meeting')
+        .reduce((sum, event) => sum + durationMinutes(event), 0),
+      focusMinutes: completedWindow
+        .filter(event => event.type === 'focus')
+        .reduce((sum, event) => sum + durationMinutes(event), 0),
+      notes: events.filter(event =>
+        event.type === 'note' &&
+        new Date(event.startAt).getTime() >= periodStart &&
+        new Date(event.startAt).getTime() <= periodEnd).length,
+    };
+  }, [events, now, period]);
 
   const stats = useMemo(() => {
     if (!issues.length && !loading) return null;
@@ -138,6 +168,18 @@ function AnalyticsContent({ projects, issues, timeLogs, loading, period, onTabCh
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
           <KpiCard icon={AlertTriangle} label="Прострочено" color="#ef4444"
             value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'все вчасно'} />
+        </div>
+
+        <SectionTitle>Календар · {period} днів</SectionTitle>
+        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <KpiCard icon={CalendarDays} label="Заплановано" color="#8b5cf6"
+            value={calendarStats.upcoming} sub={`наступні ${period} днів`} />
+          <KpiCard icon={Video} label="Мітинги" color="#3b82f6"
+            value={calendarStats.meetings} sub={`${fmtH(Math.round(calendarStats.meetingMinutes))} за період`} />
+          <KpiCard icon={Clock} label="Фокус-час" color="#14b8a6"
+            value={fmtH(Math.round(calendarStats.focusMinutes))} sub={`за останні ${period} днів`} />
+          <KpiCard icon={StickyNote} label="Нотатки" color="#64748b"
+            value={calendarStats.notes} sub="у видимому календарі" />
         </div>
 
         {/* Statuses + Projects */}
@@ -288,6 +330,7 @@ export default function WorkspaceAnalyticsPage() {
   const { members } = useTeamMembers(allUids);
 
   const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(p => p.id));
+  const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
 
   // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
   const [projectFilters, setProjectFilters] = useState([]);
@@ -391,7 +434,7 @@ export default function WorkspaceAnalyticsPage() {
 
   return (
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 min-h-full pb-[120px]">
+      <div className="workspace-page-layout min-h-full pb-[120px]">
 
         <PageHeader
           variant="main"
@@ -512,7 +555,8 @@ export default function WorkspaceAnalyticsPage() {
             projects={visibleProjects}
             issues={filteredIssues}
             timeLogs={filteredTimeLogs}
-            loading={loading}
+            events={calendarEvents}
+            loading={loading || calendarLoading}
             period={period}
             onTabChange={setActiveTab}
           />

@@ -10,7 +10,7 @@ export default function IssueModal({ issue, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={issue.title || 'Завдання'}
-        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:rounded-l-[24px] sm:pb-0"
+        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
         onClick={e => e.stopPropagation()}
       >
         <IssueDetail issueId={issue.id} projectId={issue.projectId} isModal={true} onClose={onClose} />

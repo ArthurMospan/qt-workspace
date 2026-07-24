@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppContext }    from '@/lib/context/AppContext';
-import { requestNotifPermission } from '@/lib/hooks/useNotifications';
 import { useDeadlineReminders } from '@/lib/hooks/useDeadlineReminders';
 import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
@@ -538,8 +537,6 @@ export default function WorkspaceHeader() {
 
   const { results: searchResults, loading: searchLoading, search } = useSearch();
   const { activeOrgId } = useAppContext();
-
-  useEffect(() => { if (uid) requestNotifPermission(); }, [uid]);
 
   // Client-side deadline reminders (24h before due + daily for overdue)
   useDeadlineReminders(uid, activeOrgId);

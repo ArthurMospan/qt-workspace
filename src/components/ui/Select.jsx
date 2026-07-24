@@ -1,10 +1,58 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
 // UI Kit Select Component
 // Strict rule enforced: Select buttons are 36px height (h-9)
 // Matches input and button heights for consistent form alignment
+
+function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    visible: false,
+  });
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const viewportPadding = 8;
+      const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2);
+      const dropdownHeight = dropdownRef.current?.offsetHeight || 280;
+      const roomBelow = window.innerHeight - rect.bottom - viewportPadding;
+      const roomAbove = rect.top - viewportPadding;
+      const showAbove = roomBelow < dropdownHeight && roomAbove > roomBelow;
+      const top = showAbove
+        ? Math.max(viewportPadding, rect.top - dropdownHeight - gap)
+        : Math.max(
+          viewportPadding,
+          Math.min(rect.bottom + gap, window.innerHeight - dropdownHeight - viewportPadding),
+        );
+      const left = Math.min(
+        Math.max(viewportPadding, rect.left),
+        Math.max(viewportPadding, window.innerWidth - width - viewportPadding),
+      );
+
+      setPosition({ top, left, width, visible: true });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [dropdownRef, gap, isOpen, triggerRef]);
+
+  return position;
+}
 
 // Single Select Component
 export function Select({
@@ -22,10 +70,16 @@ export function Select({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target) &&
+        !dropdownRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -62,8 +116,17 @@ export function Select({
         <ChevronDown size={compact ? 12 : 14} className={`text-muted shrink-0 transition-transform ${compact ? 'ml-1' : 'ml-[8px]'} ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className={`absolute z-50 top-full mt-[4px] min-w-full w-max max-w-[300px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-[6px] overflow-hidden ${dropdownClassName}`}>
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={dropdownRef}
+          className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-[6px] overflow-hidden ${dropdownClassName}`}
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            visibility: dropdownPosition.visible ? 'visible' : 'hidden',
+          }}
+        >
           <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
             {options.map((opt) => (
               <button
@@ -92,7 +155,8 @@ export function Select({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -109,15 +173,22 @@ export function MultiSelect({
   dropdownClassName = '',
   disabled = false,
   variant = 'default',
-  triggerIcon: TriggerIcon
+  triggerIcon: TriggerIcon,
+  selectAllLabel = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target) &&
+        !dropdownRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
         setSearch(''); // clear search on close
       }
@@ -127,6 +198,8 @@ export function MultiSelect({
   }, []);
 
   const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const allValues = options.map(option => option.value);
+  const allSelected = allValues.length > 0 && allValues.every(optionValue => value.includes(optionValue));
 
   const handleSelect = (val) => {
     if (value.includes(val)) {
@@ -161,8 +234,17 @@ export function MultiSelect({
         <ChevronDown size={14} className={`text-muted shrink-0 ml-[8px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className={`absolute z-50 top-full mt-[4px] min-w-full w-max max-w-[320px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col ${dropdownClassName}`}>
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={dropdownRef}
+          className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            visibility: dropdownPosition.visible ? 'visible' : 'hidden',
+          }}
+        >
           <div className="p-[8px] border-b border-[#f0f0f0] shrink-0">
             <div className="relative">
               <Search size={14} className="absolute left-[10px] top-1/2 -translate-y-1/2 text-muted" />
@@ -177,6 +259,23 @@ export function MultiSelect({
             </div>
           </div>
           <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-[6px]">
+            {selectAllLabel && options.length > 0 && (
+              <button
+                type="button"
+                aria-pressed={allSelected}
+                onClick={() => {
+                  onChange(allSelected
+                    ? value.filter(selectedValue => !allValues.includes(selectedValue))
+                    : [...new Set([...value, ...allValues])]);
+                }}
+                className="mb-1 flex h-[34px] w-full items-center gap-[10px] rounded-[8px] border-b border-line px-[8px] text-left transition-colors hover:bg-canvas"
+              >
+                <div className={`flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[4px] border transition-colors ${allSelected ? 'border-ink bg-ink' : 'border-[#d9d9d9] bg-white'}`}>
+                  {allSelected && <Check size={12} className="text-white" />}
+                </div>
+                <span className="truncate text-[13px] font-bold text-ink">{selectAllLabel}</span>
+              </button>
+            )}
             {filteredOptions.length === 0 ? (
               <div className="px-[12px] py-[16px] text-center text-[12px] font-medium text-muted">
                 Нічого не знайдено
@@ -212,7 +311,8 @@ export function MultiSelect({
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

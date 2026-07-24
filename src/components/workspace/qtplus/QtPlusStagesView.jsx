@@ -70,8 +70,7 @@ export default function QtPlusStagesView({ qtProjectId }) {
         <div className="py-4"><Spinner /></div>
       ) : selected ? (
         <>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[14px] text-ink font-semibold truncate">{selected.label || 'Без назви'}</span>
+          <div className="flex justify-end">
             <span className="text-[12px] text-muted shrink-0">Прогрес: {percent}% ({done}/{total})</span>
           </div>
           {canAccessStage(selected) ? (

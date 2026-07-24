@@ -2,13 +2,14 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, Check, CheckSquare, ListTodo, Mic2 } from 'lucide-react';
+import { X, Check, CheckSquare, ListTodo, Mic2, Minus, Tag as TagIcon } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
-import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { PRIORITY_ICONS, TYPE_ICONS, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import { fromDateInput } from '@/lib/utils/date';
 import Tabs from '@/components/ui/Tabs';
 import AudioTaskPanel from '@/components/AudioTaskPanel';
@@ -112,7 +113,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-task-title"
-        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:w-[min(760px,92vw)] sm:rounded-none sm:rounded-l-[24px] sm:pb-0"
+        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:w-[min(760px,92vw)] sm:rounded-none sm:pb-0"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-line shrink-0">
@@ -198,7 +199,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.type}
                 onChange={val => set('type', val)}
-                options={types.map(t => ({ value: t.id, label: t.label }))}
+                options={types.map(t => ({
+                  value: t.id,
+                  label: t.label,
+                  icon: TYPE_ICONS[t.id] || CheckSquare,
+                }))}
               />
             </div>
             <div>
@@ -206,7 +211,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.priority}
                 onChange={val => set('priority', val)}
-                options={priorities.map(p => ({ value: p.id, label: p.label }))}
+                options={priorities.map(p => ({
+                  value: p.id,
+                  label: p.label,
+                  icon: PRIORITY_ICONS[p.id] || Minus,
+                }))}
               />
             </div>
           </div>
@@ -218,15 +227,19 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.status}
                 onChange={val => set('status', val)}
-                options={visibleStatuses.map(s => ({ value: s.id, label: s.label }))}
+                options={visibleStatuses.map(s => ({
+                  value: s.id,
+                  label: s.label,
+                  dotColor: s.color,
+                }))}
               />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Дедлайн</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={form.dueDate}
-                onChange={e => set('dueDate', e.target.value)}
+                onChange={value => set('dueDate', value)}
+                placeholder="Без дедлайну"
               />
             </div>
           </div>
@@ -299,15 +312,15 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                       key={l.id}
                       type="button"
                       onClick={() => toggleLabel(l.id)}
-                      className={`flex items-center gap-[6px] px-[10px] py-[5px] rounded-[8px] text-[11px] font-bold border transition-all ${
+                      aria-pressed={selected}
+                      className={`inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium transition-colors ${
                         selected
-                          ? 'border-transparent'
-                          : 'border-line bg-white opacity-60 hover:opacity-100'
+                          ? ''
+                          : 'bg-ink/5 text-[#404040] hover:bg-ink/10'
                       }`}
-                      style={selected ? { background: l.color + '18', color: l.color } : { color: '#9a9a9a' }}
+                      style={selected ? { background: `${l.color}14`, color: l.color } : undefined}
                     >
-                      {selected && <CheckSquare size={12} />}
-                      <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: l.color }} />
+                      <TagIcon size={10} className="shrink-0 opacity-70" />
                       {l.label}
                     </button>
                   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
-import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu } from '@/components/ui';
+import { CakeSlice, CalendarDays, Clock3, LockKeyhole, Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/UserAvatar';
@@ -10,6 +10,19 @@ import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
+
+const EVENT_TYPE_LABELS = {
+  meeting: 'Мітинг',
+  event: 'Подія',
+  focus: 'Фокус-час',
+  absence: 'Відсутність',
+  release: 'Реліз / етап',
+  note: 'Нотатка',
+  reminder: 'Нагадування',
+  milestone: 'Віха',
+  birthday: 'День народження',
+};
 
 const getRealProfileDetails = (member) => {
   const skills = member.profile?.skills || member.skills;
@@ -20,6 +33,7 @@ const getRealProfileDetails = (member) => {
     phone:    member.profile?.phone    || member.phone    || null,
     location: member.profile?.location || member.location || null,
     timezone: member.profile?.timezone || member.timezone || member.localization?.timezone || null,
+    birthday: member.profile?.birthday || member.birthday || null,
   };
 };
 
@@ -34,6 +48,7 @@ export default function ProfileView({ user, onClose }) {
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
   const { positions = [], doneStatusIds } = useWorkflowConfig();
   const { members: orgMembers } = useOrganization();
+  const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
   const [activeTab, setActiveTab] = useState('profile');
 
   if (!user) return null;
@@ -53,6 +68,17 @@ export default function ProfileView({ user, onClose }) {
     const project = projects.find(item => item.id === task.projectId);
     return project?.status !== 'archived' && !doneStatusIds.includes(task.columnId || task.status);
   });
+  const nowTime = now;
+  const agendaEvents = calendarEvents
+    .filter(event => {
+      const endTime = new Date(event.endAt).getTime();
+      if (!Number.isFinite(endTime) || endTime < nowTime) return false;
+      return event.birthdayUserId === uid ||
+        event.organizerId === uid ||
+        event.participantIds?.includes(uid);
+    })
+    .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
+    .slice(0, 30);
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();
@@ -83,7 +109,8 @@ export default function ProfileView({ user, onClose }) {
 
   const tabsConfig = [
     { id: 'profile', label: 'Профіль' },
-    { id: 'tasks', label: `Задачі (${allActiveTasks.length})` }
+    { id: 'tasks', label: `Задачі (${allActiveTasks.length})` },
+    { id: 'events', label: `Події (${agendaEvents.length})` },
   ];
 
   const adminMenu = [
@@ -256,6 +283,21 @@ export default function ProfileView({ user, onClose }) {
                     )}
                   </div>
                 </div>
+
+                {/* Birthday */}
+                <div className="flex items-center gap-3">
+                  <div className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center shrink-0">
+                    <CakeSlice size={14} className="text-ink" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">День народження</span>
+                    <span className={`text-[13px] font-medium leading-none truncate ${details.birthday ? 'text-ink' : 'text-faint'}`}>
+                      {details.birthday
+                        ? new Date(`${details.birthday}T00:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })
+                        : 'Не вказано'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -282,6 +324,65 @@ export default function ProfileView({ user, onClose }) {
                   />
                 );
               })
+            )}
+          </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted">Порядок денний</h3>
+              <p className="mt-1 text-[12px] text-muted">Найближчі події, зустрічі, нотатки й важливі дати учасника.</p>
+            </div>
+            {calendarLoading ? (
+              <div className="flex min-h-[180px] items-center justify-center">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : agendaEvents.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="Найближчих подій немає"
+                description="Нові події з календаря з’являться тут автоматично"
+              />
+            ) : (
+              <div className="flex flex-col gap-2">
+                {agendaEvents.map(event => {
+                  const start = new Date(event.startAt);
+                  const sourceId = event.sourceEventId || event.id;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => {
+                        if (onClose) onClose();
+                        router.push(`/calendar?event=${encodeURIComponent(sourceId)}`);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-[14px] border border-line bg-white p-3 text-left transition-colors hover:bg-canvas"
+                    >
+                      <span className="flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center rounded-[12px] bg-canvas">
+                        <span className="text-[10px] font-bold uppercase text-muted">
+                          {start.toLocaleDateString('uk-UA', { month: 'short' })}
+                        </span>
+                        <span className="text-[17px] font-black leading-none text-ink">{start.getDate()}</span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate text-[13px] font-bold text-ink">{event.title}</span>
+                          {event.visibility === 'private' && <LockKeyhole size={11} className="shrink-0 text-muted" />}
+                        </span>
+                        <span className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">
+                          <Clock3 size={11} />
+                          {event.allDay
+                            ? 'Весь день'
+                            : start.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                          <span>·</span>
+                          {EVENT_TYPE_LABELS[event.type] || 'Подія'}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

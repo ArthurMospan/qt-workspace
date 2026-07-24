@@ -7,6 +7,7 @@ import UserAvatar from '@/components/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import Button from '@/components/ui/Button';
+import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import { useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -384,7 +385,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   return (
     <div className="flex h-full flex-col bg-canvas">
       {viewerAttachment && <AttachmentViewer attachment={viewerAttachment} onClose={() => setViewerAttachment(null)} />}
-      <div ref={scrollRef} className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
+      <div ref={scrollRef} className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
         {timeline.length === 0 && (
           <EmptyState
             icon={MessageSquare}
@@ -484,7 +485,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
       </div>
 
       {!isArchived && (
-        <div className="relative shrink-0 bg-gradient-to-b from-transparent via-canvas/90 via-[45%] to-canvas px-4 pb-5 pt-3" ref={wrapperRef}>
+        <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} className="px-4 pb-5 pt-3">
           {mentionState.active && filteredMembers.length > 0 && (
             <div className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
               {filteredMembers.map((member, index) => (
@@ -573,7 +574,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
               </button>
             </div>
           </div>
-        </div>
+        </ChatComposerDock>
       )}
     </div>
   );

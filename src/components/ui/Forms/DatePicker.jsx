@@ -42,6 +42,7 @@ export const DatePicker = forwardRef(({
   onDateRangeChange,
   inputClassName,
   hideIcon,
+  yearRange = null,
   ...props
 }, ref) => {
   const { formatDate: formatLocal, getWeekdays, getFirstDayOffset } = useLocalization();
@@ -129,6 +130,12 @@ export const DatePicker = forwardRef(({
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOffset(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const yearOptions = yearRange
+    ? Array.from(
+      { length: Math.max(0, yearRange.max - yearRange.min + 1) },
+      (_, index) => yearRange.max - index,
+    )
+    : [];
 
   const displayValue = mode === 'single' ?
     (selectedDate ? formatLocal(selectedDate) : '') :
@@ -245,9 +252,23 @@ export const DatePicker = forwardRef(({
             >
               <ChevronLeft size={18} />
             </button>
-            <h3 className="text-[14px] font-bold text-ink">
-              {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[14px] font-bold text-ink">
+                {MONTHS[currentMonth.getMonth()]}
+              </h3>
+              {yearRange ? (
+                <select
+                  aria-label="Рік"
+                  value={currentMonth.getFullYear()}
+                  onChange={event => setCurrentMonth(new Date(Number(event.target.value), currentMonth.getMonth(), 1))}
+                  className="h-7 rounded-[8px] border border-line bg-canvas px-2 text-[12px] font-bold text-ink outline-none focus:border-ink"
+                >
+                  {yearOptions.map(year => <option key={year} value={year}>{year}</option>)}
+                </select>
+              ) : (
+                <span className="text-[14px] font-bold text-ink">{currentMonth.getFullYear()}</span>
+              )}
+            </div>
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
               className="p-1 hover:bg-canvas rounded-[6px] transition-colors"

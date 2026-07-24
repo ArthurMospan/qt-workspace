@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
+import ChatComposerDock from '@/components/ui/ChatComposerDock';
 
 const TYPING_IDLE_MS = 3000;
 
@@ -9,7 +10,7 @@ const TYPING_IDLE_MS = 3000;
  * Керує typing: setTyping(true) на початку набору, setTyping(false) після
  * паузи або надсилання. onSend/onTyping приходять від панелі.
  */
-export default function ChatComposer({ onSend, onTyping, disabled }) {
+export default function ChatComposer({ onSend, onTyping, disabled, scrollRef }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const typingRef = useRef(false);
@@ -56,7 +57,7 @@ export default function ChatComposer({ onSend, onTyping, disabled }) {
   };
 
   return (
-    <div className="shrink-0 px-4 pb-5 pt-3">
+    <ChatComposerDock scrollRef={scrollRef} className="px-4 pb-5 pt-3">
       <div className="flex min-h-[44px] items-end gap-1 rounded-[24px] bg-white p-1 ring-1 ring-black/[0.04] transition-all focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
         <textarea
           value={text}
@@ -78,6 +79,6 @@ export default function ChatComposer({ onSend, onTyping, disabled }) {
           <ArrowUp size={16} />
         </button>
       </div>
-    </div>
+    </ChatComposerDock>
   );
 }

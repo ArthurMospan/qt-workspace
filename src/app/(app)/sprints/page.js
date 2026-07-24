@@ -416,7 +416,7 @@ export default function GlobalSprintsPage() {
 
   return (
     <div className="flex-1 h-full overflow-hidden bg-transparent">
-      <div className="w-full h-full page-gutter pt-[56px] pb-[24px] flex flex-col gap-2">
+      <div className="workspace-page-layout h-full pb-[24px]">
       
       <PageHeader
         variant="main"

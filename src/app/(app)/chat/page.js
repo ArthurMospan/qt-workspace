@@ -8,6 +8,10 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import Button from '@/components/ui/Button';
+import ChatComposerDock from '@/components/ui/ChatComposerDock';
+import Dialog from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm, EmptyState, Counter } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -564,7 +568,7 @@ function ThreadSidebar({
   return (
     <div className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
+      <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <MessageSquare size={16} className="text-muted" />
           <h3 className="font-bold text-[14px] text-ink">Гілка</h3>
@@ -602,7 +606,7 @@ function ThreadSidebar({
       </div>
 
       {/* Replies */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 flex flex-col gap-0.5">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-5 pb-12 pt-4 flex flex-col gap-0.5">
         {replies.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <MessageSquare size={32} className="text-faint mb-3" />
@@ -663,14 +667,14 @@ function ThreadSidebar({
       </div>
 
       {/* Thread Input */}
-      <div className="px-4 pb-4 shrink-0">
+      <ChatComposerDock scrollRef={scrollRef}>
         <MessageInput
           onSend={onSend}
           onError={onError}
           placeholder="Відповісти в гілку..."
           members={members}
         />
-      </div>
+      </ChatComposerDock>
     </div>
   );
 }
@@ -1043,6 +1047,9 @@ export default function ChatPage() {
   const requestPaneClose = useMobilePaneBack(mobilePane === 'chat', () => setMobilePane('list'));
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelDescription, setNewChannelDescription] = useState('');
+  const [newChannelMemberIds, setNewChannelMemberIds] = useState([]);
+  const [isSubmittingChannel, setIsSubmittingChannel] = useState(false);
   const [presenceMap, setPresenceMap] = useState({});
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [unreadBadge, setUnreadBadge] = useState(0);
@@ -1079,8 +1086,6 @@ export default function ChatPage() {
   const composerRef = useRef(null);
   const messageRefs = useRef(new Map());
   const typingRef = useRef(null);
-  const channelInputRef = useRef(null);
-
   // Notification links open the exact conversation instead of dropping the
   // user on #general.
   useEffect(() => {
@@ -1312,22 +1317,46 @@ export default function ChatPage() {
     }
   };
 
-  const handleCreateChannel = async (e) => {
-    if (e.key === 'Enter' && newChannelName.trim()) {
-      const id = await createChannel(newChannelName.trim());
-      if (id) {
-        setIsCreatingChannel(false);
-        setNewChannelName('');
-        openChannel({ id, type: 'channel' });
-        showToast('Канал створено ✓');
-      } else {
-        showToast('Помилка при створенні каналу');
-      }
-    } else if (e.key === 'Escape') {
+  const resetChannelDraft = () => {
+    setNewChannelName('');
+    setNewChannelDescription('');
+    setNewChannelMemberIds([]);
+  };
+
+  const closeCreateChannelDialog = () => {
+    if (isSubmittingChannel) return;
+    setIsCreatingChannel(false);
+    resetChannelDraft();
+  };
+
+  const handleCreateChannel = async (event) => {
+    event.preventDefault();
+    if (!newChannelName.trim() || isSubmittingChannel) return;
+
+    setIsSubmittingChannel(true);
+    const id = await createChannel(newChannelName.trim(), {
+      description: newChannelDescription.trim(),
+      members: [myUid, ...newChannelMemberIds].filter(Boolean),
+    });
+    setIsSubmittingChannel(false);
+
+    if (id) {
       setIsCreatingChannel(false);
-      setNewChannelName('');
+      resetChannelDraft();
+      openChannel({ id, type: 'channel' });
+      showToast('Канал створено ✓');
+    } else {
+      showToast('Помилка при створенні каналу', 'error');
     }
   };
+
+  const channelMemberOptions = useMemo(() => members
+    .filter(member => (member.id || member.uid) !== myUid)
+    .map(member => ({
+      value: member.id || member.uid,
+      label: member.name || member.displayName || member.email || 'Учасник',
+      avatar: member.avatar || member.photoURL || '',
+    })), [members, myUid]);
 
   const handleSendMessage = async (text, attachments) => {
     clearTimeout(typingRef.current);
@@ -1416,6 +1445,83 @@ export default function ChatPage() {
           onClose={() => setViewerAttachment(null)}
         />
       )}
+      <Dialog
+        isOpen={isCreatingChannel}
+        onClose={closeCreateChannelDialog}
+        title="Новий канал"
+        presentation="dialog"
+        size="md"
+        footer={(
+          <>
+            <Button
+              style="secondary"
+              size="md"
+              onClick={closeCreateChannelDialog}
+              disabled={isSubmittingChannel}
+            >
+              Скасувати
+            </Button>
+            <Button
+              type="submit"
+              form="create-channel-form"
+              size="md"
+              loading={isSubmittingChannel}
+              disabled={!newChannelName.trim()}
+            >
+              Створити канал
+            </Button>
+          </>
+        )}
+      >
+        <form id="create-channel-form" onSubmit={handleCreateChannel} className="space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="new-channel-name" className="block text-[11px] font-bold uppercase tracking-wide text-muted">
+              Назва каналу
+            </label>
+            <Input
+              id="new-channel-name"
+              autoFocus
+              value={newChannelName}
+              onChange={event => setNewChannelName(event.target.value)}
+              placeholder="наприклад, дизайн-команда"
+              maxLength={80}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="new-channel-description" className="block text-[11px] font-bold uppercase tracking-wide text-muted">
+              Опис
+            </label>
+            <textarea
+              id="new-channel-description"
+              value={newChannelDescription}
+              onChange={event => setNewChannelDescription(event.target.value)}
+              placeholder="Про що цей канал?"
+              rows={3}
+              maxLength={240}
+              className="w-full resize-none rounded-[10px] border border-transparent bg-canvas px-3 py-2.5 text-[13px] text-ink outline-none transition-colors placeholder:text-[#a3a3a3] focus:border-ink"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-[11px] font-bold uppercase tracking-wide text-muted">
+              Учасники
+            </label>
+            <MultiSelect
+              value={newChannelMemberIds}
+              onChange={setNewChannelMemberIds}
+              options={channelMemberOptions}
+              placeholder="Додати учасників"
+              searchPlaceholder="Знайти учасника..."
+              triggerIcon={UserPlus}
+              dropdownClassName="w-full max-w-none"
+            />
+            <p className="text-[11px] leading-4 text-muted">
+              Ви будете додані автоматично. Інші учасники не додаються, доки ви їх не виберете.
+            </p>
+          </div>
+        </form>
+      </Dialog>
       {/* Two-zone layout */}
       <div className="flex-1 flex overflow-hidden gap-3 p-[12px] pt-[56px]">
 
@@ -1429,7 +1535,10 @@ export default function ChatPage() {
                 <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Канали</span>
                 {isAdminOrOwner && (
                   <button
-                    onClick={() => setIsCreatingChannel(true)}
+                    onClick={() => {
+                      resetChannelDraft();
+                      setIsCreatingChannel(true);
+                    }}
                     className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
                     title="Новий канал"
                   >
@@ -1437,22 +1546,6 @@ export default function ChatPage() {
                   </button>
                 )}
               </div>
-
-              {isCreatingChannel && (
-                <div className="mb-1.5 px-3">
-                  <input
-                    ref={channelInputRef}
-                    autoFocus
-                    type="text"
-                    value={newChannelName}
-                    onChange={e => setNewChannelName(e.target.value)}
-                    onKeyDown={handleCreateChannel}
-                    onBlur={() => { setIsCreatingChannel(false); setNewChannelName(''); }}
-                    placeholder="назва-каналу"
-                    className="w-full text-[13px] bg-white border border-line focus:border-ink rounded-xl px-3 py-2 outline-none transition-colors"
-                  />
-                </div>
-              )}
 
               <div className="flex flex-col gap-[2px]">
                 {channels
@@ -1538,10 +1631,10 @@ export default function ChatPage() {
         <div className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 gap-3 min-w-0 overflow-hidden`}>
 
           {/* Main chat area */}
-          <div className="flex-1 bg-canvas rounded-[16px] flex flex-col overflow-hidden min-w-0 relative">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas">
             
             {/* Chat header */}
-            <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line/70 px-4">
+            <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
               <button
                 onClick={requestPaneClose}
                 className="md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0"
@@ -1642,7 +1735,7 @@ export default function ChatPage() {
             {/* Messages list */}
             <div
               ref={chatScrollRef}
-              className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-6 pt-2 scroll-pb-6"
+              className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-4 pb-12 pt-2 scroll-pb-12"
             >
               {loading && messages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center h-full">
@@ -1729,7 +1822,7 @@ export default function ChatPage() {
             )}
 
             {/* Input */}
-            <div ref={composerRef} className="shrink-0">
+            <ChatComposerDock ref={composerRef} scrollRef={chatScrollRef}>
               <MessageInput
                 onSend={handleSendMessage}
                 onTyping={handleMainTyping}
@@ -1739,7 +1832,7 @@ export default function ChatPage() {
                   : 'Написати повідомлення...'}
                 members={mentionMembers}
               />
-            </div>
+            </ChatComposerDock>
           </div>
 
           {/* Thread sidebar */}

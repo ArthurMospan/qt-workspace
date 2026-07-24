@@ -207,7 +207,7 @@ export default function MyTasksPage() {
 
   return (
     <div className={`flex-1 h-full bg-transparent ${viewMode === 'kanban' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
-      <div className={`w-full flex flex-col gap-2 page-gutter pt-[56px] ${viewMode === 'kanban' ? 'h-full pb-0' : 'min-h-full pb-[120px]'}`}>
+      <div className={`workspace-page-layout ${viewMode === 'kanban' ? 'h-full pb-0' : 'min-h-full pb-[120px]'}`}>
         <PageHeader
           variant="main"
           title="Мої завдання"
@@ -506,7 +506,7 @@ export default function MyTasksPage() {
 
       {showSettingsModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/40 backdrop-blur-sm">
-          <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[480px] sm:rounded-none sm:rounded-l-[24px]">
+          <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[480px] sm:rounded-none">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <h2 className="text-[16px] font-bold text-ink">Налаштування дошки</h2>

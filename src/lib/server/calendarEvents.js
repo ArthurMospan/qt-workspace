@@ -9,9 +9,12 @@ export const CALENDAR_EVENT_TYPES = new Set([
   'focus',
   'absence',
   'release',
+  'note',
+  'reminder',
+  'milestone',
 ]);
 
-export const CALENDAR_VISIBILITIES = new Set(['team', 'participants']);
+export const CALENDAR_VISIBILITIES = new Set(['team', 'participants', 'private']);
 export const CALENDAR_RECURRENCES = new Set(['none', 'daily', 'weekly', 'monthly']);
 export const CALENDAR_REMINDERS = new Set([0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080]);
 
@@ -152,6 +155,7 @@ export async function validateCalendarReferences({
 }
 
 export function canManageCalendarEvent(event, authorization) {
+  if (event.visibility === 'private') return event.organizerId === authorization.user.uid;
   return event.organizerId === authorization.user.uid ||
     ['owner', 'admin'].includes(authorization.membership?.role);
 }

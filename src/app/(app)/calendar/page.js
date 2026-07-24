@@ -4,13 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CalendarDays,
+  BellRing,
+  CakeSlice,
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Diamond,
   Flag,
   List,
+  LockKeyhole,
   Plus,
   RefreshCw,
+  StickyNote,
   Users,
   Video,
 } from 'lucide-react';
@@ -38,6 +43,10 @@ const TYPE_CONFIG = {
   focus: { label: 'Фокус-час', color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
   absence: { label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
   release: { label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
+  note: { label: 'Нотатка', color: '#64748b', bg: '#f8fafc', icon: StickyNote },
+  reminder: { label: 'Нагадування', color: '#f97316', bg: '#fff7ed', icon: BellRing },
+  milestone: { label: 'Віха', color: '#ec4899', bg: '#fdf2f8', icon: Diamond },
+  birthday: { label: 'День народження', color: '#db2777', bg: '#fdf2f8', icon: CakeSlice },
 };
 
 function FilterDivider() {
@@ -131,6 +140,7 @@ function EventCard({ event, compact = false, onClick }) {
       <div className="flex items-center gap-1.5 min-w-0">
         <Icon size={compact ? 11 : 12} style={{ color: config.color }} className="shrink-0" />
         <span className={`font-bold text-ink truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}>{event.title}</span>
+        {event.visibility === 'private' && <LockKeyhole size={10} className="ml-auto shrink-0 text-muted" aria-label="Приватна подія" />}
       </div>
       {!compact && <span className="block text-[10px] text-muted mt-1">{eventTimeLabel(event)}</span>}
     </button>
@@ -476,9 +486,12 @@ export default function CalendarPage() {
     showToast('Відповідь збережено', 'success');
   };
 
-  const canManageSelected = !selectedEvent ||
-    selectedEvent.organizerId === currentUserId ||
-    ['owner', 'admin'].includes(orgRole);
+  const canManageSelected = !selectedEvent || (
+    !selectedEvent.readOnly && (
+      selectedEvent.organizerId === currentUserId ||
+      (selectedEvent.visibility !== 'private' && ['owner', 'admin'].includes(orgRole))
+    )
+  );
 
   const filterOptions = [
     { value: 'all', label: 'Усі типи' },
@@ -499,7 +512,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex-1 h-full overflow-hidden bg-transparent">
-      <div className="w-full h-full flex flex-col page-gutter pt-[56px] pb-[12px]">
+      <div className="workspace-page-layout h-full pb-[24px]">
         <PageHeader
           title="Календар"
           tabs={[
@@ -532,7 +545,6 @@ export default function CalendarPage() {
                 <FilterDivider />
                 <span className="max-w-[260px] truncate px-2 text-[12px] font-bold text-ink">{periodTitle(anchor, view)}</span>
               </FilterBar>
-              <span className="hidden xl:inline text-[11px] text-muted">Дедлайни із задач додаються автоматично</span>
             </>
           }
         />

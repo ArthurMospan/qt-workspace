@@ -4,9 +4,9 @@ import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const PUBLIC_PROFILE_FIELDS = [
   'name', 'email', 'avatar', 'photoURL', 'phone', 'title', 'status', 'statusEmoji',
-  'bio', 'skills', 'telegram', 'location', 'timezone', 'lastActive',
+  'bio', 'skills', 'telegram', 'location', 'timezone', 'birthday', 'lastActive',
 ];
-const NESTED_PROFILE_FIELDS = ['bio', 'skills', 'telegram', 'phone', 'location', 'timezone'];
+const NESTED_PROFILE_FIELDS = ['bio', 'skills', 'telegram', 'phone', 'location', 'timezone', 'birthday'];
 
 function serializeValue(value) {
   if (value?.toDate) return value.toDate().toISOString();

@@ -16,7 +16,7 @@ import { EmptyState, PageHeader, Surface, Tabs } from '@/components/ui';
 import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
-import { LayoutGrid, BarChart2, Plus, Users, MessageSquare, Settings2, List, ClipboardList, Plug, Kanban } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, Users, UserPlus, MessageSquare, Settings2, List, ClipboardList, Plug, Kanban } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -74,6 +74,11 @@ export default function BoardPage({ params }) {
   });
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
+  const [teamRoleFilter, setTeamRoleFilter] = useState('all');
+  const [teamWorkloadFilter, setTeamWorkloadFilter] = useState('all');
+  const [teamManageOpen, setTeamManageOpen] = useState(false);
+  const [teamSelection, setTeamSelection] = useState([]);
+  const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const [boardView, setBoardView] = useState(() => {
     if (typeof window === 'undefined') return 'kanban';
     const stored = localStorage.getItem(`qt_project_view_${projectId}`);
@@ -84,6 +89,11 @@ export default function BoardPage({ params }) {
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
   const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
   const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked);
+  const openTeamManager = () => {
+    setTeamSelection(Array.isArray(project?.team) ? project.team : []);
+    setTeamMemberSearch('');
+    setTeamManageOpen(true);
+  };
 
   const tabs = useMemo(() => {
     const base = TABS(projectId);
@@ -206,7 +216,7 @@ export default function BoardPage({ params }) {
 
   return (
     <div className={`flex-1 h-full bg-transparent ${isBoard ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
-      <div className={`w-full flex flex-col gap-2 page-gutter pt-[56px] ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
+      <div className={`workspace-page-layout ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
 
       {/* ── PageHeader ── */}
       <PageHeader
@@ -357,6 +367,43 @@ export default function BoardPage({ params }) {
                 ]}
               />
             </FilterBar>
+          ) : activeTab === 'team' ? (
+            <>
+              <FilterBar>
+                <Select
+                  value={teamRoleFilter}
+                  onChange={setTeamRoleFilter}
+                  variant="ghost"
+                  options={[
+                    { value: 'all', label: 'Усі ролі' },
+                    { value: 'owner', label: 'Власники' },
+                    { value: 'admin', label: 'Адміністратори' },
+                    { value: 'member', label: 'Учасники' },
+                  ]}
+                />
+                <Select
+                  value={teamWorkloadFilter}
+                  onChange={setTeamWorkloadFilter}
+                  variant="ghost"
+                  options={[
+                    { value: 'all', label: 'Усе навантаження' },
+                    { value: 'assigned', label: 'Є активні завдання' },
+                    { value: 'available', label: 'Без активних завдань' },
+                  ]}
+                />
+              </FilterBar>
+              {can(orgRole, 'manage:team') && (
+                <Button
+                  icon={UserPlus}
+                  style="secondary"
+                  size="md"
+                  onClick={openTeamManager}
+                  className="ml-auto"
+                >
+                  Керувати
+                </Button>
+              )}
+            </>
           ) : null
         }
       />
@@ -447,6 +494,15 @@ export default function BoardPage({ params }) {
           project={project}
           canManage={can(orgRole, 'manage:team')}
           inviteMember={inviteMember}
+          roleFilter={teamRoleFilter}
+          workloadFilter={teamWorkloadFilter}
+          manageOpen={teamManageOpen}
+          onManageOpenChange={setTeamManageOpen}
+          onOpenManager={openTeamManager}
+          selected={teamSelection}
+          onSelectedChange={setTeamSelection}
+          memberSearch={teamMemberSearch}
+          onMemberSearchChange={setTeamMemberSearch}
         />
       )}
 

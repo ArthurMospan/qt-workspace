@@ -33,7 +33,7 @@ import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
   Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   CheckCircle, XCircle, Play, Square as StopIcon,
-  FileText, Film, Music, Link2, Copy,
+  FileText, Film, Music, Link2, Copy, Tag as TagIcon,
   ZoomIn, Maximize2,
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
@@ -1022,7 +1022,15 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         title={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
                         className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
                       >
-                        {isTimerMine ? <StopIcon size={10} className="block fill-current" /> : <Play size={11} strokeWidth={2.2} className="block fill-current translate-x-[1px]" />}
+                        {isTimerMine ? (
+                          <StopIcon size={10} className="block fill-current" />
+                        ) : (
+                          <Play
+                            size={10}
+                            strokeWidth={0}
+                            className="block translate-x-[1px] fill-current"
+                          />
+                        )}
                       </button>
                       <button
                         type="button"
@@ -1115,7 +1123,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             {/* LOG TIME FORM MODAL */}
             {logForm && (
               <div className="fixed inset-0 z-[100] flex items-end justify-end bg-black/40 backdrop-blur-sm" onClick={() => setLogForm(null)}>
-                <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none sm:rounded-l-[24px]" onClick={event => event.stopPropagation()}>
+                <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none" onClick={event => event.stopPropagation()}>
                   <div className="px-5 sm:px-6 py-4 border-b border-line flex items-center justify-between shrink-0">
                     <h3 className="text-[16px] font-bold text-ink">Трекінг часу</h3>
                     <Button style="secondary" size="icon" icon={X} onClick={() => setLogForm(null)} aria-label="Закрити" />
@@ -1355,10 +1363,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                                   update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });
                                   setShowLabelDropdown(false);
                                 }}
-                                className={`flex w-full items-center justify-between px-4 py-2 text-left text-[12px] transition-colors hover:bg-canvas ${active ? 'bg-[#f5f7ff] font-bold' : ''}`}
+                                aria-pressed={active}
+                                className="flex w-full items-center px-4 py-2 text-left text-[12px] transition-colors hover:bg-canvas"
                               >
-                                <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: label.color }} />{label.label || label.name}</span>
-                                {active && <CheckSquare size={12} className="text-ink" />}
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium ${active ? '' : 'bg-ink/5 text-[#404040]'}`}
+                                  style={active ? { background: `${label.color}14`, color: label.color } : undefined}
+                                >
+                                  <TagIcon size={10} className="shrink-0 opacity-70" />
+                                  {label.label || label.name}
+                                </span>
                               </button>
                             );
                           })}
@@ -1526,41 +1540,40 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   })}
 
                 {showLinkInput && (
-                  <div className="flex flex-col gap-3 p-3 bg-canvas rounded-[10px] mt-2">
-                    <div className="flex gap-2">
-                      <div className="flex-1">
+                  <div className="mt-2 flex flex-col gap-4 rounded-[12px] border border-line bg-white p-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                      <div className="min-w-0">
                         <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Зв’язок</label>
-                        <select
+                        <Select
                           value={linkRelation}
-                          onChange={e => setLinkRelation(e.target.value)}
-                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-line transition-colors font-medium text-ink"
-                        >
-                          {Object.entries(RELATION_LABELS).map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
-                          ))}
-                        </select>
+                          onChange={setLinkRelation}
+                          className="w-full"
+                          dropdownClassName="w-full max-w-none"
+                          options={Object.entries(RELATION_LABELS).map(([value, label]) => ({
+                            value,
+                            label,
+                          }))}
+                        />
                       </div>
-                      <div className="flex-[2]">
+                      <div className="min-w-0">
                         <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Завдання</label>
-                        <select
+                        <Select
                           value={linkTargetId}
-                          onChange={e => setLinkTargetId(e.target.value)}
-                          className="w-full text-[13px] bg-white rounded-[8px] px-3 py-1.5 outline-none border border-line transition-colors font-medium text-ink"
-                        >
-                          {issues
-                            .filter(i => i.id !== issueId)
-                            .map(i => (
-                              <option key={i.id} value={i.id}>
-                                {i.issueKey} — {i.title}
-                              </option>
-                            ))}
-                          {issues.filter(i => i.id !== issueId).length === 0 && (
-                            <option value="">Немає інших завдань у проєкті</option>
-                          )}
-                        </select>
+                          onChange={setLinkTargetId}
+                          className="w-full"
+                          dropdownClassName="w-full max-w-none"
+                          disabled={issues.filter(item => item.id !== issueId).length === 0}
+                          placeholder="Немає інших завдань у проєкті"
+                          options={issues
+                            .filter(item => item.id !== issueId)
+                            .map(item => ({
+                              value: item.id,
+                              label: `${item.issueKey} — ${item.title}`,
+                            }))}
+                        />
                       </div>
                     </div>
-                    <div className="flex gap-2 justify-end mt-1">
+                    <div className="flex justify-end gap-2">
                       <Button style="secondary" size="sm" onClick={() => { setShowLinkInput(false); }}>Скасувати</Button>
                       <Button
                         style="primary"

@@ -18,20 +18,67 @@ export async function GET(request) {
     }
 
     const db = getAdminDb();
-    const [eventsSnapshot, issuesSnapshot, projectsSnapshot] = await Promise.all([
+    const [eventsSnapshot, issuesSnapshot, projectsSnapshot, membershipsSnapshot] = await Promise.all([
       db.collection('calendarEvents').where('organizationId', '==', organizationId).get(),
       db.collection('issues').where('organizationId', '==', organizationId).get(),
       db.collection('projects').where('organizationId', '==', organizationId).get(),
+      db.collection('orgMemberships').where('orgId', '==', organizationId).get(),
     ]);
 
     const events = eventsSnapshot.docs
       .map(serializeCalendarEvent)
       .filter(event =>
-        event.visibility !== 'participants' ||
-        event.organizerId === authorization.user.uid ||
-        event.participantIds?.includes(authorization.user.uid) ||
-        ['owner', 'admin'].includes(authorization.membership?.role),
+        event.visibility === 'private'
+          ? event.organizerId === authorization.user.uid
+          : event.visibility !== 'participants' ||
+            event.organizerId === authorization.user.uid ||
+            event.participantIds?.includes(authorization.user.uid) ||
+            ['owner', 'admin'].includes(authorization.membership?.role),
       );
+    const memberships = membershipsSnapshot.docs.map(document => document.data());
+    const profileSnapshots = memberships.length
+      ? await db.getAll(...memberships.map(membership => db.collection('users').doc(membership.userId)))
+      : [];
+    const currentYear = new Date().getUTCFullYear();
+    const birthdayEvents = memberships.flatMap((membership, index) => {
+      const profile = profileSnapshots[index]?.exists ? profileSnapshots[index].data() : {};
+      const birthday = typeof profile.birthday === 'string'
+        ? profile.birthday
+        : typeof profile.profile?.birthday === 'string'
+          ? profile.profile.birthday
+          : '';
+      const match = birthday.match(/^\d{4}-(\d{2})-(\d{2})$/);
+      if (!match) return [];
+      const month = Number(match[1]);
+      const day = Number(match[2]);
+      return [currentYear - 1, currentYear, currentYear + 1, currentYear + 2].flatMap(year => {
+        let start = new Date(Date.UTC(year, month - 1, day));
+        if (start.getUTCMonth() !== month - 1 || start.getUTCDate() !== day) {
+          if (month !== 2 || day !== 29) return [];
+          start = new Date(Date.UTC(year, 1, 28));
+        }
+        const end = new Date(start);
+        end.setUTCDate(end.getUTCDate() + 1);
+        return [{
+          id: `birthday_${membership.userId}_${year}`,
+          title: `День народження · ${profile.name || profile.email || 'Учасник'}`,
+          description: 'Привітайте колегу в загальному чаті 🎉',
+          type: 'birthday',
+          visibility: 'team',
+          allDay: true,
+          startAt: start.toISOString(),
+          endAt: end.toISOString(),
+          organizerId: membership.userId,
+          participantIds: [],
+          participantResponses: {},
+          birthdayUserId: membership.userId,
+          readOnly: true,
+          isSystem: true,
+          recurrence: { frequency: 'none', interval: 1, until: '' },
+          reminderMinutes: [],
+        }];
+      });
+    });
     const isPrivileged = ['owner', 'admin'].includes(authorization.membership?.role);
     const visibleProjectIds = new Set(projectsSnapshot.docs.flatMap(document => {
       const project = document.data();
@@ -54,7 +101,7 @@ export async function GET(request) {
     });
 
     return NextResponse.json(
-      { events, deadlines },
+      { events: [...events, ...birthdayEvents], deadlines },
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
@@ -80,7 +127,9 @@ export async function POST(request) {
     const normalized = normalizedCalendarEventInput(body);
     if (normalized.error) return NextResponse.json({ error: normalized.error }, { status: 400 });
     const eventData = normalized.value;
-    if (!eventData.participantIds.includes(authorization.user.uid)) {
+    if (eventData.visibility === 'private') {
+      eventData.participantIds = [authorization.user.uid];
+    } else if (!eventData.participantIds.includes(authorization.user.uid)) {
       eventData.participantIds.unshift(authorization.user.uid);
     }
     const referenceError = await validateCalendarReferences({

@@ -12,11 +12,26 @@ import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
-import FilterBar from '@/components/ui/FilterBar';
-import { Select } from '@/components/ui/Select';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 
-export default function ProjectTeamTab({ members = [], allMembers = [], issues = [], projectId, project, canManage = false, inviteMember }) {
+export default function ProjectTeamTab({
+  members = [],
+  allMembers = [],
+  issues = [],
+  projectId,
+  project,
+  canManage = false,
+  inviteMember,
+  roleFilter = 'all',
+  workloadFilter = 'all',
+  manageOpen = false,
+  onManageOpenChange = () => {},
+  onOpenManager = () => {},
+  selected = [],
+  onSelectedChange = () => {},
+  memberSearch = '',
+  onMemberSearchChange = () => {},
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -24,20 +39,15 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
   const { byUser } = useProjectTimeLogs(projectId);
   const { doneStatusIds } = useWorkflowConfig();
   const doneSet = new Set(doneStatusIds);
-  const [manageOpen, setManageOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [workloadFilter, setWorkloadFilter] = useState('all');
-  const [selected, setSelected] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const filteredMembers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = memberSearch.trim().toLowerCase();
     if (!query) return allMembers;
     return allMembers.filter(member => [member.name, member.email]
       .some(value => String(value || '').toLowerCase().includes(query)));
-  }, [allMembers, search]);
+  }, [allMembers, memberSearch]);
   const visibleMembers = useMemo(() => members.filter(member => {
     const uid = member.id || member.uid;
     const completedStatuses = new Set(doneStatusIds);
@@ -51,15 +61,13 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
 
   const toggleMember = userId => {
     if (userId === project?.createdBy) return;
-    setSelected(current => current.includes(userId)
-      ? current.filter(id => id !== userId)
-      : [...current, userId]);
+    onSelectedChange(selected.includes(userId)
+      ? selected.filter(id => id !== userId)
+      : [...selected, userId]);
   };
 
   const openManager = () => {
-    setSelected(Array.isArray(project?.team) ? project.team : []);
-    setSearch('');
-    setManageOpen(true);
+    onOpenManager();
   };
 
   const saveTeam = async () => {
@@ -67,7 +75,7 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
     try {
       await updateProjectTeam(projectId, selected);
       showToast('Команду проєкту оновлено');
-      setManageOpen(false);
+      onManageOpenChange(false);
     } catch (error) {
       showToast(error.message || 'Не вдалося оновити команду', 'error');
     } finally {
@@ -76,39 +84,7 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-2 pb-8">
-      <div className="flex items-center justify-between gap-3">
-          <FilterBar>
-            <Select
-              value={roleFilter}
-              onChange={setRoleFilter}
-              variant="ghost"
-              options={[
-                { value: 'all', label: 'Усі ролі' },
-                { value: 'owner', label: 'Власники' },
-                { value: 'admin', label: 'Адміністратори' },
-                { value: 'member', label: 'Учасники' },
-              ]}
-            />
-            <Select
-              value={workloadFilter}
-              onChange={setWorkloadFilter}
-              variant="ghost"
-              options={[
-                { value: 'all', label: 'Усе навантаження' },
-                { value: 'assigned', label: 'Є активні завдання' },
-                { value: 'available', label: 'Без активних завдань' },
-              ]}
-            />
-          </FilterBar>
-          {canManage && (
-            <Button icon={UserPlus} style="secondary" size="md" onClick={openManager}>
-              Керувати
-            </Button>
-          )}
-      </div>
-
-      {/* Same filter → gap → content-panel rhythm as Analytics. */}
+    <div className="flex flex-1 flex-col pb-8">
       <div className="w-full rounded-[16px] bg-canvas p-[16px]">
         {members.length === 0 ? (
           <EmptyState
@@ -188,16 +164,16 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
 
       <Dialog
         isOpen={manageOpen}
-        onClose={() => setManageOpen(false)}
+        onClose={() => onManageOpenChange(false)}
         title="Команда проєкту"
         size="md"
-        footer={<><Button style="secondary" size="md" onClick={() => setManageOpen(false)}>Скасувати</Button><Button size="md" onClick={saveTeam} loading={saving}>Зберегти ({selected.length})</Button></>}
+        footer={<><Button style="secondary" size="md" onClick={() => onManageOpenChange(false)}>Скасувати</Button><Button size="md" onClick={saveTeam} loading={saving}>Зберегти ({selected.length})</Button></>}
       >
         <div className="flex flex-col gap-4">
           <button
             type="button"
             onClick={() => {
-              setManageOpen(false);
+              onManageOpenChange(false);
               setInviteOpen(true);
             }}
             className="flex items-center gap-3 rounded-[14px] bg-canvas p-4 text-left transition-colors hover:bg-[#ededed]"
@@ -210,7 +186,7 @@ export default function ProjectTeamTab({ members = [], allMembers = [], issues =
               <span className="mt-0.5 block text-[11px] text-muted">Email, посилання або QR-код</span>
             </span>
           </button>
-          <Input value={search} onChange={event => setSearch(event.target.value)} icon={Search} placeholder="Ім’я або email учасника" autoFocus />
+          <Input value={memberSearch} onChange={event => onMemberSearchChange(event.target.value)} icon={Search} placeholder="Ім’я або email учасника" autoFocus />
           <div className="max-h-[420px] overflow-y-auto flex flex-col gap-1">
             {filteredMembers.map(member => {
               const uid = member.id || member.uid;

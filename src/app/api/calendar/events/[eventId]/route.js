@@ -62,7 +62,9 @@ export async function PATCH(request, context) {
     const normalized = normalizedCalendarEventInput(body, loaded.event);
     if (normalized.error) return NextResponse.json({ error: normalized.error }, { status: 400 });
     const eventData = normalized.value;
-    if (!eventData.participantIds.includes(loaded.event.organizerId)) {
+    if (eventData.visibility === 'private') {
+      eventData.participantIds = [loaded.event.organizerId];
+    } else if (!eventData.participantIds.includes(loaded.event.organizerId)) {
       eventData.participantIds.unshift(loaded.event.organizerId);
     }
     const referenceError = await validateCalendarReferences({

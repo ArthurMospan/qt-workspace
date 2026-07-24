@@ -3,44 +3,14 @@
 // src/lib/hooks/useNotifications.js
 // Real-time notifications. Detects truly NEW docs and delivers them through
 // channels the user controls in Налаштування → Сповіщення
-// (users/{uid}/settings/notifications): browser push, sound, in-app popup,
-// opt-in email. Also exposes list actions for the notification center.
+// (users/{uid}/settings/notifications): sound, in-app popup and opt-in email.
+// Also exposes list actions for the notification center.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   collection, query, where, orderBy, limit, onSnapshot, updateDoc, deleteDoc,
   doc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
-
-// Request browser notification permission once
-export async function requestNotifPermission() {
-  if (!('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
-  if (Notification.permission === 'denied') return false;
-  const result = await Notification.requestPermission();
-  return result === 'granted';
-}
-
-// Fire a browser native notification
-function fireBrowserNotif(notification) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const n = new Notification(notification.title, {
-    body: notification.body,
-    icon: '/logo.svg',
-    badge: '/logo.svg',
-    silent: notification.type === 'emergency',
-    requireInteraction: notification.type === 'emergency',
-    tag: notification.type === 'emergency' ? `emergency-${notification.id || 'alert'}` : undefined,
-  });
-  const link = notificationDestinationWithOrganization(notification);
-  if (link) n.onclick = () => {
-    window.focus();
-    window.location.href = link;
-    n.close();
-  };
-  if (notification.type !== 'emergency') setTimeout(() => n.close(), 8000);
-}
 
 // Soft two-tone chime via WebAudio — no external audio asset needed
 function playChime() {
@@ -130,11 +100,9 @@ export function useNotifications(userId, {
             seenIds.current.add(n.id);
             if (n.organizationId !== activeOrganizationIdRef.current) return;
             const prefs = prefsRef.current;
-            // 1. Browser native notification (gated by browser permission)
-            fireBrowserNotif(n);
-            // 2. Sound chime
+            // 1. Sound chime
             if (prefs.sound !== false && n.type !== 'emergency') playChime();
-            // 3. In-app popup callback (goes to store)
+            // 2. In-app popup callback (goes to store)
             if (prefs.popup !== false && onNew) onNew(n);
           }
         });

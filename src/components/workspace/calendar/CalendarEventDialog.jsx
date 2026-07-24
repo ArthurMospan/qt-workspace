@@ -7,15 +7,18 @@ import {
   CircleHelp,
   Check,
   Clock3,
+  Diamond,
   ExternalLink,
   Link2,
+  LockKeyhole,
   MapPin,
   Repeat2,
+  StickyNote,
   Trash2,
   Users,
   X,
 } from 'lucide-react';
-import { Button, Dialog, Input, Select, Textarea } from '@/components/ui';
+import { Button, Dialog, Input, Select, Textarea, ToggleSwitch } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import UserAvatar from '@/components/UserAvatar';
@@ -26,7 +29,14 @@ const TYPE_OPTIONS = [
   { value: 'focus', label: 'Фокус-час', dotColor: '#14b8a6' },
   { value: 'absence', label: 'Відсутність', dotColor: '#f59e0b' },
   { value: 'release', label: 'Реліз / етап', dotColor: '#ef4444' },
+  { value: 'note', label: 'Нотатка', icon: StickyNote },
+  { value: 'reminder', label: 'Нагадування', icon: BellRing },
+  { value: 'milestone', label: 'Віха', icon: Diamond },
 ];
+const TYPE_LABELS = new Map([
+  ...TYPE_OPTIONS.map(option => [option.value, option.label]),
+  ['birthday', 'День народження'],
+]);
 
 const RESPONSE_OPTIONS = [
   { value: 'accepted', label: 'Буду', icon: Check, activeClass: 'bg-emerald-600 text-white border-emerald-600' },
@@ -131,7 +141,7 @@ function EventDetails({
         <div className="bg-gradient-to-br from-black/[0.035] to-transparent p-[18px]">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-bold text-white">
-              {TYPE_OPTIONS.find(option => option.value === event.type)?.label || 'Подія'}
+              {TYPE_LABELS.get(event.type) || 'Подія'}
             </span>
             {project && <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-muted ring-1 ring-black/[0.05]">{project.name}</span>}
             {event.recurrence?.frequency !== 'none' && <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-muted ring-1 ring-black/[0.05]"><Repeat2 size={11} /> {recurrence?.label}</span>}
@@ -256,6 +266,11 @@ export default function CalendarEventDialog({
   const submit = async eventObject => {
     eventObject.preventDefault();
     if (!canManage) return;
+    const title = form.title.trim();
+    if (!title) {
+      setError('Вкажіть назву події');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -269,15 +284,23 @@ export default function CalendarEventDialog({
         startAt = new Date(`${form.startDate}T${form.startTime}:00`);
         endAt = new Date(`${form.endDate}T${form.endTime}:00`);
       }
+      if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) {
+        throw new Error('Вкажіть коректні дату й час');
+      }
+      if (endAt <= startAt) {
+        throw new Error('Завершення має бути пізніше за початок');
+      }
       await onSave({
-        title: form.title,
+        title,
         type: form.type,
         description: form.description,
         location: form.location,
         meetingUrl: form.meetingUrl,
         projectId: form.projectId,
         visibility: form.visibility,
-        participantIds: form.participantIds,
+        participantIds: form.visibility === 'private'
+          ? (currentUserId ? [currentUserId] : [])
+          : form.participantIds,
         allDay: form.allDay,
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
@@ -378,6 +401,7 @@ export default function CalendarEventDialog({
           <label className="text-[12px] font-bold text-ink">Назва</label>
           <Input
             autoFocus
+            required
             value={form.title}
             onChange={e => update('title', e.target.value)}
             placeholder="Наприклад, синхронізація команди"
@@ -432,21 +456,20 @@ export default function CalendarEventDialog({
           </div>
         </div>
 
-        <div className="rounded-[14px] bg-canvas p-[12px] space-y-[12px]">
-          <label className="flex items-center justify-between gap-4 cursor-pointer">
+        <div className="overflow-hidden rounded-[14px] border border-line bg-white">
+          <div className="flex items-center justify-between gap-4 border-b border-line bg-canvas px-[14px] py-[12px]">
             <span>
               <span className="block text-[12px] font-bold text-ink">Подія на весь день</span>
               <span className="block text-[11px] text-muted mt-0.5">Без прив’язки до конкретної години</span>
             </span>
-            <input
-              type="checkbox"
+            <ToggleSwitch
               checked={form.allDay}
-              onChange={e => update('allDay', e.target.checked)}
+              onChange={value => update('allDay', value)}
               disabled={!canManage}
-              className="w-4 h-4 accent-[#1f1f1f]"
+              size="sm"
             />
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+          </div>
+          <div className="grid grid-cols-1 gap-[12px] p-[14px] sm:grid-cols-2">
             <div className="space-y-[6px]">
               <label className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
                 <CalendarDays size={13} /> Початок
@@ -470,19 +493,28 @@ export default function CalendarEventDialog({
 
         <div className="space-y-[8px]">
           <label className="text-[12px] font-bold text-ink flex items-center gap-1.5">
-            <Users size={14} /> Учасники
+            {form.visibility === 'private' ? <LockKeyhole size={14} /> : <Users size={14} />}
+            {form.visibility === 'private'
+              ? (form.type === 'note' ? 'Приватна нотатка' : 'Приватна подія')
+              : 'Учасники'}
           </label>
-          <MultiSelect
-            value={form.participantIds}
-            onChange={value => update('participantIds', value)}
-            options={memberOptions}
-            placeholder="Додати учасників"
-            searchPlaceholder="Знайти учасника..."
-            disabled={!canManage}
-            className="w-full"
-            dropdownClassName="w-full"
-          />
-          {event && form.participantIds.length > 0 && (
+          {form.visibility === 'private' ? (
+            <div className="rounded-[12px] border border-line bg-canvas px-3 py-2.5 text-[12px] text-muted">
+              Цю подію бачите лише ви. Запрошення та командні сповіщення не надсилаються.
+            </div>
+          ) : (
+            <MultiSelect
+              value={form.participantIds}
+              onChange={value => update('participantIds', value)}
+              options={memberOptions}
+              placeholder="Додати учасників"
+              searchPlaceholder="Знайти учасника..."
+              disabled={!canManage}
+              className="w-full"
+              dropdownClassName="w-full"
+            />
+          )}
+          {event && form.visibility !== 'private' && form.participantIds.length > 0 && (
             <div className="flex flex-wrap gap-[6px] pt-[2px]">
               {form.participantIds.map(uid => {
                 const member = members.find(item => (item.id || item.uid) === uid);
@@ -528,6 +560,7 @@ export default function CalendarEventDialog({
             options={[
               { value: 'team', label: 'Уся команда' },
               { value: 'participants', label: 'Лише учасники' },
+              { value: 'private', label: 'Лише я', icon: LockKeyhole },
             ]}
             disabled={!canManage}
           />

@@ -69,7 +69,7 @@ export default function Dialog({
           w-full flex flex-col overflow-hidden
           pb-[env(safe-area-inset-bottom)] sm:pb-0
           ${isSheet
-            ? 'max-h-[94dvh] rounded-t-[24px] sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-[24px]'
+            ? 'max-h-[94dvh] rounded-t-[24px] sm:h-full sm:max-h-none sm:rounded-none'
             : 'max-h-[92vh] rounded-t-[24px] sm:max-h-[90vh] sm:rounded-[24px]'}
           ${sizeClasses[size]}
           ${className}

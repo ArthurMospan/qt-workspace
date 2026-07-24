@@ -475,7 +475,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
               <Link
                 href={`/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="text-ink font-semibold underline cursor-pointer hover:text-ink-hover transition-colors no-nav"
+                className="text-ink font-semibold cursor-pointer hover:text-ink-hover transition-colors no-nav"
               >
                 {stats.lastAction.issueKey}: {stats.lastAction.title}
               </Link>
@@ -629,8 +629,9 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
               placeholder="Додати учасників одразу"
               searchPlaceholder="Знайти учасника..."
               className="w-full"
-              dropdownClassName="!w-full !max-w-none"
+              dropdownClassName="w-full max-w-none"
               triggerIcon={Users}
+              selectAllLabel="Вибрати всіх учасників"
             />
             <p className="mt-1.5 text-[11px] text-muted">Ви як автор проєкту будете додані автоматично.</p>
           </div>
@@ -867,7 +868,7 @@ export default function WorkspacePage() {
 
   return (<>
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
-      <div className="w-full page-gutter pt-[56px] flex flex-col gap-2 min-h-full">
+      <div className="workspace-page-layout min-h-full">
         
         <PageHeader
           variant="main"

@@ -18,6 +18,76 @@ function reminderLabel(minutes) {
   return `До початку ${minutes / 1440} дн`;
 }
 
+function datePartsInTimezone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  return Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+}
+
+async function createBirthdayGreetings(db, organizationId) {
+  const organizationSnapshot = await db.collection('organizations').doc(organizationId).get();
+  const timeZone = organizationSnapshot.data()?.timezone || 'Europe/Kyiv';
+  let today;
+  try {
+    today = datePartsInTimezone(new Date(), timeZone);
+  } catch {
+    today = datePartsInTimezone(new Date(), 'Europe/Kyiv');
+  }
+  const membershipsSnapshot = await db.collection('orgMemberships').where('orgId', '==', organizationId).get();
+  const memberships = membershipsSnapshot.docs.map(document => document.data());
+  if (!memberships.length) return 0;
+  const profiles = await db.getAll(...memberships.map(membership => db.collection('users').doc(membership.userId)));
+  let created = 0;
+
+  await Promise.all(memberships.map(async (membership, index) => {
+    const profile = profiles[index]?.exists ? profiles[index].data() : {};
+    const birthday = typeof profile.birthday === 'string'
+      ? profile.birthday
+      : typeof profile.profile?.birthday === 'string'
+        ? profile.profile.birthday
+        : '';
+    if (birthday.slice(5) !== `${today.month}-${today.day}`) return;
+
+    const greetingId = `birthday_${today.year}_${today.month}_${today.day}_${membership.userId}`;
+    const messageRef = db.collection('organizations').doc(organizationId)
+      .collection('channels').doc('general').collection('messages').doc(greetingId);
+    try {
+      const name = profile.name || profile.email || 'нашого колеги';
+      const text = `🎉 Сьогодні день народження у ${name}! Вітаємо, бажаємо натхнення, крутих результатів і чудового року попереду!`;
+      await messageRef.create({
+        text,
+        attachments: [],
+        senderId: 'quickteam-system',
+        user: 'QuickTeam',
+        avatar: null,
+        system: true,
+        type: 'birthday',
+        birthdayUserId: membership.userId,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        readBy: [],
+      });
+      await db.collection('organizations').doc(organizationId).collection('channels').doc('general').set({
+        name: 'general',
+        type: 'public',
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageText: text.slice(0, 80),
+        lastMessageSender: 'QuickTeam',
+        lastMessageSenderId: 'quickteam-system',
+        messageCount: admin.firestore.FieldValue.increment(1),
+      }, { merge: true });
+      created += 1;
+    } catch (error) {
+      if (error.code !== 6 && error.code !== 'already-exists') throw error;
+    }
+  }));
+
+  return created;
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -92,7 +162,8 @@ export async function POST(request) {
       }
     }));
 
-    return NextResponse.json({ created });
+    const birthdayGreetings = await createBirthdayGreetings(db, organizationId);
+    return NextResponse.json({ created, birthdayGreetings });
   } catch (error) {
     return routeErrorResponse(error, {
       context: 'calendar-reminders POST',

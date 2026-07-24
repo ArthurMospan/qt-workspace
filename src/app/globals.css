@@ -61,17 +61,40 @@
   .hide-scrollbar { scrollbar-width: none; overflow: -moz-scrollbars-none; -ms-overflow-style: none; }
   .hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
+  /* Composer overlaps the scroll area by half its live height.
+     Its lower half is the solid chat surface; the upper half stays transparent. */
+  .chat-composer-dock {
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+    margin-top: calc(0px - var(--chat-composer-overlap, 48px));
+    background: linear-gradient(
+      to bottom,
+      transparent 0 50%,
+      var(--chat-composer-surface, var(--color-canvas)) 50% 100%
+    );
+  }
+
   /* ── Page gutter — single source of truth for page horizontal padding.
      Pages apply .page-gutter (instead of px-[24px] md:px-[32px]); rows that
      must scroll edge-to-edge (kanban, tabs, timesheet) apply .full-bleed and
      automatically match whatever gutter their page declares. ── */
-  .page-gutter {
+  .page-gutter,
+  .workspace-page-layout {
     --page-px: 24px;
     padding-left: var(--page-px);
     padding-right: var(--page-px);
   }
+  .workspace-page-layout {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 56px;
+  }
   @media (min-width: 768px) {
-    .page-gutter { --page-px: 32px; }
+    .page-gutter,
+    .workspace-page-layout { --page-px: 32px; }
   }
   .full-bleed {
     margin-left: calc(var(--page-px, 24px) * -1);

@@ -344,13 +344,15 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       throw e;
     }
   };
-  const createChannel = async name => {
+  const createChannel = async (name, options = {}) => {
     if (!name.trim() || !activeOrgId) return null;
     const safeId = name.trim().toLowerCase().replace(/\s+/g, '-');
     try {
       await setDoc(doc(db, 'organizations', activeOrgId, 'channels', safeId), {
         name: name.trim().toLowerCase(),
-        type: 'public'
+        type: 'public',
+        description: options.description || '',
+        members: Array.isArray(options.members) ? [...new Set(options.members.filter(Boolean))] : [],
       });
       return safeId;
     } catch (error) {

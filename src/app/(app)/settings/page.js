@@ -14,7 +14,7 @@ import { linkWithPopup, unlink, signOut as firebaseSignOut } from 'firebase/auth
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
-  Palette, Check, Plus, Trash2, Edit2, X, Save,
+  Shapes, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
@@ -35,6 +35,7 @@ import {
   InnerNavigation, 
   PageHeader,
   Dialog,
+  DatePicker,
   Surface,
   useConfirm,
   Popover
@@ -97,9 +98,9 @@ const NAV = [
   { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
   { id: 'integrations',  label: 'Інтеграції',       icon: PlugZap,       group: 'Організація', adminOnly: true },
   { id: 'statuses',      label: 'Статуси завдань',    icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
-  { id: 'types',         label: 'Типи завдань',       icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
+  { id: 'types',         label: 'Типи завдань',       icon: Shapes,        group: 'Налаштування процесів', adminOnly: true },
   { id: 'priorities',    label: 'Пріоритети',       icon: AlertTriangle, group: 'Налаштування процесів', adminOnly: true },
-  { id: 'labels',        label: 'Мітки',            icon: Palette,       group: 'Налаштування процесів', adminOnly: true },
+  { id: 'labels',        label: 'Мітки',            icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
   { id: 'positions',     label: 'Посади та ставки', icon: Briefcase,     group: 'Налаштування процесів', adminOnly: true },
   { id: 'archives',      label: 'Архів проєктів',    icon: Archive,       group: 'Інше' },
   { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: false, adminOnly: true },
@@ -176,6 +177,48 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
             <X size={15} />
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Оберіть дату' }) {
+  const dirty = (value ?? '') !== (saved ?? '');
+  const [saving, setSaving] = useState(false);
+  const commit = async () => {
+    if (!dirty || saving) return;
+    setSaving(true);
+    try { await onSave(); } finally { setSaving(false); }
+  };
+  return (
+    <div className="flex w-[300px] items-center gap-1.5">
+      <DatePicker
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="min-w-0 flex-1"
+        yearRange={{ min: new Date().getFullYear() - 100, max: new Date().getFullYear() }}
+      />
+      {dirty && (
+        <>
+          <button
+            type="button"
+            onClick={commit}
+            disabled={saving}
+            title="Зберегти"
+            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] bg-ink text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
+          >
+            <Check size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(saved ?? '')}
+            title="Скасувати"
+            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] bg-canvas text-muted transition-colors hover:bg-line"
+          >
+            <X size={15} />
+          </button>
+        </>
       )}
     </div>
   );
@@ -636,6 +679,7 @@ export default function SettingsPage() {
   const [telegram,      setTelegram]      = useState('');
   const [phone,         setPhone]         = useState('');
   const [location,      setLocation]      = useState('');
+  const [birthday,      setBirthday]      = useState('');
   const [skillsInput,   setSkillsInput]   = useState('');
 
   // Saved values + whether any profile field is unsaved (for the leave guard).
@@ -647,6 +691,7 @@ export default function SettingsPage() {
     telegram !== (currentUser?.telegram || '') ||
     phone !== (currentUser?.phone || '') ||
     location !== (currentUser?.location || '') ||
+    birthday !== (currentUser?.birthday || '') ||
     skillsInput !== savedSkills;
 
   // Discard unsaved profile edits (used when the user chooses to leave without
@@ -659,6 +704,7 @@ export default function SettingsPage() {
     setTelegram(currentUser?.telegram || '');
     setPhone(currentUser?.phone || '');
     setLocation(currentUser?.location || '');
+    setBirthday(currentUser?.birthday || '');
     setSkillsInput(Array.isArray(currentUser?.skills) ? currentUser.skills.join(', ') : '');
   }, [currentUser]);
 
@@ -737,13 +783,6 @@ export default function SettingsPage() {
   // Last workflow value known to match Firestore — process settings auto-save
   // (no manual button), so this guards against re-writing freshly hydrated data.
   const wfBaseline = useRef(null);
-  const [pushPerm, setPushPerm] = useState('default'); // browser Notification.permission
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      queueMicrotask(() => setPushPerm(Notification.permission));
-    }
-  }, []);
-
   // ── Localization ──
   const [dateFormat, setDateFormat] = useState('DD.MM.YYYY');
   const [firstDayOfWeek, setFirstDayOfWeek] = useState('Monday');
@@ -789,6 +828,7 @@ export default function SettingsPage() {
         setTelegram(currentUser.telegram || '');
         setPhone(currentUser.phone || '');
         setLocation(currentUser.location || '');
+        setBirthday(currentUser.birthday || '');
         setSkillsInput(Array.isArray(currentUser.skills) ? currentUser.skills.join(', ') : '');
         if (currentUser.localization) {
           const loc = {
@@ -1603,6 +1643,15 @@ export default function SettingsPage() {
             <Row label="Локація" desc="Місто, країна">
               <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[260px]" />
             </Row>
+            <Row label="День народження" desc="Показується команді в профілі та календарі">
+              <InlineDateField
+                value={birthday}
+                onChange={setBirthday}
+                saved={currentUser?.birthday || ''}
+                onSave={() => saveProfileField('birthday', birthday)}
+                placeholder="Оберіть день народження"
+              />
+            </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <label className="text-[13px] font-medium text-ink">Про себе</label>
               <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
@@ -1686,33 +1735,6 @@ export default function SettingsPage() {
           {/* Канали доставки */}
           <Card variant="white" padding="lg" className="!border-none">
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Канали</p>
-            <Row
-              label="Push у браузері"
-              desc={
-                pushPerm === 'granted' ? 'Системні сповіщення увімкнено для цього браузера'
-                : pushPerm === 'denied' ? 'Заблоковано браузером — дозволь сповіщення для сайту в налаштуваннях браузера'
-                : 'Системні сповіщення, навіть коли вкладка не активна'
-              }
-            >
-              {pushPerm === 'granted' ? (
-                <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#10b981]">
-                  <Check size={13} /> Увімкнено
-                </span>
-              ) : pushPerm === 'denied' ? (
-                <span className="text-[12px] font-medium text-muted">Заблоковано</span>
-              ) : (
-                <Button
-                  onClick={async () => {
-                    const result = await Notification.requestPermission();
-                    setPushPerm(result);
-                    showToast(result === 'granted' ? 'Push-сповіщення увімкнено' : 'Доступ відхилено');
-                  }}
-                  style="secondary" size="md"
-                >
-                  Увімкнути
-                </Button>
-              )}
-            </Row>
             <Row label="Звук" desc="Короткий сигнал при новому сповіщенні">
               <ToggleSwitch checked={notif.sound} onChange={v => setNotif(p => ({ ...p, sound: v }))} size="sm" />
             </Row>

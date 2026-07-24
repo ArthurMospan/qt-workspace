@@ -7,15 +7,16 @@ import QtPlusChatPanel from './chat/QtPlusChatPanel';
  * На вузькому екрані (< lg) чат стає під етапами. qtProjectId — id проєкту в порталі.
  * Монтується лише коли portalUser вже автентифікований (гейт у QtPlusProjectTab).
  */
-export default function QtPlusLinkedContent({ qtProjectId, portalUser, currentUser }) {
+export default function QtPlusLinkedContent({ qtProjectId, portalUser, currentUser, header = null }) {
   return (
-    <div className="flex flex-col lg:flex-row gap-4 items-start">
-      <div className="flex-1 min-w-0 w-full">
+    <div className="grid min-h-[520px] grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex min-h-[520px] min-w-0 flex-col gap-4 rounded-[16px] bg-canvas p-4">
+        {header}
         <QtPlusStagesView qtProjectId={qtProjectId} />
       </div>
-      <div className="w-full lg:w-[340px] shrink-0">
-        <QtPlusChatPanel qtProjectId={qtProjectId} portalUser={portalUser} currentUser={currentUser} />
-      </div>
+      <aside className="h-[520px] min-h-[440px] w-full overflow-hidden rounded-[16px] bg-canvas lg:sticky lg:top-[140px] lg:h-[min(620px,calc(100vh-180px))]">
+        <QtPlusChatPanel qtProjectId={qtProjectId} portalUser={portalUser} currentUser={currentUser} embedded />
+      </aside>
     </div>
   );
 }
