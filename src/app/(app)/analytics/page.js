@@ -30,6 +30,10 @@ import {
   effectiveTimeLogMillis,
   isCalendarEventTimeLog,
 } from '@/lib/utils/timeLogDates.mjs';
+import {
+  filterTeamIssues,
+  filterTeamTimeLogs,
+} from '@/lib/utils/teamAnalytics.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -337,6 +341,7 @@ export default function WorkspaceAnalyticsPage() {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [period, setPeriod] = useState(30);
+  const [teamMemberFilter, setTeamMemberFilter] = useState('all');
 
   // Табель state
   const selfUid = currentUser?.uid || currentUser?.id;
@@ -354,14 +359,31 @@ export default function WorkspaceAnalyticsPage() {
       return d;
     });
   };
+  const selectTeamMember = memberId => {
+    setTeamMemberFilter(memberId);
+    setAssigneeFilter(memberId);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (memberId === 'all') url.searchParams.delete('member');
+      else url.searchParams.set('member', memberId);
+      url.searchParams.set('tab', 'workload');
+      window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const member = searchParams.get('member');
-      if (member) queueMicrotask(() => setAssigneeFilter(member));
+      if (member) {
+        queueMicrotask(() => {
+          setAssigneeFilter(member);
+          setTeamMemberFilter(member);
+        });
+      }
       const tab = searchParams.get('tab');
       if (tab) queueMicrotask(() => setActiveTab(tab));
+      else if (member) queueMicrotask(() => setActiveTab('workload'));
     }
   }, []);
 
@@ -452,6 +474,14 @@ export default function WorkspaceAnalyticsPage() {
     )),
     [projectFilters, timeLogs]
   );
+  const teamIssues = useMemo(
+    () => filterTeamIssues(issues, projectFilters, teamMemberFilter),
+    [issues, projectFilters, teamMemberFilter],
+  );
+  const teamTimeLogs = useMemo(
+    () => filterTeamTimeLogs(timeLogs, projectFilters, teamMemberFilter),
+    [projectFilters, teamMemberFilter, timeLogs],
+  );
 
   const TABS = [
     { id: 'overview', label: 'Огляд', icon: BarChart2 },
@@ -531,6 +561,32 @@ export default function WorkspaceAnalyticsPage() {
                   Списати час
                 </Button>
               </>
+            ) : activeTab === 'workload' ? (
+              <FilterBar>
+                <MultiSelect
+                  value={projectFilters}
+                  onChange={setProjectFilters}
+                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  placeholder="Всі проєкти"
+                  searchPlaceholder="Пошук проєкту..."
+                  className="w-[200px]"
+                  variant="ghost"
+                />
+                <Select
+                  value={teamMemberFilter}
+                  onChange={selectTeamMember}
+                  options={[
+                    { value: 'all', label: 'Вся команда' },
+                    ...members.map(member => ({
+                      value: member.id || member.uid,
+                      label: member.name || member.email,
+                    })),
+                  ]}
+                  variant="ghost"
+                />
+                <FilterDivider />
+                <Segmented value={period} onChange={setPeriod} options={periodOptions} />
+              </FilterBar>
             ) : (
               <FilterBar>
                 <MultiSelect
@@ -620,7 +676,16 @@ export default function WorkspaceAnalyticsPage() {
         )}
 
         {activeTab === 'workload' && (
-          <WorkloadTab members={members} issues={filteredIssues} timeLogs={filteredTimeLogs} period={period} />
+          <WorkloadTab
+            members={members}
+            issues={teamIssues}
+            timeLogs={teamTimeLogs}
+            events={calendarEvents}
+            projects={projects}
+            period={period}
+            selectedMemberId={teamMemberFilter}
+            onSelectMember={selectTeamMember}
+          />
         )}
 
         {activeTab === 'billing' && canSeeBilling && (
