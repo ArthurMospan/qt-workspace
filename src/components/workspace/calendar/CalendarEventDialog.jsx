@@ -25,7 +25,7 @@ import { useConfirm } from '@/components/ui/ConfirmProvider';
 import UserAvatar from '@/components/UserAvatar';
 import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 
-const TYPE_OPTIONS = [
+export const CALENDAR_EVENT_TYPE_OPTIONS = [
   { value: 'meeting', label: 'Мітинг', dotColor: '#3b82f6' },
   { value: 'event', label: 'Подія', dotColor: '#8b5cf6' },
   { value: 'focus', label: 'Фокус-час', dotColor: '#14b8a6' },
@@ -36,7 +36,7 @@ const TYPE_OPTIONS = [
   { value: 'milestone', label: 'Віха', icon: Diamond },
 ];
 const TYPE_LABELS = new Map([
-  ...TYPE_OPTIONS.map(option => [option.value, option.label]),
+  ...CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option.label]),
   ['birthday', 'День народження'],
 ]);
 
@@ -46,14 +46,14 @@ const RESPONSE_OPTIONS = [
   { value: 'declined', label: 'Не буду', icon: X, activeClass: 'bg-red-500 text-white border-red-500' },
 ];
 
-const RECURRENCE_OPTIONS = [
+export const CALENDAR_EVENT_RECURRENCE_OPTIONS = [
   { value: 'none', label: 'Не повторювати' },
   { value: 'daily', label: 'Щодня' },
   { value: 'weekly', label: 'Щотижня' },
   { value: 'monthly', label: 'Щомісяця' },
 ];
 
-const REMINDER_OPTIONS = [
+export const CALENDAR_EVENT_REMINDER_OPTIONS = [
   { value: 0, label: 'У момент початку' },
   { value: 5, label: 'За 5 хвилин' },
   { value: 10, label: 'За 10 хвилин' },
@@ -78,7 +78,7 @@ function localTimeValue(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function initialForm(event, initialStart, currentUserId) {
+export function calendarEventFormInitialValue(event, initialStart, currentUserId) {
   const editableStart = event?.sourceEventId ? event.seriesStartAt : event?.startAt;
   const editableEnd = event?.sourceEventId ? event.seriesEndAt : event?.endAt;
   const start = editableStart ? new Date(editableStart) : new Date(initialStart || Date.now());
@@ -105,6 +105,48 @@ function initialForm(event, initialStart, currentUserId) {
     recurrenceInterval: event?.recurrence?.interval || 1,
     recurrenceUntil: event?.recurrence?.until || '',
     reminderMinutes: event?.reminderMinutes || [15],
+  };
+}
+
+export function calendarEventFormPayload(form, currentUserId) {
+  const title = form.title.trim();
+  if (!title) throw new Error('Вкажіть назву події');
+
+  let startAt;
+  let endAt;
+  if (form.allDay) {
+    startAt = new Date(`${form.startDate}T00:00:00`);
+    endAt = new Date(`${form.endDate}T00:00:00`);
+    if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
+  } else {
+    startAt = new Date(`${form.startDate}T${form.startTime}:00`);
+    endAt = new Date(`${form.endDate}T${form.endTime}:00`);
+  }
+  if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) {
+    throw new Error('Вкажіть коректні дату й час');
+  }
+  if (endAt <= startAt) throw new Error('Завершення має бути пізніше за початок');
+
+  return {
+    title,
+    type: form.type,
+    description: form.description,
+    location: form.location,
+    meetingUrl: form.meetingUrl,
+    projectId: form.projectId,
+    visibility: form.visibility,
+    participantIds: form.visibility === 'private'
+      ? (currentUserId ? [currentUserId] : [])
+      : form.participantIds,
+    allDay: form.allDay,
+    startAt: startAt.toISOString(),
+    endAt: endAt.toISOString(),
+    recurrence: {
+      frequency: form.recurrenceFrequency,
+      interval: Number(form.recurrenceInterval) || 1,
+      until: form.recurrenceUntil,
+    },
+    reminderMinutes: form.reminderMinutes,
   };
 }
 
@@ -135,16 +177,19 @@ export function CalendarEventDetails({
   onAddTime,
   onDeleteTime,
   onRespond,
+  showOverview = true,
 }) {
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
   const project = projects.find(item => item.id === event.projectId);
-  const recurrence = RECURRENCE_OPTIONS.find(option => option.value === event.recurrence?.frequency);
+  const recurrence = CALENDAR_EVENT_RECURRENCE_OPTIONS.find(option => option.value === event.recurrence?.frequency);
   const reminderLabels = (event.reminderMinutes || [])
-    .map(minutes => REMINDER_OPTIONS.find(option => option.value === minutes)?.label)
+    .map(minutes => CALENDAR_EVENT_REMINDER_OPTIONS.find(option => option.value === minutes)?.label)
     .filter(Boolean);
   return (
     <div className="space-y-[18px]">
+      {showOverview && (
+        <>
       <div className="overflow-hidden rounded-[18px] border border-black/[0.05] bg-white">
         <div className="bg-gradient-to-br from-black/[0.035] to-transparent p-[18px]">
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -182,6 +227,8 @@ export function CalendarEventDetails({
           <BellRing size={15} className="mt-0.5 shrink-0 text-ink" />
           <span>Нагадування: {reminderLabels.join(', ').toLocaleLowerCase('uk-UA')}</span>
         </div>
+      )}
+        </>
       )}
 
       <div>
@@ -301,7 +348,7 @@ export default function CalendarEventDialog({
   onCancelEdit,
 }) {
   const confirm = useConfirm();
-  const [form, setForm] = useState(() => initialForm(event, initialStart, currentUserId));
+  const [form, setForm] = useState(() => calendarEventFormInitialValue(event, initialStart, currentUserId));
   const [mode, setMode] = useState(initialMode || (event ? 'details' : 'edit'));
   const [saving, setSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);
@@ -336,51 +383,10 @@ export default function CalendarEventDialog({
   const submit = async eventObject => {
     eventObject.preventDefault();
     if (!canManage) return;
-    const title = form.title.trim();
-    if (!title) {
-      setError('Вкажіть назву події');
-      return;
-    }
     setSaving(true);
     setError('');
     try {
-      let startAt;
-      let endAt;
-      if (form.allDay) {
-        startAt = new Date(`${form.startDate}T00:00:00`);
-        endAt = new Date(`${form.endDate}T00:00:00`);
-        if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
-      } else {
-        startAt = new Date(`${form.startDate}T${form.startTime}:00`);
-        endAt = new Date(`${form.endDate}T${form.endTime}:00`);
-      }
-      if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) {
-        throw new Error('Вкажіть коректні дату й час');
-      }
-      if (endAt <= startAt) {
-        throw new Error('Завершення має бути пізніше за початок');
-      }
-      await onSave({
-        title,
-        type: form.type,
-        description: form.description,
-        location: form.location,
-        meetingUrl: form.meetingUrl,
-        projectId: form.projectId,
-        visibility: form.visibility,
-        participantIds: form.visibility === 'private'
-          ? (currentUserId ? [currentUserId] : [])
-          : form.participantIds,
-        allDay: form.allDay,
-        startAt: startAt.toISOString(),
-        endAt: endAt.toISOString(),
-        recurrence: {
-          frequency: form.recurrenceFrequency,
-          interval: Number(form.recurrenceInterval) || 1,
-          until: form.recurrenceUntil,
-        },
-        reminderMinutes: form.reminderMinutes,
-      });
+      await onSave(calendarEventFormPayload(form, currentUserId));
     } catch (saveError) {
       setError(saveError.message || 'Не вдалося зберегти подію');
     } finally {
@@ -541,7 +547,7 @@ export default function CalendarEventDialog({
             <Select
               value={form.type}
               onChange={value => update('type', value)}
-              options={TYPE_OPTIONS}
+              options={CALENDAR_EVENT_TYPE_OPTIONS}
               disabled={!canManage}
             />
           </div>
@@ -559,7 +565,7 @@ export default function CalendarEventDialog({
         <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2">
           <div className="space-y-[8px]">
             <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink"><Repeat2 size={14} /> Повторення</label>
-            <Select value={form.recurrenceFrequency} onChange={value => update('recurrenceFrequency', value)} options={RECURRENCE_OPTIONS} />
+            <Select value={form.recurrenceFrequency} onChange={value => update('recurrenceFrequency', value)} options={CALENDAR_EVENT_RECURRENCE_OPTIONS} />
             {form.recurrenceFrequency !== 'none' && (
               <div className="grid grid-cols-[110px_1fr] gap-2">
                 <Input type="number" min="1" max="12" value={form.recurrenceInterval} onChange={eventObject => update('recurrenceInterval', eventObject.target.value)} aria-label="Інтервал повторення" />
@@ -572,7 +578,7 @@ export default function CalendarEventDialog({
             <MultiSelect
               value={form.reminderMinutes}
               onChange={value => update('reminderMinutes', value)}
-              options={REMINDER_OPTIONS}
+              options={CALENDAR_EVENT_REMINDER_OPTIONS}
               placeholder="Додати нагадування"
               searchPlaceholder="Знайти інтервал..."
               className="w-full"

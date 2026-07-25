@@ -70,16 +70,18 @@ export function useCalendarEvents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async ({ silent = false } = {}) => {
     if (!activeOrgId) {
       setEvents([]);
       setDeadlines([]);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    setEvents([]);
-    setDeadlines([]);
+    if (!silent) {
+      setLoading(true);
+      setEvents([]);
+      setDeadlines([]);
+    }
     try {
       const result = await calendarRequest(
         `/api/calendar/events?organizationId=${encodeURIComponent(activeOrgId)}`,
@@ -90,7 +92,7 @@ export function useCalendarEvents() {
     } catch (requestError) {
       setError(requestError);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [activeOrgId]);
 
@@ -104,7 +106,7 @@ export function useCalendarEvents() {
       method: 'POST',
       body: JSON.stringify({ ...data, organizationId: activeOrgId }),
     });
-    await refresh();
+    await refresh({ silent: true });
     return result.event;
   }, [activeOrgId, refresh]);
 
@@ -113,7 +115,7 @@ export function useCalendarEvents() {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
-    await refresh();
+    await refresh({ silent: true });
     return result.event;
   }, [refresh]);
 
@@ -121,7 +123,7 @@ export function useCalendarEvents() {
     await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
       method: 'DELETE',
     });
-    await refresh();
+    await refresh({ silent: true });
   }, [refresh]);
 
   const respondToEvent = useCallback(async (eventId, response) => {
