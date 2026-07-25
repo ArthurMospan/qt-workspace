@@ -19,6 +19,7 @@ import {
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
+import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -118,15 +119,14 @@ export default function MobileNav() {
     e.stopPropagation();
     const result = stopTimer();
     setMoreOpen(false);
-    if (result?.projectId) {
-      const suffix = result.minutes > 0 ? `?logTime=${result.minutes}` : '';
-      router.push(`/${result.projectId}/issue/${result.issueId}${suffix}`);
-    }
+    const targetHref = timerTargetHref(result, { minutes: result?.minutes });
+    if (targetHref) router.push(targetHref);
   };
 
   const handleTimerNavigate = (timer) => {
     setMoreOpen(false);
-    if (timer.projectId) router.push(`/${timer.projectId}/issue/${timer.issueId}`);
+    const targetHref = timerTargetHref(timer);
+    if (targetHref) router.push(targetHref);
   };
 
   return (

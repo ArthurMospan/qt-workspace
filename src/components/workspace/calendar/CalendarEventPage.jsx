@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   BellRing,
   CalendarDays,
@@ -319,6 +319,8 @@ function CalendarEventTimeSheet({
 
 export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const confirm = useConfirm();
   const { currentUser, projects = [], orgRole } = useAppContext();
   const { members = [] } = useOrganization();
@@ -391,6 +393,25 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     ? calendarEventFormInitialValue(event, event.startAt, currentUserId)
     : null;
   const quickForm = quickState.eventKey === eventFormKey ? quickState.form : eventForm;
+  const logTimeParam = searchParams.get('logTime');
+
+  useEffect(() => {
+    if (!event || !logTimeParam) return;
+
+    const minutes = Math.round(Number(logTimeParam));
+    if (canTrackTime && Number.isFinite(minutes) && minutes > 0) {
+      queueMicrotask(() => {
+        setTimerMinutes(minutes);
+        setTimePanelOpen(true);
+        setActionError('');
+      });
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete('logTime');
+    const nextQuery = nextSearchParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [canTrackTime, event, logTimeParam, pathname, router, searchParams]);
 
   const projectOptions = useMemo(() => [
     { value: '', label: 'Без проєкту' },
@@ -557,7 +578,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       showToast('Зупини поточний таймер спочатку', 'error');
       return;
     }
-    startTimer(timerKey, event.projectId || '');
+    startTimer(timerKey, event.projectId || '', {
+      entityType: 'calendar_event',
+      eventId: sourceEventId,
+      occurrenceStartAt: event.startAt,
+    });
   };
 
   const handleSaveTime = async form => {

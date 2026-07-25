@@ -13,23 +13,27 @@ function formatElapsed(seconds) {
 const useWorkspaceStore = create((set, get) => ({
 
   // ── Timer ─────────────────────────────────────────────────────────
-  activeTimer:    null,   // { issueId, startedAt }
+  activeTimer:    null,   // { issueId, projectId, startedAt, entityType?, ...context }
   timerElapsed:   0,      // seconds
   _timerInterval: null,
 
-  startTimer: (issueId, projectId) => {
+  startTimer: (issueId, projectId, context = {}) => {
     const { _timerInterval } = get();
     if (_timerInterval) clearInterval(_timerInterval);
     const startedAt = Date.now();
     const interval  = setInterval(() => set({ timerElapsed: Math.floor((Date.now() - startedAt) / 1000) }), 1000);
-    set({ activeTimer: { issueId, projectId, startedAt }, timerElapsed: 0, _timerInterval: interval });
+    set({
+      activeTimer: { ...context, issueId, projectId, startedAt },
+      timerElapsed: 0,
+      _timerInterval: interval,
+    });
   },
 
   stopTimer: () => {
     const { activeTimer, timerElapsed, _timerInterval } = get();
     if (_timerInterval) clearInterval(_timerInterval);
     if (!activeTimer) { set({ _timerInterval: null }); return null; }
-    const result = { issueId: activeTimer.issueId, projectId: activeTimer.projectId, minutes: Math.max(1, Math.ceil(timerElapsed / 60)) };
+    const result = { ...activeTimer, minutes: Math.max(1, Math.ceil(timerElapsed / 60)) };
     set({ activeTimer: null, timerElapsed: 0, _timerInterval: null });
     return result;
   },

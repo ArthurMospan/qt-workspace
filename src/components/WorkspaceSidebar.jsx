@@ -19,6 +19,7 @@ import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicato
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
+import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 
 import { can } from '@/lib/utils/can';
 
@@ -101,11 +102,8 @@ export default function WorkspaceSidebar() {
     e.preventDefault();
     e.stopPropagation();
     const result = stopTimer();
-    if (result && result.minutes > 0 && result.projectId) {
-      router.push(`/${result.projectId}/issue/${result.issueId}?logTime=${result.minutes}`);
-    } else if (result && result.projectId) {
-      router.push(`/${result.projectId}/issue/${result.issueId}`);
-    }
+    const targetHref = timerTargetHref(result, { minutes: result?.minutes });
+    if (targetHref) router.push(targetHref);
   };
 
   const isActive = (href, exact) =>
@@ -331,9 +329,8 @@ export default function WorkspaceSidebar() {
         <div className={`shrink-0 ${collapsed ? 'p-[12px]' : 'p-[16px]'}`} style={{ borderTop: '1px solid var(--sb-border)', backgroundColor: theme.bg }}>
           <div 
             onClick={() => {
-              if (activeTimer.projectId) {
-                router.push(`/${activeTimer.projectId}/issue/${activeTimer.issueId}`);
-              }
+              const targetHref = timerTargetHref(activeTimer);
+              if (targetHref) router.push(targetHref);
             }}
             className={`transition-colors rounded-[12px] flex items-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}
             style={{ backgroundColor: 'var(--sb-active)' }}
