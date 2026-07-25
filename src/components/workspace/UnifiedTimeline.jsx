@@ -448,15 +448,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                       <StatusEmoji member={authorMember} />
                     </span>
                   )}
-                  <div className={`relative max-w-full break-words rounded-[16px] p-3 text-[14px] leading-[22px] ${isMe ? 'bg-[#303030] text-white' : 'bg-white text-ink'}`}>
-                    <span
-                      aria-hidden="true"
-                      className={`pointer-events-none absolute bottom-0 h-[10px] w-[7px] ${
-                        isMe
-                          ? '-right-[6px] bg-[#303030] [clip-path:polygon(0_0,0_100%,100%_100%)]'
-                          : '-left-[6px] bg-white [clip-path:polygon(100%_0,0_100%,100%_100%)]'
-                      }`}
-                    />
+                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'}`}>
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
                     {item.text && (
                       <div className="whitespace-pre-wrap">
