@@ -5,6 +5,9 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { expandOccurrences } from '@/lib/utils/calendarRecurrence.mjs';
 
+// Kept deliberately larger than the client's 3-minute poll interval.
+const REMINDER_LOOKBACK_MS = 10 * 60 * 1000;
+
 function reminderLabel(minutes) {
   if (minutes === 0) return 'Подія починається зараз';
   if (minutes < 60) return `До початку ${minutes} хв`;
@@ -117,7 +120,11 @@ export async function POST(request) {
       .where('participantIds', 'array-contains', userId)
       .get();
     const now = Date.now();
-    const lookBack = 5 * 60 * 1000;
+    // Must exceed the client's poll interval (REMINDER_POLL_MS) with margin, or
+    // a reminder whose trigger falls between two polls is never delivered.
+    // Widening it is free: notification ids are deterministic, so re-examining
+    // the same window cannot produce a duplicate.
+    const lookBack = REMINDER_LOOKBACK_MS;
     const candidates = [];
 
     snapshot.docs.forEach(document => {
