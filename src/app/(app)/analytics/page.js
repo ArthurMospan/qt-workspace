@@ -364,8 +364,8 @@ export default function WorkspaceAnalyticsPage() {
     setAssigneeFilter(memberId);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
-      if (memberId === 'all') url.searchParams.delete('member');
-      else url.searchParams.set('member', memberId);
+      if (memberId === 'all') url.searchParams.delete('teamMember');
+      else url.searchParams.set('teamMember', memberId);
       url.searchParams.set('tab', 'workload');
       window.history.replaceState(null, '', `${url.pathname}${url.search}`);
     }
@@ -374,7 +374,7 @@ export default function WorkspaceAnalyticsPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      const member = searchParams.get('member');
+      const member = searchParams.get('teamMember');
       if (member) {
         queueMicrotask(() => {
           setAssigneeFilter(member);

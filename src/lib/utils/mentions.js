@@ -77,3 +77,12 @@ export function extractMentionedUserIds(text, members = [], currentUserId = '') 
     .map(member => member.id || member.uid)
     .filter(userId => userId && userId !== currentUserId))];
 }
+
+export function filterMentionCandidates(members = [], currentUserId = '', query = '') {
+  const normalizedQuery = query.trim().toLocaleLowerCase('uk-UA');
+  return members.filter(member => {
+    const memberId = member?.id || member?.uid;
+    if (!member?.name || !memberId || memberId === currentUserId) return false;
+    return member.name.toLocaleLowerCase('uk-UA').includes(normalizedQuery);
+  });
+}

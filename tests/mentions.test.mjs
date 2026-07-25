@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractMentionedUserIds } from '../src/lib/utils/mentions.js';
+import {
+  extractMentionedUserIds,
+  filterMentionCandidates,
+} from '../src/lib/utils/mentions.js';
 
 const members = [
   { id: 'anna', name: 'Анна Коваль' },
@@ -24,4 +27,15 @@ test('excludes the author and ignores plain text without @', () => {
 
 test('resolves uid-backed members', () => {
   assert.deepEqual(extractMentionedUserIds('Пінг @Олег', members), ['oleh']);
+});
+
+test('mention picker excludes the current user and filters the remaining members', () => {
+  assert.deepEqual(
+    filterMentionCandidates(members, 'self', 'ол').map(member => member.id || member.uid),
+    ['oleh'],
+  );
+  assert.deepEqual(
+    filterMentionCandidates(members, 'self', '').map(member => member.id || member.uid),
+    ['anna', 'oleh'],
+  );
 });

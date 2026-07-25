@@ -134,16 +134,22 @@ function MessageBubble({
       {/* Avatar or time gutter */}
       <div className="w-9 shrink-0 flex justify-end items-start pt-0.5">
         {showHeader ? (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`?member=${msg.senderId}`);
-            }}
-            className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-            title="Переглянути профіль"
-          >
-            <UserAvatar user={{ name: msg.user, avatar: senderMember?.avatar || msg.avatar }} size={36} />
-          </button>
+          senderMember ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`?member=${msg.senderId}`);
+              }}
+              className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+              title="Переглянути профіль"
+            >
+              <UserAvatar user={{ name: msg.user, avatar: senderMember.avatar || msg.avatar }} size={36} />
+            </button>
+          ) : (
+            <div className="w-9 h-9 rounded-xl overflow-hidden">
+              <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
+            </div>
+          )
         ) : (
           <span className={`text-[10px] text-muted leading-[1.8] pt-1 transition-opacity ${showActions ? 'opacity-100' : 'opacity-0'}`}>
             {msg.time}

@@ -1,14 +1,14 @@
 'use client';
 
 import UserAvatar from '@/components/UserAvatar';
+import { filterMentionCandidates } from '@/lib/utils/mentions';
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export default function MentionText({ text = '', members = [], dark = false }) {
-  const candidates = members
-    .filter(member => member?.name)
+export default function MentionText({ text = '', members = [], dark = false, excludeMemberId = '' }) {
+  const candidates = filterMentionCandidates(members, excludeMemberId)
     .sort((a, b) => b.name.length - a.name.length);
 
   if (!text || candidates.length === 0) return text;

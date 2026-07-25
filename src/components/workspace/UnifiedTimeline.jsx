@@ -18,7 +18,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MentionText from '@/components/workspace/MentionText';
 import { sendNotification } from '@/lib/hooks/useNotifications';
-import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
 
 const FIELD_LABELS = {
   status: 'статус',
@@ -192,12 +192,12 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
     selectedIndex: 0,
     ignoreIndex: -1,
   });
+  const myId = currentUser?.uid || currentUser?.id;
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
-    const query = mentionState.query.toLowerCase();
-    return members.filter(member => member.name?.toLowerCase().includes(query));
-  }, [mentionState.active, mentionState.query, members]);
+    return filterMentionCandidates(members, myId, mentionState.query);
+  }, [mentionState.active, mentionState.query, members, myId]);
 
   const timeline = useMemo(() => {
     const items = [];
@@ -287,6 +287,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
   };
 
   const selectMention = member => {
+    if ((member?.id || member?.uid) === myId) return;
     const textBefore = input.slice(0, mentionState.startIndex);
     const textAfter = input.slice(mentionState.cursorIndex);
     const mentionText = `@${member.name} `;
@@ -317,7 +318,6 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
 
   // Read receipts: while the chat is open, mark every visible comment from
   // other people that this user hasn't read yet. Best-effort (see hook).
-  const myId = currentUser?.uid || currentUser?.id;
   useEffect(() => {
     if (!myId) return;
     const unread = comments
@@ -451,7 +451,7 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
                     {item.text && (
                       <div className="whitespace-pre-wrap">
-                        <MentionText text={item.text} members={members} dark={isMe} />
+                        <MentionText text={item.text} members={members} dark={isMe} excludeMemberId={item.authorId} />
                       </div>
                     )}
                     <ChatAttachmentList

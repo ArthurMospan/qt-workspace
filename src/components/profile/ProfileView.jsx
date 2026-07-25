@@ -116,7 +116,7 @@ export default function ProfileView({ user, onClose }) {
 
   const adminMenu = [
     { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/settings?section=team&user=${uid}`); } },
-    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&member=${uid}`); } }
+    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&teamMember=${uid}`); } }
   ];
 
   return (
