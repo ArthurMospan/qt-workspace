@@ -4,6 +4,7 @@ import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { deliverEmail } from '@/lib/server/email';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { deliverTelegramNotification } from '@/lib/server/telegram';
 
 const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
 const PREF_DEFAULTS = { assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true };
@@ -119,6 +120,12 @@ export async function POST(request) {
     await Promise.allSettled(createdDeliveries
       .filter(item => item.prefs.emailEnabled && EMAIL_TYPES.has(type))
       .map(item => sendEmail({ email: item.profile.email, type, title, body, link: scopedLink })));
+    await deliverTelegramNotification({
+      userIds: createdDeliveries.map(item => item.userId),
+      title,
+      body,
+      link: scopedLink,
+    }).catch(error => console.warn('[notifications] Telegram delivery failed:', error.message));
 
     return NextResponse.json({ delivered: createdDeliveries.length });
   } catch (error) {

@@ -6,7 +6,7 @@
 // this component only renders the grid for the state it receives via props.
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Clock } from 'lucide-react';
+import { CalendarDays, Clock } from 'lucide-react';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -79,7 +79,7 @@ function logDate(log) {
 }
 
 // ── Week view: one member — day columns with task cards (YouTrack style) ─────
-function MemberWeek({ days, logs, issuesById, todayKey }) {
+function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
   // grid[dayKey] = [{ issue, minutes, logsCount }]
   const byDay = useMemo(() => {
     const map = {};
@@ -89,8 +89,9 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
       if (!d) return;
       const key = dayKey(d);
       if (!map[key]) return;
-      const cur = map[key].get(log.issueId) || 0;
-      map[key].set(log.issueId, cur + (log.spentMinutes || 0));
+      const targetKey = log.issueId || `event:${log.eventId}:${log.occurrenceStartAt}`;
+      const cur = map[key].get(targetKey) || 0;
+      map[key].set(targetKey, cur + (log.spentMinutes || 0));
     });
     return map;
   }, [days, logs]);
@@ -121,15 +122,21 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
             {/* Task cards */}
-            {entries.map(([issueId, minutes]) => {
-              const issue = issuesById[issueId];
+            {entries.map(([targetKey, minutes]) => {
+              const issue = issuesById[targetKey];
+              const event = eventsByKey[targetKey];
               return (
-                <div key={issueId} className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
+                <div key={targetKey} className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
-                      <Link href={`/${issue.projectId}/issue/${issueId}`}
+                      <Link href={`/${issue.projectId}/issue/${targetKey}`}
                         className="text-[12px] font-bold text-ink hover:underline truncate uppercase">
-                        {issue.issueKey || issueId.slice(0, 6)}
+                        {issue.issueKey || targetKey.slice(0, 6)}
+                      </Link>
+                    ) : event ? (
+                      <Link href={`/calendar?event=${encodeURIComponent(event.sourceEventId || event.id)}`} className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink hover:underline">
+                        <CalendarDays size={12} className="shrink-0 text-muted" />
+                        <span className="truncate">Подія</span>
                       </Link>
                     ) : (
                       <span className="text-[12px] font-bold text-faint uppercase">???</span>
@@ -138,6 +145,9 @@ function MemberWeek({ days, logs, issuesById, todayKey }) {
                   </div>
                   {issue?.title && (
                     <p className="text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">{issue.title}</p>
+                  )}
+                  {event?.title && (
+                    <p className="text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">{event.title}</p>
                   )}
                 </div>
               );
@@ -423,6 +433,7 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function TimesheetTab({
   issues = [],
+  events = [],
   timeLogs = [],
   members = [],
   projects = [],
@@ -442,6 +453,13 @@ export default function TimesheetTab({
     issues.forEach(i => { map[i.id] = i; });
     return map;
   }, [issues]);
+  const eventsByKey = useMemo(() => {
+    const map = {};
+    events.forEach(event => {
+      map[`event:${event.sourceEventId || event.id}:${event.startAt}`] = event;
+    });
+    return map;
+  }, [events]);
 
   // Range for the current view
   const { rangeStart, rangeEnd, days, rangeLabel, capacity } = useMemo(() => {
@@ -512,7 +530,7 @@ export default function TimesheetTab({
         ) : mode === 'week' ? (
           isTeam
             ? <TeamWeek days={days} logs={rangeLogs} members={members} todayKey={todayKey} onSelectMember={onSelectMember} />
-            : <MemberWeek days={days} logs={rangeLogs} issuesById={issuesById} todayKey={todayKey} />
+            : <MemberWeek days={days} logs={rangeLogs} issuesById={issuesById} eventsByKey={eventsByKey} todayKey={todayKey} />
         ) : (
           <MonthGrid anchor={anchor} logs={rangeLogs} todayKey={todayKey} onSelectDay={onSelectDay} />
         )}

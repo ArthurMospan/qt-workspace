@@ -1,7 +1,9 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '../Button';
+import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 export default function SplitButton({
   primaryLabel,
@@ -15,10 +17,23 @@ export default function SplitButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuPosition = useFloatingOverlay({
+    open: isOpen,
+    anchorRef: containerRef,
+    overlayRef: menuRef,
+    preferredPlacement: 'bottom',
+    align: 'start',
+    gap: 4,
+  });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current
+        && !containerRef.current.contains(event.target)
+        && !menuRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -75,8 +90,16 @@ export default function SplitButton({
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && items.length > 0 && (
-        <div className="absolute z-50 top-full mt-1 left-0 w-max min-w-[160px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
+      {isOpen && items.length > 0 && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed z-[1000] w-max min-w-[160px] max-w-[calc(100vw-16px)] overflow-hidden rounded-[12px] border border-[#f0f0f0] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            visibility: menuPosition.ready ? 'visible' : 'hidden',
+          }}
+        >
           <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
             {items.map((item, idx) => (
               <button
@@ -92,7 +115,8 @@ export default function SplitButton({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

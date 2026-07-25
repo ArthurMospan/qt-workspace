@@ -129,6 +129,24 @@ test('a member can create only their own time log and cannot edit another user l
   await assertFails(updateDoc(doc(db, 'timeLogs', 'log-owner'), { spentMinutes: 999 }));
 });
 
+test('calendar time logs keep their event occurrence identity', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  const ref = doc(db, 'timeLogs', 'calendar-log');
+  await assertSucceeds(setDoc(ref, {
+    organizationId: 'org-a',
+    projectId: 'project-a',
+    issueId: '',
+    eventId: 'event-a',
+    occurrenceStartAt: '2026-07-25T09:00:00.000Z',
+    sourceType: 'calendar_event',
+    userId: 'member-a',
+    spentMinutes: 45,
+  }));
+  await assertSucceeds(updateDoc(ref, { spentMinutes: 50 }));
+  await assertFails(updateDoc(ref, { eventId: 'event-b' }));
+  await assertFails(updateDoc(ref, { occurrenceStartAt: '2026-07-26T09:00:00.000Z' }));
+});
+
 test('authors can delete their own comments but not another authors comments', async () => {
   const db = environment.authenticatedContext('member-a').firestore();
   await assertSucceeds(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'member-comment')));

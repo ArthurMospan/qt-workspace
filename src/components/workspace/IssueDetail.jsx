@@ -33,12 +33,13 @@ import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
   Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   CheckCircle, XCircle, Play, Square as StopIcon,
-  FileText, Film, Music, Link2, Copy, Tag as TagIcon,
+  FileText, Film, Music, Link2, Copy, Sparkles, Tag as TagIcon,
   ZoomIn, Maximize2,
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
+import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -472,6 +473,29 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     }
   }, [issueId, projectId, showToast]);
 
+  const copyAiPrompt = async () => {
+    if (!issue) return;
+    const taskUrl = `${window.location.origin}/${projectId}/issue/${issueId}`;
+    const prompt = buildTaskAiPrompt({
+      issue,
+      projectName: project?.name || '',
+      statusName: STATUSES.find(item => item.id === (issue.status || issue.columnId))?.name || '',
+      priorityName: PRIORITIES.find(item => item.id === issue.priority)?.name || '',
+      typeName: TYPES.find(item => item.id === issue.type)?.name || '',
+      assigneeNames: (issue.assigneeIds || [])
+        .map(uid => members.find(member => (member.id || member.uid) === uid))
+        .filter(Boolean)
+        .map(member => member.name || member.displayName || member.email || ''),
+      taskUrl,
+    });
+    try {
+      await navigator.clipboard.writeText(prompt);
+      showToast('AI-промпт скопійовано');
+    } catch {
+      showToast('Не вдалося скопіювати AI-промпт', 'error');
+    }
+  };
+
   // ── Breadcrumbs ───────────────────────────────────────────────────
   useEffect(() => {
     if (isModal) return;
@@ -888,6 +912,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     >
                       <Copy size={13} className="text-muted" />
                       Копіювати посилання
+                    </button>
+                    <button
+                      onClick={() => {
+                        copyAiPrompt();
+                        setShowActionsDropdown(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <Sparkles size={13} className="text-muted" />
+                      Скопіювати AI-промпт
                     </button>
                     {!isArchived && (
                       <>

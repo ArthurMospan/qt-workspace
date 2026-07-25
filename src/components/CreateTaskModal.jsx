@@ -2,10 +2,10 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, Check, CheckSquare, ListTodo, Mic2, Minus, Tag as TagIcon } from 'lucide-react';
+import { X, Check, ListTodo, Mic2, Tag as TagIcon } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
-import { PRIORITY_ICONS, TYPE_ICONS, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -202,7 +202,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 options={types.map(t => ({
                   value: t.id,
                   label: t.label,
-                  icon: TYPE_ICONS[t.id] || CheckSquare,
+                  badgeColor: t.color,
                 }))}
               />
             </div>
@@ -214,7 +214,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 options={priorities.map(p => ({
                   value: p.id,
                   label: p.label,
-                  icon: PRIORITY_ICONS[p.id] || Minus,
+                  dotColor: p.color,
                 }))}
               />
             </div>

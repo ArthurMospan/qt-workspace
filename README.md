@@ -33,9 +33,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_PORTAL_URL=
 RESEND_API_KEY=
 EMAIL_FROM=
+
+# Optional Telegram bot integration
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_BOT_USERNAME=
+TELEGRAM_WEBHOOK_SECRET=
 ```
 
 `NEXT_PUBLIC_*` values are shipped to the browser. Never put Admin SDK, Cloudinary secret, email-provider secret, API keys or other credentials in a public variable.
+
+For Telegram, create one bot through BotFather, put its token and username in the server-only variables above, and use a random webhook secret (32+ characters). The app registers `/api/integrations/telegram/webhook` when a user or organization starts a connection. `NEXT_PUBLIC_APP_URL` must therefore be a public HTTPS origin outside local development.
 
 ## Commands
 

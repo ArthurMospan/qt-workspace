@@ -2,6 +2,7 @@ import 'server-only';
 
 import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { deliverTelegramNotification } from '@/lib/server/telegram';
 
 export const CALENDAR_EVENT_TYPES = new Set([
   'meeting',
@@ -195,4 +196,10 @@ export async function createCalendarNotifications({
     });
   });
   await batch.commit();
+  await deliverTelegramNotification({
+    userIds: recipients,
+    title,
+    body,
+    link: scopedLink,
+  }).catch(error => console.warn('[calendar] Telegram delivery failed:', error.message));
 }

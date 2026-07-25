@@ -20,7 +20,7 @@ export default function StageStepper({ stages, activeId, onSelect }) {
 
   return (
     <div ref={scrollRef} className="w-full overflow-x-auto border-b border-line">
-      <div className="flex items-center gap-5 min-w-max">
+      <div className="flex w-full min-w-max items-center">
         {stages.map((s) => {
           const meta = stageStatusMeta(s.status);
           const accessible = canAccessStage(s);
@@ -35,7 +35,7 @@ export default function StageStepper({ stages, activeId, onSelect }) {
               aria-current={active ? 'step' : undefined}
               aria-disabled={!accessible}
               title={accessible ? meta.label : 'Етап ще не розпочато'}
-              className={`flex items-center gap-1.5 whitespace-nowrap pb-2 pt-1 text-[13px] border-b-2 transition-colors ${
+              className={`flex min-w-[140px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-3 pb-2 pt-1 text-[13px] border-b-2 transition-colors ${
                 active ? 'border-ink text-ink font-semibold' : 'border-transparent text-muted'
               } ${accessible ? 'hover:text-ink cursor-pointer' : 'opacity-40 cursor-not-allowed'}`}
             >

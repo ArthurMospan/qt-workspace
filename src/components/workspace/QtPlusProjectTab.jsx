@@ -17,7 +17,6 @@ function LinkedRow({ name, stale, menuItems, href }) {
   return (
     <div className="flex flex-col gap-1 rounded-[12px] bg-white p-3">
       <div className="flex items-center gap-2">
-        <Plug size={16} className="text-muted shrink-0" />
         <h2 className="min-w-0 flex-1 truncate text-[18px] font-bold tracking-tight text-ink">
           {name || 'Без назви'}
         </h2>
@@ -51,7 +50,7 @@ function LinkedRow({ name, stale, menuItems, href }) {
         )}
       </div>
       {stale && (
-        <p className="pl-[24px] text-[12px] text-muted">
+        <p className="text-[12px] text-muted">
           Цей проєкт QuickTeam+ зараз недоступний для вашого акаунта.
         </p>
       )}

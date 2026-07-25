@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { colors, spacing, sizing, shadows, transitions, zIndex } from '@/lib/design/tokens';
+import { colors, spacing, sizing, shadows, transitions } from '@/lib/design/tokens';
+import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 /**
  * Popover Component
@@ -27,17 +29,28 @@ import { colors, spacing, sizing, shadows, transitions, zIndex } from '@/lib/des
  */
 export function Popover({ trigger, children, position = 'bottom', className = '', hideCloseIcon = false, onOpenChange }) {
   const [isOpen, setIsOpenState] = useState(false);
-  const setIsOpen = (value) => {
+  const setIsOpen = useCallback((value) => {
     setIsOpenState(value);
     onOpenChange?.(value);
-  };
+  }, [onOpenChange]);
   const containerRef = useRef(null);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
+  const popoverPosition = useFloatingOverlay({
+    open: isOpen,
+    anchorRef: triggerRef,
+    overlayRef: popoverRef,
+    preferredPlacement: position,
+    align: 'center',
+  });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current
+        && !containerRef.current.contains(event.target)
+        && !popoverRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -46,56 +59,14 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
 
-  const getPositionStyles = () => {
-    const arrowSize = 8;
-    const gap = 8;
-
-    switch (position) {
-      case 'top':
-        return {
-          top: 'auto',
-          bottom: `calc(100% + ${gap}px)`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          arrowBottom: `-${arrowSize}px`,
-          arrowLeft: '50%',
-          arrowTransform: 'translateX(-50%)',
-        };
-      case 'left':
-        return {
-          top: '50%',
-          right: `calc(100% + ${gap}px)`,
-          left: 'auto',
-          transform: 'translateY(-50%)',
-          arrowRight: `-${arrowSize}px`,
-          arrowTop: '50%',
-          arrowTransform: 'translateY(-50%)',
-        };
-      case 'right':
-        return {
-          top: '50%',
-          left: `calc(100% + ${gap}px)`,
-          transform: 'translateY(-50%)',
-          arrowLeft: `-${arrowSize}px`,
-          arrowTop: '50%',
-          arrowTransform: 'translateY(-50%)',
-        };
-      case 'bottom':
-      default:
-        return {
-          top: `calc(100% + ${gap}px)`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          arrowTop: `-${arrowSize}px`,
-          arrowLeft: '50%',
-          arrowTransform: 'translateX(-50%)',
-        };
-    }
-  };
-
-  const positionStyles = getPositionStyles();
+  const arrowStyle = {
+    top: { bottom: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)' },
+    bottom: { top: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)' },
+    left: { right: -5, top: '50%', transform: 'translateY(-50%) rotate(45deg)' },
+    right: { left: -5, top: '50%', transform: 'translateY(-50%) rotate(45deg)' },
+  }[popoverPosition.placement];
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
@@ -107,19 +78,24 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
         {trigger}
       </div>
 
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={popoverRef}
           style={{
-            position: 'absolute',
+            position: 'fixed',
+            top: popoverPosition.top,
+            left: popoverPosition.left,
+            visibility: popoverPosition.ready ? 'visible' : 'hidden',
             backgroundColor: colors.surface,
             border: `1px solid ${colors.border.light}`,
             borderRadius: sizing.radius.xl,
             boxShadow: shadows.xl,
-            zIndex: zIndex.modal,
+            zIndex: 1000,
             minWidth: '240px',
+            maxWidth: 'calc(100vw - 16px)',
+            maxHeight: 'calc(100dvh - 16px)',
+            overflowY: 'auto',
             padding: spacing.lg,
-            ...positionStyles,
           }}
           className="animate-in fade-in-0 zoom-in-95 duration-200"
         >
@@ -127,12 +103,11 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
           <div
             style={{
               position: 'absolute',
-              width: 0,
-              height: 0,
-              borderLeft: '8px solid transparent',
-              borderRight: '8px solid transparent',
-              borderTop: `8px solid ${colors.surface}`,
-              ...positionStyles,
+              width: 10,
+              height: 10,
+              backgroundColor: colors.surface,
+              border: `1px solid ${colors.border.light}`,
+              ...arrowStyle,
             }}
           />
 
@@ -170,7 +145,8 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
           <div style={{ paddingTop: hideCloseIcon ? 0 : spacing.sm }}>
             {typeof children === 'function' ? children({ close: () => setIsOpen(false) }) : children}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

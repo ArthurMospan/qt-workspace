@@ -1,6 +1,7 @@
 'use client';
 // src/app/workspace/chat/page.js — Rebuilt from scratch
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
   Trash2, X, Pin, ChevronDown, Info, UserPlus, ArrowLeft, Search
@@ -31,6 +32,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import {
   collectChatAttachments,
   isChatMediaAttachment,
@@ -79,6 +81,13 @@ function MessageBubble({
   const [editText, setEditText] = useState(msg.text || '');
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const emojiPickerPosition = useFloatingOverlay({
+    open: showEmoji,
+    anchorRef: emojiButtonRef,
+    overlayRef: emojiPickerRef,
+    preferredPlacement: 'top',
+    align: 'end',
+  });
   const router = useRouter();
   const confirmDialog = useConfirm();
 
@@ -120,7 +129,7 @@ function MessageBubble({
     <div
       className={`relative flex gap-3 px-4 py-1 group hover:bg-black/[0.02] transition-colors rounded-xl -mx-2 ${showHeader ? 'mt-4' : 'mt-0.5'}`}
       onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => { setShowActions(false); if (!showEmoji) {} }}
+      onMouseLeave={() => { if (!showEmoji) setShowActions(false); }}
     >
       {/* Avatar or time gutter */}
       <div className="w-9 shrink-0 flex justify-end items-start pt-0.5">
@@ -231,7 +240,7 @@ function MessageBubble({
       </div>
 
       {/* Action toolbar */}
-      {showActions && !editing && (
+      {(showActions || showEmoji) && !editing && (
         <div className="absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20">
           {/* Emoji */}
           <div className="relative">
@@ -243,8 +252,16 @@ function MessageBubble({
             >
               <Smile size={15} />
             </button>
-            {showEmoji && (
-              <div ref={emojiPickerRef} className="absolute right-0 bottom-[calc(100%+8px)] z-[70] shadow-2xl rounded-2xl overflow-hidden">
+            {showEmoji && typeof document !== 'undefined' && createPortal(
+              <div
+                ref={emojiPickerRef}
+                className="fixed z-[1000] max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] overflow-hidden rounded-2xl shadow-2xl"
+                style={{
+                  top: emojiPickerPosition.top,
+                  left: emojiPickerPosition.left,
+                  visibility: emojiPickerPosition.ready ? 'visible' : 'hidden',
+                }}
+              >
                 <EmojiPicker
                   onEmojiClick={(d) => { onReact(msg.id, d.emoji); setShowEmoji(false); setShowActions(false); }}
                   autoFocusSearch={false}
@@ -253,7 +270,8 @@ function MessageBubble({
                   height={360}
                   emojiStyle="native"
                 />
-              </div>
+              </div>,
+              document.body,
             )}
           </div>
 
@@ -320,6 +338,13 @@ function MessageInput({
   const fileRef = useRef(null);
   const emojiRef = useRef(null);
   const emojiBtnRef = useRef(null);
+  const emojiPosition = useFloatingOverlay({
+    open: showEmoji,
+    anchorRef: emojiBtnRef,
+    overlayRef: emojiRef,
+    preferredPlacement: 'top',
+    align: 'start',
+  });
   const sendingRef = useRef(false);
 
   useEffect(() => {
@@ -458,8 +483,16 @@ function MessageInput({
       )}
 
       {/* Emoji picker */}
-      {showEmoji && (
-        <div ref={emojiRef} className="absolute bottom-full left-4 mb-2 z-30 shadow-2xl rounded-2xl overflow-hidden">
+      {showEmoji && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={emojiRef}
+          className="fixed z-[1000] max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] overflow-hidden rounded-2xl shadow-2xl"
+          style={{
+            top: emojiPosition.top,
+            left: emojiPosition.left,
+            visibility: emojiPosition.ready ? 'visible' : 'hidden',
+          }}
+        >
           <EmojiPicker
             onEmojiClick={(d) => { setText(prev => prev + d.emoji); setShowEmoji(false); textareaRef.current?.focus(); }}
             autoFocusSearch={false}
@@ -468,7 +501,8 @@ function MessageInput({
             height={380}
             emojiStyle="native"
           />
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Input card */}

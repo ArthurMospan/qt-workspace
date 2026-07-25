@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { deliverTelegramNotification } from '@/lib/server/telegram';
 
 function nextOccurrence(date, frequency, interval) {
   const next = new Date(date);
@@ -142,12 +143,14 @@ export async function POST(request) {
     await Promise.all(candidates.map(async candidate => {
       const id = `calendar_reminder_${candidate.eventId}_${userId}_${candidate.occurrenceStart}_${candidate.minutes}`;
       try {
+        const link = withNotificationOrganization(`/calendar?event=${candidate.eventId}`, organizationId);
+        const body = reminderLabel(candidate.minutes);
         await db.collection('notifications').doc(id).create({
           userId,
           type: 'calendar_reminder',
           title: candidate.event.title,
-          body: reminderLabel(candidate.minutes),
-          link: withNotificationOrganization(`/calendar?event=${candidate.eventId}`, organizationId),
+          body,
+          link,
           organizationId,
           calendarEventId: candidate.eventId,
           actorId: candidate.event.organizerId || '',
@@ -157,6 +160,12 @@ export async function POST(request) {
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         created += 1;
+        await deliverTelegramNotification({
+          userIds: [userId],
+          title: candidate.event.title,
+          body,
+          link,
+        }).catch(error => console.warn('[calendar-reminders] Telegram delivery failed:', error.message));
       } catch (error) {
         if (error.code !== 6 && error.code !== 'already-exists') throw error;
       }

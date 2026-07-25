@@ -22,6 +22,7 @@ import {
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
+import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
@@ -86,12 +87,6 @@ function sameDay(a, b) {
 function dateKey(value) {
   const date = new Date(value);
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
-function isEventOnDay(event, day) {
-  const dayStart = startOfDay(day).getTime();
-  const dayEnd = addDays(dayStart, 1).getTime();
-  return new Date(event.startAt).getTime() < dayEnd && new Date(event.endAt).getTime() > dayStart;
 }
 
 function shortTime(value) {
@@ -174,7 +169,7 @@ function AllDayRow({ days, events, deadlines, onEventClick, onDeadlineClick }) {
     <div className="grid border-b border-line bg-[#fafafa]" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
       <div className="px-2 py-2 text-[10px] font-semibold text-muted border-r border-line">Весь день</div>
       {days.map(day => {
-        const dayEvents = events.filter(event => event.allDay && isEventOnDay(event, day));
+        const dayEvents = events.filter(event => event.allDay && isCalendarEventOnDay(event, day));
         const dayDeadlines = deadlines.filter(deadline => sameDay(deadline.dueDate, day));
         return (
           <div key={dateKey(day)} className="min-h-[48px] p-[5px] border-r last:border-r-0 border-line space-y-[4px]">
@@ -280,7 +275,7 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
       </div>
       <div className="grid grid-cols-7">
         {days.map(day => {
-          const dayEvents = events.filter(event => isEventOnDay(event, day));
+          const dayEvents = events.filter(event => isCalendarEventOnDay(event, day));
           const dayDeadlines = deadlines.filter(deadline => sameDay(deadline.dueDate, day));
           const items = [
             ...dayEvents.map(item => ({ kind: 'event', item, time: new Date(item.startAt).getTime() })),

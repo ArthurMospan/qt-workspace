@@ -109,7 +109,13 @@ export function Select({
           {selectedOption?.icon && (
             <selectedOption.icon size={14} className="text-muted shrink-0" />
           )}
-          <span className="text-[13px] truncate text-ink font-medium">
+          <span
+            className={`truncate font-medium ${selectedOption?.badgeColor ? 'rounded-[4px] px-[6px] py-[1.5px] text-[10px]' : 'text-[13px] text-ink'}`}
+            style={selectedOption?.badgeColor ? {
+              color: selectedOption.badgeColor,
+              backgroundColor: `${selectedOption.badgeColor}14`,
+            } : undefined}
+          >
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
@@ -149,7 +155,15 @@ export function Select({
                   {opt.icon && (
                     <opt.icon size={14} className={value === opt.value ? 'text-ink' : 'text-muted'} />
                   )}
-                  <span className="truncate">{opt.label}</span>
+                  <span
+                    className={`truncate ${opt.badgeColor ? 'rounded-[4px] px-[6px] py-[1.5px] text-[10px] font-medium' : ''}`}
+                    style={opt.badgeColor ? {
+                      color: opt.badgeColor,
+                      backgroundColor: `${opt.badgeColor}14`,
+                    } : undefined}
+                  >
+                    {opt.label}
+                  </span>
                 </div>
                 {value === opt.value && <Check size={14} className="text-ink shrink-0 ml-2" />}
               </button>

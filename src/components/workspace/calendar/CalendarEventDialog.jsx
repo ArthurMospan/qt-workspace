@@ -12,6 +12,7 @@ import {
   Link2,
   LockKeyhole,
   MapPin,
+  Pencil,
   Repeat2,
   StickyNote,
   Trash2,
@@ -22,6 +23,7 @@ import { Button, Dialog, Input, Select, Textarea, ToggleSwitch } from '@/compone
 import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import UserAvatar from '@/components/UserAvatar';
+import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 
 const TYPE_OPTIONS = [
   { value: 'meeting', label: 'Мітинг', dotColor: '#3b82f6' },
@@ -126,6 +128,12 @@ function EventDetails({
   isParticipant,
   saving,
   error,
+  timeLogs,
+  totalMinutes,
+  timeLoading,
+  timeSaving,
+  onAddTime,
+  onDeleteTime,
   onRespond,
 }) {
   const start = new Date(event.startAt);
@@ -223,6 +231,50 @@ function EventDetails({
           <ExternalLink size={15} /> Приєднатися до зустрічі
         </a>
       )}
+
+      {!event.readOnly && ['meeting', 'event', 'focus', 'release'].includes(event.type) && (
+        <div className="rounded-[16px] border border-line bg-white p-[14px]">
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[12px] font-bold text-ink">Фактично витрачений час</p>
+              <p className="mt-0.5 text-[11px] text-muted">
+                {timeLoading ? 'Завантаження…' : totalMinutes > 0 ? `Всього ${Math.floor(totalMinutes / 60)} год ${totalMinutes % 60} хв` : 'Час ще не списували'}
+              </p>
+            </div>
+            {!event.allDay && (
+              <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-bold text-muted">
+                План: {Math.max(1, Math.round((end.getTime() - start.getTime()) / 60_000))} хв
+              </span>
+            )}
+          </div>
+          <form className="grid gap-2 sm:grid-cols-[110px_1fr_auto]" onSubmit={onAddTime}>
+            <Input name="minutes" type="number" min="1" max="10080" required placeholder="Хвилини" aria-label="Витрачено хвилин" />
+            <Input name="description" maxLength={2000} placeholder="Що зроблено (необов’язково)" aria-label="Опис роботи" />
+            <Button type="submit" size="sm" loading={timeSaving}>Додати</Button>
+          </form>
+          {timeLogs.length > 0 && (
+            <div className="mt-3 divide-y divide-line border-t border-line">
+              {timeLogs.map(log => {
+                const member = members.find(item => (item.id || item.uid) === log.userId);
+                const canDelete = log.userId === currentUserId;
+                return (
+                  <div key={log.id} className="flex items-start gap-2 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-ink">{memberLabel(member || {})} · {log.spentMinutes} хв</p>
+                      {log.description && <p className="mt-0.5 break-words text-[11px] text-muted">{log.description}</p>}
+                    </div>
+                    {canDelete && (
+                      <button type="button" onClick={() => onDeleteTime(log.id)} className="rounded-[7px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис часу">
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
       {error && <p className="text-[12px] font-medium text-red-600">{error}</p>}
     </div>
   );
@@ -243,8 +295,19 @@ export default function CalendarEventDialog({
 }) {
   const confirm = useConfirm();
   const [form, setForm] = useState(() => initialForm(event, initialStart, currentUserId));
+  const [mode, setMode] = useState(event ? 'details' : 'edit');
   const [saving, setSaving] = useState(false);
+  const [timeSaving, setTimeSaving] = useState(false);
   const [error, setError] = useState('');
+  const eventId = event?.sourceEventId || event?.id || '';
+  const occurrenceStartAt = event?.startAt || '';
+  const {
+    logs: timeLogs,
+    totalMinutes,
+    loading: timeLoading,
+    addTimeLog,
+    deleteTimeLog,
+  } = useCalendarEventTimeLogs(event?.readOnly ? '' : eventId, occurrenceStartAt);
 
   const memberOptions = useMemo(() => members.map(member => ({
     value: member.id || member.uid,
@@ -346,9 +409,49 @@ export default function CalendarEventDialog({
     }
   };
 
-  if (event && !canManage) {
+  const handleAddTime = async formEvent => {
+    formEvent.preventDefault();
+    const formElement = formEvent.currentTarget;
+    const data = new FormData(formElement);
+    setTimeSaving(true);
+    setError('');
+    try {
+      await addTimeLog({
+        userId: currentUserId,
+        projectId: event?.projectId || '',
+        spentMinutes: Number(data.get('minutes')),
+        description: data.get('description'),
+      });
+      formElement.reset();
+    } catch (timeError) {
+      setError(timeError.message || 'Не вдалося додати час');
+    } finally {
+      setTimeSaving(false);
+    }
+  };
+
+  const handleDeleteTime = async logId => {
+    try {
+      await deleteTimeLog(logId);
+    } catch (timeError) {
+      setError(timeError.message || 'Не вдалося видалити запис часу');
+    }
+  };
+
+  if (event && mode === 'details') {
     return (
-      <Dialog isOpen={isOpen} onClose={onClose} title="Деталі події" size="lg" footer={<Button style="secondary" size="md" onClick={onClose}>Закрити</Button>}>
+      <Dialog
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Деталі події"
+        size="lg"
+        footer={(
+          <>
+            {canManage && !event.readOnly && <Button style="secondary" size="md" icon={Pencil} onClick={() => setMode('edit')}>Редагувати</Button>}
+            <Button style="secondary" size="md" onClick={onClose}>Закрити</Button>
+          </>
+        )}
+      >
         <EventDetails
           event={event}
           members={members}
@@ -358,6 +461,12 @@ export default function CalendarEventDialog({
           isParticipant={isParticipant}
           saving={saving}
           error={error}
+          timeLogs={timeLogs}
+          totalMinutes={totalMinutes}
+          timeLoading={timeLoading}
+          timeSaving={timeSaving}
+          onAddTime={handleAddTime}
+          onDeleteTime={handleDeleteTime}
           onRespond={handleResponse}
         />
       </Dialog>
@@ -379,7 +488,7 @@ export default function CalendarEventDialog({
           Видалити
         </Button>
       )}
-      <Button style="secondary" size="md" onClick={onClose}>Скасувати</Button>
+      <Button style="secondary" size="md" onClick={() => event ? setMode('details') : onClose()}>Скасувати</Button>
       <Button type="submit" form="calendar-event-form" size="md" loading={saving}>
         {event ? 'Зберегти' : 'Створити подію'}
       </Button>

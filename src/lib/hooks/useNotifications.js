@@ -46,7 +46,7 @@ function playChime() {
 }
 
 // Channel defaults — must mirror the notif initial state in settings/page.js
-export const CHANNEL_DEFAULTS = { sound: true, popup: true, emailEnabled: false };
+export const CHANNEL_DEFAULTS = { sound: true, popup: true, emailEnabled: false, telegramEnabled: false };
 
 export function useNotifications(userId, {
   activeOrganizationId,

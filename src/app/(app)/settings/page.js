@@ -18,7 +18,7 @@ import {
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
-  Globe, Tag as TagIcon, Briefcase, GripVertical,
+  Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -191,7 +191,7 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
     try { await onSave(); } finally { setSaving(false); }
   };
   return (
-    <div className="flex w-[300px] items-center gap-1.5">
+    <div className="flex w-[260px] items-center gap-1.5">
       <DatePicker
         value={value}
         onChange={onChange}
@@ -744,6 +744,12 @@ export default function SettingsPage() {
 
   // ── API Keys ──
   const [apiKeys, setApiKeys] = useState([]);
+  const [telegramBotStatus, setTelegramBotStatus] = useState({ configured: false, connected: false, chatTitle: '' });
+  const [telegramBotLoading, setTelegramBotLoading] = useState(false);
+  const [telegramGroupStatus, setTelegramGroupStatus] = useState({ configured: false, connected: false, chatTitle: '', defaultProjectId: '' });
+  const [telegramGroupLoading, setTelegramGroupLoading] = useState(false);
+  const [telegramGroupProjectId, setTelegramGroupProjectId] = useState('');
+  const [telegramGroupConnect, setTelegramGroupConnect] = useState(null);
 
   const apiKeysRequest = async (method = 'GET', body = null) => {
     const token = await auth.currentUser?.getIdToken();
@@ -760,6 +766,108 @@ export default function SettingsPage() {
     if (!response.ok) throw new Error(result.error || 'API key request failed');
     return result;
   };
+
+  const telegramRequest = useCallback(async (path, method = 'GET', body = null) => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Authentication required');
+    const response = await fetch(path, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Telegram request failed');
+    return result;
+  }, []);
+
+  const refreshTelegram = useCallback(async () => {
+    if (!currentUser) return;
+    const status = await telegramRequest('/api/integrations/telegram');
+    setTelegramBotStatus(status);
+  }, [currentUser, telegramRequest]);
+
+  const refreshTelegramGroup = useCallback(async () => {
+    if (!activeOrgId || !isAdmin) return;
+    const status = await telegramRequest(`/api/integrations/telegram/group?organizationId=${encodeURIComponent(activeOrgId)}`);
+    setTelegramGroupStatus(status);
+    if (status.defaultProjectId) setTelegramGroupProjectId(status.defaultProjectId);
+  }, [activeOrgId, isAdmin, telegramRequest]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => refreshTelegram().catch(() => {}), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [refreshTelegram]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => refreshTelegramGroup().catch(() => {}), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [refreshTelegramGroup]);
+
+  const connectTelegram = async () => {
+    if (!activeOrgId) return;
+    setTelegramBotLoading(true);
+    try {
+      const result = await telegramRequest('/api/integrations/telegram', 'POST', { organizationId: activeOrgId });
+      window.open(result.link, '_blank', 'noopener,noreferrer');
+      showToast('Підтвердьте підключення у Telegram, потім натисніть «Перевірити»');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setTelegramBotLoading(false);
+    }
+  };
+
+  const disconnectTelegram = async () => {
+    setTelegramBotLoading(true);
+    try {
+      await telegramRequest('/api/integrations/telegram', 'DELETE');
+      setTelegramBotStatus(previous => ({ ...previous, connected: false, chatTitle: '' }));
+      setNotif(previous => ({ ...previous, telegramEnabled: false }));
+      showToast('Telegram відключено');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setTelegramBotLoading(false);
+    }
+  };
+
+  const connectTelegramGroup = async () => {
+    if (!activeOrgId || !telegramGroupProjectId) {
+      showToast('Оберіть проєкт для нових задач', 'error');
+      return;
+    }
+    setTelegramGroupLoading(true);
+    try {
+      const result = await telegramRequest('/api/integrations/telegram/group', 'POST', {
+        organizationId: activeOrgId,
+        projectId: telegramGroupProjectId,
+      });
+      setTelegramGroupConnect(result);
+      window.open(result.addGroupLink, '_blank', 'noopener,noreferrer');
+      showToast('Додайте бота в групу та надішліть команду підключення');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setTelegramGroupLoading(false);
+    }
+  };
+
+  const disconnectTelegramGroup = async () => {
+    setTelegramGroupLoading(true);
+    try {
+      await telegramRequest(`/api/integrations/telegram/group?organizationId=${encodeURIComponent(activeOrgId)}`, 'DELETE');
+      setTelegramGroupStatus(previous => ({ ...previous, connected: false, chatTitle: '', defaultProjectId: '' }));
+      setTelegramGroupConnect(null);
+      showToast('Telegram-групу відключено');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setTelegramGroupLoading(false);
+    }
+  };
   const [generatingKey, setGeneratingKey] = useState(false);
 
   // ── Billing ──
@@ -771,7 +879,7 @@ export default function SettingsPage() {
   // Events + delivery channels; channel defaults must mirror CHANNEL_DEFAULTS in useNotifications.js
   const [notif, setNotif] = useState({
     assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true,
-    sound: true, popup: true, emailEnabled: false,
+    sound: true, popup: true, emailEnabled: false, telegramEnabled: false,
   });
   const [notifSaving, setNotifSaving] = useState(false);
   // Last notif/localization value known to match Firestore (JSON) — see the
@@ -1744,6 +1852,52 @@ export default function SettingsPage() {
             <Row label="Email" desc="Найважливіше (призначення, згадки, дедлайни) — дублювати на пошту">
               <ToggleSwitch checked={notif.emailEnabled} onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))} size="sm" />
             </Row>
+            <Row
+              label="Telegram"
+              desc={telegramBotStatus.connected
+                ? `Підключено: ${telegramBotStatus.chatTitle || 'особистий чат із ботом'}`
+                : telegramBotStatus.configured
+                  ? 'Отримуйте призначення, згадки, дедлайни та календарні нагадування в Telegram'
+                  : 'Бот ще не налаштований на сервері'}
+            >
+              <div className="flex items-center gap-2">
+                {telegramBotStatus.connected && (
+                  <ToggleSwitch
+                    checked={notif.telegramEnabled}
+                    onChange={v => setNotif(p => ({ ...p, telegramEnabled: v }))}
+                    size="sm"
+                  />
+                )}
+                {telegramBotStatus.connected ? (
+                  <>
+                    <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegram().catch(error => showToast(error.message, 'error'))}>Перевірити</Button>
+                    <Button style="ghost" color="red" size="sm" onClick={disconnectTelegram} loading={telegramBotLoading}>Відключити</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      style="ghost"
+                      size="sm"
+                      icon={RefreshCw}
+                      onClick={() => refreshTelegram().catch(error => showToast(error.message, 'error'))}
+                      disabled={!telegramBotStatus.configured}
+                    >
+                      Перевірити
+                    </Button>
+                    <Button
+                      style="secondary"
+                      size="sm"
+                      icon={Send}
+                      onClick={connectTelegram}
+                      loading={telegramBotLoading}
+                      disabled={!telegramBotStatus.configured}
+                    >
+                      Підключити
+                    </Button>
+                  </>
+                )}
+              </div>
+            </Row>
 
           </Card>
 
@@ -2171,6 +2325,80 @@ export default function SettingsPage() {
                       </a>
                     )}
                   </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Telegram bot — group task capture */}
+            <Card variant="white" padding="lg" className="mb-4 !border-none">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-line bg-[#229ED9]/10 text-[#229ED9]">
+                  <Send size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[14px] font-semibold text-ink">Telegram bot</p>
+                      <p className="mt-[2px] text-[12px] text-muted">Створення задач із групи через /task або звернення до бота</p>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[11px] font-semibold ${telegramGroupStatus.connected ? 'bg-green-50 text-[#10b981]' : 'bg-[#f5f5f5] text-muted'}`}>
+                      <span className={`h-[5px] w-[5px] rounded-full ${telegramGroupStatus.connected ? 'bg-[#10b981]' : 'bg-faint'}`} />
+                      {telegramGroupStatus.connected ? 'Підключено' : telegramGroupStatus.configured ? 'Не підключено' : 'Не налаштовано'}
+                    </span>
+                  </div>
+
+                  {telegramGroupStatus.connected ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#f0f0f0] pt-3">
+                      <span className="text-[12px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
+                      <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}>Перевірити</Button>
+                      <Button style="ghost" color="red" size="sm" onClick={disconnectTelegramGroup} loading={telegramGroupLoading}>Відключити</Button>
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-3 border-t border-[#f0f0f0] pt-3">
+                      <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto]">
+                        <Select
+                          value={telegramGroupProjectId}
+                          onChange={setTelegramGroupProjectId}
+                          options={[
+                            { value: '', label: 'Проєкт для нових задач' },
+                            ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
+                          ]}
+                          disabled={!telegramGroupStatus.configured}
+                        />
+                        <Button
+                          style="secondary"
+                          size="md"
+                          icon={Send}
+                          onClick={connectTelegramGroup}
+                          loading={telegramGroupLoading}
+                          disabled={!telegramGroupStatus.configured || !telegramGroupProjectId}
+                        >
+                          Додати в групу
+                        </Button>
+                      </div>
+                      {telegramGroupConnect?.command && (
+                        <div className="rounded-[10px] border border-line bg-canvas p-3">
+                          <p className="mb-2 text-[11px] text-muted">Після додавання бота надішліть у групу цю одноразову команду (діє 30 хв):</p>
+                          <div className="flex items-center gap-2">
+                            <code className="min-w-0 flex-1 select-all break-all rounded bg-white px-2 py-1.5 text-[11px]">{telegramGroupConnect.command}</code>
+                            <Button
+                              style="ghost"
+                              size="icon-sm"
+                              icon={Copy}
+                              onClick={() => {
+                                navigator.clipboard.writeText(telegramGroupConnect.command);
+                                showToast('Команду скопійовано');
+                              }}
+                              aria-label="Копіювати команду"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}>Перевірити підключення</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>

@@ -565,6 +565,7 @@ export default function WorkspaceAnalyticsPage() {
         {activeTab === 'timesheet' && (
           <TimesheetTab
             issues={filteredIssues}
+            events={calendarEvents}
             timeLogs={projectScopedTimeLogs}
             members={members}
             projects={visibleProjects}

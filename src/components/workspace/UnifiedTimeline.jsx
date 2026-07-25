@@ -160,6 +160,20 @@ function EventMessage({ text, time, actor, isMine = false }) {
   );
 }
 
+function SystemEventMessage({ text, time, actorName }) {
+  return (
+    <div className="flex justify-center px-3">
+      <div className="flex max-w-[92%] items-center gap-2 rounded-full bg-black/[0.045] px-3 py-2 text-[11px] text-muted">
+        <span className="min-w-0 text-center leading-4">
+          {actorName && <strong className="font-bold text-ink">{actorName} · </strong>}
+          {text}
+        </span>
+        <span className="shrink-0 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
+      </div>
+    </div>
+  );
+}
+
 function DaySeparator({ timestamp }) {
   const label = dayLabel(timestamp);
   if (!label) return null;
@@ -475,10 +489,17 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
 
           if (item._type === 'audit') {
             const member = members.find(candidate => (candidate.id || candidate.uid) === item.userId);
-            const actor = item.userId
-              ? { ...member, id: item.userId, name: item.userName || member?.name || 'Учасник', avatar: member?.avatar || member?.photoURL }
-              : { id: org?.id, name: org?.name || 'Організація', avatar: org?.logo || org?.logoUrl };
-            return <Fragment key={`audit-${item.id}`}>{separator}<EventMessage text={formatAuditEvent(item, members)} time={fmtClock(item.createdAt)} actor={actor} isMine={item.userId === myId} /></Fragment>;
+            const actorName = item.userName || member?.name || org?.name || 'Система';
+            return (
+              <Fragment key={`audit-${item.id}`}>
+                {separator}
+                <SystemEventMessage
+                  text={formatAuditEvent(item, members)}
+                  time={fmtClock(item.createdAt)}
+                  actorName={actorName}
+                />
+              </Fragment>
+            );
           }
           return null;
         })}
