@@ -9,6 +9,7 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  Timestamp,
   where,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -56,6 +57,10 @@ export function useCalendarEventTimeLogs(eventId, occurrenceStartAt) {
     if (!eventId || !occurrenceStartAt || !userId || !Number.isFinite(minutes) || minutes <= 0) {
       throw new Error('Вкажіть коректний час');
     }
+    const occurrenceDate = new Date(occurrenceStartAt);
+    if (!Number.isFinite(occurrenceDate.getTime())) {
+      throw new Error('Не вдалося визначити дату події');
+    }
     await addDoc(collection(db, 'timeLogs'), {
       organizationId: activeOrgId,
       sourceType: 'calendar_event',
@@ -66,7 +71,9 @@ export function useCalendarEventTimeLogs(eventId, occurrenceStartAt) {
       userId,
       spentMinutes: minutes,
       description: String(description || '').trim().slice(0, 2000),
-      loggedAt: serverTimestamp(),
+      // Calendar work belongs to the occurrence date, even when entered later.
+      loggedAt: Timestamp.fromDate(occurrenceDate),
+      createdAt: serverTimestamp(),
     });
   }, [activeOrgId, eventId, occurrenceStartAt]);
 

@@ -58,9 +58,9 @@ test('derives a scoped task destination when an old notification has no link', (
 test('keeps a calendar event deep link scoped to the right organization', () => {
   assert.equal(
     notificationDestinationWithOrganization({
-      link: '/calendar?event=event-42',
+      link: '/calendar/event/event-42?occurrence=2026-07-25T09%3A00%3A00.000Z',
       organizationId: 'org-1',
     }),
-    '/calendar?event=event-42&org=org-1',
+    '/calendar/event/event-42?occurrence=2026-07-25T09%3A00%3A00.000Z&org=org-1',
   );
 });

@@ -143,7 +143,11 @@ export async function POST(request) {
     await Promise.all(candidates.map(async candidate => {
       const id = `calendar_reminder_${candidate.eventId}_${userId}_${candidate.occurrenceStart}_${candidate.minutes}`;
       try {
-        const link = withNotificationOrganization(`/calendar?event=${candidate.eventId}`, organizationId);
+        const occurrence = new Date(candidate.occurrenceStart).toISOString();
+        const link = withNotificationOrganization(
+          `/calendar/event/${encodeURIComponent(candidate.eventId)}?occurrence=${encodeURIComponent(occurrence)}`,
+          organizationId,
+        );
         const body = reminderLabel(candidate.minutes);
         await db.collection('notifications').doc(id).create({
           userId,

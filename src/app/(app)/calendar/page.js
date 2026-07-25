@@ -23,6 +23,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
+import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
@@ -384,7 +385,7 @@ function AgendaView({ anchor, events, deadlines, onEventClick, onDeadlineClick, 
 
 export default function CalendarPage() {
   const router = useRouter();
-  const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
+  const { currentUser, projects } = useAppContext();
   const { members } = useOrganization();
   const {
     events,
@@ -393,9 +394,6 @@ export default function CalendarPage() {
     error,
     refresh,
     createEvent,
-    updateEvent,
-    removeEvent,
-    respondToEvent,
   } = useCalendarEvents();
   const showToast = useWorkspaceStore(state => state.showToast);
   const calendarSearch = useWorkspaceStore(state => state.calendarSearch);
@@ -406,7 +404,6 @@ export default function CalendarPage() {
   const [projectFilters, setProjectFilters] = useState([]);
   const [memberFilter, setMemberFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
   const [initialStart, setInitialStart] = useState(null);
 
   const filteredEvents = useMemo(() => events.filter(event => {
@@ -432,14 +429,9 @@ export default function CalendarPage() {
     if (!eventId) return;
     const matching = events.find(event => event.id === eventId || event.sourceEventId === eventId);
     if (matching) {
-      queueMicrotask(() => {
-        setSelectedEvent(matching);
-        setAnchor(new Date(matching.startAt));
-        setDialogOpen(true);
-        window.history.replaceState(null, '', '/calendar');
-      });
+      router.replace(calendarEventHref(matching));
     }
-  }, [events]);
+  }, [events, router]);
 
   const movePeriod = direction => {
     setAnchor(previous => {
@@ -451,42 +443,19 @@ export default function CalendarPage() {
   };
 
   const openCreate = date => {
-    setSelectedEvent(null);
     setInitialStart(date || new Date());
     setDialogOpen(true);
   };
 
   const openEvent = event => {
-    setSelectedEvent(event);
-    setInitialStart(null);
-    setDialogOpen(true);
+    router.push(calendarEventHref(event));
   };
 
   const handleSave = async data => {
-    if (selectedEvent) await updateEvent(selectedEvent.sourceEventId || selectedEvent.id, data);
-    else await createEvent(data);
+    await createEvent(data);
     setDialogOpen(false);
-    showToast(selectedEvent ? 'Подію оновлено' : 'Подію створено, запрошення надіслано', 'success');
+    showToast('Подію створено, запрошення надіслано', 'success');
   };
-
-  const handleDelete = async () => {
-    await removeEvent(selectedEvent.sourceEventId || selectedEvent.id);
-    setDialogOpen(false);
-    showToast('Подію скасовано', 'success');
-  };
-
-  const handleRespond = async response => {
-    const updated = await respondToEvent(selectedEvent.sourceEventId || selectedEvent.id, response);
-    setSelectedEvent(previous => ({ ...previous, participantResponses: updated.participantResponses }));
-    showToast('Відповідь збережено', 'success');
-  };
-
-  const canManageSelected = !selectedEvent || (
-    !selectedEvent.readOnly && (
-      selectedEvent.organizerId === currentUserId ||
-      (selectedEvent.visibility !== 'private' && ['owner', 'admin'].includes(orgRole))
-    )
-  );
 
   const filterOptions = [
     { value: 'all', label: 'Усі типи' },
@@ -595,16 +564,13 @@ export default function CalendarPage() {
       {dialogOpen && (
         <CalendarEventDialog
           isOpen
-          event={selectedEvent}
           initialStart={initialStart}
           members={members}
           projects={projects}
           currentUserId={currentUserId}
-          canManage={canManageSelected}
+          canManage
           onClose={() => setDialogOpen(false)}
           onSave={handleSave}
-          onDelete={handleDelete}
-          onRespond={handleRespond}
         />
       )}
     </div>

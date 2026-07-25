@@ -1,7 +1,7 @@
 'use client';
-// src/app/workspace/analytics/page.js — Workspace-wide analytics + Billing (admin/owner only)
+// src/app/workspace/analytics/page.js — Workspace-wide analytics + invoices (admin/owner only)
 // Огляд = швидкий стан воркспейсу; Продуктивність = тренди; Табель = час;
-// Команда = навантаження; Білінг = рахунки. Всі контроли табу (період,
+// Команда = навантаження; Рахунок = клієнтські рахунки. Всі контроли табу (період,
 // тиждень/місяць, учасник, навігація) живуть в ОДНОМУ FilterBar під табами.
 import { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -10,7 +10,7 @@ import {
   BarChart2, AlertTriangle, CalendarDays, Clock, Users, Zap, Target, Receipt, ArrowRight,
   ChevronLeft, ChevronRight, Plus, StickyNote, Video,
 } from 'lucide-react';
-import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
+import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import BillingTab from '@/components/workspace/BillingTab';
@@ -25,6 +25,11 @@ import FilterBar from '@/components/ui/FilterBar';
 import { parseDueDate } from '@/lib/utils/date';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
+import { calendarEventOccurrenceKey } from '@/lib/utils/calendarEventNavigation.mjs';
+import {
+  effectiveTimeLogMillis,
+  isCalendarEventTimeLog,
+} from '@/lib/utils/timeLogDates.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -84,7 +89,6 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
   }, [events, now, period]);
 
   const stats = useMemo(() => {
-    if (!issues.length && !loading) return null;
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
@@ -103,7 +107,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
       return t > periodAgo;
     }).length;
 
-    const periodLogs = timeLogs.filter(l => (l.loggedAt?.toMillis?.() ?? 0) >= periodAgo);
+    const periodLogs = timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
     const periodMin  = periodLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
 
     const byProject = projects.map(p => {
@@ -132,7 +136,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
       byProject, byStatus, maxStatus, noAssignee, unestimated,
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
-  }, [issues, timeLogs, projects, period, loading, statuses, doneSet, firstStatusId, now]);
+  }, [issues, timeLogs, projects, period, statuses, doneSet, firstStatusId, now]);
 
   if (loading) {
     return (
@@ -142,13 +146,13 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
     );
   }
 
-  if (!stats || stats.total === 0) {
+  if (stats.total === 0 && stats.periodMin === 0 && events.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center">
         <EmptyState
           icon={BarChart2}
           title="Даних ще немає"
-          description="Аналітика з'явиться після створення завдань"
+          description="Аналітика з’явиться після створення завдань, подій або записів часу"
         />
       </div>
     );
@@ -322,12 +326,7 @@ export default function WorkspaceAnalyticsPage() {
   const canSeeBilling = orgRole === 'owner' || orgRole === 'admin';
   const canSeeTeamTimesheet = canSeeBilling;
 
-  const allUids = useMemo(() => {
-    const set = new Set();
-    projects.forEach(p => (p.team || []).forEach(uid => set.add(uid)));
-    return [...set];
-  }, [projects]);
-  const { members } = useTeamMembers(allUids);
+  const { members } = useOrganization();
 
   const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(p => p.id));
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
@@ -400,21 +399,58 @@ export default function WorkspaceAnalyticsPage() {
   }, [projects, filteredIssues, searchMatchedProjectIds, searchQuery]);
 
   const filteredIssueIds = useMemo(() => new Set(filteredIssues.map(i => i.id)), [filteredIssues]);
+  const calendarEventsByKey = useMemo(() => {
+    const map = new Map();
+    calendarEvents.forEach(event => {
+      map.set(
+        calendarEventOccurrenceKey(event.sourceEventId || event.id, event.startAt),
+        event,
+      );
+    });
+    return map;
+  }, [calendarEvents]);
 
   const filteredTimeLogs = useMemo(() => {
     return timeLogs.filter(log => {
       if (projectFilters.length > 0 && !projectFilters.includes(log.projectId)) return false;
+      if (isCalendarEventTimeLog(log)) {
+        if (assigneeFilter === 'unassigned') return false;
+        if (assigneeFilter !== 'all' && log.userId !== assigneeFilter) return false;
+        if (priorityFilter !== 'all' || typeFilter !== 'all') return false;
+        if (searchQuery) {
+          const event = calendarEventsByKey.get(
+            calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt),
+          );
+          const project = projects.find(item => item.id === log.projectId);
+          const eventText = `${event?.title || ''} ${event?.description || ''} ${event?.location || ''} ${project?.name || ''}`
+            .toLocaleLowerCase('uk-UA');
+          if (!eventText.includes(searchQuery)) return false;
+        }
+        return true;
+      }
       if (searchQuery || assigneeFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all') {
         if (!filteredIssueIds.has(log.issueId)) return false;
       }
       return true;
     });
-  }, [timeLogs, projectFilters, searchQuery, assigneeFilter, priorityFilter, typeFilter, filteredIssueIds]);
+  }, [
+    assigneeFilter,
+    calendarEventsByKey,
+    filteredIssueIds,
+    priorityFilter,
+    projectFilters,
+    projects,
+    searchQuery,
+    timeLogs,
+    typeFilter,
+  ]);
 
   // Табель фільтрується лише по проєктах — вимір «хто» задає селектор учасника
   const projectScopedTimeLogs = useMemo(
-    () => filteredTimeLogs,
-    [filteredTimeLogs]
+    () => timeLogs.filter(log => (
+      projectFilters.length === 0 || projectFilters.includes(log.projectId)
+    )),
+    [projectFilters, timeLogs]
   );
 
   const TABS = [
@@ -422,10 +458,10 @@ export default function WorkspaceAnalyticsPage() {
     { id: 'timesheet', label: 'Табель', icon: Clock },
     { id: 'velocity', label: 'Продуктивність', icon: Zap },
     { id: 'workload', label: 'Команда', icon: Users },
-    ...(canSeeBilling ? [{ id: 'billing', label: 'Білінг', icon: Receipt }] : []),
+    ...(canSeeBilling ? [{ id: 'billing', label: 'Рахунок', icon: Receipt }] : []),
   ];
 
-  // Білінг — один конкретний проєкт
+  // Рахунок — один конкретний проєкт
   const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = projects.find(p => p.id === billingProjectId) || projects[0];
   const billingIssues  = filteredIssues.filter(i => i.projectId === (billingProject?.id));
@@ -590,6 +626,7 @@ export default function WorkspaceAnalyticsPage() {
         {activeTab === 'billing' && canSeeBilling && (
           <BillingTab
             issues={billingIssues}
+            events={calendarEvents}
             members={members}
             project={billingProject}
             projectId={billingProject?.id}

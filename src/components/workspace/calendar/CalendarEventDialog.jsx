@@ -119,7 +119,7 @@ function responseLabel(value) {
   return 'Очікуємо';
 }
 
-function EventDetails({
+export function CalendarEventDetails({
   event,
   members,
   projects,
@@ -240,6 +240,11 @@ function EventDetails({
               <p className="mt-0.5 text-[11px] text-muted">
                 {timeLoading ? 'Завантаження…' : totalMinutes > 0 ? `Всього ${Math.floor(totalMinutes / 60)} год ${totalMinutes % 60} хв` : 'Час ще не списували'}
               </p>
+              <p className="mt-1 text-[10px] leading-relaxed text-faint">
+                {event.projectId
+                  ? 'Потрапляє в аналітику команди та в рахунок обраного проєкту.'
+                  : 'Потрапляє в аналітику команди. Щоб додати час у рахунок, прив’яжіть подію до проєкту.'}
+              </p>
             </div>
             {!event.allDay && (
               <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-bold text-muted">
@@ -292,10 +297,12 @@ export default function CalendarEventDialog({
   onSave,
   onDelete,
   onRespond,
+  initialMode,
+  onCancelEdit,
 }) {
   const confirm = useConfirm();
   const [form, setForm] = useState(() => initialForm(event, initialStart, currentUserId));
-  const [mode, setMode] = useState(event ? 'details' : 'edit');
+  const [mode, setMode] = useState(initialMode || (event ? 'details' : 'edit'));
   const [saving, setSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);
   const [error, setError] = useState('');
@@ -452,7 +459,7 @@ export default function CalendarEventDialog({
           </>
         )}
       >
-        <EventDetails
+        <CalendarEventDetails
           event={event}
           members={members}
           projects={projects}
@@ -488,7 +495,17 @@ export default function CalendarEventDialog({
           Видалити
         </Button>
       )}
-      <Button style="secondary" size="md" onClick={() => event ? setMode('details') : onClose()}>Скасувати</Button>
+      <Button
+        style="secondary"
+        size="md"
+        onClick={() => {
+          if (event && onCancelEdit) onCancelEdit();
+          else if (event) setMode('details');
+          else onClose();
+        }}
+      >
+        Скасувати
+      </Button>
       <Button type="submit" form="calendar-event-form" size="md" loading={saving}>
         {event ? 'Зберегти' : 'Створити подію'}
       </Button>
@@ -501,7 +518,7 @@ export default function CalendarEventDialog({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title={event ? (canManage ? 'Подія' : 'Деталі події') : 'Нова подія'}
+      title={event ? (canManage ? 'Редагування події' : 'Деталі події') : 'Нова подія'}
       size="lg"
       footer={footer}
     >

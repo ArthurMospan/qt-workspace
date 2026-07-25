@@ -16,9 +16,18 @@ export function useProjectAllTimeLogs(projectId) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!projectId || !activeOrgId) {
-      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => {
+        setLogs([]);
+        setByIssue({});
+        setLoading(false);
+      });
       return;
     }
+    queueMicrotask(() => {
+      setLogs([]);
+      setByIssue({});
+      setLoading(true);
+    });
     const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
     const unsub = onSnapshot(q, {
       serverTimestamps: 'estimate'

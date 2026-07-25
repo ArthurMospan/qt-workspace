@@ -11,6 +11,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
+import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -348,14 +349,13 @@ export default function ProfileView({ user, onClose }) {
               <div className="flex flex-col gap-2">
                 {agendaEvents.map(event => {
                   const start = new Date(event.startAt);
-                  const sourceId = event.sourceEventId || event.id;
                   return (
                     <button
                       key={event.id}
                       type="button"
                       onClick={() => {
                         if (onClose) onClose();
-                        router.push(`/calendar?event=${encodeURIComponent(sourceId)}`);
+                        router.push(calendarEventHref(event));
                       }}
                       className="flex w-full items-center gap-3 rounded-[14px] border border-line bg-white p-3 text-left transition-colors hover:bg-canvas"
                     >

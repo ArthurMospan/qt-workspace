@@ -14,6 +14,11 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/UserAvatar';
 import { Dialog, Button, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
+import {
+  calendarEventHref,
+  calendarEventOccurrenceKey,
+} from '@/lib/utils/calendarEventNavigation.mjs';
+import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -75,7 +80,7 @@ function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
 }
 
 function logDate(log) {
-  return log.loggedAt?.toDate ? log.loggedAt.toDate() : log.loggedAt ? new Date(log.loggedAt) : null;
+  return effectiveTimeLogDate(log);
 }
 
 // ── Week view: one member — day columns with task cards (YouTrack style) ─────
@@ -89,7 +94,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
       if (!d) return;
       const key = dayKey(d);
       if (!map[key]) return;
-      const targetKey = log.issueId || `event:${log.eventId}:${log.occurrenceStartAt}`;
+      const targetKey = log.issueId || calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt);
       const cur = map[key].get(targetKey) || 0;
       map[key].set(targetKey, cur + (log.spentMinutes || 0));
     });
@@ -134,7 +139,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                         {issue.issueKey || targetKey.slice(0, 6)}
                       </Link>
                     ) : event ? (
-                      <Link href={`/calendar?event=${encodeURIComponent(event.sourceEventId || event.id)}`} className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink hover:underline">
+                      <Link href={calendarEventHref(event)} className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink hover:underline">
                         <CalendarDays size={12} className="shrink-0 text-muted" />
                         <span className="truncate">Подія</span>
                       </Link>
@@ -456,7 +461,7 @@ export default function TimesheetTab({
   const eventsByKey = useMemo(() => {
     const map = {};
     events.forEach(event => {
-      map[`event:${event.sourceEventId || event.id}:${event.startAt}`] = event;
+      map[calendarEventOccurrenceKey(event.sourceEventId || event.id, event.startAt)] = event;
     });
     return map;
   }, [events]);
@@ -526,7 +531,7 @@ export default function TimesheetTab({
 
         {/* Grid */}
         {timeLogs.length === 0 ? (
-          <EmptyState icon={Clock} title="Даних ще немає" description="Логи часу з'являться після трекінгу завдань" />
+          <EmptyState icon={Clock} title="Даних ще немає" description="Логи часу з’являться після трекінгу завдань або подій" />
         ) : mode === 'week' ? (
           isTeam
             ? <TeamWeek days={days} logs={rangeLogs} members={members} todayKey={todayKey} onSelectMember={onSelectMember} />

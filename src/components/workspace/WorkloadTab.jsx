@@ -7,6 +7,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { EmptyState, KpiCard } from '@/components/ui';
 import { useWorkflowConfig, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
+import { effectiveTimeLogMillis } from '@/lib/utils/timeLogDates.mjs';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -88,7 +89,7 @@ export default function WorkloadTab({ members = [], issues = [], timeLogs = [], 
       });
       const inProg = open.filter(i => i.columnId === 'in-progress');
       const minutes = timeLogs
-        .filter(l => l.userId === uid && (l.loggedAt?.toMillis?.() ?? 0) >= periodAgo)
+        .filter(log => log.userId === uid && effectiveTimeLogMillis(log) >= periodAgo)
         .reduce((s, l) => s + (l.spentMinutes || 0), 0);
 
       // Priority breakdown of open tasks

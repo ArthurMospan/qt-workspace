@@ -1,7 +1,8 @@
 'use client';
 
 // src/lib/hooks/useWorkspaceAnalytics.js
-// Loads issues + timeLogs for ALL projects in a workspace (batched by chunks of 10)
+// Loads project issues plus every organization time log. Calendar events may
+// intentionally have no project, but they still belong in team analytics.
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -22,16 +23,27 @@ export function useWorkspaceAnalytics(projectIds = []) {
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!activeOrgId || projectIds.length === 0) {
-      queueMicrotask(() => setLoading(false));
+    if (!activeOrgId) {
+      queueMicrotask(() => {
+        setIssues([]);
+        setTimeLogs([]);
+        setIssueLinks([]);
+        setLoading(false);
+      });
       return;
     }
+    queueMicrotask(() => {
+      setIssues([]);
+      setTimeLogs([]);
+      setIssueLinks([]);
+      setLoading(true);
+    });
     const chunks = chunkArray(projectIds, 10);
     const allIssues = {};
     const allTimeLogs = {};
     const allIssueLinks = {};
     let pendingIssues = chunks.length;
-    let pendingTimeLogs = chunks.length;
+    let pendingTimeLogs = 1;
     let pendingLinks = 1; // Not partitioned by project, just one query per org
     const unsubs = [];
     const checkDone = () => {
@@ -53,6 +65,29 @@ export function useWorkspaceAnalytics(projectIds = []) {
       checkDone();
     });
     unsubs.push(unsubLinks);
+
+    const tq = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId));
+    const unsubTimeLogs = onSnapshot(tq, {
+      serverTimestamps: 'estimate'
+    }, snap => {
+      const currentIds = new Set(snap.docs.map(d => d.id));
+      Object.keys(allTimeLogs).forEach(id => {
+        if (!currentIds.has(id)) delete allTimeLogs[id];
+      });
+      snap.docs.forEach(d => {
+        allTimeLogs[d.id] = {
+          id: d.id,
+          ...d.data()
+        };
+      });
+      if (pendingTimeLogs > 0) pendingTimeLogs--;
+      flushLogs();
+      checkDone();
+    }, () => {
+      if (pendingTimeLogs > 0) pendingTimeLogs--;
+      checkDone();
+    });
+    unsubs.push(unsubTimeLogs);
 
     chunks.forEach(chunk => {
       // Issues query
@@ -81,26 +116,7 @@ export function useWorkspaceAnalytics(projectIds = []) {
         if (pendingIssues > 0) pendingIssues--;
         checkDone();
       });
-
-      // TimeLogs query
-      const tq = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('projectId', 'in', chunk));
-      const unsub2 = onSnapshot(tq, {
-        serverTimestamps: 'estimate'
-      }, snap => {
-        snap.docs.forEach(d => {
-          allTimeLogs[d.id] = {
-            id: d.id,
-            ...d.data()
-          };
-        });
-        if (pendingTimeLogs > 0) pendingTimeLogs--;
-        flushLogs();
-        checkDone();
-      }, () => {
-        if (pendingTimeLogs > 0) pendingTimeLogs--;
-        checkDone();
-      });
-      unsubs.push(unsub1, unsub2);
+      unsubs.push(unsub1);
     });
     return () => unsubs.forEach(u => u());
   }, [activeOrgId, projectIds.join(',')]); // eslint-disable-line

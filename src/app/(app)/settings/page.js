@@ -448,7 +448,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
         <button
           type="button"
           onClick={onToggleDone}
-          title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/білінг (клік, щоб прибрати)' : 'Позначити завершальним'}
+          title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати)' : 'Позначити завершальним'}
           className={`shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${
             isDone ? 'bg-[#10b981]/12 text-[#10b981]' : 'text-faint hover:text-muted hover:bg-canvas'
           }`}
@@ -2639,7 +2639,7 @@ export default function SettingsPage() {
       case 'statuses': {
         const doneIds = getDoneStatusIds(statuses);
         return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахується прогрес, швидкість, прострочені та білінг.">
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахуються прогрес, швидкість, прострочені та рахунок.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />

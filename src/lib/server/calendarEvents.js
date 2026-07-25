@@ -169,7 +169,7 @@ export async function createCalendarNotifications({
   type,
   title,
   body,
-  link = `/calendar?event=${eventId}`,
+  link = `/calendar/event/${encodeURIComponent(eventId)}`,
 }) {
   const recipients = [...new Set(recipientIds)].filter(uid => uid && uid !== actorId);
   if (!recipients.length) return;
