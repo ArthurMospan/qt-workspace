@@ -1,6 +1,7 @@
 'use client';
 // src/components/WorkspaceHeader.jsx — Smart contextual header with 5 modes
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useAppContext }    from '@/lib/context/AppContext';
 import { useDeadlineReminders } from '@/lib/hooks/useDeadlineReminders';
@@ -19,6 +20,8 @@ import {
 import Button from '@/components/ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
+import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { auth } from '@/lib/firebase';
 
 const TYPE_CFG = {
@@ -160,7 +163,17 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const [calendarResponses, setCalendarResponses] = useState({});
   const [respondingNotificationId, setRespondingNotificationId] = useState('');
   const bellRef = useRef(null);
+  const notificationPanelRef = useRef(null);
   const userRef = useRef(null);
+  const notificationPanelPosition = useFloatingOverlay({
+    open: bellOpen,
+    anchorRef: bellRef,
+    overlayRef: notificationPanelRef,
+    preferredPlacement: 'bottom',
+    align: 'end',
+    gap: 8,
+    padding: 8,
+  });
 
   const scopedNotifications = notifications.filter(n => n.organizationId === activeOrgId);
   const unreadCount = scopedNotifications.filter(n => !n.read).length;
@@ -181,7 +194,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
   useEffect(() => {
     const clickOut = e => {
-      if (bellOpen && bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
+      if (
+        bellOpen
+        && bellRef.current
+        && !bellRef.current.contains(e.target)
+        && !notificationPanelRef.current?.contains(e.target)
+      ) setBellOpen(false);
       if (userOpen && userRef.current && !userRef.current.contains(e.target)) setUserOpen(false);
     };
     document.addEventListener('mousedown', clickOut);
@@ -249,21 +267,38 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
           <div className="relative" ref={bellRef}>
             <button
               id="notif-bell"
-            onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
-            className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${
-              bellOpen ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'
-            } ${unreadCount > 0 ? 'animate-[bellShake_0.4s_ease]' : ''}`}
-          >
-            {hasEmergency ? <span className="animate-bounce text-[16px]">🔥</span> : <Bell size={18} />}
-            {unreadCount > 0 && !hasEmergency && (
-              <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
+              type="button"
+              aria-label="Сповіщення"
+              aria-expanded={bellOpen}
+              aria-controls={bellOpen ? 'notification-center-panel' : undefined}
+              onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
+              className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${
+                bellOpen ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'
+              } ${unreadCount > 0 ? 'animate-[bellShake_0.4s_ease]' : ''}`}
+            >
+              {hasEmergency ? <span className="animate-bounce text-[16px]">🔥</span> : <Bell size={18} />}
+              {unreadCount > 0 && !hasEmergency && (
+                <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {bellOpen && (
-            <div className="fixed md:absolute right-[8px] md:right-0 top-[56px] md:top-[calc(100%+8px)] w-[min(380px,calc(100vw-16px))] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
+          {bellOpen && typeof document !== 'undefined' && createPortal(
+            <div
+              ref={notificationPanelRef}
+              id="notification-center-panel"
+              role="dialog"
+              aria-label="Центр сповіщень"
+              data-qt-global-notification-layer
+              className="fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+              style={{
+                top: notificationPanelPosition.top,
+                left: notificationPanelPosition.left,
+                visibility: notificationPanelPosition.ready ? 'visible' : 'hidden',
+                zIndex: GLOBAL_NOTIFICATION_Z_INDEX,
+              }}
+            >
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-canvas">
                 <div className="flex items-center gap-2">
@@ -398,7 +433,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                   <span className="text-[10px] text-faint">останні {scopedNotifications.length}</span>
                 </div>
               )}
-            </div>
+            </div>,
+            document.body,
           )}
         </div>
         )}
@@ -438,14 +474,18 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       </div>
 
       {/* ─── Live notification popup ────────────────────────────────── */}
-      {liveNotif && (() => {
+      {liveNotif && typeof document !== 'undefined' && createPortal((() => {
         const cfg = TYPE_CFG[liveNotif.type] || TYPE_CFG.assigned;
         return (
           <div
-            className={`fixed bottom-[72px] md:bottom-5 right-[12px] md:right-[24px] z-[100] w-[min(320px,calc(100vw-24px))] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden ${
+            data-qt-global-notification-layer
+            className={`fixed bottom-[72px] right-[12px] w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.12)] md:bottom-5 md:right-[24px] ${
               liveNotif.type === 'emergency' ? 'border-2 border-red-500' : 'border border-[#f0f0f0]'
             }`}
-            style={{ animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)' }}
+            style={{
+              animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)',
+              zIndex: GLOBAL_NOTIFICATION_Z_INDEX,
+            }}
           >
             <div className="flex items-start gap-3 px-4 py-4">
               <NotifIcon n={liveNotif} size={32} />
@@ -499,7 +539,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
     </>
   );
 }

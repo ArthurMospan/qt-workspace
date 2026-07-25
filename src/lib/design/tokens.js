@@ -236,7 +236,7 @@ export const zIndex = {
   fixed: 30,
   modal: 40,
   tooltip: 50,
-  notification: 60,
+  notification: 10000,
 };
 
 export const states = {

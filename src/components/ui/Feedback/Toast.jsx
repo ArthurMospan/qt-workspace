@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle, X, AlertCircle, AlertTriangle, Info, Loader2 } from 'lucide-react';
+import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
 
 export function Toast({
   variant = 'info', // success, error, warning, info, loading
@@ -29,8 +31,16 @@ export function Toast({
   const isLoading = variant === 'loading';
   const isSuccess = variant === 'success';
 
-  return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none flex flex-col items-center">
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      data-qt-global-notification-layer
+      role={isError ? 'alert' : 'status'}
+      aria-live={isError ? 'assertive' : 'polite'}
+      className="pointer-events-none fixed bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center"
+      style={{ zIndex: GLOBAL_NOTIFICATION_Z_INDEX }}
+    >
       <div 
         className="flex items-center gap-3 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
         style={{ animation: 'toastSlideUp 0.2s ease-out' }}
@@ -73,7 +83,8 @@ export function Toast({
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
