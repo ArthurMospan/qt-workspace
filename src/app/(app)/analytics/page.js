@@ -4,6 +4,7 @@
 // Команда = навантаження; Рахунок = клієнтські рахунки. Всі контроли табу (період,
 // тиждень/місяць, учасник, навігація) живуть в ОДНОМУ FilterBar під табами.
 import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
@@ -33,6 +34,7 @@ import {
 import {
   filterTeamIssues,
   filterTeamTimeLogs,
+  memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -322,6 +324,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
 
 // ── PAGE ─────────────────────────────────────────────────────────────
 export default function WorkspaceAnalyticsPage() {
+  const router = useRouter();
   const { projects = [], orgRole, currentUser } = useAppContext();
   const analyticsSearch = useWorkspaceStore(state => state.analyticsSearch);
   const [activeTab, setActiveTab] = useState('overview');
@@ -360,6 +363,10 @@ export default function WorkspaceAnalyticsPage() {
     });
   };
   const selectTeamMember = memberId => {
+    if (memberId !== 'all') {
+      router.push(memberAnalyticsHref(memberId));
+      return;
+    }
     setTeamMemberFilter(memberId);
     setAssigneeFilter(memberId);
     if (typeof window !== 'undefined') {
@@ -376,16 +383,14 @@ export default function WorkspaceAnalyticsPage() {
       const searchParams = new URLSearchParams(window.location.search);
       const member = searchParams.get('teamMember');
       if (member) {
-        queueMicrotask(() => {
-          setAssigneeFilter(member);
-          setTeamMemberFilter(member);
-        });
+        router.replace(memberAnalyticsHref(member));
+        return;
       }
       const tab = searchParams.get('tab');
       if (tab) queueMicrotask(() => setActiveTab(tab));
       else if (member) queueMicrotask(() => setActiveTab('workload'));
     }
-  }, []);
+  }, [router]);
 
   const searchQuery = analyticsSearch.trim().toLocaleLowerCase('uk-UA');
   const searchMatchedProjectIds = useMemo(() => new Set(

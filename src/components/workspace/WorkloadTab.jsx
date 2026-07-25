@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  LayoutDashboard,
   ListChecks,
   Target,
   TrendingUp,
@@ -22,7 +23,6 @@ import {
   EmptyState,
   KpiCard,
   Segmented,
-  Tabs,
 } from '@/components/ui';
 import {
   DEFAULT_PRIORITIES,
@@ -264,23 +264,39 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
   );
 }
 
-function MemberHeader({ stat, positions, period, onBack }) {
+const MEMBER_VIEWS = [
+  { id: 'overview', label: 'Огляд', description: 'Ключові показники', icon: LayoutDashboard },
+  { id: 'work', label: 'Робота', description: 'Завдання й активність', icon: ListChecks },
+  { id: 'timesheet', label: 'Табель', description: 'Робочий час', icon: Clock },
+  { id: 'productivity', label: 'Продуктивність', description: 'Динаміка роботи', icon: TrendingUp },
+];
+
+function MemberHeader({ stat, positions, period, onBack, standalone }) {
   const risk = riskMeta(stat);
   return (
-    <div className="mb-5 rounded-[18px] bg-white p-4 sm:p-5">
+    <div className="mb-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Button style="ghost" size="icon-sm" icon={ArrowLeft} onClick={onBack} aria-label="Повернутися до команди" />
-        <UserAvatar user={stat.member} size={52} />
+        {!standalone && (
+          <Button style="ghost" size="icon-sm" icon={ArrowLeft} onClick={onBack} aria-label="Повернутися до команди" />
+        )}
+        <UserAvatar user={stat.member} size={standalone ? 64 : 52} />
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[20px] font-bold text-ink">{memberName(stat.member)}</h2>
-          <p className="mt-0.5 truncate text-[12px] text-muted">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+            Аналітика працівника
+          </p>
+          <h1 className={`truncate font-bold tracking-tight text-ink ${standalone ? 'text-[26px]' : 'text-[20px]'}`}>
+            {memberName(stat.member)}
+          </h1>
+          <p className="mt-1 truncate text-[12px] text-muted">
             {positionLabel(stat.member, positions)}
             {stat.member?.email ? ` · ${stat.member.email}` : ''}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${risk.className}`}>{risk.label}</span>
-          <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-bold text-muted">Період: {period} днів</span>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${risk.className}`}>{risk.label}</span>
+          <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-muted shadow-sm">
+            Період: {period} днів
+          </span>
         </div>
       </div>
     </div>
@@ -566,37 +582,64 @@ function MemberDetail({
   events,
   period,
   onBack,
+  standalone = false,
 }) {
   const [view, setView] = useState('overview');
 
   return (
     <div className="w-full pb-16">
-      <MemberHeader stat={stat} positions={positions} period={period} onBack={onBack} />
-      <div className="mb-5 overflow-x-auto rounded-[14px] bg-white px-2 pt-2">
-        <Tabs
-          tabs={[
-            { id: 'overview', label: 'Огляд' },
-            { id: 'work', label: 'Робота' },
-            { id: 'timesheet', label: 'Табель' },
-            { id: 'productivity', label: 'Продуктивність' },
-          ]}
-          activeTab={view}
-          onTabChange={setView}
-        />
-      </div>
+      <MemberHeader
+        stat={stat}
+        positions={positions}
+        period={period}
+        onBack={onBack}
+        standalone={standalone}
+      />
+      <nav
+        className="custom-scrollbar mb-6 flex gap-1.5 overflow-x-auto rounded-[16px] bg-[#e9e9e9] p-1.5"
+        aria-label="Розділи аналітики працівника"
+      >
+        {MEMBER_VIEWS.map(item => {
+          const Icon = item.icon;
+          const active = view === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={active ? 'page' : undefined}
+              onClick={() => setView(item.id)}
+              className={`flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${
+                active
+                  ? 'bg-white text-ink shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
+                  : 'text-muted hover:bg-white/50 hover:text-ink'
+              }`}
+            >
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[9px] ${active ? 'bg-ink text-white' : 'bg-white/70 text-muted'}`}>
+                <Icon size={14} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[12px] font-bold">{item.label}</span>
+                <span className="mt-0.5 block truncate text-[9px] font-medium text-muted">{item.description}</span>
+              </span>
+            </button>
+          );
+        })}
+      </nav>
 
-      {view === 'overview' && (
-        <MemberOverview stat={stat} projects={projects} statuses={statuses} events={events} period={period} />
-      )}
-      {view === 'work' && (
-        <MemberWork stat={stat} projects={projects} statuses={statuses} events={events} />
-      )}
-      {view === 'timesheet' && (
-        <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
-      )}
-      {view === 'productivity' && (
-        <VelocityTab issues={stat.issues} projects={projects} period={period} />
-      )}
+      <div key={view}>
+        {view === 'overview' && (
+          <MemberOverview stat={stat} projects={projects} statuses={statuses} events={events} period={period} />
+        )}
+        {view === 'work' && (
+          <MemberWork stat={stat} projects={projects} statuses={statuses} events={events} />
+        )}
+        {view === 'timesheet' && (
+          <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
+        )}
+        {view === 'productivity' && (
+          <VelocityTab issues={stat.issues} projects={projects} period={period} />
+        )}
+      </div>
     </div>
   );
 }
@@ -610,6 +653,7 @@ export default function WorkloadTab({
   period = 30,
   selectedMemberId = 'all',
   onSelectMember,
+  standaloneDetail = false,
 }) {
   const [now, setNow] = useState(() => Date.now());
   const { doneStatusIds, positions = [], statuses = [] } = useWorkflowConfig();
@@ -724,6 +768,7 @@ export default function WorkloadTab({
           events={events}
           period={period}
           onBack={() => onSelectMember?.('all')}
+          standalone={standaloneDetail}
         />
       ) : (
         <TeamOverview

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   filterTeamIssues,
   filterTeamTimeLogs,
+  memberAnalyticsHref,
 } from '../src/lib/utils/teamAnalytics.mjs';
 
 const issues = [
@@ -41,4 +42,9 @@ test('project filtering is consistent for team tasks and time', () => {
 
 test('projectless event time remains visible when no project filter is active', () => {
   assert.equal(filterTeamTimeLogs(logs, [], 'all').some(log => log.id === 'l3'), true);
+});
+
+test('employee analytics opens as a dedicated encoded route', () => {
+  assert.equal(memberAnalyticsHref('user/42'), '/analytics/team/user%2F42');
+  assert.equal(memberAnalyticsHref(''), '/analytics?tab=workload');
 });

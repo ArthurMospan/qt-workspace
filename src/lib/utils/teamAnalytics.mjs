@@ -13,3 +13,8 @@ export function filterTeamTimeLogs(timeLogs = [], projectIds = [], memberId = 'a
     return true;
   });
 }
+
+export function memberAnalyticsHref(memberId) {
+  const normalizedId = typeof memberId === 'string' ? memberId.trim() : '';
+  return normalizedId ? `/analytics/team/${encodeURIComponent(normalizedId)}` : '/analytics?tab=workload';
+}
