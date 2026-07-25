@@ -1,8 +1,13 @@
 'use client';
+import { useState } from 'react';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
+
+const failedAvatarUrls = new Set();
 
 // src/components/UserAvatar.jsx — Fixed: uses size prop, supports avatar/photoURL
 export default function UserAvatar({ user, size = 32, className = '', tooltip = false }) {
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState(null);
+
   if (!user) return (
     <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
       className={`rounded-full bg-line flex items-center justify-center shrink-0 ${className}`}>
@@ -11,6 +16,11 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
   );
 
   const avatarUrl = user.customAvatar || user.avatar || user.photoURL;
+  const showAvatarImage = Boolean(
+    avatarUrl
+    && failedAvatarUrl !== avatarUrl
+    && !failedAvatarUrls.has(avatarUrl)
+  );
   const name = user.name || user.email || '?';
   const initials = name.charAt(0).toUpperCase();
 
@@ -32,12 +42,16 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
   const avatar = (
     <div style={{ width: size, height: size, minWidth: size }}
       className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
-      {avatarUrl ? (
+      {showAvatarImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={avatarUrl}
           alt={name}
           referrerPolicy="no-referrer"
+          onError={() => {
+            failedAvatarUrls.add(avatarUrl);
+            setFailedAvatarUrl(avatarUrl);
+          }}
           style={{ width: size, height: size }}
           className="object-cover"
         />

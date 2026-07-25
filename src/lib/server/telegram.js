@@ -133,8 +133,12 @@ export async function createIssueFromTelegram({
   const type = types.some(item => item.id === 'task') ? 'task' : types[0]?.id || 'task';
   const issueRef = db.collection('issues').doc();
   let issueKey = '';
+  const telegramUsername = String(telegramUser.username || '').replace(/^@/, '').trim();
   const authorName = [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(' ') ||
-    telegramUser.username || 'Telegram';
+    telegramUsername || 'Telegram';
+  const reporterName = telegramUsername
+    ? `QuickTeam (@${telegramUsername})`
+    : `QuickTeam (${authorName})`;
 
   await db.runTransaction(async transaction => {
     const freshProject = await transaction.get(projectRef);
@@ -160,7 +164,6 @@ export async function createIssueFromTelegram({
       dueDate: null,
       sprintId: null,
       reporterId: `telegram:${telegramUser.id || 'unknown'}`,
-      reporterName: authorName,
       estimateMinutes: null,
       parentEpicId: null,
       subtasks: [],
@@ -171,7 +174,10 @@ export async function createIssueFromTelegram({
         chatId: String(telegramChatId),
         messageId: telegramMessageId,
         telegramUserId: telegramUser.id || null,
+        telegramUsername,
+        telegramDisplayName: authorName,
       },
+      reporterName,
       createdBy: 'telegram-bot',
       createdAt: now,
       updatedAt: now,
@@ -179,7 +185,7 @@ export async function createIssueFromTelegram({
     transaction.update(projectRef, { issueCounter: next, updatedAt: now });
     transaction.create(issueRef.collection('audit').doc(), {
       userId: 'telegram-bot',
-      userName: authorName,
+      userName: reporterName,
       action: 'created',
       from: null,
       to: issueKey,

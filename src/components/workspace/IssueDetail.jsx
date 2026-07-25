@@ -24,7 +24,7 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
-import { TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { Popover, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
@@ -413,7 +413,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showDetailsDropdown, setShowDetailsDropdown] = useState(false);
-  const [showReporterDropdown, setShowReporterDropdown] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkRelation, setLinkRelation] = useState('relates-to');
   const [linkTargetId, setLinkTargetId] = useState('');
@@ -422,7 +421,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [timeLogsPage, setTimeLogsPage] = useState(1);
   const actionsDropdownRef = useRef(null);
   const detailsDropdownRef = useRef(null);
-  const reporterDropdownRef = useRef(null);
   const [logForm,      setLogForm]      = useState(null);
   const [logTab, setLogTab] = useState('spend');
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
@@ -439,9 +437,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       }
       if (detailsDropdownRef.current && !detailsDropdownRef.current.contains(e.target)) {
         setShowDetailsDropdown(false);
-      }
-      if (reporterDropdownRef.current && !reporterDropdownRef.current.contains(e.target)) {
-        setShowReporterDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -563,7 +558,24 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
   const reporterMatchByEmail = issue.reporterName ? members.find(m => m.email && m.email.toLowerCase() === issue.reporterName.toLowerCase()) : null;
-  const reporter      = members.find(m => (m.id || m.uid) === issue.reporterId) || reporterMatchByEmail || (issue.source === 'buggybag' ? { name: 'BuggyBag' } : (issue.reporterName ? { name: issue.reporterName } : null));
+  const reporterMember = members.find(m => (m.id || m.uid) === issue.reporterId) || reporterMatchByEmail || null;
+  const telegramUsername = String(issue.sourceMeta?.telegramUsername || '').replace(/^@/, '').trim();
+  const externalReporterName = issue.source === 'telegram'
+    ? telegramUsername
+      ? `QuickTeam (@${telegramUsername})`
+      : `QuickTeam (${issue.reporterName || 'користувач Telegram'})`
+    : issue.source === 'buggybag'
+      ? 'BuggyBag'
+      : issue.reporterName || 'Зовнішній автор';
+  const reporter = reporterMember || { name: externalReporterName };
+  const isExternalReporter = !reporterMember;
+  const externalReporterSource = issue.source === 'telegram'
+    ? 'Цю задачу створено через Telegram-бота QuickTeam.'
+    : issue.source === 'youtrack'
+      ? 'Автора перенесено разом із задачею з YouTrack.'
+      : issue.source === 'buggybag'
+        ? 'Цю задачу створено через інтеграцію BuggyBag.'
+        : 'Цю задачу створено зовнішньою інтеграцією.';
   const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
   const subtasksAll   = (issue.subtasks || []).length;
   const visibleAttachments = issue.attachments || [];
@@ -821,39 +833,62 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             
             {/* Metadata strip for non-editable details */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
-              {/* Clickable Reporter Dropdown */}
-              <div className="relative" ref={reporterDropdownRef}>
-                <button
-                  onClick={() => setShowReporterDropdown(!showReporterDropdown)}
-                  className="flex items-center gap-1.5 hover:bg-[#f0f0f0] px-1.5 py-0.5 rounded-[6px] transition-colors cursor-pointer"
-                >
-                  <span>Автор:</span>
-                  <UserAvatar user={reporter} size={16} />
-                  <span className="text-ink font-semibold">{reporter?.name || 'Невідомо'}</span>
-                </button>
-                {showReporterDropdown && reporter && (
-                  <div className="absolute left-0 top-full mt-1 w-[180px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-[6px] z-50">
+              <Popover
+                position="bottom"
+                hideCloseIcon
+                trigger={(
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-0.5 transition-colors hover:bg-[#f0f0f0]"
+                  >
+                    <span>Автор:</span>
+                    <UserAvatar user={reporter} size={16} />
+                    <span className="text-ink font-semibold">{reporter.name}</span>
+                  </button>
+                )}
+              >
+                {({ close }) => isExternalReporter ? (
+                  <div className="w-[260px]">
+                    <p className="text-[13px] font-bold text-ink">Зовнішній автор</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-muted">{externalReporterSource}</p>
+                    <p className="mt-2 text-[11px] leading-relaxed text-faint">
+                      Це не учасник організації, тому профіль та особистий чат недоступні.
+                    </p>
+                    {issue.source === 'youtrack' && issue.importMetadata?.sourceUrl && (
+                      <a
+                        href={issue.importMetadata.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
+                      >
+                        Відкрити в YouTrack <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-[180px] space-y-1">
                     <button
+                      type="button"
                       onClick={() => {
-                        setShowReporterDropdown(false);
+                        close();
                         const params = new URLSearchParams(searchParams.toString());
-                        params.set('member', reporter.id || reporter.uid);
+                        params.set('member', reporterMember.id || reporterMember.uid);
                         router.push(`${pathname}?${params.toString()}`);
                       }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
+                      className="flex h-[32px] w-full items-center px-[10px] text-left text-[13px] font-medium text-ink transition-colors hover:bg-canvas"
                     >
                       Переглянути профіль
                     </button>
                     <Link
-                      href={`/chat?dm=${encodeURIComponent(reporter.id || reporter.uid)}`}
-                      onClick={() => setShowReporterDropdown(false)}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium"
+                      href={`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`}
+                      onClick={close}
+                      className="flex h-[32px] w-full items-center px-[10px] text-left text-[13px] font-medium text-ink transition-colors hover:bg-canvas"
                     >
                       Написати в чат
                     </Link>
                   </div>
                 )}
-              </div>
+              </Popover>
               <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               {/* Created relative time */}

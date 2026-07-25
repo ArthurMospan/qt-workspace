@@ -6,6 +6,7 @@ export default function ToggleSwitch({
   disabled = false,
   size = 'md', // sm, md, lg
   label,
+  ariaLabel,
   className = '',
 }) {
   const sizeMap = {
@@ -34,6 +35,7 @@ export default function ToggleSwitch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={ariaLabel || label}
         disabled={disabled}
         onClick={() => !disabled && onChange?.(!checked)}
         style={containerStyle}

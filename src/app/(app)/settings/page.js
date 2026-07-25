@@ -47,6 +47,8 @@ import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { Colorful } from '@uiw/react-color';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
+import IntegrationCard, { IntegrationSteps } from '@/components/integrations/IntegrationCard';
+import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 import {
   getDoneStatusIds,
   DEFAULT_STATUSES,
@@ -750,6 +752,7 @@ export default function SettingsPage() {
   const [telegramGroupLoading, setTelegramGroupLoading] = useState(false);
   const [telegramGroupProjectId, setTelegramGroupProjectId] = useState('');
   const [telegramGroupConnect, setTelegramGroupConnect] = useState(null);
+  const [telegramGroupSetupOpen, setTelegramGroupSetupOpen] = useState(false);
 
   const apiKeysRequest = async (method = 'GET', body = null) => {
     const token = await auth.currentUser?.getIdToken();
@@ -794,6 +797,11 @@ export default function SettingsPage() {
     const status = await telegramRequest(`/api/integrations/telegram/group?organizationId=${encodeURIComponent(activeOrgId)}`);
     setTelegramGroupStatus(status);
     if (status.defaultProjectId) setTelegramGroupProjectId(status.defaultProjectId);
+    if (status.connected) {
+      setTelegramGroupSetupOpen(false);
+      setTelegramGroupConnect(null);
+    }
+    return status;
   }, [activeOrgId, isAdmin, telegramRequest]);
 
   useEffect(() => {
@@ -846,6 +854,7 @@ export default function SettingsPage() {
         projectId: telegramGroupProjectId,
       });
       setTelegramGroupConnect(result);
+      setTelegramGroupSetupOpen(true);
       window.open(result.addGroupLink, '_blank', 'noopener,noreferrer');
       showToast('Додайте бота в групу та надішліть команду підключення');
     } catch (error) {
@@ -856,17 +865,40 @@ export default function SettingsPage() {
   };
 
   const disconnectTelegramGroup = async () => {
+    if (!(await confirmDialog({
+      title: 'Відключити Telegram-групу?',
+      message: 'Бот перестане створювати задачі з цієї групи. Уже створені задачі залишаться у QuickTeam.',
+      confirmText: 'Відключити',
+      danger: true,
+    }))) return false;
+
     setTelegramGroupLoading(true);
     try {
       await telegramRequest(`/api/integrations/telegram/group?organizationId=${encodeURIComponent(activeOrgId)}`, 'DELETE');
       setTelegramGroupStatus(previous => ({ ...previous, connected: false, chatTitle: '', defaultProjectId: '' }));
       setTelegramGroupConnect(null);
+      setTelegramGroupSetupOpen(false);
       showToast('Telegram-групу відключено');
+      return true;
     } catch (error) {
       showToast(error.message, 'error');
+      return false;
     } finally {
       setTelegramGroupLoading(false);
     }
+  };
+
+  const toggleTelegramGroup = async enabled => {
+    if (enabled) {
+      setTelegramGroupSetupOpen(true);
+      return;
+    }
+    if (telegramGroupStatus.connected) {
+      await disconnectTelegramGroup();
+      return;
+    }
+    setTelegramGroupSetupOpen(false);
+    setTelegramGroupConnect(null);
   };
   const [generatingKey, setGeneratingKey] = useState(false);
 
@@ -2282,216 +2314,215 @@ export default function SettingsPage() {
         return (
           <Section title="Інтеграції" desc="Керуй підключеними сервісами" rightAction={saveButton}>
 
-            {/* QT Portal — головна інтеграція */}
-            <Card variant="white" padding="lg" className="mb-4 !border-none">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-[10px] bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
-                  <Image src="/quickteam.png" alt="" width={30} height={30} className="object-contain" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-4 mb-1">
-                    <div>
-                      <p className="text-[14px] font-semibold text-ink">QuickTeam+</p>
-                      <p className="text-[12px] text-muted mt-[2px]">Синхронізація клієнтських запитів з порталу</p>
-                    </div>
-                    <div className="shrink-0">
-                      <ToggleSwitch
-                        checked={qtEnabled}
-                        onChange={saveIntegration}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex items-center gap-3 flex-wrap">
-                    {qtEnabled ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
-                        <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
-                        Підключено
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-muted">
-                        <span className="w-[5px] h-[5px] rounded-full bg-faint" />
-                        Вимкнено
-                      </span>
-                    )}
-                    {qtEnabled && PORTAL_URL && (
-                      <a
-                        href={PORTAL_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[12px] text-ink font-semibold hover:underline"
-                      >
-                        Відкрити портал <ExternalLink size={11} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <IntegrationCard
+              title="QuickTeam+"
+              description="Синхронізує клієнтські запити та оновлення з порталу QuickTeam+."
+              logoSrc="/quickteam.png"
+              logoAlt="QuickTeam+"
+              enabled={qtEnabled}
+              onToggle={saveIntegration}
+              toggleDisabled={qtSaving}
+              status={qtEnabled ? 'connected' : 'off'}
+              statusLabel={qtEnabled ? 'Підключено' : 'Вимкнено'}
+              statusMeta={qtEnabled && PORTAL_URL ? (
+                <a
+                  href={PORTAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
+                >
+                  Відкрити портал <ExternalLink size={11} />
+                </a>
+              ) : null}
+            />
 
             {/* Telegram bot — group task capture */}
-            <Card variant="white" padding="lg" className="mb-4 !border-none">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-line bg-[#229ED9]/10 text-[#229ED9]">
-                  <Send size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[14px] font-semibold text-ink">Telegram bot</p>
-                      <p className="mt-[2px] text-[12px] text-muted">Створення задач із групи через /task або звернення до бота</p>
+            <IntegrationCard
+              title="Telegram"
+              description="Створюйте задачі прямо з робочої Telegram-групи та автоматично додавайте їх у вибраний проєкт."
+              logoSrc="/integrations/telegram.svg"
+              logoAlt="Telegram"
+              enabled={telegramGroupStatus.connected || telegramGroupSetupOpen}
+              onToggle={toggleTelegramGroup}
+              toggleDisabled={!telegramGroupStatus.configured || telegramGroupLoading}
+              status={telegramGroupStatus.connected ? 'connected' : telegramGroupSetupOpen ? 'pending' : telegramGroupStatus.configured ? 'off' : 'unavailable'}
+              statusLabel={telegramGroupStatus.connected ? 'Підключено' : telegramGroupSetupOpen ? 'Налаштування' : telegramGroupStatus.configured ? 'Вимкнено' : 'Недоступно'}
+              statusMeta={telegramGroupStatus.connected ? (
+                <span className="text-[12px] text-muted">
+                  {telegramGroupStatus.chatTitle || 'Telegram-група'}
+                  {telegramGroupProjectId && projects.find(project => project.id === telegramGroupProjectId)?.name
+                    ? ` → ${projects.find(project => project.id === telegramGroupProjectId).name}`
+                    : ''}
+                </span>
+              ) : !telegramGroupStatus.configured ? (
+                <span className="text-[11px] text-muted">Бота ще не налаштовано на сервері QuickTeam.</span>
+              ) : null}
+            >
+              {telegramGroupStatus.connected ? (
+                <div className="space-y-3">
+                  <div className="rounded-[10px] border border-line bg-canvas p-3">
+                    <p className="text-[12px] font-semibold text-ink">Як створити задачу в групі</p>
+                    <div className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-muted">
+                      <p><code className="rounded bg-white px-1.5 py-0.5 text-ink">/task Назва задачі</code> — швидка команда.</p>
+                      <p>
+                        <code className="rounded bg-white px-1.5 py-0.5 text-ink">
+                          @{telegramGroupStatus.username || 'quick_team_bot'} Назва задачі
+                        </code>
+                        {' '}— звичайне звернення до бота.
+                      </p>
+                      <p>Наступні рядки повідомлення стануть описом задачі.</p>
                     </div>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[11px] font-semibold ${telegramGroupStatus.connected ? 'bg-green-50 text-[#10b981]' : 'bg-[#f5f5f5] text-muted'}`}>
-                      <span className={`h-[5px] w-[5px] rounded-full ${telegramGroupStatus.connected ? 'bg-[#10b981]' : 'bg-faint'}`} />
-                      {telegramGroupStatus.connected ? 'Підключено' : telegramGroupStatus.configured ? 'Не підключено' : 'Не налаштовано'}
-                    </span>
                   </div>
-
-                  {telegramGroupStatus.connected ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#f0f0f0] pt-3">
-                      <span className="text-[12px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
-                      <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}>Перевірити</Button>
-                      <Button style="ghost" color="red" size="sm" onClick={disconnectTelegramGroup} loading={telegramGroupLoading}>Відключити</Button>
-                    </div>
-                  ) : (
-                    <div className="mt-3 space-y-3 border-t border-[#f0f0f0] pt-3">
-                      <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto]">
-                        <Select
-                          value={telegramGroupProjectId}
-                          onChange={setTelegramGroupProjectId}
-                          options={[
-                            { value: '', label: 'Проєкт для нових задач' },
-                            ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
-                          ]}
-                          disabled={!telegramGroupStatus.configured}
-                        />
+                  <Button
+                    style="ghost"
+                    size="sm"
+                    icon={RefreshCw}
+                    onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}
+                  >
+                    Перевірити підключення
+                  </Button>
+                </div>
+              ) : telegramGroupSetupOpen ? (
+                <IntegrationSteps
+                  steps={[
+                    {
+                      title: 'Оберіть проєкт QuickTeam',
+                      description: 'Усі нові задачі з цієї Telegram-групи потраплятимуть саме сюди.',
+                      content: (
+                        <div className="mt-2 max-w-[420px]">
+                          <Select
+                            value={telegramGroupProjectId}
+                            onChange={setTelegramGroupProjectId}
+                            options={[
+                              { value: '', label: 'Оберіть проєкт' },
+                              ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
+                            ]}
+                          />
+                        </div>
+                      ),
+                    },
+                    {
+                      title: 'Додайте бота в Telegram-групу',
+                      description: 'Telegram відкриється в новій вкладці. Виберіть потрібну групу та підтвердьте додавання.',
+                      content: (
                         <Button
                           style="secondary"
-                          size="md"
-                          icon={Send}
+                          size="sm"
+                          icon={ExternalLink}
+                          className="mt-2"
                           onClick={connectTelegramGroup}
                           loading={telegramGroupLoading}
-                          disabled={!telegramGroupStatus.configured || !telegramGroupProjectId}
+                          disabled={!telegramGroupProjectId}
                         >
-                          Додати в групу
+                          Відкрити Telegram
                         </Button>
-                      </div>
-                      {telegramGroupConnect?.command && (
-                        <div className="rounded-[10px] border border-line bg-canvas p-3">
-                          <p className="mb-2 text-[11px] text-muted">Після додавання бота надішліть у групу цю одноразову команду (діє 30 хв):</p>
-                          <div className="flex items-center gap-2">
-                            <code className="min-w-0 flex-1 select-all break-all rounded bg-white px-2 py-1.5 text-[11px]">{telegramGroupConnect.command}</code>
-                            <Button
-                              style="ghost"
-                              size="icon-sm"
-                              icon={Copy}
-                              onClick={() => {
-                                navigator.clipboard.writeText(telegramGroupConnect.command);
-                                showToast('Команду скопійовано');
-                              }}
-                              aria-label="Копіювати команду"
-                            />
-                          </div>
+                      ),
+                    },
+                    {
+                      title: 'Підтвердьте групу командою',
+                      description: telegramGroupConnect?.command
+                        ? 'Скопіюйте одноразову команду та надішліть її в доданій групі протягом 30 хвилин.'
+                        : 'Після додавання бота тут з’явиться одноразова команда.',
+                      content: telegramGroupConnect?.command ? (
+                        <div className="mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2">
+                          <code className="min-w-0 flex-1 select-all break-all text-[11px] text-ink">{telegramGroupConnect.command}</code>
+                          <Button
+                            style="ghost"
+                            size="icon-sm"
+                            icon={Copy}
+                            onClick={() => {
+                              navigator.clipboard.writeText(telegramGroupConnect.command);
+                              showToast('Команду скопійовано');
+                            }}
+                            aria-label="Копіювати команду"
+                          />
                         </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}>Перевірити підключення</Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
+                      ) : null,
+                    },
+                    {
+                      title: 'Перевірте підключення',
+                      description: 'Після надсилання команди поверніться сюди. QuickTeam покаже назву групи та готовий приклад команди.',
+                      content: (
+                        <Button
+                          style="ghost"
+                          size="sm"
+                          icon={RefreshCw}
+                          className="mt-2"
+                          onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}
+                        >
+                          Перевірити
+                        </Button>
+                      ),
+                    },
+                  ]}
+                />
+              ) : null}
+            </IntegrationCard>
+
+            <YouTrackImportCard
+              key={activeOrgId}
+              organizationId={activeOrgId}
+              members={members}
+              projects={projects}
+              showToast={showToast}
+            />
 
             {/* BuggyBag Portal */}
-            <Card variant="white" padding="lg" className="mb-4 !border-none">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-[10px] bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
-                  <Image src="/bug-logo.png" alt="" width={30} height={30} className="object-contain" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-4 mb-1">
-                    <div>
-                      <p className="text-[14px] font-semibold text-ink flex items-center gap-2">
-                        BuggyBag Portal
-                      </p>
-                      <p className="text-[12px] text-muted mt-[2px]">Перетворюйте баг-репорти в завдання автоматично</p>
-                    </div>
-                    <div className="shrink-0">
-                      <ToggleSwitch
-                        checked={buggyBagEnabled}
-                        onChange={toggleBuggyBag}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Status + info */}
-                  <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex flex-col gap-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {buggyBagEnabled ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-green-50 text-[#10b981]">
-                          <span className="w-[5px] h-[5px] rounded-full bg-[#10b981]" />
-                          Підключено
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#f5f5f5] text-muted">
-                          <span className="w-[5px] h-[5px] rounded-full bg-faint" />
-                          Вимкнено
-                        </span>
+            <IntegrationCard
+              title="BuggyBag Portal"
+              description="Перетворює баг-репорти клієнтів на задачі QuickTeam разом зі скріншотами та технічними даними."
+              logoSrc="/bug-logo.png"
+              logoAlt="BuggyBag"
+              enabled={buggyBagEnabled}
+              onToggle={toggleBuggyBag}
+              status={buggyBagEnabled ? 'connected' : 'off'}
+              statusLabel={buggyBagEnabled ? 'Підключено' : 'Вимкнено'}
+              statusMeta={(
+                <a
+                  href="https://buggy-bag.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
+                >
+                  Відкрити BuggyBag <ExternalLink size={11} />
+                </a>
+              )}
+            >
+              {buggyBagEnabled && (
+                <div className="rounded-[10px] border border-line bg-canvas p-3">
+                  <p className="mb-3 text-[12px] font-semibold text-ink">Вставте ці дані в налаштуваннях BuggyBag</p>
+                  <div className="grid items-center gap-3 sm:grid-cols-[100px_1fr]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted">API Token</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <code className="min-w-0 flex-1 select-all truncate rounded border border-line bg-white px-3 py-1.5 font-mono text-[12px]">
+                        {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
+                      </code>
+                      {buggyBagKey.token && (
+                        <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} aria-label="Копіювати API Token" />
                       )}
-
-                      <a
-                        href="https://buggy-bag.vercel.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[12px] text-ink font-semibold cursor-pointer hover:underline"
-                      >
-                        Відкрити BuggyBag <ExternalLink size={11} />
-                      </a>
                     </div>
-                    
-                    {buggyBagEnabled && (
-                      <div className="bg-[#fcfcfc] border border-line rounded-[8px] p-4 mt-1">
-                        <p className="text-[12px] font-semibold text-ink mb-3">Вставте ці дані в налаштуваннях BuggyBag:</p>
-                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center mb-3">
-                          <span className="text-[11px] text-muted uppercase tracking-wider font-bold">API Token</span>
-                          <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">
-                              {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
-                            </code>
-                            {buggyBagKey.token && (
-                              <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-[100px_1fr] gap-3 items-center">
-                          <span className="text-[11px] text-muted uppercase tracking-wider font-bold">Org ID</span>
-                          <div className="flex items-center gap-2">
-                            <code className="text-[12px] font-mono bg-white border border-line px-3 py-1.5 rounded flex-1 select-all">{activeOrgId}</code>
-                            <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* What syncs */}
-                  <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1">
-                    {[
-                      'Баг-репорти',
-                      'Скріншоти та консоль',
-                      'Коментарі клієнтів',
-                      'Статуси завдань',
-                    ].map(item => (
-                      <div key={item} className="flex items-center gap-2 text-[12px] text-faint">
-                        <span className="w-[4px] h-[4px] rounded-full shrink-0 bg-[#e0e0e0]" />
-                        {item}
-                      </div>
-                    ))}
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Org ID</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <code className="min-w-0 flex-1 select-all truncate rounded border border-line bg-white px-3 py-1.5 font-mono text-[12px]">{activeOrgId}</code>
+                      <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} aria-label="Копіювати ID організації" />
+                    </div>
                   </div>
                 </div>
+              )}
+              <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+                {[
+                  'Баг-репорти',
+                  'Скріншоти та консоль',
+                  'Коментарі клієнтів',
+                  'Статуси завдань',
+                ].map(item => (
+                  <div key={item} className="flex items-center gap-2 text-[12px] text-faint">
+                    <span className="h-[4px] w-[4px] shrink-0 rounded-full bg-[#e0e0e0]" />
+                    {item}
+                  </div>
+                ))}
               </div>
-            </Card>
+            </IntegrationCard>
           </Section>
         );
       }

@@ -377,6 +377,22 @@ test('the sealed QuickTeam+ token is unreachable for anyone else', async () => {
   await assertFails(setDoc(doc(db, 'users', 'member-a', 'private', 'qtplus'), { qtUserId: 'x' }));
 });
 
+test('YouTrack import queues and external identity tables are server-only', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'imports', 'import-a'), { organizationId: 'org-a', provider: 'youtrack' });
+    await setDoc(doc(db, 'imports', 'import-a', 'items', '00000000'), { status: 'pending' });
+    await setDoc(doc(db, 'externalObjectLinks', 'link-a'), { organizationId: 'org-a' });
+    await setDoc(doc(db, 'externalActors', 'actor-a'), { organizationId: 'org-a' });
+  });
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  await assertFails(getDoc(doc(ownerDb, 'imports', 'import-a')));
+  await assertFails(getDoc(doc(ownerDb, 'imports', 'import-a', 'items', '00000000')));
+  await assertFails(getDoc(doc(ownerDb, 'externalObjectLinks', 'link-a')));
+  await assertFails(getDoc(doc(ownerDb, 'externalActors', 'actor-a')));
+  await assertFails(setDoc(doc(ownerDb, 'imports', 'forged'), { organizationId: 'org-a' }));
+});
+
 test('locking users/{uid}/private did not lock users/{uid}/settings', async () => {
   const db = environment.authenticatedContext('member-a').firestore();
   await assertSucceeds(setDoc(doc(db, 'users', 'member-a', 'settings', 'prefs'), { theme: 'dark' }));

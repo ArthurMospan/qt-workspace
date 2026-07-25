@@ -290,6 +290,24 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // YouTrack migration state and external identity/link tables are only
+    // accessed through authenticated Admin SDK routes. Nested import queue
+    // documents inherit the same explicit deny.
+    match /imports/{importId} {
+      allow read, write: if false;
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    match /externalObjectLinks/{linkId} {
+      allow read, write: if false;
+    }
+
+    match /externalActors/{actorId} {
+      allow read, write: if false;
+    }
+
     // ── organizations/{orgId}/channels/... — chat, scoped via path ──────
     match /organizations/{orgId}/channels/{channelId} {
       allow read: if isOrgMember(orgId);

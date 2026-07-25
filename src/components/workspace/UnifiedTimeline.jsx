@@ -8,7 +8,7 @@ import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
-import { useConfirm } from '@/components/ui';
+import { Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useComments } from '@/lib/hooks/useComments';
@@ -133,30 +133,6 @@ function StatusEmoji({ member }) {
     >
       {member.statusEmoji}
     </span>
-  );
-}
-
-function EventMessage({ text, time, actor, isMine = false }) {
-  return (
-    <div className={`flex items-end gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
-      {!isMine && <div className="mb-5 shrink-0"><UserAvatar user={actor} size={28} /></div>}
-      <div className={`flex max-w-[84%] min-w-0 flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-        {!isMine && (
-          <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
-            {actor?.name || 'Система'}
-            <StatusEmoji member={actor} />
-          </span>
-        )}
-        <div className={`max-w-full rounded-[16px] px-3 py-2.5 text-[14px] leading-[22px] ${
-          isMine
-            ? 'rounded-br-none bg-[#303030] text-white'
-            : 'rounded-bl-none bg-[#f2f2f7] text-ink'
-        }`}>
-          {text}
-        </div>
-        <span className="mt-1 px-1 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
-      </div>
-    </div>
   );
 }
 
@@ -420,18 +396,50 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
           if (item._type === 'comment') {
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
             const authorMember = members.find(candidate => (candidate.id || candidate.uid) === item.authorId);
+            const isExternalAuthor = !isMe && !authorMember;
+            const authorAvatar = (
+              <UserAvatar user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }} size={28} />
+            );
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
               <div className={`group flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
-                <button
-                  type="button"
-                  className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
-                  onClick={() => router.push(`?member=${item.authorId}`)}
-                  aria-label={`Профіль: ${item.authorName || 'учасник'}`}
-                >
-                  <UserAvatar user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }} size={28} />
-                </button>
+                {isExternalAuthor ? (
+                  <Popover
+                    position="top"
+                    hideCloseIcon
+                    trigger={(
+                      <button
+                        type="button"
+                        className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                        aria-label={`Інформація про зовнішнього автора: ${item.authorName || 'користувач'}`}
+                      >
+                        {authorAvatar}
+                      </button>
+                    )}
+                  >
+                    <div className="w-[240px]">
+                      <p className="text-[13px] font-bold text-ink">Зовнішній автор</p>
+                      <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                        {item.source === 'youtrack'
+                          ? 'Коментар перенесено з YouTrack.'
+                          : 'Коментар додано через зовнішню інтеграцію.'}
+                      </p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-faint">
+                        Це не учасник організації, тому профіль та особистий чат недоступні.
+                      </p>
+                    </div>
+                  </Popover>
+                ) : (
+                  <button
+                    type="button"
+                    className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                    onClick={() => router.push(`?member=${item.authorId}`)}
+                    aria-label={`Профіль: ${item.authorName || 'учасник'}`}
+                  >
+                    {authorAvatar}
+                  </button>
+                )}
                 <div className={`flex max-w-[84%] min-w-0 flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && (
                     <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
@@ -481,10 +489,13 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
           if (item._type === 'time') {
             const member = members.find(candidate => (candidate.id || candidate.uid) === item.userId);
             const text = `Списано ${fmtTime(item.spentMinutes)}${item.description ? ` · ${item.description}` : ''}`;
-            const actor = member
-              ? { ...member, id: member.id || member.uid, avatar: member.avatar || member.photoURL }
-              : { id: item.userId, name: item.userName || 'Учасник' };
-            return <Fragment key={`time-${item.id}`}>{separator}<EventMessage text={text} time={fmtClock(item.loggedAt)} actor={actor} isMine={item.userId === myId} /></Fragment>;
+            const actorName = member?.name || item.userName || item.externalActor?.name || org?.name || 'Система';
+            return (
+              <Fragment key={`time-${item.id}`}>
+                {separator}
+                <SystemEventMessage text={text} time={fmtClock(item.loggedAt)} actorName={actorName} />
+              </Fragment>
+            );
           }
 
           if (item._type === 'audit') {

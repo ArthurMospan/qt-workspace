@@ -243,8 +243,10 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
         {stats.overdue.length > 0 && (
           <div className="bg-white rounded-[16px] p-5">
             <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle size={13} className="text-red-500" />
-              <SectionTitle>Прострочені завдання ({stats.overdue.length})</SectionTitle>
+              <AlertTriangle size={13} className="shrink-0 text-red-500" />
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                Прострочені завдання ({stats.overdue.length})
+              </h3>
             </div>
             <div className="flex flex-col gap-0 divide-y divide-line">
               {stats.overdue.slice(0, 8).map(issue => {

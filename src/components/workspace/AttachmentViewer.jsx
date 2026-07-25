@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, ExternalLink, FileText, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, ExternalLink, FileText, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 function getUrl(attachment) {
   return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
@@ -63,7 +63,16 @@ export default function AttachmentViewer({ attachment, onClose }) {
         {kind === 'image' && (
           <div className="flex items-center gap-1" aria-label="Масштаб зображення">
             <button type="button" onClick={() => setScale(value => Math.max(0.5, value - 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Зменшити"><ZoomOut size={17} /></button>
-            <button type="button" onClick={() => setScale(1)} className="min-w-12 rounded-[7px] px-2 py-1.5 text-[11px] font-semibold text-white/70 hover:bg-white/10 hover:text-white" aria-label="Скинути масштаб"><RotateCcw size={14} className="mx-auto" /></button>
+            <button
+              type="button"
+              onClick={() => setScale(1)}
+              disabled={scale === 1}
+              className="min-w-12 rounded-[7px] px-2 py-1.5 text-[11px] font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/35 disabled:hover:bg-transparent"
+              aria-label={`Поточний масштаб ${Math.round(scale * 100)}%. Скинути до 100%`}
+              title={scale === 1 ? 'Зображення вже має масштаб 100%' : 'Скинути масштаб до 100%'}
+            >
+              {Math.round(scale * 100)}%
+            </button>
             <button type="button" onClick={() => setScale(value => Math.min(3, value + 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Збільшити"><ZoomIn size={17} /></button>
           </div>
         )}
