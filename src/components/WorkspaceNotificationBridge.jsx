@@ -11,6 +11,9 @@ import { auth } from '@/lib/firebase';
 // server's look-back window (REMINDER_LOOKBACK_MS) must stay comfortably
 // larger than this, or a reminder could fall between two polls.
 const REMINDER_POLL_MS = 180_000;
+// Floor between two requests from one tab, whatever triggers them. Kept well
+// under the server's 10-minute look-back so nothing can be missed.
+const REMINDER_MIN_GAP_MS = 60_000;
 
 // Synthesised locally instead of streamed from assets.mixkit.co. Pulling an
 // alarm sound off a third-party CDN meant the emergency alert silently failed
@@ -87,8 +90,15 @@ export default function WorkspaceNotificationBridge() {
   useEffect(() => {
     if (!activeOrgId || !userId) return undefined;
     let cancelled = false;
-    const checkCalendarReminders = async () => {
+    let lastPollAt = 0;
+    const checkCalendarReminders = async ({ force = false } = {}) => {
       if (cancelled || document.hidden) return;
+      // Hard floor between requests. Without it, alt-tabbing repeatedly would
+      // fire a request per switch — making the visibility trigger worse than
+      // the fixed interval it was meant to improve on.
+      const now = Date.now();
+      if (!force && now - lastPollAt < REMINDER_MIN_GAP_MS) return;
+      lastPollAt = now;
       try {
         const token = await auth.currentUser?.getIdToken();
         if (!token || cancelled) return;
@@ -104,8 +114,8 @@ export default function WorkspaceNotificationBridge() {
         // Best-effort poll: the next interval safely retries deterministic reminders.
       }
     };
-    checkCalendarReminders();
-    const timer = window.setInterval(checkCalendarReminders, REMINDER_POLL_MS);
+    checkCalendarReminders({ force: true });
+    const timer = window.setInterval(() => checkCalendarReminders({ force: true }), REMINDER_POLL_MS);
     const onVisible = () => { if (!document.hidden) checkCalendarReminders(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
