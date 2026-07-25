@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Card, ToggleSwitch } from '@/components/ui';
+import { Button, Card, ToggleSwitch } from '@/components/ui';
 
 const STATUS_STYLES = {
   connected: 'bg-green-50 text-[#10b981]',
@@ -46,6 +46,11 @@ export default function IntegrationCard({
   enabled,
   onToggle,
   toggleDisabled = false,
+  actionLabel,
+  onAction,
+  actionIcon,
+  actionStyle = 'secondary',
+  actionAriaLabel,
   status = enabled ? 'connected' : 'off',
   statusLabel = enabled ? 'Підключено' : 'Вимкнено',
   statusMeta,
@@ -67,12 +72,25 @@ export default function IntegrationCard({
               <p className="text-[14px] font-semibold leading-snug text-ink">{title}</p>
               <p className="mt-[2px] text-[12px] leading-relaxed text-muted">{description}</p>
             </div>
-            <ToggleSwitch
-              checked={enabled}
-              onChange={onToggle}
-              disabled={toggleDisabled}
-              ariaLabel={`${enabled ? 'Вимкнути' : 'Увімкнути'} інтеграцію ${title}`}
-            />
+            {actionLabel ? (
+              <Button
+                style={actionStyle}
+                size="sm"
+                icon={actionIcon}
+                onClick={onAction}
+                disabled={toggleDisabled}
+                aria-label={actionAriaLabel || `${actionLabel}: ${title}`}
+              >
+                {actionLabel}
+              </Button>
+            ) : (
+              <ToggleSwitch
+                checked={enabled}
+                onChange={onToggle}
+                disabled={toggleDisabled}
+                ariaLabel={`${enabled ? 'Вимкнути' : 'Увімкнути'} інтеграцію ${title}`}
+              />
+            )}
           </div>
 
           <div className="mt-3 border-t border-[#f0f0f0] pt-3">

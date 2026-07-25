@@ -19,7 +19,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal
+  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -48,7 +48,7 @@ import { Colorful } from '@uiw/react-color';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
 import IntegrationCard, { IntegrationSteps } from '@/components/integrations/IntegrationCard';
-import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
+import DataMigrationSettings from '@/components/migrations/DataMigrationSettings';
 import {
   getDoneStatusIds,
   DEFAULT_STATUSES,
@@ -99,6 +99,7 @@ const NAV = [
   { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Організація' },
   { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
   { id: 'integrations',  label: 'Інтеграції',       icon: PlugZap,       group: 'Організація', adminOnly: true },
+  { id: 'migration',     label: 'Перенесення даних', icon: DatabaseBackup, group: 'Організація', adminOnly: true },
   { id: 'statuses',      label: 'Статуси завдань',    icon: GitBranch,     group: 'Налаштування процесів', adminOnly: true },
   { id: 'types',         label: 'Типи завдань',       icon: Shapes,        group: 'Налаштування процесів', adminOnly: true },
   { id: 'priorities',    label: 'Пріоритети',       icon: AlertTriangle, group: 'Налаштування процесів', adminOnly: true },
@@ -2290,6 +2291,21 @@ export default function SettingsPage() {
           </Section>
         );
 
+      case 'migration':
+        return (
+          <Section
+            title="Перенесення даних"
+            desc="Перенесіть робочі проєкти та історію команди у QuickTeam"
+          >
+            <DataMigrationSettings
+              organizationId={activeOrgId}
+              members={members}
+              projects={projects}
+              showToast={showToast}
+            />
+          </Section>
+        );
+
       case 'integrations': {
         const buggyBagKey = apiKeys.find(k => k.name === 'BuggyBag Integration');
         const buggyBagEnabled = !!buggyBagKey;
@@ -2458,14 +2474,6 @@ export default function SettingsPage() {
                 />
               ) : null}
             </IntegrationCard>
-
-            <YouTrackImportCard
-              key={activeOrgId}
-              organizationId={activeOrgId}
-              members={members}
-              projects={projects}
-              showToast={showToast}
-            />
 
             {/* BuggyBag Portal */}
             <IntegrationCard

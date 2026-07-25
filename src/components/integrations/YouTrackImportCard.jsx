@@ -32,6 +32,7 @@ export default function YouTrackImportCard({
   members = [],
   projects = [],
   showToast,
+  presentation = 'integration',
 }) {
   const [connection, setConnection] = useState({ connected: false });
   const [baseUrl, setBaseUrl] = useState('');
@@ -290,6 +291,7 @@ export default function YouTrackImportCard({
   const progress = progressFor(job);
   const activeJob = ACTIVE_JOB_STATUSES.has(job?.status);
   const cardEnabled = connection.connected || setupOpen;
+  const migrationPresentation = presentation === 'migration';
   const cardStatus = loading
     ? 'pending'
     : connection.connected
@@ -307,8 +309,25 @@ export default function YouTrackImportCard({
       enabled={cardEnabled}
       onToggle={toggleConnection}
       toggleDisabled={loading || Boolean(action) || activeJob}
+      actionLabel={migrationPresentation
+        ? connection.connected
+          ? 'Відключити'
+          : setupOpen
+            ? 'Закрити'
+            : 'Налаштувати'
+        : undefined}
+      onAction={() => toggleConnection(!cardEnabled)}
+      actionIcon={!connection.connected && !setupOpen ? Upload : undefined}
+      actionStyle={connection.connected || setupOpen ? 'ghost' : 'secondary'}
+      actionAriaLabel={connection.connected ? 'Відключити джерело YouTrack' : 'Налаштувати імпорт із YouTrack'}
       status={cardStatus}
-      statusLabel={loading ? 'Перевіряємо' : connection.connected ? 'Підключено' : setupOpen ? 'Налаштування' : 'Вимкнено'}
+      statusLabel={loading
+        ? 'Перевіряємо'
+        : connection.connected
+          ? migrationPresentation ? 'Готово до імпорту' : 'Підключено'
+          : setupOpen
+            ? 'Налаштування'
+            : migrationPresentation ? 'Не налаштовано' : 'Вимкнено'}
       statusMeta={connection.connected ? (
         <span className="min-w-0 truncate text-[12px] text-muted">
           {connection.account?.name || connection.account?.login || 'YouTrack'} · {connection.baseUrl}
