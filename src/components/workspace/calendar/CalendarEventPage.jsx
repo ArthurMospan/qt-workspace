@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   BellRing,
@@ -14,9 +14,11 @@ import {
   MapPin,
   MoreHorizontal,
   Pencil,
+  Play,
   RefreshCw,
   Repeat2,
   Settings2,
+  Square as StopIcon,
   Trash2,
   Users,
   X,
@@ -50,7 +52,6 @@ import {
   CALENDAR_EVENT_RECURRENCE_OPTIONS,
   CALENDAR_EVENT_REMINDER_OPTIONS,
   CALENDAR_EVENT_TYPE_OPTIONS,
-  CalendarEventDetails,
   calendarEventFormInitialValue,
   calendarEventFormPayload,
 } from '@/components/workspace/calendar/CalendarEventDialog';
@@ -61,15 +62,40 @@ const VISIBILITY_OPTIONS = [
   { value: 'private', label: 'Лише я', icon: LockKeyhole },
 ];
 
+const RESPONSE_OPTIONS = [
+  { value: 'accepted', label: 'Буду' },
+  { value: 'tentative', label: 'Можливо' },
+  { value: 'declined', label: 'Не буду' },
+];
+
 function memberLabel(member) {
   return member?.name || member?.displayName || member?.email || 'Учасник';
 }
 
-function relativeTime(value) {
-  if (!value) return '—';
+function responseLabel(value) {
+  if (value === 'accepted') return 'буде';
+  if (value === 'tentative') return 'можливо';
+  if (value === 'declined') return 'не буде';
+  return 'очікуємо';
+}
+
+function responseClass(value) {
+  if (value === 'accepted') return 'text-emerald-600';
+  if (value === 'declined') return 'text-red-500';
+  return 'text-muted';
+}
+
+function asDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
   const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function relativeTime(value) {
+  const date = asDate(value);
+  if (!date) return '—';
   const diff = Date.now() - date.getTime();
-  if (!Number.isFinite(diff)) return '—';
   if (diff < 60_000) return 'щойно';
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} хв тому`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} год тому`;
@@ -78,10 +104,26 @@ function relativeTime(value) {
 }
 
 function formatTime(value) {
-  const date = new Date(value);
-  return Number.isFinite(date.getTime())
+  const date = asDate(value);
+  return date
     ? date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
     : '—';
+}
+
+function formatMinutes(value) {
+  const minutes = Math.max(0, Math.round(Number(value) || 0));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours && rest) return `${hours} год ${rest} хв`;
+  if (hours) return `${hours} год`;
+  return `${rest} хв`;
+}
+
+function shiftDateValue(value, days) {
+  const [year, month, date] = String(value || '').split('-').map(Number);
+  if (!year || !month || !date) return value;
+  const shifted = new Date(Date.UTC(year, month - 1, date + days));
+  return shifted.toISOString().slice(0, 10);
 }
 
 function AttributeValue({ children, muted = false }) {
@@ -92,11 +134,194 @@ function AttributeValue({ children, muted = false }) {
   );
 }
 
+function CalendarEventTimeSheet({
+  initialMinutes,
+  logs,
+  totalMinutes,
+  loading,
+  saving,
+  members,
+  currentUserId,
+  canManage,
+  error,
+  onClose,
+  onSave,
+  onDelete,
+}) {
+  const [form, setForm] = useState({
+    id: '',
+    minutes: initialMinutes || 0,
+    description: '',
+  });
+
+  const hours = Math.floor(form.minutes / 60);
+  const minutes = form.minutes % 60;
+  const updateDuration = (nextHours, nextMinutes) => {
+    setForm(current => ({
+      ...current,
+      minutes: Math.max(0, nextHours * 60 + Math.min(59, Math.max(0, nextMinutes))),
+    }));
+  };
+
+  const handleSubmit = async formEvent => {
+    formEvent.preventDefault();
+    const saved = await onSave(form);
+    if (saved) setForm({ id: '', minutes: 0, description: '' });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none"
+        onClick={clickEvent => clickEvent.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4 sm:px-6">
+          <div>
+            <h3 className="text-[16px] font-bold text-ink">Трекінг часу</h3>
+            <p className="mt-0.5 text-[11px] font-medium text-muted">Загалом списано: {formatMinutes(totalMinutes)}</p>
+          </div>
+          <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
+        </div>
+
+        <div className="custom-scrollbar flex flex-col gap-6 overflow-y-auto p-5 sm:p-6">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                {form.id ? 'Змінити витрачений час' : 'Списати час'}
+              </p>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    value={hours || ''}
+                    placeholder="0"
+                    onChange={inputEvent => updateDuration(Number(inputEvent.target.value) || 0, minutes)}
+                    className="w-full rounded-[10px] border border-line bg-white py-[10px] pl-4 pr-10 text-[15px] font-bold text-ink outline-none transition-colors focus:border-[#a8a8a8]"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">год</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={minutes || ''}
+                    placeholder="0"
+                    onChange={inputEvent => updateDuration(hours, Number(inputEvent.target.value) || 0)}
+                    className="w-full rounded-[10px] border border-line bg-white py-[10px] pl-4 pr-9 text-[15px] font-bold text-ink outline-none transition-colors focus:border-[#a8a8a8]"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">хв</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">Коментар</p>
+              <Textarea
+                value={form.description}
+                onChange={inputEvent => setForm(current => ({ ...current, description: inputEvent.target.value }))}
+                placeholder="Над чим працювали?"
+                rows={3}
+              />
+            </div>
+
+            {error && <p className="text-[12px] font-medium text-red-600">{error}</p>}
+
+            <div className="flex items-center gap-2">
+              <Button type="submit" size="md" loading={saving} disabled={form.minutes <= 0}>
+                {form.id ? 'Зберегти зміни' : 'Зберегти'}
+              </Button>
+              {form.id && (
+                <Button
+                  type="button"
+                  style="secondary"
+                  size="md"
+                  onClick={() => setForm({ id: '', minutes: 0, description: '' })}
+                >
+                  Скасувати
+                </Button>
+              )}
+            </div>
+          </form>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h4 className="text-[14px] font-bold text-ink">Журнал часу</h4>
+              <span className="text-[11px] font-medium text-muted">{logs.length} записів</span>
+            </div>
+
+            {loading ? (
+              <div className="flex min-h-[120px] items-center justify-center"><LoadingSpinner size="sm" /></div>
+            ) : logs.length === 0 ? (
+              <div className="rounded-[14px] bg-canvas px-4 py-8 text-center">
+                <Clock3 size={20} className="mx-auto mb-2 text-faint" />
+                <p className="text-[12px] font-medium text-muted">На цій події ще немає записів часу</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {logs.map(log => {
+                  const member = members.find(item => (item.id || item.uid) === log.userId);
+                  const logDate = asDate(log.loggedAt || log.createdAt);
+                  const canChange = canManage || log.userId === currentUserId;
+                  return (
+                    <div key={log.id} className="flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3">
+                      <UserAvatar user={member || { name: memberLabel(member) }} size={30} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-[12px] font-bold text-ink">{memberLabel(member)}</span>
+                          <span className="rounded-[6px] bg-white px-2 py-0.5 text-[11px] font-bold text-ink">
+                            {formatMinutes(log.spentMinutes)}
+                          </span>
+                          {logDate && (
+                            <span className="text-[10px] font-medium text-muted">
+                              {logDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                        {log.description && <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted">{log.description}</p>}
+                      </div>
+                      {canChange && (
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setForm({
+                              id: log.id,
+                              minutes: Number(log.spentMinutes) || 0,
+                              description: log.description || '',
+                            })}
+                            className="rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink"
+                            aria-label="Редагувати запис"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(log.id)}
+                            className="rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500"
+                            aria-label="Видалити запис"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const router = useRouter();
   const confirm = useConfirm();
   const { currentUser, projects = [], orgRole } = useAppContext();
-  const { members } = useOrganization();
+  const { members = [] } = useOrganization();
   const {
     events,
     loading,
@@ -107,23 +332,48 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     respondToEvent,
   } = useCalendarEvents();
   const showToast = useWorkspaceStore(state => state.showToast);
+  const activeTimer = useWorkspaceStore(state => state.activeTimer);
+  const timerElapsed = useWorkspaceStore(state => state.timerElapsed);
+  const startTimer = useWorkspaceStore(state => state.startTimer);
+  const stopTimer = useWorkspaceStore(state => state.stopTimer);
+  const formatElapsed = useWorkspaceStore(state => state.formatElapsed);
   const currentUserId = currentUser?.uid || currentUser?.id || '';
   const event = useMemo(
     () => findCalendarEvent(events, eventId, occurrenceStartAt),
     [eventId, events, occurrenceStartAt],
   );
   const sourceEventId = calendarEventSourceId(event) || eventId;
+  const eventFormKey = event ? JSON.stringify([
+    sourceEventId,
+    event.startAt,
+    event.endAt,
+    event.title,
+    event.type,
+    event.projectId,
+    event.visibility,
+    event.participantIds,
+    event.reminderMinutes,
+    event.recurrence,
+  ]) : '';
   const {
     logs: timeLogs,
     totalMinutes,
     loading: timeLoading,
     addTimeLog,
+    updateTimeLog,
     deleteTimeLog,
   } = useCalendarEventTimeLogs(event?.readOnly ? '' : sourceEventId, event?.startAt || '');
+
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(null);
+  const [quickState, setQuickState] = useState({ eventKey: '', form: null });
+  const [scheduleDraft, setScheduleDraft] = useState(null);
+  const [detailsDraft, setDetailsDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [attributeSaving, setAttributeSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);
+  const [timePanelOpen, setTimePanelOpen] = useState(false);
+  const [timerMinutes, setTimerMinutes] = useState(0);
   const [actionError, setActionError] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -131,9 +381,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     event.organizerId === currentUserId
     || (event.visibility !== 'private' && ['owner', 'admin'].includes(orgRole))
   ));
+  const canTrackTime = Boolean(event && !event.readOnly && currentUserId);
   const response = event?.participantResponses?.[currentUserId] || 'pending';
   const isParticipant = event?.participantIds?.includes(currentUserId);
   const organizer = members.find(member => (member.id || member.uid) === event?.organizerId);
+  const timerKey = event ? `calendar-event:${sourceEventId}:${event.startAt}` : '';
+  const isTimerMine = activeTimer?.issueId === timerKey;
+  const eventForm = event
+    ? calendarEventFormInitialValue(event, event.startAt, currentUserId)
+    : null;
+  const quickForm = quickState.eventKey === eventFormKey ? quickState.form : eventForm;
+
   const projectOptions = useMemo(() => [
     { value: '', label: 'Без проєкту' },
     ...projects
@@ -172,7 +430,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
   const enterEdit = () => {
     if (!canManage || !event) return;
-    setDraft(calendarEventFormInitialValue(event, event.startAt, currentUserId));
+    setDraft({
+      title: event.title || '',
+      description: event.description || '',
+      location: event.location || '',
+      meetingUrl: event.meetingUrl || '',
+    });
     setActionError('');
     setIsEditing(true);
   };
@@ -180,7 +443,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const cancelEdit = () => {
     setDraft(null);
     setActionError('');
-    setDetailsOpen(false);
     setIsEditing(false);
   };
 
@@ -190,19 +452,66 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
   const saveEdit = async () => {
     if (!draft || !canManage) return;
+    const title = draft.title.trim();
+    if (!title) {
+      setActionError('Вкажіть назву події');
+      return;
+    }
     setSaving(true);
     setActionError('');
     try {
-      await updateEvent(sourceEventId, calendarEventFormPayload(draft, currentUserId));
+      await updateEvent(sourceEventId, {
+        title,
+        description: draft.description,
+        location: draft.location,
+        meetingUrl: draft.meetingUrl,
+      });
       showToast('Подію оновлено', 'success');
       setIsEditing(false);
       setDraft(null);
-      setDetailsOpen(false);
     } catch (saveError) {
       setActionError(saveError.message || 'Не вдалося зберегти подію');
     } finally {
       setSaving(false);
     }
+  };
+
+  const persistQuickForm = async nextForm => {
+    if (!canManage || attributeSaving) return false;
+    const previous = quickForm;
+    setQuickState({ eventKey: eventFormKey, form: nextForm });
+    setAttributeSaving(true);
+    setActionError('');
+    try {
+      await updateEvent(sourceEventId, calendarEventFormPayload(nextForm, currentUserId));
+      return true;
+    } catch (saveError) {
+      setQuickState({ eventKey: eventFormKey, form: previous });
+      setActionError(saveError.message || 'Не вдалося оновити атрибут події');
+      showToast(saveError.message || 'Не вдалося оновити атрибут події', 'error');
+      return false;
+    } finally {
+      setAttributeSaving(false);
+    }
+  };
+
+  const updateQuickField = (key, value) => {
+    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
+    return persistQuickForm({ ...base, [key]: value });
+  };
+
+  const updateEventDate = value => {
+    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
+    const oldStart = Date.parse(`${base.startDate}T00:00:00Z`);
+    const nextStart = Date.parse(`${value}T00:00:00Z`);
+    const dayDelta = Number.isFinite(oldStart) && Number.isFinite(nextStart)
+      ? Math.round((nextStart - oldStart) / 86_400_000)
+      : 0;
+    return persistQuickForm({
+      ...base,
+      startDate: value,
+      endDate: shiftDateValue(base.endDate, dayDelta),
+    });
   };
 
   const handleDelete = async () => {
@@ -236,29 +545,58 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     }
   };
 
-  const handleAddTime = async formEvent => {
-    formEvent.preventDefault();
-    const formElement = formEvent.currentTarget;
-    const data = new FormData(formElement);
+  const handleTimerToggle = () => {
+    if (!canTrackTime) return;
+    if (isTimerMine) {
+      const result = stopTimer();
+      setTimerMinutes(result?.minutes || 0);
+      setTimePanelOpen(true);
+      return;
+    }
+    if (activeTimer) {
+      showToast('Зупини поточний таймер спочатку', 'error');
+      return;
+    }
+    startTimer(timerKey, event.projectId || '');
+  };
+
+  const handleSaveTime = async form => {
     setTimeSaving(true);
     setActionError('');
     try {
-      await addTimeLog({
-        userId: currentUserId,
-        projectId: event?.projectId || '',
-        spentMinutes: Number(data.get('minutes')),
-        description: data.get('description'),
-      });
-      formElement.reset();
-      showToast('Час події додано в аналітику', 'success');
+      if (form.id) {
+        await updateTimeLog(form.id, {
+          spentMinutes: form.minutes,
+          description: form.description,
+        });
+        showToast('Запис часу оновлено', 'success');
+      } else {
+        await addTimeLog({
+          userId: currentUserId,
+          projectId: event?.projectId || '',
+          spentMinutes: form.minutes,
+          description: form.description,
+        });
+        showToast('Час події додано в аналітику', 'success');
+      }
+      setTimerMinutes(0);
+      return true;
     } catch (timeError) {
-      setActionError(timeError.message || 'Не вдалося додати час');
+      setActionError(timeError.message || 'Не вдалося зберегти час');
+      return false;
     } finally {
       setTimeSaving(false);
     }
   };
 
   const handleDeleteTime = async logId => {
+    const approved = await confirm({
+      title: 'Видалити запис часу?',
+      message: 'Цей час зникне з аналітики команди та рахунків.',
+      confirmText: 'Видалити',
+      danger: true,
+    });
+    if (!approved) return;
     setActionError('');
     try {
       await deleteTimeLog(logId);
@@ -290,7 +628,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     );
   }
 
-  const view = isEditing && draft ? draft : calendarEventFormInitialValue(event, event.startAt, currentUserId);
+  const view = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
   const typeOption = CALENDAR_EVENT_TYPE_OPTIONS.find(option => option.value === view.type);
   const projectOption = projectOptions.find(option => option.value === view.projectId);
   const recurrenceOption = CALENDAR_EVENT_RECURRENCE_OPTIONS.find(option => option.value === view.recurrenceFrequency);
@@ -303,7 +641,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-transparent">
-      <div className="page-gutter flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px] pt-[56px] custom-scrollbar">
+      <div className="page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px] pt-[56px]">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col">
           <div className="sticky top-0 z-[30] bg-white pb-[12px] pt-[12px]">
             <div className="flex w-full items-start justify-between gap-[16px]">
@@ -353,8 +691,8 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         size="icon-lg"
                         icon={Pencil}
                         onClick={enterEdit}
-                        aria-label="Редагувати подію"
-                        title="Редагувати подію"
+                        aria-label="Редагувати текст події"
+                        title="Редагувати назву й опис"
                       />
                     )}
                     <ContextMenu
@@ -371,7 +709,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       items={[
                         { label: 'Копіювати посилання', icon: Copy, onClick: copyEventLink },
                         ...(canManage ? [
-                          { label: 'Редагувати', icon: Pencil, onClick: enterEdit },
+                          { label: 'Редагувати текст', icon: Pencil, onClick: enterEdit },
                           { label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true },
                         ] : []),
                       ]}
@@ -385,16 +723,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
               <TaskAttributesPanel
                 singleRow
                 compact
-                primaryClassName="grid w-full grid-cols-2 items-center gap-1.5 overflow-visible sm:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_1fr_1.25fr_92px] [&>*]:min-w-0"
+                primaryClassName="grid w-full grid-cols-2 items-center gap-1.5 overflow-visible sm:grid-cols-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.1fr_1.15fr_92px] [&>*]:min-w-0"
                 primaryChildren={(
                   <>
                     <div className={attributeItemClass}>
                       <span className={attributeLabelClass}>Тип</span>
-                      {isEditing ? (
+                      {canManage ? (
                         <Select
                           compact
-                          value={draft.type}
-                          onChange={value => updateDraft('type', value)}
+                          disabled={attributeSaving}
+                          value={view.type}
+                          onChange={value => updateQuickField('type', value)}
                           options={CALENDAR_EVENT_TYPE_OPTIONS}
                           buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[8px] bg-transparent px-0 text-[13px] font-medium"
                         />
@@ -405,11 +744,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
                     <div className={attributeItemClass}>
                       <span className={attributeLabelClass}>Проєкт</span>
-                      {isEditing ? (
+                      {canManage ? (
                         <Select
                           compact
-                          value={draft.projectId}
-                          onChange={value => updateDraft('projectId', value)}
+                          disabled={attributeSaving}
+                          value={view.projectId}
+                          onChange={value => updateQuickField('projectId', value)}
                           options={projectOptions}
                           buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[8px] bg-transparent px-0 text-[13px] font-medium"
                         />
@@ -420,11 +760,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
                     <div className={attributeItemClass}>
                       <span className={attributeLabelClass}>Дата</span>
-                      {isEditing ? (
+                      {canManage ? (
                         <DatePicker
                           hideIcon
-                          value={draft.startDate}
-                          onChange={value => updateDraft('startDate', value)}
+                          disabled={attributeSaving}
+                          value={view.startDate}
+                          onChange={updateEventDate}
                           inputClassName="h-[22px] w-full cursor-pointer bg-transparent p-0 text-[13px] font-medium text-ink outline-none"
                         />
                       ) : (
@@ -436,65 +777,163 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       position="bottom"
                       hideCloseIcon
                       className="h-full"
+                      onOpenChange={open => {
+                        if (open) setScheduleDraft({ ...view });
+                      }}
                       trigger={(
                         <button type="button" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
-                          <span className={attributeLabelClass}>Час</span>
-                          <AttributeValue>{event.allDay && !isEditing ? 'Весь день' : `${isEditing ? draft.startTime : formatTime(event.startAt)}–${isEditing ? draft.endTime : formatTime(event.endAt)}`}</AttributeValue>
+                          <span className={attributeLabelClass}>Час події</span>
+                          <AttributeValue>{event.allDay ? 'Весь день' : `${formatTime(event.startAt)}–${formatTime(event.endAt)}`}</AttributeValue>
                         </button>
                       )}
                     >
-                      <div className="w-[300px] max-w-full space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-[12px] font-bold text-ink">Подія на весь день</p>
-                            <p className="mt-0.5 text-[10px] text-muted">Без конкретної години</p>
+                      {({ close }) => {
+                        const schedule = scheduleDraft || view;
+                        return (
+                          <div className="w-[300px] max-w-full space-y-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="text-[12px] font-bold text-ink">Подія на весь день</p>
+                                <p className="mt-0.5 text-[10px] text-muted">Без конкретної години</p>
+                              </div>
+                              <ToggleSwitch
+                                checked={schedule.allDay}
+                                onChange={value => setScheduleDraft(current => ({ ...current, allDay: value }))}
+                                disabled={!canManage || attributeSaving}
+                                size="sm"
+                                ariaLabel="Подія на весь день"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Початок</span>
+                                <Input
+                                  type="date"
+                                  value={schedule.startDate}
+                                  onChange={inputEvent => setScheduleDraft(current => ({ ...current, startDate: inputEvent.target.value }))}
+                                  disabled={!canManage || attributeSaving}
+                                />
+                                {!schedule.allDay && (
+                                  <Input
+                                    type="time"
+                                    value={schedule.startTime}
+                                    onChange={inputEvent => setScheduleDraft(current => ({ ...current, startTime: inputEvent.target.value }))}
+                                    disabled={!canManage || attributeSaving}
+                                  />
+                                )}
+                              </div>
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Завершення</span>
+                                <Input
+                                  type="date"
+                                  value={schedule.endDate}
+                                  onChange={inputEvent => setScheduleDraft(current => ({ ...current, endDate: inputEvent.target.value }))}
+                                  disabled={!canManage || attributeSaving}
+                                />
+                                {!schedule.allDay && (
+                                  <Input
+                                    type="time"
+                                    value={schedule.endTime}
+                                    onChange={inputEvent => setScheduleDraft(current => ({ ...current, endTime: inputEvent.target.value }))}
+                                    disabled={!canManage || attributeSaving}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                            {canManage ? (
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  loading={attributeSaving}
+                                  onClick={async () => {
+                                    if (await persistQuickForm(schedule)) close();
+                                  }}
+                                >
+                                  Застосувати
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted">Змінювати подію може організатор або адміністратор.</p>
+                            )}
                           </div>
-                          <ToggleSwitch
-                            checked={view.allDay}
-                            onChange={value => updateDraft('allDay', value)}
-                            disabled={!isEditing}
-                            size="sm"
-                            ariaLabel="Подія на весь день"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Початок</span>
-                            <Input type="date" value={view.startDate} onChange={inputEvent => updateDraft('startDate', inputEvent.target.value)} disabled={!isEditing} />
-                            {!view.allDay && <Input type="time" value={view.startTime} onChange={inputEvent => updateDraft('startTime', inputEvent.target.value)} disabled={!isEditing} />}
-                          </div>
-                          <div className="space-y-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Завершення</span>
-                            <Input type="date" value={view.endDate} onChange={inputEvent => updateDraft('endDate', inputEvent.target.value)} disabled={!isEditing} />
-                            {!view.allDay && <Input type="time" value={view.endTime} onChange={inputEvent => updateDraft('endTime', inputEvent.target.value)} disabled={!isEditing} />}
-                          </div>
-                        </div>
-                        {!isEditing && <p className="text-[11px] text-muted">Редагування доступне організатору або адміністратору.</p>}
-                      </div>
+                        );
+                      }}
                     </Popover>
 
-                    <div className={attributeItemClass}>
-                      <span className={attributeLabelClass}>Учасники</span>
-                      {isEditing ? (
+                    <Popover
+                      position="bottom"
+                      hideCloseIcon
+                      className="h-full"
+                      trigger={(
+                        <button type="button" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
+                          <span className={attributeLabelClass}>Учасники</span>
+                          <AttributeValue><Users size={13} className="mr-1.5 shrink-0 text-muted" />{event.participantIds?.length || 0} учасників</AttributeValue>
+                        </button>
+                      )}
+                    >
+                      <div className="w-[300px] max-w-full space-y-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Учасники події</p>
                         <MultiSelect
-                          value={draft.participantIds}
-                          onChange={value => updateDraft('participantIds', value)}
+                          value={view.participantIds}
+                          onChange={value => updateQuickField('participantIds', value)}
                           options={memberOptions}
-                          placeholder="Додати"
+                          placeholder="Додати учасників"
                           searchPlaceholder="Знайти учасника…"
+                          disabled={!canManage || attributeSaving || view.visibility === 'private'}
                           className="w-full"
                           dropdownClassName="w-[280px]"
                         />
-                      ) : (
-                        <AttributeValue><Users size={13} className="mr-1.5 shrink-0 text-muted" />{event.participantIds?.length || 0} учасників</AttributeValue>
-                      )}
+                        {!canManage && <p className="text-[11px] text-muted">Список доступний лише для перегляду.</p>}
+                      </div>
+                    </Popover>
+
+                    <div
+                      className={`${attributeItemClass} ${canTrackTime ? 'cursor-pointer hover:bg-[#ebebeb]' : ''}`}
+                      onClick={clickEvent => {
+                        if (!canTrackTime || clickEvent.target.closest('button')) return;
+                        setTimerMinutes(0);
+                        setTimePanelOpen(true);
+                      }}
+                    >
+                      <span className={attributeLabelClass}>Трекінг часу</span>
+                      <div className="flex h-[22px] min-w-0 items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={!canTrackTime}
+                          onClick={handleTimerToggle}
+                          aria-label={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
+                          title={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
+                          className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
+                        >
+                          {isTimerMine ? (
+                            <StopIcon size={10} className="block fill-current" />
+                          ) : (
+                            <Play size={10} strokeWidth={0} className="block translate-x-[1px] fill-current" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canTrackTime}
+                          onClick={() => {
+                            setTimerMinutes(0);
+                            setTimePanelOpen(true);
+                          }}
+                          className="min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted"
+                          aria-label="Відкрити трекінг часу"
+                        >
+                          {isTimerMine ? formatElapsed((totalMinutes * 60) + timerElapsed) : formatMinutes(totalMinutes)}
+                        </button>
+                      </div>
                     </div>
 
                     <Popover
                       position="bottom"
                       hideCloseIcon
                       className="flex h-full items-center"
-                      onOpenChange={setDetailsOpen}
+                      onOpenChange={open => {
+                        setDetailsOpen(open);
+                        if (open) setDetailsDraft({ ...view });
+                      }}
                       trigger={(
                         <button
                           type="button"
@@ -506,44 +945,84 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         </button>
                       )}
                     >
-                      <div className="w-[300px] max-w-full space-y-4">
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Видимість</span>
-                          {isEditing ? (
-                            <Select value={draft.visibility} onChange={value => updateDraft('visibility', value)} options={VISIBILITY_OPTIONS} />
-                          ) : <AttributeValue>{visibilityOption?.label}</AttributeValue>}
-                        </div>
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Повторення</span>
-                          {isEditing ? (
-                            <>
-                              <Select value={draft.recurrenceFrequency} onChange={value => updateDraft('recurrenceFrequency', value)} options={CALENDAR_EVENT_RECURRENCE_OPTIONS} />
-                              {draft.recurrenceFrequency !== 'none' && (
+                      {({ close }) => {
+                        const detailValues = detailsDraft || view;
+                        return (
+                          <div className="w-[300px] max-w-full space-y-4">
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Видимість</span>
+                              <Select
+                                disabled={!canManage || attributeSaving}
+                                value={detailValues.visibility}
+                                onChange={value => setDetailsDraft(current => ({ ...current, visibility: value }))}
+                                options={VISIBILITY_OPTIONS}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Повторення</span>
+                              <Select
+                                disabled={!canManage || attributeSaving}
+                                value={detailValues.recurrenceFrequency}
+                                onChange={value => setDetailsDraft(current => ({ ...current, recurrenceFrequency: value }))}
+                                options={CALENDAR_EVENT_RECURRENCE_OPTIONS}
+                              />
+                              {detailValues.recurrenceFrequency !== 'none' && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 pt-1">
-                                  <Input type="number" min="1" max="12" value={draft.recurrenceInterval} onChange={inputEvent => updateDraft('recurrenceInterval', inputEvent.target.value)} aria-label="Інтервал повторення" />
-                                  <Input type="date" value={draft.recurrenceUntil} min={draft.startDate} onChange={inputEvent => updateDraft('recurrenceUntil', inputEvent.target.value)} aria-label="Повторювати до дати" />
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    value={detailValues.recurrenceInterval}
+                                    onChange={inputEvent => setDetailsDraft(current => ({ ...current, recurrenceInterval: inputEvent.target.value }))}
+                                    disabled={!canManage || attributeSaving}
+                                    aria-label="Інтервал повторення"
+                                  />
+                                  <Input
+                                    type="date"
+                                    value={detailValues.recurrenceUntil}
+                                    min={detailValues.startDate}
+                                    onChange={inputEvent => setDetailsDraft(current => ({ ...current, recurrenceUntil: inputEvent.target.value }))}
+                                    disabled={!canManage || attributeSaving}
+                                    aria-label="Повторювати до дати"
+                                  />
                                 </div>
                               )}
-                            </>
-                          ) : <AttributeValue><Repeat2 size={13} className="mr-1.5 text-muted" />{recurrenceOption?.label}</AttributeValue>}
-                        </div>
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Нагадування</span>
-                          {isEditing ? (
-                            <MultiSelect
-                              value={draft.reminderMinutes}
-                              onChange={value => updateDraft('reminderMinutes', value)}
-                              options={CALENDAR_EVENT_REMINDER_OPTIONS}
-                              placeholder="Додати нагадування"
-                              searchPlaceholder="Знайти інтервал…"
-                              className="w-full"
-                              dropdownClassName="w-[280px]"
-                            />
-                          ) : (
-                            <AttributeValue muted={!reminderLabels.length}><BellRing size={13} className="mr-1.5" />{reminderLabels.length ? reminderLabels.join(', ') : 'Без нагадувань'}</AttributeValue>
-                          )}
-                        </div>
-                      </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Нагадування</span>
+                              <MultiSelect
+                                value={detailValues.reminderMinutes}
+                                onChange={value => setDetailsDraft(current => ({ ...current, reminderMinutes: value }))}
+                                options={CALENDAR_EVENT_REMINDER_OPTIONS}
+                                placeholder="Додати нагадування"
+                                searchPlaceholder="Знайти інтервал…"
+                                disabled={!canManage || attributeSaving}
+                                className="w-full"
+                                dropdownClassName="w-[280px]"
+                              />
+                            </div>
+                            {canManage ? (
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  loading={attributeSaving}
+                                  onClick={async () => {
+                                    if (await persistQuickForm(detailValues)) close();
+                                  }}
+                                >
+                                  Застосувати
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-1 text-[11px] text-muted">
+                                <p>Видимість: {visibilityOption?.label}</p>
+                                <p>Повторення: {recurrenceOption?.label}</p>
+                                <p>Нагадування: {reminderLabels.length ? reminderLabels.join(', ') : 'немає'}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }}
                     </Popover>
                   </>
                 )}
@@ -551,76 +1030,148 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             </div>
           </div>
 
-          <main className="grid gap-[20px] pt-[8px] lg:grid-cols-[minmax(0,1fr)_340px]">
-            <section className="space-y-[20px]">
-              <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted">Опис</p>
-                {isEditing ? (
-                  <Textarea
-                    value={draft.description}
-                    onChange={inputEvent => updateDraft('description', inputEvent.target.value)}
-                    placeholder="Контекст, порядок денний або важливі деталі"
-                    rows={7}
-                    className="min-h-[180px]"
-                  />
-                ) : (
-                  <div className="min-h-[140px] whitespace-pre-wrap rounded-[14px] bg-canvas p-4 text-[13px] leading-relaxed text-ink">
-                    {event.description || <span className="text-faint">Опис не додано</span>}
-                  </div>
-                )}
+          <main className="flex flex-col gap-6 py-1">
+            <section>
+              <div className="mb-3 flex items-center gap-3">
+                <h2 className="text-[14px] font-bold text-ink">Опис</h2>
               </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[14px] border border-line bg-white p-4">
-                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted"><MapPin size={13} /> Місце</p>
-                  {isEditing ? (
-                    <Input value={draft.location} onChange={inputEvent => updateDraft('location', inputEvent.target.value)} placeholder="Офіс або кімната" />
-                  ) : (
-                    <p className="text-[13px] font-medium text-ink">{event.location || <span className="text-faint">Не вказано</span>}</p>
-                  )}
+              {isEditing ? (
+                <Textarea
+                  value={draft.description}
+                  onChange={inputEvent => updateDraft('description', inputEvent.target.value)}
+                  placeholder="Контекст, порядок денний або важливі деталі"
+                  rows={7}
+                  className="min-h-[180px]"
+                />
+              ) : (
+                <div className="min-h-[140px] w-full whitespace-pre-wrap rounded-[16px] bg-canvas px-4 py-3 text-[13px] leading-relaxed text-ink">
+                  {event.description || <span className="text-faint">Опис не додано</span>}
                 </div>
-                <div className="rounded-[14px] border border-line bg-white p-4">
-                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted"><Link2 size={13} /> Посилання</p>
-                  {isEditing ? (
-                    <Input type="url" value={draft.meetingUrl} onChange={inputEvent => updateDraft('meetingUrl', inputEvent.target.value)} placeholder="https://meet…" />
-                  ) : event.meetingUrl ? (
-                    <a href={event.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink hover:underline">
-                      Приєднатися <ExternalLink size={12} />
+              )}
+            </section>
+
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <MapPin size={14} className="text-muted" />
+                <h2 className="text-[14px] font-bold text-ink">Місце</h2>
+              </div>
+              {isEditing ? (
+                <Input
+                  value={draft.location}
+                  onChange={inputEvent => updateDraft('location', inputEvent.target.value)}
+                  placeholder="Офіс, кімната або адреса"
+                />
+              ) : (
+                <div className="w-full rounded-[16px] bg-canvas px-4 py-3 text-[13px] font-medium text-ink">
+                  {event.location || <span className="text-faint">Не вказано</span>}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <Link2 size={14} className="text-muted" />
+                <h2 className="text-[14px] font-bold text-ink">Посилання</h2>
+              </div>
+              {isEditing ? (
+                <Input
+                  type="url"
+                  value={draft.meetingUrl}
+                  onChange={inputEvent => updateDraft('meetingUrl', inputEvent.target.value)}
+                  placeholder="https://meet…"
+                />
+              ) : (
+                <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+                  {event.meetingUrl ? (
+                    <a
+                      href={event.meetingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink hover:underline"
+                    >
+                      Приєднатися до зустрічі <ExternalLink size={12} />
                     </a>
                   ) : (
                     <p className="text-[13px] text-faint">Не вказано</p>
                   )}
                 </div>
-              </div>
+              )}
             </section>
 
-            <aside className="rounded-[16px] border border-line bg-white p-[14px]">
-              <CalendarEventDetails
-                event={event}
-                members={members}
-                projects={projects}
-                currentUserId={currentUserId}
-                response={response}
-                isParticipant={isParticipant}
-                saving={saving}
-                error={actionError}
-                timeLogs={timeLogs}
-                totalMinutes={totalMinutes}
-                timeLoading={timeLoading}
-                timeSaving={timeSaving}
-                onAddTime={handleAddTime}
-                onDeleteTime={handleDeleteTime}
-                onRespond={handleRespond}
-                showOverview={false}
-              />
-            </aside>
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <Users size={14} className="text-muted" />
+                <h2 className="text-[14px] font-bold text-ink">Учасники</h2>
+              </div>
+              <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+                {event.participantIds?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {event.participantIds.map(uid => {
+                      const member = members.find(item => (item.id || item.uid) === uid);
+                      const state = event.participantResponses?.[uid] || 'pending';
+                      return (
+                        <span key={uid} className="inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1.5 text-[11px] text-ink">
+                          <UserAvatar user={member || { name: memberLabel(member) }} size={20} />
+                          <span className="font-semibold">{memberLabel(member)}</span>
+                          <span className={responseClass(state)}>· {responseLabel(state)}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-faint">Учасників не додано</p>
+                )}
+
+                {isParticipant && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/[0.05] pt-3">
+                    <span className="mr-1 text-[11px] font-bold text-muted">Ваша відповідь:</span>
+                    {RESPONSE_OPTIONS.map(option => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => handleRespond(option.value)}
+                        className={`rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${
+                          response === option.value
+                            ? 'bg-ink text-white'
+                            : 'bg-white text-muted hover:text-ink'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           </main>
 
-          {isEditing && actionError && (
+          {actionError && !timePanelOpen && (
             <p className="mt-4 text-[12px] font-medium text-red-600">{actionError}</p>
           )}
         </div>
       </div>
+
+      {timePanelOpen && (
+        <CalendarEventTimeSheet
+          initialMinutes={timerMinutes}
+          logs={timeLogs}
+          totalMinutes={totalMinutes}
+          loading={timeLoading}
+          saving={timeSaving}
+          members={members}
+          currentUserId={currentUserId}
+          canManage={canManage}
+          error={actionError}
+          onClose={() => {
+            setTimePanelOpen(false);
+            setTimerMinutes(0);
+            setActionError('');
+          }}
+          onSave={handleSaveTime}
+          onDelete={handleDeleteTime}
+        />
+      )}
     </div>
   );
 }

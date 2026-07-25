@@ -10,6 +10,7 @@ import {
   query,
   serverTimestamp,
   Timestamp,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -81,11 +82,27 @@ export function useCalendarEventTimeLogs(eventId, occurrenceStartAt) {
     await deleteDoc(doc(db, 'timeLogs', logId));
   }, []);
 
+  const updateTimeLog = useCallback(async (logId, {
+    spentMinutes,
+    description = '',
+  }) => {
+    const minutes = Math.round(Number(spentMinutes));
+    if (!logId || !Number.isFinite(minutes) || minutes <= 0) {
+      throw new Error('Вкажіть коректний час');
+    }
+    await updateDoc(doc(db, 'timeLogs', logId), {
+      spentMinutes: minutes,
+      description: String(description || '').trim().slice(0, 2000),
+      updatedAt: serverTimestamp(),
+    });
+  }, []);
+
   return {
     logs,
     loading,
     totalMinutes: logs.reduce((sum, log) => sum + (Number(log.spentMinutes) || 0), 0),
     addTimeLog,
+    updateTimeLog,
     deleteTimeLog,
   };
 }
