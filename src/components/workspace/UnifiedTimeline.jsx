@@ -403,15 +403,16 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
-              <div className={`group flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
+              <div className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}>
                 {isExternalAuthor ? (
                   <Popover
                     position="top"
                     hideCloseIcon
+                    className="col-start-1 row-start-1 self-end"
                     trigger={(
                       <button
                         type="button"
-                        className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                        className="block shrink-0 transition-opacity hover:opacity-80"
                         aria-label={`Інформація про зовнішнього автора: ${item.authorName || 'користувач'}`}
                       >
                         {authorAvatar}
@@ -433,21 +434,29 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                 ) : (
                   <button
                     type="button"
-                    className="mb-5 mt-auto shrink-0 transition-opacity hover:opacity-80"
+                    className={`${isMe ? 'col-start-2' : 'col-start-1'} row-start-1 self-end transition-opacity hover:opacity-80`}
                     onClick={() => router.push(`?member=${item.authorId}`)}
                     aria-label={`Профіль: ${item.authorName || 'учасник'}`}
                   >
                     {authorAvatar}
                   </button>
                 )}
-                <div className={`flex max-w-[84%] min-w-0 flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                <div className={`row-start-1 flex max-w-[84%] min-w-0 flex-col ${isMe ? 'col-start-1 items-end justify-self-end' : 'col-start-2 items-start'}`}>
                   {!isMe && (
                     <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
                       {item.authorName}
                       <StatusEmoji member={authorMember} />
                     </span>
                   )}
-                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'}`}>
+                  <div className={`relative max-w-full break-words rounded-[16px] p-3 text-[14px] leading-[22px] ${isMe ? 'bg-[#303030] text-white' : 'bg-white text-ink'}`}>
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute bottom-0 h-[10px] w-[7px] ${
+                        isMe
+                          ? '-right-[6px] bg-[#303030] [clip-path:polygon(0_0,0_100%,100%_100%)]'
+                          : '-left-[6px] bg-white [clip-path:polygon(100%_0,0_100%,100%_100%)]'
+                      }`}
+                    />
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
                     {item.text && (
                       <div className="whitespace-pre-wrap">
@@ -462,7 +471,8 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                       onOpen={setViewerAttachment}
                     />
                   </div>
-                  <div className={`mt-1 flex items-center gap-1 ${isMe ? 'flex-row-reverse' : ''}`}>
+                </div>
+                <div className={`row-start-2 mt-1 flex items-center gap-1 ${isMe ? 'col-start-1 justify-self-end flex-row-reverse' : 'col-start-2 justify-self-start'}`}>
                     <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
                       {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
@@ -479,7 +489,6 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
                         {isMe && <button type="button" onClick={() => handleDelete(item)} className="rounded-[6px] p-1 text-muted hover:bg-red-100 hover:text-red-500" aria-label="Видалити повідомлення" title="Видалити"><Trash2 size={12} /></button>}
                       </div>
                     )}
-                  </div>
                 </div>
               </div>
               </Fragment>
