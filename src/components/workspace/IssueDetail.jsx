@@ -24,7 +24,7 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
-import { Popover, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { ContextMenu, Popover, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
@@ -410,8 +410,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // ── UI state ──────────────────────────────────────────────────────
   const [showSubInput, setShowSubInput] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
-  const [showLabelDropdown, setShowLabelDropdown] = useState(false);
-  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showDetailsDropdown, setShowDetailsDropdown] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkRelation, setLinkRelation] = useState('relates-to');
@@ -419,8 +417,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(-1);
   const [editingSubtaskText, setEditingSubtaskText] = useState('');
   const [timeLogsPage, setTimeLogsPage] = useState(1);
-  const actionsDropdownRef = useRef(null);
-  const detailsDropdownRef = useRef(null);
   const [logForm,      setLogForm]      = useState(null);
   const [logTab, setLogTab] = useState('spend');
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
@@ -428,20 +424,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const leftScrollRef = useRef(null);
   const TIME_LOGS_PER_PAGE = 5;
-
-  // Click outside handlers
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (actionsDropdownRef.current && !actionsDropdownRef.current.contains(e.target)) {
-        setShowActionsDropdown(false);
-      }
-      if (detailsDropdownRef.current && !detailsDropdownRef.current.contains(e.target)) {
-        setShowDetailsDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
 
   // ── Edit mode state ───────────────────────────────────────────────
   const [isEditing,    setIsEditing]   = useState(false);
@@ -928,63 +910,30 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             ) : (
               <>
               {!isArchived && <Button style="secondary" size="icon-lg" icon={Pencil} onClick={enterEdit} aria-label="Редагувати завдання" title="Редагувати завдання" />}
-              <div className="relative" ref={actionsDropdownRef}>
-                <Button 
-                  style="secondary" 
-                  size="icon-lg" 
-                  icon={MoreHorizontal}
-                  onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-                  title="Опції"
-                />
-                {showActionsDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-[210px] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-[6px] z-50">
-                    <button
-                      onClick={() => {
-                        copyIssueLink();
-                        setShowActionsDropdown(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium cursor-pointer"
-                    >
-                      <Copy size={13} className="text-muted" />
-                      Копіювати посилання
-                    </button>
-                    <button
-                      onClick={() => {
-                        copyAiPrompt();
-                        setShowActionsDropdown(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium cursor-pointer"
-                    >
-                      <Sparkles size={13} className="text-muted" />
-                      Скопіювати AI-промпт
-                    </button>
-                    {!isArchived && (
-                      <>
-                    <button
-                      onClick={() => {
-                        toggleWatch();
-                        setShowActionsDropdown(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-ink hover:bg-canvas transition-colors text-left font-medium cursor-pointer"
-                    >
-                      {isWatching ? <EyeOff size={13} className="text-muted" /> : <Eye size={13} className="text-muted" />}
-                      {isWatching ? 'Не стежити' : 'Стежити'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleDelete();
-                        setShowActionsDropdown(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-[12px] h-[32px] text-[13px] text-red-500 hover:bg-red-50 transition-colors text-left font-medium cursor-pointer"
-                    >
-                      <Trash2 size={13} className="text-red-400" />
-                      Видалити
-                    </button>
-                      </>
-                    )}
-                  </div>
+              <ContextMenu
+                trigger={(
+                  <Button
+                    style="secondary"
+                    size="icon-lg"
+                    icon={MoreHorizontal}
+                    aria-label="Опції завдання"
+                    title="Опції"
+                  />
                 )}
-              </div>
+                dropdownClassName="w-[210px]"
+                items={[
+                  { label: 'Копіювати посилання', icon: Copy, onClick: copyIssueLink },
+                  { label: 'Скопіювати AI-промпт', icon: Sparkles, onClick: copyAiPrompt },
+                  ...(!isArchived ? [
+                    {
+                      label: isWatching ? 'Не стежити' : 'Стежити',
+                      icon: isWatching ? EyeOff : Eye,
+                      onClick: toggleWatch,
+                    },
+                    { label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true },
+                  ] : []),
+                ]}
+              />
               </>
             )}
             {isModal && onClose && (
@@ -1117,20 +1066,25 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </div>
 
                   {/* Less frequently changed fields */}
-                  <div className="relative flex h-full items-center" ref={detailsDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setShowDetailsDropdown(value => !value)}
-                      className={`flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 max-sm:px-0 ${isHeaderScrolled ? 'h-[28px]' : 'h-[42px]'} ${showDetailsDropdown ? 'bg-white text-ink' : 'text-muted hover:bg-[#ebebeb] hover:text-ink'}`}
-                      aria-expanded={showDetailsDropdown}
-                      aria-label="Деталі завдання"
-                      title={`Пріоритет: ${PRIORITIES.find(item => item.id === issue.priority)?.label || 'не вказано'} · Тип: ${TYPES.find(item => item.id === issue.type)?.label || 'не вказано'}`}
-                    >
-                      <Settings2 size={14} />
-                      <span className="max-sm:hidden">Деталі</span>
-                    </button>
-                    {showDetailsDropdown && (
-                      <div className="absolute right-0 top-full z-[120] mt-2 flex w-[280px] flex-col gap-4 rounded-[12px] border border-line bg-white p-4 shadow-[0_14px_36px_rgba(0,0,0,0.12)] max-sm:fixed max-sm:bottom-[76px] max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:w-auto">
+                  <Popover
+                    position="bottom"
+                    hideCloseIcon
+                    className="flex h-full items-center"
+                    onOpenChange={setShowDetailsDropdown}
+                    trigger={(
+                      <button
+                        type="button"
+                        className={`flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 max-sm:px-0 ${isHeaderScrolled ? 'h-[28px]' : 'h-[42px]'} ${showDetailsDropdown ? 'bg-white text-ink' : 'text-muted hover:bg-[#ebebeb] hover:text-ink'}`}
+                        aria-expanded={showDetailsDropdown}
+                        aria-label="Деталі завдання"
+                        title={`Пріоритет: ${PRIORITIES.find(item => item.id === issue.priority)?.label || 'не вказано'} · Тип: ${TYPES.find(item => item.id === issue.type)?.label || 'не вказано'}`}
+                      >
+                        <Settings2 size={14} />
+                        <span className="max-sm:hidden">Деталі</span>
+                      </button>
+                    )}
+                  >
+                      <div className="flex w-[248px] max-w-full flex-col gap-4">
                         <div className="flex flex-col gap-1.5 sm:hidden">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Спринт</span>
                           <Select
@@ -1181,8 +1135,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                           />
                         </div>
                       </div>
-                    )}
-                  </div>
+                  </Popover>
                 </>
               }
             />
@@ -1403,9 +1356,32 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                 {!isArchived && (
                   <div className="relative flex flex-nowrap items-center gap-1.5 mb-[24px]">
-                    <button aria-label="Додати мітку" onClick={() => setShowLabelDropdown(value => !value)} className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
-                      <Plus size={11} /><span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
-                    </button>
+                    <ContextMenu
+                      trigger={(
+                        <button
+                          type="button"
+                          aria-label="Додати мітку"
+                          disabled={availableLabels.length === 0}
+                          title={availableLabels.length === 0 ? 'Немає доступних міток' : undefined}
+                          className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Plus size={11} /><span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
+                        </button>
+                      )}
+                      dropdownClassName="w-[220px]"
+                      items={availableLabels.map(label => {
+                        const active = (issue.labelIds || []).includes(label.id);
+                        return {
+                          label: `${active ? '✓ ' : ''}${label.label || label.name}`,
+                          icon: TagIcon,
+                          color: active ? label.color : undefined,
+                          onClick: () => {
+                            const current = issue.labelIds || [];
+                            update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });
+                          },
+                        };
+                      })}
+                    />
                     <button aria-label="Додати підзавдання" onClick={() => setShowSubInput(value => !value)} className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
                       <Plus size={11} /><span className="sm:hidden">Підзавдання</span><span className="hidden sm:inline">Додати підзавдання</span>
                     </button>
@@ -1416,38 +1392,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     }} aria-label="Додати зв’язок" className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
                       <Plus size={11} /><span className="sm:hidden">Зв’язок</span><span className="hidden sm:inline">Додати зв’язок</span>
                     </button>
-
-                    {showLabelDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowLabelDropdown(false)} />
-                        <div className="absolute left-0 top-full z-20 mt-1 w-[200px] rounded-[12px] border border-line bg-white py-2 shadow-lg">
-                          {availableLabels.length === 0 && <p className="px-4 py-2 text-[12px] text-muted">Немає доступних міток</p>}
-                          {availableLabels.map(label => {
-                            const active = (issue.labelIds || []).includes(label.id);
-                            return (
-                              <button
-                                key={label.id}
-                                onClick={() => {
-                                  const current = issue.labelIds || [];
-                                  update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });
-                                  setShowLabelDropdown(false);
-                                }}
-                                aria-pressed={active}
-                                className="flex w-full items-center px-4 py-2 text-left text-[12px] transition-colors hover:bg-canvas"
-                              >
-                                <span
-                                  className={`inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium ${active ? '' : 'bg-ink/5 text-[#404040]'}`}
-                                  style={active ? { background: `${label.color}14`, color: label.color } : undefined}
-                                >
-                                  <TagIcon size={10} className="shrink-0 opacity-70" />
-                                  {label.label || label.name}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
                   </div>
                 )}
 

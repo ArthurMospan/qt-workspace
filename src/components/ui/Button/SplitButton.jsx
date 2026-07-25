@@ -93,6 +93,7 @@ export default function SplitButton({
       {isOpen && items.length > 0 && typeof document !== 'undefined' && createPortal(
         <div
           ref={menuRef}
+          data-qt-floating-overlay
           className="fixed z-[1000] w-max min-w-[160px] max-w-[calc(100vw-16px)] overflow-hidden rounded-[12px] border border-[#f0f0f0] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
           style={{
             top: menuPosition.top,

@@ -125,6 +125,7 @@ export function Select({
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownRef}
+          data-qt-floating-overlay
           className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-[6px] overflow-hidden ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
@@ -251,6 +252,7 @@ export function MultiSelect({
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownRef}
+          data-qt-floating-overlay
           className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,

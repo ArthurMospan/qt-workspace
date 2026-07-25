@@ -60,6 +60,7 @@ export default function ContextMenu({
       {isOpen && typeof document !== 'undefined' && createPortal(
           <div
             ref={menuRef}
+            data-qt-floating-overlay
             className={`fixed z-[1000] w-[200px] max-w-[calc(100vw-16px)] rounded-[12px] border border-[#f0f0f0] bg-white py-[6px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] ${dropdownClassName}`}
             style={{
               top: menuPosition.top,

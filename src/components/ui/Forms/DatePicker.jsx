@@ -241,6 +241,7 @@ export const DatePicker = forwardRef(({
       {isOpen && !disabled && typeof document !== 'undefined' && createPortal(
         <div
           ref={popupRef}
+          data-qt-floating-overlay
           className="fixed z-[200] w-[320px] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
           style={{ top: popupPosition.top, left: popupPosition.left }}
         >

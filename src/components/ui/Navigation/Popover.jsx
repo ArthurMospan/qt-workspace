@@ -50,6 +50,7 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
         containerRef.current
         && !containerRef.current.contains(event.target)
         && !popoverRef.current?.contains(event.target)
+        && !event.target.closest?.('[data-qt-floating-overlay]')
       ) {
         setIsOpen(false);
       }
@@ -81,6 +82,7 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={popoverRef}
+          data-qt-floating-overlay
           style={{
             position: 'fixed',
             top: popoverPosition.top,
