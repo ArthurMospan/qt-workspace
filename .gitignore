@@ -45,3 +45,12 @@ firestore-debug.log
 .firebase-config/
 
 .vercel
+
+# local agent/dev scratch output
+*.stdout.log
+*.stderr.log
+firebase-debug.log
+ui-debug.log
+calls.json
+msgs.json
+my_diff.txt

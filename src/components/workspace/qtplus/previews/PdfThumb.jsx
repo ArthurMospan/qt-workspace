@@ -50,5 +50,6 @@ export default function PdfThumb({ url, onFailed }) {
       </div>
     );
   }
+  // eslint-disable-next-line @next/next/no-img-element -- rendered client-side into a canvas data: URL, which next/image cannot process
   return <img src={thumb} alt="" className="w-full h-[160px] object-cover object-top" />;
 }

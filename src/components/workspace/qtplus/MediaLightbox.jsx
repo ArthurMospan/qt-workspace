@@ -41,6 +41,7 @@ export default function MediaLightbox({ view, onClose }) {
           </div>
         )}
         {view.kind === 'image' && view.url && (
+          // eslint-disable-next-line @next/next/no-img-element -- portal media is served from arbitrary partner hosts, which next/image cannot whitelist
           <img src={view.url} alt={view.title} className="max-w-[90vw] max-h-[80vh] object-contain rounded-[12px]" />
         )}
         {view.kind === 'video' && view.url && (

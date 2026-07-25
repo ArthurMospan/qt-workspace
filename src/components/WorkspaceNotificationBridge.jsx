@@ -7,6 +7,39 @@ import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { auth } from '@/lib/firebase';
 
+// Synthesised locally instead of streamed from assets.mixkit.co. Pulling an
+// alarm sound off a third-party CDN meant the emergency alert silently failed
+// whenever that host was blocked, offline or slow — exactly the moments the
+// alert matters most — and disclosed usage to an unrelated service.
+function playEmergencyAlarm() {
+  if (typeof window === 'undefined') return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const play = () => {
+      // Two-tone descending siren, twice.
+      [0, 0.55].forEach(offset => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+        osc.frequency.exponentialRampToValueAtTime(560, ctx.currentTime + offset + 0.42);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + offset + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.5);
+      });
+      window.setTimeout(() => { ctx.close().catch(() => {}); }, 1400);
+    };
+    if (ctx.state === 'suspended') ctx.resume().then(play).catch(() => ctx.close().catch(() => {}));
+    else play();
+  } catch { /* audio unavailable — the visual alert still fires */ }
+}
+
 export default function WorkspaceNotificationBridge() {
   const { currentUser, activeOrgId } = useAppContext();
   const userId = currentUser?.id || currentUser?.uid;
@@ -18,6 +51,7 @@ export default function WorkspaceNotificationBridge() {
   const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
   const clearNotificationCenter = useWorkspaceStore(state => state.clearNotificationCenter);
+  const restoreTimer = useWorkspaceStore(state => state.restoreTimer);
   const handleNew = useCallback(notification => showLiveNotif(notification), [showLiveNotif]);
   const notificationCenter = useNotifications(userId, {
     activeOrganizationId: activeOrgId,
@@ -32,6 +66,12 @@ export default function WorkspaceNotificationBridge() {
   useEffect(() => {
     clearLiveNotif();
   }, [activeOrgId, clearLiveNotif]);
+
+  // A running timer survives reloads and crashes; re-attach it as soon as the
+  // workspace mounts so the user never silently loses tracked time.
+  useEffect(() => {
+    restoreTimer();
+  }, [restoreTimer]);
 
   useEffect(() => {
     if (!activeOrgId || !userId) return undefined;
@@ -101,15 +141,10 @@ export default function WorkspaceNotificationBridge() {
       ) return;
 
       playedEmergencyIds.current.add(notification.id);
-      const playAlarm = () => {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.volume = 0.2;
-        audio.play().catch(() => {});
-      };
-      playAlarm();
+      playEmergencyAlarm();
       emergencyTimers.current.set(notification.id, [
-        window.setTimeout(playAlarm, 3000),
-        window.setTimeout(playAlarm, 6000),
+        window.setTimeout(playEmergencyAlarm, 3000),
+        window.setTimeout(playEmergencyAlarm, 6000),
       ]);
     });
 
@@ -125,9 +160,13 @@ export default function WorkspaceNotificationBridge() {
 
   useEffect(() => () => clearNotificationCenter(), [clearNotificationCenter, userId]);
 
+  // Captured on every run, not once: pinning it to the first page meant the tab
+  // kept showing the title of whatever page happened to load first for as long
+  // as there were unread chats.
   useEffect(() => {
-    if (!baseTitleRef.current) {
-      baseTitleRef.current = document.title.replace(/^\(\d+\)\s*/, '').replace(/^Нове повідомлення ·\s*/, '');
+    const decorated = /^(\(\d+\)\s*|Нове повідомлення ·\s*)/;
+    if (!decorated.test(document.title)) {
+      baseTitleRef.current = document.title;
     }
     const baseTitle = baseTitleRef.current || 'QuickTeam';
     if (displayedUnreadChats === 0) {

@@ -24,9 +24,13 @@ export function OrgProvider({ user, children }) {
 
   // ── Apply an org as active (Internal helper) ─────────────────────────
   const applyOrg = useCallback(async (orgData, uid) => {
+    // Persisted BEFORE the await below. The membership listener re-derives the
+    // active org from localStorage on every snapshot, so writing it late let a
+    // snapshot arriving mid-await revert the switch the user just made.
+    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, orgData.id);
     setActiveOrgId(orgData.id);
     setActiveOrg(orgData);
-    
+
     try {
       const memSnap = await getDoc(doc(db, 'orgMemberships', `${orgData.id}_${uid}`));
       if (memSnap.exists()) {
@@ -41,7 +45,6 @@ export function OrgProvider({ user, children }) {
     setNoOrg(false);
     setOrgError(null);
     setOrgLoading(false);
-    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, orgData.id);
   }, []);
 
   // ── Load all orgs when user changes ─────────────────────────────────────

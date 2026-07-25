@@ -1,11 +1,21 @@
 // src/app/api/upload/delete/route.js
-// Deletes an asset from Cloudinary so removed chat files don't linger in
-// storage. Requires the API secret, so it must run server-side. The caller
-// proves auth; the storagePath (Cloudinary public_id) and resourceType come
-// from the attachment metadata saved at upload time.
+// Deletes an asset from Cloudinary so removed files don't linger in storage.
+// Requires the API secret, so it must run server-side.
+//
+// Authorization: proving you are signed in is NOT enough — that would let any
+// user destroy any other tenant's attachments, avatars and materials by naming
+// their public_id. The organization is read out of the path itself and the
+// caller must be a member of it, so a request can never reach outside the
+// caller's own tenants.
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  callerBelongsToPathOrganization,
+  isSafeStoragePath,
+  organizationIdFromPath,
+} from '@/lib/server/uploadPaths';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -26,21 +36,32 @@ export async function POST(req) {
     }
 
     const { storagePath, resourceType } = await req.json();
-    // Mirror the upload public_id shape (quickteam/<folder>/<name>); reject
-    // anything that could target assets outside our namespace.
-    if (typeof storagePath !== 'string' || !/^[a-zA-Z0-9/_-]{1,220}$/.test(storagePath)) {
+    if (!isSafeStoragePath(storagePath)) {
       return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 });
     }
-    const type = ALLOWED_RESOURCE_TYPES.has(resourceType) ? resourceType : 'image';
 
+    const organizationId = organizationIdFromPath(storagePath);
+    if (!organizationId) {
+      // Legacy uploads that predate organization-scoped folders carry no proof
+      // of ownership, so nobody may delete them through this route.
+      return NextResponse.json({ error: 'Storage path is not organization-scoped' }, { status: 403 });
+    }
+    if (!(await callerBelongsToPathOrganization(authorization.user.uid, organizationId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const type = ALLOWED_RESOURCE_TYPES.has(resourceType) ? resourceType : 'image';
     const result = await cloudinary.uploader.destroy(storagePath, { resource_type: type, invalidate: true });
     // Cloudinary returns { result: 'ok' } or 'not found'. Treat a missing
     // asset as success — the goal (it's gone) is already met.
     if (result.result !== 'ok' && result.result !== 'not found') {
-      return NextResponse.json({ error: `Cloudinary: ${result.result}` }, { status: 502 });
+      return NextResponse.json({ error: 'Не вдалося видалити файл' }, { status: 502 });
     }
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    return routeErrorResponse(error, {
+      context: 'upload-delete',
+      fallbackMessage: 'Не вдалося видалити файл',
+    });
   }
 }

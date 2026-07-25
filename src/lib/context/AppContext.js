@@ -8,6 +8,7 @@ import { OrgProvider, useOrg } from '@/lib/context/OrgContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { claimActivityHeartbeat } from '@/lib/utils/activity';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const AppContext = createContext(null);
 const INVITATION_CHECK_TTL = 5 * 60 * 1000;
@@ -32,7 +33,9 @@ function AppProviderInner({
 
   useEffect(() => {
     if (user?.localization) {
-      require('@/store/useWorkspaceStore').default.getState().setLocalization(user.localization);
+      // Static import rather than require(): CommonJS interop inside a client
+      // module depends on bundler behaviour and is not guaranteed to resolve.
+      useWorkspaceStore.getState().setLocalization(user.localization);
     }
   }, [user?.localization]);
 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
@@ -69,8 +69,11 @@ export function Select({
   compact = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
   const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
+  const listboxId = useId();
   const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
 
   useEffect(() => {
@@ -88,14 +91,80 @@ export function Select({
   }, []);
 
   const selectedOption = options.find(o => o.value === value);
+  const selectedIndex = options.findIndex(o => o.value === value);
+
+  // Keep the highlighted row in view while arrowing through a long list.
+  useEffect(() => {
+    if (!isOpen || activeIndex < 0) return;
+    dropdownRef.current
+      ?.querySelector(`[data-option-index="${activeIndex}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, isOpen]);
+
+  const open = (index = selectedIndex >= 0 ? selectedIndex : 0) => {
+    setActiveIndex(options.length ? Math.max(0, Math.min(index, options.length - 1)) : -1);
+    setIsOpen(true);
+  };
+  const close = ({ focusTrigger = true } = {}) => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+    if (focusTrigger) triggerRef.current?.focus();
+  };
+  const commit = index => {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    close();
+  };
+
+  // Full keyboard support: the control is the primary form input across the
+  // whole app and previously could not be operated without a mouse at all.
+  const handleKeyDown = event => {
+    if (disabled) return;
+    const { key } = event;
+    if (!isOpen) {
+      if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        open();
+      }
+      return;
+    }
+    if (key === 'Escape') {
+      event.preventDefault();
+      close();
+    } else if (key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex(current => Math.min(current + 1, options.length - 1));
+    } else if (key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex(current => Math.max(current - 1, 0));
+    } else if (key === 'Home') {
+      event.preventDefault();
+      setActiveIndex(0);
+    } else if (key === 'End') {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+    } else if (key === 'Enter' || key === ' ') {
+      event.preventDefault();
+      commit(activeIndex);
+    } else if (key === 'Tab') {
+      close({ focusTrigger: false });
+    }
+  };
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between text-ink transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : buttonClassName}`}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        onKeyDown={handleKeyDown}
+        onClick={() => (isOpen ? close({ focusTrigger: false }) : open())}
+        className={`w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : buttonClassName}`}
       >
         <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {TriggerIcon && <TriggerIcon size={14} className="text-muted shrink-0" />}
@@ -134,16 +203,17 @@ export function Select({
             visibility: dropdownPosition.visible ? 'visible' : 'hidden',
           }}
         >
-          <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
-            {options.map((opt) => (
+          <div className="max-h-[240px] overflow-y-auto custom-scrollbar" role="listbox" id={listboxId}>
+            {options.map((opt, index) => (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-[12px] h-[36px] text-[13px] hover:bg-canvas transition-colors text-left ${value === opt.value ? 'bg-canvas font-bold' : 'font-medium'}`}
+                role="option"
+                aria-selected={value === opt.value}
+                data-option-index={index}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => commit(index)}
+                className={`w-full flex items-center justify-between px-[12px] h-[36px] text-[13px] transition-colors text-left ${index === activeIndex ? 'bg-canvas' : ''} ${value === opt.value ? 'bg-canvas font-bold' : 'font-medium'}`}
               >
                 <div className="flex items-center gap-[8px]">
                   {opt.dotColor && (
@@ -212,7 +282,10 @@ export function MultiSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  // String(...) guard: an option built from a record with a missing name used
+  // to throw here and take the whole page down.
+  const filteredOptions = options.filter(o =>
+    String(o.label ?? '').toLowerCase().includes(search.toLowerCase()));
   const allValues = options.map(option => option.value);
   const allSelected = allValues.length > 0 && allValues.every(optionValue => value.includes(optionValue));
 
@@ -237,8 +310,17 @@ export function MultiSelect({
       <button
         type="button"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onKeyDown={event => {
+          if (event.key === 'Escape' && isOpen) {
+            event.preventDefault();
+            setIsOpen(false);
+            setSearch('');
+          }
+        }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between text-ink transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : 'bg-canvas hover:bg-[#ebebeb] rounded-[10px] px-[12px] h-[36px]'}`}
+        className={`w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : 'bg-canvas hover:bg-[#ebebeb] rounded-[10px] px-[12px] h-[36px]'}`}
       >
         <div className="flex items-center gap-[8px] overflow-hidden">
           {TriggerIcon && <TriggerIcon size={14} className="text-muted shrink-0" />}
@@ -264,11 +346,17 @@ export function MultiSelect({
           <div className="p-[8px] border-b border-[#f0f0f0] shrink-0">
             <div className="relative">
               <Search size={14} className="absolute left-[10px] top-1/2 -translate-y-1/2 text-muted" />
-              <input 
+              <input
                 type="text"
                 autoFocus
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                onKeyDown={event => {
+                  if (event.key !== 'Escape') return;
+                  event.preventDefault();
+                  setIsOpen(false);
+                  setSearch('');
+                }}
                 placeholder={searchPlaceholder}
                 className="w-full bg-canvas text-[13px] font-medium text-ink rounded-[8px] pl-[32px] pr-[10px] py-[6px] outline-none border border-transparent focus:border-line"
               />

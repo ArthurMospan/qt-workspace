@@ -108,7 +108,9 @@ export async function upsertEmailAuthUser(email) {
   };
   if (!userSnap.exists) {
     baseProfile.name = userRecord.displayName || email.split('@')[0];
-    baseProfile.avatar = userRecord.photoURL || `https://i.pravatar.cc/150?u=${userRecord.uid}`;
+    // Empty rather than a third-party placeholder — UserAvatar falls back to
+    // initials, and no uid leaves the platform.
+    baseProfile.avatar = userRecord.photoURL || '';
     baseProfile.role = 'user';
     baseProfile.createdAt = nowIso;
     baseProfile.lastActive = nowIso;

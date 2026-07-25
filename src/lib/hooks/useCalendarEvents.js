@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { expandOccurrences } from '@/lib/utils/calendarRecurrence.mjs';
 
 async function calendarRequest(path, options = {}) {
   const token = await auth.currentUser?.getIdToken();
@@ -20,33 +21,36 @@ async function calendarRequest(path, options = {}) {
   return result;
 }
 
-function addRecurrence(date, frequency, interval) {
-  const next = new Date(date);
-  if (frequency === 'daily') next.setDate(next.getDate() + interval);
-  if (frequency === 'weekly') next.setDate(next.getDate() + 7 * interval);
-  if (frequency === 'monthly') next.setMonth(next.getMonth() + interval);
-  return next;
-}
+// How far around today the calendar materialises a repeating series. Anchoring
+// the window on *now* rather than on the series start is what stops a
+// long-running daily event from vanishing: the old code walked from the first
+// occurrence and gave up after a fixed number of steps, so anything older than
+// ~13 months produced no occurrences at all.
+const HORIZON_BEHIND_MONTHS = 6;
+const HORIZON_AHEAD_MONTHS = 24;
 
 function expandRecurringEvents(sourceEvents) {
-  const horizonEnd = new Date();
-  horizonEnd.setFullYear(horizonEnd.getFullYear() + 2);
+  const windowStart = new Date();
+  windowStart.setMonth(windowStart.getMonth() - HORIZON_BEHIND_MONTHS);
+  const windowEnd = new Date();
+  windowEnd.setMonth(windowEnd.getMonth() + HORIZON_AHEAD_MONTHS);
+
   return sourceEvents.flatMap(event => {
     const frequency = event.recurrence?.frequency || 'none';
     if (frequency === 'none') return [event];
-    const interval = Math.max(1, Number(event.recurrence?.interval) || 1);
     const originalStart = new Date(event.startAt);
     const duration = new Date(event.endAt).getTime() - originalStart.getTime();
-    const configuredUntil = event.recurrence?.until
-      ? new Date(`${event.recurrence.until}T23:59:59`)
-      : horizonEnd;
-    const until = configuredUntil < horizonEnd ? configuredUntil : horizonEnd;
-    const occurrences = [];
-    let occurrenceStart = originalStart;
-    let index = 0;
-    while (occurrenceStart <= until && index < 400) {
+    const { occurrences } = expandOccurrences({
+      start: originalStart,
+      frequency,
+      interval: event.recurrence?.interval,
+      until: event.recurrence?.until ? `${event.recurrence.until}T23:59:59` : null,
+      windowStart,
+      windowEnd,
+    });
+    return occurrences.map((occurrenceStart, index) => {
       const startAt = occurrenceStart.toISOString();
-      occurrences.push({
+      return {
         ...event,
         id: `${event.id}::${startAt}`,
         sourceEventId: event.id,
@@ -55,11 +59,8 @@ function expandRecurringEvents(sourceEvents) {
         recurrenceIndex: index,
         startAt,
         endAt: new Date(occurrenceStart.getTime() + duration).toISOString(),
-      });
-      occurrenceStart = addRecurrence(occurrenceStart, frequency, interval);
-      index += 1;
-    }
-    return occurrences;
+      };
+    });
   });
 }
 

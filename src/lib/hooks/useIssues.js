@@ -9,12 +9,15 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { reportLoadError } from '@/lib/utils/errors';
+import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 
-// Human labels for default workflow columns (used in status_changed notifications)
-const COLUMN_LABELS = {
-  backlog: 'Backlog', todo: 'To Do', 'in-progress': 'In Progress',
-  'code-review': 'Code Review', qa: 'QA', 'client-approval': 'Client Approval', done: 'Done'
-};
+// Stable string form of an audited field, so array values compare by content
+// rather than by identity. Order-insensitive for arrays: reordering assignees
+// is not a change worth an activity entry.
+function auditValue(value) {
+  if (Array.isArray(value)) return JSON.stringify([...value].map(String).sort());
+  return String(value ?? '');
+}
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -47,7 +50,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   const {
     activeOrgId, currentUser
   } = useAppContext();
-  const { doneStatusIds } = useWorkflowConfig();
+  const { doneStatusIds, statuses } = useWorkflowConfig();
   const [issues, setIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +152,8 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         issueId: result.id,
         projectId,
         organizationId: activeOrgId,
-        actor: { id: userId || '', name: userName || '' }
+        // No `actor` here: /api/notifications resolves the sender from the
+        // verified ID token. Passing one was silently discarded.
       }).catch(() => {});
     }
     return {
@@ -179,20 +183,22 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       updatedAt: serverTimestamp()
     }).catch(() => {});
 
-    // Write audit for notable field changes
+    // Write audit for notable field changes. Arrays are compared by VALUE —
+    // comparing them by reference logged a "changed_assigneeIds" entry on every
+    // single save, because a fresh array is never `===` the stored one.
     const auditFields = ['status', 'priority', 'title', 'columnId', 'assigneeIds'];
     for (const field of auditFields) {
-      if (data[field] !== undefined && current && data[field] !== current[field]) {
-        const from = Array.isArray(current[field]) ? JSON.stringify(current[field]) : String(current[field] ?? '');
-        const to = Array.isArray(data[field]) ? JSON.stringify(data[field]) : String(data[field] ?? '');
-        await writeAudit(issueId, {
-          userId,
-          userName,
-          action: `changed_${field}`,
-          from,
-          to
-        });
-      }
+      if (data[field] === undefined || !current) continue;
+      const from = auditValue(current[field]);
+      const to = auditValue(data[field]);
+      if (from === to) continue;
+      await writeAudit(issueId, {
+        userId,
+        userName,
+        action: `changed_${field}`,
+        from,
+        to
+      });
     }
   }, [issues, projectId]);
 
@@ -249,12 +255,13 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       });
     });
 
-    // Update the moved issue itself
+    // Update the moved issue itself. `subtasks` is deliberately NOT written
+    // here: echoing back our local copy overwrote whatever a colleague had
+    // just ticked off, and moving a card never changes its subtasks anyway.
     const movedIssueUpdates = {
       columnId: newColumnId,
       status: newColumnId,
       order: Math.max(0, newOrder),
-      subtasks: issue.subtasks || [],
       updatedAt: serverTimestamp()
     };
     const wasDone = doneStatusIds.includes(oldColumnId);
@@ -288,12 +295,11 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
           userIds: recipients,
           type: 'status_changed',
           title: `${issue.issueKey || 'Задача'}: статус змінено`,
-          body: `${issue.title || ''} → ${COLUMN_LABELS[newColumnId] || newColumnId}`,
+          body: `${issue.title || ''} → ${statusLabel(newColumnId, statuses)}`,
           link: `/${projectId}/issue/${issueId}`,
           issueId,
           projectId,
           organizationId: activeOrgId,
-          actor: { id: userId || '', name: userName || '' }
         }).catch(() => {});
       }
     }
@@ -309,7 +315,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [activeOrgId, issues, projectId, doneStatusIds]);
+  }, [activeOrgId, issues, projectId, doneStatusIds, statuses]);
   return {
     issues,
     issueLinks,

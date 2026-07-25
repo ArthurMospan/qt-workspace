@@ -9,6 +9,11 @@ import {
   validateCalendarReferences,
 } from '@/lib/server/calendarEvents';
 
+// Deadline horizon the calendar can actually display. Matches the client's
+// recurrence window in useCalendarEvents.
+const DEADLINE_WINDOW_BEHIND_MONTHS = 6;
+const DEADLINE_WINDOW_AHEAD_MONTHS = 24;
+
 export async function GET(request) {
   try {
     const organizationId = new URL(request.url).searchParams.get('organizationId')?.trim() || '';
@@ -18,10 +23,26 @@ export async function GET(request) {
     }
 
     const db = getAdminDb();
+    // Deadlines are only shown around the visible horizon, so only issues with
+    // a due date in that range are read — this used to pull every issue in the
+    // organization, with every field, on every calendar load.
+    const deadlineFrom = new Date();
+    deadlineFrom.setMonth(deadlineFrom.getMonth() - DEADLINE_WINDOW_BEHIND_MONTHS);
+    const deadlineTo = new Date();
+    deadlineTo.setMonth(deadlineTo.getMonth() + DEADLINE_WINDOW_AHEAD_MONTHS);
+
     const [eventsSnapshot, issuesSnapshot, projectsSnapshot, membershipsSnapshot] = await Promise.all([
       db.collection('calendarEvents').where('organizationId', '==', organizationId).get(),
-      db.collection('issues').where('organizationId', '==', organizationId).get(),
-      db.collection('projects').where('organizationId', '==', organizationId).get(),
+      db.collection('issues')
+        .where('organizationId', '==', organizationId)
+        .where('dueDate', '>=', admin.firestore.Timestamp.fromDate(deadlineFrom))
+        .where('dueDate', '<=', admin.firestore.Timestamp.fromDate(deadlineTo))
+        .select('title', 'issueKey', 'projectId', 'dueDate', 'assigneeIds', 'completedAt')
+        .get(),
+      db.collection('projects')
+        .where('organizationId', '==', organizationId)
+        .select('team')
+        .get(),
       db.collection('orgMemberships').where('orgId', '==', organizationId).get(),
     ]);
 

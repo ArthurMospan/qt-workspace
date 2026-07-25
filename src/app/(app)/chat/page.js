@@ -29,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
-import { channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
+import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
@@ -332,6 +332,7 @@ function MessageInput({
   placeholder = 'Написати повідомлення...',
   members = [],
 }) {
+  const { activeOrgId } = useAppContext();
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -413,7 +414,10 @@ function MessageInput({
     let uploaded = [];
     if (attachments.length > 0) {
       try {
-        uploaded = await Promise.all(attachments.map(file => uploadFile(file, 'chat/attachments')));
+        // Organization-scoped so ownership stays provable when the file is
+        // later released by /api/upload/delete.
+        uploaded = await Promise.all(attachments.map(file =>
+          uploadFile(file, `organizations/${activeOrgId}/chat`)));
       } catch (e) {
         console.error('Upload error', e);
         onError?.('Не вдалося завантажити вкладення');
@@ -1098,6 +1102,7 @@ export default function ChatPage() {
   const [channelInfoTab, setChannelInfoTab] = useState('info');
   const [viewerAttachment, setViewerAttachment] = useState(null);
   const [now, setNow] = useState(() => Date.now());
+  const [typingNow, setTypingNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
@@ -1116,6 +1121,7 @@ export default function ChatPage() {
   const {
     channels, dmChannels, messages, loading, activeChannelData,
     activeThreadId, threadMessages, activeDMs, readState,
+    hasMoreMessages, loadOlderMessages,
     sendMessage, deleteMessage, editMessage, toggleReaction,
     createChannel, setTyping, openThread, closeThread,
     sendThreadMessage, markAsRead, deleteReply
@@ -1126,6 +1132,8 @@ export default function ChatPage() {
   const composerRef = useRef(null);
   const messageRefs = useRef(new Map());
   const typingRef = useRef(null);
+  const lastTailIdRef = useRef(null);
+  const pendingHistoryHeightRef = useRef(null);
   // Notification links open the exact conversation instead of dropping the
   // user on #general.
   useEffect(() => {
@@ -1171,22 +1179,45 @@ export default function ChatPage() {
     return () => el.removeEventListener('scroll', handler);
   }, []);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages.
+  // Growing the history window prepends older messages: that is neither new
+  // activity (no unread badge) nor a reason to jump — the previous reading
+  // position is restored by compensating for the added height.
   useEffect(() => {
     const count = messages.length;
+    const tailId = messages[count - 1]?.id ?? null;
+    const previousTailId = lastTailIdRef.current;
+    const hasNewTail = tailId !== null && tailId !== previousTailId;
+    lastTailIdRef.current = tailId;
+
+    const scrollElement = chatScrollRef.current;
+    const heightBeforeRender = pendingHistoryHeightRef.current;
+    if (heightBeforeRender !== null) {
+      pendingHistoryHeightRef.current = null;
+      if (scrollElement) {
+        scrollElement.scrollTop += scrollElement.scrollHeight - heightBeforeRender;
+      }
+      queueMicrotask(() => setLastMsgCount(count));
+      return;
+    }
+
     if (!isScrolledUp) {
-      const scrollElement = chatScrollRef.current;
       if (scrollElement) {
         scrollElement.scrollTo({
           top: scrollElement.scrollHeight,
           behavior: count <= 1 ? 'instant' : 'smooth',
         });
       }
-    } else if (count > lastMsgCount && lastMsgCount > 0) {
+    } else if (hasNewTail && previousTailId !== null && count > lastMsgCount && lastMsgCount > 0) {
       queueMicrotask(() => setUnreadBadge(v => v + (count - lastMsgCount)));
     }
     queueMicrotask(() => setLastMsgCount(count));
-  }, [messages.length]); // eslint-disable-line
+  }, [messages]); // eslint-disable-line
+
+  const handleLoadOlderMessages = () => {
+    pendingHistoryHeightRef.current = chatScrollRef.current?.scrollHeight ?? null;
+    loadOlderMessages();
+  };
 
   // Keep the last message visible when attachment previews or a growing
   // textarea change the composer height.
@@ -1207,6 +1238,8 @@ export default function ChatPage() {
   // Mark as read + scroll to bottom when switching channel
   useEffect(() => {
     markAsRead(getRoomId());
+    lastTailIdRef.current = null;
+    pendingHistoryHeightRef.current = null;
     queueMicrotask(() => {
       setIsScrolledUp(false);
       setUnreadBadge(0);
@@ -1374,19 +1407,21 @@ export default function ChatPage() {
     if (!newChannelName.trim() || isSubmittingChannel) return;
 
     setIsSubmittingChannel(true);
-    const id = await createChannel(newChannelName.trim(), {
-      description: newChannelDescription.trim(),
-      members: [myUid, ...newChannelMemberIds].filter(Boolean),
-    });
-    setIsSubmittingChannel(false);
-
-    if (id) {
+    try {
+      const id = await createChannel(newChannelName.trim(), {
+        description: newChannelDescription.trim(),
+        members: [myUid, ...newChannelMemberIds].filter(Boolean),
+      });
       setIsCreatingChannel(false);
       resetChannelDraft();
       openChannel({ id, type: 'channel' });
       showToast('Канал створено ✓');
-    } else {
-      showToast('Помилка при створенні каналу', 'error');
+    } catch (channelError) {
+      // createChannel now reports *why* it refused (duplicate name, unusable
+      // slug, denied write) instead of silently returning null.
+      showToast(channelError.message || 'Помилка при створенні каналу', 'error');
+    } finally {
+      setIsSubmittingChannel(false);
     }
   };
 
@@ -1446,9 +1481,21 @@ export default function ChatPage() {
     ? messages.filter(message => messageMatchesChatSearch(message, chatSearch))
     : messages;
 
-  const typingUsers = (activeChannelData?.typing || [])
-    .filter(uid => uid !== myUid)
-    .map(uid => members.find(m => (m.id || m.uid) === uid)?.name || 'Хтось');
+  // Stale flags (crashed tab, hard reload) are discarded by TTL rather than
+  // leaving "X друкує…" on screen forever. The clearing write normally arrives
+  // via snapshot; this ticker only covers the case where it never comes.
+  const typingFlagCount = activeChannelData?.typing?.length || 0;
+  useEffect(() => {
+    if (!typingFlagCount) return undefined;
+    const timer = setInterval(() => setTypingNow(Date.now()), 2000);
+    return () => clearInterval(timer);
+  }, [typingFlagCount]);
+
+  const typingUsers = useMemo(
+    () => activeTypingUserIds(activeChannelData, { now: typingNow, exclude: myUid })
+      .map(uid => members.find(m => (m.id || m.uid) === uid)?.name || 'Хтось'),
+    [activeChannelData, members, myUid, typingNow],
+  );
 
   const handleOpenThread = (msgId) => {
     setShowChannelInfo(false);
@@ -1790,7 +1837,21 @@ export default function ChatPage() {
                   />
                 </div>
               ) : (
-                displayMessages.map((msg, i) => {
+                <>
+                {/* Only the latest window is subscribed; older history loads on
+                    demand so opening a busy channel is not an unbounded read. */}
+                {hasMoreMessages && !chatSearch.trim() && (
+                  <div className="flex justify-center pb-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleLoadOlderMessages}
+                      className="rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink"
+                    >
+                      Показати давніші повідомлення
+                    </button>
+                  </div>
+                )}
+                {displayMessages.map((msg, i) => {
                   const prev = i > 0 ? displayMessages[i - 1] : null;
                   const showDateSep = !isSameDay(prev?.createdAt, msg.createdAt);
                   return (
@@ -1825,7 +1886,8 @@ export default function ChatPage() {
                       />
                     </div>
                   );
-                })
+                })}
+                </>
               )}
 
               {/* Typing indicator */}

@@ -33,6 +33,7 @@ export default function FileCard({ view, onOpen }) {
   let thumb = null;
   if (view.url && !thumbFailed) {
     if (view.kind === 'image') {
+      // eslint-disable-next-line @next/next/no-img-element -- portal media is served from arbitrary partner hosts, which next/image cannot whitelist
       thumb = <img src={view.url} alt={view.title} onError={handleThumbFailed} className="w-full h-[160px] object-cover" />;
     } else if (view.kind === 'pdf') {
       thumb = <PdfThumb url={view.url} onFailed={handleThumbFailed} />;

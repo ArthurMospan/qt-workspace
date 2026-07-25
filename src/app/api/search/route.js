@@ -29,16 +29,35 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Too many search requests' }, { status: 429 });
     }
 
-    const snap = await getAdminDb().collection('issues')
-      .where('organizationId', '==', organizationId)
-      .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt')
-      .get();
+    const db = getAdminDb();
+    // Search must honour the same per-project access model as the rest of the
+    // app: a plain member could previously find the titles of tasks in projects
+    // they are not on and cannot open. Owners/admins still see everything.
+    const isPrivileged = ['owner', 'admin'].includes(authorization.membership?.role);
+    const [snap, projectsSnapshot] = await Promise.all([
+      db.collection('issues')
+        .where('organizationId', '==', organizationId)
+        .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt')
+        .get(),
+      isPrivileged
+        ? Promise.resolve(null)
+        : db.collection('projects')
+          .where('organizationId', '==', organizationId)
+          .where('team', 'array-contains', authorization.user.uid)
+          .select()
+          .get(),
+    ]);
+    const visibleProjectIds = projectsSnapshot
+      ? new Set(projectsSnapshot.docs.map(document => document.id))
+      : null;
+
     const results = snap.docs
       .map(item => {
         const issue = item.data();
         return { id: item.id, ...issue, score: scoreIssue(issue, term) };
       })
       .filter(issue => issue.score > 0)
+      .filter(issue => !visibleProjectIds || visibleProjectIds.has(issue.projectId))
       .sort((a, b) => b.score - a.score || (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       .slice(0, 50)
       .map(issue => ({

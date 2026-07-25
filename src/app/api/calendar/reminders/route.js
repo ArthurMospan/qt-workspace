@@ -3,14 +3,7 @@ import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdm
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
-
-function nextOccurrence(date, frequency, interval) {
-  const next = new Date(date);
-  if (frequency === 'daily') next.setDate(next.getDate() + interval);
-  if (frequency === 'weekly') next.setDate(next.getDate() + 7 * interval);
-  if (frequency === 'monthly') next.setMonth(next.getMonth() + interval);
-  return next;
-}
+import { expandOccurrences } from '@/lib/utils/calendarRecurrence.mjs';
 
 function reminderLabel(minutes) {
   if (minutes === 0) return 'Подія починається зараз';
@@ -27,6 +20,23 @@ function datePartsInTimezone(date, timeZone) {
     day: '2-digit',
   }).formatToParts(date);
   return Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+}
+
+// Every open tab polls this route, and the birthday sweep below reads all
+// memberships plus every member profile. Claiming a once-per-day marker first
+// turns that from "per poll, per tab, per user" into "once per organization per
+// day" — the create() fails for everyone who loses the race.
+async function claimDailyBirthdaySweep(db, organizationId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const ref = db.collection('organizations').doc(organizationId)
+    .collection('settings').doc(`birthdaySweep_${today}`);
+  try {
+    await ref.create({ claimedAt: admin.firestore.FieldValue.serverTimestamp() });
+    return true;
+  } catch (error) {
+    if (error.code === 6 || error.code === 'already-exists') return false;
+    throw error;
+  }
 }
 
 async function createBirthdayGreetings(db, organizationId) {
@@ -100,28 +110,36 @@ export async function POST(request) {
 
     const userId = authorization.user.uid;
     const db = getAdminDb();
-    const snapshot = await db.collection('calendarEvents').where('organizationId', '==', organizationId).get();
+    // Only the caller's own events are read. Scanning the whole organization on
+    // every poll made this the most expensive query in the app.
+    const snapshot = await db.collection('calendarEvents')
+      .where('organizationId', '==', organizationId)
+      .where('participantIds', 'array-contains', userId)
+      .get();
     const now = Date.now();
     const lookBack = 5 * 60 * 1000;
     const candidates = [];
 
     snapshot.docs.forEach(document => {
       const event = document.data();
-      if (!event.participantIds?.includes(userId)) return;
       const reminders = Array.isArray(event.reminderMinutes) ? event.reminderMinutes : [15];
-      const frequency = event.recurrence?.frequency || 'none';
-      const interval = Math.max(1, Number(event.recurrence?.interval) || 1);
-      const until = event.recurrence?.until
-        ? new Date(`${event.recurrence.until}T23:59:59`).getTime()
-        : now + 2 * 365 * 24 * 60 * 60 * 1000;
-      const maxReminder = Math.max(0, ...reminders) * 60 * 1000;
-      let occurrence = event.startAt?.toDate?.() || new Date(event.startAt);
-      let iterations = 0;
-      while (
-        Number.isFinite(occurrence.getTime()) &&
-        occurrence.getTime() <= Math.min(until, now + maxReminder + 5 * 60 * 1000) &&
-        iterations < 1000
-      ) {
+      if (!reminders.length) return;
+      const maxReminder = Math.max(0, ...reminders.map(Number)) * 60 * 1000;
+      // Only occurrences whose reminder could fire inside the look-back window
+      // matter, so the walk is bounded by that window and not by how old the
+      // series is — a daily event from two years ago used to exhaust the
+      // iteration cap before reaching today and silently stopped reminding.
+      const { occurrences } = expandOccurrences({
+        start: event.startAt?.toDate?.() || new Date(event.startAt),
+        frequency: event.recurrence?.frequency || 'none',
+        interval: event.recurrence?.interval,
+        until: event.recurrence?.until ? `${event.recurrence.until}T23:59:59` : null,
+        windowStart: new Date(now - lookBack),
+        windowEnd: new Date(now + maxReminder + 5 * 60 * 1000),
+        maxOccurrences: 64,
+      });
+
+      occurrences.forEach(occurrence => {
         reminders.forEach(minutes => {
           const triggerAt = occurrence.getTime() - Number(minutes) * 60 * 1000;
           if (triggerAt <= now && triggerAt >= now - lookBack) {
@@ -133,10 +151,7 @@ export async function POST(request) {
             });
           }
         });
-        if (frequency === 'none') break;
-        occurrence = nextOccurrence(occurrence, frequency, interval);
-        iterations += 1;
-      }
+      });
     });
 
     let created = 0;
@@ -175,7 +190,9 @@ export async function POST(request) {
       }
     }));
 
-    const birthdayGreetings = await createBirthdayGreetings(db, organizationId);
+    const birthdayGreetings = await claimDailyBirthdaySweep(db, organizationId)
+      ? await createBirthdayGreetings(db, organizationId)
+      : 0;
     return NextResponse.json({ created, birthdayGreetings });
   } catch (error) {
     return routeErrorResponse(error, {

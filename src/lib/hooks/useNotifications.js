@@ -8,9 +8,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   collection, query, where, orderBy, limit, onSnapshot, updateDoc, deleteDoc,
-  doc, writeBatch,
+  doc, getDocs, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+
+// Live window kept in memory for the notification centre.
+const PAGE_SIZE = 50;
+// Firestore caps a batched write at 500 operations.
+const WRITE_BATCH_LIMIT = 400;
 
 // Soft two-tone chime via WebAudio — no external audio asset needed
 function playChime() {
@@ -78,17 +83,28 @@ export function useNotifications(userId, {
       queueMicrotask(() => setLoading(false));
       return;
     }
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc'),
-      limit(60),
-    );
+    // Scoped to the active organization. A user-only query let notifications
+    // from other organizations consume the page limit and inflate the badge
+    // for an organization the user is not even looking at.
+    const q = activeOrganizationId
+      ? query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId),
+        where('organizationId', '==', activeOrganizationId),
+        orderBy('createdAt', 'desc'),
+        limit(PAGE_SIZE),
+      )
+      : query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc'),
+        limit(PAGE_SIZE),
+      );
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })).sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)).slice(0, 50);
+      })).sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
       if (isFirstLoad.current) {
         // On first load: just populate seenIds, don't fire popups
         isFirstLoad.current = false;
@@ -112,16 +128,31 @@ export function useNotifications(userId, {
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();
-  }, [userId]); // eslint-disable-line
+  }, [userId, activeOrganizationId]); // eslint-disable-line
+
+  // "Mark all read" / "clear read" used to operate on the loaded page only, so
+  // with more unread items than the page size the button appeared to do
+  // nothing for the rest. Both now walk every matching document in batches.
+  const applyToAllMatching = useCallback(async (organizationId, matches, mutate) => {
+    if (!userId) return;
+    const constraints = [where('userId', '==', userId)];
+    if (organizationId) constraints.push(where('organizationId', '==', organizationId));
+    const snapshot = await getDocs(query(collection(db, 'notifications'), ...constraints));
+    const targets = snapshot.docs.filter(matches);
+    for (let index = 0; index < targets.length; index += WRITE_BATCH_LIMIT) {
+      const batch = writeBatch(db);
+      targets.slice(index, index + WRITE_BATCH_LIMIT).forEach(item => mutate(batch, item.ref));
+      await batch.commit();
+    }
+  }, [userId]);
 
   const markAllRead = useCallback(async (organizationId = null) => {
-    if (!userId) return;
-    const targets = notifications.filter(item => !item.read && (!organizationId || item.organizationId === organizationId));
-    if (targets.length === 0) return;
-    const batch = writeBatch(db);
-    targets.forEach(item => batch.update(doc(db, 'notifications', item.id), { read: true }));
-    await batch.commit();
-  }, [notifications, userId]);
+    await applyToAllMatching(
+      organizationId,
+      item => item.data().read !== true,
+      (batch, ref) => batch.update(ref, { read: true }),
+    );
+  }, [applyToAllMatching]);
 
   const markRead = useCallback(async id => {
     await updateDoc(doc(db, 'notifications', id), {
@@ -141,22 +172,20 @@ export function useNotifications(userId, {
 
   // Delete everything already read — keeps the center tidy
   const clearRead = useCallback(async (organizationId = null) => {
-    if (!userId) return;
-    const targets = notifications.filter(item => item.read && (!organizationId || item.organizationId === organizationId));
-    if (targets.length === 0) return;
-    const batch = writeBatch(db);
-    targets.forEach(item => batch.delete(doc(db, 'notifications', item.id)));
-    await batch.commit();
-  }, [notifications, userId]);
+    await applyToAllMatching(
+      organizationId,
+      item => item.data().read === true,
+      (batch, ref) => batch.delete(ref),
+    );
+  }, [applyToAllMatching]);
 
   const markProjectRead = useCallback(async (projectId, organizationId = null) => {
-    const targets = notifications.filter(item =>
-      !item.read && item.projectId === projectId && (!organizationId || item.organizationId === organizationId));
-    if (targets.length === 0) return;
-    const batch = writeBatch(db);
-    targets.forEach(item => batch.update(doc(db, 'notifications', item.id), { read: true }));
-    await batch.commit();
-  }, [notifications]);
+    await applyToAllMatching(
+      organizationId,
+      item => item.data().read !== true && item.data().projectId === projectId,
+      (batch, ref) => batch.update(ref, { read: true }),
+    );
+  }, [applyToAllMatching]);
 
   return {
     notifications,

@@ -18,15 +18,12 @@ import {
 } from '@/components/ui';
 import { useWorkflowConfig, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import { buildCalendarBillingItems } from '@/lib/utils/calendarBillingItems.mjs';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 
 // ── Defaults ─────────────────────────────────────────────────────────
 
 const TYPE_META = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, t]));
-
-const COL_LABEL = {
-  backlog: 'Backlog', todo: 'To Do', 'in-progress': 'In Progress',
-  'code-review': 'Code Review', qa: 'QA', 'client-approval': 'Client Approval', done: 'Done',
-};
 
 const CURRENCIES = ['USD', 'EUR', 'UAH', 'GBP', 'PLN'];
 
@@ -106,20 +103,24 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
     [timeLogs, issue.id],
   );
 
-  // Calculate auto price: sum per-user (minutes/60 * rate)
+  // Auto price: sum per-user (minutes/60 * rate).
+  //
+  // The estimate is a fallback for tasks with NO logged time — keyed on whether
+  // time was tracked, not on whether the money came out to zero. Testing the
+  // total meant that 8 logged hours at a rate of 0 silently fell through to
+  // billing the estimate instead, quietly inventing a charge.
   const autoPrice = useMemo(() => {
-    let total = 0;
-    Object.entries(issueLogs.byUser).forEach(([uid, minutes]) => {
-      const rate = rates[uid] ?? 0;
-      total += (minutes / 60) * rate;
-    });
-    // If no time logged but estimate exists → use estimate
-    if (total === 0 && issue.estimateMinutes) {
-      const uid = issue.assigneeIds?.[0];
-      const rate = uid ? (rates[uid] ?? 0) : 0;
-      total = (issue.estimateMinutes / 60) * rate;
+    if (issueLogs.totalMinutes > 0) {
+      return Object.entries(issueLogs.byUser).reduce(
+        (total, [uid, minutes]) => total + (minutes / 60) * (rates[uid] ?? 0),
+        0,
+      );
     }
-    return total;
+    if (issue.estimateMinutes) {
+      const uid = issue.assigneeIds?.[0];
+      return (issue.estimateMinutes / 60) * (uid ? (rates[uid] ?? 0) : 0);
+    }
+    return 0;
   }, [issueLogs, rates, issue]);
 
   const price = useManual ? (manualPrice ?? 0) : autoPrice;
@@ -220,12 +221,19 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
 
 // ── Invoice Preview Component ─────────────────────────────────────────
 
-function InvoicePreview({ invoice, project, org, onClose }) {
+function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopied, onCopyFailed }) {
   const printRef = useRef(null);
 
   const handlePrint = () => {
-    const content = printRef.current.innerHTML;
+    const content = printRef.current?.innerHTML;
+    if (!content) return;
+    // window.open returns null when a popup blocker is active; the old code
+    // dereferenced it straight away and the button just appeared to do nothing.
     const win = window.open('', '_blank');
+    if (!win) {
+      onPrintBlocked?.();
+      return;
+    }
     win.document.write(`
       <!DOCTYPE html>
       <html>
@@ -253,8 +261,15 @@ function InvoicePreview({ invoice, project, org, onClose }) {
     `);
     win.document.close();
     win.focus();
-    win.print();
-    win.close();
+    // Printing immediately can fire before fonts and styles are applied, and
+    // closing synchronously afterwards cancels the dialog in some browsers.
+    // Wait for load, then let the browser close the window once printing ends.
+    const startPrinting = () => {
+      win.print();
+      win.addEventListener('afterprint', () => win.close());
+    };
+    if (win.document.readyState === 'complete') startPrinting();
+    else win.addEventListener('load', startPrinting);
   };
 
   const handleCopy = () => {
@@ -272,7 +287,12 @@ function InvoicePreview({ invoice, project, org, onClose }) {
       invoice.tax > 0 ? `ПДВ (${invoice.taxPct}%): +${fmtMoney(invoice.tax, invoice.currency)}` : '',
       `До оплати: ${fmtMoney(invoice.total, invoice.currency)}`,
     ].filter(l => l !== '').join('\n');
-    navigator.clipboard.writeText(lines);
+    // Clipboard access is denied in insecure contexts and by some browsers;
+    // silently swallowing that left the user thinking the copy worked.
+    navigator.clipboard?.writeText(lines).then(
+      () => onCopied?.(),
+      () => onCopyFailed?.(),
+    );
   };
 
   return (
@@ -382,12 +402,12 @@ function InvoicePreview({ invoice, project, org, onClose }) {
 
 export default function BillingTab({ issues = [], events = [], members = [], project, projectId }) {
   const { currentUser, activeOrgId } = useAppContext();
+  const showToast = useWorkspaceStore(state => state.showToast);
   const { logs, byIssue, loading: logsLoading } = useProjectAllTimeLogs(projectId);
   const { statuses, doneStatusIds } = useWorkflowConfig();
-  // Status labels come from the live workflow config (fall back to legacy map).
-  const statusLabelOf = (id) => id === 'calendar_event'
-    ? 'Подія'
-    : statuses.find(s => s.id === id)?.label || COL_LABEL[id] || id;
+  // Status labels come from the live workflow config, falling back to the
+  // shared defaults rather than a local copy of the same map.
+  const statusLabelOf = (id) => id === 'calendar_event' ? 'Подія' : statusLabel(id, statuses);
 
   const { billableEvents, timeLogsByItem } = useMemo(() => {
     return buildCalendarBillingItems({ byIssue, events, logs, projectId });
@@ -872,6 +892,9 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           project={project}
           org={{ name: fromName }}
           onClose={() => setShowPreview(false)}
+          onPrintBlocked={() => showToast('Дозвольте спливаючі вікна, щоб надрукувати рахунок', 'error')}
+          onCopied={() => showToast('Рахунок скопійовано ✓')}
+          onCopyFailed={() => showToast('Не вдалося скопіювати рахунок', 'error')}
         />
       )}
     </div>

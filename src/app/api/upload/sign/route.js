@@ -2,6 +2,12 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  callerBelongsToPathOrganization,
+  isSafeUploadFolder,
+  organizationIdFromPath,
+} from '@/lib/server/uploadPaths';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -23,14 +29,22 @@ export async function POST(req) {
     const folder = params?.folder;
     const publicId = params?.public_id;
     if (
-      typeof folder !== 'string' ||
-      !/^quickteam\/[a-zA-Z0-9/_-]{1,180}$/.test(folder) ||
+      !isSafeUploadFolder(folder) ||
       typeof publicId !== 'string' ||
       !/^[a-zA-Z0-9_-]{1,160}$/.test(publicId)
     ) {
       return NextResponse.json({ error: 'Invalid upload parameters' }, { status: 400 });
     }
-    
+
+    // Signing an organization folder for a non-member would let one tenant
+    // write into another tenant's namespace, which the delete route then
+    // treats as owned by that other tenant.
+    const organizationId = organizationIdFromPath(folder);
+    if (organizationId &&
+        !(await callerBelongsToPathOrganization(authorization.user.uid, organizationId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const timestamp = Math.round(new Date().getTime() / 1000);
     
     const signature = cloudinary.utils.api_sign_request(
@@ -45,7 +59,10 @@ export async function POST(req) {
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    return routeErrorResponse(error, {
+      context: 'upload-sign',
+      fallbackMessage: 'Не вдалося підготувати завантаження',
+    });
   }
 }

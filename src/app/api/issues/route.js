@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
-
-const DEFAULT_PRIORITIES = ['blocker', 'high', 'medium', 'low'];
-const DEFAULT_TYPES = ['epic', 'feature', 'task', 'bug'];
-const DEFAULT_STATUSES = ['backlog', 'todo', 'in-progress', 'done'];
-const DEFAULT_LABELS = ['bug', 'frontend', 'design'];
+import {
+  DEFAULT_LABEL_IDS,
+  DEFAULT_PRIORITY_IDS,
+  DEFAULT_STATUS_IDS,
+  DEFAULT_TYPE_IDS,
+  resolveDoneStatusIds,
+  workflowIds,
+} from '@/lib/utils/workflowDefaults.mjs';
 
 function projectPrefix(project) {
   if (project.issuePrefix) return String(project.issuePrefix).slice(0, 8).toUpperCase();
   const letters = String(project.name || 'WS').match(/\p{L}/gu)?.join('') || 'WS';
   return letters.slice(0, 3).toUpperCase();
-}
-
-function terminalStatusIds(workflow) {
-  const statuses = workflow?.statuses || [];
-  const explicit = statuses.filter(status => status.isDone === true).map(status => status.id);
-  if (explicit.length) return explicit;
-  if (statuses.some(status => status.id === 'done')) return ['done'];
-  return statuses.length ? [statuses.at(-1).id] : ['done'];
 }
 
 function normalizedDate(value) {
@@ -100,11 +95,11 @@ export async function POST(request) {
     const workflowSnap = await db.collection('organizations').doc(organizationId)
       .collection('settings').doc('workflow').get();
     const workflow = workflowSnap.data() || {};
-    const statusIds = (workflow.statuses?.length ? workflow.statuses.map(item => item.id) : DEFAULT_STATUSES);
-    const priorityIds = new Set(workflow.priorities?.length ? workflow.priorities.map(item => item.id) : DEFAULT_PRIORITIES);
-    const typeIds = new Set(workflow.types?.length ? workflow.types.map(item => item.id) : DEFAULT_TYPES);
-    const labelIds = new Set(workflow.labels?.length ? workflow.labels.map(item => item.id) : DEFAULT_LABELS);
-    const doneIds = terminalStatusIds(workflow);
+    const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
+    const priorityIds = new Set(workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS));
+    const typeIds = new Set(workflowIds(workflow.types, DEFAULT_TYPE_IDS));
+    const labelIds = new Set(workflowIds(workflow.labels, DEFAULT_LABEL_IDS));
+    const doneIds = resolveDoneStatusIds(workflow.statuses);
     const status = typeof data.status === 'string' ? data.status : statusIds[0];
     if (!statusIds.includes(status)) {
       return NextResponse.json({ error: 'Invalid workflow status' }, { status: 400 });

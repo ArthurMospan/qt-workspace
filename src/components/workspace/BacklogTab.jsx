@@ -97,8 +97,9 @@ export default function BacklogTab({ projectId, project, currentUser }) {
   };
   const handleLogTime = async (minutes, desc) => {
     if (!activeIssue) return;
+    // addTimeLog moves the issue's spentMinutes mirror atomically in the same
+    // batch; adding it again here raced with concurrent logs.
     await addTimeLog(activeIssue.id, projectId, currentUser?.id || currentUser?.uid, minutes, desc);
-    await updateIssue(activeIssue.id, { spentMinutes: (activeIssue.spentMinutes || 0) + minutes });
     showToast(`${minutes} хв списано ✓`);
   };
   const handleAddSubtask    = async (title) => { if (activeIssue) await handleUpdate({ subtasks: [...(activeIssue.subtasks||[]), {title, done:false}] }); };

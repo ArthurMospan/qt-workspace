@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CalendarDays,
@@ -23,6 +23,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
+import { MINUTES_PER_DAY, layoutDayEvents } from '@/lib/utils/calendarLayout.mjs';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
@@ -38,7 +39,10 @@ import { MultiSelect } from '@/components/ui/Select';
 import CalendarEventDialog from '@/components/workspace/calendar/CalendarEventDialog';
 
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const HOURS = Array.from({ length: 15 }, (_, index) => index + 7);
+// The full day is rendered so nothing has to be clamped; the grid scrolls to
+// the start of the working day on open.
+const HOURS = Array.from({ length: 24 }, (_, index) => index);
+const WORKDAY_START_HOUR = 7;
 const TYPE_CONFIG = {
   meeting: { label: 'Мітинг', color: '#3b82f6', bg: '#eff6ff', icon: Video },
   event: { label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarDays },
@@ -188,9 +192,17 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
     ? [startOfDay(anchor)]
     : Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(anchor), index));
   const today = new Date();
+  const rootRef = useRef(null);
+
+  // The grid covers all 24 hours so nothing needs clamping; open it on the
+  // working day instead of at midnight.
+  useEffect(() => {
+    const scroller = rootRef.current?.closest('.overflow-auto');
+    if (scroller) scroller.scrollTop = WORKDAY_START_HOUR * 60;
+  }, [view]);
 
   return (
-    <div className="min-w-[780px]">
+    <div ref={rootRef} className="min-w-[780px]">
       <div className="grid border-b border-line bg-white sticky top-0 z-10" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
         <div className="border-r border-line" />
         {days.map((day, index) => (
@@ -213,28 +225,32 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
       />
 
       <div className="grid" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
-        <div className="relative border-r border-line" style={{ height: HOURS.length * 60 }}>
-          {HOURS.map((hour, index) => (
-            <span key={hour} className="absolute right-2 -translate-y-1/2 text-[10px] font-medium text-muted" style={{ top: index * 60 }}>
+        <div className="relative border-r border-line" style={{ height: MINUTES_PER_DAY }}>
+          {HOURS.map(hour => (
+            <span key={hour} className="absolute right-2 -translate-y-1/2 text-[10px] font-medium text-muted" style={{ top: hour * 60 }}>
               {String(hour).padStart(2, '0')}:00
             </span>
           ))}
         </div>
         {days.map(day => {
-          const timedEvents = events.filter(event => !event.allDay && sameDay(event.startAt, day));
+          // Laid out against the full 24 hours: a night-time event used to be
+          // clamped onto the 07:00 row or pushed outside the container, and
+          // concurrent events were drawn on top of each other.
+          const timedEvents = events.filter(event => !event.allDay);
+          const boxes = layoutDayEvents(timedEvents, day);
           return (
             <div
               key={dateKey(day)}
               className={`relative border-r last:border-r-0 border-line ${day.getDay() === 0 || day.getDay() === 6 ? 'bg-[#fcfcfc]' : 'bg-white'}`}
-              style={{ height: HOURS.length * 60 }}
+              style={{ height: MINUTES_PER_DAY }}
             >
-              {HOURS.map((hour, index) => (
+              {HOURS.map(hour => (
                 <button
                   type="button"
                   key={hour}
                   aria-label={`Створити подію о ${hour}:00`}
                   className="absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors"
-                  style={{ top: index * 60, height: 60 }}
+                  style={{ top: hour * 60, height: 60 }}
                   onClick={() => {
                     const start = new Date(day);
                     start.setHours(hour, 0, 0, 0);
@@ -242,18 +258,20 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
                   }}
                 />
               ))}
-              {timedEvents.map(event => {
-                const start = new Date(event.startAt);
-                const end = new Date(event.endAt);
-                const top = Math.max(0, (start.getHours() - HOURS[0]) * 60 + start.getMinutes());
-                const rawHeight = Math.max(34, (end.getTime() - start.getTime()) / 60_000);
-                const height = Math.min(rawHeight, HOURS.length * 60 - top);
-                return (
-                  <div key={event.id} className="absolute left-[4px] right-[4px] z-[2]" style={{ top: top + 2, height: Math.max(30, height - 4) }}>
-                    <EventCard event={event} onClick={onEventClick} />
-                  </div>
-                );
-              })}
+              {boxes.map(box => (
+                <div
+                  key={box.event.id}
+                  className="absolute z-[2] px-[2px]"
+                  style={{
+                    top: box.top + 2,
+                    height: Math.max(26, box.height - 4),
+                    left: `${box.leftPercent}%`,
+                    width: `${box.widthPercent}%`,
+                  }}
+                >
+                  <EventCard event={box.event} compact={box.lanes > 2} onClick={onEventClick} />
+                </div>
+              ))}
             </div>
           );
         })}

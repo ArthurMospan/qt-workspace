@@ -6,6 +6,7 @@ import { formatMsgTime } from '@/lib/portal/qtplusChatView.mjs';
 function Avatar({ name, url }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase();
   if (url) {
+    // eslint-disable-next-line @next/next/no-img-element -- avatars come from arbitrary identity providers, which next/image cannot whitelist
     return <img src={url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />;
   }
   return (

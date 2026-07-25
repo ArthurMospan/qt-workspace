@@ -2,12 +2,46 @@
 
 // src/lib/hooks/useWorkspaceChat.js
 import { useState, useEffect, useRef } from 'react';
-import { collection, doc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove, increment, writeBatch } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit, onSnapshot, serverTimestamp, setDoc, where, deleteDoc, deleteField, updateDoc, getDoc, getDocs, arrayUnion, arrayRemove, increment, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { sendNotification } from '@/lib/hooks/useNotifications';
-import { channelUnreadCount } from '@/lib/utils/workspaceChat.mjs';
+import {
+  channelIdFromName,
+  channelUnreadCount,
+  isDirectRoomId,
+  isVisibleChatChannel,
+} from '@/lib/utils/workspaceChat.mjs';
+import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
+
+// A live listener over an entire channel history is unbounded, so only the most
+// recent window is subscribed. Older messages load on demand via loadOlderMessages().
+const MESSAGE_PAGE_SIZE = 60;
+// A "typing" flag that is never cleared (tab crash, forced reload) would stick
+// forever, so writers refresh it on this cadence and readers ignore stale ones.
+const TYPING_TTL_MS = 8000;
+const TYPING_REFRESH_MS = 3000;
+
+// Best-effort storage cleanup: the Firestore record is already gone, so a
+// failed release must not surface as a failed delete.
+async function releaseChatAttachments(attachments) {
+  const targets = (Array.isArray(attachments) ? attachments : []).filter(item => item?.storagePath);
+  if (!targets.length) return;
+  await Promise.allSettled(
+    targets.map(item => deleteFileFromCloudinary(item.storagePath, item.resourceType)),
+  );
+}
+
+function toChatMessage(document) {
+  const item = document.data();
+  const createdAt = typeof item.createdAt?.toDate === 'function' ? item.createdAt.toDate() : new Date();
+  return {
+    id: document.id,
+    ...item,
+    time: createdAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+  };
+}
 
 export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId = null) {
   const {
@@ -21,7 +55,10 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
   const [loading, setLoading] = useState(true);
   const [readState, setReadState] = useState({}); // { channelId: Timestamp }
   const [activeDMs, setActiveDMs] = useState([]); // [uid, ...]
+  const [messageLimit, setMessageLimit] = useState(MESSAGE_PAGE_SIZE);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const typingStateRef = useRef(false);
+  const typingTimerRef = useRef(null);
 
   // Thread state
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -33,9 +70,16 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     const uid = currentUser.id || currentUser.uid;
     const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
     return () => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
       if (!typingStateRef.current) return;
       typingStateRef.current = false;
-      void updateDoc(channelRef, { typing: arrayRemove(uid) }).catch(() => {});
+      void updateDoc(channelRef, {
+        typing: arrayRemove(uid),
+        [`typingAt.${uid}`]: 0,
+      }).catch(() => {});
     };
   }, [activeOrgId, channelId, currentUser]);
 
@@ -55,7 +99,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       });
       setReadState(state);
     }, err => {
-      reportLoadError('[useWorkspaceChat] messages', err);
+      reportLoadError('[useWorkspaceChat] read state', err);
     });
     return () => unsub();
   }, [activeOrgId, currentUser]);
@@ -72,106 +116,76 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         setActiveDMs([]);
       }
     }, err => {
-      reportLoadError('[useWorkspaceChat] channel', err);
+      reportLoadError('[useWorkspaceChat] active DMs', err);
     });
     return () => unsub();
   }, [activeOrgId, currentUser]);
 
-  // Fetch manual channels only (no auto-generated project channels)
+  // Room documents are listable org-wide (see the note in firestore.rules), so
+  // visibility is applied here through the shared isVisibleChatChannel rule —
+  // the same predicate the unread badge uses, so the sidebar and the badge can
+  // no longer disagree about which rooms a member is in.
   useEffect(() => {
-    if (!activeOrgId) return;
-    const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
-    const unsubChannels = onSnapshot(qChannels, snap => {
-      const allChannels = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-      setDmChannels(allChannels.filter(channel => channel.type === 'dm'));
+    if (!activeOrgId || !currentUser) return undefined;
+    const uid = currentUser.id || currentUser.uid;
+    const channelsRef = collection(db, 'organizations', activeOrgId, 'channels');
+    const unsubChannels = onSnapshot(query(channelsRef), snap => {
+      const allChannels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setDmChannels(allChannels.filter(channel => isVisibleChatChannel(channel, uid) && isDirectRoomId(channel.id)));
 
-      // Filter out DMs, invalid/test channels and auto-generated project rooms.
-      let channels = allChannels.filter(c => {
-        // Skip DM as channel, project channels, and obviously invalid names
-        if (c.type === 'dm' || c.id === 'DM' || c.id?.startsWith('project_')) return false;
-        if (!c.name || c.name.length === 0) return false;
-        // Skip test channels (single digit IDs like "1", "11")
-        if (/^\d+$/.test(c.id)) return false;
-        return true;
-      });
-
-      // Always include general channel
-      const hasGeneral = channels.some(c => c.id === 'general');
-      const finalChannels = hasGeneral ? channels : [{
-        id: 'general',
-        name: 'general',
-        type: 'public'
-      }, ...channels];
-      if (finalChannels.length > 0) {
-        // Sort by lastMessageAt desc (most recent first), then alphabetically
-        finalChannels.sort((a, b) => {
-          const aTime = a.lastMessageAt?.toMillis?.() ?? 0;
-          const bTime = b.lastMessageAt?.toMillis?.() ?? 0;
-          if (bTime !== aTime) return bTime - aTime;
-          return a.name.localeCompare(b.name);
-        });
-        setChannels(finalChannels);
-      } else {
-        setChannels([{
-          id: 'general',
-          name: 'general',
-          type: 'public'
-        }, {
-          id: 'design',
-          name: 'design',
-          type: 'public'
-        }, {
-          id: 'development',
-          name: 'development',
-          type: 'public'
-        }]);
+      const visible = allChannels.filter(channel =>
+        !isDirectRoomId(channel.id) && isVisibleChatChannel(channel, uid));
+      // `general` is the one room every member may create on first use, so it
+      // is always offered even before the document exists. Nothing else is
+      // fabricated: a member cannot create other rooms, so offering them only
+      // produced a permission error on the first message.
+      if (!visible.some(channel => channel.id === 'general')) {
+        visible.unshift({ id: 'general', name: 'general', type: 'public' });
       }
+      visible.sort((a, b) => {
+        const aTime = a.lastMessageAt?.toMillis?.() ?? 0;
+        const bTime = b.lastMessageAt?.toMillis?.() ?? 0;
+        if (bTime !== aTime) return bTime - aTime;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      setChannels(visible);
     }, err => {
       reportLoadError('[useWorkspaceChat] channels', err);
     });
     return () => unsubChannels();
-  }, [activeOrgId]);
+  }, [activeOrgId, currentUser]);
 
-  // Fetch messages for active channel
+  // Fetch messages for the active channel. Only the most recent window is
+  // subscribed — an unbounded listener re-reads the entire history of a busy
+  // channel on every open. loadOlderMessages() widens it on demand.
+  useEffect(() => {
+    queueMicrotask(() => {
+      setMessageLimit(MESSAGE_PAGE_SIZE);
+      setHasMoreMessages(false);
+    });
+  }, [channelId, activeOrgId]);
+
   useEffect(() => {
     if (!channelId || !activeOrgId) {
       queueMicrotask(() => setMessages([]));
-      return;
+      return undefined;
     }
     queueMicrotask(() => setLoading(true));
     const messagesRef = collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages');
-    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+    const q = query(messagesRef, orderBy('createdAt', 'desc'), limit(messageLimit));
     const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => {
-        const item = d.data();
-        let timeString = '';
-        if (item.createdAt && typeof item.createdAt.toDate === 'function') {
-          timeString = item.createdAt.toDate().toLocaleTimeString('uk-UA', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } else {
-          timeString = new Date().toLocaleTimeString('uk-UA', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        }
-        return {
-          id: d.id,
-          ...item,
-          time: timeString
-        };
-      });
+      // Newest-first on the wire so the limit keeps the *latest* window;
+      // reversed here because the UI renders oldest-first.
+      const data = snap.docs.map(toChatMessage).reverse();
       setMessages(data);
+      setHasMoreMessages(snap.size >= messageLimit);
       setLoading(false);
     }, err => {
-      reportLoadError('[useWorkspaceChat] read state', err);
+      reportLoadError('[useWorkspaceChat] messages', err);
+      setLoading(false);
     });
     return () => unsub();
-  }, [channelId, activeOrgId]);
+  }, [channelId, activeOrgId, messageLimit]);
 
   // Fetch thread messages
   useEffect(() => {
@@ -181,29 +195,9 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     }
     const q = query(collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId, 'replies'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => {
-        const item = d.data();
-        let timeString = '';
-        if (item.createdAt && typeof item.createdAt.toDate === 'function') {
-          timeString = item.createdAt.toDate().toLocaleTimeString('uk-UA', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } else {
-          timeString = new Date().toLocaleTimeString('uk-UA', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        }
-        return {
-          id: d.id,
-          ...item,
-          time: timeString
-        };
-      });
-      setThreadMessages(data);
+      setThreadMessages(snap.docs.map(toChatMessage));
     }, err => {
-      reportLoadError('[useWorkspaceChat] direct messages', err);
+      reportLoadError('[useWorkspaceChat] thread replies', err);
     });
     return () => unsub();
   }, [activeThreadId, channelId, activeOrgId]);
@@ -222,7 +216,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         setActiveChannelData(null);
       }
     }, err => {
-      reportLoadError('[useWorkspaceChat] replies', err);
+      reportLoadError('[useWorkspaceChat] active channel', err);
     });
     return () => unsub();
   }, [channelId, activeOrgId]);
@@ -236,17 +230,37 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       const batch = writeBatch(db);
       const channelMetadata = {
         lastMessageAt: serverTimestamp(),
-        lastMessageText: text.trim().slice(0, 80),
-        lastMessageSender: currentUser.name || 'Користувач',
         lastMessageSenderId: uid,
         messageCount: increment(1),
       };
       if (channelType === 'dm') {
         channelMetadata.name = 'DM';
         channelMetadata.type = 'dm';
-      } else if (channelId === 'general') {
-        channelMetadata.name = 'general';
-        channelMetadata.type = 'public';
+        // No lastMessageText/lastMessageSender here. Firestore cannot gate a
+        // collection listing per document (the {channelId} wildcard is unbound
+        // on queries), so every org member can enumerate the room documents —
+        // a preview stored here would be readable message content. Only the
+        // unread counters live on the document; the text stays under
+        // messages/, which IS gated by room membership.
+        //
+        // `participants` is deliberately NOT written: membership is already
+        // provable from the room id, nothing reads the field, and writing it
+        // would be rejected by the currently deployed rules — which would break
+        // DM sending for the whole window between shipping this client and
+        // deploying the new rules.
+        //
+        // Rooms created before this change still carry a preview written by the
+        // old client. Removing it here purges that history as conversations
+        // continue, instead of leaving old message text org-readable forever.
+        channelMetadata.lastMessageText = deleteField();
+        channelMetadata.lastMessageSender = deleteField();
+      } else {
+        channelMetadata.lastMessageText = text.trim().slice(0, 80);
+        channelMetadata.lastMessageSender = currentUser.name || 'Користувач';
+        if (channelId === 'general') {
+          channelMetadata.name = 'general';
+          channelMetadata.type = 'public';
+        }
       }
       batch.set(channelRef, channelMetadata, { merge: true });
       batch.set(messageRef, {
@@ -305,11 +319,25 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       throw error;
     }
   };
+  // Firestore does not cascade, so replies under a deleted message would stay
+  // forever and unreachable. Uploaded files are released too — otherwise every
+  // deleted attachment keeps costing storage.
   const deleteMessage = async msgId => {
     if (!channelId || !activeOrgId) return;
     try {
       const msgRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', msgId);
-      await deleteDoc(msgRef);
+      const snapshot = await getDoc(msgRef);
+      const attachments = snapshot.exists() ? snapshot.data().attachments || [] : [];
+
+      const replies = await getDocs(collection(msgRef, 'replies'));
+      const replyAttachments = replies.docs.flatMap(reply => reply.data().attachments || []);
+
+      const batch = writeBatch(db);
+      replies.docs.forEach(reply => batch.delete(reply.ref));
+      batch.delete(msgRef);
+      await batch.commit();
+
+      await releaseChatAttachments([...attachments, ...replyAttachments]);
     } catch (e) {
       console.error('Error deleting message:', e);
       throw e;
@@ -345,34 +373,55 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     }
   };
   const createChannel = async (name, options = {}) => {
-    if (!name.trim() || !activeOrgId) return null;
-    const safeId = name.trim().toLowerCase().replace(/\s+/g, '-');
-    try {
-      await setDoc(doc(db, 'organizations', activeOrgId, 'channels', safeId), {
-        name: name.trim().toLowerCase(),
-        type: 'public',
-        description: options.description || '',
-        members: Array.isArray(options.members) ? [...new Set(options.members.filter(Boolean))] : [],
-      });
-      return safeId;
-    } catch (error) {
-      console.error('Error creating channel:', error);
-      return null;
-    }
+    if (!name.trim() || !activeOrgId) throw new Error('Вкажіть назву каналу');
+    const safeId = channelIdFromName(name);
+    // A slug that survives sanitising is required: `/` is illegal in a document
+    // id and `_` is reserved for DM room ids, so a name made only of those
+    // characters has no usable id.
+    if (!safeId) throw new Error('Назва каналу має містити літери або цифри');
+
+    const channelRef = doc(db, 'organizations', activeOrgId, 'channels', safeId);
+    // Plain `setDoc` here silently replaced an existing room, wiping its
+    // description, members and message counters. Refuse instead.
+    const existing = await getDoc(channelRef);
+    if (existing.exists()) throw new Error('Канал з такою назвою вже існує');
+
+    await setDoc(channelRef, {
+      name: name.trim().toLowerCase(),
+      type: 'public',
+      description: options.description || '',
+      members: Array.isArray(options.members) ? [...new Set(options.members.filter(Boolean))] : [],
+      createdAt: serverTimestamp(),
+    });
+    return safeId;
   };
+  // The flag carries a heartbeat timestamp and is refreshed while typing, so a
+  // reader can discard it after TYPING_TTL_MS. Without that, a crashed tab
+  // leaves "X is typing…" on screen permanently.
   const setTyping = async isTyping => {
     if (!channelId || !activeOrgId || !currentUser) return;
     if (typingStateRef.current === isTyping) return;
     typingStateRef.current = isTyping;
     const uid = currentUser.id || currentUser.uid;
+    const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
+    const write = () => setDoc(channelRef, {
+      typing: isTyping ? arrayUnion(uid) : arrayRemove(uid),
+      typingAt: { [uid]: isTyping ? Date.now() : 0 },
+    }, { merge: true });
+
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
     try {
-      const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
-      await setDoc(channelRef, {
-        typing: isTyping ? arrayUnion(uid) : arrayRemove(uid)
-      }, {
-        merge: true
-      });
-    } catch (e) {
+      await write();
+      if (isTyping) {
+        typingTimerRef.current = setInterval(() => {
+          if (!typingStateRef.current) return;
+          void write().catch(() => {});
+        }, TYPING_REFRESH_MS);
+      }
+    } catch {
       typingStateRef.current = !isTyping;
     }
   };
@@ -421,12 +470,15 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     try {
       const replyRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId, 'replies', replyId);
       const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', parentMsgId);
+      const replySnapshot = await getDoc(replyRef);
+      const attachments = replySnapshot.exists() ? replySnapshot.data().attachments || [] : [];
       const batch = writeBatch(db);
       batch.delete(replyRef);
       batch.update(parentRef, {
         replyCount: increment(-1)
       });
       await batch.commit();
+      await releaseChatAttachments(attachments);
     } catch (e) {
       console.error('Error deleting reply:', e);
       throw e;
@@ -434,6 +486,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
   };
   const openThread = msgId => setActiveThreadId(msgId);
   const closeThread = () => setActiveThreadId(null);
+  const loadOlderMessages = () => setMessageLimit(current => current + MESSAGE_PAGE_SIZE);
 
   // Compute unread count for a channel
   const getUnreadCount = cId => {
@@ -450,6 +503,8 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     threadMessages,
     readState,
     activeDMs,
+    hasMoreMessages,
+    loadOlderMessages,
     sendMessage,
     deleteMessage,
     editMessage,

@@ -23,9 +23,14 @@ function dayKeyOf(date) {
 }
 
 export function useDeadlineReminders(userId, activeOrgId) {
-  const { doneStatusIds } = useWorkflowConfig();
+  const { doneStatusIds, loading: workflowLoading } = useWorkflowConfig();
   useEffect(() => {
     if (!userId || !activeOrgId) return;
+    // Until the org's workflow has loaded, doneStatusIds is the *default*
+    // (['done']). Running now would treat an org whose terminal status is named
+    // anything else as "nothing is finished" and nag about completed tasks —
+    // and then the throttle below would block the correct run for four hours.
+    if (workflowLoading) return;
 
     // Throttle per browser so we don't rescan on every page load
     const throttleKey = `qt_deadline_check_${userId}_${activeOrgId}`;
@@ -42,46 +47,57 @@ export function useDeadlineReminders(userId, activeOrgId) {
         const prefs = prefSnap.exists() ? prefSnap.data() : {};
         if ((prefs.deadline ?? true) === false) return;
 
-        // Single equality filter — no composite index required
-        const snap = await getDocs(query(collection(db, 'issues'), where('organizationId', '==', activeOrgId)));
+        // Only the caller's own tasks, instead of every issue in the org.
+        const snap = await getDocs(query(
+          collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('assigneeIds', 'array-contains', userId),
+        ));
         const now = Date.now();
         const in24h = now + 24 * 3600 * 1000;
         const todayKey = dayKeyOf(new Date());
 
-        for (const d of snap.docs) {
+        const due = snap.docs.flatMap(d => {
           const iss = d.data();
-          if (doneStatusIds.includes(iss.columnId || iss.status)) continue;
-          if (!iss.assigneeIds?.includes(userId)) continue;
-          const due = parseDueDate(iss.dueDate);
-          if (!due) continue;
-          const dueMs = due.getTime();
-
-          let notifId = null;
-          let title = null;
+          if (doneStatusIds.includes(iss.columnId || iss.status)) return [];
+          const dueDate = parseDueDate(iss.dueDate);
+          if (!dueDate) return [];
+          const dueMs = dueDate.getTime();
           if (dueMs < now) {
-            notifId = `overdue_${d.id}_${userId}_${todayKey}`;
-            title = `${iss.issueKey || 'Завдання'}: дедлайн прострочено`;
-          } else if (dueMs <= in24h) {
-            notifId = `deadline_${d.id}_${userId}_${dayKeyOf(due)}`;
-            title = `${iss.issueKey || 'Завдання'}: дедлайн ${due.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}`;
+            return [{
+              issue: iss,
+              id: d.id,
+              dedupeKey: `overdue_${d.id}_${userId}_${todayKey}`,
+              title: `${iss.issueKey || 'Завдання'}: дедлайн прострочено`,
+            }];
           }
-          if (!notifId) continue;
+          if (dueMs <= in24h) {
+            return [{
+              issue: iss,
+              id: d.id,
+              dedupeKey: `deadline_${d.id}_${userId}_${dayKeyOf(dueDate)}`,
+              title: `${iss.issueKey || 'Завдання'}: дедлайн ${dueDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}`,
+            }];
+          }
+          return [];
+        });
 
-          await sendNotification({
-            userIds: [userId],
-            type: 'deadline',
-            title,
-            body: iss.title || '',
-            link: `/${iss.projectId}/issue/${d.id}`,
-            issueId: d.id,
-            projectId: iss.projectId || '',
-            organizationId: activeOrgId,
-            dedupeKey: notifId,
-          });
-        }
+        // Delivered together rather than in a serial await chain, which took one
+        // round-trip per task.
+        await Promise.allSettled(due.map(item => sendNotification({
+          userIds: [userId],
+          type: 'deadline',
+          title: item.title,
+          body: item.issue.title || '',
+          link: `/${item.issue.projectId}/issue/${item.id}`,
+          issueId: item.id,
+          projectId: item.issue.projectId || '',
+          organizationId: activeOrgId,
+          dedupeKey: item.dedupeKey,
+        })));
       } catch (err) {
         console.warn('[useDeadlineReminders]', err);
       }
     })();
-  }, [userId, activeOrgId, doneStatusIds]);
+  }, [userId, activeOrgId, doneStatusIds, workflowLoading]);
 }

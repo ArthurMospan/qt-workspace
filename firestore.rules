@@ -309,45 +309,110 @@ service cloud.firestore {
     }
 
     // ── organizations/{orgId}/channels/... — chat, scoped via path ──────
+    //
+    // Direct messages live in the same collection but their CONTENT is not
+    // org-visible. A DM room id is the deterministic `uidA_uidB` pair built by
+    // directMessageRoomId(); both halves are Firebase uids (28 alphanumeric
+    // chars), so the shape below matches DM rooms exactly and never a human
+    // channel slug or a legacy `project_*` / numeric room. Membership is
+    // therefore provable from the document id alone: no get() is needed, so the
+    // check also holds while a brand-new DM room is created in the same batch
+    // as its first message. Keep in sync with isDirectRoomId() in
+    // src/lib/utils/workspaceChat.mjs.
+    //
+    // IMPORTANT — why `list` is not gated: on a query the {channelId} wildcard
+    // is unbound (null), so any id-based condition raises a null-value error and
+    // rejects every listing, including the caller's own channels. Per-document
+    // gating of a collection the app must enumerate is therefore not expressible
+    // here. The room documents stay listable (id, participants and unread
+    // counters — no message text: sendMessage deliberately omits
+    // lastMessageText/lastMessageSender for DM rooms), while everything under
+    // messages/ is addressed by a concrete channel id and IS gated.
     match /organizations/{orgId}/channels/{channelId} {
-      allow read: if isOrgMember(orgId);
-      allow create: if isOrgAdminOrOwner(orgId) || (
-        isOrgMember(orgId) && (
-          request.resource.data.type == 'dm' ||
-          (channelId == 'general' && request.resource.data.type == 'public')
+      function isDirectRoom() {
+        return channelId.matches('^[A-Za-z0-9]{20,}_[A-Za-z0-9]{20,}$');
+      }
+
+      function isDirectRoomMember() {
+        return request.auth.uid in channelId.split('_');
+      }
+
+      function canAccessRoom() {
+        return isOrgMember(orgId) && (!isDirectRoom() || isDirectRoomMember());
+      }
+
+      // A DM room document is enumerable by the whole org (see above), so it
+      // must never hold message content. Enforced here rather than trusted to
+      // the client, because this is the only thing keeping the listing safe.
+      //
+      // Rooms created before this rule still carry a stale lastMessageText.
+      // Testing only the resulting document would reject every write to those
+      // rooms — including the typing heartbeat — and lock them up until someone
+      // sent a message. So a write is allowed when it does not touch the
+      // fields, and separately when it removes them; only writing a *new*
+      // preview is refused. sendMessage deletes them on the next DM sent,
+      // which clears the historical previews as conversations continue.
+      function keepsDirectRoomContentOut(touched) {
+        return !isDirectRoom() ||
+          !touched.hasAny(['lastMessageText', 'lastMessageSender']) ||
+          !request.resource.data.keys().hasAny(['lastMessageText', 'lastMessageSender']);
+      }
+
+      allow get: if canAccessRoom();
+      allow list: if isOrgMember(orgId);
+      allow create: if isOrgMember(orgId) &&
+        keepsDirectRoomContentOut(request.resource.data.keys()) && (
+        isDirectRoom()
+          ? (isDirectRoomMember() &&
+             request.resource.data.type == 'dm' &&
+             // `participants` is an optional mirror of the pair the id already
+             // encodes. The client does not write it (membership is provable
+             // from the id alone); this clause exists so that if anything ever
+             // does, it can never name someone outside the pair.
+             request.resource.data.get('participants', []).hasOnly(channelId.split('_')))
+          : (isOrgAdminOrOwner(orgId) ||
+             (channelId == 'general' && request.resource.data.type == 'public'))
+      );
+      allow update: if canAccessRoom() &&
+        keepsDirectRoomContentOut(request.resource.data.diff(resource.data).affectedKeys()) && (
+        isOrgAdminOrOwner(orgId) || (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'typing',
+              'typingAt',
+              'lastMessageAt',
+              'lastMessageText',
+              'lastMessageSender',
+              'lastMessageSenderId',
+              'messageCount',
+              'participants'
+            ]) &&
+          // `participants` backfills legacy DM rooms, but it can never name
+          // anyone outside the id-encoded pair.
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['participants']) ||
+           (isDirectRoom() && request.resource.data.get('participants', []).hasOnly(channelId.split('_'))))
         )
       );
-      allow update: if isOrgAdminOrOwner(orgId) || (
-        isOrgMember(orgId) && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly([
-            'typing',
-            'lastMessageAt',
-            'lastMessageText',
-            'lastMessageSender',
-            'lastMessageSenderId',
-            'messageCount'
-          ])
-      );
-      allow delete: if isOrgAdminOrOwner(orgId);
+      allow delete: if isOrgAdminOrOwner(orgId) && !isDirectRoom();
 
       match /messages/{msgId} {
-        allow read: if isOrgMember(orgId);
-        allow create: if isOrgMember(orgId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isOrgMember(orgId) &&
+        allow read: if canAccessRoom();
+        allow create: if canAccessRoom() && request.resource.data.senderId == request.auth.uid;
+        allow update: if canAccessRoom() &&
           request.resource.data.senderId == resource.data.senderId && (
             resource.data.senderId == request.auth.uid ||
             request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['reactions', 'replyCount', 'isPinned'])
           );
-        allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
+        allow delete: if canAccessRoom() && resource.data.senderId == request.auth.uid;
 
         match /replies/{replyId} {
-          allow read: if isOrgMember(orgId);
-          allow create: if isOrgMember(orgId) && request.resource.data.senderId == request.auth.uid;
-          allow update: if isOrgMember(orgId) &&
+          allow read: if canAccessRoom();
+          allow create: if canAccessRoom() && request.resource.data.senderId == request.auth.uid;
+          allow update: if canAccessRoom() &&
             resource.data.senderId == request.auth.uid &&
             request.resource.data.senderId == resource.data.senderId;
-          allow delete: if isOrgMember(orgId) && resource.data.senderId == request.auth.uid;
+          allow delete: if canAccessRoom() && resource.data.senderId == request.auth.uid;
         }
       }
     }

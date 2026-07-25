@@ -10,6 +10,40 @@ function formatElapsed(seconds) {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
+// The running timer is the one piece of state whose loss costs the user real,
+// unrecoverable work, so it outlives the tab. Only the descriptor is stored —
+// elapsed time is always recomputed from `startedAt`, which keeps a restored
+// timer accurate even after hours of downtime and immune to clock throttling.
+const TIMER_STORAGE_KEY = 'qt_active_timer';
+// A timer left running overnight is a forgotten timer, not 14 billable hours.
+const MAX_TIMER_MS = 12 * 60 * 60 * 1000;
+
+function readStoredTimer() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    const stored = JSON.parse(raw);
+    const startedAt = Number(stored?.startedAt);
+    if (!stored?.issueId || !Number.isFinite(startedAt)) return null;
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < 0 || elapsed > MAX_TIMER_MS) return null;
+    return { ...stored, startedAt };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTimer(timer) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (timer) window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(timer));
+    else window.localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch { /* private mode / quota — the in-memory timer still works */ }
+}
+
+const elapsedSeconds = startedAt => Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+
 const useWorkspaceStore = create((set, get) => ({
 
   // ── Timer ─────────────────────────────────────────────────────────
@@ -17,50 +51,91 @@ const useWorkspaceStore = create((set, get) => ({
   timerElapsed:   0,      // seconds
   _timerInterval: null,
 
+  // Returns false when a timer is already running instead of silently
+  // discarding it — replacing it used to throw away the tracked time.
   startTimer: (issueId, projectId, context = {}) => {
-    const { _timerInterval } = get();
+    const { activeTimer, _timerInterval } = get();
+    if (activeTimer) return false;
     if (_timerInterval) clearInterval(_timerInterval);
-    const startedAt = Date.now();
-    const interval  = setInterval(() => set({ timerElapsed: Math.floor((Date.now() - startedAt) / 1000) }), 1000);
+    const timer = { ...context, issueId, projectId, startedAt: Date.now() };
+    writeStoredTimer(timer);
     set({
-      activeTimer: { ...context, issueId, projectId, startedAt },
+      activeTimer: timer,
       timerElapsed: 0,
-      _timerInterval: interval,
+      _timerInterval: setInterval(() => set({ timerElapsed: elapsedSeconds(timer.startedAt) }), 1000),
     });
+    return true;
   },
 
   stopTimer: () => {
-    const { activeTimer, timerElapsed, _timerInterval } = get();
+    const { activeTimer, _timerInterval } = get();
     if (_timerInterval) clearInterval(_timerInterval);
+    writeStoredTimer(null);
     if (!activeTimer) { set({ _timerInterval: null }); return null; }
-    const result = { ...activeTimer, minutes: Math.max(1, Math.ceil(timerElapsed / 60)) };
+    // Recomputed rather than read from `timerElapsed`, which a background tab
+    // may not have updated recently.
+    const seconds = elapsedSeconds(activeTimer.startedAt);
+    const result = { ...activeTimer, minutes: Math.max(1, Math.ceil(seconds / 60)) };
     set({ activeTimer: null, timerElapsed: 0, _timerInterval: null });
     return result;
+  },
+
+  // Re-attaches a timer that survived a reload. Safe to call repeatedly.
+  restoreTimer: () => {
+    const { activeTimer, _timerInterval } = get();
+    if (activeTimer) return;
+    const stored = readStoredTimer();
+    if (!stored) {
+      writeStoredTimer(null);
+      return;
+    }
+    if (_timerInterval) clearInterval(_timerInterval);
+    set({
+      activeTimer: stored,
+      timerElapsed: elapsedSeconds(stored.startedAt),
+      _timerInterval: setInterval(() => set({ timerElapsed: elapsedSeconds(stored.startedAt) }), 1000),
+    });
   },
 
   formatElapsed,
 
   // ── Toast ─────────────────────────────────────────────────────────
   toast: null,
+  _toastTimer: null,
   showToast: (message, type = 'success', options = {}) => {
-    const id = Date.now();
-    set({ toast: { message, type, id, action: options.action } });
-    const duration = options.duration || 3500;
-    setTimeout(() => {
-      if (get().toast?.id === id) {
-        set({ toast: null });
-      }
-    }, duration);
+    // Date.now() collides when two toasts fire in the same millisecond, which
+    // let the first one's timer dismiss the second. A counter cannot collide,
+    // and the pending timer is cancelled so each toast gets its full duration.
+    const id = (get()._toastSeq || 0) + 1;
+    const previousTimer = get()._toastTimer;
+    if (previousTimer) clearTimeout(previousTimer);
+    const timer = setTimeout(() => {
+      if (get().toast?.id === id) set({ toast: null, _toastTimer: null });
+    }, options.duration || 3500);
+    set({ toast: { message, type, id, action: options.action }, _toastSeq: id, _toastTimer: timer });
   },
-  clearToast: () => set({ toast: null }),
+  clearToast: () => {
+    const timer = get()._toastTimer;
+    if (timer) clearTimeout(timer);
+    set({ toast: null, _toastTimer: null });
+  },
 
   // ── Live notification popup (real-time) ───────────────────────────
   liveNotif: null,   // { id, title, body, type, link }
+  _liveNotifTimer: null,
   showLiveNotif: (notif) => {
-    set({ liveNotif: notif });
-    setTimeout(() => set({ liveNotif: null }), 6000);
+    // Same problem: the previous popup's timer used to clear whichever popup
+    // happened to be on screen when it fired, cutting the newer one short.
+    const previousTimer = get()._liveNotifTimer;
+    if (previousTimer) clearTimeout(previousTimer);
+    const timer = setTimeout(() => set({ liveNotif: null, _liveNotifTimer: null }), 6000);
+    set({ liveNotif: notif, _liveNotifTimer: timer });
   },
-  clearLiveNotif: () => set({ liveNotif: null }),
+  clearLiveNotif: () => {
+    const timer = get()._liveNotifTimer;
+    if (timer) clearTimeout(timer);
+    set({ liveNotif: null, _liveNotifTimer: null });
+  },
 
   // One shared notification stream for the whole workspace. This avoids
   // separate Firestore listeners in the header, sidebar and org switcher.

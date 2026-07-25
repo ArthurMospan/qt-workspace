@@ -166,9 +166,12 @@ async function updateOneBUser(userRecord, profile, resolvedEmail, displayName, p
     id: nextUserRecord.uid,
     name: options.preserveProfile && existingProfile.name ? existingProfile.name : displayName,
     email: nextUserRecord.email || resolvedEmail,
+    // Empty rather than a third-party placeholder: storing an i.pravatar.cc URL
+    // on the profile leaked the uid off-platform and made avatars depend on an
+    // unrelated service. UserAvatar renders initials when this is empty.
     avatar: options.preserveProfile && existingProfile.avatar
       ? existingProfile.avatar
-      : (photoURL || nextUserRecord.photoURL || `https://i.pravatar.cc/150?u=${nextUserRecord.uid}`),
+      : (photoURL || nextUserRecord.photoURL || ''),
     photoURL: options.preserveProfile && existingProfile.photoURL
       ? existingProfile.photoURL
       : (photoURL || nextUserRecord.photoURL || null),

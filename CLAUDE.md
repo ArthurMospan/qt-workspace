@@ -95,7 +95,13 @@ src/
 **Multi-Tenancy**:
 - The active organization comes from the authenticated user's `orgMemberships`
 - All Firestore queries must be filtered or path-scoped by organization
-- User presence tracked at `presence/{userId}`
+- User presence is org-scoped at `organizations/{orgId}/presence/{userId}`; the
+  root-level `presence/` collection is denied outright in `firestore.rules`
+- Direct messages live in `organizations/{orgId}/channels/{uidA_uidB}`. The room
+  id encodes both participants and is what the rules check — message content is
+  readable only by those two. The room *document* stays org-listable (Firestore
+  cannot gate a query per document), so it must never carry message text; see
+  the note above the channels rule.
 
 ### Core Features
 

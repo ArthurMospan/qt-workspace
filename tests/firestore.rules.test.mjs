@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs } from 'firebase/firestore';
 
 let environment;
 
@@ -61,6 +61,43 @@ beforeEach(async () => {
 after(async () => {
   await environment?.cleanup();
 });
+
+// ── Direct-message fixtures ─────────────────────────────────────────────
+// DM rooms live in the org-wide channels collection, so without an explicit
+// gate every member could read every conversation by reconstructing the
+// deterministic room id. Membership is proven from the id itself, which only
+// works for real Firebase uids (28 alphanumeric chars).
+const DM_A = 'Aa1bb2cc3dd4ee5ff6gg7hh8ii9j';
+const DM_B = 'Zz9yy8xx7ww6vv5uu4tt3ss2rr1q';
+const DM_C = 'Mm5nn4oo3pp2qq1rr0ss9tt8uu7v';
+const DM_ROOM = `${DM_A}_${DM_B}`;
+
+async function seedDirectRoomMembers() {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    for (const uid of [DM_A, DM_B, DM_C]) {
+      await setDoc(doc(db, 'orgMemberships', `org-a_${uid}`), {
+        id: `org-a_${uid}`, orgId: 'org-a', userId: uid, role: 'member',
+      });
+    }
+  });
+}
+
+async function seedDirectRoom() {
+  await seedDirectRoomMembers();
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM), {
+      name: 'DM', type: 'dm', participants: [DM_A, DM_B], messageCount: 1,
+    });
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1'), {
+      senderId: DM_A, text: 'секрет',
+    });
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1', 'replies', 'r1'), {
+      senderId: DM_B, text: 'теж секрет',
+    });
+  });
+}
 
 test('an authenticated outsider cannot self-join an organization', async () => {
   const db = environment.authenticatedContext('outsider').firestore();
@@ -262,31 +299,31 @@ test('chat send metadata supports unread counts without opening channel settings
   await assertFails(updateDoc(channel, { description: 'Bypass settings permission' }));
 });
 
-test('a member can send a DM using only the metadata allowed by deployed rules', async () => {
-  const memberDb = environment.authenticatedContext('member-a').firestore();
-  const channel = doc(memberDb, 'organizations', 'org-a', 'channels', 'member-a_owner-a');
+test('a member can send a DM using only the metadata the rules allow', async () => {
+  await seedDirectRoomMembers();
+  const memberDb = environment.authenticatedContext(DM_A).firestore();
+  const channel = doc(memberDb, 'organizations', 'org-a', 'channels', DM_ROOM);
 
-  await assertSucceeds(setDoc(channel, { name: 'DM', type: 'dm' }));
+  await assertSucceeds(setDoc(channel, { name: 'DM', type: 'dm', participants: [DM_A, DM_B] }));
   await assertSucceeds(updateDoc(channel, {
     lastMessageAt: new Date(),
-    lastMessageText: 'Hello',
-    lastMessageSender: 'Member',
+    lastMessageSenderId: DM_A,
+    messageCount: 1,
   }));
   await assertSucceeds(setDoc(
-    doc(memberDb, 'organizations', 'org-a', 'channels', 'member-a_owner-a', 'messages', 'message-a'),
-    { senderId: 'member-a', text: 'Hello' },
+    doc(memberDb, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'message-a'),
+    { senderId: DM_A, text: 'Hello' },
   ));
   await assertSucceeds(setDoc(
-    doc(memberDb, 'organizations', 'org-a', 'activeDMs', 'owner-a'),
-    { partners: ['member-a'] },
+    doc(memberDb, 'organizations', 'org-a', 'activeDMs', DM_B),
+    { partners: [DM_A] },
   ));
 
-  // These are the two writes the old sender loop attempted and that caused
-  // "Missing or insufficient permissions" after the message itself was sent.
-  await assertFails(updateDoc(channel, { participants: ['member-a', 'owner-a'] }));
+  // Message text belongs under messages/, never on the org-enumerable room doc.
+  await assertFails(updateDoc(channel, { lastMessageText: 'Hello' }));
   await assertFails(setDoc(
-    doc(memberDb, 'organizations', 'org-a', 'activeDMs', 'member-a'),
-    { partners: ['owner-a'] },
+    doc(memberDb, 'organizations', 'org-a', 'activeDMs', DM_A),
+    { partners: [DM_B] },
   ));
 });
 
@@ -421,4 +458,126 @@ test('an org admin can flip the QuickTeam+ org flag', async () => {
 test('an outsider cannot read the QuickTeam+ org flag', async () => {
   const db = environment.authenticatedContext('outsider').firestore();
   await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'settings', 'integrations')));
+});
+
+test('a DM participant reads their own room and its messages', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext(DM_A).firestore();
+  await assertSucceeds(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM)));
+  await assertSucceeds(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1')));
+});
+
+test('another org member cannot read someone else\'s DM room or its messages', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM)));
+  await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1')));
+  await assertFails(getDocs(collection(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages')));
+  await assertFails(getDocs(collection(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1', 'replies')));
+});
+
+// Documented residual exposure: a query cannot be gated per document because
+// the {channelId} wildcard is unbound during `list`, so the room documents
+// themselves stay enumerable. That is only safe while they carry no message
+// text — this test pins the invariant that keeps it safe.
+test('DM room documents never carry a message preview', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext(DM_A).firestore();
+  await assertSucceeds(setDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM), {
+    lastMessageAt: new Date(), lastMessageSenderId: DM_A, messageCount: 2,
+  }, { merge: true }));
+  // Writing content onto the enumerable room document is rejected.
+  await assertFails(setDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM), {
+    lastMessageText: 'секрет',
+  }, { merge: true }));
+});
+
+// A room written by the OLD client already holds a preview. Rejecting every
+// write whose *result* still contains it would lock those rooms up entirely —
+// including the typing heartbeat — the moment these rules ship.
+test('a legacy DM room carrying an old preview is not bricked by the new rule', async () => {
+  await seedDirectRoomMembers();
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'organizations', 'org-a', 'channels', DM_ROOM), {
+      name: 'DM', type: 'dm', messageCount: 3,
+      lastMessageText: 'написано старим клієнтом', lastMessageSender: 'Хтось',
+    });
+  });
+  const db = environment.authenticatedContext(DM_A).firestore();
+  const room = doc(db, 'organizations', 'org-a', 'channels', DM_ROOM);
+
+  // Writes that leave the inherited field alone still go through.
+  await assertSucceeds(updateDoc(room, { typing: [DM_A], typingAt: { [DM_A]: 1 } }));
+  // And the client can purge the inherited preview.
+  await assertSucceeds(updateDoc(room, {
+    lastMessageAt: new Date(),
+    lastMessageSenderId: DM_A,
+    lastMessageText: deleteField(),
+    lastMessageSender: deleteField(),
+  }));
+  // Once purged, re-introducing content is refused.
+  await assertFails(updateDoc(room, { lastMessageText: 'знову секрет' }));
+});
+
+test('an org admin cannot read a DM they are not part of', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext('admin-a').firestore();
+  await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM)));
+  await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1')));
+  await assertFails(deleteDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM)));
+});
+
+test('channel listing still works for members', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext('member-a').firestore();
+  const channels = collection(db, 'organizations', 'org-a', 'channels');
+  await assertSucceeds(getDocs(query(channels)));
+  await assertSucceeds(getDocs(query(channels, where('type', '==', 'public'))));
+});
+
+test('a DM room cannot be created for a pair the caller is not in', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertFails(setDoc(doc(db, 'organizations', 'org-a', 'channels', `${DM_A}_${DM_C}`), {
+    name: 'DM', type: 'dm', participants: [DM_A, DM_C],
+  }));
+});
+
+test('participants can never name anyone outside the pair encoded in the room id', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext(DM_A).firestore();
+  await assertFails(updateDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM), {
+    participants: [DM_A, DM_B, 'member-a'],
+  }));
+  await assertSucceeds(updateDoc(doc(db, 'organizations', 'org-a', 'channels', DM_ROOM), {
+    participants: [DM_A, DM_B],
+  }));
+});
+
+test('a member still reads and posts in public channels', async () => {
+  await seedDirectRoom();
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(getDoc(doc(db, 'organizations', 'org-a', 'channels', 'general')));
+  await assertSucceeds(getDocs(collection(db, 'organizations', 'org-a', 'channels', 'general', 'messages')));
+  await assertSucceeds(setDoc(doc(db, 'organizations', 'org-a', 'channels', 'general', 'messages', 'new'), {
+    senderId: 'member-a', text: 'привіт',
+  }));
+});
+
+test('legacy project_* and numeric rooms are not mistaken for DM rooms', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', 'project_alpha'), {
+      name: 'project alpha', type: 'public',
+    });
+  });
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(getDoc(doc(db, 'organizations', 'org-a', 'channels', 'project_alpha')));
+});
+
+test('a member may refresh the typing heartbeat but not rewrite a channel', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  const channel = doc(db, 'organizations', 'org-a', 'channels', 'general');
+  await assertSucceeds(updateDoc(channel, { typing: ['member-a'], typingAt: { 'member-a': 1 } }));
+  await assertFails(updateDoc(channel, { name: 'hijacked' }));
 });

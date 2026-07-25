@@ -39,11 +39,15 @@ export function useAuth() {
         return;
       }
 
+      // No third-party placeholder avatar here. The old i.pravatar.cc URL was
+      // persisted into the user's Firestore profile, which leaked their uid to
+      // an unrelated service and left every avatar dependent on it staying up.
+      // An empty avatar renders as initials via UserAvatar.
       const fallbackProfile = {
         id: firebaseUser.uid,
         name: firebaseUser.displayName || 'Користувач',
         email: firebaseUser.email,
-        avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+        avatar: firebaseUser.photoURL || '',
       };
 
       try {

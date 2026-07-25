@@ -39,6 +39,7 @@ import {
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
+import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
 import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -641,7 +642,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
         link: `/${projectId}/issue/${issueId}`, issueId, projectId,
         organizationId: activeOrg?.id || activeOrg?.organizationId || '',
-        actor: { id: currentUser?.id || currentUser?.uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
+        // `actor` is resolved server-side from the ID token; passing it here
+        // was silently dropped by /api/notifications.
       }).catch(() => {});
   };
 
@@ -670,18 +672,22 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       await update({ estimateMinutes: logForm.estim });
     }
 
+    // The issue's denormalised `spentMinutes` mirror is maintained inside
+    // useTimeLogs, in the same batch as the log itself — writing it here as
+    // well raced with concurrent logs and could drop one of them.
     if (logForm.minutes > 0) {
-      if (logForm.id) {
-        await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc });
-        const oldLog = timeLogs.find(l => l.id === logForm.id);
-        const diff = logForm.minutes - (oldLog?.spentMinutes || 0);
-        if (diff !== 0) await update({ spentMinutes: Math.max(0, spentMin + diff) });
-        showToast('Запис оновлено ✓');
-      } else {
-        const uid = currentUser?.id || currentUser?.uid;
-        await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc);
-        await update({ spentMinutes: spentMin + logForm.minutes });
-        showToast(`${logForm.minutes} хв списано ✓`);
+      try {
+        if (logForm.id) {
+          await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc });
+          showToast('Запис оновлено ✓');
+        } else {
+          const uid = currentUser?.id || currentUser?.uid;
+          await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc);
+          showToast(`${logForm.minutes} хв списано ✓`);
+        }
+      } catch (err) {
+        showToast(err.message || 'Не вдалося зберегти час', 'error');
+        return;
       }
     } else if (logForm.minutes === 0 && logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
       showToast('Оцінку часу оновлено ✓');
@@ -697,8 +703,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     }))) return;
     try {
       await deleteTimeLog(log.id);
-      const nextSpent = Math.max(0, spentMin - log.spentMinutes);
-      await update({ spentMinutes: nextSpent });
       showToast('Запис часу видалено ✓');
     } catch (err) {
       showToast('Помилка видалення: ' + err.message, 'error');
@@ -712,18 +716,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     setUploadingAttach(true);
     try {
       const orgId = project?.organizationId || '';
-      const uploaded = [];
-      for (const file of files) {
-        const meta = await uploadFile(file, `organizations/${orgId}/attachments`);
-        uploaded.push({
-          id: makeAttachmentId(),
-          ...meta, // { name, url, size, type }
-          uploadedById: currentUser?.id || currentUser?.uid || '',
-          uploadedByName: currentUser?.name || currentUser?.email || '',
-          uploadedAt: nowMs(),
-        });
-      }
-      await update({ attachments: [...(issue.attachments || []), ...uploaded] });
+      // Uploaded in parallel, and appended with arrayUnion so two people
+      // attaching files at the same time cannot overwrite each other's list.
+      const uploaded = await Promise.all(files.map(async file => ({
+        id: makeAttachmentId(),
+        ...await uploadFile(file, `organizations/${orgId}/attachments`), // { name, url, size, type }
+        uploadedById: currentUser?.id || currentUser?.uid || '',
+        uploadedByName: currentUser?.name || currentUser?.email || '',
+        uploadedAt: nowMs(),
+      })));
+      await update({ attachments: arrayUnion(...uploaded) });
       showToast(`Додано вкладень: ${uploaded.length} ✓`);
       return uploaded;
     } catch (err) {
@@ -736,12 +738,20 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
   const handleDeleteAttachment = async (id) => {
     if (!(await confirmDialog({ title: 'Видалити вкладення?', confirmText: 'Видалити', danger: true }))) return;
+    const removed = (issue.attachments || []).find(a => a.id === id);
     await update({ attachments: (issue.attachments || []).filter(a => a.id !== id) });
+    // Release the stored file too — dropping only the metadata left the upload
+    // in Cloudinary forever, still being paid for.
+    if (removed?.storagePath) {
+      await deleteFileFromCloudinary(removed.storagePath, removed.resourceType).catch(() => {});
+    }
   };
 
   const handleAddSubtask = async () => {
     if (!subtaskText.trim()) return;
-    await update({ subtasks: [...(issue.subtasks || []), { title: subtaskText.trim(), done: false }] });
+    // arrayUnion appends server-side, so a colleague adding a subtask at the
+    // same moment no longer loses theirs to our stale copy of the array.
+    await update({ subtasks: arrayUnion({ title: subtaskText.trim(), done: false }) });
     setSubtaskText(''); setShowSubInput(false);
   };
 

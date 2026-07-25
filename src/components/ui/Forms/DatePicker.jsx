@@ -27,14 +27,20 @@ const parseDate = (val) => {
   return val.toDate ? val.toDate() : new Date(val);
 };
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+// Rendered through Intl rather than a hardcoded English list — the picker sat
+// in an otherwise fully Ukrainian UI and said "January".
+const monthFormatter = new Intl.DateTimeFormat('uk-UA', { month: 'long' });
+const monthName = date => {
+  const label = monthFormatter.format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 export const DatePicker = forwardRef(({
   value = '',
   onChange,
   error,
   disabled = false,
-  placeholder = 'Select date',
+  placeholder = 'Оберіть дату',
   className = '',
   mode = 'single', // 'single' or 'range'
   startDate = '',
@@ -248,6 +254,8 @@ export const DatePicker = forwardRef(({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
+              type="button"
+              aria-label="Попередній місяць"
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
               className="p-1 hover:bg-canvas rounded-[6px] transition-colors"
             >
@@ -255,7 +263,7 @@ export const DatePicker = forwardRef(({
             </button>
             <div className="flex items-center gap-2">
               <h3 className="text-[14px] font-bold text-ink">
-                {MONTHS[currentMonth.getMonth()]}
+                {monthName(currentMonth)}
               </h3>
               {yearRange ? (
                 <select
@@ -271,6 +279,8 @@ export const DatePicker = forwardRef(({
               )}
             </div>
             <button
+              type="button"
+              aria-label="Наступний місяць"
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
               className="p-1 hover:bg-canvas rounded-[6px] transition-colors"
             >
@@ -302,6 +312,8 @@ export const DatePicker = forwardRef(({
               return (
                 <button
                   key={day}
+                  type="button"
+                  aria-pressed={Boolean(isSelected || isRangeStart || isRangeEnd)}
                   onClick={() => handleDateClick(day)}
                   className={`
                     p-1 text-[12px] font-semibold rounded-[6px] transition-all

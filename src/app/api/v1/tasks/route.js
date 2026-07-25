@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { randomUUID } from 'node:crypto';
 import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
+import {
+  DEFAULT_PRIORITY_IDS,
+  DEFAULT_STATUS_IDS,
+  DEFAULT_TYPE_IDS,
+  workflowIds,
+} from '@/lib/utils/workflowDefaults.mjs';
 
 export async function POST(req) {
   try {
@@ -69,15 +75,29 @@ export async function POST(req) {
       if (serializedMetadata.length <= 20_000) safeMetadata = JSON.parse(serializedMetadata);
     }
 
-    // 2. Prepare task payload
+    // 2. Resolve the organization's workflow. Hardcoding 'backlog'/'bug' and
+    // trusting the caller's priority dropped externally created tasks into a
+    // column that may not exist in this org's board, where nobody ever sees
+    // them.
+    const workflowSnapshot = await orgRef.collection('settings').doc('workflow').get();
+    const workflow = workflowSnapshot.data() || {};
+    const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
+    const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
+    const typeIds = workflowIds(workflow.types, DEFAULT_TYPE_IDS);
+    const status = statusIds.includes('backlog') ? 'backlog' : statusIds[0];
+    const resolvedPriority = priorityIds.includes(priority)
+      ? priority
+      : (priorityIds.includes('high') ? 'high' : priorityIds[0]);
+    const resolvedType = typeIds.includes('bug') ? 'bug' : typeIds[0];
+
     const payload = {
       issueKey: `EXT-${randomUUID().slice(0, 8).toUpperCase()}`,
       title: title.trim(),
       description: description ? String(description).trim().slice(0, 50_000) : '',
-      status: 'backlog', 
-      columnId: 'backlog',
-      priority: priority || 'high',
-      type: 'bug',
+      status,
+      columnId: status,
+      priority: resolvedPriority,
+      type: resolvedType,
       organizationId,
       projectId: projectId || null, 
       attachments: safeAttachments,

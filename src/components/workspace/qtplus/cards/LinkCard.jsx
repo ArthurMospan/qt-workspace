@@ -29,6 +29,7 @@ export default function LinkCard({ view }) {
     >
       <div className="h-[160px] bg-canvas flex items-center justify-center overflow-hidden">
         {image && !imgFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element -- link previews point at arbitrary third-party hosts, which next/image cannot whitelist
           <img src={image} alt="" onError={() => setImgFailed(true)} className="w-full h-full object-cover" />
         ) : (
           <div className="w-10 h-10 rounded-[10px] bg-surface flex items-center justify-center">

@@ -5,7 +5,7 @@ import { auth } from '@/lib/firebase';
 /**
  * Direct Cloudinary Upload 
  */
-export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars') {
+export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars', onProgress = null) {
   try {
     if (file.size > 25 * 1024 * 1024) throw new Error('File exceeds the 25 MB limit');
     const ext = file.name.split('.').pop()?.toLowerCase();
@@ -51,16 +51,33 @@ export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars')
     formData.append('public_id', public_id);
     formData.append('overwrite', String(overwrite));
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resource_type}/upload`, {
-      method: 'POST',
-      body: formData,
+    // XHR rather than fetch: it is the only way to observe real upload
+    // progress. The previous helper jumped straight from 20% to 100%, so every
+    // progress bar in the app was decorative.
+    const data = await new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resource_type}/upload`);
+      if (onProgress) {
+        request.upload.onprogress = progressEvent => {
+          if (!progressEvent.lengthComputable) return;
+          onProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100));
+        };
+      }
+      request.onload = () => {
+        if (request.status < 200 || request.status >= 300) {
+          reject(new Error(`Cloudinary upload error: ${request.status} ${request.statusText}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(request.responseText));
+        } catch {
+          reject(new Error('Cloudinary returned an unreadable response'));
+        }
+      };
+      request.onerror = () => reject(new Error('Cloudinary upload failed'));
+      request.onabort = () => reject(new Error('Cloudinary upload aborted'));
+      request.send(formData);
     });
-
-    if (!res.ok) {
-      throw new Error(`Cloudinary upload error: ${res.statusText}`);
-    }
-
-    const data = await res.json();
     let downloadUrl = data.secure_url;
     if (data.resource_type === 'image') {
       downloadUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');

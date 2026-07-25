@@ -14,8 +14,9 @@ export async function uploadFile(file, path, onProgress = null) {
   const folder = path ? `quickteam/${path.replace(/^\/+|\/+$/g, '')}` : 'quickteam/attachments';
 
   try {
-    if (onProgress) onProgress(20);
-    const { downloadUrl, storagePath, resourceType } = await uploadFileToCloudinary(file, folder);
+    // Real byte-level progress from the upload itself, not a fabricated 20→100.
+    const { downloadUrl, storagePath, resourceType } =
+      await uploadFileToCloudinary(file, folder, onProgress);
     if (onProgress) onProgress(100);
 
     return {
