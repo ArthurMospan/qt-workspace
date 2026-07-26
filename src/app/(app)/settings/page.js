@@ -18,7 +18,7 @@ import {
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
-  Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
+  Globe, Tag as TagIcon, Briefcase, GripVertical,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -749,6 +749,8 @@ export default function SettingsPage() {
   const [apiKeys, setApiKeys] = useState([]);
   const [telegramBotStatus, setTelegramBotStatus] = useState({ configured: false, connected: false, chatTitle: '' });
   const [telegramBotLoading, setTelegramBotLoading] = useState(false);
+  // True between opening the bot deep link and the webhook confirming it.
+  const [telegramAwaitingLink, setTelegramAwaitingLink] = useState(false);
   const [telegramGroupStatus, setTelegramGroupStatus] = useState({ configured: false, connected: false, chatTitle: '', defaultProjectId: '' });
   const [telegramGroupLoading, setTelegramGroupLoading] = useState(false);
   const [telegramGroupProjectId, setTelegramGroupProjectId] = useState('');
@@ -821,7 +823,8 @@ export default function SettingsPage() {
     try {
       const result = await telegramRequest('/api/integrations/telegram', 'POST', { organizationId: activeOrgId });
       window.open(result.link, '_blank', 'noopener,noreferrer');
-      showToast('Підтвердьте підключення у Telegram, потім натисніть «Перевірити»');
+      setTelegramAwaitingLink(true);
+      showToast('Натисніть «Старт» у Telegram — далі підключиться саме');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -841,6 +844,26 @@ export default function SettingsPage() {
     } finally {
       setTelegramBotLoading(false);
     }
+  };
+
+  // One control for the whole channel, like every other row in Канали: the
+  // switch *is* the connection. Turning it on links the bot — or, for an
+  // account that is already linked, just re-enables delivery; turning it off
+  // unlinks it.
+  const toggleTelegram = async enabled => {
+    if (!enabled) {
+      if (telegramBotStatus.connected) {
+        await disconnectTelegram();
+        return;
+      }
+      setNotif(previous => ({ ...previous, telegramEnabled: false }));
+      return;
+    }
+    if (telegramBotStatus.connected) {
+      setNotif(previous => ({ ...previous, telegramEnabled: true }));
+      return;
+    }
+    await connectTelegram();
   };
 
   const connectTelegramGroup = async () => {
@@ -915,6 +938,45 @@ export default function SettingsPage() {
     sound: true, popup: true, emailEnabled: false, telegramEnabled: false,
   });
   const [notifSaving, setNotifSaving] = useState(false);
+
+  // The Telegram link is not established here: the bot's webhook writes it only
+  // after you press Start in Telegram. That wait used to be surfaced as a manual
+  // «Перевірити» button, which put the mechanics of our own webhook in front of
+  // the user. The row polls for the result itself now, and re-checks whenever
+  // the tab regains focus — which is exactly when someone comes back from
+  // Telegram. Enabling delivery is part of linking, so the preference is set
+  // here too and picked up by the notif auto-save below.
+  useEffect(() => {
+    if (!telegramAwaitingLink) return undefined;
+    const deadline = Date.now() + 3 * 60 * 1000;
+    const check = async () => {
+      try {
+        const status = await telegramRequest('/api/integrations/telegram');
+        setTelegramBotStatus(status);
+        if (!status.connected) return;
+        setTelegramAwaitingLink(false);
+        setNotif(previous => ({ ...previous, telegramEnabled: true }));
+        showToast('Telegram підключено');
+      } catch {
+        // Transient failure: the next tick retries, and the connect token stays
+        // valid for 15 minutes either way.
+      }
+    };
+    const timer = window.setInterval(() => {
+      if (Date.now() > deadline) {
+        setTelegramAwaitingLink(false);
+        return;
+      }
+      check();
+    }, 3000);
+    const onFocus = () => check();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [telegramAwaitingLink, telegramRequest, showToast]);
+
   // Last notif/localization value known to match Firestore (JSON) — see the
   // auto-save effects below. null until the first render establishes it.
   const notifBaseline = useRef(null);
@@ -1889,47 +1951,19 @@ export default function SettingsPage() {
               label="Telegram"
               desc={telegramBotStatus.connected
                 ? `Підключено: ${telegramBotStatus.chatTitle || 'особистий чат із ботом'}`
-                : telegramBotStatus.configured
-                  ? 'Отримуйте призначення, згадки, дедлайни та календарні нагадування в Telegram'
-                  : 'Бот ще не налаштований на сервері'}
+                : telegramAwaitingLink
+                  ? 'Натисніть «Старт» у Telegram — підключення застосується саме'
+                  : telegramBotStatus.configured
+                    ? 'Отримуйте призначення, згадки, дедлайни та календарні нагадування в Telegram'
+                    : 'Бот ще не налаштований на сервері'}
             >
-              <div className="flex items-center gap-2">
-                {telegramBotStatus.connected && (
-                  <ToggleSwitch
-                    checked={notif.telegramEnabled}
-                    onChange={v => setNotif(p => ({ ...p, telegramEnabled: v }))}
-                    size="sm"
-                  />
-                )}
-                {telegramBotStatus.connected ? (
-                  <>
-                    <Button style="ghost" size="sm" icon={RefreshCw} onClick={() => refreshTelegram().catch(error => showToast(error.message, 'error'))}>Перевірити</Button>
-                    <Button style="ghost" color="red" size="sm" onClick={disconnectTelegram} loading={telegramBotLoading}>Відключити</Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      style="ghost"
-                      size="sm"
-                      icon={RefreshCw}
-                      onClick={() => refreshTelegram().catch(error => showToast(error.message, 'error'))}
-                      disabled={!telegramBotStatus.configured}
-                    >
-                      Перевірити
-                    </Button>
-                    <Button
-                      style="secondary"
-                      size="sm"
-                      icon={Send}
-                      onClick={connectTelegram}
-                      loading={telegramBotLoading}
-                      disabled={!telegramBotStatus.configured}
-                    >
-                      Підключити
-                    </Button>
-                  </>
-                )}
-              </div>
+              <ToggleSwitch
+                checked={telegramBotStatus.connected && notif.telegramEnabled}
+                onChange={toggleTelegram}
+                disabled={!telegramBotStatus.configured || telegramBotLoading || telegramAwaitingLink}
+                size="sm"
+                ariaLabel="Сповіщення в Telegram"
+              />
             </Row>
 
           </Card>
