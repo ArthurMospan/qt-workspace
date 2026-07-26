@@ -11,6 +11,7 @@ import {
   doc, getDocs, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { CHANNEL_DEFAULTS } from '@/lib/utils/notificationChannels.mjs';
 
 // Live window kept in memory for the notification centre.
 const PAGE_SIZE = 50;
@@ -50,8 +51,10 @@ function playChime() {
   } catch { /* audio not available — silently skip */ }
 }
 
-// Channel defaults — must mirror the notif initial state in settings/page.js
-export const CHANNEL_DEFAULTS = { sound: true, popup: true, emailEnabled: false, telegramEnabled: false };
+// Re-exported for callers that already import it from here. The definition
+// lives with the delivery rules in lib/utils/notificationChannels.mjs, which the
+// settings page and both server senders read too.
+export { CHANNEL_DEFAULTS };
 
 export function useNotifications(userId, {
   activeOrganizationId,
@@ -104,7 +107,14 @@ export function useNotifications(userId, {
       const docs = snap.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })).sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+      }))
+        // `inapp: false` marks a document written purely as the cross-channel
+        // dedupe claim for someone who wanted this event by email or Telegram
+        // only. Filtered here rather than in the query: adding it as a `where`
+        // would need a composite index and would hide every document written
+        // before the field existed.
+        .filter(n => n.inapp !== false)
+        .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
       if (isFirstLoad.current) {
         // On first load: just populate seenIds, don't fire popups
         isFirstLoad.current = false;

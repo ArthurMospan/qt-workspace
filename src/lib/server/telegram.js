@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 
 function config() {
   return {
@@ -71,7 +72,10 @@ export async function sendTelegramMessage(chatId, text) {
   });
 }
 
-export async function deliverTelegramNotification({ userIds, title, body, link = '' }) {
+// `type` is optional: callers that have a notification type (the notifications
+// route) get the per-event switch applied, and the calendar senders, whose types
+// have no switch in Settings, fall through to the channel master alone.
+export async function deliverTelegramNotification({ userIds, title, body, link = '', type = '' }) {
   const status = telegramStatus();
   const recipients = [...new Set((userIds || []).filter(Boolean))];
   if (!status.configured || !recipients.length) return { delivered: 0 };
@@ -88,7 +92,7 @@ export async function deliverTelegramNotification({ userIds, title, body, link =
   const deliveries = recipients.flatMap((uid, index) => {
     const preferences = preferenceSnapshots[index].exists ? preferenceSnapshots[index].data() : {};
     const connection = connectionSnapshots[index].exists ? connectionSnapshots[index].data() : {};
-    return preferences.telegramEnabled === true && connection.chatId
+    return shouldDeliver(preferences, 'telegram', type) && connection.chatId
       ? [sendTelegramMessage(connection.chatId, message)]
       : [];
   });

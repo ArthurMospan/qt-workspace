@@ -5,10 +5,8 @@ import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { deliverEmail } from '@/lib/server/email';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
+import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 
-const PREF_KEY_BY_TYPE = { assigned: 'assigned', commented: 'commented', status_changed: 'statusChanged', mentioned: 'mentioned', deadline: 'deadline' };
-const PREF_DEFAULTS = { assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true };
-const EMAIL_TYPES = new Set(['assigned', 'mentioned', 'deadline', 'alert', 'emergency']);
 const ALLOWED_TYPES = new Set(['assigned', 'commented', 'status_changed', 'mentioned', 'deadline', 'chat_message', 'alert', 'emergency', 'calendar_invite', 'calendar_changed', 'calendar_reminder', 'test']);
 const cleanText = (value, maxLength) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 
@@ -78,56 +76,73 @@ export async function POST(request) {
       db.collection('users').doc(authorization.user.uid).get(),
     ]);
     const sender = senderSnap.exists ? senderSnap.data() : {};
-    const prefKey = PREF_KEY_BY_TYPE[type];
-    const deliveries = userIds.map((userId, index) => {
-      const prefs = settingsSnaps[index].exists ? settingsSnaps[index].data() : {};
-      return {
-        userId,
-        prefs,
-        profile: profileSnaps[index].exists ? profileSnaps[index].data() : {},
-        enabled: !prefKey || (prefs[prefKey] ?? PREF_DEFAULTS[prefKey]),
-      };
-    }).filter(item => item.enabled);
+    // Each channel decides for itself. Previously one set of switches gated the
+    // notification record and the other channels rode along on it, so muting an
+    // event in the bell also silenced the email and the Telegram message — the
+    // three are independent columns now.
+    const recipients = userIds.map((userId, index) => ({
+      userId,
+      prefs: settingsSnaps[index].exists ? settingsSnaps[index].data() : {},
+      profile: profileSnaps[index].exists ? profileSnaps[index].data() : {},
+    }));
+    const audienceFor = channel => recipients.filter(item => shouldDeliver(item.prefs, channel, type));
+    const inappAudience = audienceFor('inapp');
+    const emailAudience = audienceFor('email');
+    const telegramAudience = audienceFor('telegram');
+    const reached = new Set([...inappAudience, ...emailAudience, ...telegramAudience].map(item => item.userId));
 
-    const notificationData = delivery => ({
+    const notificationData = (delivery, { inapp }) => ({
         userId: delivery.userId, type, title, body, link: scopedLink, issueId, projectId, organizationId,
         actorId: authorization.user.uid,
         actorName: sender.name || authorization.user.name || '',
         actorAvatar: sender.avatar || sender.photoURL || authorization.user.picture || '',
         read: false,
+        // False when this recipient asked for the event on another channel only.
+        // The document still has to exist as the dedupe claim below; the bell
+        // filters it out.
+        inapp,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-    let createdDeliveries = deliveries;
+
+    // One claim per recipient, covering every channel. The notification document
+    // doubles as the "already told them" marker, so a repeated poll — the daily
+    // deadline sweep is the real case — must not resend the email or the
+    // Telegram message either. Claiming only for the bell would have let both
+    // external channels fire on every pass for anyone who muted the bell.
+    let delivered = reached;
     if (dedupeKey) {
-      const creationResults = await Promise.all(deliveries.map(async delivery => {
-        const ref = db.collection('notifications').doc(`${dedupeKey}_${delivery.userId}`);
+      const claimants = recipients.filter(item => reached.has(item.userId));
+      const claimResults = await Promise.all(claimants.map(async item => {
+        const ref = db.collection('notifications').doc(`${dedupeKey}_${item.userId}`);
         try {
-          await ref.create(notificationData(delivery));
+          await ref.create(notificationData(item, { inapp: inappAudience.includes(item) }));
           return true;
         } catch (error) {
           if (error.code === 6 || error.code === 'already-exists') return false;
           throw error;
         }
       }));
-      createdDeliveries = deliveries.filter((_, index) => creationResults[index]);
-    } else if (deliveries.length) {
+      delivered = new Set(claimants.filter((_, index) => claimResults[index]).map(item => item.userId));
+    } else if (inappAudience.length) {
       const batch = db.batch();
-      for (const delivery of deliveries) {
-        batch.set(db.collection('notifications').doc(), notificationData(delivery));
+      for (const delivery of inappAudience) {
+        batch.set(db.collection('notifications').doc(), notificationData(delivery, { inapp: true }));
       }
       await batch.commit();
     }
-    await Promise.allSettled(createdDeliveries
-      .filter(item => item.prefs.emailEnabled && EMAIL_TYPES.has(type))
+
+    await Promise.allSettled(emailAudience
+      .filter(item => delivered.has(item.userId))
       .map(item => sendEmail({ email: item.profile.email, type, title, body, link: scopedLink })));
     await deliverTelegramNotification({
-      userIds: createdDeliveries.map(item => item.userId),
+      userIds: telegramAudience.filter(item => delivered.has(item.userId)).map(item => item.userId),
       title,
       body,
       link: scopedLink,
+      type,
     }).catch(error => console.warn('[notifications] Telegram delivery failed:', error.message));
 
-    return NextResponse.json({ delivered: createdDeliveries.length });
+    return NextResponse.json({ delivered: delivered.size });
   } catch (error) {
     return routeErrorResponse(error, { context: 'notifications', fallbackMessage: 'Failed to send notification' });
   }

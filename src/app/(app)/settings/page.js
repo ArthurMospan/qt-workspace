@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -43,6 +43,12 @@ import {
 import UserAvatar from '@/components/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import {
+  CHANNEL_DEFAULTS,
+  EVENT_DEFAULTS,
+  NOTIFICATION_EVENTS,
+  resolveNotificationMatrix,
+} from '@/lib/utils/notificationChannels.mjs';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { Colorful } from '@uiw/react-color';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
@@ -932,12 +938,30 @@ export default function SettingsPage() {
   const [upgrading,      setUpgrading]      = useState(false);
 
   // ── Notifications ──
-  // Events + delivery channels; channel defaults must mirror CHANNEL_DEFAULTS in useNotifications.js
+  // `channels` is the event × channel matrix; the flat per-event flags beside it
+  // are the pre-matrix shape, still written in step with the in-app column so a
+  // deploy that is mid-rollout keeps behaving. Defaults and the delivery rules
+  // both live in lib/utils/notificationChannels.mjs.
   const [notif, setNotif] = useState({
-    assigned: true, commented: true, statusChanged: false, deadline: true, mentioned: true,
-    sound: true, popup: true, emailEnabled: false, telegramEnabled: false,
+    ...CHANNEL_DEFAULTS,
+    ...EVENT_DEFAULTS,
+    channels: resolveNotificationMatrix({}),
   });
   const [notifSaving, setNotifSaving] = useState(false);
+  const notifMatrix = useMemo(() => resolveNotificationMatrix(notif), [notif]);
+
+  // Ticking a cell. The in-app column also mirrors into the legacy flat flag.
+  const setChannelEvent = (channel, key, enabled) => {
+    setNotif(previous => {
+      const matrix = resolveNotificationMatrix(previous);
+      const next = {
+        ...previous,
+        channels: { ...matrix, [channel]: { ...matrix[channel], [key]: enabled } },
+      };
+      if (channel === 'inapp') next[key] = enabled;
+      return next;
+    });
+  };
 
   // The Telegram link is not established here: the bot's webhook writes it only
   // after you press Start in Telegram. That wait used to be surfaced as a manual
@@ -948,7 +972,9 @@ export default function SettingsPage() {
   // here too and picked up by the notif auto-save below.
   useEffect(() => {
     if (!telegramAwaitingLink) return undefined;
-    const deadline = Date.now() + 3 * 60 * 1000;
+    const pollMs = 3000;
+    const maxTicks = 60; // three minutes; the connect token itself lasts fifteen
+    let ticks = 0;
     const check = async () => {
       try {
         const status = await telegramRequest('/api/integrations/telegram');
@@ -963,12 +989,13 @@ export default function SettingsPage() {
       }
     };
     const timer = window.setInterval(() => {
-      if (Date.now() > deadline) {
+      ticks += 1;
+      if (ticks > maxTicks) {
         setTelegramAwaitingLink(false);
         return;
       }
       check();
-    }, 3000);
+    }, pollMs);
     const onFocus = () => check();
     window.addEventListener('focus', onFocus);
     return () => {
@@ -1113,8 +1140,13 @@ export default function SettingsPage() {
         if (uid) {
           const notifSnap = await getDoc(doc(db, 'users', uid, 'settings', 'notifications'));
           if (notifSnap.exists()) {
+            const stored = notifSnap.data();
             setNotif(p => {
-              const merged = { ...p, ...notifSnap.data() };
+              // The matrix is resolved from the stored document, never from the
+              // merged object: a pre-matrix document has no `channels`, and
+              // merging would leave the defaults sitting there as if they had
+              // been chosen, overriding what the account was actually getting.
+              const merged = { ...p, ...stored, channels: resolveNotificationMatrix(stored) };
               notifBaseline.current = JSON.stringify(merged);
               return merged;
             });
@@ -1933,58 +1965,126 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
-      case 'notifications': return (
-        <Section title="Сповіщення" desc="Канали доставки та події, про які тебе повідомляти" rightAction={saveButton}>
-          {/* Канали доставки */}
-          <Card variant="white" padding="lg" className="!border-none">
-            <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Канали</p>
-            <Row label="Звук" desc="Короткий сигнал при новому сповіщенні">
-              <ToggleSwitch checked={notif.sound} onChange={v => setNotif(p => ({ ...p, sound: v }))} size="sm" />
-            </Row>
-            <Row label="Спливаючі сповіщення" desc="Картка внизу екрана, коли подія стається в реальному часі">
-              <ToggleSwitch checked={notif.popup} onChange={v => setNotif(p => ({ ...p, popup: v }))} size="sm" />
-            </Row>
-            <Row label="Email" desc="Найважливіше (призначення, згадки, дедлайни) — дублювати на пошту">
-              <ToggleSwitch checked={notif.emailEnabled} onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))} size="sm" />
-            </Row>
-            <Row
-              label="Telegram"
-              desc={telegramBotStatus.connected
-                ? `Підключено: ${telegramBotStatus.chatTitle || 'особистий чат із ботом'}`
-                : telegramAwaitingLink
-                  ? 'Натисніть «Старт» у Telegram — підключення застосується саме'
-                  : telegramBotStatus.configured
-                    ? 'Отримуйте призначення, згадки, дедлайни та календарні нагадування в Telegram'
-                    : 'Бот ще не налаштований на сервері'}
-            >
+      case 'notifications': {
+        // The old page had two lists that did not know about each other: a set
+        // of event switches and a set of channel switches. Nothing said which
+        // event reached which channel — and the answer was hardcoded server-side,
+        // so "Зміна статусу" could be on while no status email ever arrived.
+        // One grid, one answer per cell.
+        const columns = [
+          {
+            id: 'inapp',
+            label: 'На сайті',
+            available: true,
+            note: 'Дзвіночок у шапці',
+          },
+          {
+            id: 'email',
+            label: 'Email',
+            available: notif.emailEnabled === true,
+            note: currentUser?.email || 'Пошта не вказана',
+            master: (
               <ToggleSwitch
-                checked={telegramBotStatus.connected && notif.telegramEnabled}
+                checked={notif.emailEnabled === true}
+                onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))}
+                size="sm"
+                ariaLabel="Сповіщення на пошту"
+              />
+            ),
+          },
+          {
+            id: 'telegram',
+            label: 'Telegram',
+            available: telegramBotStatus.connected && notif.telegramEnabled === true,
+            note: telegramBotStatus.connected
+              ? telegramBotStatus.chatTitle || 'особистий чат із ботом'
+              : telegramAwaitingLink
+                ? 'Натисніть «Старт» у боті'
+                : telegramBotStatus.configured
+                  ? 'Увімкни, щоб підключити бота'
+                  : 'Бот не налаштований',
+            master: (
+              <ToggleSwitch
+                checked={telegramBotStatus.connected && notif.telegramEnabled === true}
                 onChange={toggleTelegram}
                 disabled={!telegramBotStatus.configured || telegramBotLoading || telegramAwaitingLink}
                 size="sm"
                 ariaLabel="Сповіщення в Telegram"
               />
-            </Row>
+            ),
+          },
+        ];
+        const eventRows = [
+          { key: 'assigned',      label: 'Завдання призначено мені', desc: 'Хтось призначив завдання на тебе або створив нове одразу з тобою' },
+          { key: 'commented',     label: 'Новий коментар',           desc: 'У завданнях, де ти виконавець або автор' },
+          { key: 'mentioned',     label: 'Згадування',               desc: 'Хтось написав @твоє-імʼя в коментарі' },
+          { key: 'statusChanged', label: 'Зміна статусу',            desc: 'Коли твоє завдання рухається по дошці' },
+          { key: 'deadline',      label: 'Дедлайни',                 desc: 'За 24 години до дедлайну та щодня для прострочених завдань' },
+        ].filter(row => NOTIFICATION_EVENTS.some(event => event.key === row.key));
+        const grid = 'grid grid-cols-[minmax(0,1fr)_repeat(3,64px)] gap-x-2 sm:grid-cols-[minmax(0,1fr)_repeat(3,88px)] sm:gap-x-3';
 
-          </Card>
+        return (
+          <Section title="Сповіщення" desc="Обери, про що повідомляти й куди саме це надсилати" rightAction={saveButton}>
+            <Card variant="white" padding="lg" className="!border-none">
+              <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-3">Що і куди надсилати</p>
 
-          {/* Події */}
-          <Card variant="white" padding="lg" className="!border-none">
-            <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Події</p>
-            {[
-              { key: 'assigned',      label: 'Завдання призначено мені', desc: 'Хтось призначив завдання на тебе або створив нове одразу з тобою' },
-              { key: 'commented',     label: 'Новий коментар',           desc: 'У завданнях, де ти виконавець або автор' },
-              { key: 'mentioned',     label: 'Згадування',               desc: 'Хтось написав @твоє-імʼя в коментарі' },
-              { key: 'statusChanged', label: 'Зміна статусу',            desc: 'Коли твоє завдання рухається по дошці' },
-              { key: 'deadline',      label: 'Дедлайни',                 desc: 'За 24 години до дедлайну та щодня для прострочених завдань' },
-            ].map(n => (
-              <Row key={n.key} label={n.label} desc={n.desc}>
-                <ToggleSwitch checked={notif[n.key]} onChange={v => setNotif(p => ({ ...p, [n.key]: v }))} size="sm" />
+              <div className={`${grid} items-end border-b border-line pb-3`}>
+                <span aria-hidden />
+                {columns.map(column => (
+                  <div key={column.id} className="flex flex-col items-center gap-1.5 text-center">
+                    <span className="text-[12px] font-bold leading-none text-ink">{column.label}</span>
+                    {column.master || <span className="h-[20px]" aria-hidden />}
+                    <span className="text-[10px] leading-tight text-faint break-words w-full">{column.note}</span>
+                  </div>
+                ))}
+              </div>
+
+              {eventRows.map(row => (
+                <div key={row.key} className={`${grid} items-center border-b border-line/60 py-[12px] last:border-b-0`}>
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[13px] font-medium leading-snug text-ink">{row.label}</p>
+                    <p className="text-[12px] mt-[2px] leading-relaxed text-muted">{row.desc}</p>
+                  </div>
+                  {columns.map(column => {
+                    const checked = notifMatrix[column.id][row.key] === true;
+                    return (
+                      <div key={column.id} className="flex justify-center">
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={checked}
+                          aria-label={`${row.label} — ${column.label}`}
+                          disabled={!column.available}
+                          title={column.available ? undefined : `Канал «${column.label}» вимкнено`}
+                          onClick={() => setChannelEvent(column.id, row.key, !checked)}
+                          className="flex h-[26px] w-[26px] items-center justify-center rounded-[8px] transition-colors enabled:hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-35"
+                        >
+                          <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border transition-colors ${
+                            checked ? 'border-ink bg-ink' : 'border-[#d9d9d9] bg-white'
+                          }`}>
+                            {checked && <Check size={12} className="text-white" />}
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </Card>
+
+            {/* In-app delivery has two extras that are not events at all. */}
+            <Card variant="white" padding="lg" className="!border-none">
+              <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-2">Як показувати на сайті</p>
+              <Row label="Звук" desc="Короткий сигнал при новому сповіщенні">
+                <ToggleSwitch checked={notif.sound} onChange={v => setNotif(p => ({ ...p, sound: v }))} size="sm" />
               </Row>
-            ))}
-          </Card>
-        </Section>
-      );
+              <Row label="Спливаючі сповіщення" desc="Картка внизу екрана, коли подія стається в реальному часі">
+                <ToggleSwitch checked={notif.popup} onChange={v => setNotif(p => ({ ...p, popup: v }))} size="sm" />
+              </Row>
+            </Card>
+          </Section>
+        );
+      }
 
       // ──────────────────────────────────────────────────────────────
       case 'localization': {
