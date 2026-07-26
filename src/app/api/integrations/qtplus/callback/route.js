@@ -7,9 +7,11 @@ import {
   verifyQtPlusState,
 } from '@/lib/server/oauthState.mjs';
 
+// There is no dedicated QuickTeam+ settings section any more — connecting is
+// done from the project that needs it. Errors still land in Settings, where the
+// `qtplusError` handler raises the toast, but on the default section.
 function settingsUrl(origin, params) {
   const url = new URL('/settings', origin);
-  url.searchParams.set('section', 'qtplus');
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return NextResponse.redirect(url);
 }
@@ -75,7 +77,7 @@ async function handleCallback(request) {
 
     await writeLink(uid, { qtUserId, email, refreshToken });
 
-    const target = new URL(getSafeAuthRedirect(state.redirectTo, '/settings?section=qtplus'), origin);
+    const target = new URL(getSafeAuthRedirect(state.redirectTo, '/settings'), origin);
     target.searchParams.set('qtplus', 'connected');
     return NextResponse.redirect(target);
   } catch (error) {

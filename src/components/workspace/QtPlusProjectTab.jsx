@@ -10,6 +10,7 @@ import { usePortalSession } from '@/lib/portal/usePortalSession';
 import { usePortalProjects } from '@/lib/portal/usePortalProjects';
 import { toPortalProjectOptions, resolveLinkView } from '@/lib/portal/qtplusLinkModel.mjs';
 import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProjectLink';
+import { disconnectQtPlusAccount, startQtPlusConnect } from '@/lib/portal/qtplusAccount';
 import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 
@@ -106,6 +107,29 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
     setSaving(false);
   };
 
+  // The account link starts and ends here rather than in a settings tab of its
+  // own: connecting QuickTeam+ only ever mattered in order to link a project, so
+  // the button belongs next to that. The return path brings the OAuth round-trip
+  // back to this project instead of dumping the user in Settings.
+  const connectAccount = () => {
+    startQtPlusConnect(`${window.location.pathname}${window.location.search}`);
+  };
+
+  const disconnectAccount = async () => {
+    setSaving(true);
+    try {
+      await disconnectQtPlusAccount();
+      showToast('Акаунт QuickTeam+ відключено');
+      window.location.reload();
+    } catch (err) {
+      console.error('[qtplus] account disconnect failed:', err);
+      showToast(err.message === 'NOT_SIGNED_IN'
+        ? 'Потрібно увійти повторно'
+        : 'Не вдалося відключити акаунт QuickTeam+', 'error');
+      setSaving(false);
+    }
+  };
+
   const doUnlink = async () => {
     setSaving(true);
     try {
@@ -165,6 +189,9 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
                         ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]
                         : []),
                       { label: 'Відвʼязати', icon: Unlink, onClick: doUnlink, isDanger: true },
+                      // Account-level, not project-level: the only home it has
+                      // now that the personal settings tab is gone.
+                      { label: 'Відключити акаунт QuickTeam+', icon: Plug, onClick: disconnectAccount, isDanger: true },
                     ]}
                   />
                   {changing && options.length > 0 && (
@@ -214,13 +241,20 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
         <EmptyState
           icon={Plug}
           title="Підключіть QuickTeam+"
-          description="Підключіть акаунт, щоб прив’язати проєкт і працювати з матеріалами та чатом."
+          description="Підключіть акаунт, щоб привʼязати проєкт і працювати з матеріалами та чатом."
+          action="Підключити QuickTeam+"
+          onAction={connectAccount}
           className="min-h-[280px] rounded-[12px] bg-white"
         />
       ) : sessionError === 'grant_invalid' ? (
-        <p className="text-[13px] text-red-500">
-          Підключення застаріло — підключіть QuickTeam+ заново в Налаштуваннях.
-        </p>
+        <EmptyState
+          icon={Plug}
+          title="Підключення застаріло"
+          description="Доступ до QuickTeam+ більше не дійсний. Підключіть акаунт заново."
+          action="Підключити заново"
+          onAction={connectAccount}
+          className="min-h-[280px] rounded-[12px] bg-white"
+        />
       ) : sessionError ? (
         <p className="text-[13px] text-muted">Не вдалося зʼєднатися з QuickTeam+. Спробуйте пізніше.</p>
       ) : options.length === 0 ? (

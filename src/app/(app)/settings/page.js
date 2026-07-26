@@ -10,7 +10,7 @@ import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
-import { linkWithPopup, unlink, signOut as firebaseSignOut } from 'firebase/auth';
+import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
@@ -18,7 +18,7 @@ import {
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
-  Globe, Tag as TagIcon, Briefcase, GripVertical,
+  Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -63,15 +63,11 @@ import {
   DEFAULT_LABELS,
   DEFAULT_POSITIONS,
 } from '@/lib/hooks/useWorkflowConfig';
-import { usePortalSession } from '@/lib/portal/usePortalSession';
-import { usePortalProjects } from '@/lib/portal/usePortalProjects';
-import { getPortalAuth } from '@/lib/portal/firebase';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
 // Інлайниться на білді, тому зміна цієї змінної потребує redeploy, не просто
 // рестарту.
-const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
 const ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
@@ -90,15 +86,9 @@ const COLOR_PALETTE = [
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
   { id: 'auth-methods',  label: 'Способи входу',     icon: Link2,        group: 'Особисте' },
-  // Персональне підключення, а не org-налаштування: секція "Інтеграції" нижче
-  // adminOnly, а підключати свій акаунт QT+ має кожен учасник сам.
-  //
-  // Показуємо лише коли інтеграцію налаштовано на сервері. Ненастроєна
-  // інтеграція має бути невидимою, а не кнопкою, яка падає: NEXT_PUBLIC_QTPLUS_URL
-  // з'являється лише разом із секретами обміну.
-  ...(QTPLUS_CONFIGURED
-    ? [{ id: 'qtplus', label: 'QuickTeam+', icon: PlugZap, group: 'Особисте' }]
-    : []),
+  // No personal QuickTeam+ entry here on purpose. Connecting the account only
+  // ever served linking a project, so that action lives in the project's
+  // QuickTeam+ tab; the org-level switch stays under "Інтеграції".
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
   { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
@@ -573,34 +563,6 @@ function PositionItem({ item, onSave, onDelete }) {
 // Strips the transient `isNew` UI flag before a workflow item is persisted.
 const cleanWorkflowItems = arr => (arr || []).map(({ isNew, ...rest }) => rest);
 
-// Ukrainian plural agreement for "проєкт" (count noun forms):
-// 11-14 -> проєктів; ends in 1 -> проєкт; ends in 2-4 -> проєкти; else -> проєктів.
-function pluralProjects(n) {
-  const mod100 = n % 100;
-  const mod10 = n % 10;
-  if (mod100 >= 11 && mod100 <= 14) return 'проєктів';
-  if (mod10 === 1) return 'проєкт';
-  if (mod10 >= 2 && mod10 <= 4) return 'проєкти';
-  return 'проєктів';
-}
-
-// Phase 2 proof: counts the connected user's QuickTeam+ projects, read straight
-// from quickteam-portal-prod under QT+'s own Firestore rules. Kept as its own
-// component so the portal hooks only run while the QuickTeam+ card is on screen.
-function QtPlusProjectsProbe() {
-  const { portalUser, loading: sessionLoading, error: sessionError } = usePortalSession();
-  const { count, loading: projectsLoading } = usePortalProjects(portalUser);
-
-  if (sessionLoading || projectsLoading) {
-    return <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>;
-  }
-  if (sessionError === 'grant_invalid') {
-    return <p className="text-[13px] text-red-500">Підключення застаріло — підключіть QuickTeam+ заново.</p>;
-  }
-  if (sessionError || count === null) return null; // not connected / not configured -> show nothing extra
-  return <p className="text-[13px] text-muted">Доступно {count} {pluralProjects(count)} QuickTeam+</p>;
-}
-
 // ── MAIN PAGE ────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -746,8 +708,6 @@ export default function SettingsPage() {
 
   // ── Integration (QT portal) ──
   const [qtEnabled,      setQtEnabled]      = useState(false);
-  const [qtPlusLink,     setQtPlusLink]     = useState(null);
-  const [qtPlusLoading,  setQtPlusLoading]  = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [qtSaving,       setQtSaving]       = useState(false);
 
@@ -1398,78 +1358,6 @@ export default function SettingsPage() {
     }
   };
 
-  const loadQtPlusStatus = useCallback(async () => {
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser) return;
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const response = await fetch('/api/integrations/qtplus', {
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      if (!response.ok) throw new Error('status');
-      setQtPlusLink(await response.json());
-    } catch (error) {
-      console.error('[settings] QuickTeam+ status failed:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    // queueMicrotask, як і в refreshAuthProviders вище: тримає setState поза
-    // тілом ефекту (react-hooks/set-state-in-effect).
-    if (currentUser) queueMicrotask(() => loadQtPlusStatus());
-  }, [currentUser, loadQtPlusStatus]);
-
-  const handleConnectQtPlus = async () => {
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
-    setQtPlusLoading(true);
-    try {
-      // Колбек автентифікується кукою qt_session, тому вона має бути свіжою
-      // до того, як ми покинемо SPA — та сама причина, що й у handleConnectOneB.
-      const idToken = await firebaseUser.getIdToken(true);
-      const sessionResponse = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      if (!sessionResponse.ok) throw new Error('Failed to refresh server session');
-
-      // URL авторизації будує сервер: лише він може поставити httpOnly-куку
-      // з nonce, яку звіряє колбек.
-      window.location.href = '/api/integrations/qtplus/connect';
-    } catch (error) {
-      console.error('[settings] QuickTeam+ connect failed:', error);
-      showToast('Не вдалося почати підключення QuickTeam+', 'error');
-      setQtPlusLoading(false);
-    }
-  };
-
-  const handleDisconnectQtPlus = async () => {
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
-    setQtPlusLoading(true);
-    try {
-      const idToken = await firebaseUser.getIdToken(true);
-      const response = await fetch('/api/integrations/qtplus', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      if (!response.ok) throw new Error('disconnect');
-      // Best-effort: also sign out of the named portal Firebase app so the
-      // browser doesn't keep a live, auto-refreshing quickteam-portal-prod
-      // session around (browserLocalPersistence) after disconnect. Must never
-      // block/throw out of the disconnect flow.
-      const pAuth = getPortalAuth();
-      if (pAuth) { try { await firebaseSignOut(pAuth); } catch { /* best-effort: portal sign-out must not block disconnect */ } }
-      setQtPlusLink({ connected: false });
-      showToast('QuickTeam+ відключено');
-    } catch (error) {
-      console.error('[settings] QuickTeam+ disconnect failed:', error);
-      showToast('Не вдалося відключити QuickTeam+', 'error');
-    } finally {
-      setQtPlusLoading(false);
-    }
-  };
-
   const handleConnectOneB = async () => {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
@@ -1981,14 +1869,19 @@ export default function SettingsPage() {
 
         // Every line is the shared <Row>, so all three cards land on the same
         // label column and the same right-hand control column.
-        const channelCard = ({ id, title, caption, master, available, offNote, showDesc = false, footer = null }) => (
+        const channelCard = ({ id, icon: ChannelIcon, title, caption, master, available, offNote, showDesc = false, footer = null }) => (
           <Card variant="white" padding="lg" className="!border-none">
             <div className="flex items-start justify-between gap-4 pb-1">
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-muted uppercase tracking-wider">{title}</p>
-                {caption && <p className="mt-[3px] text-[12px] text-muted truncate">{caption}</p>}
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-canvas">
+                  <ChannelIcon size={16} className="text-ink" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-ink leading-none">{title}</p>
+                  {caption && <p className="mt-[5px] text-[12px] text-muted truncate">{caption}</p>}
+                </div>
               </div>
-              {master && <div className="shrink-0 pt-[2px]">{master}</div>}
+              {master && <div className="shrink-0 pt-[6px]">{master}</div>}
             </div>
 
             {available ? eventRows.map(row => (
@@ -2012,6 +1905,7 @@ export default function SettingsPage() {
           <Section title="Сповіщення" desc="Кожен канал окремо: обери, про що він тебе повідомляє" rightAction={saveButton}>
             {channelCard({
               id: 'inapp',
+              icon: Bell,
               title: 'На сайті',
               caption: 'Дзвіночок у шапці робочого простору',
               available: true,
@@ -2030,6 +1924,7 @@ export default function SettingsPage() {
 
             {channelCard({
               id: 'email',
+              icon: Mail,
               title: 'Email',
               caption: currentUser?.email || 'Пошта не вказана',
               available: notif.emailEnabled === true,
@@ -2046,6 +1941,7 @@ export default function SettingsPage() {
 
             {channelCard({
               id: 'telegram',
+              icon: Send,
               title: 'Telegram',
               caption: telegramBotStatus.connected
                 ? `Підключено: ${telegramBotStatus.chatTitle || 'особистий чат із ботом'}`
@@ -2374,43 +2270,6 @@ export default function SettingsPage() {
 
 
       // ──────────────────────────────────────────────────────────────
-      case 'qtplus':
-        return (
-          <Section
-            title="QuickTeam+"
-            desc="Підключи свій акаунт QuickTeam+, щоб бачити проєкти клієнтського порталу тут"
-          >
-            <Card variant="white" padding="lg" className="!border-none">
-              {!qtEnabled ? (
-                <p className="text-[13px] text-muted py-2 leading-relaxed">
-                  Інтеграцію з QuickTeam+ вимкнено для цієї організації.
-                  Зверніться до адміністратора, щоб увімкнути її в розділі «Інтеграції».
-                </p>
-              ) : (
-                <>
-                  <LoginMethodItem
-                    icon={<Image src="/quickteam.png" alt="" width={20} height={20} className="object-contain" />}
-                    title="QuickTeam+"
-                    detail={qtPlusLink?.connected
-                      ? (qtPlusLink.email || 'Акаунт підключено')
-                      : 'Підключіть свій акаунт QuickTeam+'}
-                    connected={Boolean(qtPlusLink?.connected)}
-                    loading={qtPlusLoading}
-                    disabled={qtPlusLoading}
-                    onConnect={handleConnectQtPlus}
-                    onDisconnect={handleDisconnectQtPlus}
-                  />
-                  {qtPlusLink?.connected && (
-                    <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
-                      <QtPlusProjectsProbe />
-                    </div>
-                  )}
-                </>
-              )}
-            </Card>
-          </Section>
-        );
-
       case 'migration':
         return (
           <Section

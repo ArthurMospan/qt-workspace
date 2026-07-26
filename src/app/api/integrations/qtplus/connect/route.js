@@ -8,11 +8,10 @@ import {
   QTPLUS_STATE_COOKIE,
 } from '@/lib/server/oauthState.mjs';
 
-const SETTINGS = '/settings?section=qtplus';
+const SETTINGS = '/settings';
 
 function settingsError(origin, error) {
   const url = new URL('/settings', origin);
-  url.searchParams.set('section', 'qtplus');
   url.searchParams.set('qtplusError', error);
   return NextResponse.redirect(url);
 }
