@@ -60,9 +60,26 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   // A drag & drop is painted from this overlay until Firestore echoes it back.
   const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues, compareIssues);
   const deliveredRef = useRef(false);
+  // Depend on the uid, not on the `currentUser` object: the profile listener
+  // hands back a fresh object whenever anything on the user document changes,
+  // and that identity churn used to tear down and rebuild this subscription.
+  const currentUserId = currentUser?.uid || currentUser?.id || null;
+  // Which query the rows on screen belong to. Re-running the effect for the
+  // same project must not blank them — the board renders a spinner while
+  // `loading` is true, so clearing on every re-subscribe is exactly the
+  // "board reloaded itself" flash. Rows are only stale once the target moves.
+  const targetRef = useRef(null);
   useEffect(() => {
-    deliveredRef.current = false;
-    if (!projectId || !activeOrgId || !currentUser) {
+    const target = `${activeOrgId || ''}/${projectId || ''}`;
+    const targetChanged = targetRef.current !== target;
+    targetRef.current = target;
+    if (targetChanged) deliveredRef.current = false;
+    if (!projectId || !activeOrgId || !currentUserId) {
+      // Nothing was subscribed, so the next run has to count as a fresh target
+      // however it is reached — otherwise the run that finally has a uid would
+      // skip the reset below and render an empty board instead of a spinner.
+      targetRef.current = null;
+      deliveredRef.current = false;
       queueMicrotask(() => {
         setSnapshotIssues([]);
         setIssueLinks([]);
@@ -72,12 +89,14 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       return;
     }
 
-    queueMicrotask(() => {
-      setSnapshotIssues([]);
-      setIssueLinks([]);
-      setError(null);
-      setLoading(true);
-    });
+    if (targetChanged) {
+      queueMicrotask(() => {
+        setSnapshotIssues([]);
+        setIssueLinks([]);
+        setError(null);
+        setLoading(true);
+      });
+    }
 
     // No orderBy — sorted client-side to avoid composite index
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
@@ -130,7 +149,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, currentUser]);
+  }, [projectId, activeOrgId, includeLinks, currentUserId]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

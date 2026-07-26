@@ -12,10 +12,13 @@ export function useSprints() {
     activeOrgId, currentUser
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
+  // uid, not the object: a new `currentUser` identity (any write to the user
+  // document produces one) used to re-subscribe and re-read every sprint.
+  const currentUserId = currentUser?.id || currentUser?.uid || null;
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!activeOrgId || !currentUser) {
+    if (!activeOrgId || !currentUserId) {
       queueMicrotask(() => setLoading(false));
       return;
     }
@@ -40,7 +43,7 @@ export function useSprints() {
       setLoading(false);
     });
     return () => unsub();
-  }, [activeOrgId, currentUser]);
+  }, [activeOrgId, currentUserId]);
   const createSprint = useCallback(async data => {
     if (!activeOrgId) return;
 

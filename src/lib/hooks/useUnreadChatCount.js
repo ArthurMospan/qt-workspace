@@ -11,12 +11,15 @@ import { channelUnreadCount, isVisibleChatChannel } from '@/lib/utils/workspaceC
 
 export function useUnreadChatCount() {
   const { currentUser, activeOrgId } = useAppContext();
+  // uid, not the object: a new `currentUser` identity (any write to the user
+  // document produces one) used to re-subscribe and re-read the read cursors.
+  const currentUserId = currentUser?.id || currentUser?.uid || null;
   const [channels, setChannels] = useState([]);
   const [readState, setReadState] = useState(null); // { channelId: lastReadAt Timestamp }
 
   useEffect(() => {
-    if (!activeOrgId || !currentUser) return;
-    const uid = currentUser.id || currentUser.uid;
+    if (!activeOrgId || !currentUserId) return;
+    const uid = currentUserId;
     const qReadState = query(collection(db, 'organizations', activeOrgId, 'readState'), where('userId', '==', uid));
     const unsub = onSnapshot(qReadState, snap => {
       const state = {};
@@ -32,7 +35,7 @@ export function useUnreadChatCount() {
       reportLoadError('[useUnreadChatCount] read state', err);
     });
     return () => unsub();
-  }, [activeOrgId, currentUser]);
+  }, [activeOrgId, currentUserId]);
 
   useEffect(() => {
     if (!activeOrgId) return undefined;

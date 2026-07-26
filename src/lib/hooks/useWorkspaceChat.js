@@ -48,6 +48,11 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     currentUser,
     activeOrgId
   } = useAppContext();
+  // Subscriptions key off the uid, never off the `currentUser` object: the
+  // profile listener yields a new object whenever any field on the user
+  // document changes, and that identity churn used to tear down every chat
+  // listener below and re-read each collection from scratch.
+  const currentUserId = currentUser?.id || currentUser?.uid || null;
   const [messages, setMessages] = useState([]);
   const [channels, setChannels] = useState([]);
   const [dmChannels, setDmChannels] = useState([]);
@@ -66,8 +71,8 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
 
   useEffect(() => {
     typingStateRef.current = false;
-    if (!channelId || !activeOrgId || !currentUser) return undefined;
-    const uid = currentUser.id || currentUser.uid;
+    if (!channelId || !activeOrgId || !currentUserId) return undefined;
+    const uid = currentUserId;
     const channelRef = doc(db, 'organizations', activeOrgId, 'channels', channelId);
     return () => {
       if (typingTimerRef.current) {
@@ -81,12 +86,12 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         [`typingAt.${uid}`]: 0,
       }).catch(() => {});
     };
-  }, [activeOrgId, channelId, currentUser]);
+  }, [activeOrgId, channelId, currentUserId]);
 
   // Fetch read state for all channels (per-user cursor tracking)
   useEffect(() => {
-    if (!activeOrgId || !currentUser) return;
-    const uid = currentUser.id || currentUser.uid;
+    if (!activeOrgId || !currentUserId) return;
+    const uid = currentUserId;
     const qReadState = query(collection(db, 'organizations', activeOrgId, 'readState'), where('userId', '==', uid));
     const unsub = onSnapshot(qReadState, snap => {
       const state = {};
@@ -102,12 +107,12 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       reportLoadError('[useWorkspaceChat] read state', err);
     });
     return () => unsub();
-  }, [activeOrgId, currentUser]);
+  }, [activeOrgId, currentUserId]);
 
   // Fetch active DMs list for current user
   useEffect(() => {
-    if (!activeOrgId || !currentUser) return;
-    const uid = currentUser.id || currentUser.uid;
+    if (!activeOrgId || !currentUserId) return;
+    const uid = currentUserId;
     const dmDocRef = doc(db, 'organizations', activeOrgId, 'activeDMs', uid);
     const unsub = onSnapshot(dmDocRef, snap => {
       if (snap.exists()) {
@@ -119,15 +124,15 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       reportLoadError('[useWorkspaceChat] active DMs', err);
     });
     return () => unsub();
-  }, [activeOrgId, currentUser]);
+  }, [activeOrgId, currentUserId]);
 
   // Room documents are listable org-wide (see the note in firestore.rules), so
   // visibility is applied here through the shared isVisibleChatChannel rule —
   // the same predicate the unread badge uses, so the sidebar and the badge can
   // no longer disagree about which rooms a member is in.
   useEffect(() => {
-    if (!activeOrgId || !currentUser) return undefined;
-    const uid = currentUser.id || currentUser.uid;
+    if (!activeOrgId || !currentUserId) return undefined;
+    const uid = currentUserId;
     const channelsRef = collection(db, 'organizations', activeOrgId, 'channels');
     const unsubChannels = onSnapshot(query(channelsRef), snap => {
       const allChannels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -153,7 +158,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       reportLoadError('[useWorkspaceChat] channels', err);
     });
     return () => unsubChannels();
-  }, [activeOrgId, currentUser]);
+  }, [activeOrgId, currentUserId]);
 
   // Fetch messages for the active channel. Only the most recent window is
   // subscribed — an unbounded listener re-reads the entire history of a busy
