@@ -342,18 +342,25 @@ export default function AgileBoard({ issues, members, projectId, project, active
                         />
                       )}
 
+                      {/* Card spacing lives in a margin on the cards, never in
+                          `gap` here: gap is invisible to the drag library, which
+                          sizes its placeholder from each card's own box. With a
+                          gap the slot freed by lifting a card was 8px taller
+                          than the placeholder replacing it, so the whole column
+                          hopped on every lift and again on every drop. */}
                       <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 p-[8px] flex flex-col gap-[8px] transition-colors custom-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
+                            className={`flex-1 p-[8px] flex flex-col transition-colors custom-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
                               snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                             }`}
                           >
                             {colIssues.map((issue, i) => (
                               <IssueCard
                                 key={issue.id}
+                                className="mb-[8px]"
                                 issue={issue}
                                 issues={issues}
                                 members={members}

@@ -375,7 +375,7 @@ export default function MyTasksPage() {
                             <div
                               ref={provided.innerRef}
                               {...provided.droppableProps}
-                              className={`flex-1 overflow-y-auto p-[8px] flex flex-col gap-[8px] transition-colors custom-scrollbar ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
+                              className={`flex-1 overflow-y-auto p-[8px] flex flex-col transition-colors custom-scrollbar ${snapshot.isDraggingOver ? 'bg-[#f0f0f0]' : ''}`}
                             >
                               {colIssues.length === 0 ? (
                                 <div className="flex items-center justify-center h-20 text-[13px] text-faint">
@@ -387,6 +387,7 @@ export default function MyTasksPage() {
                                   return (
                                     <IssueCard
                                       key={issue.id}
+                                      className="mb-[8px]"
                                       issue={issue}
                                       issues={tasks}
                                       sprints={sprints}

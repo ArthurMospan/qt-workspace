@@ -27,7 +27,7 @@ function hexToRgba(hex, alpha) {
 
 
 
-export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive, isArchived }) {
+export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive, isArchived, className = '' }) {
   const router   = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
@@ -87,9 +87,17 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
     const { isDragging = false, isDropAnimating = false } = snapshot;
     const libraryTransition = provided.draggableProps?.style?.transition;
     const libraryTransform = provided.draggableProps?.style?.transform;
-    // Lift the card while it is under the cursor, then let the scale ease back
-    // to 1 as part of the drop animation instead of popping off at the end.
     const lifted = isDragging && !isDropAnimating;
+    // `transition-all` would put `transform` under a CSS transition, but the
+    // library drives the card's transform frame by frame during a drag. The two
+    // fight each other and the card drifts after the drop, so only paint
+    // properties ease here.
+    // The hover ring is an `!important` box-shadow, so it outranks the inline
+    // lift shadow below — and the cursor is by definition over the card being
+    // dragged. Dropping the ring while lifted lets the lift actually show, and
+    // stops the shadow swapping abruptly the moment the card is released.
+    const hoverRing = lifted ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
+    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
     // `none` is the library asking for an instant snap and cannot be combined
     // with further entries — appending to it would void the whole declaration.
     const cardTransition = !libraryTransition || libraryTransition === 'none'
@@ -111,16 +119,21 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
         onClick={() => { if (!isDraggingRef.current) router.push(`/${projectId}/issue/${issue.id}`); }}
-        className={`relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-all duration-200 flex flex-col justify-between hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0`}
+        className={cardClassName}
         style={{
           ...provided.draggableProps?.style,
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: lifted ? '#e4e4e7' : '#ffffff',
-          boxShadow: lifted ? '0 16px 16px -10px rgba(0, 0, 0, 0.16), 0 4px 4px -2px rgba(0, 0, 0, 0.08)' : 'none',
-          transform: lifted && libraryTransform
-            ? `${libraryTransform} scale(1.015)`
-            : libraryTransform,
+          // A deeper shadow now carries the "lifted" feel on its own. There used
+          // to be a scale(1.015) here too, but the library measures a Draggable
+          // once at drag start and derives every placeholder and displacement
+          // offset from that box — visually resizing the card afterwards puts it
+          // a few pixels out of step with the slot it is heading for.
+          boxShadow: lifted
+            ? '0 18px 26px -12px rgba(0, 0, 0, 0.22), 0 6px 8px -4px rgba(0, 0, 0, 0.10)'
+            : 'none',
+          transform: libraryTransform,
           // Hand the transition straight back to the library while it owns the
           // card. The previous version appended `ring 0.2s ease` — not an
           // animatable property — and that inline value silently overrode the

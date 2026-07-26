@@ -363,7 +363,7 @@ export default function GlobalSprintsPage() {
       <Droppable droppableId={droppableId}>
         {(provided, snapshot) => (
           <div 
-            className="flex flex-col gap-[8px] px-4 pb-4 pt-1 min-h-[60px]" 
+            className="flex flex-col px-4 pb-4 pt-1 min-h-[60px]" 
             ref={provided.innerRef} 
             {...provided.droppableProps}
           >
@@ -373,6 +373,7 @@ export default function GlobalSprintsPage() {
                 return (
                   <IssueCard
                     key={issue.id}
+                    className="mb-[8px]"
                     issue={issue}
                     issues={issueList}
                     sprints={sprints}
@@ -392,6 +393,7 @@ export default function GlobalSprintsPage() {
                       ref={draggableProvided.innerRef}
                       {...draggableProvided.draggableProps}
                       {...draggableProvided.dragHandleProps}
+                      className="mb-[8px]"
                       style={{
                         ...draggableProvided.draggableProps.style,
                         opacity: draggableSnapshot.isDragging ? 0.8 : 1,
