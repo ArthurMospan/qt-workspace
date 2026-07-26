@@ -51,6 +51,12 @@ export function ConfirmProvider({ children }) {
   const handleCancel = () => settle(input ? null : false);
   const handleConfirm = () => settle(input ? inputValue : true);
 
+  // A confirm with neither a message nor an input still needs its form in the
+  // DOM for the footer's submit button, but the form is empty — and the dialog
+  // pads its body regardless, which rendered as a blank white strip between the
+  // title and the buttons. Collapse the padding instead of shipping that gap.
+  const hasBody = Boolean(message) || Boolean(input);
+
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
@@ -60,6 +66,7 @@ export function ConfirmProvider({ children }) {
         title={title}
         size="sm"
         presentation="dialog"
+        bodyClassName={hasBody ? '' : '!py-0'}
         footer={
           <>
             <Button style="secondary" size="md" onClick={handleCancel}>{cancelText}</Button>

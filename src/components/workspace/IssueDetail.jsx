@@ -31,7 +31,7 @@ import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
-  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
+  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, Download, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   CheckCircle, XCircle, Play, Square as StopIcon,
   FileText, Film, Music, Link2, Copy, Sparkles, Tag as TagIcon,
   ZoomIn, Maximize2,
@@ -40,6 +40,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
+import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -285,25 +286,34 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
                   <img src={url} alt="" className="h-full w-full object-cover" />
                 ) : <FileText size={16} className="text-muted" />}
               </button>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-semibold text-ink">{attachment.name}</p>
+              {/* The name opens the preview — the obvious target, and what the
+                  thumbnail beside it already did. The row used to spend a slot
+                  on an "open in a new tab" link instead, which is the one thing
+                  the preview makes unnecessary; downloading is what was missing. */}
+              <button
+                type="button"
+                onClick={() => onOpen(attachment)}
+                className="min-w-0 flex-1 text-left"
+                aria-label={`Переглянути ${attachment.name}`}
+              >
+                <p className="truncate text-[12px] font-semibold text-ink group-hover:underline">{attachment.name}</p>
                 <p className="text-[10px] text-faint">{fmtBytes(attachment.size)}</p>
-              </div>
+              </button>
               {isEditing && url && (
                 <Button style="ghost" size="sm" onClick={() => onInsert(attachment, fileType, url)}>
                   Вставити в опис
                 </Button>
               )}
               {url && (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => downloadMaterial(url, attachment.name)}
                   className="p-2 text-faint hover:text-ink"
-                  aria-label={`Відкрити ${attachment.name}`}
+                  aria-label={`Завантажити ${attachment.name}`}
+                  title="Завантажити"
                 >
-                  <ExternalLink size={14} />
-                </a>
+                  <Download size={14} />
+                </button>
               )}
               {!isArchived && (
                 <button
@@ -806,8 +816,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleDeleteAttachment = async (id) => {
-    if (!(await confirmDialog({ title: 'Видалити вкладення?', confirmText: 'Видалити', danger: true }))) return;
-    const removed = (issue.attachments || []).find(a => a.id === id);
+    const target = (issue.attachments || []).find(a => a.id === id);
+    if (!(await confirmDialog({
+      title: 'Видалити вкладення?',
+      message: `${target?.name || 'Файл'} буде видалено із завдання і зі сховища. Це не можна скасувати.`,
+      confirmText: 'Видалити',
+      danger: true,
+    }))) return;
+    const removed = target;
     await update({ attachments: (issue.attachments || []).filter(a => a.id !== id) });
     // Release the stored file too — dropping only the metadata left the upload
     // in Cloudinary forever, still being paid for.
@@ -1803,7 +1819,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   {chatView === 'qtplus' && qtplusLink?.projectId ? (
                     <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
                   ) : (
-                    <UnifiedTimeline issueId={issueId} projectId={projectId} isArchived={isArchived} org={activeOrg} members={members} />
+                    <UnifiedTimeline issueId={issueId} projectId={projectId} issue={issue} isArchived={isArchived} org={activeOrg} members={members} />
                   )}
                 </div>
               </div>
