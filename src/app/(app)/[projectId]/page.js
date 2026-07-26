@@ -202,13 +202,19 @@ export default function BoardPage({ params }) {
   }, [createIssue, showToast]); // eslint-disable-line
 
   const handleMoveIssue = useCallback(async (issueId, newColumnId, newIndex, updateFields = null) => {
-    try {
-      if (updateFields) {
-        await updateIssue(issueId, updateFields, actor);
-      }
-      await moveIssue(issueId, newColumnId, newIndex, actor);
-    } catch (err) {
-      showToast(`Помилка переміщення. Відновлено попередній стан: ${err.message}`, 'error');
+    // Both writes are kicked off synchronously so each paints its optimistic
+    // result before the first await. Awaiting them in sequence also chained two
+    // full round-trips onto a swimlane drop, which is what made the card sit
+    // there for about a second before settling.
+    const move = moveIssue(issueId, newColumnId, newIndex, actor);
+    const fields = updateFields
+      ? updateIssue(issueId, updateFields, actor)
+      : Promise.resolve();
+
+    const results = await Promise.allSettled([move, fields]);
+    const failed = results.find(r => r.status === 'rejected');
+    if (failed) {
+      showToast(`Помилка переміщення. Відновлено попередній стан: ${failed.reason?.message || failed.reason}`, 'error');
     }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 

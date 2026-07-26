@@ -6,26 +6,32 @@ import { collection, query, where, onSnapshot, doc, updateDoc, deleteField, serv
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { reportLoadError } from '@/lib/utils/errors';
+import { pickPatchableFields } from '@/lib/utils/optimistic.mjs';
 export function useAllMyTasks(userId) {
   const {
     activeOrgId
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
-  const [tasks, setTasks] = useState([]);
+  const [snapshotTasks, setSnapshotTasks] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Keeps the "My tasks" kanban from springing a dropped card back to its old
+  // column while the write is in flight. Sorted by due date here, not by
+  // `order`, so the merged list needs no re-sort.
+  const [tasks, applyPatch, revertPatch] = useOptimisticPatch(snapshotTasks);
   useEffect(() => {
     if (!activeOrgId || !userId) {
       queueMicrotask(() => {
-        setTasks([]);
+        setSnapshotTasks([]);
         setIssueLinks([]);
         setLoading(false);
       });
       return;
     }
     queueMicrotask(() => {
-      setTasks([]);
+      setSnapshotTasks([]);
       setIssueLinks([]);
       setLoading(true);
     });
@@ -39,7 +45,7 @@ export function useAllMyTasks(userId) {
         const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
         return aTime - bTime;
       });
-      setTasks(docs);
+      setSnapshotTasks(docs);
       setLoading(false);
     }, err => {
       reportLoadError('[useAllMyTasks]', err);
@@ -65,10 +71,20 @@ export function useAllMyTasks(userId) {
       if (willBeDone && !wasDone) updates.completedAt = serverTimestamp();
       if (!willBeDone && wasDone) updates.completedAt = deleteField();
     }
-    await updateDoc(doc(db, 'issues', taskId), {
-      ...updates,
-    });
-  }, [tasks, doneStatusIds]);
+    // Paint the new column before the round-trip, otherwise the drop animation
+    // lands the card back where it started and the echo teleports it.
+    const optimistic = pickPatchableFields(data);
+    if (optimistic) applyPatch({ [taskId]: optimistic });
+
+    try {
+      await updateDoc(doc(db, 'issues', taskId), {
+        ...updates,
+      });
+    } catch (err) {
+      if (optimistic) revertPatch([taskId]);
+      throw err;
+    }
+  }, [tasks, doneStatusIds, applyPatch, revertPatch]);
   return {
     tasks,
     issueLinks,

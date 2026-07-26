@@ -3,7 +3,7 @@
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from './IssueCard';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { DEFAULT_COLUMNS } from './BoardConfigModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
@@ -48,21 +48,30 @@ export default function AgileBoard({ issues, members, projectId, project, active
   const [mounted, setMounted] = useState(false);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
   
-  const activeHiddenCols = project ? (project.hiddenColumns || []) : hiddenColumns;
-  const visibleColumns = globalStatuses.filter(s => !activeHiddenCols.includes(s.id));
-  const hiddenColIds = activeHiddenCols.filter(id => globalStatuses.some(s => s.id === id));
-  
-  const columns = [...visibleColumns];
-  if (showHiddenLane && hiddenColIds.length > 0) {
-    columns.push({
-      id: '__hidden__',
-      label: 'Приховані',
-      color: '#cfcfcf',
-      isHiddenContainer: true,
-      colIds: hiddenColIds
-    });
-  }
-  
+  // Both sources hand back a fresh array on every render, which would defeat
+  // the memos below; collapse them to a value that only changes on content.
+  const hiddenColsKey = (project ? (project.hiddenColumns || []) : hiddenColumns).join(',');
+  const activeHiddenCols = useMemo(
+    () => (hiddenColsKey ? hiddenColsKey.split(',') : []),
+    [hiddenColsKey]
+  );
+
+  const columns = useMemo(() => {
+    const visibleColumns = globalStatuses.filter(s => !activeHiddenCols.includes(s.id));
+    const hiddenColIds = activeHiddenCols.filter(id => globalStatuses.some(s => s.id === id));
+    const next = [...visibleColumns];
+    if (showHiddenLane && hiddenColIds.length > 0) {
+      next.push({
+        id: '__hidden__',
+        label: 'Приховані',
+        color: '#cfcfcf',
+        isHiddenContainer: true,
+        colIds: hiddenColIds
+      });
+    }
+    return next;
+  }, [globalStatuses, activeHiddenCols, showHiddenLane]);
+
   const [activeAddColId, setActiveAddColId] = useState(null);
   const [collapsedCols, setCollapsedCols] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -123,7 +132,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
     onMoveIssue(draggableId, destColId, destination.index, updateFields);
   };
 
-  const getSwimlanes = () => {
+  const swimlanes = useMemo(() => {
     if (swimlane === 'none') {
       return [{ id: 'all', title: null, issues }];
     }
@@ -174,17 +183,15 @@ export default function AgileBoard({ issues, members, projectId, project, active
       if (noEpicIssues.length > 0 || epics.length === 0) {
         lanes.push({ id: 'epic-none', title: 'Без Епіку', issues: noEpicIssues });
       }
-      return lanes.filter(l => l.issues.length > 0 || l.id.startsWith('epic-') && l.id !== 'epic-none'); 
+      return lanes.filter(l => l.issues.length > 0 || l.id.startsWith('epic-') && l.id !== 'epic-none');
       // show epic lane even if empty to allow drag into it, but hide empty non-epic lane
     }
     return [{ id: 'all', title: null, issues }];
-  };
+  }, [swimlane, issues, members]);
 
   if (!mounted) {
     return null; // Avoid SSR hydration mismatches and React 18 strict mode DnD bug
   }
-
-  const swimlanes = getSwimlanes();
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>

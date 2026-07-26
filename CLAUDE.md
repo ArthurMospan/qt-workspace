@@ -87,6 +87,20 @@ src/
 - Multiple hooks can be used in a single component to gather all needed data
 - Firebase listeners keep data in sync with backend
 
+**Optimistic writes (drag & drop)**:
+- Boards render a Firestore snapshot, so any write that moves something on
+  screen must paint its result *synchronously* before awaiting the round-trip.
+  `@hello-pangea/dnd` animates a dropped card into the list as it stands when
+  the drag ends — without the overlay the card visibly springs back and then
+  jumps once the echo lands.
+- Use `useOptimisticPatch(items, compare)` (`src/lib/hooks/`): it overlays a
+  patch map on the snapshot and retires each entry once the snapshot agrees.
+  Revert explicitly in the write's `catch`.
+- `planMove()` in `src/lib/utils/optimistic.mjs` computes a move once and is
+  used for *both* the repaint and the Firestore batch, so the two cannot drift.
+  Pure logic lives in that `.mjs` so `tests/optimistic-board.test.mjs` can cover
+  it without React.
+
 **UI State**:
 - Component-level: local `useState()`
 - Workspace-level: Zustand store (useWorkspaceStore) for timers, toasts, live notifications, breadcrumbs

@@ -85,7 +85,12 @@ export default function BacklogTab({ projectId, project, currentUser }) {
       return sortDir === 'asc' ? res : -res;
     });
 
-  const handleUpdate  = async (patch) => { if (activeIssue) await updateIssue(activeIssue.id, patch, currentUser?.id, currentUser?.name); };
+  // updateIssue takes an { userId, userName } actor — passing the two fields as
+  // separate arguments landed a bare string in that slot, so every backlog edit
+  // was audited with no author at all.
+  const actor = { userId: currentUser?.id || currentUser?.uid, userName: currentUser?.name || '' };
+
+  const handleUpdate  = async (patch) => { if (activeIssue) await updateIssue(activeIssue.id, patch, actor); };
   const handleDelete  = async () => { if (activeIssue) { await deleteIssue(activeIssue.id); setActiveIssue(null); showToast('Видалено'); } };
   const handleComment = async (text) => { 
     if (activeIssue) {
@@ -124,7 +129,13 @@ export default function BacklogTab({ projectId, project, currentUser }) {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
     
     const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId.replace('sprint-', '');
-    await updateIssue(draggableId, { sprintId: targetSprintId }, currentUser?.id || currentUser?.uid, currentUser?.name);
+    // updateIssue mirrors sprintId locally before the round-trip, so the row
+    // stays where it was dropped instead of snapping back for a moment.
+    try {
+      await updateIssue(draggableId, { sprintId: targetSprintId }, actor);
+    } catch (err) {
+      showToast('Не вдалося перемістити задачу: ' + err.message, 'error');
+    }
   };
 
   const activeOrPlannedSprints = sprints.filter(s => s.status === 'active' || s.status === 'planned');

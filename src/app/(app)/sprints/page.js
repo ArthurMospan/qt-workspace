@@ -6,6 +6,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig, DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
+import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -27,6 +28,8 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
@@ -219,7 +222,10 @@ export default function GlobalSprintsPage() {
 
   const isManager = can(orgRole, 'manage:sprints');
   const projectIds = (projects || []).map(p => p.id);
-  const { issues, issueLinks, loading: issuesLoading } = useWorkspaceAnalytics(projectIds);
+  const { issues: snapshotIssues, issueLinks, loading: issuesLoading } = useWorkspaceAnalytics(projectIds);
+  // Sprint reassignment is painted locally first; without it the dropped card
+  // animates back into its old sprint and only then hops to the new one.
+  const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues);
   const { sprints, loading: sprintsLoading, createSprint, updateSprint, deleteSprint, startSprint, completeSprint } = useSprints();
 
   const loading = issuesLoading || sprintsLoading;
@@ -229,18 +235,21 @@ export default function GlobalSprintsPage() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const issueId = draggableId;
+    const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId;
+
+    // Move the card first, write second. Firestore was also imported lazily
+    // right here, so the first drop of a session paid a chunk fetch on top of
+    // the round-trip before anything on screen moved.
+    applyPatch({ [issueId]: { sprintId: targetSprintId } });
 
     try {
-      const targetSprintId = destination.droppableId === 'backlog' ? null : destination.droppableId;
-      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
-      
       await updateDoc(doc(db, 'issues', issueId), {
         sprintId: targetSprintId,
         updatedAt: serverTimestamp()
       });
       showToast('Спринт оновлено ✓');
     } catch (err) {
+      revertPatch([issueId]);
       console.error(err);
       showToast('Помилка оновлення спринта');
     }

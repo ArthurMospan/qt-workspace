@@ -1,15 +1,17 @@
 'use client';
 
 // src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { reportLoadError } from '@/lib/utils/errors';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import { compareIssues, pickPatchableFields, planMove } from '@/lib/utils/optimistic.mjs';
 
 // Stable string form of an audited field, so array values compare by content
 // rather than by identity. Order-insensitive for arrays: reordering assignees
@@ -51,14 +53,18 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     activeOrgId, currentUser
   } = useAppContext();
   const { doneStatusIds, statuses } = useWorkflowConfig();
-  const [issues, setIssues] = useState([]);
+  const [snapshotIssues, setSnapshotIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // A drag & drop is painted from this overlay until Firestore echoes it back.
+  const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues, compareIssues);
+  const deliveredRef = useRef(false);
   useEffect(() => {
+    deliveredRef.current = false;
     if (!projectId || !activeOrgId || !currentUser) {
       queueMicrotask(() => {
-        setIssues([]);
+        setSnapshotIssues([]);
         setIssueLinks([]);
         setError(null);
         setLoading(false);
@@ -67,7 +73,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     queueMicrotask(() => {
-      setIssues([]);
+      setSnapshotIssues([]);
       setIssueLinks([]);
       setError(null);
       setLoading(true);
@@ -76,6 +82,8 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // No orderBy — sorted client-side to avoid composite index
     const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
     const unsub = onSnapshot(q, {
+      // Needed so an empty project still leaves the loading state once the
+      // server confirms it really is empty (a metadata-only transition).
       includeMetadataChanges: true,
     }, snap => {
       // An empty cache is not proof that a task was deleted. While Firestore is
@@ -86,18 +94,23 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         setLoading(true);
         return;
       }
+      // Metadata-only event — typically the server acknowledging a write we
+      // already applied locally. The documents are identical to what is on
+      // screen, so publishing a fresh array would re-render every card for
+      // nothing; mid drop-animation that repaint is exactly the visible blink.
+      if (deliveredRef.current && snap.docChanges().length === 0) {
+        setError(null);
+        setLoading(false);
+        return;
+      }
       const docs = snap.docs.map(d => ({
         id: d.id,
         ...d.data({ serverTimestamps: 'estimate' })
       }));
       // Sort client-side by order ASC, fallback to createdAt asc
-      docs.sort((a, b) => {
-        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
-        const aTime = a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.createdAt?.toMillis?.() ?? 0;
-        return aTime - bTime;
-      });
-      setIssues(docs);
+      docs.sort(compareIssues);
+      deliveredRef.current = true;
+      setSnapshotIssues(docs);
       setError(null);
       setLoading(false);
     }, err => {
@@ -173,10 +186,22 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
 
     // Find current issue for diff
     const current = issues.find(i => i.id === issueId);
-    await updateDoc(doc(db, 'issues', issueId), {
-      ...data,
-      updatedAt: serverTimestamp()
-    });
+
+    // Mirror board-position fields locally right away. Backlog and sprint views
+    // drag cards by writing sprintId/assigneeIds through here, and without the
+    // overlay the card springs back until the round-trip completes.
+    const optimistic = pickPatchableFields(data);
+    if (optimistic) applyPatch({ [issueId]: optimistic });
+
+    try {
+      await updateDoc(doc(db, 'issues', issueId), {
+        ...data,
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      if (optimistic) revertPatch([issueId]);
+      throw err;
+    }
 
     // Touch parent project
     await updateDoc(doc(db, 'projects', projectId), {
@@ -200,7 +225,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         to
       });
     }
-  }, [issues, projectId]);
+  }, [issues, projectId, applyPatch, revertPatch]);
 
   // -------------------------------------------------------------------------
   // deleteIssue
@@ -239,43 +264,44 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       }
     }
     const oldColumnId = issue.columnId;
-    const batch = writeBatch(db);
 
-    // Reorder destination column (exclude the moving issue)
-    const destIssues = issues.filter(i => i.id !== issueId && i.columnId === newColumnId).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    // One plan drives both the repaint and the writes, so the overlay retires
+    // the moment Firestore echoes back instead of disagreeing with it. Cards
+    // whose position is unchanged are left out — no repaint, no write.
+    const plan = planMove(issues, issueId, newColumnId, newOrder);
+    if (!plan) throw new Error('Issue not found');
 
-    // Insert moving issue at target position
-    destIssues.splice(Math.max(0, newOrder), 0, {
-      id: issueId
-    });
-    destIssues.forEach((i, idx) => {
-      batch.update(doc(db, 'issues', i.id), {
-        order: idx,
+    // Paint first: @hello-pangea/dnd animates the card into the list as it
+    // stands when the drag ends, so the destination slot has to exist by now.
+    applyPatch(plan.patches);
+
+    try {
+      const batch = writeBatch(db);
+
+      // `subtasks` is deliberately NOT written here: echoing back our local copy
+      // overwrote whatever a colleague had just ticked off, and moving a card
+      // never changes its subtasks anyway.
+      for (const [id, patch] of Object.entries(plan.patches)) {
+        const updates = { ...patch, updatedAt: serverTimestamp() };
+        if (id === issueId) {
+          const wasDone = doneStatusIds.includes(oldColumnId);
+          const willBeDone = doneStatusIds.includes(newColumnId);
+          if (willBeDone && !wasDone) updates.completedAt = serverTimestamp();
+          if (!willBeDone && wasDone) updates.completedAt = deleteField();
+        }
+        batch.update(doc(db, 'issues', id), updates);
+      }
+
+      // Touch parent project in the same batch
+      batch.update(doc(db, 'projects', projectId), {
         updatedAt: serverTimestamp()
       });
-    });
 
-    // Update the moved issue itself. `subtasks` is deliberately NOT written
-    // here: echoing back our local copy overwrote whatever a colleague had
-    // just ticked off, and moving a card never changes its subtasks anyway.
-    const movedIssueUpdates = {
-      columnId: newColumnId,
-      status: newColumnId,
-      order: Math.max(0, newOrder),
-      updatedAt: serverTimestamp()
-    };
-    const wasDone = doneStatusIds.includes(oldColumnId);
-    const willBeDone = doneStatusIds.includes(newColumnId);
-    if (willBeDone && !wasDone) movedIssueUpdates.completedAt = serverTimestamp();
-    if (!willBeDone && wasDone) movedIssueUpdates.completedAt = deleteField();
-    batch.update(doc(db, 'issues', issueId), movedIssueUpdates);
-
-    // Touch parent project in the same batch
-    batch.update(doc(db, 'projects', projectId), {
-      updatedAt: serverTimestamp()
-    });
-
-    await batch.commit();
+      await batch.commit();
+    } catch (err) {
+      revertPatch(Object.keys(plan.patches));
+      throw err;
+    }
 
     // Audit
     await writeAudit(issueId, {
@@ -315,7 +341,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [activeOrgId, issues, projectId, doneStatusIds, statuses]);
+  }, [activeOrgId, issues, projectId, doneStatusIds, statuses, applyPatch, revertPatch]);
   return {
     issues,
     issueLinks,

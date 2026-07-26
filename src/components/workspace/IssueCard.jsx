@@ -83,7 +83,18 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
     issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
   );
 
-  const renderCardContent = (provided = {}, isDragging = false) => {
+  const renderCardContent = (provided = {}, snapshot = {}) => {
+    const { isDragging = false, isDropAnimating = false } = snapshot;
+    const libraryTransition = provided.draggableProps?.style?.transition;
+    const libraryTransform = provided.draggableProps?.style?.transform;
+    // Lift the card while it is under the cursor, then let the scale ease back
+    // to 1 as part of the drop animation instead of popping off at the end.
+    const lifted = isDragging && !isDropAnimating;
+    // `none` is the library asking for an instant snap and cannot be combined
+    // with further entries — appending to it would void the whole declaration.
+    const cardTransition = !libraryTransition || libraryTransition === 'none'
+      ? libraryTransition || undefined
+      : `${libraryTransition}, box-shadow 0.2s ease, border-color 0.2s ease`;
     const msgCount = issue.commentCount || issue.commentsCount || issue.comments?.length || (issue.hasUnreadChat ? 1 : 0);
     const hasUnreadChat = Boolean(
       issue.lastCommentAt &&
@@ -105,14 +116,17 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
           ...provided.draggableProps?.style,
           borderWidth: '1px',
           borderStyle: 'solid',
-          borderColor: isDragging ? '#e4e4e7' : '#ffffff',
-          boxShadow: isDragging ? '0 16px 16px -10px rgba(0, 0, 0, 0.16), 0 4px 4px -2px rgba(0, 0, 0, 0.08)' : 'none',
-          transform: isDragging && provided.draggableProps?.style?.transform 
-            ? `${provided.draggableProps.style.transform} scale(1.015)` 
-            : provided.draggableProps?.style?.transform,
-          transition: isDragging 
-            ? provided.draggableProps?.style?.transition 
-            : `${provided.draggableProps?.style?.transition || ''}, ring 0.2s ease`.replace(/^,\s*/, ''),
+          borderColor: lifted ? '#e4e4e7' : '#ffffff',
+          boxShadow: lifted ? '0 16px 16px -10px rgba(0, 0, 0, 0.16), 0 4px 4px -2px rgba(0, 0, 0, 0.08)' : 'none',
+          transform: lifted && libraryTransform
+            ? `${libraryTransform} scale(1.015)`
+            : libraryTransform,
+          // Hand the transition straight back to the library while it owns the
+          // card. The previous version appended `ring 0.2s ease` — not an
+          // animatable property — and that inline value silently overrode the
+          // `transition-all duration-200` class, so nothing on the card eased
+          // at rest either. Leaving it undefined lets the class do its job.
+          transition: cardTransition,
         }}
       >
         {/* ── Priority glow blob ─────────────────────────── */}
@@ -281,7 +295,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
   if (isDraggable) {
     return (
       <Draggable draggableId={issue.id} index={index} isDragDisabled={isArchived}>
-        {(provided, snapshot) => renderCardContent(provided, snapshot.isDragging)}
+        {(provided, snapshot) => renderCardContent(provided, snapshot)}
       </Draggable>
     );
   }
