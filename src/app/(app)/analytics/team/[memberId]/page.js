@@ -25,7 +25,7 @@ import {
 const PERIOD_OPTIONS = [7, 14, 30, 90].map(days => ({ value: days, label: `${days}д` }));
 
 function memberName(member) {
-  return member?.name || member?.displayName || member?.email || 'Працівник';
+  return member?.name || member?.displayName || member?.email || 'Учасник';
 }
 
 export default function MemberAnalyticsPage() {
@@ -78,8 +78,8 @@ export default function MemberAnalyticsPage() {
       <div className="flex min-h-[440px] flex-1 items-center justify-center bg-white">
         <EmptyState
           icon={Users}
-          title="Працівника не знайдено"
-          description="Можливо, він більше не входить до організації."
+          title="Учасника не знайдено"
+          description="Можливо, ця людина більше не входить до організації."
           action="Повернутися до команди"
           onAction={() => router.push('/analytics?tab=workload')}
         />
@@ -90,30 +90,6 @@ export default function MemberAnalyticsPage() {
   return (
     <div className="custom-scrollbar h-full flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
       <div className="workspace-page-layout min-h-full pb-[120px]">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-[12px] font-semibold text-ink">Дані працівника</p>
-            <p className="mt-0.5 text-[10px] text-muted">Фільтри застосовуються до всіх розділів сторінки</p>
-          </div>
-          <FilterBar>
-            <MultiSelect
-              value={projectFilters}
-              onChange={setProjectFilters}
-              options={projects.map(project => ({ value: project.id, label: project.name }))}
-              placeholder="Всі проєкти"
-              searchPlaceholder="Пошук проєкту…"
-              className="w-[210px]"
-              variant="ghost"
-            />
-            <span className="mx-0.5 h-4 w-px shrink-0 bg-line" />
-            <Segmented
-              value={period}
-              onChange={setPeriod}
-              options={PERIOD_OPTIONS}
-            />
-          </FilterBar>
-        </div>
-
         <Surface variant="panel" padding="lg" className="min-h-[520px] flex-1">
           <WorkloadTab
             members={members}
@@ -125,6 +101,28 @@ export default function MemberAnalyticsPage() {
             selectedMemberId={memberId}
             standaloneDetail
             onSelectMember={() => router.push('/analytics?tab=workload')}
+            // The filters live in the member header rather than in a page
+            // header of their own — they read as controls for the analytics
+            // they actually scope, next to the person being analysed.
+            detailFilters={(
+              <FilterBar className="bg-white">
+                <MultiSelect
+                  value={projectFilters}
+                  onChange={setProjectFilters}
+                  options={projects.map(project => ({ value: project.id, label: project.name }))}
+                  placeholder="Всі проєкти"
+                  searchPlaceholder="Пошук проєкту…"
+                  className="w-[210px]"
+                  variant="ghost"
+                />
+                <span className="mx-0.5 h-4 w-px shrink-0 bg-line" />
+                <Segmented
+                  value={period}
+                  onChange={setPeriod}
+                  options={PERIOD_OPTIONS}
+                />
+              </FilterBar>
+            )}
           />
         </Surface>
       </div>

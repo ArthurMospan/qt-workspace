@@ -2,12 +2,15 @@
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
+// The icon chip is deliberately not themable. Every KPI row used to pick its
+// own hue, which made a set of four cards read as four unrelated widgets and
+// implied a status the number alone was already carrying. One brand grey chip
+// with an ink glyph keeps every analytics surface looking like one system.
 export default function KpiCard({
   icon: Icon,
   label,
   value,
   sub,
-  color = '#1f1f1f',
   trend,
   onClick,
   className = '',
@@ -16,8 +19,8 @@ export default function KpiCard({
     <div className={`bg-white border border-transparent rounded-[16px] p-5 transition-all duration-200 ${onClick ? 'hover:ring-4 hover:ring-[#ECECEC] cursor-pointer' : ''} ${className}`}>
       <div className="flex items-start justify-between mb-3">
         {Icon && (
-          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center animate-fade-in" style={{ background: color + '15' }}>
-            <Icon size={16} style={{ color }} />
+          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center animate-fade-in bg-canvas">
+            <Icon size={16} className="text-ink" />
           </div>
         )}
         {trend !== undefined && (

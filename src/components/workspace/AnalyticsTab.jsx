@@ -141,17 +141,17 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard icon={Target}       label="Завершено завдань" color="#10b981"
+          <KpiCard icon={Target}       label="Завершено завдань"
             value={`${stats.done} / ${stats.total}`}
             sub={`${stats.completionPct}% завершення`} />
-          <KpiCard icon={Zap}          label="Velocity (7 днів)" color="#1f1f1f"
+          <KpiCard icon={Zap}          label="Velocity (7 днів)"
             value={stats.recentDone}
             sub="завдань закрито за тиждень"
             trend={stats.velocityTrend} />
-          <KpiCard icon={AlertCircle}  label="Прострочено" color={stats.overdue.length > 0 ? '#dc2626' : '#10b981'}
+          <KpiCard icon={AlertCircle}  label="Прострочено"
             value={stats.overdue.length}
             sub="завдань після дедлайну" />
-          <KpiCard icon={Users}        label="В роботі" color="#0891b2"
+          <KpiCard icon={Users}        label="В роботі"
             value={stats.inProg}
             sub="активних завдань" />
         </div>

@@ -263,14 +263,14 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Zap} color="#1f1f1f" trend={stats.velocityTrend ?? undefined}
+          <KpiCard icon={Zap} trend={stats.velocityTrend ?? undefined}
             value={stats.donePeriod} label={`Закрито за ${period}д`} sub="vs попередній період" />
-          <KpiCard icon={CheckCircle2} color="#10b981"
+          <KpiCard icon={CheckCircle2}
             value={stats.totalDone} label="Всього закрито" sub={`${stats.completionPct}% від всіх завдань`} />
-          <KpiCard icon={Calendar} color="#0891b2"
+          <KpiCard icon={Calendar}
             value={stats.avgCycleTime !== null ? `${stats.avgCycleTime}д` : '—'}
             label="Середній цикл" sub="від відкриття до закриття" />
-          <KpiCard icon={TrendingUp} color="#d97706"
+          <KpiCard icon={TrendingUp}
             value={stats.createdPeriod} label={`Відкрито за ${period}д`}
             sub={stats.createdPeriod > stats.donePeriod
               ? '↑ Більше відкривається'

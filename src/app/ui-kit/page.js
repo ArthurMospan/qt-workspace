@@ -832,10 +832,10 @@ function ProgressSection() {
           <div>
             <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">KpiCard (Колоризовані показники аналітики)</h4>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-              <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" color="#10b981" icon={Target} trend={12} />
-              <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" color="#6366f1" icon={Zap} trend={-5} />
-              <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" color="#0891b2" icon={Clock} />
-              <KpiCard label="Команда" value="8" sub="учасників із завданнями" color="#eab308" icon={Users} />
+              <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" icon={Target} trend={12} />
+              <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" icon={Zap} trend={-5} />
+              <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" icon={Clock} />
+              <KpiCard label="Команда" value="8" sub="учасників із завданнями" icon={Users} />
             </div>
           </div>
 

@@ -292,7 +292,7 @@ function KpiSection() {
         swatchLabel="KitKpiCard — єдина версія"
         decision="AnalyticsTab.jsx тепер імпортує ui/DataDisplay/KpiCard.jsx, локальну функцію видалено."
       />
-      <KitKpiCard icon={Clock} label="ЗАВДАНЬ" value="24" color="#6366f1" trend={12} />
+      <KitKpiCard icon={Clock} label="ЗАВДАНЬ" value="24" trend={12} />
     </div>
   );
 }

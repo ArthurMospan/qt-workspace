@@ -153,28 +153,28 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           icon={Clock}
-          color="#0891b2"
+
           value={fmtH(summary.minutes)}
           label={`Списано за ${period}д`}
           sub="за задачами та подіями"
         />
         <KpiCard
           icon={CheckCircle2}
-          color="#10b981"
+
           value={summary.done}
           label={`Завершено за ${period}д`}
           sub="сума по учасниках"
         />
         <KpiCard
           icon={ListChecks}
-          color="#1f1f1f"
+
           value={summary.open}
           label="Відкритих завдань"
           sub={`${stats.filter(stat => stat.inProgress > 0).length} людей мають роботу в процесі`}
         />
         <KpiCard
           icon={AlertTriangle}
-          color="#ef4444"
+
           value={summary.overdue}
           label="Прострочених"
           sub={summary.overdue ? 'потребують рішення керівника' : 'критичних затримок немає'}
@@ -183,7 +183,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
 
       <div className="overflow-hidden rounded-[18px] bg-white">
         <div className="hidden grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] gap-4 border-b border-line px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-muted lg:grid">
-          <span>Працівник</span>
+          <span>Учасник</span>
           <span>Поточний фокус</span>
           <span className="text-center">Готово</span>
           <span className="text-center">В роботі</span>
@@ -271,8 +271,10 @@ const MEMBER_VIEWS = [
   { id: 'productivity', label: 'Продуктивність', description: 'Динаміка роботи', icon: TrendingUp },
 ];
 
-function MemberHeader({ stat, positions, period, onBack, standalone }) {
-  const risk = riskMeta(stat);
+// The right-hand slot carries the page's own filters when it has any. It used
+// to hold a workload badge and a "Період: N днів" chip — both were read-only
+// restatements of state the filters themselves now show.
+function MemberHeader({ stat, positions, onBack, standalone, filters }) {
   return (
     <div className="mb-6">
       <div className="flex flex-wrap items-center gap-4">
@@ -281,9 +283,6 @@ function MemberHeader({ stat, positions, period, onBack, standalone }) {
         )}
         <UserAvatar user={stat.member} size={standalone ? 64 : 52} />
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-            Аналітика працівника
-          </p>
           <h1 className={`truncate font-bold tracking-tight text-ink ${standalone ? 'text-[26px]' : 'text-[20px]'}`}>
             {memberName(stat.member)}
           </h1>
@@ -292,12 +291,9 @@ function MemberHeader({ stat, positions, period, onBack, standalone }) {
             {stat.member?.email ? ` · ${stat.member.email}` : ''}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${risk.className}`}>{risk.label}</span>
-          <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-muted shadow-sm">
-            Період: {period} днів
-          </span>
-        </div>
+        {filters && (
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">{filters}</div>
+        )}
       </div>
     </div>
   );
@@ -463,10 +459,10 @@ function MemberOverview({ stat, projects, statuses, events, period }) {
   return (
     <>
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard icon={Clock} color="#0891b2" value={fmtH(stat.minutes)} label="Списано часу" sub={`≈ ${fmtH(averagePerDay)} на календарний день`} />
-        <KpiCard icon={CheckCircle2} color="#10b981" value={stat.done} label="Завершено" sub={`${completionRate}% від активного набору`} />
-        <KpiCard icon={Target} color="#1f1f1f" value={stat.inProgress} label="Зараз у роботі" sub={`${stat.open} відкритих загалом`} />
-        <KpiCard icon={AlertTriangle} color="#ef4444" value={stat.overdue} label="Прострочено" sub={stat.overdue ? 'потребує уваги' : 'затримок немає'} />
+        <KpiCard icon={Clock} value={fmtH(stat.minutes)} label="Списано часу" sub={`≈ ${fmtH(averagePerDay)} на календарний день`} />
+        <KpiCard icon={CheckCircle2} value={stat.done} label="Завершено" sub={`${completionRate}% від активного набору`} />
+        <KpiCard icon={Target} value={stat.inProgress} label="Зараз у роботі" sub={`${stat.open} відкритих загалом`} />
+        <KpiCard icon={AlertTriangle} value={stat.overdue} label="Прострочено" sub={stat.overdue ? 'потребує уваги' : 'затримок немає'} />
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         <IssueList
@@ -583,6 +579,7 @@ function MemberDetail({
   period,
   onBack,
   standalone = false,
+  filters,
 }) {
   const [view, setView] = useState('overview');
 
@@ -591,13 +588,13 @@ function MemberDetail({
       <MemberHeader
         stat={stat}
         positions={positions}
-        period={period}
         onBack={onBack}
         standalone={standalone}
+        filters={filters}
       />
       <nav
         className="custom-scrollbar mb-6 flex gap-1.5 overflow-x-auto rounded-[16px] bg-[#e9e9e9] p-1.5"
-        aria-label="Розділи аналітики працівника"
+        aria-label="Розділи аналітики учасника"
       >
         {MEMBER_VIEWS.map(item => {
           const Icon = item.icon;
@@ -654,6 +651,9 @@ export default function WorkloadTab({
   selectedMemberId = 'all',
   onSelectMember,
   standaloneDetail = false,
+  // Rendered in the member header. The standalone member page owns the filter
+  // controls but has no header row of its own to put them in.
+  detailFilters,
 }) {
   const [now, setNow] = useState(() => Date.now());
   const { doneStatusIds, positions = [], statuses = [] } = useWorkflowConfig();
@@ -746,7 +746,7 @@ export default function WorkloadTab({
       <div className="flex flex-1 items-center justify-center">
         <EmptyState
           icon={Users}
-          title="Працівника не знайдено"
+          title="Учасника не знайдено"
           description="Можливо, він більше не входить до організації."
           action="Повернутися до команди"
           onAction={() => onSelectMember?.('all')}
@@ -769,6 +769,7 @@ export default function WorkloadTab({
           period={period}
           onBack={() => onSelectMember?.('all')}
           standalone={standaloneDetail}
+          filters={detailFilters}
         />
       ) : (
         <TeamOverview

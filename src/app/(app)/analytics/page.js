@@ -170,25 +170,25 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Target} label="Всі завдання" color="#10b981"
+          <KpiCard icon={Target} label="Всі завдання"
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
-          <KpiCard icon={Zap} label={`Закрито за ${period}д`} color="#1f1f1f" onClick={() => onTabChange('velocity')}
+          <KpiCard icon={Zap} label={`Закрито за ${period}д`} onClick={() => onTabChange('velocity')}
             value={stats.recentDone} sub="тренди — у Продуктивності" />
-          <KpiCard icon={Clock} label={`Списано часу · ${period}д`} color="#0891b2" onClick={() => onTabChange('timesheet')}
+          <KpiCard icon={Clock} label={`Списано часу · ${period}д`} onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
-          <KpiCard icon={AlertTriangle} label="Прострочено" color="#ef4444"
+          <KpiCard icon={AlertTriangle} label="Прострочено"
             value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'все вчасно'} />
         </div>
 
         <SectionTitle>Календар · {period} днів</SectionTitle>
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard icon={CalendarDays} label="Заплановано" color="#8b5cf6"
+          <KpiCard icon={CalendarDays} label="Заплановано"
             value={calendarStats.upcoming} sub={`наступні ${period} днів`} />
-          <KpiCard icon={Video} label="Мітинги" color="#3b82f6"
+          <KpiCard icon={Video} label="Мітинги"
             value={calendarStats.meetings} sub={`${fmtH(Math.round(calendarStats.meetingMinutes))} за період`} />
-          <KpiCard icon={Clock} label="Фокус-час" color="#14b8a6"
+          <KpiCard icon={Clock} label="Фокус-час"
             value={fmtH(Math.round(calendarStats.focusMinutes))} sub={`за останні ${period} днів`} />
-          <KpiCard icon={StickyNote} label="Нотатки" color="#64748b"
+          <KpiCard icon={StickyNote} label="Нотатки"
             value={calendarStats.notes} sub="у видимому календарі" />
         </div>
 
