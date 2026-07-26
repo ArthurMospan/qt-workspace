@@ -11,6 +11,7 @@ import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { reportLoadError } from '@/lib/utils/errors';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { compareIssues, pickPatchableFields, planMove } from '@/lib/utils/optimistic.mjs';
 
 // Stable string form of an audited field, so array values compare by content
@@ -331,10 +332,11 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       to: newColumnId
     });
 
-    // Notify assignees + watchers about the status change (skip same-column reorders and the actor)
+    // Tell the task's participants it moved (same-column reorders are not a
+    // status change and notify nobody). Shared rule, so the person who opened
+    // the task is included — they used to be the one party never told.
     if (oldColumnId !== newColumnId) {
-      const recipients = [...new Set([...(issue.assigneeIds || []), ...(issue.watcherIds || [])])]
-        .filter(uid => uid && uid !== userId);
+      const recipients = issueParticipants(issue, { actorId: userId });
       if (recipients.length) {
         sendNotification({
           userIds: recipients,

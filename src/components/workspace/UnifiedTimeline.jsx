@@ -17,6 +17,7 @@ import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MentionText from '@/components/workspace/MentionText';
+import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
 
@@ -154,15 +155,17 @@ function DaySeparator({ timestamp }) {
   const label = dayLabel(timestamp);
   if (!label) return null;
   return (
-    <div className="flex justify-center py-3" aria-label={`Дата: ${label}`}>
-      <span className="rounded-full bg-white/75 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
+    <div className="flex justify-center py-2.5" aria-label={`Дата: ${label}`}>
+      {/* A date marker is a landmark, not content: bold + widest tracking made
+          it heavier than the messages it separates. */}
+      <span className="rounded-full bg-white/75 px-2.5 py-[3px] text-[9px] font-semibold uppercase tracking-wide text-faint">
         {label}
       </span>
     </div>
   );
 }
 
-export default function UnifiedTimeline({ issueId, projectId, isArchived, org, members = [] }) {
+export default function UnifiedTimeline({ issueId, projectId, issue, isArchived, org, members = [] }) {
   const router = useRouter();
   const { currentUser, projects = [] } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -362,6 +365,29 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             console.error('[task-chat] mention notification failed:', notificationError);
             showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
           }
+        }
+
+        // Everyone with a stake in the task hears about a new comment. Nothing
+        // sent this type before — «Новий коментар» sat in Settings as a switch
+        // wired to no sender at all, so it silently did nothing. Mentioned
+        // people are excluded: they already get the mention, which says the
+        // same thing more precisely.
+        const commentRecipients = issueParticipants(issue, {
+          actorId: myId,
+          commentAuthorIds: comments.map(item => item.authorId),
+          exclude: mentionedUserIds,
+        });
+        if (commentRecipients.length > 0) {
+          sendNotification({
+            userIds: commentRecipients,
+            type: 'commented',
+            title: `${currentUser?.name || 'Колега'} прокоментував завдання`,
+            body: text.slice(0, 500) || 'Вкладення',
+            link: `/${projectId}/issue/${issueId}`,
+            issueId,
+            projectId,
+            organizationId: project?.organizationId || org?.id || '',
+          }).catch(error => console.error('[task-chat] comment notification failed:', error));
         }
       }
       resetComposer();

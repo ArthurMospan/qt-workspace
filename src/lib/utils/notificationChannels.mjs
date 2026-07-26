@@ -29,7 +29,10 @@ export const EVENT_DEFAULTS = {
   assigned: true,
   commented: true,
   mentioned: true,
-  statusChanged: false,
+  // On by default now that it reaches the task's participants rather than
+  // everyone on the board: if a task you opened or were given moves, that is
+  // exactly the thing you wanted to know.
+  statusChanged: true,
   deadline: true,
 };
 
