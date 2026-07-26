@@ -396,6 +396,7 @@ export default function MyTasksPage() {
                                       index={index}
                                       projectId={issue.projectId}
                                       projectName={pName}
+                                      showProjectName
                                       issueLinks={issueLinks}
                                     />
                                   );

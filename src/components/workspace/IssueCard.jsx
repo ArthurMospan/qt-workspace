@@ -27,7 +27,12 @@ function hexToRgba(hex, alpha) {
 
 
 
-export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, isTimerActive, isArchived, className = '' }) {
+// `showProjectName` is opt-in: cross-project lists (Мої завдання, спринти) need
+// the project after the key to tell two identical-looking cards apart, but on a
+// project's own board every card would repeat the project you are already in.
+// `projectName` is still always accepted — the issue key prefix is derived from
+// it below, which has to work whether or not the badge is shown.
+export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, isTimerActive, isArchived, className = '' }) {
   const router   = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
@@ -168,7 +173,7 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
           {/* Row 1: Code + Project (merged, original mono bold font, separated by •) + Priority */}
           <div className="flex items-center gap-[8px] mb-[10px] flex-wrap">
             <span className="font-mono text-[#c5c5c5] font-bold text-[10px] tracking-wider select-none truncate max-w-[180px]">
-              {displayKey}{projectName ? ` • ${projectName.toUpperCase()}` : ''}
+              {displayKey}{showProjectName && projectName ? ` • ${projectName.toUpperCase()}` : ''}
             </span>
 
             {isTimerActive && (
