@@ -7,11 +7,20 @@ import { ChevronDown, Check, Search } from 'lucide-react';
 // Strict rule enforced: Select buttons are 36px height (h-9)
 // Matches input and button heights for consistent form alignment
 
+// The trigger width is a floor for the dropdown, never a cap. Matching it
+// exactly turned every compact inline control into an unreadable column — the
+// issue attribute selects are ~110px wide, so a member list rendered there had
+// nowhere to put a full name. The panel now sizes to its content between these
+// two bounds, which only ever makes a dropdown wider than it was.
+const DROPDOWN_MIN_WIDTH = 200;
+const DROPDOWN_MAX_WIDTH = 360;
+
 function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
   const [position, setPosition] = useState({
     top: 0,
     left: 0,
-    width: 0,
+    minWidth: 0,
+    maxWidth: DROPDOWN_MAX_WIDTH,
     visible: false,
   });
 
@@ -23,7 +32,15 @@ function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
       if (!trigger) return;
       const rect = trigger.getBoundingClientRect();
       const viewportPadding = 8;
-      const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2);
+      const roomForPanel = window.innerWidth - viewportPadding * 2;
+      const maxWidth = Math.min(DROPDOWN_MAX_WIDTH, roomForPanel);
+      const minWidth = Math.min(Math.max(rect.width, DROPDOWN_MIN_WIDTH), roomForPanel);
+      // Clamping `left` needs the width the panel actually took, which only the
+      // laid-out element knows once `max-content` has resolved.
+      const renderedWidth = Math.min(
+        Math.max(dropdownRef.current?.offsetWidth || 0, minWidth),
+        roomForPanel,
+      );
       const dropdownHeight = dropdownRef.current?.offsetHeight || 280;
       const roomBelow = window.innerHeight - rect.bottom - viewportPadding;
       const roomAbove = rect.top - viewportPadding;
@@ -36,16 +53,21 @@ function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
         );
       const left = Math.min(
         Math.max(viewportPadding, rect.left),
-        Math.max(viewportPadding, window.innerWidth - width - viewportPadding),
+        Math.max(viewportPadding, window.innerWidth - renderedWidth - viewportPadding),
       );
 
-      setPosition({ top, left, width, visible: true });
+      setPosition({ top, left, minWidth, maxWidth, visible: true });
     };
 
+    // Twice: the first pass measures a panel that has not been given its
+    // min-width yet, so its width — and with it the `left` clamp near the right
+    // edge of the viewport — is only final on the second.
     updatePosition();
+    const settle = requestAnimationFrame(updatePosition);
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
     return () => {
+      cancelAnimationFrame(settle);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
@@ -199,7 +221,9 @@ export function Select({
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
-            width: dropdownPosition.width,
+            width: 'max-content',
+            minWidth: dropdownPosition.minWidth,
+            maxWidth: dropdownPosition.maxWidth,
             visibility: dropdownPosition.visible ? 'visible' : 'hidden',
           }}
         >
@@ -339,7 +363,9 @@ export function MultiSelect({
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
-            width: dropdownPosition.width,
+            width: 'max-content',
+            minWidth: dropdownPosition.minWidth,
+            maxWidth: dropdownPosition.maxWidth,
             visibility: dropdownPosition.visible ? 'visible' : 'hidden',
           }}
         >
