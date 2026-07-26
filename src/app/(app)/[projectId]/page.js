@@ -416,7 +416,11 @@ export default function BoardPage({ params }) {
 
       {/* ── Tab content ── */}
       {activeTab === 'board' && (
-        loading ? (
+        // Only spin while there is genuinely nothing to show. Swapping a
+        // populated board for the spinner unmounts it, and it comes back
+        // through a blank frame — so any brief `loading` blip read as the
+        // board reloading itself.
+        loading && boardIssues.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
           </div>

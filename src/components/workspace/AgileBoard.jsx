@@ -8,6 +8,13 @@ import { DEFAULT_COLUMNS } from './BoardConfigModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 
+// The drag context cannot render during SSR/hydration, so the first board of a
+// session waits a tick before painting. Every later mount — a tab switch, a
+// `loading` flip, coming back from an issue — is already client-side, and
+// returning null for a paint there reads as the board blinking out and back.
+// One module-level flag means only the very first mount pays that frame.
+let dndReady = false;
+
 function InlineAddForm({ onAdd, onCancel }) {
   const [title, setTitle] = useState('');
   const ref = useRef(null);
@@ -45,7 +52,7 @@ function InlineAddForm({ onAdd, onCancel }) {
 }
 
 export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false, issueLinks = [], isArchived }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(dndReady);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
   
   // Both sources hand back a fresh array on every render, which would defeat
@@ -94,7 +101,11 @@ export default function AgileBoard({ issues, members, projectId, project, active
   };
 
   useEffect(() => {
-    queueMicrotask(() => setMounted(true));
+    if (dndReady) return;
+    queueMicrotask(() => {
+      dndReady = true;
+      setMounted(true);
+    });
   }, []);
 
   const onDragEnd = (result) => {
@@ -353,7 +364,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 p-[8px] flex flex-col transition-colors scroll-stable ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
+                            className={`flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
                               snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                             }`}
                           >
