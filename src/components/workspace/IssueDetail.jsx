@@ -254,6 +254,75 @@ function MaterialCard({ mat, onClick }) {
   );
 }
 
+// ── Attachment rows ────────────────────────────────────────────────
+// Lives on the description's canvas panel, so each row is a white surface —
+// the same card-on-canvas relationship the rest of the workspace uses. There
+// is deliberately no rule above the list: the panel edge already separates
+// attachments from the description text.
+function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, onDelete }) {
+  if (attachments.length === 0) return null;
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-1.5 text-muted">
+        <Paperclip size={12} />
+        <span className="text-[11px] font-semibold">Вкладення</span>
+        <span className="text-[11px] font-semibold text-faint">{attachments.length}</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {attachments.map(attachment => {
+          const url = getMatFileUrl(attachment);
+          const fileType = detectFileType(attachment);
+          return (
+            <div key={attachment.id || url} className="group flex min-w-0 items-center gap-3 rounded-[12px] bg-white px-2.5 py-2">
+              <button
+                type="button"
+                onClick={() => onOpen(attachment)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas"
+                aria-label={`Переглянути ${attachment.name}`}
+              >
+                {fileType === 'image' && url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                ) : <FileText size={16} className="text-muted" />}
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[12px] font-semibold text-ink">{attachment.name}</p>
+                <p className="text-[10px] text-faint">{fmtBytes(attachment.size)}</p>
+              </div>
+              {isEditing && url && (
+                <Button style="ghost" size="sm" onClick={() => onInsert(attachment, fileType, url)}>
+                  Вставити в опис
+                </Button>
+              )}
+              {url && (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-faint hover:text-ink"
+                  aria-label={`Відкрити ${attachment.name}`}
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+              {!isArchived && (
+                <button
+                  type="button"
+                  onClick={() => onDelete(attachment.id)}
+                  className="p-2 text-faint hover:text-red-500"
+                  aria-label={`Видалити ${attachment.name}`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Media viewer (lightbox) ────────────────────────────────────────
 function MediaViewer({ mat, onClose }) {
   const fileType = detectFileType(mat);
@@ -789,6 +858,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     router.push(`/${projectId}`);
   };
 
+  // Built once and placed by the description block below — inside the canvas
+  // panel when there is a description, in its own panel otherwise (and while
+  // editing, where the per-row "Вставити в опис" action lives).
+  const attachmentRows = (
+    <AttachmentRows
+      attachments={visibleAttachments}
+      isEditing={isEditing}
+      isArchived={isArchived}
+      onOpen={setViewerMat}
+      onInsert={(attachment, fileType, url) => {
+        const markdown = fileType === 'image' ? `![${attachment.name}](${url})` : `[${attachment.name}](${url})`;
+        setDraft(current => ({ ...current, description: `${current.description || ''}${current.description ? '\n\n' : ''}${markdown}` }));
+      }}
+      onDelete={handleDeleteAttachment}
+    />
+  );
+
   // ════════════════════════════════════════════════════════════════
   // RENDER
   // ════════════════════════════════════════════════════════════════
@@ -797,9 +883,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
+      {/* pb-0 used to let the last row of the left column sit flush against the
+          bottom edge of the panel. The gutter belongs on this wrapper rather
+          than on the column, so the chat beside it ends on the same line. */}
       <div
         onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pt-[56px] pb-0'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
+        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pt-[56px] pb-[20px]'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
       >
 
         <div className={`grid grid-cols-1 gap-[20px] items-stretch ${isModal ? '' : 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] lg:flex-1 lg:min-h-0'}`}>
@@ -1287,21 +1376,33 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <h2 className="text-[14px] font-bold text-ink">Опис</h2>
                   </div>
                   {isEditing ? (
-                    <MarkdownEditor
-                      value={draft.description}
-                      onChange={description => setDraft(d => ({ ...d, description }))}
-                      onUploadFiles={handleUploadAttachments}
-                      uploading={uploadingAttach}
-                      placeholder="Додай детальний опис завдання..."
-                      minHeight="320px"
-                    />
-                  ) : issue.description ? (
-                    <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
-                      <MarkdownViewer
-                        content={issue.description}
-                        className="text-[15px] leading-7"
-                        onTaskToggle={isArchived ? undefined : (taskLine, checked) => update({ description: setTaskChecked(issue.description, taskLine, checked) })}
+                    <>
+                      <MarkdownEditor
+                        value={draft.description}
+                        onChange={description => setDraft(d => ({ ...d, description }))}
+                        onUploadFiles={handleUploadAttachments}
+                        uploading={uploadingAttach}
+                        placeholder="Додай детальний опис завдання..."
+                        minHeight="320px"
                       />
+                      {visibleAttachments.length > 0 && (
+                        <div className="mt-3 w-full rounded-[16px] bg-canvas px-4 py-3">
+                          {attachmentRows}
+                        </div>
+                      )}
+                    </>
+                  ) : (issue.description || visibleAttachments.length > 0) ? (
+                    <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+                      {issue.description && (
+                        <MarkdownViewer
+                          content={issue.description}
+                          className="text-[15px] leading-7"
+                          onTaskToggle={isArchived ? undefined : (taskLine, checked) => update({ description: setTaskChecked(issue.description, taskLine, checked) })}
+                        />
+                      )}
+                      {visibleAttachments.length > 0 && (
+                        <div className={issue.description ? 'mt-4' : ''}>{attachmentRows}</div>
+                      )}
                     </div>
                   ) : (
                     <button onClick={enterEdit} className="text-[13px] text-faint italic hover:text-muted transition-colors text-left">
@@ -1317,50 +1418,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       if (!label) return null;
                       return <Tag key={id} label={label.label || label.name} color={label.color} onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== id) })} />;
                     })}
-                  </div>
-                )}
-
-                {visibleAttachments.length > 0 && (
-                  <div className="border-t border-[#eeeeee] pt-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Paperclip size={13} className="text-muted" />
-                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted">Вкладення</h3>
-                      <span className="text-[11px] font-semibold text-faint">{visibleAttachments.length}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {visibleAttachments.map(attachment => {
-                        const url = getMatFileUrl(attachment);
-                        const fileType = detectFileType(attachment);
-                        return (
-                          <div key={attachment.id || url} className="group flex min-w-0 items-center gap-3 rounded-[8px] border border-transparent px-2 py-2 hover:border-[#d7d7d7] hover:bg-[#fafafa]">
-                            <button type="button" onClick={() => setViewerMat(attachment)} className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-canvas">
-                              {fileType === 'image' && url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={url} alt="" className="h-full w-full object-cover" />
-                              ) : <FileText size={16} className="text-muted" />}
-                            </button>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[12px] font-semibold text-ink">{attachment.name}</p>
-                              <p className="text-[10px] text-faint">{fmtBytes(attachment.size)}</p>
-                            </div>
-                            {isEditing && url && (
-                              <Button
-                                style="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const markdown = fileType === 'image' ? `![${attachment.name}](${url})` : `[${attachment.name}](${url})`;
-                                  setDraft(current => ({ ...current, description: `${current.description || ''}${current.description ? '\n\n' : ''}${markdown}` }));
-                                }}
-                              >
-                                Вставити в опис
-                              </Button>
-                            )}
-                            {url && <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 text-faint hover:text-ink" aria-label={`Відкрити ${attachment.name}`}><ExternalLink size={14} /></a>}
-                            {!isArchived && <button type="button" onClick={() => handleDeleteAttachment(attachment.id)} className="p-2 text-faint hover:text-red-500" aria-label={`Видалити ${attachment.name}`}><Trash2 size={14} /></button>}
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 )}
 
