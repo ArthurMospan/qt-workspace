@@ -397,8 +397,19 @@ export default function UnifiedTimeline({ issueId, projectId, isArchived, org, m
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
             const authorMember = members.find(candidate => (candidate.id || candidate.uid) === item.authorId);
             const isExternalAuthor = !isMe && !authorMember;
+            // Prefer the live profile over `item.authorAvatar`. That field is a
+            // snapshot taken when the comment was written: imports (YouTrack)
+            // never set it, and for everyone else it goes stale as soon as they
+            // change their photo. Only genuinely external authors — who have no
+            // profile to read — fall back to what the document carries.
+            const authorProfile = (isMe ? currentUser : authorMember) || null;
             const authorAvatar = (
-              <UserAvatar user={{ id: item.authorId, name: item.authorName, avatar: item.authorAvatar }} size={28} />
+              <UserAvatar
+                user={authorProfile
+                  ? { ...authorProfile, name: authorProfile.name || item.authorName }
+                  : { id: item.authorId, name: item.authorName, avatar: item.authorAvatar }}
+                size={28}
+              />
             );
             return (
               <Fragment key={`comment-${item.id}`}>
