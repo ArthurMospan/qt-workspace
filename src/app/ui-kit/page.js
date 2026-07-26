@@ -24,6 +24,7 @@ import TaskCard from '@/components/ui/TaskManagement/TaskCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import ProjectCard from '@/components/ui/TaskManagement/ProjectCard';
 import TeamMemberCard from '@/components/ui/TaskManagement/TeamMemberCard';
+import KitStatus from './KitStatus';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import {
@@ -45,6 +46,14 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GROUPS = [
+  {
+    // First, because it is the only screen here that reports what the product
+    // actually uses — everything below it is a catalogue, not evidence.
+    title: 'Реальність',
+    items: [
+      { id: 'kit-status',   label: 'Стан кіту',          icon: Activity },
+    ]
+  },
   {
     title: 'Атоми (Atoms)',
     items: [
@@ -1898,6 +1907,7 @@ function TokensSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
+  'kit-status': <KitStatus />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
   selects:    <SelectsSection />,

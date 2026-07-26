@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "kit:scan": "node scripts/scan-kit-usage.mjs",
     "test": "npm run test:unit",
     "test:unit": "node --test --test-reporter=spec \"tests/!(firestore.rules).test.mjs\"",
     "test:all": "npm run test:unit && npm run test:rules:emulator",
