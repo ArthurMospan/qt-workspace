@@ -96,11 +96,38 @@ export function scanKitUsage() {
   const showcased = new Set();
 
   const showcaseSource = readFileSync(SHOWCASE_FILE, 'utf8');
+  const groupsSource = showcaseSource.slice(
+    showcaseSource.indexOf('const GROUPS'),
+    showcaseSource.indexOf('const SECTIONS'),
+  );
+  const mapSource = showcaseSource.slice(
+    showcaseSource.indexOf('const SECTION_MAP'),
+    showcaseSource.indexOf('// MAIN PAGE'),
+  );
+  const visibleSectionIds = new Set(
+    [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]),
+  );
+  const visibleSectionFunctions = [...mapSource.matchAll(
+    /^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*<([A-Z]\w+Section)\s*\/>/gm,
+  )]
+    .filter(match => visibleSectionIds.has(match[1] || match[2]))
+    .map(match => match[3]);
+  const visibleShowcaseSource = visibleSectionFunctions
+    .map((name) => {
+      const start = showcaseSource.indexOf(`function ${name}(`);
+      if (start < 0) return '';
+      const nextFunction = showcaseSource.indexOf('\nfunction ', start + 1);
+      const sectionMap = showcaseSource.indexOf('\nconst SECTION_MAP', start + 1);
+      const end = nextFunction < 0 ? sectionMap : nextFunction;
+      return showcaseSource.slice(start, end);
+    })
+    .join('\n');
+
   for (const match of showcaseSource.matchAll(IMPORT_RE)) {
     for (const name of importedNames(match[1])) {
       // An import alone is not a showcase. Requiring a JSX render prevents a
-      // stale/unused import from making coverage look green.
-      if (inventory.has(name) && new RegExp(`<${name}\\b`).test(showcaseSource)) {
+      // stale/unused import or a hidden legacy section from making coverage green.
+      if (inventory.has(name) && new RegExp(`<${name}\\b`).test(visibleShowcaseSource)) {
         showcased.add(name);
       }
     }

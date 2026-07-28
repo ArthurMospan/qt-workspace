@@ -9,22 +9,19 @@
 // exactly the same prominence, so the kit slowly stopped describing the site.
 
 import React, { useMemo, useState } from 'react';
-import { Search, CheckCircle2, CircleSlash, ChevronDown } from 'lucide-react';
+import { Search, CheckCircle2, ChevronDown } from 'lucide-react';
 import usage from './kit-usage.generated.json';
 
 function ComponentRow({ name, entry, expanded, onToggle }) {
-  const used = entry.count > 0;
   return (
     <div className="rounded-[10px] border border-[#f0f0f0] bg-white overflow-hidden">
       <button
         type="button"
-        onClick={() => used && onToggle(name)}
-        aria-expanded={used ? expanded : undefined}
-        className={`flex w-full items-center gap-[10px] px-[14px] py-[10px] text-left ${used ? 'hover:bg-[#fafafa] cursor-pointer' : 'cursor-default'} transition-colors`}
+        onClick={() => onToggle(name)}
+        aria-expanded={expanded}
+        className="flex w-full cursor-pointer items-center gap-[10px] px-[14px] py-[10px] text-left transition-colors hover:bg-[#fafafa]"
       >
-        {used
-          ? <CheckCircle2 size={15} className={`shrink-0 ${entry.showcased ? 'text-[#10b981]' : 'text-[#ef4444]'}`} />
-          : <CircleSlash size={15} className="shrink-0 text-[#cfcfcf]" />}
+        <CheckCircle2 size={15} className={`shrink-0 ${entry.showcased ? 'text-[#10b981]' : 'text-[#ef4444]'}`} />
 
         <span className="text-[13px] font-bold text-[#1f1f1f] font-mono">{name}</span>
 
@@ -34,22 +31,18 @@ function ComponentRow({ name, entry, expanded, onToggle }) {
 
         <span className="ml-auto flex items-center gap-[8px] shrink-0">
           <span
-            className={`rounded-full px-[8px] py-[2px] text-[11px] font-bold ${
-              used ? 'bg-[#ecfdf5] text-[#047857]' : 'bg-[#f5f5f5] text-[#9a9a9a]'
-            }`}
+            className="rounded-full bg-[#ecfdf5] px-[8px] py-[2px] text-[11px] font-bold text-[#047857]"
           >
-            {used ? `${entry.count} використань · ${entry.showcased ? 'у каталозі' : 'НЕМАЄ В КАТАЛОЗІ'}` : 'не використовується'}
+            {entry.count} використань · {entry.showcased ? 'у каталозі' : 'НЕМАЄ В КАТАЛОЗІ'}
           </span>
-          {used && (
-            <ChevronDown
-              size={14}
-              className={`text-[#9a9a9a] transition-transform ${expanded ? 'rotate-180' : ''}`}
-            />
-          )}
+          <ChevronDown
+            size={14}
+            className={`text-[#9a9a9a] transition-transform ${expanded ? 'rotate-180' : ''}`}
+          />
         </span>
       </button>
 
-      {used && expanded && (
+      {expanded && (
         <ul className="border-t border-[#f0f0f0] bg-[#fafafa] px-[14px] py-[10px] space-y-[4px]">
           {entry.usedIn.map(file => (
             <li key={file} className="text-[11px] text-[#71717a] font-mono truncate">{file}</li>
@@ -64,22 +57,16 @@ export default function KitStatus() {
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState(null);
 
-  const { used, unused } = useMemo(() => {
+  const used = useMemo(() => {
     const term = query.trim().toLowerCase();
-    const entries = Object.entries(usage.components)
-      .filter(([name]) => !term || name.toLowerCase().includes(term));
-    return {
-      // Most-used first: the components that actually define how the site looks.
-      used: entries.filter(([, e]) => e.count > 0).sort((a, b) => b[1].count - a[1].count),
-      unused: entries.filter(([, e]) => e.count === 0),
-    };
+    return Object.entries(usage.components)
+      .filter(([name, entry]) => entry.count > 0 && (!term || name.toLowerCase().includes(term)))
+      .sort((a, b) => b[1].count - a[1].count);
   }, [query]);
 
   const toggle = name => setExpanded(current => (current === name ? null : name));
   const {
-    components,
     used: usedTotal,
-    unused: unusedTotal,
     covered,
     uncovered,
   } = usage.totals;
@@ -89,11 +76,8 @@ export default function KitStatus() {
       <div>
         <h2 className="text-[22px] font-bold text-[#1f1f1f]">Стан кіту</h2>
         <p className="mt-[4px] max-w-[680px] text-[13px] text-[#9a9a9a]">
-          Що з цього кіту продукт реально використовує. Рахується за імпортами, а не за
-          згадками назви в коді — інакше <span className="font-mono">Stat</span> ловився б
-          у кожному <span className="font-mono">Status</span>. Сторінки
-          <span className="font-mono"> /ui-kit</span> та <span className="font-mono">/ui-diff</span> не
-          рахуються: демонстрація компонента — це не використання.
+          Тут показано тільки компоненти, які продукт реально імпортує. Невикористовувані
+          заготовки не є частиною каталогу й тут не відображаються.
         </p>
         <p className="mt-[6px] text-[12px] text-[#cfcfcf]">
           Оновити: <span className="font-mono text-[#71717a]">npm run kit:scan</span> · перевіряється
@@ -104,10 +88,8 @@ export default function KitStatus() {
 
       <div className="flex flex-wrap gap-[12px]">
         {[
-          { label: 'Компонентів', value: components, color: '#1f1f1f' },
           { label: 'У продукті', value: usedTotal, color: '#10b981' },
           { label: 'Покрито каталогом', value: `${covered}/${usedTotal}`, color: uncovered ? '#ef4444' : '#10b981' },
-          { label: 'Не використовуються', value: unusedTotal, color: '#9a9a9a' },
         ].map(stat => (
           <div key={stat.label} className="rounded-[12px] border border-[#f0f0f0] bg-white px-[18px] py-[12px]">
             <div className="text-[11px] font-bold uppercase tracking-wide text-[#9a9a9a]">{stat.label}</div>
@@ -138,20 +120,6 @@ export default function KitStatus() {
         {used.length === 0 && <p className="text-[12px] text-[#9a9a9a]">Нічого не знайдено.</p>}
       </section>
 
-      <section className="flex flex-col gap-[8px]">
-        <h3 className="text-[13px] font-bold text-[#1f1f1f]">
-          Не використовуються <span className="text-[#9a9a9a]">({unused.length})</span>
-        </h3>
-        <p className="-mt-[4px] max-w-[680px] text-[12px] text-[#9a9a9a]">
-          Ці компоненти існують у кіті, але жодна сторінка продукту їх не імпортує. Це не
-          обов&apos;язково помилка — частина може бути свідомим заділом. Але саме вони
-          створювали враження, що кіт і сайт — це різні дизайни.
-        </p>
-        {unused.map(([name, entry]) => (
-          <ComponentRow key={name} name={name} entry={entry} expanded={false} onToggle={toggle} />
-        ))}
-        {unused.length === 0 && <p className="text-[12px] text-[#9a9a9a]">Нічого не знайдено.</p>}
-      </section>
     </div>
   );
 }

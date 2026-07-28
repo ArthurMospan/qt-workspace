@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { HeaderSearch } from '@/components/ui/Forms/HeaderSearch';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
@@ -11,9 +10,9 @@ import Surface from '@/components/ui/Surface';
 import ContextMenu from '@/components/ui/ContextMenu';
 import {
   ButtonGroup, AvatarGroup, Breadcrumb, FormGroup, Badge, StatusBadge, PriorityBadge, Tag, Counter,
-  Checkbox, RadioButton, ToggleSwitch, DatePicker, TimePicker, FileInput, SearchInput,
-  ProgressRing, Chip, Stat, Alert, Toast, LoadingSpinner, EmptyState, Pagination, Stepper,
-  Dropdown, Popover, Tooltip, TaskAttributesPanel, Progress, KpiCard, Table,
+  Checkbox, ToggleSwitch, DatePicker,
+  Alert, LoadingSpinner, EmptyState,
+  Popover, Tooltip, TaskAttributesPanel, KpiCard,
   SidebarLayout, InnerNavigation, PageHeader, Card, Segmented, ImageUpload, UserAvatar,
   ConfirmProvider, useConfirm
 } from '@/components/ui';
@@ -23,15 +22,13 @@ import WorkspaceHeader from '@/components/WorkspaceHeader';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import TaskCard from '@/components/ui/TaskManagement/TaskCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
-import ProjectCard from '@/components/ui/TaskManagement/ProjectCard';
-import TeamMemberCard from '@/components/ui/TaskManagement/TeamMemberCard';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import KitStatus from './KitStatus';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
 import {
-  Plus, Edit2, Trash2, Archive, Search, ChevronRight, ChevronDown,
+  Plus, Edit2, Trash2, Archive, Search, ChevronDown,
   User, Bell, Settings, Settings2, Check, X, AlertCircle, Info,
   LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft,
   Layers, MessageSquare, Zap, Hash, Calendar, Clock, Filter,
@@ -39,7 +36,7 @@ import {
   Play, Pause, RefreshCw, MoreVertical, Copy, ExternalLink,
   TrendingUp, BarChart2, PieChart, Users, Tag as TagIcon, Lock,
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
-  ChevronLeft, ChevronsUpDown, GripVertical, Move, Columns,
+  ChevronLeft, ChevronsUpDown, GripVertical, Move,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
   PanelLeftOpen, Building
 } from 'lucide-react';
@@ -69,20 +66,16 @@ const GROUPS = [
       { id: 'badges',       label: 'Badges, Status & Priority', icon: Hash },
       { id: 'avatars',      label: 'Avatars & Teams',    icon: Users },
       { id: 'surfaces',     label: 'Surfaces',           icon: Layers },
-      { id: 'breadcrumbs',  label: 'Breadcrumbs',        icon: ChevronRight },
       { id: 'tooltips',     label: 'Tooltips',           icon: MessageSquare },
     ]
   },
   {
     title: 'Молекули (Molecules)',
     items: [
-      { id: 'button-groups',label: 'Button Groups',      icon: Columns },
-      { id: 'avatar-groups',label: 'Avatar Groups',      icon: Users },
-      { id: 'form-groups',  label: 'Form Groups',        icon: AlignLeft },
       { id: 'task-attributes', label: 'Task Attributes Panel', icon: Settings },
       { id: 'filters',      label: 'Filter Bar',         icon: Filter },
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
-      { id: 'progress',     label: 'Progress & Stats',   icon: TrendingUp },
+      { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
       { id: 'chat-composer', label: 'Chat Composer Dock', icon: MessageSquare },
     ]
@@ -90,7 +83,7 @@ const GROUPS = [
   {
     title: 'Організми (Organisms)',
     items: [
-      { id: 'task-crm',     label: 'Task & CRM Cards',   icon: CheckSquare },
+      { id: 'task-crm',     label: 'Task Cards & Rows',  icon: CheckSquare },
       { id: 'dialogs',      label: 'Dialogs & Modals',   icon: MessageSquare },
     ]
   },
@@ -359,17 +352,10 @@ function ButtonsSection() {
 function InputsSection() {
   const [val, setVal] = useState('');
   const [pw, setPw] = useState('');
-  const [headerVal, setHeaderVal] = useState('');
   const [show, setShow] = useState(false);
-
-  // States for new input types
   const [chk, setChk] = useState(false);
-  const [rdo, setRdo] = useState('one');
   const [tgl, setTgl] = useState(true);
   const [dateSingle, setDateSingle] = useState('');
-  const [timeVal, setTimeVal] = useState('');
-  const [fileVal, setFileVal] = useState([]);
-  const [srchVal, setSrchVal] = useState('');
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -380,45 +366,18 @@ function InputsSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Checkbox, Radio & Toggle" description="Кнопки вибору та перемикачі. Checkbox скруглений відповідно до розміру (L4). Radio - класичний. Toggle - округлена пігулка.">
+      <PreviewBlock title="Checkbox & Toggle" description="Ті самі Checkbox і ToggleSwitch, які зараз використовує продукт.">
         <div className="flex items-center gap-[24px] flex-wrap">
           <Checkbox checked={chk} onChange={setChk} label="Я погоджуюся з умовами" id="chk-demo" />
-          <RadioButton
-            name="radio-demo"
-            value={rdo}
-            onChange={setRdo}
-            options={[
-              { label: 'Варіант 1', value: 'one' },
-              { label: 'Варіант 2', value: 'two' },
-            ]}
-            layout="horizontal"
-          />
           <ToggleSwitch checked={tgl} onChange={setTgl} label="Активний спринт" />
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Pickers: Date & Time" description="Інструменти вибору дати та часу. DatePicker містить випадаючий календар (L2), а TimePicker інтегрований у висоту 36px із заокругленням 10px (L2.5)." fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] max-w-[500px]">
+      <PreviewBlock title="Date Picker" description="Живий DatePicker, який використовується у задачах, календарі та налаштуваннях." fullWidth>
+        <div className="max-w-[260px]">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Оберіть дату</label>
             <DatePicker value={dateSingle} onChange={setDateSingle} placeholder="Оберіть день..." />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Оберіть час</label>
-            <TimePicker value={timeVal} onChange={setTimeVal} />
-          </div>
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock title="SearchInput & FileInput" description="Пошук із вбудованою іконкою та FileInput із зоною завантаження (L2.5)." fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] max-w-[600px]">
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Пошуковий запит</label>
-            <SearchInput value={srchVal} onChange={setSrchVal} placeholder="Швидкий пошук..." />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Завантаження файлів</label>
-            <FileInput value={fileVal} onChange={setFileVal} multiple />
           </div>
         </div>
       </PreviewBlock>
@@ -431,12 +390,6 @@ function InputsSection() {
           <div className="rounded-[16px] border border-line bg-white p-[20px]">
             <ImageUpload value="/favicon.ico" onChange={() => {}} theme="light" />
           </div>
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock title="Header Search Input — 36px" description="Спеціальний безмежовий пошук для хедера. Кольори: фон transparent, нижня рамка фокусу #1f1f1f. Текст #1f1f1f, placeholder #cfcfcf, іконка #9a9a9a." fullWidth>
-        <div className="max-w-[400px]">
-          <HeaderSearch value={headerVal} onChange={setHeaderVal} placeholder="Пошук по робочому простору..." />
         </div>
       </PreviewBlock>
 
@@ -813,68 +766,12 @@ function AvatarsSection() {
 function ProgressSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Progress Components (Linear & Circular)" description="Реальні компоненти відображення прогресу." fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] w-full">
-          {/* Linear Progress */}
-          <div className="flex flex-col gap-[16px]">
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Linear Progress (sm, md, lg)</h4>
-            <div className="flex flex-col gap-4">
-              <div>
-                <span className="text-[11px] text-[#9a9a9a] font-bold block mb-1">Small (success):</span>
-                <Progress value={45} variant="success" size="sm" showLabel />
-              </div>
-              <div>
-                <span className="text-[11px] text-[#9a9a9a] font-bold block mb-1">Medium (default):</span>
-                <Progress value={68} variant="default" size="md" showLabel />
-              </div>
-              <div>
-                <span className="text-[11px] text-[#9a9a9a] font-bold block mb-1">Large (danger):</span>
-                <Progress value={90} variant="danger" size="lg" showLabel />
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Ring */}
-          <div className="flex flex-col gap-[16px]">
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-2">Circular Progress Ring (sm, md, lg)</h4>
-            <div className="flex items-center gap-[16px] flex-wrap">
-              <div className="flex flex-col items-center gap-1">
-                <ProgressRing value={25} size="sm" variant="danger" />
-                <span className="text-[10px] text-[#9a9a9a]">sm</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <ProgressRing value={60} size="md" variant="warning" />
-                <span className="text-[10px] text-[#9a9a9a]">md</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <ProgressRing value={85} size="lg" variant="success" />
-                <span className="text-[10px] text-[#9a9a9a]">lg</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock title="KpiCard & Stat Components" description="Справжні блоки аналітики з сайту." fullWidth>
-        <div className="flex flex-col gap-6 w-full">
-          <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">KpiCard (Колоризовані показники аналітики)</h4>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-              <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" icon={Target} trend={12} />
-              <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" icon={Zap} trend={-5} />
-              <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" icon={Clock} />
-              <KpiCard label="Команда" value="8" sub="учасників із завданнями" icon={Users} />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-3">Stat (Простий текстовий показник)</h4>
-            <div className="flex items-center gap-8 flex-wrap">
-              <Stat label="Активні користувачі" number="120" trend="up" trendValue={8.2} icon={Users} />
-              <Stat label="Прострочено завдань" number="3" trend="down" trendValue={15.4} icon={AlertCircle} />
-              <Stat label="Середній час релізу" number="4.2 дн" icon={Clock} />
-            </div>
-          </div>
+      <PreviewBlock title="KPI Cards" description="Живі KpiCard з аналітики, velocity та workload." fullWidth>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+          <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" icon={Target} trend={12} />
+          <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" icon={Zap} trend={-5} />
+          <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" icon={Clock} />
+          <KpiCard label="Команда" value="8" sub="учасників із завданнями" icon={Users} />
         </div>
       </PreviewBlock>
     </div>
@@ -884,9 +781,6 @@ function ProgressSection() {
 
 
 function NavigationOverlaysSection() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-
   const menuItems = [
     { icon: Edit2, label: 'Редагувати', onClick: () => alert('Редагувати') },
     { icon: Copy, label: 'Дублювати', onClick: () => alert('Дублювати') },
@@ -898,16 +792,8 @@ function NavigationOverlaysSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Dropdown, Popover & Tooltip" description="Спливаючі та інформаційні елементи. Dropdown та Popover використовують L2 (12px), а Tooltip використовує L3 (8px)." fullWidth>
+      <PreviewBlock title="Popover & Tooltip" description="Живі Popover і Tooltip, які використовує продукт." fullWidth>
         <div className="flex items-center gap-[24px] flex-wrap">
-          <Dropdown
-            trigger="Опції проєкту"
-            items={[
-              { label: 'Експорт PDF', onClick: () => alert('PDF') },
-              { label: 'Експорт CSV', onClick: () => alert('CSV') },
-            ]}
-          />
-
           <Popover
             trigger={<Button style="secondary">Показати Popover</Button>}
             position="bottom"
@@ -924,8 +810,8 @@ function NavigationOverlaysSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="ContextMenu & Dropdown Menu Elements" description="Контекстні та випадаючі меню. Скруглення L2 (12px) відповідно до інструкцій." fullWidth>
-        <div className="flex items-start gap-[40px] items-start flex-wrap">
+      <PreviewBlock title="Context Menu" description="Живий ContextMenu з продуктовими станами елементів." fullWidth>
+        <div className="flex items-start gap-[40px] flex-wrap">
           <div className="flex flex-col gap-[8px]">
             <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Інтерактивне меню</span>
             <ContextMenu 
@@ -933,46 +819,9 @@ function NavigationOverlaysSection() {
               items={menuItems}
             />
           </div>
-
-          <div className="flex flex-col gap-[8px]">
-            <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Стиль елементів</span>
-            <div className="bg-white rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#f0f0f0] py-[6px] w-[200px]">
-              {[
-                { icon: Edit2, label: 'Редагувати' },
-                { icon: Copy, label: 'Дублювати' },
-                { icon: Archive, label: 'Архівувати' },
-              ].map(item => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.label} className="px-[14px] py-[9px] text-[13px] font-medium text-[#1f1f1f] hover:bg-[#f4f4f5] flex items-center gap-[8px] cursor-pointer transition-colors">
-                    <Icon size={14} className="text-[#9a9a9a]" />{item.label}
-                  </div>
-                );
-              })}
-              <div className="h-[1px] bg-[#f0f0f0] my-[4px] mx-[14px]" />
-              <div className="px-[14px] py-[9px] text-[13px] font-medium text-red-500 hover:bg-red-50 flex items-center gap-[8px] cursor-pointer transition-colors">
-                <Trash2 size={14} />Видалити
-              </div>
-            </div>
-          </div>
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Stepper" description="Кроковий навігатор для майстрів створення або процесів." fullWidth>
-        <Stepper
-          steps={['Основна інформація', 'Налаштування команди', 'Підтвердження']}
-          currentStep={currentStep}
-          onStepClick={setCurrentStep}
-        />
-      </PreviewBlock>
-
-      <PreviewBlock title="Pagination" description="Посторінкова навігація з кнопками L2.5 (10px) та стрілками.">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={5}
-          onPageChange={setCurrentPage}
-        />
-      </PreviewBlock>
     </div>
   );
 }
@@ -1213,35 +1062,8 @@ function PageHeadersSection() {
 }
 
 function FeedbackSection() {
-  const [toastConfig, setToastConfig] = useState(null);
-  
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Toasters" description="Центровані темні спливаючі сповіщення з іконками." fullWidth>
-        <div className="flex flex-wrap gap-[8px]">
-          <Button style="primary" size="lg" onClick={() => setToastConfig({ variant: 'success', message: 'Проєкт успішно збережено ✓' })}>
-            Успіх Тост
-          </Button>
-          <Button style="secondary" color="red" size="lg" onClick={() => setToastConfig({ variant: 'error', message: 'Помилка при збереженні даних' })}>
-            Помилка Тост
-          </Button>
-          <Button style="secondary" size="lg" onClick={() => setToastConfig({ variant: 'warning', message: 'Увага: Сесія скоро закінчиться' })}>
-            Попередження
-          </Button>
-          <Button style="secondary" size="lg" onClick={() => setToastConfig({ variant: 'loading', message: 'Завантаження даних...' })}>
-            Завантаження
-          </Button>
-        </div>
-        {toastConfig && (
-          <Toast
-            variant={toastConfig.variant}
-            message={toastConfig.message}
-            autoClose={toastConfig.variant === 'loading' ? 0 : 3000}
-            onClose={() => setToastConfig(null)}
-          />
-        )}
-      </PreviewBlock>
-
       <PreviewBlock title="Alerts" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
         <div className="flex flex-col gap-[12px] max-w-[600px]">
           <Alert variant="success" title="Операція успішна">Проєкт успішно створено та додано до бази даних.</Alert>
@@ -1312,11 +1134,6 @@ function ChatComposerSection() {
 }
 
 function TaskCRMSection() {
-  const dummyComments = [
-    { id: '1', author: 'Артур Моспан', initials: 'АМ', timestamp: new Date('2026-07-12T10:00:00Z'), content: 'Кругові скруглення тепер виглядають супер!', edited: false },
-    { id: '2', author: 'Іван Петренко', initials: 'ІП', timestamp: new Date('2026-07-12T10:50:00Z'), content: 'Згоден, концентричність робить інтерфейс дуже акуратним.', parentId: '1' }
-  ];
-
   const demoMembers = [
     { uid: '1', name: 'Артур Моспан', initials: 'АМ', bg: '#6366f1' },
     { uid: '2', name: 'Іван Петренко', initials: 'ІП', bg: '#10b981' }
@@ -1389,41 +1206,6 @@ function TaskCRMSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Project & Team Cards" description="Картки проєктів та користувачів. Мають скруглення L1 (16px)." fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-          <ProjectCard
-            name="Редизайн сайту QuickTeam"
-            description="Оновлення інтерфейсу згідно з новими правилами концентричності та токенів"
-            members={demoMembers}
-            taskCount={15}
-            inProgressCount={4}
-            commentCount={32}
-          />
-          <ProjectCard
-            name="Редизайн сайту QuickTeam (Велика картка / Bento)"
-            description="Головний проєкт організації. Оновлення інтерфейсу згідно з новими правилами концентричності та токенів."
-            members={demoMembers}
-            taskCount={15}
-            inProgressCount={4}
-            commentCount={32}
-            isLarge
-            lastAction={{
-              actor: 'Артур Моспан',
-              action: 'оновив завдання',
-              issueKey: 'QT-104',
-              title: 'Редизайн сторінки авторизації',
-              time: '15 хв тому'
-            }}
-            className="md:col-span-2"
-          />
-          <TeamMemberCard
-            name="Артур Моспан"
-            role="Product Lead"
-            status="online"
-          />
-        </div>
-      </PreviewBlock>
-
       <PreviewBlock title="Task Card (Kanban)" description="Основна картка завдання для канбан дошки." fullWidth>
         <div className="bg-[#f4f4f5] p-6 rounded-[16px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
           <TaskCard
@@ -1993,7 +1775,7 @@ export default function UIKitPage() {
           <div className="px-[20px] pt-[20px] pb-[16px] border-b border-white/10 shrink-0">
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-[2px]">Internal · Not in nav</div>
             <div className="text-[17px] font-bold text-white">UI Kit</div>
-            <div className="text-[10px] text-white/30 mt-[1px]">{SECTIONS.length} sections · CRM components</div>
+            <div className="text-[10px] text-white/30 mt-[1px]">{SECTIONS.length} sections · product UI only</div>
           </div>
           <nav className="flex-1 overflow-y-auto p-[10px] flex flex-col gap-[14px]">
             {GROUPS.map(g => (

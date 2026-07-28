@@ -29,7 +29,7 @@
     "AvatarGroup": {
       "file": "src/components/ui/DataDisplay/AvatarGroup.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Badge": {
@@ -43,7 +43,7 @@
     "Breadcrumb": {
       "file": "src/components/ui/Navigation/Breadcrumb.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Button": {
@@ -87,7 +87,7 @@
     "ButtonGroup": {
       "file": "src/components/ui/Button/ButtonGroup.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Card": {
@@ -206,7 +206,7 @@
     "Dropdown": {
       "file": "src/components/ui/Navigation/Dropdown.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "EmptyState": {
@@ -237,7 +237,7 @@
     "FileInput": {
       "file": "src/components/ui/Forms/FileInput.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "FilterBar": {
@@ -258,7 +258,7 @@
     "FormGroup": {
       "file": "src/components/ui/Forms/FormGroup.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Grid": {
@@ -270,7 +270,7 @@
     "HeaderSearch": {
       "file": "src/components/ui/Forms/HeaderSearch.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "ImageUpload": {
@@ -398,7 +398,7 @@
     "Pagination": {
       "file": "src/components/ui/Navigation/Pagination.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Popover": {
@@ -423,31 +423,31 @@
     "Progress": {
       "file": "src/components/ui/DataDisplay/Progress.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "ProgressRing": {
       "file": "src/components/ui/DataDisplay/ProgressRing.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "ProjectCard": {
       "file": "src/components/ui/TaskManagement/ProjectCard.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "RadioButton": {
       "file": "src/components/ui/Forms/RadioButton.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "SearchInput": {
       "file": "src/components/ui/Forms/SearchInput.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Segmented": {
@@ -515,7 +515,7 @@
     "Stat": {
       "file": "src/components/ui/DataDisplay/Stat.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "StatusBadge": {
@@ -529,7 +529,7 @@
     "Stepper": {
       "file": "src/components/ui/Navigation/Stepper.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Surface": {
@@ -610,7 +610,7 @@
     "TeamMemberCard": {
       "file": "src/components/ui/TaskManagement/TeamMemberCard.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Textarea": {
@@ -636,13 +636,13 @@
     "TimePicker": {
       "file": "src/components/ui/Forms/TimePicker.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "Toast": {
       "file": "src/components/ui/Feedback/Toast.jsx",
       "count": 0,
-      "showcased": true,
+      "showcased": false,
       "usedIn": []
     },
     "ToggleSwitch": {

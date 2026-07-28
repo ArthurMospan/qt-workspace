@@ -77,6 +77,9 @@ test('every UI component used by the product is showcased in /ui-kit', () => {
   const uncovered = Object.entries(committed.components)
     .filter(([, entry]) => entry.count > 0 && !entry.showcased)
     .map(([name]) => name);
+  const showcasedButUnused = Object.entries(committed.components)
+    .filter(([, entry]) => entry.count === 0 && entry.showcased)
+    .map(([name]) => name);
 
   assert.deepEqual(
     uncovered,
@@ -85,6 +88,11 @@ test('every UI component used by the product is showcased in /ui-kit', () => {
   );
   assert.equal(committed.totals.uncovered, 0);
   assert.equal(committed.totals.covered, committed.totals.used);
+  assert.deepEqual(
+    showcasedButUnused,
+    [],
+    `Unused components must not be visible in /ui-kit: ${showcasedButUnused.join(', ')}`,
+  );
 });
 
 test('the atomic hierarchy and section renderer stay in sync', () => {
@@ -99,7 +107,11 @@ test('the atomic hierarchy and section renderer stay in sync', () => {
   const sectionIds = [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
   const renderedIds = [...mapSource.matchAll(/^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*</gm)]
     .map(match => match[1] || match[2]);
-  assert.deepEqual(renderedIds.toSorted(), sectionIds.toSorted(), 'Navigation and SECTION_MAP disagree');
+  assert.deepEqual(
+    sectionIds.filter(id => !renderedIds.includes(id)),
+    [],
+    'A visible navigation section is missing its renderer',
+  );
 
   const sectionFunctions = [...source.matchAll(/^function (\w+Section)\(/gm)].map(match => match[1]);
   const renderedFunctions = new Set(
