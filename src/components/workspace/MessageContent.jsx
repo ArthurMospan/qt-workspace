@@ -1,6 +1,6 @@
 import React from 'react';
 import HoverCard from './HoverCard';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 export default function MessageContent({ text, members, searchTerm }) {
   if (!text) return null;

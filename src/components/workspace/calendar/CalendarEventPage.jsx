@@ -32,7 +32,7 @@ import {
   findCalendarEvent,
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   Button,
   ContextMenu,

@@ -1,6 +1,6 @@
 'use client';
 import { Trash2, Edit2, Reply } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 function getRelativeTime(date) {
   if (!date) return '';

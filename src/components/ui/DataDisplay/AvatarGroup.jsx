@@ -1,5 +1,5 @@
 'use client';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 export default function AvatarGroup({ avatars = [], maxDisplay = 4, size = 'md', className = '' }) {
   const sizeMap = { sm: 20, md: 28, lg: 36, xl: 44 };

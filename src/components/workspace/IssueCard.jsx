@@ -3,7 +3,7 @@
 import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Calendar, Lock, Paperclip } from 'lucide-react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';

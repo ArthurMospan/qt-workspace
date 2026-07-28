@@ -3,7 +3,7 @@
 import { Briefcase, Check, Crown, Shield, Trash2, UserRound } from 'lucide-react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 const ROLES = [
   { value: 'member', label: 'Учасник', description: 'Працює із завданнями та проєктами.', icon: UserRound },

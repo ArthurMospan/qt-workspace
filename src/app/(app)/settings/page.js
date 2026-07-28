@@ -40,7 +40,7 @@ import {
   useConfirm,
   Popover
 } from '@/components/ui';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import {

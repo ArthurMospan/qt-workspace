@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';

@@ -16,7 +16,7 @@ import { HeaderSearch } from '@/components/ui/Forms/HeaderSearch';
 import TeamMemberCard from '@/components/ui/TaskManagement/TeamMemberCard';
 import CommentThread from '@/components/ui/TaskManagement/CommentThread';
 import TimeLogDisplay from '@/components/ui/TaskManagement/TimeLogDisplay';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 import {
   Palette, Copy, Layers, LayoutGrid, Box, MessageSquare,

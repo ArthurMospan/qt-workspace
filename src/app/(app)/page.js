@@ -7,7 +7,7 @@ import { reportLoadError } from '@/lib/utils/errors';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';

@@ -4,7 +4,7 @@ import { CakeSlice, CalendarDays, Clock3, LockKeyhole, Mail, MapPin, Phone, Mess
 import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';

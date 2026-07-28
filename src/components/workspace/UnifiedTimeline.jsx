@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import Button from '@/components/ui/Button';

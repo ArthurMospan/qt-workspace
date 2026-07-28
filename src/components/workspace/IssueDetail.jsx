@@ -15,7 +15,7 @@ import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
 import { useIssueLinks }       from '@/lib/hooks/useIssueLinks';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import MarkdownViewer, { setTaskChecked } from '@/components/MarkdownViewer';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
 import { useLocalization } from '@/lib/hooks/useLocalization';

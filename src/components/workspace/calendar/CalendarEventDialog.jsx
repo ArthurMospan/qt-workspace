@@ -22,7 +22,7 @@ import {
 import { Button, Dialog, Input, Select, Textarea, ToggleSwitch } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 
 export const CALENDAR_EVENT_TYPE_OPTIONS = [

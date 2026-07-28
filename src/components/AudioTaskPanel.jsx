@@ -8,7 +8,7 @@ import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [

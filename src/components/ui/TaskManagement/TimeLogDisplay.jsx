@@ -1,6 +1,6 @@
 'use client';
 import { Clock, Trash2, Edit2 } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 function formatMinutes(minutes) {
   const h = Math.floor(minutes / 60);

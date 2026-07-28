@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, ChevronRight, X, Bell, Hash } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { HeaderSearch } from '../Forms/HeaderSearch';
 import { Breadcrumb } from '../Navigation/Breadcrumb';
 import Tooltip from '../Navigation/Tooltip';

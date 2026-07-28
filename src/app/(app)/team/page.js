@@ -13,7 +13,7 @@ import {
   LoadingSpinner, 
   EmptyState,
 } from '@/components/ui';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 

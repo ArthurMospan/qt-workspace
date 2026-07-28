@@ -7,7 +7,7 @@ import {
   Trash2, X, Pin, ChevronDown, Info, UserPlus, ArrowLeft, Search
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import Dialog from '@/components/ui/Dialog';

@@ -23,7 +23,7 @@ function ComponentRow({ name, entry, expanded, onToggle }) {
         className={`flex w-full items-center gap-[10px] px-[14px] py-[10px] text-left ${used ? 'hover:bg-[#fafafa] cursor-pointer' : 'cursor-default'} transition-colors`}
       >
         {used
-          ? <CheckCircle2 size={15} className="shrink-0 text-[#10b981]" />
+          ? <CheckCircle2 size={15} className={`shrink-0 ${entry.showcased ? 'text-[#10b981]' : 'text-[#ef4444]'}`} />
           : <CircleSlash size={15} className="shrink-0 text-[#cfcfcf]" />}
 
         <span className="text-[13px] font-bold text-[#1f1f1f] font-mono">{name}</span>
@@ -38,7 +38,7 @@ function ComponentRow({ name, entry, expanded, onToggle }) {
               used ? 'bg-[#ecfdf5] text-[#047857]' : 'bg-[#f5f5f5] text-[#9a9a9a]'
             }`}
           >
-            {used ? `${entry.count} використань` : 'не використовується'}
+            {used ? `${entry.count} використань · ${entry.showcased ? 'у каталозі' : 'НЕМАЄ В КАТАЛОЗІ'}` : 'не використовується'}
           </span>
           {used && (
             <ChevronDown
@@ -76,7 +76,13 @@ export default function KitStatus() {
   }, [query]);
 
   const toggle = name => setExpanded(current => (current === name ? null : name));
-  const { components, used: usedTotal, unused: unusedTotal } = usage.totals;
+  const {
+    components,
+    used: usedTotal,
+    unused: unusedTotal,
+    covered,
+    uncovered,
+  } = usage.totals;
 
   return (
     <div className="flex flex-col gap-[24px]">
@@ -92,6 +98,7 @@ export default function KitStatus() {
         <p className="mt-[6px] text-[12px] text-[#cfcfcf]">
           Оновити: <span className="font-mono text-[#71717a]">npm run kit:scan</span> · перевіряється
           тестом <span className="font-mono text-[#71717a]">tests/kit-usage.test.mjs</span>
+          . Тест також падає, якщо живий компонент продукту не має preview у каталозі.
         </p>
       </div>
 
@@ -99,6 +106,7 @@ export default function KitStatus() {
         {[
           { label: 'Компонентів', value: components, color: '#1f1f1f' },
           { label: 'У продукті', value: usedTotal, color: '#10b981' },
+          { label: 'Покрито каталогом', value: `${covered}/${usedTotal}`, color: uncovered ? '#ef4444' : '#10b981' },
           { label: 'Не використовуються', value: unusedTotal, color: '#9a9a9a' },
         ].map(stat => (
           <div key={stat.label} className="rounded-[12px] border border-[#f0f0f0] bg-white px-[18px] py-[12px]">

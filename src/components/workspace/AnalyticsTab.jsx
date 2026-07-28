@@ -2,7 +2,7 @@
 // src/components/workspace/AnalyticsTab.jsx — Real reports: velocity, burndown, assignee stats, overdue
 import { useEffect, useMemo, useState } from 'react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   Clock, CheckCircle2, AlertCircle, TrendingUp, TrendingDown,
   Users, Target, Zap, BarChart2, Calendar, AlertTriangle, ClipboardList

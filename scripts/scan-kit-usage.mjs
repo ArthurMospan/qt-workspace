@@ -21,6 +21,7 @@ const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const SCAN_DIRS = [join(ROOT, 'src', 'app'), join(ROOT, 'src', 'components')];
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'kit-usage.generated.json');
+const SHOWCASE_FILE = join(ROOT, 'src', 'app', 'ui-kit', 'page.js');
 
 // The kit itself and the two showcase pages are excluded: a component being
 // demoed on /ui-kit is not the same as the product using it.
@@ -92,6 +93,18 @@ function importedNames(clause) {
 
 export function scanKitUsage() {
   const inventory = buildInventory();
+  const showcased = new Set();
+
+  const showcaseSource = readFileSync(SHOWCASE_FILE, 'utf8');
+  for (const match of showcaseSource.matchAll(IMPORT_RE)) {
+    for (const name of importedNames(match[1])) {
+      // An import alone is not a showcase. Requiring a JSX render prevents a
+      // stale/unused import from making coverage look green.
+      if (inventory.has(name) && new RegExp(`<${name}\\b`).test(showcaseSource)) {
+        showcased.add(name);
+      }
+    }
+  }
 
   for (const dir of SCAN_DIRS) {
     for (const file of walk(dir)) {
@@ -114,15 +127,23 @@ export function scanKitUsage() {
     components[name] = {
       file: entry.file,
       count: entry.usedIn.length,
+      showcased: showcased.has(name),
       usedIn: entry.usedIn.sort(),
     };
   }
 
   const used = Object.values(components).filter(entry => entry.count > 0).length;
+  const covered = Object.values(components).filter(entry => entry.count > 0 && entry.showcased).length;
   return {
     // Regenerate with `npm run kit:scan`; tests/kit-usage.test.mjs enforces it.
     generatedBy: 'scripts/scan-kit-usage.mjs',
-    totals: { components: Object.keys(components).length, used, unused: Object.keys(components).length - used },
+    totals: {
+      components: Object.keys(components).length,
+      used,
+      unused: Object.keys(components).length - used,
+      covered,
+      uncovered: used - covered,
+    },
     components,
   };
 }

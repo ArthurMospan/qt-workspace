@@ -7,7 +7,7 @@ import { useAppContext }    from '@/lib/context/AppContext';
 import { useDeadlineReminders } from '@/lib/hooks/useDeadlineReminders';
 import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
-import UserAvatar           from '@/components/UserAvatar';
+import UserAvatar           from '@/components/ui/DataDisplay/UserAvatar';
 import UserStatusSetter     from '@/components/UserStatusSetter';
 import SearchModal          from '@/components/SearchModal';
 import TopHeader            from '@/components/ui/Layout/TopHeader';

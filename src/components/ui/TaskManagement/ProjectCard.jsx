@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { MoreVertical, Users } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 export default function ProjectCard({
   name,

@@ -1,7 +1,7 @@
 'use client';
 // src/components/ui/TaskManagement/TaskRow.jsx — Beautiful list-row representation of a task
 import { Calendar, Clock, CheckSquare, Lock } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';

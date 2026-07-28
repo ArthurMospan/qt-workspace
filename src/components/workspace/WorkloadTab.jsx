@@ -17,7 +17,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   Button,
   EmptyState,

@@ -11,7 +11,7 @@ import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Dialog, Button, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {

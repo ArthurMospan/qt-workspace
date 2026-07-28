@@ -14,7 +14,7 @@ import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { Button, Card, LoadingSpinner, PageHeader } from '@/components/ui';
 import { Select } from '@/components/ui/Select';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 const PRIORITY_OPTIONS = [
   { value: 'blocker', label: 'Blocker' },

@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import {
   collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, getDoc,
 } from 'firebase/firestore';
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { CalendarDays, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import {

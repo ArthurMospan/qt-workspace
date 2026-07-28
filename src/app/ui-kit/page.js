@@ -14,7 +14,8 @@ import {
   Checkbox, RadioButton, ToggleSwitch, DatePicker, TimePicker, FileInput, SearchInput,
   ProgressRing, Chip, Stat, Alert, Toast, LoadingSpinner, EmptyState, Pagination, Stepper,
   Dropdown, Popover, Tooltip, TaskAttributesPanel, Progress, KpiCard, Table,
-  SidebarLayout, InnerNavigation, PageHeader
+  SidebarLayout, InnerNavigation, PageHeader, Card, Segmented, ImageUpload, UserAvatar,
+  ConfirmProvider, useConfirm
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import TopHeader from '@/components/ui/Layout/TopHeader';
@@ -24,9 +25,11 @@ import TaskCard from '@/components/ui/TaskManagement/TaskCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import ProjectCard from '@/components/ui/TaskManagement/ProjectCard';
 import TeamMemberCard from '@/components/ui/TaskManagement/TeamMemberCard';
+import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import KitStatus from './KitStatus';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
 import {
   Plus, Edit2, Trash2, Archive, Search, ChevronRight, ChevronDown,
   User, Bell, Settings, Settings2, Check, X, AlertCircle, Info,
@@ -34,7 +37,7 @@ import {
   Layers, MessageSquare, Zap, Hash, Calendar, Clock, Filter,
   ArrowUp, ArrowDown, Minus, Star, Bug, CheckSquare, Flag,
   Play, Pause, RefreshCw, MoreVertical, Copy, ExternalLink,
-  TrendingUp, BarChart2, PieChart, Users, Folder, Tag as TagIcon, Lock,
+  TrendingUp, BarChart2, PieChart, Users, Tag as TagIcon, Lock,
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
   ChevronLeft, ChevronsUpDown, GripVertical, Move, Columns,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
@@ -81,6 +84,7 @@ const GROUPS = [
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
       { id: 'progress',     label: 'Progress & Stats',   icon: TrendingUp },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
+      { id: 'chat-composer', label: 'Chat Composer Dock', icon: MessageSquare },
     ]
   },
   {
@@ -419,6 +423,17 @@ function InputsSection() {
         </div>
       </PreviewBlock>
 
+      <PreviewBlock title="Brand image upload" description="Живий ImageUpload із двома брендовими поверхнями. Зміна sidebar theme не змінює його API й не ламає контраст." fullWidth>
+        <div className="grid max-w-[760px] grid-cols-1 gap-[16px] md:grid-cols-2">
+          <div className="rounded-[16px] bg-ink p-[20px]">
+            <ImageUpload value="/favicon.ico" onChange={() => {}} theme="dark" />
+          </div>
+          <div className="rounded-[16px] border border-line bg-white p-[20px]">
+            <ImageUpload value="/favicon.ico" onChange={() => {}} theme="light" />
+          </div>
+        </div>
+      </PreviewBlock>
+
       <PreviewBlock title="Header Search Input — 36px" description="Спеціальний безмежовий пошук для хедера. Кольори: фон transparent, нижня рамка фокусу #1f1f1f. Текст #1f1f1f, placeholder #cfcfcf, іконка #9a9a9a." fullWidth>
         <div className="max-w-[400px]">
           <HeaderSearch value={headerVal} onChange={setHeaderVal} placeholder="Пошук по робочому простору..." />
@@ -547,8 +562,8 @@ function SelectsSection() {
 
 function TabsSection() {
   const [a1, setA1] = useState('board');
-  const [a2, setA2] = useState('active');
   const [a3, setA3] = useState('kanban');
+  const [period, setPeriod] = useState(30);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Standard Tabs — 36px" description="Pill wrapper bg-[#f4f4f5], active tab bg-white shadow-sm.">
@@ -567,15 +582,14 @@ function TabsSection() {
         />
       </PreviewBlock>
 
-      <PreviewBlock title="Segmented Switcher (Icon-only)" description="Перемикач вигляду сторінки. Використовує кастомні іконки без текстових міток (label), автоматично формуючи квадратні кнопки 28x28px. Висота: 36px. Скруглення: 10px.">
-        <Tabs
-          tabs={[
-            { id: 'grid', icon: Kanban },
-            { id: 'list', icon: List },
-          ]}
-          activeTab={a1 === 'board' ? 'grid' : 'list'}
-          onTabChange={(id) => setA1(id === 'grid' ? 'board' : 'sprints')}
-        />
+      <PreviewBlock title="Segmented Switcher" description="Компактний взаємовиключний перемикач, який продукт використовує всередині FilterBar для періодів і режимів.">
+        <div className="rounded-[10px] bg-canvas p-[2px]">
+          <Segmented
+            value={period}
+            onChange={setPeriod}
+            options={[7, 14, 30, 90].map(days => ({ value: days, label: `${days}д` }))}
+          />
+        </div>
       </PreviewBlock>
     </div>
   );
@@ -616,6 +630,19 @@ function SurfacesSection() {
           </div>
 
         </Surface>
+      </PreviewBlock>
+
+      <PreviewBlock title="Card variants" description="Живий Card, який використовується на сторінках аналітики, налаштувань, інтеграцій та порталу." fullWidth>
+        <div className="grid w-full grid-cols-1 gap-[16px] md:grid-cols-2">
+          <Card variant="white" padding="lg">
+            <p className="text-[13px] font-bold text-ink">White card</p>
+            <p className="mt-[4px] text-[12px] text-muted">Стандартна продуктова картка з border-line.</p>
+          </Card>
+          <Card variant="gray" padding="lg" interactive>
+            <p className="text-[13px] font-bold text-ink">Interactive gray card</p>
+            <p className="mt-[4px] text-[12px] text-muted">Той самий hover і радіус, що на сайті.</p>
+          </Card>
+        </div>
       </PreviewBlock>
     </div>
   );
@@ -761,22 +788,23 @@ function BadgesSection() {
 
 function AvatarsSection() {
   const sizes = [20, 24, 28, 32, 36, 40, 48];
+  const demoUser = { id: 'ui-kit-arthur', name: 'Артур Моспан' };
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Avatar sizes" description="Базовий атом аватара розробника. Використовується в картках, списках та таблицях.">
+      <PreviewBlock title="UserAvatar sizes" description="Канонічний живий аватар із продукту: фото, fallback-ініціали, детермінований колір і tooltip.">
         <div className="flex items-end gap-[16px]">
           {sizes.map(s => (
             <div key={s} className="flex flex-col items-center gap-[6px]">
-              <div
-                className="rounded-full flex items-center justify-center text-white font-bold shrink-0"
-                style={{ width: s, height: s, backgroundColor: '#6366f1', fontSize: Math.max(8, s * 0.35) }}
-              >
-                АМ
-              </div>
+              <UserAvatar user={demoUser} size={s} tooltip />
               <span className="text-[9px] font-mono text-[#9a9a9a]">{s}px</span>
             </div>
           ))}
         </div>
+      </PreviewBlock>
+
+      <PreviewBlock title="UserAvatar states" description="Ті самі стани, які реально бачить користувач: брендований колір і відсутні дані.">
+        <UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size={40} tooltip />
+        <UserAvatar user={null} size={40} />
       </PreviewBlock>
     </div>
   );
@@ -949,11 +977,33 @@ function NavigationOverlaysSection() {
   );
 }
 
+function ConfirmDialogPreview() {
+  const confirm = useConfirm();
+  const [lastResult, setLastResult] = useState(null);
+
+  const openConfirm = async () => {
+    const accepted = await confirm({
+      title: 'Видалити проєкт?',
+      message: 'Ви видаляєте «Редизайн сайту». Цю дію неможливо скасувати.',
+      confirmText: 'Видалити',
+      danger: true,
+    });
+    setLastResult(accepted ? 'Підтверджено' : 'Скасовано');
+  };
+
+  return (
+    <div className="flex items-center gap-[12px]">
+      <Button style="secondary" color="red" size="lg" icon={Trash2} onClick={openConfirm}>Видалити</Button>
+      {lastResult && <span className="text-[12px] font-semibold text-muted">{lastResult}</span>}
+    </div>
+  );
+}
+
 function DialogsSection() {
   const [open1, setOpen1] = useState(false);
-  const [open2, setOpen2] = useState(false);
   return (
-    <div className="flex flex-col gap-[32px]">
+    <ConfirmProvider>
+      <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Standard Dialog" description="rounded-[24px] overlay modal. Default width 480px.">
         <Button style="primary" size="lg" onClick={() => setOpen1(true)}>Відкрити форму</Button>
         <Dialog isOpen={open1} onClose={() => setOpen1(false)} title="Редагувати проєкт" size="sm">
@@ -974,25 +1024,11 @@ function DialogsSection() {
         </Dialog>
       </PreviewBlock>
 
-      <PreviewBlock title="Danger / Confirm Dialog" description="Destructive action confirmation. Centered icon + description.">
-        <Button style="secondary" color="red" size="lg" icon={Trash2} onClick={() => setOpen2(true)}>Видалити</Button>
-        <Dialog isOpen={open2} onClose={() => setOpen2(false)} size="sm" showCloseButton={false}>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-[56px] h-[56px] bg-red-50 rounded-full flex items-center justify-center mb-[16px]">
-              <AlertCircle size={24} className="text-red-500" />
-            </div>
-            <h2 className="text-[18px] font-bold text-[#1f1f1f] mb-[8px]">Видалити проєкт?</h2>
-            <p className="text-[13px] text-[#9a9a9a] leading-relaxed mb-[24px]">
-              Ви видаляєте <strong className="text-[#1f1f1f]">Редизайн сайту</strong>. Цю дію неможливо скасувати.
-            </p>
-            <div className="flex gap-[8px] w-full">
-              <Button style="secondary" size="lg" className="flex-1" onClick={() => setOpen2(false)}>Скасувати</Button>
-              <Button style="primary" color="red" size="lg" className="flex-1" onClick={() => setOpen2(false)}>Видалити</Button>
-            </div>
-          </div>
-        </Dialog>
+      <PreviewBlock title="Danger / Confirm Dialog" description="Живий ConfirmProvider, який продукт використовує замість native confirm()/prompt().">
+        <ConfirmDialogPreview />
       </PreviewBlock>
-    </div>
+      </div>
+    </ConfirmProvider>
   );
 }
 
@@ -1241,6 +1277,34 @@ function FeedbackSection() {
               onAction={() => alert('Створення завдання...')}
             />
           </div>
+        </div>
+      </PreviewBlock>
+    </div>
+  );
+}
+
+function ChatComposerSection() {
+  return (
+    <div className="flex flex-col gap-[32px]">
+      <PreviewBlock
+        title="Chat Composer Dock"
+        description="Живий layout-molecule з чату, timeline та QuickTeam+: висота composer визначає overlap автоматично через ResizeObserver."
+        filePath="src/components/ui/ChatComposerDock.jsx"
+        fullWidth
+      >
+        <div className="h-[260px] w-full overflow-hidden rounded-[16px] border border-line bg-canvas">
+          <div className="h-full overflow-y-auto bg-white px-[20px] py-[16px]">
+            <div className="max-w-[70%] rounded-[12px] bg-canvas px-[12px] py-[10px] text-[12px] text-ink">
+              Це той самий composer dock, який використовується у трьох продуктових сценаріях.
+            </div>
+            <div className="h-[120px]" />
+          </div>
+          <ChatComposerDock className="px-[16px] pb-[16px]">
+            <div className="flex items-center gap-[8px] rounded-[16px] border border-line bg-white p-[8px] shadow-sm">
+              <Input placeholder="Написати повідомлення…" />
+              <Button style="primary" size="icon" icon={ArrowUp}>Надіслати</Button>
+            </div>
+          </ChatComposerDock>
         </div>
       </PreviewBlock>
     </div>
@@ -1699,47 +1763,23 @@ function NavMenuSection() {
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="InnerNavigation з контентною зоною" description="Патерн навігації всередині сторінок з групуванням елементів, іконками, активним та небезпечним станами, з відображенням сірої контентної зони праворуч." filePath="src/components/ui/Navigation/InnerNavigation.jsx" fullWidth>
-        <div className="h-[400px] border border-[#f0f0f0] rounded-[24px] overflow-hidden flex bg-white p-[12px] gap-[12px] w-full">
-          {/* Left panel - InnerNavigation */}
-          <div className="w-[280px] bg-[#f4f4f5] rounded-[16px] overflow-hidden shrink-0 flex flex-col">
-            <InnerNavigation
+        <div className="h-[400px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
+          <SidebarLayout
+            sidebar={(
+              <InnerNavigation
               items={NAV}
               activeId={active}
               onChange={setActive}
-            />
-          </div>
-          {/* Right panel - Gray Content Zone */}
-          <div className="flex-1 bg-[#f4f4f5] rounded-[16px] flex flex-col items-center justify-center text-center p-6">
-            <span className="text-[#9a9a9a] font-bold text-[13px] uppercase tracking-wider block mb-2">Контент зона (Content Area)</span>
-            <p className="text-[#b1b1b1] text-[12px] max-w-[280px] leading-relaxed">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>
-          </div>
-        </div>
-      </PreviewBlock>
-    </div>
-  );
-}
-
-function EmptyStatesSection() {
-  return (
-    <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Page-level Empty State" description="Центрована панель-заглушка на всю ширину (наприклад, коли немає проєктів)." fullWidth>
-        <div className="bg-white rounded-[24px] border border-[#f0f0f0] p-[24px] flex items-center justify-center w-full">
-          <EmptyState
-            icon={Folder}
-            title="Немає проєктів"
-            description="Створіть перший проєкт, щоб розпочати роботу з командою."
-            action="Новий проєкт"
-            onAction={() => alert('Новий проєкт')}
-          />
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock title="Inline Empty State" description="Компактна заглушка всередині колонок канбану або списків." fullWidth>
-        <div className="bg-[#f4f4f5] rounded-[16px] p-[24px] flex items-center justify-center w-full">
-          <EmptyState
-            icon={CheckSquare}
-            title="Немає завдань"
-          />
+              />
+            )}
+            sidebarWidth="280px"
+            hasBorder={false}
+          >
+            <div className="flex flex-1 flex-col items-center justify-center rounded-[16px] bg-canvas p-6 text-center">
+              <span className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-muted">Контент зона (Content Area)</span>
+              <p className="max-w-[280px] text-[12px] leading-relaxed text-faint">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>
+            </div>
+          </SidebarLayout>
         </div>
       </PreviewBlock>
     </div>
@@ -1820,42 +1860,42 @@ function TypographySection() {
 
 function TokensSection() {
   const colors = [
-    { label: 'Dark (Primary)', value: '#1f1f1f' },
-    { label: 'Pill Dark (hover)', value: '#303030' },
-    { label: 'Canvas/Surface Zinc Gray', value: '#f4f4f5' },
-    { label: 'Interactive Element Gray', value: '#f4f4f5' },
-    { label: 'Inset Gray', value: '#f0f0f0' },
-    { label: 'Border', value: '#e9e9e9' },
-    { label: 'Border Light', value: '#f0f0f0' },
-    { label: 'Text Muted', value: '#9a9a9a' },
-    { label: 'Text Inactive', value: '#cfcfcf' },
-    { label: 'Success', value: '#10b981' },
-    { label: 'Warning', value: '#eab308' },
-    { label: 'Danger', value: '#ef4444' },
-    { label: 'Info / Indigo', value: '#6366f1' },
-    { label: 'Cyan', value: '#0891b2' },
-    { label: 'Orange', value: '#f97316' },
-    { label: 'Purple', value: '#8b5cf6' },
+    { label: 'Dark (Primary)', value: designColors.dark },
+    { label: 'Pill Dark (hover)', value: designColors.hover.dark },
+    { label: 'Canvas / Element', value: designColors.light },
+    { label: 'Surface', value: designColors.surface },
+    { label: 'Border', value: designColors.border.primary },
+    { label: 'Border Secondary', value: designColors.border.secondary },
+    { label: 'Border Light', value: designColors.border.light },
+    { label: 'Text Muted', value: designColors.text.muted },
+    { label: 'Text Inactive', value: designColors.text.inactive },
+    { label: 'Success', value: designColors.status.success },
+    { label: 'Warning', value: designColors.status.warning },
+    { label: 'Danger', value: designColors.status.danger },
+    { label: 'Info / Indigo', value: designColors.status.info },
+    { label: 'Cyan', value: designColors.status.cyan },
+    { label: 'Orange', value: designColors.status.error },
+    { label: 'Purple', value: designColors.status.purple },
   ];
   const sizes = [
-    { label: 'Button lg (CTA, default)', value: '36px' },
-    { label: 'Button md (action)', value: '32px' },
-    { label: 'Button sm (compact)', value: '28px' },
-    { label: 'Input / Select / Tabs height', value: '36px' },
-    { label: 'L0: Global / Modal radius', value: '24px (rounded-[24px])' },
-    { label: 'L1: Panel / Card radius', value: '16px (rounded-[16px])' },
-    { label: 'L2: Inset Surface radius', value: '12px (rounded-[12px])' },
-    { label: 'L2.5: Button / Input radius', value: '10px (rounded-[10px])' },
-    { label: 'L3: Small accent radius', value: '8px (rounded-[8px])' },
+    { label: 'Button lg (CTA, default)', value: sizing.button.lg },
+    { label: 'Button md (action)', value: sizing.button.md },
+    { label: 'Button sm (compact)', value: sizing.button.sm },
+    { label: 'Input / Select / Tabs height', value: sizing.control },
+    { label: 'L0: Global / Modal radius', value: `${sizing.radius.max} (rounded-[24px])` },
+    { label: 'L1: Panel / Card radius', value: `${sizing.radius.full} (rounded-[16px])` },
+    { label: 'L2: Inset Surface radius', value: `${sizing.radius.xl} (rounded-[12px])` },
+    { label: 'L2.5: Button / Input radius', value: `${sizing.radius.lg} (rounded-[10px])` },
+    { label: 'L3: Small accent radius', value: `${sizing.radius.md} (rounded-[8px])` },
     { label: 'L4: Badge / Tag radius', value: '6px (rounded-[6px])' },
-    { label: 'Page horizontal padding', value: '32px' },
-    { label: 'Page title → content gap', value: '24px' },
+    { label: 'Page horizontal padding', value: spacing.pagePadding },
+    { label: 'Page title → content gap', value: spacing.sectionGap },
     { label: 'Max content width', value: '1400px' },
     { label: 'Sidebar width', value: '220px' },
   ];
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Color Palette" description="All tokens from /src/lib/design/tokens.js" fullWidth>
+      <PreviewBlock title="Color Palette" description="Живі значення з /src/lib/design/tokens.js; зміна джерела автоматично оновлює цю таблицю." fullWidth>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[8px]">
           {colors.map(t => <TokenChip key={t.label} {...t} isColor />)}
         </div>
@@ -1927,6 +1967,7 @@ const SECTION_MAP = {
   'inner-nav-layout': <NavMenuSection />,
   'task-crm':  <TaskCRMSection />,
   feedback:   <FeedbackSection />,
+  'chat-composer': <ChatComposerSection />,
   'button-groups': <ButtonGroupsSection />,
   'avatar-groups': <AvatarGroupsSection />,
   'breadcrumbs':   <BreadcrumbsSection />,
@@ -1952,7 +1993,7 @@ export default function UIKitPage() {
           <div className="px-[20px] pt-[20px] pb-[16px] border-b border-white/10 shrink-0">
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-[2px]">Internal · Not in nav</div>
             <div className="text-[17px] font-bold text-white">UI Kit</div>
-            <div className="text-[10px] text-white/30 mt-[1px]">16 sections · CRM components</div>
+            <div className="text-[10px] text-white/30 mt-[1px]">{SECTIONS.length} sections · CRM components</div>
           </div>
           <nav className="flex-1 overflow-y-auto p-[10px] flex flex-col gap-[14px]">
             {GROUPS.map(g => (

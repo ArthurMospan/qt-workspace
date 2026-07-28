@@ -1,6 +1,6 @@
 'use client';
 
-import UserAvatar from '@/components/UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { filterMentionCandidates } from '@/lib/utils/mentions';
 
 function escapeRegExp(value) {

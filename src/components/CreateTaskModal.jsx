@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { X, Check, ListTodo, Mic2, Tag as TagIcon } from 'lucide-react';
-import UserAvatar from './UserAvatar';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';

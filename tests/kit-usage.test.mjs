@@ -72,3 +72,42 @@ test('components known to be live are reported as live', () => {
     assert.ok(committed.components[name].count > 0, `${name} should be reported as used`);
   }
 });
+
+test('every UI component used by the product is showcased in /ui-kit', () => {
+  const uncovered = Object.entries(committed.components)
+    .filter(([, entry]) => entry.count > 0 && !entry.showcased)
+    .map(([name]) => name);
+
+  assert.deepEqual(
+    uncovered,
+    [],
+    `Live product components missing from /ui-kit: ${uncovered.join(', ')}`,
+  );
+  assert.equal(committed.totals.uncovered, 0);
+  assert.equal(committed.totals.covered, committed.totals.used);
+});
+
+test('the atomic hierarchy and section renderer stay in sync', () => {
+  const source = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
+  const groupsSource = source.slice(source.indexOf('const GROUPS'), source.indexOf('const SECTIONS'));
+  const mapSource = source.slice(source.indexOf('const SECTION_MAP'), source.indexOf('// MAIN PAGE'));
+
+  for (const layer of ['Атоми (Atoms)', 'Молекули (Molecules)', 'Організми (Organisms)', 'Лейаути (Layouts)']) {
+    assert.match(groupsSource, new RegExp(layer.replace(/[()]/g, '\\$&')), `Missing ${layer} layer`);
+  }
+
+  const sectionIds = [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
+  const renderedIds = [...mapSource.matchAll(/^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*</gm)]
+    .map(match => match[1] || match[2]);
+  assert.deepEqual(renderedIds.toSorted(), sectionIds.toSorted(), 'Navigation and SECTION_MAP disagree');
+
+  const sectionFunctions = [...source.matchAll(/^function (\w+Section)\(/gm)].map(match => match[1]);
+  const renderedFunctions = new Set(
+    [...mapSource.matchAll(/<([A-Z]\w+Section)\s*\/>/g)].map(match => match[1]),
+  );
+  assert.deepEqual(
+    sectionFunctions.filter(name => !renderedFunctions.has(name)),
+    [],
+    'Dead section functions duplicate previews without being reachable from the hierarchy',
+  );
+});
