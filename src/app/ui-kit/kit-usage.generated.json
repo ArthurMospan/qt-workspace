@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "totals": {
-    "components": 69,
+    "components": 68,
     "used": 36,
-    "unused": 33
+    "unused": 32
   },
   "components": {
     "Alert": {
@@ -41,7 +41,7 @@
     },
     "Button": {
       "file": "src/components/ui/Button.jsx",
-      "count": 35,
+      "count": 31,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/[projectId]/portal/page.js",
@@ -64,13 +64,9 @@
         "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/profile/ProfileView.jsx",
         "src/components/workspace/AgileBoard.jsx",
-        "src/components/workspace/BacklogTab.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/BoardConfigModal.jsx",
-        "src/components/workspace/DependenciesPanel.jsx",
-        "src/components/workspace/EpicsPanel.jsx",
         "src/components/workspace/IssueDetail.jsx",
-        "src/components/workspace/MaterialsTab.jsx",
         "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/QtPlusProjectTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
@@ -223,7 +219,7 @@
     },
     "FilterBar": {
       "file": "src/components/ui/FilterBar.jsx",
-      "count": 9,
+      "count": 8,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/analytics/page.js",
@@ -232,8 +228,7 @@
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js",
-        "src/components/workspace/AnalyticsTab.jsx",
-        "src/components/workspace/BacklogTab.jsx"
+        "src/components/workspace/AnalyticsTab.jsx"
       ]
     },
     "FormGroup": {
@@ -267,7 +262,7 @@
     },
     "Input": {
       "file": "src/components/ui/Input.jsx",
-      "count": 17,
+      "count": 14,
       "usedIn": [
         "src/app/(app)/[projectId]/portal/page.js",
         "src/app/(app)/chat/page.js",
@@ -278,10 +273,7 @@
         "src/components/InviteMemberDialog.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/BillingTab.jsx",
-        "src/components/workspace/DependenciesPanel.jsx",
-        "src/components/workspace/EpicsPanel.jsx",
         "src/components/workspace/IssueDetail.jsx",
-        "src/components/workspace/MaterialsTab.jsx",
         "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
@@ -324,11 +316,6 @@
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
-    },
-    "Menu": {
-      "file": "src/components/ui/Navigation/Menu.jsx",
-      "count": 0,
-      "usedIn": []
     },
     "MultiSelect": {
       "file": "src/components/ui/Select.jsx",
@@ -387,9 +374,8 @@
     },
     "PriorityBadge": {
       "file": "src/components/ui/DataDisplay/PriorityBadge.jsx",
-      "count": 2,
+      "count": 1,
       "usedIn": [
-        "src/components/workspace/BacklogTab.jsx",
         "src/components/workspace/BillingTab.jsx"
       ]
     },
@@ -430,7 +416,7 @@
     },
     "Select": {
       "file": "src/components/ui/Select.jsx",
-      "count": 19,
+      "count": 18,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/ai-call/page.js",
@@ -444,7 +430,6 @@
         "src/components/CreateTaskModal.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/AnalyticsTab.jsx",
-        "src/components/workspace/BacklogTab.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/QtPlusProjectTab.jsx",

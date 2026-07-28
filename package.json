@@ -47,8 +47,5 @@
     "eslint-config-next": "16.2.6",
     "firebase-tools": "^15.23.0",
     "tailwindcss": "^4"
-  },
-  "overrides": {
-    "react-konva": "^19.0.3"
   }
 }

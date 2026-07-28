@@ -264,10 +264,10 @@ function PriorityColorsSection() {
       <ResolvedBlock
         id="d5"
         title="Пріоритет Blocker — тепер всюди #ef4444"
-        description="Було два різних червоних (#dc2626 на дошці/PriorityBadge-тексті vs #ef4444 у фільтрах). Уніфіковано на #ef4444 в усіх джерелах: DEFAULT_PRIORITIES, PriorityBadge kit, IssueDetail, SearchModal, sprints/BacklogTab PRIORITY_CFG, AnalyticsTab."
+        description="Було два різних червоних (#dc2626 на дошці/PriorityBadge-тексті vs #ef4444 у фільтрах). Уніфіковано на #ef4444 в усіх живих джерелах: DEFAULT_PRIORITIES, PriorityBadge kit, IssueDetail, SearchModal, sprints і AnalyticsTab."
         swatch="#ef4444"
         swatchLabel="blocker — єдиний колір усюди"
-        decision="Застосовано у 8 файлах: useWorkflowConfig.js, settings/page.js, PriorityBadge.jsx, IssueDetail.jsx, SearchModal.jsx, sprints/page.js, BacklogTab.jsx, AnalyticsTab.jsx."
+        decision="Застосовано в живих workflow, settings, badge, issue, search, sprint та analytics компонентах."
       />
       <ResolvedBlock
         id="d6"
@@ -275,7 +275,7 @@ function PriorityColorsSection() {
         description="Дошка й PriorityBadge вже малювали low сірим; фільтри на 7 сторінках малювали синім (#3b82f6) — той самий пріоритет виглядав як інший статус. Уніфіковано на сірий."
         swatch="#9a9a9a"
         swatchLabel="low — єдиний колір усюди"
-        decision="Замінено dotColor у фільтрах на 6 сторінках: analytics, my, sprints, [projectId], AnalyticsTab, BacklogTab."
+        decision="Замінено dotColor у фільтрах живих analytics, my, sprints, [projectId] та AnalyticsTab."
       />
     </div>
   );
@@ -302,10 +302,10 @@ function BadgeSection() {
     <DiffBlock
       id="d9" level="medium"
       title="Бейдж статусу задубльований"
-      description="BacklogTab.jsx (нині мертвий файл) має власну локальну Badge-функцію для статусу колонки. У кіті вже є StatusBadge, який бере колір і назву прямо з workflow-конфігурації — тобто сам синхронізується з Налаштуваннями, а локальна копія — ні."
+      description="Застарілий BacklogTab мав власну локальну Badge-функцію. Файл видалено; живі списки використовують StatusBadge, який бере колір і назву з workflow-конфігурації."
       current={<LocalBacklogBadge label="Code Review" color="#9a9a9a" />}
       proposed={<StatusBadge status="code-review" />}
-      currentFile="src/components/workspace/BacklogTab.jsx:26 (локальна функція Badge)"
+      currentFile="Видалений legacy BacklogTab"
       proposedFile="src/components/ui/DataDisplay/StatusBadge.jsx"
     />
   );
@@ -317,10 +317,10 @@ function PrioritySection() {
       <ResolvedBlock
         id="d10"
         title="Пріоритет — тепер PriorityBadge замість ручного рендеру"
-        description="BacklogTab малював пріоритет вручну іконкою+текстом. Замінено на готовий kit PriorityBadge. IssueCard на живій дошці лишився зі своїм компактним кутовим індикатором — це навмисно інший, менший формат для карток, не дублікат, тому його не чіпав."
+        description="Legacy BacklogTab малював пріоритет вручну іконкою+текстом і був видалений. Живі табличні види використовують kit PriorityBadge. IssueCard на дошці має навмисно компактніший формат."
         swatch="#ef4444"
         swatchLabel="PriorityBadge — єдиний спосіб для табличних/списочних видів"
-        decision="BacklogTab.jsx рядок пріоритету замінено на <PriorityBadge priority={...} />."
+        decision="Legacy-дублікат видалено; PriorityBadge лишився єдиним стандартом для табличних видів."
       />
       <PriorityBadge priority="blocker" />
     </div>
@@ -333,10 +333,10 @@ function AvatarsSection() {
       <ResolvedBlock
         id="d11"
         title="Аватарки — тепер один стандарт: UserAvatar"
-        description="Рішення власника: аватарки мають бути однакові по стандарту, якщо аватарки нема — колір з ініціалів (детермінований, «рандомний» на вигляд). Саме так уже працює UserAvatar — сирий <img> з ui-avatars.com у BacklogTab замінено на нього."
+        description="Рішення власника: аватарки мають бути однакові; якщо фото немає, UserAvatar показує детермінований колір з ініціалів. Legacy-компонент з окремим рендером видалено."
         swatch="#4f46e5"
         swatchLabel="UserAvatar — єдиний стандарт"
-        decision="BacklogTab.jsx: <img src={ui-avatars.com...}> замінено на <UserAvatar user={m} size={20} />."
+        decision="UserAvatar лишився єдиним стандартом аватарів."
       />
       <div className="flex items-center gap-3">
         <UserAvatar user={{ name: 'Ivan Petrenko' }} size={32} />
@@ -541,14 +541,14 @@ function OutOfScopeSection() {
   return (
     <div className="flex flex-col gap-[20px]">
       <p className="text-[13px] text-[#6b6b6b] bg-[#f4f4f5] rounded-[10px] px-[14px] py-[10px] max-w-[820px]">
-        D7, D15, D17 вже вирішені (позначено зелено) — залишені тут, бо не мають власного окремого розділу. D16 і далі поза скоупом (великий блок логіки). D22 — опис двох мертвих файлів, чекає твого рішення.
+        D7, D15, D17 і D22 вже вирішені (позначено зелено). D16 лишається поза скоупом як великий блок продуктової логіки.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
         <ReferenceCard
           id="d7" resolved
           title="PRIORITY_CFG/TYPE_CFG — тепер один спільний модуль"
           description="Кожен з 6 файлів мав власну копію кольорів/іконок пріоритету й типу — копії вже розходились (D5/D6 — наслідок саме цього)."
-          decision="Додано PRIORITY_ICONS/TYPE_ICONS у useWorkflowConfig.js; BacklogTab, sprints/page.js, SearchModal.jsx, IssueDetail.jsx, AnalyticsTab.jsx тепер будують свої CFG з DEFAULT_PRIORITIES/DEFAULT_TYPES + цих мап — одна зміна кольору поширюється всюди."
+          decision="Додано PRIORITY_ICONS/TYPE_ICONS у useWorkflowConfig.js; живі sprint, search, issue та analytics компоненти будують CFG з DEFAULT_PRIORITIES/DEFAULT_TYPES + цих мап."
         />
         <ReferenceCard
           id="d15" resolved
@@ -564,14 +564,10 @@ function OutOfScopeSection() {
           decision="chat/page.js: блок з іконкою+двома <p> замінено на <EmptyState icon={MessageSquare} title={...} description={...} />."
         />
         <ReferenceCard
-          id="d22" level="medium"
-          title="BacklogTab.jsx і MaterialsTab.jsx — що це і навіщо"
-          description={<>
-            <strong>BacklogTab</strong> — альтернативний табличний (не канбан) вигляд задач проєкту: рядки замість карток, сортування по колонках, групування по спринтах, drag-and-drop між спринтами. По суті «список» тих самих задач, що на дошці. <br/><br/>
-            <strong>MaterialsTab</strong> — внутрішній менеджер файлів/посилань проєкту для команди (не плутати з клієнтським порталом): додати посилання з назвою й нотаткою, фільтр за типом (зображення/PDF/документ/посилання), видалення. <br/><br/>
-            Обидва файли існують у коді, повністю робочі, але жоден нікуди не підключений (0 імпортів) — не видно в застосунку взагалі.
-          </>}
-          decision="Питання не дизайнерське: використовуємо (підключити десь в UI) чи видаляємо як мертвий код? Потрібне твоє рішення."
+          id="d22" resolved
+          title="Непідключені BacklogTab і MaterialsTab видалено"
+          description="Обидва компоненти мали нуль імпортів; MaterialsTab також працював з недозволеним у правилах legacy-шляхом projectFiles. Актуальний list view і QuickTeam+ materials залишилися в живих маршрутах."
+          decision="Видалено як мертвий код; Git history зберігає реалізацію, якщо продуктове рішення зміниться."
         />
       </div>
     </div>

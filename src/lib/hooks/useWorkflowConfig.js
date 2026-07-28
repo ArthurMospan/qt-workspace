@@ -12,7 +12,7 @@ import { reportLoadError } from '@/lib/utils/errors';
 import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } from 'lucide-react';
 
 // Single source of truth for priority/type icons — every place that renders
-// a priority or type (BacklogTab, sprints, SearchModal, IssueDetail…) reads
+// a priority or type (sprints, SearchModal, IssueDetail, analytics…) reads
 // from here instead of keeping its own copy, so the icon set can't drift.
 export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
 export const TYPE_ICONS = { epic: Zap, feature: Star, task: CheckSquare, bug: Bug };

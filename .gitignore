@@ -1,7 +1,5 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
+# Dependencies
+/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -10,47 +8,41 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# Build, test and tool output
 /.next/
 /out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
+/build/
+/dist/
+/coverage/
+/test-results/
+/playwright-report/
+/.cache/
+/.turbo/
 *.tsbuildinfo
 next-env.d.ts
+
+# Local configuration and secrets
+.env*
+*.pem
+serviceAccountKey.json
+/.vercel/
+/.firebase/
+/.firebase-config/
+/.superpowers/
+/.claude/scheduled_tasks.lock
+
+# Logs, editor backups and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+.DS_Store
+
+# Local agent/dev scratch output
 ag-stop-probe.json
-firestore-debug.log
-.firebase/
-.firebase-config/
-
-.vercel
-
-# local agent/dev scratch output
-*.stdout.log
-*.stderr.log
-firebase-debug.log
-ui-debug.log
 calls.json
 msgs.json
 my_diff.txt

@@ -8,7 +8,7 @@ Internal multi-tenant task and project workspace built with Next.js 16, React 19
 - Java 21+ for the Firestore emulator
 - A Firebase project for local development
 - Cloudinary credentials for file uploads
-- Optional Resend credentials for email notifications
+- Optional Resend or Brevo credentials for transactional email
 
 ## Environment
 
@@ -31,10 +31,31 @@ CLOUDINARY_API_SECRET=
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_PORTAL_URL=
-RESEND_API_KEY=
-EMAIL_FROM=
 
-# Optional Telegram bot integration
+# Transactional email (configure Resend or Brevo)
+RESEND_API_KEY=
+BREVO_API_KEY=
+EMAIL_FROM=
+EMAIL_LOGIN_ENABLED=false
+AUTH_OTP_SECRET=
+
+# Optional AI call-to-tasks
+GEMINI_API_KEY=
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+
+# Optional OneB login
+NEXT_PUBLIC_ONEB_CLIENT_ID=
+NEXT_PUBLIC_ONEB_REDIRECT_URI=
+NEXT_PUBLIC_ONEB_SCOPES=
+ONEB_CLIENT_SECRET=
+
+# Optional QuickTeam+ integration
+NEXT_PUBLIC_QTPLUS_URL=
+QTPLUS_CLIENT_SECRET=
+QTPLUS_TOKEN_KEY=
+
+# Optional Telegram integration
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=
@@ -42,15 +63,21 @@ TELEGRAM_WEBHOOK_SECRET=
 
 `NEXT_PUBLIC_*` values are shipped to the browser. Never put Admin SDK, Cloudinary secret, email-provider secret, API keys or other credentials in a public variable.
 
+Email delivery prefers Resend when both provider keys are configured. Resend requires a verified sending domain; Brevo may use a verified sender address. `EMAIL_FROM` must match the selected provider configuration. Email login remains disabled unless `EMAIL_LOGIN_ENABLED=true`.
+
 For Telegram, create one bot through BotFather, put its token and username in the server-only variables above, and use a random webhook secret (32+ characters). The app registers `/api/integrations/telegram/webhook` when a user or organization starts a connection. `NEXT_PUBLIC_APP_URL` must therefore be a public HTTPS origin outside local development.
+
+QuickTeam+ setup, optional portal Firebase overrides, and the OAuth/data flow are documented in [docs/integrations/QUICKTEAM_PLUS.md](docs/integrations/QUICKTEAM_PLUS.md).
 
 ## Commands
 
 ```bash
 npm run dev
 npm run lint
-npm run build
+npm run test:unit
 npm run test:rules:emulator
+npm run build
+npm run kit:scan
 ```
 
 On Windows with Firebase CLI 15 and Node 24, the rules assertions can finish successfully while the CLI reports an error during emulator shutdown. Always check the Node test summary (`pass`, `fail`) separately from that known teardown error.
@@ -85,3 +112,10 @@ Primary collections:
 - Do not run migrations from browser login flows. Use reviewed Admin SDK scripts against an explicit project.
 - Do not add direct client creates/deletes for projects, issues, memberships or API keys.
 - Any Firestore rule change must include or update emulator assertions in `tests/firestore.rules.test.mjs`.
+
+## Documentation
+
+- [Current product guardrails and roadmap](docs/ROADMAP.md)
+- [QuickTeam+ integration](docs/integrations/QUICKTEAM_PLUS.md)
+- [Telegram integration](docs/integrations/TELEGRAM.md)
+- [YouTrack migration](docs/integrations/YOUTRACK_MIGRATION.md)
