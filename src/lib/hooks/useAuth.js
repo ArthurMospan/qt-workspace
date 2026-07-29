@@ -51,12 +51,22 @@ export function useAuth() {
       };
 
       try {
-        const idToken = await firebaseUser.getIdToken();
         try {
-          const sessionResponse = await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${idToken}` },
-          });
+          const syncServerSession = async forceRefresh => {
+            const idToken = await firebaseUser.getIdToken(forceRefresh);
+            return fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${idToken}` },
+            });
+          };
+
+          let sessionResponse = await syncServerSession(false);
+          if (sessionResponse.status === 401 || sessionResponse.status >= 500) {
+            // A stale token or a brief Admin SDK/network interruption must not
+            // leave Firebase Auth valid while protected routes have no cookie.
+            await new Promise(resolve => window.setTimeout(resolve, 250));
+            sessionResponse = await syncServerSession(sessionResponse.status === 401);
+          }
           if (!sessionResponse.ok) throw new Error('Failed to establish server session');
           sessionUserRef.current = firebaseUser.uid;
         } catch (sessionError) {

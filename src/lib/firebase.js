@@ -4,6 +4,7 @@ import { getAuth, GithubAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import {
   getFirestore,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from 'firebase/firestore';
@@ -25,7 +26,15 @@ function createFirestore() {
   if (typeof window === 'undefined') return getFirestore(app);
   try {
     return initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // Next dev repeatedly replaces modules while the browser may have several
+      // localhost tabs open. Sharing an IndexedDB primary lease across those
+      // short-lived clients produced "future update time" and lease failures
+      // that made local listeners look disconnected. Memory cache is Firebase's
+      // normal web default and keeps development deterministic; production
+      // retains the intentional offline, multi-tab cache.
+      localCache: process.env.NODE_ENV === 'development'
+        ? memoryLocalCache()
+        : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
     });
   } catch {
     // Hot reloads or another bundle may have initialized Firestore already.

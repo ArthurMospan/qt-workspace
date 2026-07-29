@@ -18,6 +18,9 @@ const PATCHABLE_FIELDS = [
   'status',
   'order',
   'sprintId',
+  'parentIssueId',
+  // Kept temporarily so legacy Epic swimlane data still settles correctly
+  // while the explicit migration is reviewed and run.
   'parentEpicId',
   'assigneeIds',
   'priority',

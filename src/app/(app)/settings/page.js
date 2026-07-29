@@ -9,6 +9,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
+import { updateWorkflowViaApi } from '@/lib/services/workflow';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -36,6 +37,9 @@ import {
   PageHeader,
   Dialog,
   DatePicker,
+  IconAction,
+  Label,
+  Pill,
   Surface,
   useConfirm,
   Popover
@@ -63,6 +67,7 @@ import {
   DEFAULT_LABELS,
   DEFAULT_POSITIONS,
 } from '@/lib/hooks/useWorkflowConfig';
+import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
@@ -82,6 +87,13 @@ const COLOR_PALETTE = [
   '#0891b2','#6366f1','#8b5cf6','#db2777','#1f1f1f',
   '#9a9a9a','#059669','#7c3aed','#d97706','#0284c7',
 ];
+const DEFAULT_WORKFLOW_SETTINGS = Object.freeze({
+  statuses: DEFAULT_STATUSES,
+  types: DEFAULT_TYPES,
+  priorities: DEFAULT_PRIORITIES,
+  labels: DEFAULT_LABELS,
+  positions: DEFAULT_POSITIONS,
+});
 
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
@@ -125,7 +137,7 @@ function Section({ title, desc, rightAction, children }) {
     <div className="flex flex-col">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[20px] font-bold text-ink tracking-tight">{title}</h2>
+          <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
           {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
         </div>
         {rightAction && <div className="shrink-0 flex items-center gap-2">{rightAction}</div>}
@@ -159,22 +171,12 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
           if (e.key === 'Enter') { e.preventDefault(); commit(); }
           else if (e.key === 'Escape' && dirty) onChange(saved ?? '');
         }}
-        className={dirty ? '!pr-[54px]' : ''}
+        composition={dirty ? 'inline-edit' : undefined}
       />
       {dirty && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10">
-          <button
-            type="button" onClick={commit} disabled={saving} title="Зберегти"
-            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] bg-ink text-white hover:bg-ink/90 transition-colors disabled:opacity-50"
-          >
-            <Check size={15} />
-          </button>
-          <button
-            type="button" onClick={() => onChange(saved ?? '')} title="Скасувати"
-            className="w-[24px] h-[24px] flex items-center justify-center rounded-[7px] bg-canvas text-muted hover:bg-line transition-colors"
-          >
-            <X size={15} />
-          </button>
+          <IconAction onClick={commit} disabled={saving} label="Зберегти" icon={Check} iconSize={15} size="xs" appearance="primary" />
+          <IconAction onClick={() => onChange(saved ?? '')} label="Скасувати" icon={X} iconSize={15} size="xs" appearance="soft" />
         </div>
       )}
     </div>
@@ -200,23 +202,23 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
       />
       {dirty && (
         <>
-          <button
-            type="button"
+          <IconAction
             onClick={commit}
             disabled={saving}
-            title="Зберегти"
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] bg-ink text-white transition-colors hover:bg-ink/90 disabled:opacity-50"
-          >
-            <Check size={15} />
-          </button>
-          <button
-            type="button"
+            label="Зберегти"
+            icon={Check}
+            iconSize={15}
+            size="compact"
+            appearance="primary"
+          />
+          <IconAction
             onClick={() => onChange(saved ?? '')}
-            title="Скасувати"
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] bg-canvas text-muted transition-colors hover:bg-line"
-          >
-            <X size={15} />
-          </button>
+            label="Скасувати"
+            icon={X}
+            iconSize={15}
+            size="compact"
+            appearance="soft"
+          />
         </>
       )}
     </div>
@@ -248,31 +250,15 @@ function OneBMark() {
 
 function ProviderStatus({ primary, connected, soon }) {
   if (soon) {
-    return (
-      <span className="inline-flex items-center text-[11px] font-bold text-[#b45309] bg-[#fffbeb] px-[8px] py-[4px] rounded-full">
-        Soon
-      </span>
-    );
+    return <Pill tone="warning" size="lg">Soon</Pill>;
   }
   if (primary) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ink bg-ink/8 px-[8px] py-[4px] rounded-full">
-        <Check size={12} /> Основний
-      </span>
-    );
+    return <Pill tone="ink-subtle" size="lg" icon={Check}>Основний</Pill>;
   }
   if (connected) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#10b981] bg-[#ecfdf5] px-[8px] py-[4px] rounded-full">
-        <Check size={12} /> Активно
-      </span>
-    );
+    return <Pill tone="success" size="lg" icon={Check}>Активно</Pill>;
   }
-  return (
-    <span className="inline-flex items-center text-[11px] font-bold text-muted bg-canvas px-[8px] py-[4px] rounded-full">
-      Не підключено
-    </span>
-  );
+  return <Pill size="lg">Не підключено</Pill>;
 }
 
 function LoginMethodItem({
@@ -291,7 +277,7 @@ function LoginMethodItem({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-[14px]">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink">
+        <div data-ui-surface="local" className="w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink">
           {icon}
         </div>
         <div className="min-w-0">
@@ -371,7 +357,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
     <div 
       ref={provided?.innerRef}
       {...provided?.draggableProps}
-      className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
+      data-ui-surface="local" className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     >
       {provided?.dragHandleProps && (
         <div {...provided.dragHandleProps} className="shrink-0 text-faint hover:text-ink cursor-grab active:cursor-grabbing">
@@ -386,7 +372,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           style={{ background: color }}
         />
         {showPalette && (
-          <div className="absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
+          <div data-ui-surface="local" className="absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
             {COLOR_PALETTE.map(c => (
               <button 
                 key={c} 
@@ -411,10 +397,10 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
         <div className="flex-1">
           <Input
             autoFocus
+            size="sm"
             value={label}
             onChange={e => setLabel(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { if (item.isNew) onDelete(item.id); else { setEditing(false); setLabel(item.label); } } }}
-            className="h-[28px] text-[12px]"
           />
         </div>
       ) : (
@@ -503,24 +489,26 @@ function PositionItem({ item, onSave, onDelete }) {
   };
 
   return (
-    <div className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group">
+    <div data-ui-surface="local" className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group">
       {editing ? (
         <div className="flex flex-1 items-center gap-3">
           <Input
+            size="sm"
             autoFocus
             value={label}
             onChange={e => setLabel(e.target.value)}
             placeholder="Назва посади"
-            className="h-[28px] text-[12px] flex-1"
+            className="flex-1"
           />
           <div className="w-[120px] flex items-center gap-1">
             <span className="text-[12px] text-muted">$</span>
             <Input
+              size="sm"
               type="number"
               value={hourlyRate}
               onChange={e => setHourlyRate(e.target.value)}
               placeholder="Ставка"
-              className="h-[28px] text-[12px] w-[50px] text-right"
+              className="w-[50px] text-right"
             />
             <span className="text-[11px] text-muted">/год</span>
           </div>
@@ -633,9 +621,18 @@ export default function SettingsPage() {
   const [types,      setTypes]      = useState(DEFAULT_TYPES);
   const [priorities, setPriorities] = useState(DEFAULT_PRIORITIES);
   const [labels,     setLabels]     = useState(DEFAULT_LABELS);
-  const [positions,  setPositions]  = useState([]);
+  const [positions,  setPositions]  = useState(DEFAULT_POSITIONS);
   const [wfLoading,  setWfLoading]  = useState(true);
   const [showSavedCheck, setShowSavedCheck] = useState(false);
+  const applyWorkflowPayload = useCallback(payload => {
+    // React batches these setters into one commit. Keeping this as one
+    // complete payload prevents a mixed A/B workflow during org switches.
+    setStatuses(payload.statuses);
+    setTypes(payload.types);
+    setPriorities(payload.priorities);
+    setLabels(payload.labels);
+    setPositions(payload.positions);
+  }, []);
 
   const triggerSavedSuccess = () => {
     setShowSavedCheck(true);
@@ -973,6 +970,13 @@ export default function SettingsPage() {
   // Last workflow value known to match Firestore — process settings auto-save
   // (no manual button), so this guards against re-writing freshly hydrated data.
   const wfBaseline = useRef(null);
+  const wfPersistedPayload = useRef(null);
+  const wfLatestPayload = useRef(null);
+  const wfLatestJson = useRef(null);
+  const wfQueuedJson = useRef(null);
+  const wfSaveQueue = useRef(Promise.resolve());
+  const wfOrgId = useRef(activeOrgId);
+  const wfLoadGeneration = useRef(0);
   // ── Localization ──
   const [dateFormat, setDateFormat] = useState('DD.MM.YYYY');
   const [firstDayOfWeek, setFirstDayOfWeek] = useState('Monday');
@@ -1057,27 +1061,64 @@ export default function SettingsPage() {
   // ── Breadcrumbs ──
   // Removed breadcrumbs to avoid duplicate 'Налаштування' in WorkspaceHeader
   useEffect(() => {
+    const organizationId = activeOrgId;
+    const generation = wfLoadGeneration.current + 1;
+    wfLoadGeneration.current = generation;
+    let cancelled = false;
+    const isCurrentWorkflowLoad = () => (
+      !cancelled
+      && wfLoadGeneration.current === generation
+      && wfOrgId.current === organizationId
+    );
+    const applyHydratedWorkflow = storedWorkflow => {
+      const payload = hydrateWorkflowSettings(
+        storedWorkflow,
+        DEFAULT_WORKFLOW_SETTINGS,
+      );
+      const json = JSON.stringify(payload);
+      wfBaseline.current = json;
+      wfPersistedPayload.current = payload;
+      wfLatestPayload.current = payload;
+      wfLatestJson.current = json;
+      wfQueuedJson.current = null;
+      applyWorkflowPayload(payload);
+    };
+
+    wfOrgId.current = organizationId;
+    wfBaseline.current = null;
+    wfPersistedPayload.current = null;
+    wfLatestPayload.current = null;
+    wfLatestJson.current = null;
+    wfQueuedJson.current = null;
+
+    // Clear every section as one defaults payload before any request can
+    // resolve. This removes org A's custom values while org B is loading.
+    queueMicrotask(() => {
+      if (!isCurrentWorkflowLoad()) return;
+      applyHydratedWorkflow(null);
+      setWfLoading(Boolean(organizationId));
+    });
+
+    if (!organizationId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const load = async () => {
-      if (!activeOrgId) return;
       try {
-        const wfSnap = await getDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'));
-        if (wfSnap.exists()) {
-          const d = wfSnap.data();
-          if (d.statuses !== undefined)   setStatuses(d.statuses);
-          if (d.types !== undefined)      setTypes(d.types);
-          if (d.priorities !== undefined) setPriorities(d.priorities);
-          if (d.labels !== undefined)     setLabels(d.labels);
-          if (d.positions !== undefined)  setPositions(d.positions);
-          else                            setPositions(DEFAULT_POSITIONS);
-        } else {
-          setPositions(DEFAULT_POSITIONS);
-        }
-        const intSnap = await getDoc(doc(db, 'organizations', activeOrgId, 'settings', 'integrations'));
+        const wfSnap = await getDoc(doc(db, 'organizations', organizationId, 'settings', 'workflow'));
+        if (!isCurrentWorkflowLoad()) return;
+        applyHydratedWorkflow(wfSnap.exists() ? wfSnap.data() : null);
+
+        const intSnap = await getDoc(doc(db, 'organizations', organizationId, 'settings', 'integrations'));
+        if (!isCurrentWorkflowLoad()) return;
         if (intSnap.exists()) {
           setQtEnabled(intSnap.data().qtPortalEnabled !== false);
         }
         
-        const orgSnap = await getDoc(doc(db, 'organizations', activeOrgId));
+        const orgSnap = await getDoc(doc(db, 'organizations', organizationId));
+        if (!isCurrentWorkflowLoad()) return;
         if (orgSnap.exists()) {
           const orgData = orgSnap.data();
           setOrgPlan(orgData.plan || 'free');
@@ -1085,20 +1126,24 @@ export default function SettingsPage() {
 
         if (isAdmin) {
           const keyResult = await apiKeysRequest();
+          if (!isCurrentWorkflowLoad()) return;
           setApiKeys(keyResult.keys || []);
 
           // Plan-limit count is admin-only (billing). Under team-gated project
           // reads a plain member can't run an org-wide projects query, so this
           // stays behind isAdmin — admins may read every project in the org.
           const { collection, query, where, getDocs } = await import('firebase/firestore');
-          const projQuery = query(collection(db, 'projects'), where('organizationId', '==', activeOrgId));
+          if (!isCurrentWorkflowLoad()) return;
+          const projQuery = query(collection(db, 'projects'), where('organizationId', '==', organizationId));
           const projSnap = await getDocs(projQuery);
+          if (!isCurrentWorkflowLoad()) return;
           setProjectsCount(projSnap.docs.length);
         }
 
         const uid = currentUser?.uid || currentUser?.id;
         if (uid) {
           const notifSnap = await getDoc(doc(db, 'users', uid, 'settings', 'notifications'));
+          if (!isCurrentWorkflowLoad()) return;
           if (notifSnap.exists()) {
             const stored = notifSnap.data();
             setNotif(p => {
@@ -1113,10 +1158,13 @@ export default function SettingsPage() {
           }
         }
       } catch {}
-      setWfLoading(false);
+      if (isCurrentWorkflowLoad()) setWfLoading(false);
     };
     load();
-  }, [activeOrgId, currentUser?.uid, isAdmin]); // eslint-disable-line
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrgId, currentUser?.uid, isAdmin, applyWorkflowPayload]); // eslint-disable-line
 
   // ── Handlers ─────────────────────────────────────────────────────
 
@@ -1443,11 +1491,100 @@ export default function SettingsPage() {
     } catch { showToast('Помилка збереження', 'error'); }
   };
 
-  // Process settings auto-save: persist workflow changes in real time — no
-  // manual "Save" button. The baseline ref keeps the initial hydration (and org
-  // switches, which re-load state) from writing freshly loaded data back and
-  // toasting on open. Debounced so a burst of inline edits or a drag-reorder
-  // collapses into a single write.
+  // Full workflow documents are serialized through one client queue. This
+  // prevents two debounced saves from arriving out of order and restoring an
+  // older status model after a newer one.
+  const queueWorkflowMutation = useCallback((
+    payload,
+    {
+      statusMigrations = [],
+      notify = true,
+    } = {},
+  ) => {
+    const organizationId = activeOrgId;
+    if (!organizationId) return Promise.reject(new Error('Не вибрано організацію'));
+    const json = JSON.stringify(payload);
+    if (
+      statusMigrations.length === 0
+      && wfQueuedJson.current === json
+      && wfBaseline.current !== json
+    ) {
+      return wfSaveQueue.current;
+    }
+    wfQueuedJson.current = json;
+
+    const work = wfSaveQueue.current
+      .catch(() => undefined)
+      .then(async () => {
+        let pendingPayload = payload;
+        let pendingJson = json;
+        let pendingMigrations = statusMigrations;
+        while (true) {
+          try {
+            const result = await updateWorkflowViaApi({
+              organizationId,
+              workflow: pendingPayload,
+              statusMigrations: pendingMigrations,
+            });
+            if (wfOrgId.current !== organizationId) return result;
+
+            wfBaseline.current = pendingJson;
+            wfPersistedPayload.current = pendingPayload;
+            if (
+              wfLatestPayload.current
+              && wfLatestJson.current !== pendingJson
+              && wfQueuedJson.current === pendingJson
+            ) {
+              pendingPayload = wfLatestPayload.current;
+              pendingJson = wfLatestJson.current;
+              pendingMigrations = [];
+              wfQueuedJson.current = pendingJson;
+              continue;
+            }
+            if (notify && wfLatestJson.current === pendingJson) {
+              showToast('Налаштування оновлено');
+            }
+            return result;
+          } catch (error) {
+            if (wfOrgId.current !== organizationId) throw error;
+            if (
+              wfLatestPayload.current
+              && wfLatestJson.current !== pendingJson
+              && wfQueuedJson.current === pendingJson
+            ) {
+              pendingPayload = wfLatestPayload.current;
+              pendingJson = wfLatestJson.current;
+              pendingMigrations = [];
+              wfQueuedJson.current = pendingJson;
+              continue;
+            }
+            if (wfQueuedJson.current === pendingJson) wfQueuedJson.current = null;
+            if (
+              wfLatestJson.current === pendingJson
+              && wfPersistedPayload.current
+            ) {
+              const restored = wfPersistedPayload.current;
+              const restoredJson = JSON.stringify(restored);
+              wfLatestPayload.current = restored;
+              wfLatestJson.current = restoredJson;
+              wfBaseline.current = restoredJson;
+              applyWorkflowPayload(restored);
+            }
+            if (notify) {
+              console.error('Workflow autosave error:', error);
+              showToast(error.message || 'Помилка збереження', 'error');
+            }
+            throw error;
+          }
+        }
+      });
+    wfSaveQueue.current = work.catch(() => undefined);
+    return work;
+  }, [activeOrgId, applyWorkflowPayload, showToast]);
+
+  // Process settings auto-save: persist workflow changes in real time through
+  // the transactional API. Debouncing collapses a burst of inline edits or a
+  // drag-reorder into one mutation.
   useEffect(() => {
     if (wfLoading) return;
     const payload = {
@@ -1458,24 +1595,29 @@ export default function SettingsPage() {
       positions: cleanWorkflowItems(positions),
     };
     const json = JSON.stringify(payload);
-    if (wfBaseline.current === null || wfBaseline.current === json) {
+    wfLatestPayload.current = payload;
+    wfLatestJson.current = json;
+    if (wfBaseline.current === null) {
       wfBaseline.current = json;
+      wfPersistedPayload.current = payload;
       return;
     }
+    if (wfBaseline.current === json) return;
     if (!activeOrgId) return;
-    const timer = setTimeout(async () => {
-      try {
-        await setDoc(doc(db, 'organizations', activeOrgId, 'settings', 'workflow'), payload, { merge: true });
-        wfBaseline.current = json;
-        showToast('Налаштування оновлено');
-      } catch (e) {
-        console.error('Workflow autosave error:', e);
-        showToast(e.message || 'Помилка збереження', 'error');
-      }
+    const timer = setTimeout(() => {
+      queueWorkflowMutation(payload).catch(() => {});
     }, 700);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statuses, types, priorities, labels, positions, wfLoading, activeOrgId]);
+  }, [
+    statuses,
+    types,
+    priorities,
+    labels,
+    positions,
+    wfLoading,
+    activeOrgId,
+    queueWorkflowMutation,
+  ]);
 
   const saveNotifications = async () => {
     const uid = currentUser?.uid || currentUser?.id;
@@ -1636,6 +1778,7 @@ export default function SettingsPage() {
   };
 
   const handleStatusDeleteClick = async (id) => {
+    const mutationOrganizationId = activeOrgId;
     const targetStatus = statuses.find(s => s.id === id);
     if (!targetStatus || targetStatus.isNew) {
       stA.onDelete(id);
@@ -1645,40 +1788,56 @@ export default function SettingsPage() {
       showToast('Дошка повинна мати хоча б одну видиму колонку', 'error');
       return;
     }
+    const target = statuses.find(s => s.id !== id && !s.isNew);
+    if (!target) return;
+    if (!(await confirmDialog({
+      title: 'Видалити колонку?',
+      message: `Усі завдання зі статусом "${targetStatus.label}" буде атомарно переміщено в "${target.label}". Продовжити?`,
+      confirmText: 'Видалити й перемістити',
+      danger: true,
+    }))) return;
+    if (
+      !mutationOrganizationId
+      || wfOrgId.current !== mutationOrganizationId
+    ) return;
+
+    const nextStatuses = statuses.filter(status => status.id !== id);
+    const payload = {
+      statuses: cleanWorkflowItems(nextStatuses),
+      types: cleanWorkflowItems(types),
+      priorities: cleanWorkflowItems(priorities),
+      labels: cleanWorkflowItems(labels),
+      positions: cleanWorkflowItems(positions),
+    };
+    wfLatestPayload.current = payload;
+    wfLatestJson.current = JSON.stringify(payload);
     setWfLoading(true);
     try {
-      const { collection, query, where, getDocs, writeBatch, serverTimestamp, deleteField } = await import('firebase/firestore');
-      const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('columnId', '==', id));
-      const snap = await getDocs(q);
-      const targetColId = statuses.find(s => s.id !== id && !s.isNew)?.id || 'backlog';
-      
-      if (snap.docs.length > 0) {
-        if (!(await confirmDialog({
-          title: 'Видалити колонку?',
-          message: `У цій колонці є ${snap.docs.length} завдань. При видаленні вони будуть переміщені в "${statuses.find(s => s.id === targetColId)?.label || 'Backlog'}". Продовжити?`,
-          confirmText: 'Продовжити', danger: true,
-        }))) {
-          setWfLoading(false);
-          return;
-        }
-        const sourceWasDone = getDoneStatusIds(statuses).includes(id);
-        const targetIsDone = getDoneStatusIds(statuses).includes(targetColId);
-        for (let offset = 0; offset < snap.docs.length; offset += 400) {
-          const batch = writeBatch(db);
-          snap.docs.slice(offset, offset + 400).forEach(issueDoc => {
-            const updates = { columnId: targetColId, status: targetColId, updatedAt: serverTimestamp() };
-            if (targetIsDone && !sourceWasDone) updates.completedAt = serverTimestamp();
-            if (!targetIsDone && sourceWasDone) updates.completedAt = deleteField();
-            batch.update(issueDoc.ref, updates);
-          });
-          await batch.commit();
-        }
+      const result = await queueWorkflowMutation(payload, {
+        statusMigrations: [{
+          fromStatusId: id,
+          toStatusId: target.id,
+        }],
+        notify: false,
+      });
+      if (wfOrgId.current !== mutationOrganizationId) return;
+      setStatuses(nextStatuses);
+      showToast(
+        result.migratedIssues > 0
+          ? `Статус видалено, переміщено завдань: ${result.migratedIssues}`
+          : 'Статус видалено',
+      );
+    } catch (error) {
+      if (wfOrgId.current !== mutationOrganizationId) return;
+      showToast(
+        error.message || 'Не вдалося безпечно видалити статус',
+        'error',
+      );
+    } finally {
+      if (wfOrgId.current === mutationOrganizationId) {
+        setWfLoading(false);
       }
-      stA.onDelete(id);
-    } catch (e) {
-      showToast('Помилка видалення статусу: ' + e.message, 'error');
     }
-    setWfLoading(false);
   };
 
   const handleDragEnd = (result, list, setList) => {
@@ -1710,22 +1869,26 @@ export default function SettingsPage() {
     const cfg = workflowResetConfig[activeSection];
     if (!cfg) return null;
     return (
-      <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-[12px] bg-canvas px-4 py-3">
+      <div className="mt-2 flex flex-col items-start gap-1 px-4 py-3">
         <p className="text-[12px] text-muted leading-relaxed">
           Повернути {cfg.noun} до стандартного набору QuickTeam. Ваші поточні зміни в цій секції буде замінено.
         </p>
         <Button
-          style="secondary"
-          color="red"
+          style="ghost"
           size="sm"
           icon={RefreshCw}
-          className="shrink-0"
+          className="-ml-3 text-faint hover:text-muted"
           onClick={async () => {
+            const resetOrganizationId = activeOrgId;
             if (!(await confirmDialog({
               title: `Скинути ${cfg.noun}?`,
               message: `Усі ваші ${cfg.noun} в цій секції буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.`,
               confirmText: 'Скинути', cancelText: 'Залишити', danger: true,
             }))) return;
+            if (
+              !resetOrganizationId
+              || wfOrgId.current !== resetOrganizationId
+            ) return;
             cfg.apply();
           }}
         >
@@ -1741,7 +1904,7 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'profile': return (
         <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, завданнях та чаті" rightAction={saveButton}>
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <Row label="Аватар" desc="Завантажте власне фото (рекомендовано 1:1)">
               <ImageUpload
                 value={customAvatar || currentUser?.avatar || ''}
@@ -1776,13 +1939,13 @@ export default function SettingsPage() {
               />
             </Row>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
-              <label className="text-[13px] font-medium text-ink">Про себе</label>
+              <Label context="inline">Про себе</Label>
               <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
               <Textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
                 placeholder="Розкажіть трохи про себе..."
-                className="w-full mt-1 text-[13px] h-[80px]"
+                composition="settings-note"
               />
               {bio !== (currentUser?.bio || '') && (
                 <div className="flex items-center justify-end gap-2">
@@ -1797,7 +1960,7 @@ export default function SettingsPage() {
 
       case 'auth-methods': return (
         <Section title="Способи входу" desc="Керуйте сервісами, через які можна входити у QuickTeam">
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <div className="divide-y divide-canvas">
               <LoginMethodItem
                 icon={<GitHubLogo size={18} />}
@@ -1870,7 +2033,7 @@ export default function SettingsPage() {
         // Every line is the shared <Row>, so all three cards land on the same
         // label column and the same right-hand control column.
         const channelCard = ({ id, icon: ChannelIcon, title, caption, master, available, offNote, showDesc = false, footer = null }) => (
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <div className="flex items-start justify-between gap-4 pb-1">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-canvas">
@@ -1953,12 +2116,18 @@ export default function SettingsPage() {
               available: telegramBotStatus.connected && notif.telegramEnabled === true,
               offNote: telegramBotStatus.configured
                 ? 'Увімкни канал — відкриється бот. Після «Старт» тут зʼявиться список подій.'
-                : 'Бот не налаштований на сервері, тому канал недоступний.',
+                : telegramBotStatus.connected
+                  ? 'Акаунт уже підключений у production. Його можна відключити і з localhost.'
+                  : 'На localhost немає секретів бота. Нове підключення виконується у production.',
               master: (
                 <ToggleSwitch
                   checked={telegramBotStatus.connected && notif.telegramEnabled === true}
                   onChange={toggleTelegram}
-                  disabled={!telegramBotStatus.configured || telegramBotLoading || telegramAwaitingLink}
+                  disabled={
+                    telegramBotLoading ||
+                    telegramAwaitingLink ||
+                    (!telegramBotStatus.configured && !telegramBotStatus.connected)
+                  }
                   size="sm"
                   ariaLabel="Сповіщення в Telegram"
                 />
@@ -2042,7 +2211,7 @@ export default function SettingsPage() {
 
         return (
         <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону" rightAction={saveButton}>
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <Row label="Мова інтерфейсу" desc="Виберіть мову відображення">
               <Select
                 value={language}
@@ -2119,7 +2288,7 @@ export default function SettingsPage() {
         return (
         <Section title="Загальні" desc="Загальні налаштування вашої організації" rightAction={saveButton}>
           {/* Zone 1: Organization */}
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Організація</p>
             <Row label="Назва організації" desc="Видима всім у вашій організації">
               <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
@@ -2143,7 +2312,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Zone 2: Branding */}
-          <Card variant="white" padding="lg" className={`!border-none transition-opacity ${!orgLogo ? 'opacity-50 pointer-events-none' : ''}`}>
+          <Card preset="borderless" padding="lg" className={`transition-opacity ${!orgLogo ? 'opacity-50 pointer-events-none' : ''}`}>
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Брендинг</p>
             {!orgLogo && (
               <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
@@ -2233,7 +2402,8 @@ export default function SettingsPage() {
                                         handleColorChange(v);
                                       }
                                     }}
-                                    className="w-full font-mono text-[13px] h-[32px]"
+                                    size="md"
+                                    className="font-mono"
                                     placeholder="#1a365d"
                                   />
                                 </div>
@@ -2339,7 +2509,10 @@ export default function SettingsPage() {
               logoAlt="Telegram"
               enabled={telegramGroupStatus.connected || telegramGroupSetupOpen}
               onToggle={toggleTelegramGroup}
-              toggleDisabled={!telegramGroupStatus.configured || telegramGroupLoading}
+              toggleDisabled={
+                telegramGroupLoading ||
+                (!telegramGroupStatus.configured && !telegramGroupStatus.connected)
+              }
               status={telegramGroupStatus.connected ? 'connected' : telegramGroupSetupOpen ? 'pending' : telegramGroupStatus.configured ? 'off' : 'unavailable'}
               statusLabel={telegramGroupStatus.connected ? 'Підключено' : telegramGroupSetupOpen ? 'Налаштування' : telegramGroupStatus.configured ? 'Вимкнено' : 'Недоступно'}
               statusMeta={telegramGroupStatus.connected ? (
@@ -2355,7 +2528,7 @@ export default function SettingsPage() {
             >
               {telegramGroupStatus.connected ? (
                 <div className="space-y-3">
-                  <div className="rounded-[10px] border border-line bg-canvas p-3">
+                  <div data-ui-surface="local" className="rounded-[10px] border border-line bg-canvas p-3">
                     <p className="text-[12px] font-semibold text-ink">Як створити задачу в групі</p>
                     <div className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-muted">
                       <p><code className="rounded bg-white px-1.5 py-0.5 text-ink">/task Назва задачі</code> — швидка команда.</p>
@@ -2419,7 +2592,7 @@ export default function SettingsPage() {
                         ? 'Скопіюйте одноразову команду та надішліть її в доданій групі протягом 30 хвилин.'
                         : 'Після додавання бота тут з’явиться одноразова команда.',
                       content: telegramGroupConnect?.command ? (
-                        <div className="mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2">
+                        <div data-ui-surface="local" className="mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2">
                           <code className="min-w-0 flex-1 select-all break-all text-[11px] text-ink">{telegramGroupConnect.command}</code>
                           <Button
                             style="ghost"
@@ -2476,7 +2649,7 @@ export default function SettingsPage() {
               )}
             >
               {buggyBagEnabled && (
-                <div className="rounded-[10px] border border-line bg-canvas p-3">
+                <div data-ui-surface="local" className="rounded-[10px] border border-line bg-canvas p-3">
                   <p className="mb-3 text-[12px] font-semibold text-ink">Вставте ці дані в налаштуваннях BuggyBag</p>
                   <div className="grid items-center gap-3 sm:grid-cols-[100px_1fr]">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted">API Token</span>
@@ -2522,14 +2695,14 @@ export default function SettingsPage() {
 
         return (
           <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
-            <Card className={`!border-none shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden p-0 transition-all`}>
+            <Card preset="elevated" padding="none" className="overflow-hidden transition-all">
               <div className={`bg-white px-6 py-6 border-b border-line`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className={`inline-flex items-center px-[8px] py-[3px] rounded-md border border-line bg-canvas text-ink text-[11px] font-semibold mb-3`}>
+                    <Pill appearance="outline" shape="badge" size="md" uppercase className="mb-3">
                       {isPro ? 'PRO PLAN' : 'FREE PLAN'}
-                    </span>
-                    <h3 className="text-[20px] font-bold text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
+                    </Pill>
+                    <h3 className="ui-type-detail-title text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
                     <p className="text-[13px] text-muted">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>
                   </div>
                   <div className="text-right">
@@ -2567,11 +2740,11 @@ export default function SettingsPage() {
 
               <div className="px-6 py-4 bg-[#fcfcfc] border-t border-line flex justify-end">
                 {isPro ? (
-                  <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" color="gray" size="lg">
+                  <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" size="lg">
                     {upgrading ? 'Завантаження...' : 'Скасувати підписку'}
                   </Button>
                 ) : (
-                  <Button onClick={() => handleUpgradePlan('pro')} disabled={upgrading} loading={upgrading} style="primary" color="blue" size="lg">
+                  <Button onClick={() => handleUpgradePlan('pro')} disabled={upgrading} loading={upgrading} style="primary" size="lg">
                     {upgrading ? 'Оновлення...' : 'Оновити до PRO'}
                   </Button>
                 )}
@@ -2586,7 +2759,7 @@ export default function SettingsPage() {
         <Section title="Учасники команди" rightAction={
           <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
         }>
-          <Surface variant="card" className="!rounded-[16px] p-0 overflow-hidden relative z-10">
+          <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
             <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[16px]">
               {members.map((member, i) => {
                 const isMe = member.id === (currentUser?.uid || currentUser?.id);
@@ -2598,14 +2771,14 @@ export default function SettingsPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-[14px] font-bold text-ink">{member.name || member.email}</p>
-                          {isMe && <span className="text-[10px] font-bold text-muted uppercase tracking-wider bg-canvas px-1.5 py-0.5 rounded-md">Ти</span>}
+                          {isMe && <Pill shape="badge" size="sm" uppercase>Ти</Pill>}
                         </div>
                         <p className="truncate text-[12px] text-muted">{member.email}</p>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <span className="hidden rounded-full bg-canvas px-3 py-1.5 text-[11px] font-semibold text-muted sm:inline">{positionLabel}</span>
-                      <span className="rounded-full bg-canvas px-3 py-1.5 text-[11px] font-semibold text-ink">{ROLE_LABELS[member.role] || member.role}</span>
+                      <Pill size="xl" className="hidden sm:inline-flex">{positionLabel}</Pill>
+                      <Pill tone="ink-subtle" size="xl">{ROLE_LABELS[member.role] || member.role}</Pill>
                       <Button
                         onClick={() => setMemberSettingsId(member.id || member.uid)}
                         style="secondary"
@@ -2632,7 +2805,7 @@ export default function SettingsPage() {
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card className="!border-none">
+            <Card preset="borderless">
               <DragDropContext onDragEnd={(res) => handleDragEnd(res, statuses, setStatuses)}>
                 <Droppable droppableId="statuses-list">
                   {(provided) => (
@@ -2666,7 +2839,8 @@ export default function SettingsPage() {
                 }}
                 style="ghost" size="lg"
                 icon={Plus} iconSize={13}
-                className="w-full justify-start py-3 mt-2"
+                composition="settings-row-action"
+                className="mt-2"
               >
                 Додати статус
               </Button>
@@ -2678,13 +2852,13 @@ export default function SettingsPage() {
       }
 
       case 'types': return (
-        <Section title="Типи завдань" desc="Типи завдань — застосовуються до всіх проєктів">
+        <Section title="Типи завдань" desc="Фіча, Задача й Баг — стандартний набір. Старі Епіки лишаються видимими як legacy-дані, але нові не створюються.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card className="!border-none">
+            <Card preset="borderless">
               {types.map(t => (
                 <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} variant="type" />
               ))}
@@ -2692,7 +2866,8 @@ export default function SettingsPage() {
                 onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
                 style="ghost" size="lg"
                 icon={Plus} iconSize={13}
-                className="w-full justify-start py-3 mt-2"
+                composition="settings-row-action"
+                className="mt-2"
               >
                 Додати тип
               </Button>
@@ -2709,7 +2884,7 @@ export default function SettingsPage() {
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card className="!border-none">
+            <Card preset="borderless">
               {priorities.map(pItem => (
                 <WorkflowItem key={pItem.id} item={pItem} onSave={prA.onSave} onDelete={prA.onDelete} variant="priority" />
               ))}
@@ -2717,7 +2892,8 @@ export default function SettingsPage() {
                 onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', isNew: true }])}
                 style="ghost" size="lg"
                 icon={Plus} iconSize={13}
-                className="w-full justify-start py-3 mt-2"
+                composition="settings-row-action"
+                className="mt-2"
               >
                 Додати пріоритет
               </Button>
@@ -2734,7 +2910,7 @@ export default function SettingsPage() {
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card className="!border-none">
+            <Card preset="borderless">
               {labels.map(l => (
                 <WorkflowItem key={l.id} item={l} onSave={lbA.onSave} onDelete={lbA.onDelete} variant="label" />
               ))}
@@ -2742,7 +2918,8 @@ export default function SettingsPage() {
                 onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#db2777', isNew: true }])}
                 style="ghost" size="lg"
                 icon={Plus} iconSize={13}
-                className="w-full justify-start py-3 mt-2"
+                composition="settings-row-action"
+                className="mt-2"
               >
                 Додати мітку
               </Button>
@@ -2759,7 +2936,7 @@ export default function SettingsPage() {
               <LoadingSpinner size="md" />
             </div>
           ) : (
-            <Card className="!border-none">
+            <Card preset="borderless">
               {positions.map(p => (
                 <PositionItem key={p.id} item={p} onSave={posA.onSave} onDelete={posA.onDelete} />
               ))}
@@ -2767,7 +2944,8 @@ export default function SettingsPage() {
                 onClick={() => setPositions(p => [...p, { id: `pos-${Date.now()}`, label: 'Нова посада', hourlyRate: 0, isNew: true }])}
                 style="ghost" size="lg"
                 icon={Plus} iconSize={13}
-                className="w-full justify-start py-3 mt-2"
+                composition="settings-row-action"
+                className="mt-2"
               >
                 Додати посаду
               </Button>
@@ -2780,7 +2958,7 @@ export default function SettingsPage() {
       // ──────────────────────────────────────────────────────────────
       case 'danger': return (
         <Section title="Видалення даних" desc="Незворотні дії. Виконуйте обережно.">
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
                 onClick={async () => {
@@ -2793,14 +2971,19 @@ export default function SettingsPage() {
               </Button>
             </Row>
 
-            <Row label="Скинути workflow" desc="Повернути статуси, типи та пріоритети до стандартних значень">
+            <Row label="Скинути налаштування процесів" desc="Повернути статуси, типи та пріоритети до стандартних значень">
               <Button
                 onClick={async () => {
+                  const resetOrganizationId = activeOrgId;
                   if (!(await confirmDialog({
                     title: 'Скинути всі workflow налаштування?',
                     message: 'Статуси, типи, пріоритети та мітки буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.',
                     confirmText: 'Скинути', cancelText: 'Залишити', danger: true,
                   }))) return;
+                  if (
+                    !resetOrganizationId
+                    || wfOrgId.current !== resetOrganizationId
+                  ) return;
                   setStatuses(DEFAULT_STATUSES);
                   setTypes(DEFAULT_TYPES);
                   setPriorities(DEFAULT_PRIORITIES);
@@ -2832,7 +3015,7 @@ export default function SettingsPage() {
         const archivedProjects = (projects || []).filter(p => p.status === 'archived');
         return (
           <Section title="Архів проєктів" desc="Перелік усіх архівованих проєктів організації з можливістю їх відновлення">
-            <Card variant="white" padding="lg" className="!border-none">
+            <Card preset="borderless" padding="lg">
               {archivedProjects.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
                   <div className="w-12 h-12 rounded-full bg-canvas flex items-center justify-center mb-3">
@@ -2857,7 +3040,7 @@ export default function SettingsPage() {
 
                         size="sm"
                         icon={ArchiveRestore}
-                        className="shrink-0 ml-4 font-bold"
+                        className="ml-4 shrink-0"
                       >
                         Розархівувати
                       </Button>

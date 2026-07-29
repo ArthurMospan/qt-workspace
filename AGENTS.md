@@ -27,6 +27,10 @@ This is a single Next.js 16.2.6 App Router application with React 19 and Firebas
 - Keep organization deletion disabled until a tested owner-only server cascade safely handles Firestore and external assets.
 - Drag-and-drop writes must update the optimistic overlay before awaiting Firestore and must roll back on failure.
 - Use the shared UI in `src/components/ui`. `Dialog` is the common modal shell; the live `/ui-kit` route and its generated usage report are the component source of truth.
+- Treat the authenticated workspace and `/ui-kit` as one UI contract. A change to a shared component must update its live workspace usage and its `/ui-kit` preview in the same change.
+- A new reusable visual component must be created under `src/components/ui`, exported from `src/components/ui/index.js`, used by the product, and rendered in `/ui-kit` in the same change. Do not add unused showcase-only components.
+- Do not introduce a local component or visual pattern that is merely similar to an existing UI Kit component. Reuse the shared component, add an explicit named context/size/preset, or mark and document the intentional local exception in `docs/UI_KIT_CONTRACT.md`.
+- After changing product UI, shared UI, or UI Kit previews, run both `npm run kit:scan` and `npm run kit:audit`, and commit both generated reports when they change.
 - QuickTeam+ uses a secondary Firebase app and a sealed server-side grant. Follow [docs/integrations/QUICKTEAM_PLUS.md](docs/integrations/QUICKTEAM_PLUS.md).
 
 ## Repository hygiene

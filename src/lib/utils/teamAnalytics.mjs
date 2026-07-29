@@ -1,6 +1,10 @@
+import { selectActionableIssues } from './issueAccounting.mjs';
+
 export function filterTeamIssues(issues = [], projectIds = [], memberId = 'all') {
-  return issues.filter(issue => {
-    if (projectIds.length > 0 && !projectIds.includes(issue.projectId)) return false;
+  const projectIssues = issues.filter(issue => (
+    projectIds.length === 0 || projectIds.includes(issue.projectId)
+  ));
+  return selectActionableIssues(projectIssues).filter(issue => {
     if (memberId !== 'all' && !issue.assigneeIds?.includes(memberId)) return false;
     return true;
   });

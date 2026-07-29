@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } from 'lucide-react';
+import { localizeBuiltInWorkflowItems } from '@/lib/utils/workflowDefaults.mjs';
 
 // Single source of truth for priority/type icons — every place that renders
 // a priority or type (sprints, SearchModal, IssueDetail, analytics…) reads
@@ -24,20 +25,21 @@ export const TYPE_ICONS = { epic: Zap, feature: Star, task: CheckSquare, bug: Bu
 // the settings page and the API must always describe the same workflow.
 export const DEFAULT_STATUSES = [{
   id: 'backlog',
-  label: 'Backlog',
+  label: 'Беклог',
   color: '#9a9a9a'
 }, {
   id: 'todo',
-  label: 'To Do',
+  label: 'До виконання',
   color: '#6366f1'
 }, {
   id: 'in-progress',
-  label: 'In Progress',
+  label: 'У роботі',
   color: '#0891b2'
 }, {
   id: 'done',
-  label: 'Done',
-  color: '#10b981'
+  label: 'Готово',
+  color: '#10b981',
+  isDone: true,
 }];
 // ── Terminal ("done") status helpers ───────────────────────────────────────────
 // A status counts as terminal (work complete) when it carries `isDone: true`.
@@ -72,50 +74,46 @@ export function getCompletedAtMillis(issue) {
 }
 
 export const DEFAULT_TYPES = [{
-  id: 'epic',
-  label: 'Epic',
-  color: '#8b5cf6'
-}, {
   id: 'feature',
-  label: 'Feature',
+  label: 'Фіча',
   color: '#0891b2'
 }, {
   id: 'task',
-  label: 'Task',
+  label: 'Задача',
   color: '#059669'
 }, {
   id: 'bug',
-  label: 'Bug',
+  label: 'Баг',
   color: '#dc2626'
 }];
 export const DEFAULT_PRIORITIES = [{
   id: 'blocker',
-  label: 'Blocker',
+  label: 'Блокер',
   color: '#ef4444'
 }, {
   id: 'high',
-  label: 'High',
+  label: 'Високий',
   color: '#f97316'
 }, {
   id: 'medium',
-  label: 'Medium',
+  label: 'Середній',
   color: '#eab308'
 }, {
   id: 'low',
-  label: 'Low',
+  label: 'Низький',
   color: '#9a9a9a'
 }];
 export const DEFAULT_LABELS = [{
   id: 'bug',
-  label: 'Bug',
+  label: 'Баг',
   color: '#ef4444'
 }, {
   id: 'frontend',
-  label: 'Frontend',
+  label: 'Фронтенд',
   color: '#3b82f6'
 }, {
   id: 'design',
-  label: 'Design',
+  label: 'Дизайн',
   color: '#db2777'
 }];
 export const DEFAULT_POSITIONS = [{
@@ -170,11 +168,21 @@ function createWorkflowStore(organizationId) {
     unsubscribe = onSnapshot(ref, workflowSnap => {
       const data = workflowSnap.exists() ? workflowSnap.data() : {};
       emit({
-        statuses: Array.isArray(data.statuses) ? data.statuses : DEFAULT_STATUSES,
-        types: Array.isArray(data.types) ? data.types : DEFAULT_TYPES,
-        priorities: Array.isArray(data.priorities) ? data.priorities : DEFAULT_PRIORITIES,
-        labels: Array.isArray(data.labels) ? data.labels : DEFAULT_LABELS,
-        positions: Array.isArray(data.positions) ? data.positions : DEFAULT_POSITIONS,
+        statuses: Array.isArray(data.statuses)
+          ? localizeBuiltInWorkflowItems('statuses', data.statuses)
+          : DEFAULT_STATUSES,
+        types: Array.isArray(data.types)
+          ? localizeBuiltInWorkflowItems('types', data.types)
+          : DEFAULT_TYPES,
+        priorities: Array.isArray(data.priorities)
+          ? localizeBuiltInWorkflowItems('priorities', data.priorities)
+          : DEFAULT_PRIORITIES,
+        labels: Array.isArray(data.labels)
+          ? localizeBuiltInWorkflowItems('labels', data.labels)
+          : DEFAULT_LABELS,
+        positions: Array.isArray(data.positions)
+          ? localizeBuiltInWorkflowItems('positions', data.positions)
+          : DEFAULT_POSITIONS,
         loading: false,
         error: null,
       });

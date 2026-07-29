@@ -1,51 +1,96 @@
 'use client';
 
-// src/lib/hooks/useProjectTimeLogs.js — Aggregated time logs for a whole project
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { isValidRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { reportLoadError } from '@/lib/utils/errors';
+
 export function useProjectTimeLogs(projectId) {
-  const {
-    activeOrgId
-  } = useAppContext();
+  const { activeOrgId } = useAppContext();
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [byUser, setByUser] = useState({});
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setTotalMinutes(0);
+      setByUser({});
+      setLoading(Boolean(projectId && activeOrgId));
+    });
+
     if (!projectId || !activeOrgId) {
-      queueMicrotask(() => setLoading(false));
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
-    const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
-    const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
-    }, snap => {
+
+    const buckets = { task: [], calendar: [] };
+    const ready = new Set();
+    const publish = () => {
+      if (cancelled) return;
       let total = 0;
       const userMap = {};
-      snap.docs.forEach(d => {
-        const {
-          userId,
-          spentMinutes = 0
-        } = d.data();
-        total += spentMinutes;
-        if (userId) {
-          userMap[userId] = (userMap[userId] || 0) + spentMinutes;
+      const seenIds = new Set();
+      [...buckets.task, ...buckets.calendar].forEach(log => {
+        if (log.id && seenIds.has(log.id)) return;
+        if (log.id) seenIds.add(log.id);
+        if (!isValidRawTimeLogMinutes(log.spentMinutes)) return;
+        const minutes = log.spentMinutes;
+        total += minutes;
+        if (log.userId) {
+          userMap[log.userId] = (userMap[log.userId] || 0) + minutes;
         }
       });
       setTotalMinutes(total);
       setByUser(userMap);
-      setLoading(false);
-    }, err => {
-      reportLoadError('[useProjectTimeLogs]', err);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [projectId, activeOrgId]);
-  return {
-    totalMinutes,
-    byUser,
-    loading
-  };
+      if (ready.size === 2) setLoading(false);
+    };
+    const subscribe = (key, sourceQuery) => onSnapshot(
+      sourceQuery,
+      { serverTimestamps: 'estimate' },
+      snapshot => {
+        if (cancelled) return;
+        buckets[key] = snapshot.docs.map(document => ({
+          id: document.id,
+          ...document.data(),
+        }));
+        ready.add(key);
+        publish();
+      },
+      error => {
+        if (cancelled) return;
+        reportLoadError(`[useProjectTimeLogs:${key}]`, error);
+        buckets[key] = [];
+        ready.add(key);
+        publish();
+      },
+    );
+
+    const base = collection(db, 'timeLogs');
+    const unsubs = [
+      subscribe('task', query(
+        base,
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', projectId),
+        where('issueId', '!=', ''),
+      )),
+      subscribe('calendar', query(
+        base,
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', projectId),
+        where('sourceType', '==', 'calendar_event'),
+        where('eventVisibility', '==', 'team'),
+      )),
+    ];
+    return () => {
+      cancelled = true;
+      unsubs.forEach(unsubscribe => unsubscribe());
+    };
+  }, [activeOrgId, projectId]);
+
+  return { totalMinutes, byUser, loading };
 }

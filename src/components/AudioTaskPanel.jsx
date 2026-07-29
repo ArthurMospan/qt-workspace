@@ -9,13 +9,14 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import { FormGroup, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [
-  { value: 'blocker', label: 'Blocker' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
+  { value: 'blocker', label: 'Блокер' },
+  { value: 'high', label: 'Високий' },
+  { value: 'medium', label: 'Середній' },
+  { value: 'low', label: 'Низький' },
 ];
 
 export default function AudioTaskPanel({
@@ -138,20 +139,18 @@ export default function AudioTaskPanel({
   return (
     <div className="flex flex-col gap-5">
       {availableProjects.length > 1 && (
-        <div>
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-muted">Проєкт</label>
+        <FormGroup label="Проєкт" gap="md">
           <Select
             value={effectiveProjectId}
             onChange={setProjectId}
             options={availableProjects.map(item => ({ value: item.id, label: item.name }))}
           />
-        </div>
+        </FormGroup>
       )}
 
-      <div>
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-muted">Аудіозапис</label>
+      <FormGroup label="Аудіозапис" gap="md">
         {audioFile ? (
-          <div className="flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3">
+          <div data-ui-surface="local" className="flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-muted"><FileAudio size={16} /></span>
             <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{audioFile.name}</span>
             <button type="button" onClick={() => setAudioFile(null)} className="rounded-full p-2 text-muted hover:bg-white hover:text-ink" aria-label="Прибрати файл"><X size={14} /></button>
@@ -174,18 +173,17 @@ export default function AudioTaskPanel({
             />
           </label>
         )}
-      </div>
+      </FormGroup>
 
-      <div>
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-muted">Або транскрипт</label>
-        <textarea
+      <FormGroup label="Або транскрипт" gap="md">
+        <Textarea
           value={transcript}
           onChange={event => setTranscript(event.target.value)}
           rows={5}
           placeholder="Вставте текст розмови…"
-          className="w-full resize-y rounded-[14px] border border-transparent bg-canvas px-4 py-3 text-[13px] leading-5 text-ink outline-none transition-colors focus:border-ink"
+          composition="audio-transcript"
         />
-      </div>
+      </FormGroup>
 
       <Button style="primary" size="lg" icon={Sparkles} onClick={analyze} loading={analyzing} disabled={analyzing}>
         {analyzing ? 'Аналізуємо…' : 'Проаналізувати'}
@@ -194,13 +192,13 @@ export default function AudioTaskPanel({
       {result && (
         <div className="flex flex-col gap-4 border-t border-line pt-5">
           {result.summary && (
-            <div className="rounded-[14px] bg-canvas p-4">
+            <div data-ui-surface="local" className="rounded-[14px] bg-canvas p-4">
               <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted">Підсумок</p>
               <p className="whitespace-pre-wrap text-[13px] leading-5 text-ink">{result.summary}</p>
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-[14px] font-bold text-ink"><ListChecks size={16} /> Запропоновані завдання</h3>
+            <h3 className="ui-type-card-title flex items-center gap-2 text-ink"><ListChecks size={16} /> Запропоновані завдання</h3>
             <Button style="primary" size="md" onClick={createTasks} loading={creating} disabled={creating || !result.tasks.some(task => task.include)}>
               Створити вибрані
             </Button>
@@ -208,7 +206,7 @@ export default function AudioTaskPanel({
           {result.tasks.map((task, index) => {
             const assignee = teamMembers.find(member => (member.id || member.uid) === task.assigneeId);
             return (
-              <div key={index} className={`rounded-[14px] bg-canvas p-4 transition-opacity ${task.include ? '' : 'opacity-45'}`}>
+              <div key={index} data-ui-surface="local" className={`rounded-[14px] bg-canvas p-4 transition-opacity ${task.include ? '' : 'opacity-45'}`}>
                 <div className="flex items-start gap-3">
                   <button
                     type="button"
@@ -236,7 +234,11 @@ export default function AudioTaskPanel({
                         onChange={value => updateTask(index, { assigneeId: value })}
                         options={[
                           { value: '', label: 'Без виконавця' },
-                          ...teamMembers.map(member => ({ value: member.id || member.uid, label: member.name || member.email })),
+                          ...teamMembers.map(member => ({
+                            value: member.id || member.uid,
+                            label: member.name || member.email,
+                            user: member,
+                          })),
                         ]}
                         compact
                       />

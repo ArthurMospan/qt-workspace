@@ -50,7 +50,8 @@ externalUpdatedAt: "<source timestamp>"
 | Assignee/Reporter | Member або external actor | без автоматичного злиття за ім’ям |
 | Comments | Issue comments | оригінальний автор і час |
 | Work items | Time logs | тип роботи можна лишити metadata |
-| Links/subtasks | Issue links/parent relations | записувати після створення всіх issues |
+| Links | Канонічний issue link | один документ на пару задач; `blocks`, `duplicates` або `relates-to` |
+| Parent/subtask relation | Related link + review marker | не вгадувати ієрархію: YouTrack може мати кілька рівнів або різні проєкти |
 | Attachments | Attachments | до 20 MB, помилки додаються як warnings |
 | Tags | Labels + metadata | наявні однойменні labels мапляться, усі теги лишаються в metadata |
 | Custom fields | import metadata | невідомі поля не викидаються |
@@ -70,6 +71,9 @@ externalUpdatedAt: "<source timestamp>"
 ## Захист від майбутніх багів
 
 - Імпортер має версію (`adapterVersion`, `mappingVersion`) у кожному run.
+- Epic із YouTrack мапиться у `Фіча`, а оригінальний тип залишається в import metadata.
+- `depends on` нормалізується у напрямлений `blocks` зі зміною напрямку; парний inverse-документ не створюється.
+- Ієрархічні зв’язки YouTrack зберігаються як `relates-to` з `requiresReview`, доки адміністратор явно не призначить `parentIssueId`.
 - Commit працює чанками з checkpoint і може продовжитися після падіння.
 - Зовнішні API викликаються з timeout, pagination і bounded limits.
 - Вкладення перевіряються за розміром і MIME.

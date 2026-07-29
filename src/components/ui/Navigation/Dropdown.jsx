@@ -121,7 +121,6 @@ export function Dropdown({ items = [], trigger, variant = 'secondary', className
             zIndex: zIndex.dropdown,
             overflow: 'hidden',
           }}
-          className="animate-in fade-in-0 zoom-in-95 duration-200"
         >
           <div style={{ padding: `${spacing.sm} 0` }}>
             {items.map((item, index) => (

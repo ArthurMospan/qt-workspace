@@ -25,7 +25,10 @@ export function buildTaskAiPrompt({
   assigneeNames = [],
   taskUrl = '',
 } = {}) {
-  const subtasks = Array.isArray(issue.subtasks) ? issue.subtasks : [];
+  // `subtasks` is the legacy lightweight checklist field. Real child issues
+  // have their own documents and are intentionally not flattened into this
+  // prompt as if they were checklist rows.
+  const checklistItems = Array.isArray(issue.subtasks) ? issue.subtasks : [];
   const labels = Array.isArray(issue.labelIds) ? issue.labelIds : [];
   const context = [
     ['Проєкт', projectName],
@@ -49,8 +52,8 @@ export function buildTaskAiPrompt({
     sections.push(`## Контекст\n${context.map(([label, value]) => `- ${label}: ${value}`).join('\n')}`);
   }
   if (clean(issue.description)) sections.push(`## Опис\n${clean(issue.description)}`);
-  if (subtasks.length) {
-    sections.push(`## Підзадачі\n${subtasks.map(item => `- [${item?.done ? 'x' : ' '}] ${clean(item?.title)}`).join('\n')}`);
+  if (checklistItems.length) {
+    sections.push(`## Чекліст\n${checklistItems.map(item => `- [${item?.done ? 'x' : ' '}] ${clean(item?.title)}`).join('\n')}`);
   }
 
   sections.push([

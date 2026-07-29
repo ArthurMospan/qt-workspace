@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import { User, CheckSquare, Clock, Hash } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
+import Pill from '@/components/ui/DataDisplay/Pill';
 
 export default function HoverCard({ type, value, children, members }) {
   const { activeOrgId } = useAppContext();
@@ -80,7 +81,7 @@ export default function HoverCard({ type, value, children, members }) {
       </span>
 
       {show && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">
+        <div data-ui-surface="local" className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">
           {type === 'user' ? (
             data && !data.notFound ? (
               <div className="flex flex-col gap-2">
@@ -108,8 +109,8 @@ export default function HoverCard({ type, value, children, members }) {
             ) : data && !data.notFound ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold text-[#c026d3] bg-[#fdf4ff] px-2 py-0.5 rounded-full">{data.issueKey}</span>
-                  <span className="text-[10px] font-bold text-muted bg-[#f0f0f0] px-2 py-0.5 rounded-full">{data.status || data.columnId}</span>
+                  <Pill tone="accent" size="sm">{data.issueKey}</Pill>
+                  <Pill tone="neutral" size="sm">{data.status || data.columnId}</Pill>
                 </div>
                 <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{data.title}</p>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f0f0f0]">

@@ -3,29 +3,26 @@
 export default function Card({
   children,
   variant = 'white',
+  preset,
   padding = 'md',
   interactive = false,
   onClick,
   className = '',
 }) {
-  const variantMap = {
-    white: 'bg-surface border border-line',
-    gray: 'bg-canvas',
+  const presetMap = {
+    bordered: 'bordered-card',
+    borderless: 'card',
+    canvas: 'panel',
+    elevated: 'elevated-card',
   };
-
-  const paddingMap = {
-    sm: 'p-[12px]',
-    md: 'p-[16px]',
-    lg: 'p-[20px]',
-    xl: 'p-[24px]',
-  };
+  const resolvedPreset = preset || (variant === 'gray' ? 'canvas' : 'bordered');
 
   return (
     <div
+      data-ui-surface={presetMap[resolvedPreset] ?? 'bordered-card'}
+      data-ui-padding={padding}
       className={`
-        rounded-[16px]
-        ${variantMap[variant]}
-        ${paddingMap[padding]}
+        ui-surface
         ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:border-faint hover:ring-4 hover:ring-ink/5 transition-all duration-200' : ''}
         ${className}
       `}

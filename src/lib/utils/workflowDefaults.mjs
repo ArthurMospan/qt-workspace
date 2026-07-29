@@ -7,7 +7,7 @@
 // human labels live here, so this file is importable from server routes too.
 
 export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'done'];
-export const DEFAULT_TYPE_IDS = ['epic', 'feature', 'task', 'bug'];
+export const DEFAULT_TYPE_IDS = ['feature', 'task', 'bug'];
 export const DEFAULT_PRIORITY_IDS = ['blocker', 'high', 'medium', 'low'];
 export const DEFAULT_LABEL_IDS = ['bug', 'frontend', 'design'];
 
@@ -15,14 +15,61 @@ export const DEFAULT_LABEL_IDS = ['bug', 'frontend', 'design'];
 // own label in the org's workflow document; this is the fallback for the
 // defaults and for legacy ids that predate configurable workflows.
 export const STATUS_LABELS = {
-  backlog: 'Backlog',
-  todo: 'To Do',
-  'in-progress': 'In Progress',
-  'code-review': 'Code Review',
+  backlog: 'Беклог',
+  todo: 'До виконання',
+  'in-progress': 'У роботі',
+  'code-review': 'Код-ревʼю',
   qa: 'QA',
-  'client-approval': 'Client Approval',
-  done: 'Done',
+  'client-approval': 'Погодження клієнтом',
+  done: 'Готово',
 };
+
+// Existing organizations can still have the original English defaults saved in
+// Firestore. Localize only a known stable id + its exact old label: custom ids
+// and renamed built-ins remain untouched.
+const BUILT_IN_LABEL_TRANSLATIONS = {
+  statuses: {
+    backlog: { Backlog: 'Беклог' },
+    todo: { 'To Do': 'До виконання' },
+    'in-progress': { 'In Progress': 'У роботі' },
+    'code-review': { 'Code Review': 'Код-ревʼю' },
+    'client-approval': { 'Client Approval': 'Погодження клієнтом' },
+    done: { Done: 'Готово' },
+  },
+  types: {
+    epic: { Epic: 'Епік (legacy)' },
+    feature: { Feature: 'Фіча' },
+    task: { Task: 'Задача' },
+    bug: { Bug: 'Баг' },
+  },
+  priorities: {
+    blocker: { Blocker: 'Блокер' },
+    high: { High: 'Високий' },
+    medium: { Medium: 'Середній' },
+    low: { Low: 'Низький' },
+  },
+  labels: {
+    bug: { Bug: 'Баг' },
+    frontend: { Frontend: 'Фронтенд' },
+    design: { Design: 'Дизайн' },
+  },
+  positions: {
+    dev: { Developer: 'Розробник' },
+    designer: { Designer: 'Дизайнер' },
+    pm: { 'Project Manager': 'PM', PM: 'PM' },
+    qa: { QA: 'QA' },
+  },
+};
+
+export function localizeBuiltInWorkflowItems(section, items) {
+  if (!Array.isArray(items)) return items;
+  const sectionTranslations = BUILT_IN_LABEL_TRANSLATIONS[section];
+  if (!sectionTranslations) return items;
+  return items.map(item => {
+    const localized = sectionTranslations[item?.id]?.[item?.label];
+    return localized ? { ...item, label: localized } : item;
+  });
+}
 
 export function statusLabel(statusId, statuses = []) {
   const configured = statuses.find(status => status?.id === statusId);

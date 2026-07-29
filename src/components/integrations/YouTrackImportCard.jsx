@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { Button, Input, Select, useConfirm } from '@/components/ui';
+import { Alert, Button, Input, Select, useConfirm } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/Select';
 import IntegrationCard, { IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import { sourceUserId, suggestUserMappings } from '@/lib/utils/youtrackImport.mjs';
 
@@ -40,6 +41,7 @@ export default function YouTrackImportCard({
   const [discovery, setDiscovery] = useState(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState([]);
   const [projectMappings, setProjectMappings] = useState({});
+  const [statusFilters, setStatusFilters] = useState({});
   const [userMappings, setUserMappings] = useState({});
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ export default function YouTrackImportCard({
       return [{
         value: id,
         label: member.name || member.displayName || member.email || id,
-        avatar: member.avatar || member.photoURL || '',
+        user: member,
       }];
     }),
   ], [members]);
@@ -157,6 +159,7 @@ export default function YouTrackImportCard({
       setDiscovery(null);
       setSelectedProjectIds([]);
       setProjectMappings({});
+      setStatusFilters({});
       setUserMappings({});
       setJob(null);
       setSetupOpen(false);
@@ -194,6 +197,10 @@ export default function YouTrackImportCard({
       setDiscovery(result);
       setSelectedProjectIds(projectIds);
       setProjectMappings(Object.fromEntries(projectIds.map(id => [id, 'create'])));
+      setStatusFilters(Object.fromEntries(result.projects.map(project => [
+        project.id,
+        (project.statuses || []).map(status => status.name),
+      ])));
       setUserMappings(suggestUserMappings(result.users, members));
       showToast(`Знайдено ${result.projects.length} проєктів YouTrack`);
     } catch (error) {
@@ -216,6 +223,15 @@ export default function YouTrackImportCard({
       showToast('Оберіть хоча б один проєкт YouTrack', 'error');
       return;
     }
+    const projectWithoutStatuses = discovery?.projects?.find(project => (
+      selectedProjectIds.includes(project.id)
+      && (project.statuses || []).length > 0
+      && (statusFilters[project.id] || []).length === 0
+    ));
+    if (projectWithoutStatuses) {
+      showToast(`Оберіть хоча б один статус для проєкту ${projectWithoutStatuses.name}`, 'error');
+      return;
+    }
     setAction('prepare');
     try {
       const result = await request('/api/integrations/youtrack/import', {
@@ -226,6 +242,7 @@ export default function YouTrackImportCard({
           selectedProjectIds,
           projectMappings,
           userMappings,
+          statusFilters,
         }),
       });
       setJob(result.job);
@@ -299,6 +316,16 @@ export default function YouTrackImportCard({
       : setupOpen
         ? 'pending'
         : 'off';
+
+  useEffect(() => {
+    if (action !== 'run') return undefined;
+    const warnBeforeClose = event => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeClose);
+    return () => window.removeEventListener('beforeunload', warnBeforeClose);
+  }, [action]);
 
   return (
     <IntegrationCard
@@ -415,7 +442,7 @@ export default function YouTrackImportCard({
               </div>
 
               {discovery && (
-                <div className="space-y-4 rounded-[12px] border border-line bg-canvas p-3">
+                <div data-ui-surface="compact-bordered-panel" data-ui-padding="sm" className="ui-surface space-y-4">
                   <div>
                     <p className="text-[12px] font-semibold text-ink">1. Проєкти та місце імпорту</p>
                     <p className="mt-1 text-[11px] text-muted">Повторний запуск оновлює вже імпортовані записи без дублів.</p>
@@ -424,27 +451,51 @@ export default function YouTrackImportCard({
                     {discovery.projects.map(project => {
                       const checked = selectedProjectIds.includes(project.id);
                       return (
-                        <div key={project.id} className="grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                          <label className="flex min-w-0 cursor-pointer items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleProject(project.id)}
-                              className="h-4 w-4 accent-ink"
+                        <div key={project.id} data-ui-surface="local" className="rounded-[10px] bg-white p-2">
+                          <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                            <label className="flex min-w-0 cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleProject(project.id)}
+                                className="h-4 w-4 accent-ink"
+                              />
+                              <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
+                                {project.name} <span className="font-normal text-muted">({project.shortName})</span>
+                              </span>
+                            </label>
+                            <Select
+                              value={projectMappings[project.id] || 'create'}
+                              onChange={value => setProjectMappings(current => ({ ...current, [project.id]: value }))}
+                              disabled={!checked}
+                              options={[
+                                { value: 'create', label: 'Створити новий проєкт' },
+                                ...activeProjects.map(target => ({ value: target.id, label: `Додати в: ${target.name}` })),
+                              ]}
                             />
-                            <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
-                              {project.name} <span className="font-normal text-muted">({project.shortName})</span>
-                            </span>
-                          </label>
-                          <Select
-                            value={projectMappings[project.id] || 'create'}
-                            onChange={value => setProjectMappings(current => ({ ...current, [project.id]: value }))}
-                            disabled={!checked}
-                            options={[
-                              { value: 'create', label: 'Створити новий проєкт' },
-                              ...activeProjects.map(target => ({ value: target.id, label: `Додати в: ${target.name}` })),
-                            ]}
-                          />
+                          </div>
+                          {(project.statuses || []).length > 0 && (
+                            <div className="mt-2 grid items-center gap-2 border-t border-line pt-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                              <div>
+                                <p className="text-[11px] font-semibold text-ink">Статуси задач</p>
+                                <p className="text-[10px] text-muted">Імпортуються лише обрані</p>
+                              </div>
+                              <MultiSelect
+                                value={statusFilters[project.id] || []}
+                                onChange={value => setStatusFilters(current => ({ ...current, [project.id]: value }))}
+                                disabled={!checked}
+                                options={project.statuses.map(status => ({
+                                  value: status.name,
+                                  label: status.archived ? `${status.name} · архівний` : status.name,
+                                }))}
+                                selectAllLabel="Усі статуси"
+                                placeholder="Оберіть статуси"
+                                size="md"
+                                className="w-full"
+                                dropdownClassName="w-[280px]"
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -460,7 +511,7 @@ export default function YouTrackImportCard({
                     {visibleUsers.map(user => {
                       const id = sourceUserId(user);
                       return (
-                        <div key={id} className="grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                        <div key={id} data-ui-surface="local" className="grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
                           <div className="min-w-0">
                             <p className="truncate text-[12px] font-semibold text-ink">{user.name}</p>
                             <p className="truncate text-[11px] text-muted">{user.email || user.login || id}</p>
@@ -497,7 +548,15 @@ export default function YouTrackImportCard({
               )}
 
               {job && (
-                <div className="rounded-[12px] border border-line bg-white p-3">
+                <div data-ui-surface="compact-bordered-card" data-ui-padding="sm" className="ui-surface">
+                  {ACTIVE_JOB_STATUSES.has(job.status) && (
+                    <Alert
+                      variant="warning"
+                      title="Не закривайте цю сторінку під час імпорту"
+                      description="Імпорт виконується послідовними кроками з браузера. Якщо закрити або оновити сторінку, процес призупиниться; його можна буде продовжити без дублів."
+                      className="mb-3"
+                    />
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="text-[12px] font-semibold text-ink">

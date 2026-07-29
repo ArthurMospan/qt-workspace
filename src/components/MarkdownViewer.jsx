@@ -29,9 +29,9 @@ export default function MarkdownViewer({ content, className = '', onTaskToggle }
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{
-          h1: ({node, ...props}) => <h1 className="text-[24px] font-bold mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
-          h2: ({node, ...props}) => <h2 className="text-[20px] font-bold mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
-          h3: ({node, ...props}) => <h3 className="text-[16px] font-bold mt-6 mb-3" {...props} />,
+          h1: ({node, ...props}) => <h1 className="ui-type-page-title mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
+          h2: ({node, ...props}) => <h2 className="ui-type-detail-title mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
+          h3: ({node, ...props}) => <h3 className="ui-type-dialog-title mt-6 mb-3" {...props} />,
           p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
           ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
           ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { name, description, visibility, organizationId, team = [] } = body;
+    const { name, description, visibility, organizationId, team = [], hiddenColumns = [] } = body;
 
     if (!name || !organizationId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -21,6 +22,20 @@ export async function POST(req) {
 
     const userId = authorization.user.uid;
     const db = getAdminDb();
+    const workflowSnap = await db.collection('organizations').doc(organizationId)
+      .collection('settings').doc('workflow').get();
+    const statusIds = workflowIds(workflowSnap.data()?.statuses, DEFAULT_STATUS_IDS);
+    const backlogStatusId = statusIds.includes('backlog') ? 'backlog' : statusIds[0];
+    const requestedHidden = Array.isArray(hiddenColumns)
+      ? [...new Set(hiddenColumns.filter(value => typeof value === 'string'))]
+      : [];
+    if (
+      requestedHidden.some(statusId => !statusIds.includes(statusId))
+      || requestedHidden.includes(backlogStatusId)
+      || requestedHidden.length >= statusIds.length
+    ) {
+      return NextResponse.json({ error: 'Некоректна конфігурація колонок' }, { status: 400 });
+    }
     const requestedTeam = [...new Set(
       (Array.isArray(team) ? team : [])
         .filter(memberId => typeof memberId === 'string' && memberId.trim())
@@ -40,6 +55,7 @@ export async function POST(req) {
       visibility: visibility === 'shared' ? 'shared' : 'internal',
       organizationId,
       team: [...new Set([userId, ...validTeam])],
+      hiddenColumns: requestedHidden,
       status: 'active',
       stagesCount: 4,
       issueCounter: 0,

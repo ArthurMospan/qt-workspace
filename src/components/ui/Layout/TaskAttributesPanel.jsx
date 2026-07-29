@@ -2,6 +2,21 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+const CONTEXT_GRIDS = {
+  task: 'grid w-full grid-cols-[repeat(3,minmax(0,1fr))_32px] items-center gap-1.5 overflow-visible sm:grid-cols-[repeat(5,minmax(0,1fr))_92px] [&>*]:min-w-0',
+  calendar: 'grid w-full grid-cols-2 items-center gap-1.5 overflow-visible sm:grid-cols-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.1fr_1.15fr_92px] [&>*]:min-w-0',
+};
+
+export function getTaskAttributeChrome({ condensed = false } = {}) {
+  return {
+    attributeItemClass: `flex min-w-0 flex-1 cursor-pointer flex-col rounded-[10px] px-2 transition-[padding,gap,background-color] duration-200 hover:bg-[#ebebeb] ${condensed ? 'gap-0 py-1' : 'gap-[4px] py-1.5'}`,
+    attributeLabelClass: `block h-[14px] overflow-hidden text-[10px] font-bold leading-[14px] uppercase tracking-wider text-muted transition-[height,max-height,opacity] duration-200 ${condensed ? 'h-0 max-h-0 opacity-0' : 'max-h-[14px] opacity-100'}`,
+    compactSelectClass: 'h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]',
+    compactInputClass: 'm-0 h-[22px] w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-[13px] font-medium leading-[22px] text-ink outline-none placeholder:font-medium placeholder:text-faint placeholder:opacity-100',
+    detailsButtonClass: `flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 hover:bg-[#ebebeb] hover:text-ink ${condensed ? 'h-[28px]' : 'h-[42px]'}`,
+  };
+}
+
 export default function TaskAttributesPanel({
   primaryChildren,
   secondaryChildren,
@@ -9,6 +24,7 @@ export default function TaskAttributesPanel({
   cardClassName = '',
   cardStyle,
   primaryClassName = '',
+  context,
   singleRow = false,
   compact = false,
   condensed = false,
@@ -23,7 +39,7 @@ export default function TaskAttributesPanel({
         style={cardStyle}
       >
         {/* Primary Row */}
-        <div className={primaryClassName || (singleRow
+        <div className={primaryClassName || CONTEXT_GRIDS[context] || (singleRow
           ? 'grid w-full grid-cols-[minmax(90px,1fr)_minmax(105px,1.15fr)_minmax(105px,1.1fr)_minmax(82px,.8fr)_minmax(72px,.7fr)_minmax(92px,.8fr)_minmax(128px,1.2fr)] items-center gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden [&>*]:!min-w-0'
           : 'flex flex-wrap items-center gap-y-4 gap-x-6 overflow-visible')}>
           {primaryChildren}

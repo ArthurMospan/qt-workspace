@@ -21,7 +21,7 @@ const EVENT_TYPE_LABELS = {
   release: 'Реліз / етап',
   note: 'Нотатка',
   reminder: 'Нагадування',
-  milestone: 'Віха',
+  milestone: 'Подія',
   birthday: 'День народження',
 };
 
@@ -135,7 +135,7 @@ export default function ProfileView({ user, onClose }) {
               <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#10b981] rounded-full ring-4 ring-white" />
             )}
             {(user.status || user.statusEmoji) && (
-              <div className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
+              <div data-ui-surface="local" className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
                 <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
                 {user.status && (
                   <span className="text-[13px] font-normal text-ink tracking-tight truncate">
@@ -147,7 +147,7 @@ export default function ProfileView({ user, onClose }) {
           </div>
           
           <div className="flex flex-col gap-1 text-center items-center">
-            <h2 className="text-[24px] font-black text-ink">{user.name || user.email} {isMe && <span className="text-muted font-normal text-[18px]">(ти)</span>}</h2>
+            <h2 className="ui-type-profile-title text-ink">{user.name || user.email} {isMe && <span className="text-muted font-normal text-[18px]">(ти)</span>}</h2>
             <p className="text-[14px] text-muted font-medium">
               {positionName}
             </p>
@@ -174,7 +174,7 @@ export default function ProfileView({ user, onClose }) {
                 color="red"
                 size="lg"
                 icon={Zap}
-                className="!bg-red-50 hover:!bg-red-100 !border !border-[#ef4444]"
+                surface="danger-subtle"
               >
                 Виклик
               </Button>
@@ -205,7 +205,7 @@ export default function ProfileView({ user, onClose }) {
             {/* Про себе */}
             {(details.bio || isMe) && (
               <div className="flex flex-col gap-3">
-                <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Про себе</h3>
+                <h3 className="ui-type-column-title text-muted uppercase tracking-wider">Про себе</h3>
                 {details.bio ? (
                   <p className="text-[14px] text-ink leading-relaxed">
                     {details.bio}
@@ -220,7 +220,7 @@ export default function ProfileView({ user, onClose }) {
 
             {/* Анкета */}
             <div className="flex flex-col gap-4">
-              <h3 className="text-[12px] font-bold text-muted uppercase tracking-wider">Контакти</h3>
+              <h3 className="ui-type-column-title text-muted uppercase tracking-wider">Контакти</h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                 {/* Telegram */}
@@ -309,7 +309,7 @@ export default function ProfileView({ user, onClose }) {
         {activeTab === 'tasks' && (
           <div className="flex flex-col gap-2">
             {allActiveTasks.length === 0 ? (
-              <div className="bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]">
+              <div data-ui-surface="local" className="bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]">
                 <p className="text-[14px] text-muted">Немає активних задач</p>
               </div>
             ) : (
@@ -321,6 +321,7 @@ export default function ProfileView({ user, onClose }) {
                     issue={task}
                     projectId={task.projectId}
                     projectName={projectName}
+                    showProjectName
                     onClick={() => handleTaskClick(task)}
                   />
                 );
@@ -332,8 +333,8 @@ export default function ProfileView({ user, onClose }) {
         {activeTab === 'events' && (
           <div className="flex flex-col gap-3">
             <div>
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted">Порядок денний</h3>
-              <p className="mt-1 text-[12px] text-muted">Найближчі події, зустрічі, нотатки й важливі дати учасника.</p>
+              <h3 className="ui-type-column-title uppercase tracking-wider text-muted">Порядок денний</h3>
+              <p className="mt-1 text-[12px] text-muted">Найближчі події, мітинги, нотатки й важливі дати учасника.</p>
             </div>
             {calendarLoading ? (
               <div className="flex min-h-[180px] items-center justify-center">

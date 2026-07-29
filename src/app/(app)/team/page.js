@@ -12,6 +12,8 @@ import {
   Surface, 
   LoadingSpinner, 
   EmptyState,
+  Button,
+  Pill,
 } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
@@ -62,19 +64,19 @@ export default function TeamPage() {
         {/* Header */}
         <div className="p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-[16px] font-bold text-ink">Команда</h2>
-            <span className="text-[11px] font-bold text-muted bg-white px-2 py-0.5 rounded-full border border-line">
-              {members.length}
-            </span>
+            <h2 className="ui-type-dialog-title text-ink">Команда</h2>
+            <Pill appearance="outline" size="md">{members.length}</Pill>
           </div>
             {isAdmin && (
-              <button 
+              <Button
                 onClick={() => setShowInviteModal(true)} 
-                className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                style="ghost"
+                size="icon-xs"
+                icon={Plus}
+                iconSize={16}
+                className="hover:!bg-white"
                 title="Запросити"
-              >
-                <Plus size={16} />
-              </button>
+              />
             )}
         </div>
 
@@ -89,7 +91,7 @@ export default function TeamPage() {
               icon={User}
               title="Нікого не знайдено"
               description="Спробуйте змінити пошуковий запит."
-              className="!px-3 !py-8"
+              density="compact"
             />
           ) : (
             filteredMembers.map(member => {
@@ -130,7 +132,9 @@ export default function TeamPage() {
 
       {/* RIGHT PANEL — mobile: shown only when a member is selected */}
       <div
-        className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full bg-canvas rounded-[16px] p-[12px] overflow-hidden`}
+        data-ui-surface="panel"
+        data-ui-padding="sm"
+        className={`ui-surface ${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full overflow-hidden`}
       >
         <button
           onClick={requestPaneClose}
@@ -138,7 +142,7 @@ export default function TeamPage() {
         >
           <ArrowLeft size={15} /> До списку команди
         </button>
-        <Surface variant="card" className="flex-1 w-full overflow-hidden !rounded-[12px] flex flex-col bg-white">
+        <Surface preset="nested-card" className="flex-1 w-full overflow-hidden flex flex-col">
           {selectedMember ? (
             <ProfileView user={selectedMember} />
           ) : (

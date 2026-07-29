@@ -55,12 +55,141 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
     }
 
+    function projectAcceptsNestedWrites(projectId) {
+      return exists(/databases/$(database)/documents/projects/$(projectId)) &&
+        get(/databases/$(database)/documents/projects/$(projectId))
+          .data.get('deletionPending', false) != true;
+    }
+
     function issueOrg(issueId) {
       return get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId;
     }
 
+    function issueAcceptsNestedWrites(issueId) {
+      let issuePath = /databases/$(database)/documents/issues/$(issueId);
+      let projectId = get(issuePath).data.get('projectId', '');
+      return exists(issuePath) &&
+        get(issuePath).data.get('deletionPending', false) != true &&
+        (
+          projectId == '' ||
+          projectId == null ||
+          projectAcceptsNestedWrites(projectId)
+        );
+    }
+
     function taskOrg(taskId) {
       return get(/databases/$(database)/documents/tasks/$(taskId)).data.organizationId;
+    }
+
+    function canAccessProject(projectId, orgId) {
+      let projectPath = /databases/$(database)/documents/projects/$(projectId);
+      let project = get(projectPath).data;
+      return exists(projectPath) &&
+        project.organizationId == orgId && (
+        isOrgAdminOrOwner(orgId) ||
+        request.auth.uid in project.team
+      );
+    }
+
+    function canAccessProjectById(projectId) {
+      let projectPath = /databases/$(database)/documents/projects/$(projectId);
+      return exists(projectPath) &&
+        canAccessProject(projectId, get(projectPath).data.organizationId);
+    }
+
+    function canAccessIssueData(data) {
+      let projectId = data.get('projectId', '');
+      return (
+        (projectId == '' || projectId == null) &&
+        isOrgAdminOrOwner(data.organizationId)
+      ) || (
+        projectId != '' &&
+        projectId != null &&
+        canAccessProject(projectId, data.organizationId)
+      );
+    }
+
+    function canAccessIssueProject(issueId) {
+      let issuePath = /databases/$(database)/documents/issues/$(issueId);
+      return exists(issuePath) &&
+        canAccessIssueData(get(issuePath).data);
+    }
+
+    function isOrganizationCalendarTimeLog(data) {
+      return data.get('projectId', '') == '' &&
+        data.get('issueId', '') == '' &&
+        data.get('sourceType', '') == 'calendar_event';
+    }
+
+    function isCalendarEventTimeLog(data) {
+      return data.get('issueId', '') == '' &&
+        data.get('sourceType', '') == 'calendar_event';
+    }
+
+    function isTeamCalendarTimeLog(data) {
+      return isCalendarEventTimeLog(data) &&
+        data.get('eventVisibility', '') == 'team';
+    }
+
+    function canAccessTimeLog(data) {
+      return (
+        isTeamCalendarTimeLog(data) && (
+          data.get('projectId', '') == '' ||
+          canAccessProject(data.projectId, data.organizationId)
+        )
+      ) || (
+        data.get('issueId', '') != '' &&
+        canAccessProject(data.projectId, data.organizationId)
+      );
+    }
+
+    function validTimeLogTarget(data) {
+      let issueId = data.get('issueId', '');
+      return isOrganizationCalendarTimeLog(data) || (
+        exists(/databases/$(database)/documents/projects/$(data.projectId)) &&
+        get(/databases/$(database)/documents/projects/$(data.projectId)).data.organizationId ==
+          data.organizationId &&
+        get(/databases/$(database)/documents/projects/$(data.projectId)).data.get('deletionPending', false) != true &&
+        (issueId == '' || (
+        exists(/databases/$(database)/documents/issues/$(issueId)) &&
+        get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId ==
+          data.organizationId &&
+        get(/databases/$(database)/documents/issues/$(issueId)).data.projectId ==
+          data.projectId &&
+        get(/databases/$(database)/documents/issues/$(issueId)).data.get('deletionPending', false) != true
+      )));
+    }
+
+    function validTimeLogPayload(data) {
+      return data.spentMinutes is int &&
+        data.spentMinutes > 0 &&
+        data.spentMinutes <= 525600 &&
+        !data.keys().hasAny(['invoiceId', 'billedAt']);
+    }
+
+    function validTimeLogIdentity(data) {
+      let issueId = data.get('issueId', '');
+      let calendarSource = data.get('sourceType', '');
+      let eventId = data.get('eventId', '');
+      let occurrenceStartAt = data.get('occurrenceStartAt', '');
+      return (
+        issueId != '' &&
+        !data.keys().hasAny(['sourceType', 'eventId', 'occurrenceStartAt'])
+      ) || (
+        issueId == '' &&
+        calendarSource == 'calendar_event' &&
+        eventId is string &&
+        eventId.size() > 0 &&
+        eventId.size() <= 256 &&
+        occurrenceStartAt is string &&
+        occurrenceStartAt.size() > 0 &&
+        occurrenceStartAt.size() <= 100
+      );
+    }
+
+    function timeLogIsUnbilled(data) {
+      return data.get('invoiceId', '') == '' &&
+        data.get('billedAt', null) == null;
     }
 
     // ── organizations/{orgId} ──────────────────────────────────────────
@@ -157,76 +286,131 @@ service cloud.firestore {
         request.auth.uid in resource.data.team
       );
       allow create: if false;
-      allow update: if request.resource.data.organizationId == resource.data.organizationId && (
-        (isOrgAdminOrOwner(resource.data.organizationId) && request.resource.data.status == resource.data.status) ||
+      allow update: if resource.data.get('deletionPending', false) != true &&
+        request.resource.data.organizationId == resource.data.organizationId && (
+        (
+          isOrgAdminOrOwner(resource.data.organizationId) &&
+          request.resource.data.status == resource.data.status &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'issueCounter',
+            'issueLinkVersion',
+            'issueHierarchyVersion',
+            'issueStatusVersion',
+            'invoiceMutationVersion',
+            'timeLogImportVersion',
+            'deletionPending'
+          ])
+        ) ||
         (isOrgMember(resource.data.organizationId) &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'issueCounter']))
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt']))
       );
       allow delete: if false; // Cascading deletion is handled by /api/projects/[projectId].
 
       // Portal chat — client + workspace side, scoped via parent project.
       match /messages/{msgId} {
-        allow read: if isOrgMember(projectOrg(projectId));
-        allow create: if isOrgMember(projectOrg(projectId)) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isOrgMember(projectOrg(projectId)) &&
+        allow read: if canAccessProjectById(projectId);
+        allow create: if projectAcceptsNestedWrites(projectId) &&
+          canAccessProjectById(projectId) &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update: if projectAcceptsNestedWrites(projectId) &&
+          canAccessProjectById(projectId) &&
           resource.data.senderId == request.auth.uid &&
           request.resource.data.senderId == resource.data.senderId;
-        allow delete: if isOrgMember(projectOrg(projectId)) && resource.data.senderId == request.auth.uid;
+        allow delete: if projectAcceptsNestedWrites(projectId) &&
+          canAccessProjectById(projectId) &&
+          resource.data.senderId == request.auth.uid;
       }
     }
 
     // ── stages/{stageId} — created only via Admin SDK, no organizationId
     //    field (scoped through the parent project) ──────────────────────
     match /stages/{stageId} {
-      allow read: if isOrgMember(projectOrg(resource.data.projectId));
+      allow read: if canAccessProjectById(resource.data.projectId);
       allow create, delete: if false;
-      allow update: if isOrgMember(projectOrg(resource.data.projectId)) &&
+      allow update: if projectAcceptsNestedWrites(resource.data.projectId) &&
+        canAccessProjectById(resource.data.projectId) &&
         request.resource.data.projectId == resource.data.projectId;
 
       match /materials/{materialId} {
-        allow read, write: if isOrgMember(projectOrg(get(/databases/$(database)/documents/stages/$(stageId)).data.projectId));
+        allow read: if canAccessProjectById(
+          get(/databases/$(database)/documents/stages/$(stageId)).data.projectId
+        );
+        allow create, update, delete: if projectAcceptsNestedWrites(
+          get(/databases/$(database)/documents/stages/$(stageId)).data.projectId
+        ) && canAccessProjectById(
+          get(/databases/$(database)/documents/stages/$(stageId)).data.projectId
+        );
       }
     }
 
     // ── issues/{issueId} ─────────────────────────────────────────────────
     match /issues/{issueId} {
-      allow read: if isOrgMember(resource.data.organizationId);
+      allow read: if canAccessIssueData(resource.data);
       allow create: if false; // Created through /api/issues or trusted integrations.
-      allow update: if isOrgMember(resource.data.organizationId) &&
+      allow update: if issueAcceptsNestedWrites(issueId) &&
+        canAccessIssueData(resource.data) &&
         request.resource.data.organizationId == resource.data.organizationId &&
+        (
+          resource.data.get('type', '') == 'epic' ||
+          request.resource.data.get('type', '') != 'epic'
+        ) &&
         !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['organizationId', 'projectId', 'issueKey', 'createdAt', 'createdBy']);
-      allow delete: if isOrgAdminOrOwner(resource.data.organizationId);
+          .hasAny([
+            'organizationId',
+            'projectId',
+            'issueKey',
+            'createdAt',
+            'createdBy',
+            'parentIssueId',
+            'parentEpicId',
+            'subtasks',
+            'deletionPending',
+            'spentMinutes',
+            'spentMinutesMirrorVersion',
+            'spentMinutesReconciledAt',
+            'timeLogMutationVersion',
+            'status',
+            'columnId',
+            'completedAt',
+            'order'
+          ]);
+      allow delete: if false; // Server route enforces hierarchy and cascades.
 
       match /comments/{commentId} {
-        allow read: if isOrgMember(issueOrg(issueId));
-        allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.authorId == request.auth.uid;
+        allow read: if canAccessIssueProject(issueId);
+        allow create: if issueAcceptsNestedWrites(issueId) &&
+          canAccessIssueProject(issueId) &&
+          request.resource.data.authorId == request.auth.uid;
         // The author may edit their own comment; any org member may mark it read
         // (read receipts) — that write touches only `readBy` and nothing else.
-        allow update: if isOrgMember(issueOrg(issueId)) && (
+        allow update: if issueAcceptsNestedWrites(issueId) &&
+          canAccessIssueProject(issueId) && (
           (resource.data.authorId == request.auth.uid &&
            request.resource.data.authorId == resource.data.authorId) ||
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
         );
-        allow delete: if isOrgMember(issueOrg(issueId)) &&
+        allow delete: if issueAcceptsNestedWrites(issueId) &&
+          canAccessIssueProject(issueId) &&
           resource.data.authorId == request.auth.uid;
       }
 
       // Append-only activity log.
       match /audit/{auditId} {
-        allow read: if isOrgMember(issueOrg(issueId));
-        allow create: if isOrgMember(issueOrg(issueId)) && request.resource.data.userId == request.auth.uid;
+        allow read: if canAccessIssueProject(issueId);
+        allow create: if issueAcceptsNestedWrites(issueId) &&
+          canAccessIssueProject(issueId) &&
+          request.resource.data.userId == request.auth.uid;
         allow update, delete: if false;
       }
     }
 
     // ── issueLinks/{id} ──────────────────────────────────────────────────
     match /issueLinks/{id} {
-      allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId) &&
-        issueOrg(request.resource.data.sourceIssueId) == request.resource.data.organizationId &&
-        issueOrg(request.resource.data.targetIssueId) == request.resource.data.organizationId;
-      allow delete: if isOrgMember(resource.data.organizationId);
+      allow read: if canAccessProject(
+        resource.data.projectId,
+        resource.data.organizationId
+      );
+      allow create, update, delete: if false; // Canonicalized by the authenticated server API.
     }
 
     // ── tasks/{taskId} — legacy/parallel collection to issues ───────────
@@ -251,28 +435,31 @@ service cloud.firestore {
 
     // ── timeLogs/{id} ────────────────────────────────────────────────────
     match /timeLogs/{id} {
-      allow read: if isOrgMember(resource.data.organizationId);
-      allow create: if isOrgMember(request.resource.data.organizationId) &&
-        request.resource.data.userId == request.auth.uid;
-      allow update: if isOrgMember(resource.data.organizationId) &&
-        (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.organizationId)) &&
-        request.resource.data.organizationId == resource.data.organizationId &&
-        request.resource.data.userId == resource.data.userId &&
-        request.resource.data.issueId == resource.data.issueId &&
-        request.resource.data.projectId == resource.data.projectId &&
-        request.resource.data.get('eventId', '') == resource.data.get('eventId', '') &&
-        request.resource.data.get('occurrenceStartAt', '') == resource.data.get('occurrenceStartAt', '');
-      allow delete: if isOrgMember(resource.data.organizationId) &&
-        (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.organizationId));
+      allow read: if isOrgMember(resource.data.organizationId) &&
+        canAccessTimeLog(resource.data);
+      allow create, update, delete: if false; // Server APIs own logs and accounting mirrors.
     }
 
     // ── invoices/{id} ────────────────────────────────────────────────────
     match /invoices/{id} {
-      allow read: if isOrgOwner(resource.data.organizationId);
-      allow create: if isOrgOwner(request.resource.data.organizationId);
-      allow update: if isOrgOwner(resource.data.organizationId) &&
-        request.resource.data.organizationId == resource.data.organizationId;
-      allow delete: if isOrgOwner(resource.data.organizationId);
+      allow read: if isOrgAdminOrOwner(resource.data.organizationId);
+      allow create, update, delete: if false; // Created by the authenticated invoice API.
+    }
+
+    // One deterministic reservation per billed time log. These documents are
+    // an internal transaction lock and must never be trusted to a client.
+    match /invoiceTimeLogReservations/{id} {
+      allow read, write: if false;
+    }
+
+    // Source-less estimate/manual invoice rows reserve the billing item itself.
+    match /invoiceEstimateReservations/{id} {
+      allow read, write: if false;
+    }
+
+    // Organization/year invoice counters are server-only transaction locks.
+    match /invoiceNumberSequences/{id} {
+      allow read, write: if false;
     }
 
     // ── notifications/{id} — created by the authenticated server route;
@@ -437,7 +624,9 @@ service cloud.firestore {
 
     match /organizations/{orgId}/settings/{settingsDoc} {
       allow read: if isOrgMember(orgId);
-      allow write: if isOrgAdminOrOwner(orgId);
+      // Workflow changes can alter completion semantics for every issue and
+      // therefore always go through the transactional workflow API.
+      allow write: if settingsDoc != 'workflow' && isOrgAdminOrOwner(orgId);
     }
 
     // Secrets are never stored on the member-readable organization document.

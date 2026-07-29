@@ -12,15 +12,15 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { auth } from '@/lib/firebase';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import { createIssueViaApi } from '@/lib/services/issues';
-import { Button, Card, LoadingSpinner, PageHeader } from '@/components/ui';
+import { Button, Card, FormGroup, IconAction, LoadingSpinner, PageHeader, Textarea } from '@/components/ui';
 import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 const PRIORITY_OPTIONS = [
-  { value: 'blocker', label: 'Blocker' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
+  { value: 'blocker', label: 'Блокер' },
+  { value: 'high', label: 'Високий' },
+  { value: 'medium', label: 'Середній' },
+  { value: 'low', label: 'Низький' },
 ];
 
 export default function AiCallPage() {
@@ -50,7 +50,7 @@ export default function AiCallPage() {
 
   const memberOptions = useMemo(() => [
     { value: '', label: 'Без виконавця' },
-    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email })),
+    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m })),
   ], [members]);
 
   const findMemberIdByName = name => {
@@ -160,7 +160,7 @@ export default function AiCallPage() {
         </p>
 
         {/* Input card */}
-        <Card variant="white" padding="lg">
+        <Card preset="bordered" padding="lg">
           <div className="flex flex-col gap-4">
             <Select
               value={effectiveProjectId}
@@ -169,15 +169,12 @@ export default function AiCallPage() {
               label="Проєкт для задач"
             />
 
-            <div>
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">
-                Запис дзвінка (аудіо)
-              </label>
+            <FormGroup label="Запис дзвінка (аудіо)">
               {audioFile ? (
-                <div className="flex items-center gap-3 rounded-[12px] border border-line bg-canvas px-3 py-2.5">
+                <div data-ui-surface="compact-bordered-panel" data-ui-padding="row" className="ui-surface flex items-center gap-3">
                   <FileAudio size={16} className="text-muted shrink-0" />
                   <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{audioFile.name}</span>
-                  <button type="button" onClick={() => setAudioFile(null)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Прибрати файл"><X size={14} /></button>
+                  <IconAction label="Прибрати файл" icon={X} iconSize={14} size="xs" appearance="quiet" shape="micro" onClick={() => setAudioFile(null)} />
                 </div>
               ) : (
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#cfcfcf] bg-canvas px-4 py-6 text-[13px] font-medium text-muted transition-colors hover:border-muted hover:text-ink">
@@ -199,23 +196,20 @@ export default function AiCallPage() {
                   />
                 </label>
               )}
-            </div>
+            </FormGroup>
 
-            <div>
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">
-                Або текст транскрипту
-              </label>
-              <textarea
+            <FormGroup label="Або текст транскрипту">
+              <Textarea
                 value={transcript}
                 onChange={event => setTranscript(event.target.value)}
                 rows={6}
                 placeholder="Вставте транскрипт дзвінка (наприклад, з Google Meet / Zoom / tl;dv)…"
-                className="w-full resize-y rounded-[12px] border border-transparent bg-canvas px-[14px] py-[10px] text-[13px] leading-5 text-ink outline-none transition-colors focus:border-ink"
+                composition="transcript"
               />
               {transcript.trim() && audioFile && (
                 <p className="mt-1 text-[11px] text-muted">Є і текст, і аудіо — використаємо текст (без транскрипції).</p>
               )}
-            </div>
+            </FormGroup>
 
             <Button onClick={analyze} loading={analyzing} disabled={analyzing} style="primary" size="md" icon={Sparkles}>
               {analyzing ? 'Аналізуємо…' : 'Проаналізувати дзвінок'}
@@ -229,12 +223,12 @@ export default function AiCallPage() {
 
         {result && (
           <>
-            <Card variant="white" padding="lg">
-              <h2 className="mb-2 text-[14px] font-black text-ink">Саммарі дзвінка</h2>
+            <Card preset="bordered" padding="lg">
+              <h2 className="ui-type-card-title-strong mb-2 text-ink">Саммарі дзвінка</h2>
               <p className="whitespace-pre-wrap text-[13px] leading-6 text-ink">{result.summary}</p>
               {result.decisions.length > 0 && (
                 <>
-                  <h3 className="mb-1.5 mt-4 text-[12px] font-bold uppercase tracking-wider text-muted">Рішення</h3>
+                  <h3 className="ui-type-column-title mb-1.5 mt-4 uppercase tracking-wider text-muted">Рішення</h3>
                   <ul className="flex flex-col gap-1">
                     {result.decisions.map((decision, index) => (
                       <li key={index} className="flex items-start gap-2 text-[13px] leading-5 text-ink">
@@ -247,9 +241,9 @@ export default function AiCallPage() {
               )}
             </Card>
 
-            <Card variant="white" padding="lg">
+            <Card preset="bordered" padding="lg">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-[14px] font-black text-ink">
+                <h2 className="ui-type-card-title-strong flex items-center gap-2 text-ink">
                   <ListChecks size={16} />
                   Запропоновані задачі ({result.tasks.filter(t => t.include).length}/{result.tasks.length})
                 </h2>

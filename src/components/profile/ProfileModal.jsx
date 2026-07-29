@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Dialog } from '@/components/ui';
+import { Dialog, IconAction } from '@/components/ui';
+import { X } from 'lucide-react';
 import ProfileView from './ProfileView';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 
@@ -29,7 +30,7 @@ export default function ProfileModal() {
       onClose={handleClose}
       size="lg"
       className="overflow-hidden"
-      bodyClassName="!p-0"
+      bodyPadding="flush"
     >
       <div className="w-full h-[80vh] flex flex-col relative">
         {user ? (
@@ -37,16 +38,12 @@ export default function ProfileModal() {
         ) : loading ? (
           <div className="flex-1 flex items-center justify-center bg-white">
              <div className="animate-spin w-8 h-8 border-4 border-ink border-t-transparent rounded-full"></div>
-             <button onClick={handleClose} className="absolute top-4 right-4 p-2 text-faint hover:text-ink z-10 bg-white rounded-full">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-             </button>
+             <IconAction label="Закрити" icon={X} iconSize={20} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 bg-white">
             <p className="text-muted">Користувача не знайдено</p>
-             <button onClick={handleClose} className="absolute top-4 right-4 p-2 text-faint hover:text-ink z-10 bg-white rounded-full">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-             </button>
+             <IconAction label="Закрити" icon={X} iconSize={20} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
           </div>
         )}
       </div>

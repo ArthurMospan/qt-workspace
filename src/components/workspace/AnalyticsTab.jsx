@@ -4,33 +4,35 @@ import { useEffect, useMemo, useState } from 'react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
-  Clock, CheckCircle2, AlertCircle, TrendingUp, TrendingDown,
-  Users, Target, Zap, BarChart2, Calendar, AlertTriangle, ClipboardList
+  Clock, AlertCircle, Users, Target, Zap, BarChart2, AlertTriangle, ClipboardList,
 } from 'lucide-react';
-import { Select } from '@/components/ui/Select';
-import FilterBar from '@/components/ui/FilterBar';
-import { useWorkflowConfig, DEFAULT_PRIORITIES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 import { parseDueDate } from '@/lib/utils/date';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
+import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
-function fmtDate(ts) {
-  if (!ts) return null;
-  const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-}
-
 function SectionTitle({ children }) {
-  return <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3">{children}</h3>;
+  return <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-3">{children}</h3>;
 }
 
-export default function AnalyticsTab({ issues, members, project, projectId, priorityFilter = 'all', typeFilter = 'all' }) {
+export default function AnalyticsTab({
+  issues,
+  issueLinks = [],
+  members,
+  project,
+  projectId,
+  priorityFilter = 'all',
+  typeFilter = 'all',
+}) {
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
-  const { statuses, doneStatusIds } = useWorkflowConfig();
+  const { statuses, doneStatusIds, priorities } = useWorkflowConfig();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -38,22 +40,32 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
   }, []);
 
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
-  const statusById = useMemo(() => Object.fromEntries((statuses || []).map(s => [s.id, s])), [statuses]);
   const firstStatusId = statuses?.[0]?.id;
+  const actionableIssues = useMemo(
+    () => selectActionableIssues(issues),
+    [issues],
+  );
 
   const filteredIssues = useMemo(() => {
-    return issues.filter(i => {
+    return actionableIssues.filter(i => {
       if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
-  }, [issues, priorityFilter, typeFilter]);
+  }, [actionableIssues, priorityFilter, typeFilter]);
 
   const stats = useMemo(() => {
     const total   = filteredIssues.length;
     const done    = filteredIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
     const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
-    const blocked = filteredIssues.filter(i => i.priority === 'blocker').length;
+    const blockerPriority = filteredIssues.filter(i => (
+      i.priority === 'blocker'
+      && !doneSet.has(i.columnId || i.status)
+    )).length;
+    const dependencyBlocked = filteredIssues.filter(i => (
+      !doneSet.has(i.columnId || i.status)
+      && openBlockerIssues(i.id, issues, issueLinks, doneSet).length > 0
+    )).length;
     const overdue = filteredIssues.filter(i => {
       const due = parseDueDate(i.dueDate);
       return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
@@ -92,8 +104,14 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
     })).filter(s => s.count > 0);
 
     // By priority
-    const byPriority = ['blocker','high','medium','low'].map(p => ({
-      p, count: filteredIssues.filter(i => i.priority === p && !doneSet.has(i.columnId || i.status)).length,
+    const byPriority = priorities.map(priority => ({
+      p: priority.id,
+      label: priority.label,
+      color: priority.color,
+      count: filteredIssues.filter(i => (
+        i.priority === priority.id
+        && !doneSet.has(i.columnId || i.status)
+      )).length,
     })).filter(s => s.count > 0);
 
     // Per-member stats
@@ -111,23 +129,37 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
     }).filter(s => s.total > 0).sort((a, b) => b.total - a.total);
 
     return {
-      total, done, inProg, blocked, overdue, noAssignee, unestimated,
+      total, done, inProg, blockerPriority, dependencyBlocked, overdue, noAssignee, unestimated,
       completionPct, budget, spentHours, burnPct, remainH, recentDone, velocityTrend,
       byStatus, byPriority, memberStats,
     };
-  }, [filteredIssues, members, project, totalMinutes, byUser, statuses, doneSet, firstStatusId, now]);
+  }, [
+    filteredIssues,
+    members,
+    project,
+    totalMinutes,
+    byUser,
+    statuses,
+    priorities,
+    doneSet,
+    firstStatusId,
+    issueLinks,
+    issues,
+    now,
+  ]);
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
 
   if (filteredIssues.length === 0) {
     return (
       <div className="flex-1 pb-8">
-        <div className="min-h-[360px] rounded-[16px] bg-canvas p-[16px]">
+        <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface min-h-[360px]">
           <EmptyState
             icon={ClipboardList}
             title="Немає даних для аналітики"
             description="Створіть завдання або змініть активні фільтри — показники з’являться автоматично."
-            className="min-h-[328px] rounded-[12px] bg-white"
+            context="page"
+            surface="card"
           />
         </div>
       </div>
@@ -137,7 +169,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
   return (
     <div className="flex-1 flex flex-col pb-8">
       {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
-      <div className="w-full bg-canvas rounded-[16px] p-[16px] flex flex-col gap-4">
+      <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface w-full flex flex-col gap-4">
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -158,7 +190,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div className="bg-white rounded-[16px] p-5">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Бюджет часу</SectionTitle>
               <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
@@ -193,7 +225,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-[16px] p-5">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Завдання по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Задач немає</p>
@@ -212,28 +244,24 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
             )}
           </div>
 
-          <div className="bg-white rounded-[16px] p-5">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Відкриті по пріоритету</SectionTitle>
             {stats.byPriority.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Немає відкритих завдань</p>
             ) : (
               <div className="flex flex-col gap-3">
-                {stats.byPriority.map(({ p, count }) => {
-                  const colors = Object.fromEntries(DEFAULT_PRIORITIES.map(d => [d.id, d.color]));
-                  const labels = Object.fromEntries(DEFAULT_PRIORITIES.map(d => [d.id, d.label]));
-                  return (
-                    <div key={p} className="flex items-center gap-3">
-                      <span className="text-[11px] font-semibold px-2 py-[3px] rounded-full w-[66px] text-center shrink-0"
-                        style={{ background: colors[p] + '18', color: colors[p] }}>
-                        {labels[p]}
-                      </span>
-                      <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: colors[p] }} />
-                      </div>
-                      <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
+                {stats.byPriority.map(({ p, label, color, count }) => (
+                  <div key={p} className="flex items-center gap-3">
+                    <span className="text-[11px] font-semibold px-2 py-[3px] rounded-full w-[82px] text-center shrink-0 truncate"
+                      style={{ background: color + '18', color }}>
+                      {label}
+                    </span>
+                    <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: color }} />
                     </div>
-                  );
-                })}
+                    <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -241,47 +269,32 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div className="bg-white rounded-[16px] p-5">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={13} className="shrink-0 text-red-500" />
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted">
+              <h3 className="ui-type-eyebrow uppercase tracking-wider text-muted">
                 Прострочені завдання ({stats.overdue.length})
               </h3>
             </div>
-            <div className="flex flex-col gap-0 divide-y divide-line">
-              {stats.overdue.slice(0, 8).map(issue => {
-                const due = issue.dueDate?.toDate ? issue.dueDate.toDate() : new Date(issue.dueDate);
-                const daysOver = Math.floor((now - due.getTime()) / 86400000);
-                const assignees = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
-                return (
-                  <div key={issue.id} className="flex items-center gap-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-ink truncate">{issue.title}</p>
-                      <div className="flex items-center gap-2 mt-[2px]">
-                        <span className="text-[10px] font-semibold px-[6px] py-[1px] rounded-full"
-                          style={{ background: (statusById[issue.columnId]?.color || '#9a9a9a') + '18', color: statusById[issue.columnId]?.color || '#9a9a9a' }}>
-                          {statusById[issue.columnId]?.label || issue.columnId}
-                        </span>
-                        <span className="text-[10px] text-muted">{issue.issueKey}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {assignees.slice(0,2).map(m => <UserAvatar key={m.id||m.uid} user={m} size={22} />)}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[11px] font-bold text-red-500">+{daysOver}д</p>
-                      <p className="text-[10px] text-muted">{fmtDate(issue.dueDate)}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-2">
+              {stats.overdue.slice(0, 8).map(issue => (
+                <TaskRow
+                  key={issue.id}
+                  issue={issue}
+                  issues={issues}
+                  members={members}
+                  projectId={projectId}
+                  projectName={project?.name}
+                  showProjectName
+                />
+              ))}
             </div>
           </div>
         )}
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div className="bg-white rounded-[16px] p-5">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -320,15 +333,26 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
         )}
 
         {/* ── Warnings ─────────────────────────────────────────────── */}
-        {(stats.noAssignee.length > 0 || stats.unestimated.length > 0 || stats.blocked > 0) && (
-          <div className="bg-white rounded-[16px] p-5">
+        {(stats.noAssignee.length > 0
+          || stats.unestimated.length > 0
+          || stats.blockerPriority > 0
+          || stats.dependencyBlocked > 0) && (
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
-              {stats.blocked > 0 && (
+              {stats.dependencyBlocked > 0 && (
                 <div className="flex items-center gap-3 p-3 bg-red-50 rounded-[12px]">
                   <AlertTriangle size={14} className="text-red-500 shrink-0" />
                   <p className="text-[12px] font-medium text-red-700">
-                    <span className="font-bold">{stats.blocked}</span> завдання з пріоритетом Blocker
+                    <span className="font-bold">{stats.dependencyBlocked}</span> завдань заблоковано незавершеними залежностями
+                  </p>
+                </div>
+              )}
+              {stats.blockerPriority > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-[12px]">
+                  <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                  <p className="text-[12px] font-medium text-amber-800">
+                    <span className="font-bold">{stats.blockerPriority}</span> завдань із пріоритетом «Блокер»
                   </p>
                 </div>
               )}
@@ -341,7 +365,7 @@ export default function AnalyticsTab({ issues, members, project, projectId, prio
                 </div>
               )}
               {stats.unestimated.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-canvas rounded-[12px]">
+                <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface flex items-center gap-3">
                   <Clock size={14} className="text-muted shrink-0" />
                   <p className="text-[12px] font-medium text-ink">
                     <span className="font-bold">{stats.unestimated.length}</span> завдань без оцінки часу

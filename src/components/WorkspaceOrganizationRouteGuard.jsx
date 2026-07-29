@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
+import Button from '@/components/ui/Button';
 
 function LoadingScreen() {
   return (
@@ -32,17 +33,18 @@ export default function WorkspaceOrganizationRouteGuard({ children }) {
 
   return (
     <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
-      <div className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
-        <h1 className="text-[18px] font-bold text-ink mb-2">Немає доступу до організації</h1>
+      <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
+        <h1 className="ui-type-section-title text-ink mb-2">Немає доступу до організації</h1>
         <p className="text-[13px] text-muted mb-5">
           Сповіщення веде до організації, учасником якої ви більше не є. Задачу не було видалено через цю помилку.
         </p>
-        <button
+        <Button
           onClick={() => router.replace('/')}
-          className="rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-ink-hover"
+          size="lg"
+          composition="workspace-guard"
         >
           Повернутися до поточної організації
-        </button>
+        </Button>
       </div>
     </div>
   );

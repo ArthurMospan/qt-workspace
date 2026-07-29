@@ -6,31 +6,31 @@ export default function PriorityBadge({ priority = 'low', className = '' }) {
       bg: 'bg-[#ef4444]/8',
       text: 'text-[#ef4444]',
       dot: 'bg-[#ef4444]',
-      label: 'Blocker',
+      label: 'Блокер',
     },
     high: {
       bg: 'bg-[#f97316]/8',
       text: 'text-[#ea580c]',
       dot: 'bg-[#f97316]',
-      label: 'High',
+      label: 'Високий',
     },
     medium: {
       bg: 'bg-[#eab308]/8',
       text: 'text-[#b45309]',
       dot: 'bg-[#eab308]',
-      label: 'Medium',
+      label: 'Середній',
     },
     low: {
       bg: 'bg-muted/8',
       text: 'text-[#737373]',
       dot: 'bg-muted',
-      label: 'Low',
+      label: 'Низький',
     },
     info: {
       bg: 'bg-[#6366f1]/8',
       text: 'text-[#4f46e5]',
       dot: 'bg-[#6366f1]',
-      label: 'Info',
+      label: 'Інфо',
     },
   };
 

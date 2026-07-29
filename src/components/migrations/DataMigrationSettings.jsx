@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
-import { Card } from '@/components/ui';
+import { Card, Pill } from '@/components/ui';
 import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 
 const UPCOMING_PROVIDERS = [
@@ -77,9 +77,9 @@ const SAFEGUARDS = [
 
 function UpcomingProviderCard({ provider }) {
   return (
-    <Card variant="white" padding="lg" className="flex h-full flex-col !border-none">
+    <Card preset="borderless" padding="lg" className="flex h-full flex-col">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white">
+        <div data-ui-surface="local" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white">
           <Image
             src={provider.logo}
             alt={`${provider.name} logo`}
@@ -90,11 +90,8 @@ function UpcomingProviderCard({ provider }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-[14px] font-bold text-ink">{provider.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#f2f2f7] px-2 py-1 text-[10px] font-semibold text-muted">
-              <Clock3 size={11} />
-              У планах
-            </span>
+            <h3 className="ui-type-card-title text-ink">{provider.name}</h3>
+            <Pill icon={Clock3} size="lg">У планах</Pill>
           </div>
           <p className="mt-1 text-[11px] leading-relaxed text-muted">{provider.description}</p>
         </div>
@@ -106,12 +103,9 @@ function UpcomingProviderCard({ provider }) {
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {provider.entities.map(entity => (
-            <span
-              key={entity}
-              className="rounded-full border border-line bg-canvas px-2 py-1 text-[10px] font-medium text-muted"
-            >
+            <Pill key={entity} appearance="outline" size="sm" weight="medium">
               {entity}
-            </span>
+            </Pill>
           ))}
         </div>
       </div>
@@ -127,7 +121,7 @@ export default function DataMigrationSettings({
 }) {
   return (
     <div className="space-y-8">
-      <Card variant="white" padding="lg" className="overflow-hidden !border-none">
+      <Card preset="borderless" padding="lg" className="overflow-hidden">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
             <DatabaseBackup size={22} />
@@ -157,12 +151,10 @@ export default function DataMigrationSettings({
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h3 className="text-[15px] font-bold text-ink">Доступно зараз</h3>
+            <h3 className="ui-type-compact-title text-ink">Доступно зараз</h3>
             <p className="mt-0.5 text-[11px] text-muted">Повний керований імпорт із попередньою перевіркою.</p>
           </div>
-          <span className="rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-semibold text-[#0b8f67]">
-            1 джерело готове
-          </span>
+          <Pill tone="success" size="lg">1 джерело готове</Pill>
         </div>
 
         <YouTrackImportCard
@@ -177,7 +169,7 @@ export default function DataMigrationSettings({
 
       <section>
         <div className="mb-3">
-          <h3 className="text-[15px] font-bold text-ink">Наступні джерела</h3>
+          <h3 className="ui-type-compact-title text-ink">Наступні джерела</h3>
           <p className="mt-0.5 max-w-[760px] text-[11px] leading-relaxed text-muted">
             Додаємо провайдери окремо: для кожного потрібні власні правила полів, статусів,
             ієрархії та користувачів. Так міграція не перетвориться на ненадійний універсальний CSV.

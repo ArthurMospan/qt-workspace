@@ -14,9 +14,12 @@ NEXT_PUBLIC_APP_URL=https://workspace.example.com
 TELEGRAM_BOT_TOKEN=<BotFather token>
 TELEGRAM_BOT_USERNAME=<username without @>
 TELEGRAM_WEBHOOK_SECRET=<32+ URL-safe random characters>
+CRON_SECRET=<random production-only bearer secret>
 ```
 
 `NEXT_PUBLIC_APP_URL` must be the public HTTPS production origin. The webhook is registered automatically through Bot API `setWebhook` when someone starts either connection flow.
+
+Vercel calls `/api/cron/notifications` every five minutes with `Authorization: Bearer $CRON_SECRET`. The server job creates calendar and deadline notifications even when no browser tab is open. Notification IDs are deterministic, so the ten-minute calendar look-back and repeated deadline sweeps cannot resend the same occurrence.
 
 Recommended BotFather settings:
 
@@ -29,6 +32,8 @@ Recommended BotFather settings:
 In **Налаштування → Сповіщення → Telegram**, the user opens a 15-minute deep link and presses Start in the private bot chat. The one-time token links only that Firebase UID to that Telegram chat. The user then enables the Telegram delivery toggle.
 
 Disconnecting removes the server-only chat binding. The normal notification preference is also turned off in the UI.
+
+Local development normally omits the bot credentials and therefore cannot create a new Telegram connection or replace the production webhook. It can still report and delete an existing server-side binding; the settings switch must never disable disconnect merely because the local process has no bot token.
 
 ## Group task capture
 

@@ -4,9 +4,11 @@ import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from './IssueCard';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { DEFAULT_COLUMNS } from './BoardConfigModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
+import Counter from '@/components/ui/DataDisplay/Counter';
+import Pill from '@/components/ui/DataDisplay/Pill';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -51,9 +53,40 @@ function InlineAddForm({ onAdd, onCancel }) {
   );
 }
 
-export default function AgileBoard({ issues, members, projectId, project, activeTimerIssueId, onAddIssue, onMoveIssue, swimlane = 'none', hiddenColumns = [], showHiddenLane = false, issueLinks = [], isArchived }) {
+export default function AgileBoard({
+  issues,
+  allIssues,
+  members,
+  projectId,
+  project,
+  projects = [],
+  sprints = [],
+  showProjectName = false,
+  collapseHierarchy = false,
+  activeTimerIssueId,
+  onAddIssue,
+  onRequestAddIssue,
+  onMoveIssue,
+  swimlane = 'none',
+  hiddenColumns = [],
+  showHiddenLane = false,
+  issueLinks = [],
+  isArchived,
+}) {
   const [mounted, setMounted] = useState(dndReady);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
+  const contextIssues = allIssues || issues;
+  // In a project board the parent is the single Kanban card and its children
+  // are managed from that card. In filtered/cross-project views a child remains
+  // visible when its parent is not part of the current result set.
+  const boardIssues = useMemo(() => {
+    if (!collapseHierarchy) return issues;
+    const visibleIds = new Set(issues.map(issue => issue.id));
+    return issues.filter(issue => {
+      const parentId = existingParentIssueId(issue);
+      return !parentId || !visibleIds.has(parentId);
+    });
+  }, [collapseHierarchy, issues]);
   
   // Both sources hand back a fresh array on every render, which would defeat
   // the memos below; collapse them to a value that only changes on content.
@@ -85,7 +118,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
       try {
         const saved = localStorage.getItem(`qt_board_collapsed_${projectId || 'default'}`);
         if (saved) return JSON.parse(saved);
-      } catch (e) {}
+      } catch {}
     }
     return ['__hidden__'];
   });
@@ -125,13 +158,7 @@ export default function AgileBoard({ issues, members, projectId, project, active
 
     let updateFields = null;
     if (destLaneId !== sourceLaneId) {
-      if (swimlane === 'epic') {
-        if (destLaneId === 'epic-none') {
-          updateFields = { parentEpicId: null };
-        } else if (destLaneId && destLaneId.startsWith('epic-')) {
-          updateFields = { parentEpicId: destLaneId.replace('epic-', '') };
-        }
-      } else if (swimlane === 'assignee') {
+      if (swimlane === 'assignee') {
         if (destLaneId === 'assignee-unassigned') {
           updateFields = { assigneeIds: [] };
         } else if (destLaneId && destLaneId.startsWith('assignee-')) {
@@ -140,16 +167,35 @@ export default function AgileBoard({ issues, members, projectId, project, active
       }
     }
 
-    onMoveIssue(draggableId, destColId, destination.index, updateFields);
+    const destinationLane = destLaneId
+      ? swimlanes.find(lane => lane.id === destLaneId)
+      : swimlanes[0];
+    const visibleDestinationIssues = (destinationLane?.issues || boardIssues)
+      .filter(candidate => (
+        candidate.id !== draggableId
+        && (destColId === '__hidden__'
+          ? columns.find(column => column.id === '__hidden__')?.colIds.includes(candidate.columnId)
+          : candidate.columnId === destColId)
+      ))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const beforeIssue = visibleDestinationIssues[destination.index];
+    const fullDestinationColumn = contextIssues
+      .filter(candidate => candidate.id !== draggableId && candidate.columnId === destColId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const fullIndex = beforeIssue
+      ? Math.max(0, fullDestinationColumn.findIndex(candidate => candidate.id === beforeIssue.id))
+      : fullDestinationColumn.length;
+
+    onMoveIssue(draggableId, destColId, fullIndex, updateFields);
   };
 
-  const swimlanes = useMemo(() => {
+  const swimlanes = (() => {
     if (swimlane === 'none') {
-      return [{ id: 'all', title: null, issues }];
+      return [{ id: 'all', title: null, issues: boardIssues }];
     }
     if (swimlane === 'assignee') {
       const grouped = {};
-      issues.forEach(i => {
+      boardIssues.forEach(i => {
         const aIds = i.assigneeIds && i.assigneeIds.length > 0 ? i.assigneeIds : ['unassigned'];
         aIds.forEach(uid => {
           if (!grouped[uid]) grouped[uid] = [];
@@ -168,37 +214,19 @@ export default function AgileBoard({ issues, members, projectId, project, active
     }
     if (swimlane === 'priority') {
       const grouped = { blocker:[], high:[], medium:[], low:[] };
-      issues.forEach(i => {
+      boardIssues.forEach(i => {
          const p = i.priority || 'medium';
          if(grouped[p]) grouped[p].push(i);
       });
       return [
-        { id: 'priority-blocker', title: 'Blocker 🔴', issues: grouped.blocker },
-        { id: 'priority-high', title: 'High 🟠', issues: grouped.high },
-        { id: 'priority-medium', title: 'Medium 🟡', issues: grouped.medium },
-        { id: 'priority-low', title: 'Low ⚪', issues: grouped.low },
+        { id: 'priority-blocker', title: 'Блокер 🔴', issues: grouped.blocker },
+        { id: 'priority-high', title: 'Високий 🟠', issues: grouped.high },
+        { id: 'priority-medium', title: 'Середній 🟡', issues: grouped.medium },
+        { id: 'priority-low', title: 'Низький ⚪', issues: grouped.low },
       ].filter(l => l.issues.length > 0);
     }
-    if (swimlane === 'epic') {
-      const epics = issues.filter(i => i.type === 'epic');
-      const lanes = epics.map(epic => {
-        const childIssues = issues.filter(i => i.parentEpicId === epic.id);
-        return {
-          id: `epic-${epic.id}`,
-          title: `Epic: ${epic.title}`,
-          issues: childIssues
-        };
-      });
-      // Plus issues without parent epic
-      const noEpicIssues = issues.filter(i => !i.parentEpicId && i.type !== 'epic');
-      if (noEpicIssues.length > 0 || epics.length === 0) {
-        lanes.push({ id: 'epic-none', title: 'Без Епіку', issues: noEpicIssues });
-      }
-      return lanes.filter(l => l.issues.length > 0 || l.id.startsWith('epic-') && l.id !== 'epic-none');
-      // show epic lane even if empty to allow drag into it, but hide empty non-epic lane
-    }
-    return [{ id: 'all', title: null, issues }];
-  }, [swimlane, issues, members]);
+    return [{ id: 'all', title: null, issues: boardIssues }];
+  })();
 
   if (!mounted) {
     return null; // Avoid SSR hydration mismatches and React 18 strict mode DnD bug
@@ -213,50 +241,52 @@ export default function AgileBoard({ issues, members, projectId, project, active
           <div className="flex gap-4 pb-2 shrink-0 full-bleed">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
-              const colTotalIssues = issues.filter(i => {
+              const colTotalIssues = boardIssues.filter(i => {
                 if (col.isHiddenContainer) return col.colIds.includes(i.columnId);
                 return i.columnId === col.id;
               });
 
               if (isCollapsed) {
                 return (
-                  <div key={col.id} className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
-                    <button className="text-muted mb-4">
+                  <div key={col.id} data-ui-surface="local" className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
+                    <button data-ui-control="column-collapse" className="text-muted mb-4">
                       <ChevronRight size={16} />
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                    <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                    <span className="text-[11px] font-bold text-muted bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                      {colTotalIssues.length}
-                    </span>
+                    <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                    <Counter value={colTotalIssues.length} size="sm" appearance="subtle" className="mt-4" />
                   </div>
                 );
               }
               return (
                 <div key={col.id} className="flex items-center justify-between w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 px-4 pt-2 pb-1 rounded-t-[12px]">
                   <div className="flex items-center gap-[6px]">
-                    <button
+                    <Button
                       onClick={() => toggleColumnCollapse(col.id)}
-                      className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                      style="ghost"
+                      size="icon-xs"
+                      icon={ChevronLeft}
+                      iconSize={16}
+                      className="-ml-2 hover:!bg-white"
                       title="Згорнути колонку"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
+                    />
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                    <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{col.label}</h3>
-                    <span className="text-[11px] font-bold text-muted bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
-                      {colTotalIssues.length}
-                    </span>
+                    <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
+                    <Counter value={colTotalIssues.length} size="sm" appearance="subtle" className="ml-1" />
                   </div>
                   <div className="flex items-center gap-1">
                     {!isArchived && !col.isHiddenContainer && (
-                      <button
-                        onClick={() => setActiveAddColId(col.id)}
-                        className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                      <Button
+                        onClick={() => onRequestAddIssue
+                          ? onRequestAddIssue(col.id)
+                          : setActiveAddColId(col.id)}
+                        style="ghost"
+                        size="icon-xs"
+                        icon={Plus}
+                        iconSize={16}
+                        className="hover:!bg-white"
                         title="Додати завдання"
-                      >
-                        <Plus size={16} />
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
@@ -272,8 +302,8 @@ export default function AgileBoard({ issues, members, projectId, project, active
               
               {swimlanes.length > 1 && (
                 <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
-                  <h4 className="text-[12px] font-bold text-ink">{lane.title}</h4>
-                  <span className="ml-2 text-[10px] font-bold text-muted bg-white px-2 py-[2px] rounded-full">{lane.issues.length}</span>
+                  <h4 className="ui-type-item-title text-ink">{lane.title}</h4>
+                  <Pill tone="surface" size="sm" className="ml-2">{lane.issues.length}</Pill>
                 </div>
               )}
               
@@ -295,14 +325,12 @@ export default function AgileBoard({ issues, members, projectId, project, active
                       <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
                         {swimlanes.length === 1 && (
                           <>
-                            <button className="text-muted mb-4">
+                            <button data-ui-control="column-collapse" className="text-muted mb-4">
                               <ChevronRight size={16} />
                             </button>
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[2px] py-[6px] rounded-full text-center mt-4" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                              {colIssues.length}
-                            </span>
+                            <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <Counter value={colIssues.length} size="sm" appearance="subtle" className="mt-4" />
                           </>
                         )}
                         {swimlanes.length > 1 && (
@@ -319,34 +347,40 @@ export default function AgileBoard({ issues, members, projectId, project, active
                       {swimlanes.length === 1 && (
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
                           <div className="flex items-center gap-[6px]">
-                            <button
+                            <Button
                               onClick={() => toggleColumnCollapse(col.id)}
-                              className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors -ml-2"
+                              style="ghost"
+                              size="icon-xs"
+                              icon={ChevronLeft}
+                              iconSize={16}
+                              className="-ml-2 hover:!bg-white"
                               title="Згорнути колонку"
-                            >
-                              <ChevronLeft size={16} />
-                            </button>
+                            />
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h3 className="text-[12px] font-bold text-ink uppercase tracking-wide">{col.label}</h3>
-                            <span className="text-[11px] font-bold text-muted bg-white/60 px-[6px] py-[2px] rounded-full ml-1">
+                            <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
+                            <Pill tone="surface" size="md" className="ml-1 opacity-60">
                               {colIssues.length}
-                            </span>
+                            </Pill>
                           </div>
                           <div className="flex items-center gap-1">
                             {!isArchived && !col.isHiddenContainer && (
-                              <button
-                                onClick={() => setActiveAddColId(col.id)}
-                                className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                              <Button
+                                onClick={() => onRequestAddIssue
+                                  ? onRequestAddIssue(col.id)
+                                  : setActiveAddColId(col.id)}
+                                style="ghost"
+                                size="icon-xs"
+                                icon={Plus}
+                                iconSize={16}
+                                className="hover:!bg-white"
                                 title="Додати завдання"
-                              >
-                                <Plus size={16} />
-                              </button>
+                              />
                             )}
                           </div>
                         </div>
                       )}
 
-                      {activeAddColId === col.id && !col.isHiddenContainer && (
+                      {!onRequestAddIssue && activeAddColId === col.id && !col.isHiddenContainer && (
                         <InlineAddForm
                           onAdd={(title) => { onAddIssue(col.id, title, lane.id); setActiveAddColId(null); }}
                           onCancel={() => setActiveAddColId(null)}
@@ -374,11 +408,16 @@ export default function AgileBoard({ issues, members, projectId, project, active
                                 className="mb-[8px]"
                                 issue={issue}
                                 issues={issues}
+                                allIssues={contextIssues}
                                 members={members}
                                 labels={labels}
                                 index={i}
-                                projectId={projectId}
-                                projectName={project?.name}
+                                projectId={issue.projectId || projectId}
+                                projectName={showProjectName
+                                  ? projects.find(item => item.id === issue.projectId)?.name || project?.name
+                                  : project?.name}
+                                showProjectName={showProjectName}
+                                sprints={sprints}
                                 isTimerActive={activeTimerIssueId === issue.id}
                                 issueLinks={issueLinks}
                                 isArchived={isArchived}

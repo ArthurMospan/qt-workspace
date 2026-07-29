@@ -4,20 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CalendarDays,
-  BellRing,
   CakeSlice,
   ChevronLeft,
   ChevronRight,
-  Clock3,
-  Diamond,
   Flag,
   List,
   LockKeyhole,
   Plus,
   RefreshCw,
-  StickyNote,
   Users,
-  Video,
 } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -36,7 +31,9 @@ import {
   Surface,
 } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
-import CalendarEventDialog from '@/components/workspace/calendar/CalendarEventDialog';
+import CalendarEventDialog, {
+  CALENDAR_EVENT_TYPE_OPTIONS,
+} from '@/components/workspace/calendar/CalendarEventDialog';
 
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 // The full day is rendered so nothing has to be clamped; the grid scrolls to
@@ -44,14 +41,7 @@ const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
 const WORKDAY_START_HOUR = 7;
 const TYPE_CONFIG = {
-  meeting: { label: 'Мітинг', color: '#3b82f6', bg: '#eff6ff', icon: Video },
-  event: { label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarDays },
-  focus: { label: 'Фокус-час', color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
-  absence: { label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
-  release: { label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
-  note: { label: 'Нотатка', color: '#64748b', bg: '#f8fafc', icon: StickyNote },
-  reminder: { label: 'Нагадування', color: '#f97316', bg: '#fff7ed', icon: BellRing },
-  milestone: { label: 'Віха', color: '#ec4899', bg: '#fdf2f8', icon: Diamond },
+  ...Object.fromEntries(CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option])),
   birthday: { label: 'День народження', color: '#db2777', bg: '#fdf2f8', icon: CakeSlice },
 };
 
@@ -476,19 +466,19 @@ export default function CalendarPage() {
   };
 
   const filterOptions = [
-    { value: 'all', label: 'Усі типи' },
-    ...Object.entries(TYPE_CONFIG).map(([value, config]) => ({ value, label: config.label, dotColor: config.color })),
-    { value: 'deadline', label: 'Дедлайни задач', dotColor: '#ef4444' },
+    { value: 'all', label: 'Усі типи', icon: CalendarDays },
+    ...Object.entries(TYPE_CONFIG).map(([value, config]) => ({ value, label: config.label, icon: config.icon })),
+    { value: 'deadline', label: 'Дедлайни задач', icon: Flag },
   ];
   const projectOptions = [
     ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
   ];
   const memberOptions = [
-    { value: 'all', label: 'Уся команда' },
+    { value: 'all', label: 'Уся команда', icon: Users },
     ...members.map(member => ({
       value: member.id || member.uid,
       label: member.name || member.displayName || member.email || 'Учасник',
-      avatar: member.avatar || member.photoURL || '',
+      user: member,
     })),
   ];
 
@@ -509,7 +499,7 @@ export default function CalendarPage() {
           filters={
             <>
               <FilterBar className="overflow-visible">
-                <Select variant="ghost" value={typeFilter} onChange={setTypeFilter} options={filterOptions} className="w-[136px]" />
+                <Select filterRole="type" variant="ghost" value={typeFilter} onChange={setTypeFilter} options={filterOptions} />
                 <MultiSelect
                   variant="ghost"
                   value={projectFilters}
@@ -517,9 +507,9 @@ export default function CalendarPage() {
                   options={projectOptions}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту..."
-                  className="w-[200px]"
+                  filterRole="project"
                 />
-                <Select variant="ghost" value={memberFilter} onChange={setMemberFilter} options={memberOptions} className="w-[148px]" />
+                <Select filterRole="member" variant="ghost" value={memberFilter} onChange={setMemberFilter} options={memberOptions} />
                 <FilterDivider />
                 <Button style="ghost" size="icon-sm" icon={ChevronLeft} onClick={() => movePeriod(-1)} aria-label="Попередній період" />
                 <Button style="ghost" size="sm" onClick={() => setAnchor(new Date())}>Сьогодні</Button>
@@ -532,7 +522,7 @@ export default function CalendarPage() {
         />
 
         <div className="flex flex-col gap-[12px] min-h-0 flex-1">
-          <Surface variant="panel" padding="sm" className="min-h-0 flex-1 overflow-hidden">
+          <Surface preset="panel" padding="sm" className="min-h-0 flex-1 overflow-hidden">
             <div className="h-full bg-white rounded-[12px] overflow-auto custom-scrollbar">
               {loading ? (
                 <div className="h-full min-h-[320px] flex items-center justify-center"><LoadingSpinner size="md" /></div>

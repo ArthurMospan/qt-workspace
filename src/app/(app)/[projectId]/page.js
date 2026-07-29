@@ -8,15 +8,14 @@ import { useIssues }     from '@/lib/hooks/useIssues';
 import { useSprints }    from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import { EmptyState, PageHeader, Surface, Tabs } from '@/components/ui';
-import ProjectTeamTab from '@/components/workspace/ProjectTeamTab';
+import { PageHeader, Pill, TaskListView, Tabs } from '@/components/ui';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import TaskRow from '@/components/ui/TaskManagement/TaskRow';
-import { LayoutGrid, BarChart2, Plus, Users, UserPlus, MessageSquare, Settings2, List, ClipboardList, Plug, Kanban } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, MessageSquare, Settings2, List, Plug, Kanban } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -25,9 +24,8 @@ import { can } from '@/lib/utils/can';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 
-const TABS = (projectId) => [
+const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
-  { id: 'team',       label: 'Команда',   icon: Users },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
 ];
 const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
@@ -45,7 +43,8 @@ export default function BoardPage({ params }) {
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
-  const { members: organizationMembers, inviteMember } = useOrganization();
+  const { members: organizationMembers } = useOrganization();
+  const { labels, priorities, types } = useWorkflowConfig();
 
   // Portal tab visible only when project is shared (synced to QT)
   const isShared = project?.visibility === 'shared';
@@ -55,10 +54,6 @@ export default function BoardPage({ params }) {
   const [boardSprintFilter, setBoardSprintFilter] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_sprint_${projectId}`) || 'all';
     return 'all';
-  });
-  const [boardSwimlane, setBoardSwimlane] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_swimlane_${projectId}`) || 'none';
-    return 'none';
   });
   const [boardAssigneeFilter, setBoardAssigneeFilter] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_assignee_${projectId}`) || 'all';
@@ -74,11 +69,6 @@ export default function BoardPage({ params }) {
   });
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
-  const [teamRoleFilter, setTeamRoleFilter] = useState('all');
-  const [teamWorkloadFilter, setTeamWorkloadFilter] = useState('all');
-  const [teamManageOpen, setTeamManageOpen] = useState(false);
-  const [teamSelection, setTeamSelection] = useState([]);
-  const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const [boardView, setBoardView] = useState(() => {
     if (typeof window === 'undefined') return 'kanban';
     const stored = localStorage.getItem(`qt_project_view_${projectId}`);
@@ -89,16 +79,11 @@ export default function BoardPage({ params }) {
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
   const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
   const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked);
-  const openTeamManager = () => {
-    setTeamSelection(Array.isArray(project?.team) ? project.team : []);
-    setTeamMemberSearch('');
-    setTeamManageOpen(true);
-  };
-
   const tabs = useMemo(() => {
-    const base = TABS(projectId);
-    return showQtPlusTab ? [...base, { id: 'qtplus', label: 'QuickTeam+', icon: Plug }] : base;
-  }, [projectId, showQtPlusTab]);
+    return showQtPlusTab
+      ? [...PROJECT_TABS, { id: 'qtplus', label: 'QuickTeam+', icon: Plug }]
+      : PROJECT_TABS;
+  }, [showQtPlusTab]);
 
   // If the qtplus tab was active and just became hidden (e.g. unlinked), fall back.
   useEffect(() => {
@@ -110,13 +95,12 @@ export default function BoardPage({ params }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(`qt_board_sprint_${projectId}`, boardSprintFilter);
-      localStorage.setItem(`qt_board_swimlane_${projectId}`, boardSwimlane);
       localStorage.setItem(`qt_board_assignee_${projectId}`, boardAssigneeFilter);
       localStorage.setItem(`qt_board_priority_${projectId}`, boardPriorityFilter);
       localStorage.setItem(`qt_board_type_${projectId}`, boardTypeFilter);
       localStorage.setItem(`qt_project_view_${projectId}`, boardView);
     }
-  }, [boardSprintFilter, boardSwimlane, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, projectId]);
+  }, [boardSprintFilter, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, projectId]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -150,27 +134,9 @@ export default function BoardPage({ params }) {
     userName: currentUser?.name || '',
   };
 
-  const handleAddIssue = useCallback(async (columnId, title, laneId = null) => {
+  const handleAddIssue = useCallback(async (columnId, title) => {
     try {
       const data = { title, columnId };
-
-      // Apply lane context if swimlanes are active
-      if (laneId) {
-        if (laneId.startsWith('assignee-')) {
-          const uid = laneId.replace('assignee-', '');
-          if (uid !== 'unassigned') {
-            data.assigneeIds = [uid];
-          }
-        } else if (laneId.startsWith('epic-')) {
-          const epicId = laneId.replace('epic-', '');
-          if (epicId !== 'none') {
-            data.parentEpicId = epicId;
-          }
-        } else if (laneId.startsWith('priority-')) {
-          const priority = laneId.replace('priority-', '');
-          data.priority = priority;
-        }
-      }
 
       await createIssue(data, actor);
       showToast('Задачу додано ✓');
@@ -190,7 +156,6 @@ export default function BoardPage({ params }) {
         assigneeIds: formData.assignees || [],
         labelIds: formData.labelIds || [],
         dueDate: formData.dueDate,
-        parentEpicId: formData.parentEpicId || null,
         estimateMinutes: formData.estimateMinutes || 0,
         sprintId: formData.sprintId || null,
       }, actor);
@@ -219,10 +184,23 @@ export default function BoardPage({ params }) {
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
   const isBoard = activeTab === 'board' && boardView === 'kanban';
+  const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
 
   return (
-    <div className={`flex-1 h-full bg-transparent ${isBoard ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
-      <div className={`workspace-page-layout ${isBoard ? 'h-full pb-[24px]' : 'min-h-full pb-[120px]'}`}>
+    <div className={`flex-1 h-full bg-transparent ${
+      isBoard
+        ? 'overflow-hidden'
+        : isQtPlusWorkspace
+          ? 'overflow-y-auto overflow-x-hidden custom-scrollbar lg:overflow-hidden'
+          : 'overflow-y-auto overflow-x-hidden custom-scrollbar'
+    }`}>
+      <div className={`workspace-page-layout ${
+        isBoard
+          ? 'h-full pb-0'
+          : isQtPlusWorkspace
+            ? 'min-h-full pb-[120px] lg:h-full lg:min-h-0 lg:pb-0'
+            : 'min-h-full pb-[120px]'
+      }`}>
 
       {/* ── PageHeader ── */}
       <PageHeader
@@ -230,7 +208,7 @@ export default function BoardPage({ params }) {
         title={
           <div className="flex items-center gap-2">
             {project?.name}
-            {isArchived && <span className="text-[10px] uppercase tracking-wider font-bold bg-[#f3f4f6] text-muted px-2 py-1 rounded-md">В архіві</span>}
+            {isArchived && <Pill tone="neutral" size="lg" shape="badge" uppercase>В архіві</Pill>}
           </div>
         }
         tabs={tabs}
@@ -251,6 +229,16 @@ export default function BoardPage({ params }) {
                 )}
               </Link>
             )}
+            {!isArchived && can(orgRole, 'edit:project_settings') && (
+              <Button
+                onClick={() => setShowConfigModal(true)}
+                icon={Settings2}
+                size="icon-lg"
+                style="secondary"
+                title="Налаштування проєкту"
+                aria-label="Налаштування проєкту"
+              />
+            )}
             {!isArchived && (
               <Button
                 onClick={() => setShowCreateTaskModal(true)}
@@ -270,6 +258,7 @@ export default function BoardPage({ params }) {
             <>
               <FilterBar>
                 <Select
+                  filterRole="sprint"
                   value={boardSprintFilter}
                   onChange={setBoardSprintFilter}
                   options={[
@@ -280,62 +269,46 @@ export default function BoardPage({ params }) {
                   variant="ghost"
                 />
                 <Select
-                  value={boardSwimlane}
-                  onChange={setBoardSwimlane}
-                  options={[
-                    { value: 'none', label: 'Без групування' },
-                    { value: 'assignee', label: 'За виконавцем' },
-                    { value: 'epic', label: 'За епіком' },
-                    { value: 'priority', label: 'За пріоритетом' }
-                  ]}
-                  variant="ghost"
-                  icon={LayoutGrid}
-                />
-                <Select
+                  filterRole="member"
                   value={boardAssigneeFilter}
                   onChange={setBoardAssigneeFilter}
                   options={[
                     { value: 'all', label: 'Всі виконавці' },
-                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m }))
                   ]}
                   variant="ghost"
-                  icon={Users}
                 />
                 <Select
+                  filterRole="priority"
                   value={boardPriorityFilter}
                   onChange={setBoardPriorityFilter}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                    { value: 'high', label: 'High', dotColor: '#f97316' },
-                    { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                    { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
+                    ...priorities.map(priority => ({
+                      value: priority.id,
+                      label: priority.label,
+                      dotColor: priority.color,
+                    })),
                   ]}
                   variant="ghost"
                 />
                 <Select
+                  filterRole="type"
                   value={boardTypeFilter}
                   onChange={setBoardTypeFilter}
                   options={[
                     { value: 'all', label: 'Всі типи' },
-                    { value: 'epic', label: 'Epic' },
-                    { value: 'feature', label: 'Feature' },
-                    { value: 'task', label: 'Task' },
-                    { value: 'bug', label: 'Bug' },
+                    ...types
+                      .map(type => ({
+                        value: type.id,
+                        label: type.label,
+                        dotColor: type.color,
+                      })),
                   ]}
                   variant="ghost"
                 />
               </FilterBar>
               <div className="ml-auto flex items-center gap-2">
-                {!isArchived && boardView === 'kanban' && can(orgRole, 'edit:board_columns') && (
-                  <Button
-                    onClick={() => setShowConfigModal(true)}
-                    icon={Settings2}
-                    size="icon-lg"
-                    style="secondary"
-                    title="Налаштування дошки"
-                  />
-                )}
                 <Tabs
                   tabs={[
                     { id: 'kanban', icon: Kanban },
@@ -349,67 +322,35 @@ export default function BoardPage({ params }) {
           ) : activeTab === 'analytics' ? (
             <FilterBar>
               <Select
+                filterRole="priority"
                 variant="ghost"
                 value={analyticsPriorityFilter}
                 onChange={setAnalyticsPriorityFilter}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
-                  { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                  { value: 'high', label: 'High', dotColor: '#f97316' },
-                  { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                  { value: 'low', label: 'Low', dotColor: '#9a9a9a' }
+                  ...priorities.map(priority => ({
+                    value: priority.id,
+                    label: priority.label,
+                    dotColor: priority.color,
+                  })),
                 ]}
               />
               <Select
+                filterRole="type"
                 variant="ghost"
                 value={analyticsTypeFilter}
                 onChange={setAnalyticsTypeFilter}
                 options={[
                   { value: 'all', label: 'Всі типи' },
-                  { value: 'epic', label: 'Epic' },
-                  { value: 'feature', label: 'Feature' },
-                  { value: 'task', label: 'Task' },
-                  { value: 'bug', label: 'Bug' }
+                  ...types
+                    .map(type => ({
+                      value: type.id,
+                      label: type.label,
+                      dotColor: type.color,
+                    })),
                 ]}
               />
             </FilterBar>
-          ) : activeTab === 'team' ? (
-            <>
-              <FilterBar>
-                <Select
-                  value={teamRoleFilter}
-                  onChange={setTeamRoleFilter}
-                  variant="ghost"
-                  options={[
-                    { value: 'all', label: 'Усі ролі' },
-                    { value: 'owner', label: 'Власники' },
-                    { value: 'admin', label: 'Адміністратори' },
-                    { value: 'member', label: 'Учасники' },
-                  ]}
-                />
-                <Select
-                  value={teamWorkloadFilter}
-                  onChange={setTeamWorkloadFilter}
-                  variant="ghost"
-                  options={[
-                    { value: 'all', label: 'Усе навантаження' },
-                    { value: 'assigned', label: 'Є активні завдання' },
-                    { value: 'available', label: 'Без активних завдань' },
-                  ]}
-                />
-              </FilterBar>
-              {can(orgRole, 'manage:team') && (
-                <Button
-                  icon={UserPlus}
-                  style="secondary"
-                  size="md"
-                  onClick={openTeamManager}
-                  className="ml-auto"
-                >
-                  Керувати
-                </Button>
-              )}
-            </>
           ) : null
         }
       />
@@ -428,50 +369,44 @@ export default function BoardPage({ params }) {
           <div className="flex-1 min-h-[500px] flex flex-col">
             <AgileBoard
               issues={boardIssues}
+              allIssues={issues}
+              collapseHierarchy
               members={members}
               projectId={projectId}
               project={project}
               activeTimerIssueId={activeTimer?.issueId}
-              swimlane={boardSwimlane}
               onAddIssue={handleAddIssue}
               onMoveIssue={handleMoveIssue}
               issueLinks={issueLinks}
+              sprints={sprints}
               isArchived={isArchived}
             />
           </div>
         ) : (
-          <Surface variant="panel" padding="md" className="w-full">
-            {boardIssues.length === 0 ? (
-              <EmptyState
-                icon={ClipboardList}
-                title="Завдань не знайдено"
-                description="Змініть фільтри або створіть нове завдання."
-                className="min-h-[328px] rounded-[12px] bg-white"
-              />
-            ) : (
-              <div className="flex flex-col gap-2">
-                {boardIssues.map(issue => (
-                  <TaskRow
-                    key={issue.id}
-                    issue={issue}
-                    issues={issues}
-                    issueLinks={issueLinks}
-                    members={members}
-                    sprints={sprints}
-                    projectId={projectId}
-                    projectName={project?.name}
-                    isTimerActive={activeTimer?.issueId === issue.id}
-                  />
-                ))}
-              </div>
-            )}
-          </Surface>
+          <TaskListView
+            issues={boardIssues}
+            allIssues={issues}
+            issueLinks={issueLinks}
+            members={members}
+            labels={labels}
+            sprints={sprints}
+            projectId={projectId}
+            projectName={project?.name}
+            hiddenStatusIds={project?.hiddenColumns || []}
+            activeTimerIssueId={activeTimer?.issueId}
+          />
         )
       )}
 
 
       {showConfigModal && project && (
-        <BoardConfigModal project={project} onClose={() => setShowConfigModal(false)} />
+        <BoardConfigModal
+          project={project}
+          issues={issues}
+          organizationMembers={organizationMembers}
+          canManageTeam={can(orgRole, 'manage:team')}
+          onClose={() => setShowConfigModal(false)}
+        />
       )}
 
       <CreateTaskModal
@@ -480,8 +415,11 @@ export default function BoardPage({ params }) {
         onSubmit={handleCreateFullIssue}
         stages={project?.stages || []}
         teamMembers={members}
-        projectContext={project ? { id: project.id, name: project.name } : null}
-        epics={issues.filter(i => i.type === 'epic')}
+        projectContext={project ? {
+          id: project.id,
+          name: project.name,
+          hiddenColumns: project.hiddenColumns || [],
+        } : null}
         sprints={sprints}
       />
       {activeTab === 'analytics' && (
@@ -490,29 +428,9 @@ export default function BoardPage({ params }) {
           members={members}
           project={project}
           projectId={projectId}
+          issueLinks={issueLinks}
           priorityFilter={analyticsPriorityFilter}
           typeFilter={analyticsTypeFilter}
-        />
-      )}
-
-      {activeTab === 'team' && (
-        <ProjectTeamTab
-          members={members}
-          allMembers={organizationMembers}
-          issues={issues}
-          projectId={projectId}
-          project={project}
-          canManage={can(orgRole, 'manage:team')}
-          inviteMember={inviteMember}
-          roleFilter={teamRoleFilter}
-          workloadFilter={teamWorkloadFilter}
-          manageOpen={teamManageOpen}
-          onManageOpenChange={setTeamManageOpen}
-          onOpenManager={openTeamManager}
-          selected={teamSelection}
-          onSelectedChange={setTeamSelection}
-          memberSearch={teamMemberSearch}
-          onMemberSearchChange={setTeamMemberSearch}
         />
       )}
 

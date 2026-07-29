@@ -41,6 +41,10 @@ import {
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
+import {
+  selectActionableIssues,
+  sumRawTimeLogMinutes,
+} from '@/lib/utils/issueAccounting.mjs';
 
 const PRIORITY_META = Object.fromEntries(DEFAULT_PRIORITIES.map(priority => [priority.id, priority]));
 
@@ -283,7 +287,10 @@ function MemberHeader({ stat, positions, onBack, standalone, filters }) {
         )}
         <UserAvatar user={stat.member} size={standalone ? 64 : 52} />
         <div className="min-w-0 flex-1">
-          <h1 className={`truncate font-bold tracking-tight text-ink ${standalone ? 'text-[26px]' : 'text-[20px]'}`}>
+          <h1
+            data-ui-density={standalone ? 'standalone' : 'embedded'}
+            className="ui-type-member-title truncate tracking-tight text-ink"
+          >
             {memberName(stat.member)}
           </h1>
           <p className="mt-1 truncate text-[12px] text-muted">
@@ -313,8 +320,8 @@ function ProjectDistribution({ stat, projects }) {
   const maxMinutes = Math.max(...rows.map(row => row.minutes), 1);
 
   return (
-    <div className="rounded-[16px] bg-white p-5">
-      <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-muted">Розподіл по проєктах</h3>
+    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+      <h3 className="ui-type-eyebrow mb-4 uppercase tracking-wider text-muted">Розподіл по проєктах</h3>
       {rows.length === 0 ? (
         <p className="py-6 text-center text-[12px] text-faint">Немає проєктних даних за період</p>
       ) : (
@@ -347,8 +354,8 @@ function IssueList({
 }) {
   const overdueSet = new Set(overdueIssueIds);
   return (
-    <div className="rounded-[16px] bg-white p-5">
-      <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">{title}</h3>
+    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+      <h3 className="ui-type-eyebrow mb-3 uppercase tracking-wider text-muted">{title}</h3>
       {issues.length === 0 ? (
         <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
       ) : (
@@ -399,8 +406,8 @@ function RecentTime({ logs, issues, events, projects }) {
   }, [events]);
 
   return (
-    <div className="rounded-[16px] bg-white p-5">
-      <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Останні записи часу</h3>
+    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+      <h3 className="ui-type-eyebrow mb-3 uppercase tracking-wider text-muted">Останні записи часу</h3>
       {logs.length === 0 ? (
         <p className="py-6 text-center text-[12px] text-faint">Час за вибраний період не списувався</p>
       ) : (
@@ -484,7 +491,7 @@ function MemberOverview({ stat, projects, statuses, events, period }) {
           overdueIssueIds={stat.overdueItems.map(issue => issue.id)}
           limit={8}
         />
-        <RecentTime logs={stat.logs} issues={stat.issues} events={events} projects={projects} />
+        <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
       </div>
     </>
   );
@@ -522,7 +529,7 @@ function MemberWork({ stat, projects, statuses, events }) {
           overdueIssueIds={stat.overdueItems.map(issue => issue.id)}
           limit={50}
         />
-        <RecentTime logs={stat.logs} issues={stat.issues} events={events} projects={projects} />
+        <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
       </div>
     </div>
   );
@@ -541,7 +548,7 @@ function MemberTimesheet({ stat, members, projects, events }) {
   };
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2">
+      <div data-ui-surface="local" className="mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2">
         <Segmented
           value={mode}
           onChange={setMode}
@@ -556,7 +563,7 @@ function MemberTimesheet({ stat, members, projects, events }) {
         <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shift(1)} aria-label="Наступний період" />
       </div>
       <TimesheetTab
-        issues={stat.issues}
+        issues={stat.timesheetIssues}
         events={events}
         timeLogs={stat.allLogs}
         members={members}
@@ -644,6 +651,7 @@ function MemberDetail({
 export default function WorkloadTab({
   members = [],
   issues = [],
+  hierarchyIssues = issues,
   timeLogs = [],
   events = [],
   projects = [],
@@ -658,6 +666,10 @@ export default function WorkloadTab({
   const [now, setNow] = useState(() => Date.now());
   const { doneStatusIds, positions = [], statuses = [] } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const actionableIssues = useMemo(
+    () => selectActionableIssues(issues, hierarchyIssues),
+    [hierarchyIssues, issues],
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -668,7 +680,8 @@ export default function WorkloadTab({
     const periodAgo = now - period * 86_400_000;
     return members.map(member => {
       const uid = memberId(member);
-      const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
+      const memberIssues = actionableIssues.filter(issue => issue.assigneeIds?.includes(uid));
+      const timesheetIssues = hierarchyIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const openItems = memberIssues.filter(issue => !doneSet.has(issue.columnId || issue.status));
       const doneItems = memberIssues
         .filter(issue => doneSet.has(issue.columnId || issue.status) && getCompletedAtMillis(issue) >= periodAgo)
@@ -682,11 +695,13 @@ export default function WorkloadTab({
         .filter(log => log.userId === uid)
         .sort((a, b) => effectiveTimeLogMillis(b) - effectiveTimeLogMillis(a));
       const logs = allLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
-      const minutes = logs.reduce((sum, log) => sum + (Number(log.spentMinutes) || 0), 0);
+      const minutes = sumRawTimeLogMinutes(logs);
       return {
         member,
         uid,
         issues: memberIssues,
+        referenceIssues: hierarchyIssues,
+        timesheetIssues,
         openItems,
         doneItems,
         overdueItems,
@@ -698,26 +713,26 @@ export default function WorkloadTab({
         overdue: overdueItems.length,
         inProgress: inProgressItems.length,
         minutes,
-        lastActivity: latestActivityMillis(memberIssues, allLogs),
+        lastActivity: latestActivityMillis(timesheetIssues, allLogs),
       };
     }).sort((a, b) => {
       if (b.overdue !== a.overdue) return b.overdue - a.overdue;
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [doneSet, issues, members, now, period, timeLogs]);
+  }, [actionableIssues, doneSet, hierarchyIssues, members, now, period, timeLogs]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)
     : null;
   const summary = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
-    const openItems = issues.filter(issue => !doneSet.has(issue.columnId || issue.status));
+    const openItems = actionableIssues.filter(issue => !doneSet.has(issue.columnId || issue.status));
     return {
-      minutes: timeLogs
-        .filter(log => effectiveTimeLogMillis(log) >= periodAgo)
-        .reduce((sum, log) => sum + (Number(log.spentMinutes) || 0), 0),
-      done: issues.filter(issue => (
+      minutes: sumRawTimeLogMinutes(
+        timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo),
+      ),
+      done: actionableIssues.filter(issue => (
         doneSet.has(issue.columnId || issue.status)
         && getCompletedAtMillis(issue) >= periodAgo
       )).length,
@@ -727,7 +742,7 @@ export default function WorkloadTab({
         return due && due.getTime() < now;
       }).length,
     };
-  }, [doneSet, issues, now, period, timeLogs]);
+  }, [actionableIssues, doneSet, now, period, timeLogs]);
 
   if (members.length === 0) {
     return (

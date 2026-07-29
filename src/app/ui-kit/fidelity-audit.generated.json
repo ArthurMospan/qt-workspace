@@ -1,0 +1,641 @@
+{
+  "generatedBy": "scripts/audit-ui-fidelity.mjs",
+  "scope": "authenticated-workspace",
+  "policy": {
+    "sharedComponentContract": "A new reusable UI component must be used by the product, exported from src/components/ui, and rendered in /ui-kit in the same change.",
+    "driftContract": "New native-control fingerprints or shared chrome overrides must be reviewed before the generated audit baseline changes.",
+    "brandingContract": "Custom branding remains limited to the sidebar and its contrast-dependent children.",
+    "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
+  },
+  "totals": {
+    "productFiles": 164,
+    "parsedFiles": 164,
+    "parseErrors": 0,
+    "nativeControls": 147,
+    "styledNativeControls": 115,
+    "reviewedNativeControls": 15,
+    "manualLabels": 0,
+    "manualModalShells": 0,
+    "manualPills": 0,
+    "manualSurfaces": 0,
+    "localSurfaceExceptions": 66,
+    "manualIconButtons": 0,
+    "headingStyles": 0,
+    "sharedChromeOverrides": 0,
+    "localSharedNameCollisions": 0
+  },
+  "nativeByTag": {
+    "button": 126,
+    "input": 15,
+    "textarea": 6,
+    "select": 0
+  },
+  "kit": {
+    "totals": {
+      "components": 77,
+      "used": 45,
+      "unused": 32,
+      "covered": 45,
+      "uncovered": 0
+    },
+    "unusedComponents": [
+      "Avatar",
+      "AvatarGroup",
+      "Badge",
+      "Breadcrumb",
+      "ButtonGroup",
+      "Chip",
+      "CommentThread",
+      "Container",
+      "Dropdown",
+      "FileInput",
+      "Grid",
+      "HeaderSearch",
+      "ListItem",
+      "PageContentWrapper",
+      "PageLayout",
+      "Pagination",
+      "Progress",
+      "ProgressRing",
+      "ProjectCard",
+      "RadioButton",
+      "SearchInput",
+      "Spacer",
+      "SplitButton",
+      "Stack",
+      "Stat",
+      "StatusBadge",
+      "Stepper",
+      "Table",
+      "TaskCard",
+      "TeamMemberCard",
+      "TimeLogDisplay",
+      "Toast"
+    ]
+  },
+  "parseErrors": [],
+  "nativeHotspots": [
+    {
+      "file": "src/app/(app)/chat/page.js",
+      "count": 29
+    },
+    {
+      "file": "src/components/workspace/IssueDetail.jsx",
+      "count": 18
+    },
+    {
+      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "src/components/WorkspaceHeader.jsx",
+      "count": 8
+    },
+    {
+      "file": "src/app/(app)/calendar/page.js",
+      "count": 6
+    },
+    {
+      "file": "src/app/(app)/ai-call/page.js",
+      "count": 5
+    },
+    {
+      "file": "src/app/(app)/settings/page.js",
+      "count": 5
+    },
+    {
+      "file": "src/components/AudioTaskPanel.jsx",
+      "count": 5
+    },
+    {
+      "file": "src/app/(app)/page.js",
+      "count": 4
+    },
+    {
+      "file": "src/components/MobileNav.jsx",
+      "count": 4
+    },
+    {
+      "file": "src/components/workspace/AttachmentViewer.jsx",
+      "count": 4
+    },
+    {
+      "file": "src/components/workspace/ChatAttachments.jsx",
+      "count": 4
+    },
+    {
+      "file": "src/components/workspace/UnifiedTimeline.jsx",
+      "count": 4
+    },
+    {
+      "file": "src/components/WorkspaceSidebar.jsx",
+      "count": 4
+    },
+    {
+      "file": "src/components/AuthLayout.jsx",
+      "count": 3
+    },
+    {
+      "file": "src/components/UserStatusSetter.jsx",
+      "count": 3
+    },
+    {
+      "file": "src/components/workspace/AgileBoard.jsx",
+      "count": 3
+    },
+    {
+      "file": "src/app/(app)/team/page.js",
+      "count": 2
+    },
+    {
+      "file": "src/components/CreateTaskModal.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/InviteLinkSection.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/MarkdownEditor.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/MarkdownViewer.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/workspace/calendar/CalendarEventDialog.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/workspace/qtplus/chat/ChatMessage.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/workspace/WorkloadTab.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/integrations/YouTrackImportCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/InviteMemberDialog.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/OrgSwitcherScreen.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/profile/ProfileView.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/SearchModal.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/TeamMemberSettingsDialog.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/qtplus/cards/AudioCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/qtplus/cards/NoteCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/qtplus/StageStepper.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/TimesheetTab.jsx",
+      "count": 1
+    }
+  ],
+  "repeatedNativeFingerprints": [],
+  "reviewedNativeControls": [
+    {
+      "location": "src/app/(app)/chat/page.js:1615",
+      "tag": "button",
+      "context": "chat-list-action"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:1649",
+      "tag": "button",
+      "context": "chat-list-action"
+    },
+    {
+      "location": "src/components/workspace/AgileBoard.jsx:252",
+      "tag": "button",
+      "context": "column-collapse"
+    },
+    {
+      "location": "src/components/workspace/AgileBoard.jsx:328",
+      "tag": "button",
+      "context": "column-collapse"
+    },
+    {
+      "location": "src/components/workspace/AttachmentViewer.jsx:66",
+      "tag": "button",
+      "context": "media-action"
+    },
+    {
+      "location": "src/components/workspace/AttachmentViewer.jsx:77",
+      "tag": "button",
+      "context": "media-action"
+    },
+    {
+      "location": "src/components/workspace/AttachmentViewer.jsx:82",
+      "tag": "button",
+      "context": "media-action"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:716",
+      "tag": "button",
+      "context": "identity-meta-trigger"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+      "tag": "button",
+      "context": "calendar-attribute-trigger"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:979",
+      "tag": "button",
+      "context": "calendar-attribute-trigger"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1029",
+      "tag": "button",
+      "context": "identity-meta-trigger"
+    },
+    {
+      "location": "src/components/WorkspaceHeader.jsx:107",
+      "tag": "button",
+      "context": "notification-response"
+    },
+    {
+      "location": "src/components/WorkspaceSidebar.jsx:226",
+      "tag": "button",
+      "context": "branding-action"
+    },
+    {
+      "location": "src/components/WorkspaceSidebar.jsx:239",
+      "tag": "button",
+      "context": "branding-action"
+    },
+    {
+      "location": "src/components/WorkspaceSidebar.jsx:289",
+      "tag": "button",
+      "context": "branding-action"
+    }
+  ],
+  "manualLabels": [],
+  "manualModalShells": [],
+  "manualPills": [],
+  "manualSurfaces": [],
+  "localSurfaceExceptions": [
+    {
+      "location": "src/app/(app)/chat/page.js:1017",
+      "tag": "div",
+      "className": "rounded-xl border border-line/70 bg-white p-2"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:251",
+      "tag": "div",
+      "className": "absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:480",
+      "tag": "div",
+      "className": "absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:856",
+      "tag": "div",
+      "className": "mt-2 bg-white rounded-2xl p-4 border border-line/70"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:902",
+      "tag": "div",
+      "className": "mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:929",
+      "tag": "div",
+      "className": "bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2"
+    },
+    {
+      "location": "src/app/(app)/error.js:16",
+      "tag": "div",
+      "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
+    },
+    {
+      "location": "src/app/(app)/layout.js:90",
+      "tag": "div",
+      "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
+    },
+    {
+      "location": "src/app/(app)/page.js:197",
+      "tag": "div",
+      "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
+    },
+    {
+      "location": "src/app/(app)/page.js:206",
+      "tag": "div",
+      "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:2531",
+      "tag": "div",
+      "className": "rounded-[10px] border border-line bg-canvas p-3"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:2595",
+      "tag": "div",
+      "className": "mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:2652",
+      "tag": "div",
+      "className": "rounded-[10px] border border-line bg-canvas p-3"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:280",
+      "tag": "div",
+      "className": "w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:357",
+      "tag": "div",
+      "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:375",
+      "tag": "div",
+      "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
+    },
+    {
+      "location": "src/app/(app)/settings/page.js:492",
+      "tag": "div",
+      "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
+    },
+    {
+      "location": "src/app/(app)/sprints/page.js:514",
+      "tag": "div",
+      "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
+    },
+    {
+      "location": "src/app/(app)/sprints/page.js:588",
+      "tag": "div",
+      "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
+    },
+    {
+      "location": "src/app/(app)/sprints/page.js:596",
+      "tag": "div",
+      "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
+    },
+    {
+      "location": "src/components/AudioTaskPanel.jsx:153",
+      "tag": "div",
+      "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
+    },
+    {
+      "location": "src/components/AudioTaskPanel.jsx:195",
+      "tag": "div",
+      "className": "rounded-[14px] bg-canvas p-4"
+    },
+    {
+      "location": "src/components/AudioTaskPanel.jsx:209",
+      "tag": "div",
+      "className": "rounded-[14px] bg-canvas p-4 transition-opacity ${…}"
+    },
+    {
+      "location": "src/components/integrations/IntegrationCard.jsx:65",
+      "tag": "div",
+      "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
+    },
+    {
+      "location": "src/components/integrations/YouTrackImportCard.jsx:454",
+      "tag": "div",
+      "className": "rounded-[10px] bg-white p-2"
+    },
+    {
+      "location": "src/components/integrations/YouTrackImportCard.jsx:514",
+      "tag": "div",
+      "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
+    },
+    {
+      "location": "src/components/InviteLinkSection.jsx:95",
+      "tag": "div",
+      "className": "mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2"
+    },
+    {
+      "location": "src/components/migrations/DataMigrationSettings.jsx:82",
+      "tag": "div",
+      "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
+    },
+    {
+      "location": "src/components/profile/ProfileView.jsx:138",
+      "tag": "div",
+      "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
+    },
+    {
+      "location": "src/components/profile/ProfileView.jsx:312",
+      "tag": "div",
+      "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
+    },
+    {
+      "location": "src/components/SearchModal.jsx:41",
+      "tag": "div",
+      "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
+    },
+    {
+      "location": "src/components/SearchModal.jsx:83",
+      "tag": "div",
+      "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
+    },
+    {
+      "location": "src/components/workspace/AgileBoard.jsx:251",
+      "tag": "div",
+      "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
+    },
+    {
+      "location": "src/components/workspace/AttachmentViewer.jsx:94",
+      "tag": "div",
+      "className": "flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center"
+    },
+    {
+      "location": "src/components/workspace/BillingTab.jsx:482",
+      "tag": "div",
+      "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:210",
+      "tag": "div",
+      "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:221",
+      "tag": "div",
+      "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:226",
+      "tag": "div",
+      "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:258",
+      "tag": "div",
+      "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:628",
+      "tag": "div",
+      "className": "overflow-hidden rounded-[14px] border border-line bg-white"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:258",
+      "tag": "div",
+      "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:269",
+      "tag": "div",
+      "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
+    },
+    {
+      "location": "src/components/workspace/HoverCard.jsx:84",
+      "tag": "div",
+      "className": "absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1478",
+      "tag": "div",
+      "className": "group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1697",
+      "tag": "div",
+      "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1727",
+      "tag": "div",
+      "className": "flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1906",
+      "tag": "div",
+      "className": "flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:1965",
+      "tag": "div",
+      "className": "flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:228",
+      "tag": "div",
+      "className": "w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform"
+    },
+    {
+      "location": "src/components/workspace/IssueDetail.jsx:235",
+      "tag": "div",
+      "className": "w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
+    },
+    {
+      "location": "src/components/workspace/IssueModal.jsx:9",
+      "tag": "div",
+      "className": "relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
+    },
+    {
+      "location": "src/components/workspace/MessageContent.jsx:48",
+      "tag": "div",
+      "className": "h-[40px] px-3 mt-1 inline-flex items-center bg-canvas rounded-[6px] border border-line text-[12px] font-medium text-ink"
+    },
+    {
+      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:93",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group"
+    },
+    {
+      "location": "src/components/workspace/qtplus/cards/ChecklistCard.jsx:9",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden"
+    },
+    {
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:51",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-surface overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow"
+    },
+    {
+      "location": "src/components/workspace/qtplus/cards/LinkCard.jsx:16",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-surface px-3 py-2"
+    },
+    {
+      "location": "src/components/workspace/qtplus/cards/PollCard.jsx:9",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden"
+    },
+    {
+      "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:89",
+      "tag": "div",
+      "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
+    },
+    {
+      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:43",
+      "tag": "div",
+      "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
+    },
+    {
+      "location": "src/components/workspace/TimesheetTab.jsx:133",
+      "tag": "div",
+      "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
+    },
+    {
+      "location": "src/components/workspace/TimesheetTab.jsx:553",
+      "tag": "div",
+      "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
+    },
+    {
+      "location": "src/components/workspace/UnifiedTimeline.jsx:561",
+      "tag": "div",
+      "className": "absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1"
+    },
+    {
+      "location": "src/components/workspace/WorkloadTab.jsx:551",
+      "tag": "div",
+      "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
+    },
+    {
+      "location": "src/components/WorkspaceHeader.jsx:325",
+      "tag": "div",
+      "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+    },
+    {
+      "location": "src/components/WorkspaceHeader.jsx:492",
+      "tag": "div",
+      "className": "absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50"
+    },
+    {
+      "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:36",
+      "tag": "div",
+      "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
+    }
+  ],
+  "manualIconButtons": [],
+  "headingStyles": [],
+  "sharedChromeOverrides": [],
+  "localSharedNameCollisions": []
+}

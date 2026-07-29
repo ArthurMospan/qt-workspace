@@ -10,7 +10,8 @@
       "mcp__plugin_vercel_vercel__list_projects",
       "mcp__plugin_vercel_vercel__list_deployments",
       "Read(//c/Users/Arthu/QuickTeam/qt/**)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "PowerShell(npm run test:unit 2>&1)"
     ]
   }
 }

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, X } from 'lucide-react';
 import AuthLayout from '@/components/AuthLayout';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { Counter } from '@/components/ui';
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
@@ -41,9 +42,12 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
           )}
         </div>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 z-20 min-w-[25px] h-[25px] px-1.5 rounded-full bg-white border-[3px] border-[#171717] text-[#171717] text-[10px] font-bold flex items-center justify-center">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <Counter
+            value={unreadCount}
+            size="lg"
+            appearance="inverse-outline"
+            className="absolute -right-1 -top-1 z-20"
+          />
         )}
       </div>
       <div className="flex flex-col items-center min-w-0 w-full text-center mt-2">
@@ -104,11 +108,11 @@ export default function OrgSwitcherScreen({ onClose }) {
   const isExpanding = !!expandingOrg;
 
   return (
-    <div className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-[#f5f5f5]'}`}>
+    <div data-ui-overlay="workspace-mode" className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-[#f5f5f5]'}`}>
       <AuthLayout hideCreateOrg={false} onClose={onClose}>
         
         <div className={`flex flex-col items-center w-full max-w-[800px] transition-opacity duration-300 ${isExpanding ? 'opacity-0' : 'opacity-100'} animate-in slide-in-from-bottom-8 duration-500 pb-16`}>
-          <h1 className="text-[32px] font-bold text-white mb-2 text-center tracking-tight">Оберіть організацію</h1>
+          <h1 className="ui-type-display-title text-white mb-2 text-center tracking-tight">Оберіть організацію</h1>
           <p className="text-[14px] font-medium text-white/50 mb-12 text-center">
             Ви увійшли як {currentUser?.email}
           </p>

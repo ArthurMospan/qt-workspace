@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "kit:scan": "node scripts/scan-kit-usage.mjs",
+    "kit:audit": "node scripts/audit-ui-fidelity.mjs",
     "test": "npm run test:unit",
     "test:unit": "node --test --test-reporter=spec \"tests/!(firestore.rules).test.mjs\"",
     "test:all": "npm run test:unit && npm run test:rules:emulator",
@@ -19,7 +20,10 @@
     "test:qtplus-material-view": "node --test tests/qtplus-material-view.test.mjs",
     "test:secret-box": "node --test tests/secret-box.test.mjs",
     "test:rules": "node --test tests/firestore.rules.test.mjs",
-    "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\""
+    "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\"",
+    "migrate:issue-hierarchy": "node scripts/migrate-issue-hierarchy-v2.mjs",
+    "migrate:calendar-time-visibility": "node scripts/backfill-calendar-time-log-visibility.mjs",
+    "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",

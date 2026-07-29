@@ -97,6 +97,65 @@ export function fieldTimestamp(value) {
   return null;
 }
 
+function firestoreTimestampMillis(value) {
+  if (typeof value?.toMillis === 'function') {
+    const millis = value.toMillis();
+    return Number.isFinite(millis) ? millis : null;
+  }
+  if (
+    Number.isSafeInteger(value?.seconds)
+    && Number.isSafeInteger(value?.nanoseconds)
+  ) {
+    return (value.seconds * 1_000) + Math.floor(value.nanoseconds / 1_000_000);
+  }
+  return null;
+}
+
+function exactFlatRecord(left, right) {
+  if (left == null || right == null) return left == null && right == null;
+  if (
+    typeof left !== 'object'
+    || Array.isArray(left)
+    || typeof right !== 'object'
+    || Array.isArray(right)
+  ) {
+    return false;
+  }
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  return (
+    leftKeys.length === rightKeys.length
+    && leftKeys.every((key, index) => (
+      key === rightKeys[index] && Object.is(left[key], right[key])
+    ))
+  );
+}
+
+export function youTrackImportedWorkLogMatches(current, expected) {
+  if (!current || !expected) return false;
+  const scalarFields = [
+    'issueId',
+    'projectId',
+    'userId',
+    'organizationId',
+    'spentMinutes',
+    'description',
+    'source',
+    'sourceId',
+  ];
+  if (scalarFields.some(field => !Object.is(current[field], expected[field]))) {
+    return false;
+  }
+  const currentLoggedAt = firestoreTimestampMillis(current.loggedAt);
+  const expectedLoggedAt = firestoreTimestampMillis(expected.loggedAt);
+  return (
+    currentLoggedAt !== null
+    && expectedLoggedAt !== null
+    && currentLoggedAt === expectedLoggedAt
+    && exactFlatRecord(current.externalActor, expected.externalActor)
+  );
+}
+
 function findWorkflowId(items, sourceName, fallbacks) {
   const wanted = normalizeMappingKey(sourceName);
   const direct = (items || []).find(item => (
@@ -119,6 +178,14 @@ export function mapYouTrackStatus(sourceName, statuses = []) {
   );
 }
 
+export function filterYouTrackIssuesByStatuses(issues = [], allowedStatusNames) {
+  if (!Array.isArray(allowedStatusNames)) return issues;
+  const allowed = new Set(allowedStatusNames.map(normalizeMappingKey).filter(Boolean));
+  return issues.filter(issue => (
+    allowed.has(normalizeMappingKey(fieldPresentation(youTrackField(issue, 'State'))))
+  ));
+}
+
 export function mapYouTrackPriority(sourceName, priorities = []) {
   const key = normalizeMappingKey(sourceName);
   const fallbacks = /(showstopper|critical|blocker|критич)/u.test(key)
@@ -133,14 +200,18 @@ export function mapYouTrackPriority(sourceName, priorities = []) {
 
 export function mapYouTrackType(sourceName, types = []) {
   const key = normalizeMappingKey(sourceName);
+  const creatableTypes = (types || []).filter(type => type?.id !== 'epic');
   const fallbacks = /(bug|defect|помил|баг)/u.test(key)
     ? ['bug', 'task']
     : /(epic|епік)/u.test(key)
-      ? ['epic', 'feature', 'task']
+      // Epic is a source-system grouping, not a QuickTeam task type. Preserve
+      // the original YouTrack value in import metadata and map the work item to
+      // the closest actionable type instead.
+      ? ['feature', 'task']
       : /(feature|story|функц|істор)/u.test(key)
         ? ['feature', 'task']
         : ['task', 'feature'];
-  return findWorkflowId(types, sourceName, fallbacks);
+  return findWorkflowId(creatableTypes, sourceName, fallbacks);
 }
 
 export function serializeCustomFields(fields) {
@@ -154,15 +225,74 @@ export function serializeCustomFields(fields) {
   }));
 }
 
-export function relationTypeFromYouTrack(linkType = {}, direction = '') {
+export function normalizeYouTrackRelation(linkType = {}, direction = '') {
   const label = normalizeMappingKey(
     direction === 'INWARD'
       ? linkType.targetToSource || linkType.name
       : linkType.sourceToTarget || linkType.name,
   );
-  if (/duplicate/u.test(label)) return 'duplicates';
-  if (/(subtask|parent)/u.test(label)) return 'subtask-of';
-  if (/(blocks|isrequiredfor)/u.test(label)) return 'blocks';
-  if (/(blockedby|dependson|requiredfor)/u.test(label)) return 'is-blocked-by';
-  return 'relates-to';
+  if (/(isduplicatedby|duplicatedby)/u.test(label)) {
+    return { relationType: 'duplicates', reverse: true, hierarchyHint: false };
+  }
+  if (/duplicate/u.test(label)) {
+    return { relationType: 'duplicates', reverse: false, hierarchyHint: false };
+  }
+  // YouTrack hierarchy can be deeper than the deliberately one-level QuickTeam
+  // model and can span projects. Keep it visible as a regular relation and flag
+  // it for review instead of silently constructing an invalid parent chain.
+  if (/(subtask|parent)/u.test(label)) {
+    return { relationType: 'relates-to', reverse: false, hierarchyHint: true };
+  }
+  if (/(blocks|isrequiredfor)/u.test(label)) {
+    return { relationType: 'blocks', reverse: false, hierarchyHint: false };
+  }
+  if (/(blockedby|dependson|requiredfor)/u.test(label)) {
+    return { relationType: 'blocks', reverse: true, hierarchyHint: false };
+  }
+  return { relationType: 'relates-to', reverse: false, hierarchyHint: false };
+}
+
+const YOUTRACK_RELATION_STRENGTH = {
+  blocks: 3,
+  duplicates: 2,
+  'relates-to': 1,
+};
+
+function relationRowTieBreakKey(row) {
+  return [
+    String(row?.sourceExternalId || ''),
+    String(row?.targetExternalId || ''),
+    String(row?.externalRelation || ''),
+    String(row?.targetReadableId || ''),
+  ].join('\u0000');
+}
+
+/**
+ * Selects the one relation QuickTeam may retain for a YouTrack issue pair.
+ *
+ * The comparison is intentionally independent from discovery order. This is
+ * used both while folding one API response and while a reciprocal issue later
+ * enqueues the same pair, so a weaker early `relates-to` can still become a
+ * `blocks` relation before the link phase starts.
+ */
+export function strongestYouTrackRelationRow(left, right) {
+  const candidates = [left, right].filter(Boolean);
+  if (candidates.length === 0) return null;
+
+  const strongestValue = Math.max(...candidates.map(
+    row => YOUTRACK_RELATION_STRENGTH[row?.relationType] || 0,
+  ));
+  const strongest = candidates
+    .filter(row => (YOUTRACK_RELATION_STRENGTH[row?.relationType] || 0) === strongestValue)
+    .sort((a, b) => relationRowTieBreakKey(a).localeCompare(relationRowTieBreakKey(b)));
+  const selected = strongest[0];
+
+  return {
+    ...selected,
+    hierarchyHint: strongest.some(row => row?.hierarchyHint === true),
+  };
+}
+
+export function relationTypeFromYouTrack(linkType = {}, direction = '') {
+  return normalizeYouTrackRelation(linkType, direction).relationType;
 }

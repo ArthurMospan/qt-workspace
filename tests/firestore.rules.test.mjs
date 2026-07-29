@@ -26,6 +26,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'organizations', 'org-a'), { ownerId: 'owner-a', name: 'Org A' });
     await setDoc(doc(db, 'users', 'owner-a'), { name: 'Owner', email: 'owner@example.com' });
     await setDoc(doc(db, 'users', 'member-a'), { name: 'Member', email: 'member@example.com' });
+    await setDoc(doc(db, 'users', 'member-offteam'), { name: 'Off-team member', email: 'offteam@example.com' });
     await setDoc(doc(db, 'orgMemberships', 'org-a_owner-a'), {
       id: 'org-a_owner-a', orgId: 'org-a', userId: 'owner-a', role: 'owner',
     });
@@ -35,11 +36,21 @@ beforeEach(async () => {
     await setDoc(doc(db, 'orgMemberships', 'org-a_member-a'), {
       id: 'org-a_member-a', orgId: 'org-a', userId: 'member-a', role: 'member',
     });
+    await setDoc(doc(db, 'orgMemberships', 'org-a_member-offteam'), {
+      id: 'org-a_member-offteam', orgId: 'org-a', userId: 'member-offteam', role: 'member',
+    });
     await setDoc(doc(db, 'projects', 'project-a'), {
-      organizationId: 'org-a', name: 'Project A', issueCounter: 1, status: 'active',
+      organizationId: 'org-a',
+      name: 'Project A',
+      issueCounter: 1,
+      status: 'active',
+      team: ['owner-a', 'admin-a', 'member-a'],
     });
     await setDoc(doc(db, 'issues', 'issue-a'), {
       organizationId: 'org-a', projectId: 'project-a', title: 'Issue A',
+      spentMinutes: 30,
+      spentMinutesMirrorVersion: 1,
+      timeLogMutationVersion: 1,
     });
     await setDoc(doc(db, 'issues', 'issue-a', 'comments', 'member-comment'), {
       authorId: 'member-a', text: 'Member comment',
@@ -138,11 +149,25 @@ test('owner membership and organization ownership cannot be removed through clie
   await assertFails(updateDoc(doc(ownerDb, 'organizations', 'org-a'), { ownerId: 'member-a' }));
 });
 
-test('only owner or admin can delete an issue', async () => {
+test('issue deletion cannot bypass the hierarchy-aware server route', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   await assertFails(deleteDoc(doc(memberDb, 'issues', 'issue-a')));
-  await assertSucceeds(deleteDoc(doc(adminDb, 'issues', 'issue-a')));
+  await assertFails(deleteDoc(doc(adminDb, 'issues', 'issue-a')));
+});
+
+test('issue execution fields can only be changed by the authoritative status API', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const issueRef = doc(memberDb, 'issues', 'issue-a');
+  await assertSucceeds(updateDoc(issueRef, { title: 'Updated title' }));
+  await assertFails(updateDoc(issueRef, { status: 'done' }));
+  await assertFails(updateDoc(issueRef, { columnId: 'done' }));
+  await assertFails(updateDoc(issueRef, { completedAt: new Date() }));
+  await assertFails(updateDoc(issueRef, { order: 10 }));
+  await assertFails(updateDoc(issueRef, { spentMinutes: 999 }));
+  await assertFails(updateDoc(issueRef, { spentMinutesMirrorVersion: 999 }));
+  await assertFails(updateDoc(issueRef, { timeLogMutationVersion: 999 }));
+  await assertFails(updateDoc(issueRef, { spentMinutesReconciledAt: new Date() }));
 });
 
 test('members cannot create or manage sprints', async () => {
@@ -153,9 +178,9 @@ test('members cannot create or manage sprints', async () => {
   await assertSucceeds(setDoc(doc(adminDb, 'sprints', 'sprint-a'), sprint));
 });
 
-test('a member can create only their own time log and cannot edit another user log', async () => {
+test('task time-log writes are owned by authenticated server APIs', async () => {
   const db = environment.authenticatedContext('member-a').firestore();
-  await assertSucceeds(setDoc(doc(db, 'timeLogs', 'member-log'), {
+  await assertFails(setDoc(doc(db, 'timeLogs', 'member-log'), {
     organizationId: 'org-a', projectId: 'project-a', issueId: 'issue-a',
     userId: 'member-a', spentMinutes: 15,
   }));
@@ -166,22 +191,106 @@ test('a member can create only their own time log and cannot edit another user l
   await assertFails(updateDoc(doc(db, 'timeLogs', 'log-owner'), { spentMinutes: 999 }));
 });
 
-test('calendar time logs keep their event occurrence identity', async () => {
+test('time logs require bounded positive integer minutes and clients cannot forge billing metadata', async () => {
   const db = environment.authenticatedContext('member-a').firestore();
-  const ref = doc(db, 'timeLogs', 'calendar-log');
-  await assertSucceeds(setDoc(ref, {
+  const base = {
     organizationId: 'org-a',
     projectId: 'project-a',
+    issueId: 'issue-a',
+    userId: 'member-a',
+  };
+  await assertFails(setDoc(doc(db, 'timeLogs', 'negative-log'), {
+    ...base,
+    spentMinutes: -15,
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'fractional-log'), {
+    ...base,
+    spentMinutes: 1.5,
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'huge-log'), {
+    ...base,
+    spentMinutes: 525601,
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'forged-billed-log'), {
+    ...base,
+    spentMinutes: 15,
+    invoiceId: 'invoice-a',
+    billedAt: new Date(),
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'orphan-log'), {
+    ...base,
     issueId: '',
+    spentMinutes: 15,
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'task-disguised-as-event'), {
+    ...base,
+    sourceType: 'calendar_event',
     eventId: 'event-a',
     occurrenceStartAt: '2026-07-25T09:00:00.000Z',
-    sourceType: 'calendar_event',
-    userId: 'member-a',
-    spentMinutes: 45,
+    spentMinutes: 15,
   }));
-  await assertSucceeds(updateDoc(ref, { spentMinutes: 50 }));
+});
+
+test('billed time logs are immutable even for their author and organization owner', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'timeLogs', 'billed-log'), {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      issueId: 'issue-a',
+      userId: 'owner-a',
+      spentMinutes: 30,
+      invoiceId: 'invoice-a',
+      billedAt: new Date(),
+    });
+  });
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const billedRef = doc(ownerDb, 'timeLogs', 'billed-log');
+  await assertFails(updateDoc(billedRef, { description: 'Changed' }));
+  await assertFails(updateDoc(billedRef, { invoiceId: deleteField() }));
+  await assertFails(deleteDoc(billedRef));
+});
+
+test('task time logs require a live issue in the same project and organization', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  await assertFails(setDoc(doc(db, 'timeLogs', 'missing-issue-log'), {
+    organizationId: 'org-a', projectId: 'project-a', issueId: 'missing',
+    userId: 'member-a', spentMinutes: 15,
+  }));
+  await assertFails(setDoc(doc(db, 'timeLogs', 'wrong-project-log'), {
+    organizationId: 'org-a', projectId: 'project-b', issueId: 'issue-a',
+    userId: 'member-a', spentMinutes: 15,
+  }));
+
+  await environment.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'issues', 'issue-a'), {
+      deletionPending: true,
+    });
+  });
+  await assertFails(setDoc(doc(db, 'timeLogs', 'deleting-issue-log'), {
+    organizationId: 'org-a', projectId: 'project-a', issueId: 'issue-a',
+    userId: 'member-a', spentMinutes: 15,
+  }));
+});
+
+test('calendar time logs are server-owned and direct clients cannot mutate them', async () => {
+  const db = environment.authenticatedContext('member-a').firestore();
+  const ref = doc(db, 'timeLogs', 'calendar-log');
+  const calendarLog = {
+    organizationId: 'org-a', projectId: 'project-a', issueId: '',
+    eventId: 'event-a', occurrenceStartAt: '2026-07-25T09:00:00.000Z',
+    sourceType: 'calendar_event', eventVisibility: 'team',
+    calendarOrganizerId: 'member-a', userId: 'member-a', spentMinutes: 45,
+  };
+  await assertFails(setDoc(ref, calendarLog));
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'timeLogs', 'calendar-log'), calendarLog);
+  });
+  await assertSucceeds(getDoc(ref));
+  await assertFails(updateDoc(ref, { spentMinutes: 50 }));
   await assertFails(updateDoc(ref, { eventId: 'event-b' }));
   await assertFails(updateDoc(ref, { occurrenceStartAt: '2026-07-26T09:00:00.000Z' }));
+  await assertFails(updateDoc(ref, { sourceType: 'task' }));
+  await assertFails(deleteDoc(ref));
 });
 
 test('authors can delete their own comments but not another authors comments', async () => {
@@ -190,23 +299,266 @@ test('authors can delete their own comments but not another authors comments', a
   await assertFails(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment')));
 });
 
-test('users can delete their own time logs but not another users logs', async () => {
+test('clients cannot delete task time logs, including their own', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
-  await assertSucceeds(setDoc(doc(memberDb, 'timeLogs', 'member-log-delete'), {
-    organizationId: 'org-a', projectId: 'project-a', issueId: 'issue-a',
-    userId: 'member-a', spentMinutes: 10,
-  }));
-  await assertSucceeds(deleteDoc(doc(memberDb, 'timeLogs', 'member-log-delete')));
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'timeLogs', 'member-log-delete'), {
+      organizationId: 'org-a', projectId: 'project-a', issueId: 'issue-a',
+      userId: 'member-a', spentMinutes: 10,
+    });
+  });
+  await assertFails(deleteDoc(doc(memberDb, 'timeLogs', 'member-log-delete')));
   await assertFails(deleteDoc(doc(memberDb, 'timeLogs', 'log-owner')));
 });
 
-test('invoices are owner-only', async () => {
+test('direct time-log creation stays denied throughout project deletion', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const log = {
+    organizationId: 'org-a',
+    projectId: 'project-a',
+    issueId: 'issue-a',
+    userId: 'member-a',
+    spentMinutes: 15,
+  };
+  await assertFails(setDoc(doc(memberDb, 'timeLogs', 'before-project-delete'), log));
+
+  await environment.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'projects', 'project-a'), {
+      deletionPending: true,
+    });
+  });
+  await assertFails(setDoc(doc(memberDb, 'timeLogs', 'after-project-delete'), log));
+});
+
+test('plain members cannot read or write time logs outside their project team', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'private-project'), {
+      organizationId: 'org-a',
+      name: 'Private project',
+      status: 'active',
+      team: ['owner-a'],
+    });
+    await setDoc(doc(db, 'issues', 'private-issue'), {
+      organizationId: 'org-a',
+      projectId: 'private-project',
+      title: 'Private issue',
+    });
+    await setDoc(doc(db, 'timeLogs', 'private-log'), {
+      organizationId: 'org-a',
+      projectId: 'private-project',
+      issueId: 'private-issue',
+      userId: 'owner-a',
+      spentMinutes: 30,
+    });
+  });
   const memberDb = environment.authenticatedContext('member-a').firestore();
   const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  await assertFails(getDoc(doc(memberDb, 'timeLogs', 'private-log')));
+  await assertFails(setDoc(doc(memberDb, 'timeLogs', 'private-member-log'), {
+    organizationId: 'org-a',
+    projectId: 'private-project',
+    issueId: 'private-issue',
+    userId: 'member-a',
+    spentMinutes: 15,
+  }));
+  await assertSucceeds(getDoc(doc(ownerDb, 'timeLogs', 'private-log')));
+});
+
+test('time log queries prove their project or organization-calendar scope', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'timeLogs', 'calendar-project-log'), {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      issueId: '',
+      sourceType: 'calendar_event',
+      eventId: 'event-project',
+      eventVisibility: 'team',
+      calendarOrganizerId: 'member-a',
+      occurrenceStartAt: '2026-07-29T09:00:00.000Z',
+      userId: 'member-a',
+      spentMinutes: 30,
+    });
+    await setDoc(doc(db, 'timeLogs', 'calendar-org-log'), {
+      organizationId: 'org-a',
+      projectId: '',
+      issueId: '',
+      sourceType: 'calendar_event',
+      eventId: 'event-org',
+      eventVisibility: 'team',
+      calendarOrganizerId: 'member-a',
+      occurrenceStartAt: '2026-07-29T11:00:00.000Z',
+      userId: 'member-a',
+      spentMinutes: 45,
+    });
+    await setDoc(doc(db, 'projects', 'query-private-project'), {
+      organizationId: 'org-a',
+      name: 'Query private project',
+      status: 'active',
+      team: ['owner-a'],
+    });
+    await setDoc(doc(db, 'timeLogs', 'query-private-log'), {
+      organizationId: 'org-a',
+      projectId: 'query-private-project',
+      issueId: '',
+      sourceType: 'calendar_event',
+      eventId: 'private-event',
+      eventVisibility: 'private',
+      calendarOrganizerId: 'owner-a',
+      occurrenceStartAt: '2026-07-29T12:00:00.000Z',
+      userId: 'owner-a',
+      spentMinutes: 15,
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const logs = collection(memberDb, 'timeLogs');
+
+  await assertFails(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'project-a'),
+  )));
+  await assertFails(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+    where('issueId', '!=', ''),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'project-a'),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'team'),
+    where('eventId', '==', 'event-project'),
+    where('occurrenceStartAt', '==', '2026-07-29T09:00:00.000Z'),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', ''),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'team'),
+    where('eventId', '==', 'event-org'),
+    where('occurrenceStartAt', '==', '2026-07-29T11:00:00.000Z'),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', ''),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'team'),
+  )));
+  await assertFails(getDoc(doc(memberDb, 'timeLogs', 'query-private-log')));
+  await assertFails(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'private'),
+  )));
+  await assertFails(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+  )));
+});
+
+test('organization calendar time can only be written by the server API', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const ref = doc(memberDb, 'timeLogs', 'calendar-without-project');
+  await assertFails(setDoc(ref, {
+    organizationId: 'org-a',
+    projectId: '',
+    issueId: '',
+    sourceType: 'calendar_event',
+    eventId: 'event-org',
+    eventVisibility: 'team',
+    calendarOrganizerId: 'member-a',
+    occurrenceStartAt: '2026-07-29T11:00:00.000Z',
+    userId: 'member-a',
+    spentMinutes: 45,
+  }));
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'timeLogs', 'calendar-without-project'), {
+      organizationId: 'org-a', projectId: '', issueId: '',
+      sourceType: 'calendar_event', eventId: 'event-org',
+      eventVisibility: 'team', calendarOrganizerId: 'member-a',
+      occurrenceStartAt: '2026-07-29T11:00:00.000Z',
+      userId: 'member-a', spentMinutes: 45,
+    });
+  });
+  await assertSucceeds(getDoc(ref));
+  await assertFails(updateDoc(ref, { spentMinutes: 50 }));
+  await assertFails(deleteDoc(ref));
+});
+
+test('invoices are readable by billing admins but all writes use the server API', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
   const invoice = { organizationId: 'org-a', projectId: 'project-a', total: 100 };
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'invoices', 'invoice-a'), invoice);
+    await setDoc(doc(context.firestore(), 'invoiceTimeLogReservations', 'reservation-a'), {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      timeLogId: 'log-owner',
+      invoiceId: 'invoice-a',
+    });
+    await setDoc(doc(context.firestore(), 'invoiceEstimateReservations', 'estimate-reservation-a'), {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      itemId: 'issue-a',
+      invoiceId: 'invoice-a',
+    });
+    await setDoc(doc(context.firestore(), 'invoiceNumberSequences', 'sequence-a'), {
+      organizationId: 'org-a',
+      year: 2026,
+      counter: 1,
+    });
+  });
+
+  await assertFails(getDoc(doc(memberDb, 'invoices', 'invoice-a')));
+  await assertSucceeds(getDoc(doc(ownerDb, 'invoices', 'invoice-a')));
+  await assertSucceeds(getDoc(doc(adminDb, 'invoices', 'invoice-a')));
   await assertFails(setDoc(doc(memberDb, 'invoices', 'invoice-a'), invoice));
-  await assertSucceeds(setDoc(doc(ownerDb, 'invoices', 'invoice-a'), invoice));
-  assert.ok(true);
+  await assertFails(setDoc(doc(ownerDb, 'invoices', 'invoice-owner-write'), invoice));
+  await assertFails(setDoc(doc(adminDb, 'invoices', 'invoice-admin-write'), invoice));
+  await assertFails(updateDoc(doc(ownerDb, 'invoices', 'invoice-a'), { total: 200 }));
+  await assertFails(deleteDoc(doc(ownerDb, 'invoices', 'invoice-a')));
+  await assertFails(getDoc(doc(ownerDb, 'invoiceTimeLogReservations', 'reservation-a')));
+  await assertFails(setDoc(
+    doc(ownerDb, 'invoiceTimeLogReservations', 'reservation-forged'),
+    {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      timeLogId: 'log-owner',
+      invoiceId: 'invoice-a',
+    },
+  ));
+  await assertFails(getDoc(
+    doc(ownerDb, 'invoiceEstimateReservations', 'estimate-reservation-a'),
+  ));
+  await assertFails(setDoc(
+    doc(ownerDb, 'invoiceEstimateReservations', 'estimate-reservation-forged'),
+    {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      itemId: 'issue-a',
+      invoiceId: 'invoice-a',
+    },
+  ));
+  await assertFails(getDoc(doc(ownerDb, 'invoiceNumberSequences', 'sequence-a')));
+  await assertFails(setDoc(doc(ownerDb, 'invoiceNumberSequences', 'sequence-forged'), {
+    organizationId: 'org-a',
+    year: 2026,
+    counter: 999,
+  }));
 });
 
 test('API keys cannot be read from the private path or written onto the organization document', async () => {
@@ -346,6 +698,319 @@ test('issues and project lifecycle mutations cannot bypass server APIs', async (
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { status: 'archived' }));
   await assertFails(deleteDoc(doc(adminDb, 'projects', 'project-a')));
   await assertSucceeds(updateDoc(doc(adminDb, 'projects', 'project-a'), { name: 'Renamed' }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueCounter: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueLinkVersion: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueHierarchyVersion: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueStatusVersion: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { invoiceMutationVersion: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { timeLogImportVersion: 99 }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { deletionPending: true }));
+});
+
+test('deletion markers freeze nested writes before non-atomic cascades', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const messageRef = doc(memberDb, 'projects', 'project-a', 'messages', 'member-message');
+  const commentRef = doc(memberDb, 'issues', 'issue-a', 'comments', 'pending-comment');
+  const auditRef = doc(memberDb, 'issues', 'issue-a', 'audit', 'pending-audit');
+  const materialRef = doc(memberDb, 'stages', 'stage-a', 'materials', 'material-a');
+
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'stages', 'stage-a'), {
+      projectId: 'project-a',
+      title: 'Stage A',
+    });
+  });
+  await assertSucceeds(setDoc(messageRef, {
+    senderId: 'member-a',
+    text: 'Before deletion',
+  }));
+  await assertSucceeds(setDoc(commentRef, {
+    authorId: 'member-a',
+    text: 'Before deletion',
+  }));
+  await assertSucceeds(setDoc(auditRef, {
+    userId: 'member-a',
+    action: 'before_deletion',
+  }));
+  await assertSucceeds(setDoc(materialRef, {
+    title: 'Before deletion',
+  }));
+
+  await environment.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'projects', 'project-a'), {
+      deletionPending: true,
+    });
+  });
+
+  await assertFails(setDoc(doc(
+    memberDb,
+    'projects',
+    'project-a',
+    'messages',
+    'late-message',
+  ), {
+    senderId: 'member-a',
+    text: 'Too late',
+  }));
+  await assertFails(updateDoc(messageRef, { text: 'Too late' }));
+  await assertFails(deleteDoc(messageRef));
+  await assertFails(setDoc(doc(
+    memberDb,
+    'stages',
+    'stage-a',
+    'materials',
+    'late-material',
+  ), {
+    title: 'Too late',
+  }));
+  await assertFails(updateDoc(materialRef, { title: 'Too late' }));
+  await assertFails(deleteDoc(materialRef));
+  await assertFails(updateDoc(doc(memberDb, 'stages', 'stage-a'), {
+    title: 'Too late',
+  }));
+  await assertFails(setDoc(doc(
+    memberDb,
+    'issues',
+    'issue-a',
+    'comments',
+    'late-comment',
+  ), {
+    authorId: 'member-a',
+    text: 'Too late',
+  }));
+  await assertFails(updateDoc(commentRef, { text: 'Too late' }));
+  await assertFails(deleteDoc(commentRef));
+  await assertFails(setDoc(doc(
+    memberDb,
+    'issues',
+    'issue-a',
+    'audit',
+    'late-audit',
+  ), {
+    userId: 'member-a',
+    action: 'too_late',
+  }));
+  await assertFails(updateDoc(doc(memberDb, 'issues', 'issue-a'), {
+    title: 'Too late',
+  }));
+
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await updateDoc(doc(db, 'projects', 'project-a'), {
+      deletionPending: false,
+    });
+    await updateDoc(doc(db, 'issues', 'issue-a'), {
+      deletionPending: true,
+    });
+  });
+  await assertFails(setDoc(doc(
+    memberDb,
+    'issues',
+    'issue-a',
+    'comments',
+    'issue-late-comment',
+  ), {
+    authorId: 'member-a',
+    text: 'Too late',
+  }));
+  await assertFails(setDoc(doc(
+    memberDb,
+    'issues',
+    'issue-a',
+    'audit',
+    'issue-late-audit',
+  ), {
+    userId: 'member-a',
+    action: 'too_late',
+  }));
+});
+
+test('issue hierarchy and legacy subtasks can only be changed by server APIs', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  await assertFails(updateDoc(doc(memberDb, 'issues', 'issue-a'), {
+    parentIssueId: 'issue-parent',
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'issues', 'issue-a'), {
+    parentEpicId: 'legacy-parent',
+  }));
+  await assertFails(updateDoc(doc(memberDb, 'issues', 'issue-a'), {
+    subtasks: [{ title: 'Обхід API', done: false }],
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'issues', 'issue-a'), {
+    deletionPending: true,
+  }));
+  await assertSucceeds(updateDoc(doc(memberDb, 'issues', 'issue-a'), {
+    title: 'Дозволене редагування',
+  }));
+});
+
+test('clients cannot promote regular issues to epic while legacy epics remain editable', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  await assertFails(updateDoc(doc(memberDb, 'issues', 'issue-a'), { type: 'epic' }));
+
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'issues', 'legacy-epic'), {
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      title: 'Legacy epic',
+      type: 'epic',
+    });
+  });
+  await assertSucceeds(updateDoc(doc(memberDb, 'issues', 'legacy-epic'), {
+    title: 'Edited legacy epic',
+  }));
+  await assertSucceeds(updateDoc(doc(memberDb, 'issues', 'legacy-epic'), {
+    type: 'task',
+  }));
+});
+
+test('issue links are readable but all client writes go through the canonical API', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'issueLinks', 'link-a'), {
+      schemaVersion: 2,
+      organizationId: 'org-a',
+      projectId: 'project-a',
+      sourceIssueId: 'issue-a',
+      targetIssueId: 'issue-b',
+      relationType: 'blocks',
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  await assertSucceeds(getDoc(doc(memberDb, 'issueLinks', 'link-a')));
+  await assertFails(setDoc(doc(memberDb, 'issueLinks', 'forged'), {
+    schemaVersion: 2,
+    organizationId: 'org-a',
+    projectId: 'project-a',
+    sourceIssueId: 'issue-a',
+    targetIssueId: 'issue-b',
+    relationType: 'blocks',
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'issueLinks', 'link-a'), {
+    relationType: 'duplicates',
+  }));
+  await assertFails(deleteDoc(doc(adminDb, 'issueLinks', 'link-a')));
+});
+
+test('project-scoped data follows live team membership while admins retain access', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'scoped-project'), {
+      organizationId: 'org-a',
+      name: 'Scoped project',
+      status: 'active',
+      team: ['member-a'],
+    });
+    await setDoc(doc(db, 'projects', 'scoped-project', 'messages', 'message-a'), {
+      senderId: 'member-a',
+      text: 'Scoped message',
+    });
+    await setDoc(doc(db, 'issues', 'scoped-issue'), {
+      organizationId: 'org-a',
+      projectId: 'scoped-project',
+      title: 'Scoped issue',
+      type: 'task',
+    });
+    await setDoc(doc(db, 'issues', 'scoped-issue', 'comments', 'comment-a'), {
+      authorId: 'member-a',
+      text: 'Scoped comment',
+    });
+    await setDoc(doc(db, 'issues', 'scoped-issue', 'audit', 'audit-a'), {
+      userId: 'member-a',
+      action: 'created',
+    });
+    await setDoc(doc(db, 'stages', 'scoped-stage'), {
+      projectId: 'scoped-project',
+      title: 'Scoped stage',
+    });
+    await setDoc(doc(db, 'stages', 'scoped-stage', 'materials', 'material-a'), {
+      title: 'Scoped material',
+    });
+    await setDoc(doc(db, 'issueLinks', 'scoped-link'), {
+      schemaVersion: 2,
+      organizationId: 'org-a',
+      projectId: 'scoped-project',
+      sourceIssueId: 'scoped-issue',
+      targetIssueId: 'scoped-issue-b',
+      relationType: 'relates-to',
+    });
+  });
+
+  const offTeamDb = environment.authenticatedContext('member-offteam').firestore();
+  const teamDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const issueRef = db => doc(db, 'issues', 'scoped-issue');
+  const commentRef = db => doc(db, 'issues', 'scoped-issue', 'comments', 'comment-a');
+  const auditRef = db => doc(db, 'issues', 'scoped-issue', 'audit', 'audit-a');
+  const stageRef = db => doc(db, 'stages', 'scoped-stage');
+  const materialRef = db => doc(db, 'stages', 'scoped-stage', 'materials', 'material-a');
+  const linkRef = db => doc(db, 'issueLinks', 'scoped-link');
+  const messageRef = db => doc(db, 'projects', 'scoped-project', 'messages', 'message-a');
+
+  await assertFails(getDoc(issueRef(offTeamDb)));
+  await assertFails(getDocs(query(
+    collection(offTeamDb, 'issues'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'scoped-project'),
+  )));
+  await assertFails(updateDoc(issueRef(offTeamDb), { title: 'Forbidden' }));
+  await assertFails(getDoc(commentRef(offTeamDb)));
+  await assertFails(getDoc(auditRef(offTeamDb)));
+  await assertFails(getDoc(stageRef(offTeamDb)));
+  await assertFails(updateDoc(stageRef(offTeamDb), { title: 'Forbidden' }));
+  await assertFails(getDoc(materialRef(offTeamDb)));
+  await assertFails(updateDoc(materialRef(offTeamDb), { title: 'Forbidden' }));
+  await assertFails(getDoc(linkRef(offTeamDb)));
+  await assertFails(getDoc(messageRef(offTeamDb)));
+  await assertFails(setDoc(
+    doc(offTeamDb, 'projects', 'scoped-project', 'messages', 'message-b'),
+    { senderId: 'member-offteam', text: 'Forbidden' },
+  ));
+
+  await assertSucceeds(getDoc(issueRef(teamDb)));
+  await assertSucceeds(getDocs(query(
+    collection(teamDb, 'issues'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'scoped-project'),
+  )));
+  await assertSucceeds(updateDoc(issueRef(teamDb), { title: 'Team edit' }));
+  await assertSucceeds(getDoc(commentRef(teamDb)));
+  await assertSucceeds(getDoc(auditRef(teamDb)));
+  await assertSucceeds(getDoc(stageRef(teamDb)));
+  await assertSucceeds(updateDoc(stageRef(teamDb), { title: 'Team stage edit' }));
+  await assertSucceeds(getDoc(materialRef(teamDb)));
+  await assertSucceeds(updateDoc(materialRef(teamDb), { title: 'Team material edit' }));
+  await assertSucceeds(getDoc(linkRef(teamDb)));
+  await assertSucceeds(getDoc(messageRef(teamDb)));
+  await assertSucceeds(getDoc(issueRef(adminDb)));
+  await assertSucceeds(getDoc(issueRef(ownerDb)));
+});
+
+test('projectless issues are restricted to organization owners and admins', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'issues', 'projectless-issue'), {
+      organizationId: 'org-a',
+      projectId: null,
+      title: 'Projectless issue',
+      type: 'task',
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+
+  await assertFails(getDoc(doc(memberDb, 'issues', 'projectless-issue')));
+  await assertFails(updateDoc(doc(memberDb, 'issues', 'projectless-issue'), {
+    title: 'Forbidden',
+  }));
+  await assertSucceeds(getDoc(doc(adminDb, 'issues', 'projectless-issue')));
+  await assertSucceeds(getDoc(doc(ownerDb, 'issues', 'projectless-issue')));
+  await assertSucceeds(updateDoc(doc(ownerDb, 'issues', 'projectless-issue'), {
+    title: 'Owner edit',
+  }));
 });
 
 test('project reads are gated by team membership for plain members', async () => {
@@ -357,6 +1022,9 @@ test('project reads are gated by team membership for plain members', async () =>
     await setDoc(doc(db, 'projects', 'project-foreign'), {
       organizationId: 'org-a', name: 'Foreign Project', status: 'active', team: ['owner-a'],
     });
+    await setDoc(doc(db, 'projects', 'project-legacy'), {
+      organizationId: 'org-a', name: 'Legacy Project', status: 'active',
+    });
   });
   const memberDb = environment.authenticatedContext('member-a').firestore();
   const adminDb = environment.authenticatedContext('admin-a').firestore();
@@ -366,7 +1034,8 @@ test('project reads are gated by team membership for plain members', async () =>
   await assertSucceeds(getDoc(doc(memberDb, 'projects', 'project-team')));
   await assertFails(getDoc(doc(memberDb, 'projects', 'project-foreign')));
   // …and a legacy project with no `team` field is invisible until backfilled.
-  await assertFails(getDoc(doc(memberDb, 'projects', 'project-a')));
+  await assertFails(getDoc(doc(memberDb, 'projects', 'project-legacy')));
+  await assertSucceeds(getDoc(doc(memberDb, 'projects', 'project-a')));
 
   // Owners and admins see every project regardless of team membership.
   await assertSucceeds(getDoc(doc(adminDb, 'projects', 'project-foreign')));
@@ -374,25 +1043,20 @@ test('project reads are gated by team membership for plain members', async () =>
   await assertSucceeds(getDoc(doc(ownerDb, 'projects', 'project-foreign')));
 });
 
-test('a member on NO project team can still load the workspace without a permission error', async () => {
-  // Reproduces the reported "invited member" case: valid org member, added to
-  // no project. Their team-scoped projects query must return empty (not denied),
-  // and the org-wide issues query the home page runs must be allowed.
+test('a member on no project team gets an empty project list and cannot query all issues', async () => {
   await environment.withSecurityRulesDisabled(async context => {
     const db = context.firestore();
     await setDoc(doc(db, 'projects', 'proj-owner-only'), {
       organizationId: 'org-a', name: 'Owner Only', status: 'active', team: ['owner-a'],
     });
   });
-  const memberDb = environment.authenticatedContext('member-a').firestore();
-  // Team-scoped projects query (what the client runs for a member) → empty, allowed.
+  const memberDb = environment.authenticatedContext('member-offteam').firestore();
   await assertSucceeds(getDocs(query(
     collection(memberDb, 'projects'),
     where('organizationId', '==', 'org-a'),
-    where('team', 'array-contains', 'member-a'),
+    where('team', 'array-contains', 'member-offteam'),
   )));
-  // Org-wide issues query (workspace home) → allowed for any org member.
-  await assertSucceeds(getDocs(query(
+  await assertFails(getDocs(query(
     collection(memberDb, 'issues'),
     where('organizationId', '==', 'org-a'),
   )));
@@ -452,6 +1116,27 @@ test('an org admin can flip the QuickTeam+ org flag', async () => {
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   await assertSucceeds(setDoc(doc(adminDb, 'organizations', 'org-a', 'settings', 'integrations'), {
     qtPortalEnabled: true,
+  }));
+});
+
+test('workflow settings are readable by members but writable only through the server API', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(
+      doc(context.firestore(), 'organizations', 'org-a', 'settings', 'workflow'),
+      { statuses: [{ id: 'backlog', label: 'Беклог' }] },
+    );
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const workflowPath = ['organizations', 'org-a', 'settings', 'workflow'];
+
+  await assertSucceeds(getDoc(doc(memberDb, ...workflowPath)));
+  await assertSucceeds(getDoc(doc(adminDb, ...workflowPath)));
+  await assertFails(setDoc(doc(memberDb, ...workflowPath), {
+    statuses: [{ id: 'done', label: 'Готово', isDone: true }],
+  }));
+  await assertFails(setDoc(doc(adminDb, ...workflowPath), {
+    statuses: [{ id: 'done', label: 'Готово', isDone: true }],
   }));
 });
 

@@ -7,10 +7,13 @@ export default function FormGroup({
   label,
   error,
   required = false,
+  gap = 'sm',
   className = '',
 }) {
+  const gapClass = gap === 'md' ? 'gap-[8px]' : 'gap-[6px]';
+
   return (
-    <div className={`flex flex-col gap-[6px] ${className}`}>
+    <div className={`flex flex-col ${gapClass} ${className}`}>
       {label && (
         <Label required={required}>
           {label}

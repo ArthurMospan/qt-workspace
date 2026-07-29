@@ -4,6 +4,7 @@ import { Plug, ExternalLink, MoreVertical, Link2, Unlink } from 'lucide-react';
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import IconAction from '@/components/ui/IconAction';
 import ContextMenu from '@/components/ui/ContextMenu';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { usePortalSession } from '@/lib/portal/usePortalSession';
@@ -16,9 +17,9 @@ import EmptyState from '@/components/ui/Feedback/EmptyState';
 
 function LinkedRow({ name, stale, menuItems, href }) {
   return (
-    <div className="flex flex-col gap-1 rounded-[12px] bg-white p-3">
+    <div data-ui-surface="nested-card" data-ui-padding="sm" className="ui-surface flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 truncate text-[18px] font-bold tracking-tight text-ink">
+        <h2 className="ui-type-section-title min-w-0 flex-1 truncate tracking-tight text-ink">
           {name || 'Без назви'}
         </h2>
         {href && (
@@ -37,13 +38,13 @@ function LinkedRow({ name, stale, menuItems, href }) {
           <div className="ml-auto shrink-0">
             <ContextMenu
               trigger={
-                <button
-                  type="button"
-                  aria-label="Дії з привʼязкою"
-                  className="w-7 h-7 rounded-full text-muted flex items-center justify-center hover:bg-canvas hover:text-ink transition-colors"
-                >
-                  <MoreVertical size={15} />
-                </button>
+                <IconAction
+                  label="Дії з привʼязкою"
+                  icon={MoreVertical}
+                  iconSize={15}
+                  size="sm"
+                  shape="circle"
+                />
               }
               items={menuItems}
             />
@@ -160,7 +161,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             header={<LinkedRow name={view.linkedName} href={portalProjectUrl} />}
           />
         ) : (
-          <div className="rounded-[16px] bg-canvas p-4">
+          <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface">
             <LinkedRow name={view.linkedName} href={portalProjectUrl} />
           </div>
         )}
@@ -216,7 +217,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             />
           )}
           {view.staleAccess && (
-            <div className="rounded-[16px] bg-canvas p-4">
+            <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface">
               <LinkedRow
                 name={view.linkedName}
                 stale
@@ -226,7 +227,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             </div>
           )}
           {!portalUser && !view.staleAccess && (
-            <div className="rounded-[16px] bg-canvas p-4">
+            <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface">
               <LinkedRow
                 name={view.linkedName}
                 href={portalProjectUrl}
@@ -244,7 +245,8 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           description="Підключіть акаунт, щоб привʼязати проєкт і працювати з матеріалами та чатом."
           action="Підключити QuickTeam+"
           onAction={connectAccount}
-          className="min-h-[280px] rounded-[12px] bg-white"
+          context="inset"
+          surface="card"
         />
       ) : sessionError === 'grant_invalid' ? (
         <EmptyState
@@ -253,7 +255,8 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           description="Доступ до QuickTeam+ більше не дійсний. Підключіть акаунт заново."
           action="Підключити заново"
           onAction={connectAccount}
-          className="min-h-[280px] rounded-[12px] bg-white"
+          context="inset"
+          surface="card"
         />
       ) : sessionError ? (
         <p className="text-[13px] text-muted">Не вдалося зʼєднатися з QuickTeam+. Спробуйте пізніше.</p>
@@ -262,25 +265,31 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
           icon={Plug}
           title="Немає доступних проєктів"
           description="У підключеному акаунті QuickTeam+ поки немає проєктів, які можна прив’язати."
-          className="min-h-[280px] rounded-[12px] bg-white"
+          context="inset"
+          surface="card"
         />
       ) : (
-        <div className="max-w-[560px] flex flex-col gap-3">
-          <p className="text-[13px] text-muted">
-            Оберіть проєкт QuickTeam+, щоб привʼязати його до цього проєкту.
-          </p>
-          <div className="flex items-center gap-2">
+        <EmptyState
+          icon={Link2}
+          title="Оберіть проєкт QuickTeam+"
+          description="Привʼяжіть відповідний клієнтський проєкт, щоб бачити тут етапи, матеріали та чат."
+          context="flexible"
+          surface="card"
+          className="w-full"
+        >
+          <div className="mx-auto flex w-full max-w-[520px] flex-col items-stretch gap-2 sm:flex-row">
             <Select
               value={selectValue}
               onChange={setPendingId}
               options={selectOptions}
               placeholder="Оберіть проєкт QuickTeam+"
+              className="min-w-0 flex-1 text-left"
             />
             <Button style="primary" size="lg" onClick={doLink} disabled={saving || !selectValue}>
               Привʼязати
             </Button>
           </div>
-        </div>
+        </EmptyState>
       )}
     </div>
   );

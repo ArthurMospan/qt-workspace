@@ -1,0 +1,122 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+import {
+  emptyBillingMemberState,
+  reconcileBillingMemberState,
+  setBillingMemberRate,
+} from '../src/lib/utils/billingProjectState.mjs';
+
+const read = path => readFile(new URL(path, import.meta.url), 'utf8');
+
+test('member rate edits stay in one project and B-only assignees initialize cleanly', () => {
+  const positions = [
+    { id: 'developer', hourlyRate: 100 },
+    { id: 'qa', hourlyRate: 120 },
+  ];
+  const projectA = 'org-1:project-a';
+  const projectB = 'org-1:project-b';
+
+  let state = reconcileBillingMemberState({
+    state: emptyBillingMemberState(),
+    projectKey: projectA,
+    members: [{ id: 'a-1', positionId: 'developer' }],
+    positions,
+  });
+  assert.deepEqual(state.rates, { 'a-1': 100 });
+
+  state = setBillingMemberRate(state, {
+    projectKey: projectA,
+    uid: 'a-1',
+    rate: 175,
+  });
+  state = reconcileBillingMemberState({
+    state,
+    projectKey: projectA,
+    members: [
+      { id: 'a-1', positionId: 'developer' },
+      { id: 'a-2', hourlyRate: 80 },
+    ],
+    positions,
+  });
+  assert.deepEqual(state.rates, { 'a-1': 175, 'a-2': 80 });
+
+  state = reconcileBillingMemberState({
+    state,
+    projectKey: projectB,
+    members: [{ id: 'b-only', positionId: 'qa' }],
+    positions,
+  });
+  assert.deepEqual(state.rates, { 'b-only': 120 });
+  assert.deepEqual(state.presets, { 'b-only': 'qa' });
+  assert.deepEqual(state.touchedRateIds, []);
+  assert.equal(Object.hasOwn(state.rates, 'a-1'), false);
+  assert.equal(Object.hasOwn(state.rates, 'a-2'), false);
+});
+
+test('position refresh updates defaults but never overwrites an in-project edit', () => {
+  const projectKey = 'org-1:project-b';
+  const member = { id: 'b-only', positionId: 'qa' };
+  let state = reconcileBillingMemberState({
+    state: emptyBillingMemberState(),
+    projectKey,
+    members: [member],
+    positions: [{ id: 'qa', hourlyRate: 120 }],
+  });
+
+  state = reconcileBillingMemberState({
+    state,
+    projectKey,
+    members: [member],
+    positions: [{ id: 'qa', hourlyRate: 140 }],
+  });
+  assert.equal(state.rates['b-only'], 140);
+
+  state = setBillingMemberRate(state, {
+    projectKey,
+    uid: 'b-only',
+    rate: 200,
+  });
+  state = reconcileBillingMemberState({
+    state,
+    projectKey,
+    members: [member],
+    positions: [{ id: 'qa', hourlyRate: 160 }],
+  });
+  assert.equal(state.rates['b-only'], 200);
+});
+
+test('BillingTab hides and clears project-scoped invoice and rate state on switch', async () => {
+  const billing = await read('../src/components/workspace/BillingTab.jsx');
+
+  assert.match(
+    billing,
+    /const billingProjectKey = `\$\{activeOrgId \|\| ''\}:\$\{projectId \|\| ''\}`/,
+  );
+  assert.match(
+    billing,
+    /const savedInvoices = savedInvoiceState\.projectKey === billingProjectKey[\s\S]{0,100}: EMPTY_INVOICES/,
+  );
+  assert.match(
+    billing,
+    /const invoicePreview = invoicePreviewState\?\.projectKey === billingProjectKey[\s\S]{0,100}: null/,
+  );
+  assert.match(
+    billing,
+    /previous\.projectKey !== billingProjectKey[\s\S]{0,100}emptyBillingMemberState\(billingProjectKey\)/,
+  );
+  assert.match(
+    billing,
+    /if \(logsLoading\) return previous;[\s\S]{0,160}reconcileBillingMemberState/,
+  );
+  assert.match(
+    billing,
+    /previous\.projectKey === billingProjectKey[\s\S]{0,120}\{ projectKey: billingProjectKey, invoices: \[\] \}/,
+  );
+  assert.match(
+    billing,
+    /previous\?\.projectKey === billingProjectKey \? previous : null/,
+  );
+  assert.doesNotMatch(billing, /\bsetSavedInvoices\b|\bsetMemberRates\b|\bsetMemberPresets\b/);
+});

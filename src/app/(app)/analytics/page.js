@@ -36,6 +36,12 @@ import {
   filterTeamTimeLogs,
   memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import {
+  selectActionableIssues,
+  sumRawTimeLogMinutes,
+} from '@/lib/utils/issueAccounting.mjs';
+import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -45,7 +51,7 @@ function fmtH(min) {
 }
 
 function SectionTitle({ children }) {
-  return <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3">{children}</h2>;
+  return <h2 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-3">{children}</h2>;
 }
 
 function FilterDivider() {
@@ -55,7 +61,18 @@ function FilterDivider() {
 // ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
 // Детальні графіки активності/трендів живуть у «Продуктивності»,
 // а навантаження по людях — у «Команді»; тут їх свідомо немає.
-function AnalyticsContent({ projects, issues, timeLogs, events, loading, period, onTabChange }) {
+function AnalyticsContent({
+  projects,
+  issues,
+  issueReferenceIssues,
+  issueLinks,
+  timeLogs,
+  events,
+  members,
+  loading,
+  period,
+  onTabChange,
+}) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const firstStatusId = statuses?.[0]?.id;
@@ -100,7 +117,19 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
     const total      = issues.length;
     const done       = issues.filter(i => doneSet.has(i.columnId || i.status)).length;
     const inProgress = issues.filter(i => i.columnId === 'in-progress').length;
-    const blockers   = issues.filter(i => i.priority === 'blocker' && !doneSet.has(i.columnId || i.status)).length;
+    const blockerPriority = issues.filter(i => (
+      i.priority === 'blocker'
+      && !doneSet.has(i.columnId || i.status)
+    )).length;
+    const dependencyBlocked = issues.filter(i => (
+      !doneSet.has(i.columnId || i.status)
+      && openBlockerIssues(
+        i.id,
+        issueReferenceIssues,
+        issueLinks,
+        doneSet,
+      ).length > 0
+    )).length;
 
     const overdue = issues.filter(i => {
       const due = parseDueDate(i.dueDate);
@@ -114,7 +143,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
     }).length;
 
     const periodLogs = timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
-    const periodMin  = periodLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
+    const periodMin = sumRawTimeLogMinutes(periodLogs);
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
@@ -124,7 +153,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
         const due = parseDueDate(i.dueDate);
         return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
       }).length;
-      const pMin = periodLogs.filter(l => l.projectId === p.id).reduce((s, l) => s + (l.spentMinutes || 0), 0);
+      const pMin = sumRawTimeLogMinutes(periodLogs.filter(l => l.projectId === p.id));
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
     }).sort((a, b) => b.total - a.total);
@@ -138,11 +167,22 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
     const unestimated = issues.filter(i => !i.estimateMinutes && (i.columnId || i.status) !== firstStatusId && !doneSet.has(i.columnId || i.status)).length;
 
     return {
-      total, done, inProgress, blockers, overdue, recentDone, periodMin,
+      total, done, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
       byProject, byStatus, maxStatus, noAssignee, unestimated,
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
-  }, [issues, timeLogs, projects, period, statuses, doneSet, firstStatusId, now]);
+  }, [
+    doneSet,
+    firstStatusId,
+    issueLinks,
+    issueReferenceIssues,
+    issues,
+    now,
+    period,
+    projects,
+    statuses,
+    timeLogs,
+  ]);
 
   if (loading) {
     return (
@@ -194,7 +234,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
 
         {/* Statuses + Projects */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <SectionTitle>По статусах</SectionTitle>
             <div className="flex flex-col gap-[10px]">
               {stats.byStatus.map(({ id, label, color, count }) => (
@@ -209,7 +249,7 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
             </div>
           </Card>
 
-          <Card variant="white" padding="lg" className="md:col-span-2 !border-none">
+          <Card preset="borderless" padding="lg" className="md:col-span-2">
             <SectionTitle>По проєктах</SectionTitle>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -259,34 +299,45 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
         {/* Overdue + Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
-            <Card variant="white" padding="lg" className="!border-none">
+            <Card preset="borderless" padding="lg">
               <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={13} className="text-red-500" />
-                <SectionTitle>Прострочені ({stats.overdue.length})</SectionTitle>
+                <AlertTriangle size={13} className="shrink-0 text-red-500" />
+                <h2 className="ui-type-eyebrow uppercase tracking-wider text-muted">
+                  Прострочені ({stats.overdue.length})
+                </h2>
               </div>
+              <div className="flex flex-col gap-2">
               {stats.overdue.slice(0, 6).map(issue => {
-                const due  = issue.dueDate?.toDate ? issue.dueDate.toDate() : new Date(issue.dueDate);
-                const days = Math.floor((now - due.getTime()) / 86400000);
                 const proj = projects.find(p => p.id === issue.projectId);
                 return (
-                  <Link href={`/${issue.projectId}/issue/${issue.id}`} key={issue.id} className="py-[10px] flex items-start justify-between gap-3 border-b border-[#f0f0f0] hover:bg-[#f9f9f9] transition-colors rounded-lg px-2 -mx-2 last:border-0">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-ink truncate">{issue.title}</p>
-                      <p className="text-[10px] text-muted">{proj?.name} · {issue.issueKey}</p>
-                    </div>
-                    <span className="text-[11px] font-bold text-red-500 shrink-0 mt-0.5">+{days}д</span>
-                  </Link>
+                  <TaskRow
+                    key={issue.id}
+                    issue={issue}
+                    issues={issueReferenceIssues}
+                    members={members}
+                    projectId={issue.projectId}
+                    projectName={proj?.name}
+                    showProjectName
+                  />
                 );
               })}
+              </div>
             </Card>
           )}
-          <Card variant="white" padding="lg" className="!border-none">
+          <Card preset="borderless" padding="lg">
             <SectionTitle>Інсайти</SectionTitle>
             <div className="flex flex-col gap-3">
-              {stats.blockers > 0 && (
+              {stats.dependencyBlocked > 0 && (
                 <Alert
                   variant="error"
-                  title={`${stats.blockers} Blocker-завдання`}
+                  title={`${stats.dependencyBlocked} завдань заблоковано`}
+                  description="Їх стримують незавершені залежності"
+                />
+              )}
+              {stats.blockerPriority > 0 && (
+                <Alert
+                  variant="warning"
+                  title={`${stats.blockerPriority} завдань із пріоритетом «Блокер»`}
                   description="Потребують негайної уваги"
                 />
               )}
@@ -308,7 +359,10 @@ function AnalyticsContent({ projects, issues, timeLogs, events, loading, period,
                   title={`${stats.inProgress} завдань в роботі`}
                 />
               )}
-              {stats.blockers === 0 && stats.noAssignee === 0 && stats.overdue.length === 0 && (
+              {stats.dependencyBlocked === 0
+                && stats.blockerPriority === 0
+                && stats.noAssignee === 0
+                && stats.overdue.length === 0 && (
                 <Alert
                   variant="success"
                   title="Все виглядає добре!"
@@ -334,8 +388,14 @@ export default function WorkspaceAnalyticsPage() {
   const canSeeTeamTimesheet = canSeeBilling;
 
   const { members } = useOrganization();
+  const { priorities, types } = useWorkflowConfig();
 
-  const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(p => p.id));
+  const {
+    issues,
+    timeLogs,
+    issueLinks,
+    loading,
+  } = useWorkspaceAnalytics(projects.map(p => p.id));
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
 
   // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
@@ -418,6 +478,14 @@ export default function WorkspaceAnalyticsPage() {
       return true;
     });
   }, [issues, searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  const actionableIssueIds = useMemo(
+    () => new Set(selectActionableIssues(issues).map(issue => issue.id)),
+    [issues],
+  );
+  const analyticsIssues = useMemo(
+    () => filteredIssues.filter(issue => actionableIssueIds.has(issue.id)),
+    [actionableIssueIds, filteredIssues],
+  );
 
   const visibleProjects = useMemo(() => {
     if (!searchQuery) return projects;
@@ -483,6 +551,12 @@ export default function WorkspaceAnalyticsPage() {
     () => filterTeamIssues(issues, projectFilters, teamMemberFilter),
     [issues, projectFilters, teamMemberFilter],
   );
+  const teamHierarchyIssues = useMemo(
+    () => issues.filter(issue => (
+      projectFilters.length === 0 || projectFilters.includes(issue.projectId)
+    )),
+    [issues, projectFilters],
+  );
   const teamTimeLogs = useMemo(
     () => filterTeamTimeLogs(timeLogs, projectFilters, teamMemberFilter),
     [projectFilters, teamMemberFilter, timeLogs],
@@ -499,7 +573,7 @@ export default function WorkspaceAnalyticsPage() {
   // Рахунок — один конкретний проєкт
   const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = projects.find(p => p.id === billingProjectId) || projects[0];
-  const billingIssues  = filteredIssues.filter(i => i.projectId === (billingProject?.id));
+  const billingIssues = issues.filter(i => i.projectId === billingProject?.id);
 
   const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
 
@@ -522,6 +596,7 @@ export default function WorkspaceAnalyticsPage() {
             activeTab === 'billing' ? (
               <FilterBar>
                 <Select
+                  filterRole="project"
                   value={billingProject?.id || ''}
                   onChange={setBillingProjectId}
                   options={projects.map(p => ({ value: p.id, label: p.name }))}
@@ -533,11 +608,12 @@ export default function WorkspaceAnalyticsPage() {
                 <FilterBar>
                   {canSeeTeamTimesheet && (
                     <Select
+                      filterRole="member"
                       value={effectiveTsMember}
                       onChange={setTsMember}
                       options={[
                         { value: 'all', label: 'Вся команда' },
-                        ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email })),
+                        ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m })),
                       ]}
                       variant="ghost"
                     />
@@ -548,7 +624,7 @@ export default function WorkspaceAnalyticsPage() {
                     options={projects.map(p => ({ value: p.id, label: p.name }))}
                     placeholder="Всі проєкти"
                     searchPlaceholder="Пошук проєкту..."
-                    className="w-[200px]"
+                    filterRole="project"
                     variant="ghost"
                   />
                   <FilterDivider />
@@ -574,10 +650,11 @@ export default function WorkspaceAnalyticsPage() {
                   options={projects.map(p => ({ value: p.id, label: p.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту..."
-                  className="w-[200px]"
+                  filterRole="project"
                   variant="ghost"
                 />
                 <Select
+                  filterRole="member"
                   value={teamMemberFilter}
                   onChange={selectTeamMember}
                   options={[
@@ -585,6 +662,7 @@ export default function WorkspaceAnalyticsPage() {
                     ...members.map(member => ({
                       value: member.id || member.uid,
                       label: member.name || member.email,
+                      user: member,
                     })),
                   ]}
                   variant="ghost"
@@ -600,40 +678,46 @@ export default function WorkspaceAnalyticsPage() {
                   options={projects.map(p => ({ value: p.id, label: p.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту..."
-                  className="w-[200px]"
+                  filterRole="project"
                   variant="ghost"
                 />
                 <Select
+                  filterRole="member"
                   value={assigneeFilter}
                   onChange={setAssigneeFilter}
                   options={[
                     { value: 'all', label: 'Всі виконавці' },
                     { value: 'unassigned', label: 'Без виконавця' },
-                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                    ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m }))
                   ]}
                   variant="ghost"
                 />
                 <Select
+                  filterRole="priority"
                   value={priorityFilter}
                   onChange={setPriorityFilter}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                    { value: 'high', label: 'High', dotColor: '#f97316' },
-                    { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                    { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
+                    ...priorities.map(priority => ({
+                      value: priority.id,
+                      label: priority.label,
+                      dotColor: priority.color,
+                    })),
                   ]}
                   variant="ghost"
                 />
                 <Select
+                  filterRole="type"
                   value={typeFilter}
                   onChange={setTypeFilter}
                   options={[
                     { value: 'all', label: 'Всі типи' },
-                    { value: 'epic', label: 'Epic' },
-                    { value: 'feature', label: 'Feature' },
-                    { value: 'task', label: 'Task' },
-                    { value: 'bug', label: 'Bug' },
+                    ...types
+                      .map(type => ({
+                        value: type.id,
+                        label: type.label,
+                        dotColor: type.color,
+                      })),
                   ]}
                   variant="ghost"
                 />
@@ -646,13 +730,16 @@ export default function WorkspaceAnalyticsPage() {
 
         {/* Content — сіра панель з відступами і скругленнями, як на сторінці
             проєктів; на ній білі картки без обводок */}
-        <Surface variant="panel" padding="lg" className="flex-1 flex flex-col min-h-[420px]">
+        <Surface preset="panel" padding="lg" className="flex-1 flex flex-col min-h-[420px]">
         {activeTab === 'overview' && (
           <AnalyticsContent
             projects={visibleProjects}
-            issues={filteredIssues}
+            issues={analyticsIssues}
+            issueReferenceIssues={issues}
+            issueLinks={issueLinks}
             timeLogs={filteredTimeLogs}
             events={calendarEvents}
+            members={members}
             loading={loading || calendarLoading}
             period={period}
             onTabChange={setActiveTab}
@@ -677,13 +764,14 @@ export default function WorkspaceAnalyticsPage() {
         )}
 
         {activeTab === 'velocity' && (
-          <VelocityTab issues={filteredIssues} projects={visibleProjects} period={period} />
+          <VelocityTab issues={analyticsIssues} projects={visibleProjects} period={period} />
         )}
 
         {activeTab === 'workload' && (
           <WorkloadTab
             members={members}
             issues={teamIssues}
+            hierarchyIssues={teamHierarchyIssues}
             timeLogs={teamTimeLogs}
             events={calendarEvents}
             projects={projects}

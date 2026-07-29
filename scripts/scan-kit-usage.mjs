@@ -7,30 +7,25 @@
 // alongside ones used in dozens of places, with nothing telling them apart —
 // which is what made the kit read as "not matching the site".
 //
-// Usage is counted from IMPORT STATEMENTS, not from occurrences of the name in
-// the source. Counting bare names produces nonsense: "Stat" matches "Status",
-// "Grid" matches every `grid` class, and the numbers end up meaningless.
+// Usage requires both an import binding and a JSX render of that binding.
+// Counting imports alone leaves stale imports looking like live product UI;
+// counting bare names produces nonsense ("Stat" matches "Status", "Grid"
+// matches every `grid` class).
 //
 // Run `npm run kit:scan` after adding or removing a kit import.
 // tests/kit-usage.test.mjs fails if the committed JSON is out of date.
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { collectWorkspaceUiFiles } from './workspace-ui-files.mjs';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
-const SCAN_DIRS = [join(ROOT, 'src', 'app'), join(ROOT, 'src', 'components')];
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'kit-usage.generated.json');
 const SHOWCASE_FILE = join(ROOT, 'src', 'app', 'ui-kit', 'page.js');
 
 // The kit itself and the two showcase pages are excluded: a component being
 // demoed on /ui-kit is not the same as the product using it.
-const EXCLUDED = [
-  join('src', 'components', 'ui') + sep,
-  join('src', 'app', 'ui-kit') + sep,
-  join('src', 'app', 'ui-diff') + sep,
-];
-
 function walk(dir, out = []) {
   let entries;
   try {
@@ -76,24 +71,26 @@ function buildInventory() {
 // lost. `[^;]` still spans newlines, so multi-line named imports keep working.
 const IMPORT_RE = /^import\s+([^;]*?)\s+from\s+['"](@\/components\/ui[^'"]*)['"]/gm;
 
-function importedNames(clause) {
-  const names = [];
+function importedBindings(clause) {
+  const bindings = [];
   const braced = clause.match(/\{([\s\S]*)\}/);
   if (braced) {
     for (const part of braced[1].split(',')) {
-      // `Foo as Bar` — the kit component is Foo, the local alias is irrelevant.
-      const name = part.split(/\bas\b/)[0].trim();
-      if (/^[A-Z]\w*$/.test(name)) names.push(name);
+      const [exportedPart, localPart] = part.split(/\bas\b/).map(value => value.trim());
+      if (/^[A-Z]\w*$/.test(exportedPart)) {
+        bindings.push({ exported: exportedPart, local: localPart || exportedPart });
+      }
     }
   }
   const leading = clause.replace(/\{[\s\S]*\}/, '').replace(/,/g, ' ').trim();
-  if (/^[A-Z]\w*$/.test(leading)) names.push(leading);
-  return names;
+  if (/^[A-Z]\w*$/.test(leading)) bindings.push({ exported: leading, local: leading });
+  return bindings;
 }
 
 export function scanKitUsage() {
   const inventory = buildInventory();
   const showcased = new Set();
+  const workspaceFiles = collectWorkspaceUiFiles();
 
   const showcaseSource = readFileSync(SHOWCASE_FILE, 'utf8');
   const groupsSource = showcaseSource.slice(
@@ -124,28 +121,24 @@ export function scanKitUsage() {
     .join('\n');
 
   for (const match of showcaseSource.matchAll(IMPORT_RE)) {
-    for (const name of importedNames(match[1])) {
+    for (const { exported: name, local } of importedBindings(match[1])) {
       // An import alone is not a showcase. Requiring a JSX render prevents a
       // stale/unused import or a hidden legacy section from making coverage green.
-      if (inventory.has(name) && new RegExp(`<${name}\\b`).test(visibleShowcaseSource)) {
+      if (inventory.has(name) && new RegExp(`<${local}\\b`).test(visibleShowcaseSource)) {
         showcased.add(name);
       }
     }
   }
 
-  for (const dir of SCAN_DIRS) {
-    for (const file of walk(dir)) {
-      const rel = relative(ROOT, file);
-      if (EXCLUDED.some(prefix => rel.startsWith(prefix))) continue;
-      const source = readFileSync(file, 'utf8');
-      const seen = new Set();
-      for (const match of source.matchAll(IMPORT_RE)) {
-        for (const name of importedNames(match[1])) {
-          if (inventory.has(name)) seen.add(name);
-        }
+  for (const file of workspaceFiles) {
+    const source = readFileSync(file, 'utf8');
+    const seen = new Set();
+    for (const match of source.matchAll(IMPORT_RE)) {
+      for (const { exported: name, local } of importedBindings(match[1])) {
+        if (inventory.has(name) && new RegExp(`<${local}\\b`).test(source)) seen.add(name);
       }
-      for (const name of seen) inventory.get(name).usedIn.push(toPosix(file));
     }
+    for (const name of seen) inventory.get(name).usedIn.push(toPosix(file));
   }
 
   const components = {};
@@ -164,6 +157,7 @@ export function scanKitUsage() {
   return {
     // Regenerate with `npm run kit:scan`; tests/kit-usage.test.mjs enforces it.
     generatedBy: 'scripts/scan-kit-usage.mjs',
+    scope: 'authenticated-workspace',
     totals: {
       components: Object.keys(components).length,
       used,

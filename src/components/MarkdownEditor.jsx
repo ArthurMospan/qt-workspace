@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import MarkdownViewer from './MarkdownViewer';
+import { IconAction } from '@/components/ui';
 import {
   continueMarkdownList,
   formatHeading,
@@ -42,18 +43,17 @@ const MAX_HISTORY = 120;
 
 function ToolbarButton({ icon: Icon, label, onClick, disabled = false, active = false }) {
   return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
+    <IconAction
+      label={label}
+      icon={Icon}
+      size="md"
+      iconSize={15}
+      appearance={active ? 'editor-active' : 'editor'}
       aria-pressed={active || undefined}
       disabled={disabled}
       onMouseDown={event => event.preventDefault()}
       onClick={onClick}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${active ? 'bg-white text-ink' : 'text-muted hover:bg-white hover:text-ink'}`}
-    >
-      <Icon size={15} strokeWidth={2} />
-    </button>
+    />
   );
 }
 

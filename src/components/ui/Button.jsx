@@ -8,6 +8,7 @@ import React from 'react';
 //   size="md"  → 32px (h-8)  — Action buttons (edit, archive, secondary)
 //   size="sm"  → 28px (h-7)  — Small/compact contexts
 //   size="icon"→ 32×32px     — Icon-only button (no text)
+//   size="icon-xs" → 20×20px — Dense expand/action controls
 //
 // STYLE RULES (strict):
 //   style="primary"   → dark background (#1f1f1f), white text
@@ -19,12 +20,43 @@ import React from 'react';
 //   color="dark"  → default (same as no color specified)
 
 const SIZES = {
-  sm:   'h-[28px] px-[12px] text-[12px] rounded-[10px]',
-  md:   'h-[32px] px-[16px] text-[13px] rounded-[10px]',
-  lg:   'h-[36px] px-[18px] text-[13px] rounded-[10px]',
-  icon: 'w-[32px] h-[32px] rounded-[10px] p-0',
-  'icon-lg': 'w-[36px] h-[36px] rounded-[10px] p-0',
-  'icon-sm': 'w-[28px] h-[28px] rounded-[10px] p-0',
+  sm:   'px-[12px] text-[12px]',
+  md:   'px-[16px] text-[13px]',
+  lg:   'px-[18px] text-[13px]',
+  icon: 'w-[32px] p-0',
+  'icon-lg': 'w-[36px] p-0',
+  'icon-sm': 'w-[28px] p-0',
+  'icon-xs': 'w-[20px] p-0',
+  'icon-24': 'w-[24px] p-0',
+  'icon-26': 'w-[26px] p-0',
+  'icon-30': 'w-[30px] p-0',
+};
+
+const UI_SIZES = {
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  icon: 'md',
+  'icon-lg': 'lg',
+  'icon-sm': 'sm',
+  'icon-xs': 'icon-xs',
+  'icon-24': 'icon-24',
+  'icon-26': 'icon-26',
+  'icon-30': 'icon-30',
+};
+
+const SHAPES = {
+  default: '',
+  compact: '!rounded-[8px]',
+  micro: '!rounded-[6px]',
+  tight: '!rounded-[7px]',
+  circle: '!rounded-full',
+};
+
+const SURFACES = {
+  default: '',
+  canvas: '!bg-canvas !text-ink hover:!bg-[#ebebeb]',
+  'danger-subtle': '!border !border-[#ef4444] !bg-red-50 hover:!bg-red-100',
 };
 
 // collapseAt="sm"|"md": below that breakpoint the label hides and the button
@@ -72,12 +104,16 @@ export function Button({
   size     = 'lg',       // 'sm' | 'md' | 'lg' | 'icon'
   icon: Icon,
   iconSize,
+  buttonRef,
   disabled  = false,
   loading   = false,
   onClick,
   type      = 'button',
   className = '',
-  collapseAt,            // 'sm' | 'md' — icon-only square below this breakpoint
+  collapseAt,
+  composition,
+  shape = 'default',
+  surface = 'default',
   // Legacy prop support
   variant,
   ...props
@@ -100,10 +136,13 @@ export function Button({
 
   return (
     <button
+      ref={buttonRef}
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${baseClasses} ${sizeClass} ${collapseClass} ${styleClass} ${className}`}
+      data-ui-size={UI_SIZES[size] ?? 'lg'}
+      data-ui-composition={composition}
+      className={`ui-control ${baseClasses} ${sizeClass} ${collapseClass} ${styleClass} ${SHAPES[shape] ?? ''} ${SURFACES[surface] ?? ''} ${className}`}
       {...props}
     >
       {loading ? (

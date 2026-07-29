@@ -3,8 +3,9 @@
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
-import { EmptyState, KpiCard } from '@/components/ui';
-import { useWorkflowConfig, DEFAULT_TYPES, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
+import { EmptyState, KpiCard, Pill } from '@/components/ui';
+import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
+import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtShortDate(date) {
@@ -159,8 +160,12 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function VelocityTab({ issues = [], projects = [], period = 30 }) {
-  const { doneStatusIds } = useWorkflowConfig();
+  const { doneStatusIds, types = [] } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const actionableIssues = useMemo(
+    () => selectActionableIssues(issues),
+    [issues],
+  );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -171,7 +176,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
     const periodAgo = now - period * 86400000;
     const prevPeriodAgo = now - period * 2 * 86400000;
 
-    const doneAll = issues.filter(i => doneSet.has(i.columnId || i.status));
+    const doneAll = actionableIssues.filter(i => doneSet.has(i.columnId || i.status));
 
     const donePeriod = doneAll.filter(i => {
       const t = getCompletedAtMillis(i);
@@ -183,7 +188,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       return t >= prevPeriodAgo && t < periodAgo;
     });
 
-    const createdPeriod = issues.filter(i => {
+    const createdPeriod = actionableIssues.filter(i => {
       const t = i.createdAt?.toMillis?.() ?? 0;
       return t >= periodAgo;
     });
@@ -213,21 +218,21 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       const label = new Date(dayStart).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
       return {
         label,
-        a: issues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
-        b: issues.filter(iss => { if (!doneSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
+        a: actionableIssues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
+        b: actionableIssues.filter(iss => { if (!doneSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
       };
     });
 
     // By type breakdown — types come from the shared workflow config
-    const byType = DEFAULT_TYPES.map(({ id: type, label, color }) => {
-      const typeIssues = issues.filter(i => i.type === type);
+    const byType = types.map(({ id: type, label, color }) => {
+      const typeIssues = actionableIssues.filter(i => i.type === type);
       const typeDone = typeIssues.filter(i => doneSet.has(i.columnId || i.status));
       return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
     const byProject = projects.map(p => {
-      const pIssues = issues.filter(i => i.projectId === p.id);
+      const pIssues = actionableIssues.filter(i => i.projectId === p.id);
       const pDone = pIssues.filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
       return { p, count: pDone.length, total: pIssues.length };
     }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
@@ -237,15 +242,17 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       velocityTrend,
       createdPeriod: createdPeriod.length,
       totalDone: doneAll.length,
-      completionPct: issues.length > 0 ? Math.round((doneAll.length / issues.length) * 100) : 0,
+      completionPct: actionableIssues.length > 0
+        ? Math.round((doneAll.length / actionableIssues.length) * 100)
+        : 0,
       avgCycleTime,
       days,
       byType,
       byProject,
     };
-  }, [issues, projects, period, doneSet, now]);
+  }, [actionableIssues, projects, period, doneSet, now, types]);
 
-  if (issues.length === 0) {
+  if (actionableIssues.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <EmptyState
@@ -282,16 +289,16 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         {/* Charts row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Daily Activity */}
-          <div className="md:col-span-2 bg-white rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface md:col-span-2">
+            <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
               Активність ({period} днів)
             </h3>
             <BarChart data={stats.days} colorA="#1f1f1f" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />
           </div>
 
           {/* By type */}
-          <div className="bg-white rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">По типах</h3>
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+            <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">По типах</h3>
             {stats.byType.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Немає даних</p>
             ) : (
@@ -299,10 +306,9 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                 {stats.byType.map(({ type, label, color, total, done, pct }) => (
                   <div key={type}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full"
-                        style={{ background: color + '18', color }}>
+                      <Pill color={color} size="md" weight="medium">
                         {label}
-                      </span>
+                      </Pill>
                       <span className="text-[11px] text-muted">{done}/{total}</span>
                     </div>
                     <div className="h-[5px] bg-canvas rounded-full overflow-hidden">
@@ -317,26 +323,26 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Burndown */}
-        <div className="bg-white rounded-[16px] p-5 mb-6">
-          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
+        <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface mb-6">
+          <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
             Burndown Chart ({period} днів)
           </h3>
-          <BurndownChart issues={issues} days={period} doneSet={doneSet} now={now} />
+          <BurndownChart issues={actionableIssues} days={period} doneSet={doneSet} now={now} />
         </div>
 
         {/* Weekly velocity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-[16px] p-5">
-            <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
+          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+            <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)
             </h3>
-            <WeeklyVelocityChart issues={issues} weeksBack={8} doneSet={doneSet} now={now} />
+            <WeeklyVelocityChart issues={actionableIssues} weeksBack={8} doneSet={doneSet} now={now} />
           </div>
 
           {/* By project */}
           {stats.byProject.length > 0 && (
-            <div className="bg-white rounded-[16px] p-5">
-              <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
+            <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+              <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
                 По проєктах (закрито за {period}д)
               </h3>
               <div className="flex flex-col gap-3">
@@ -356,15 +362,15 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
         </div>
 
         {/* Recent done issues */}
-        <div className="bg-white rounded-[16px] p-5">
-          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider mb-4">
+        <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+          <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
             Нещодавно закриті завдання
           </h3>
           {stats.donePeriod === 0 ? (
             <p className="text-[13px] text-muted py-4 text-center">За вказаний період завдань не закрито</p>
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
-              {issues
+              {actionableIssues
                 .filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= now - period * 86400000)
                 .sort((a, b) => getCompletedAtMillis(b) - getCompletedAtMillis(a))
                 .slice(0, 8)
@@ -385,7 +391,7 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
                         {cycleDays !== null && (
                           <span className="text-[11px] text-muted">{cycleDays}д цикл</span>
                         )}
-                        <span className="text-[11px] font-bold text-[#10b981] bg-green-50 px-2 py-0.5 rounded-full">✓ Done</span>
+                        <Pill tone="success" size="md">✓ Виконано</Pill>
                       </div>
                     </div>
                   );

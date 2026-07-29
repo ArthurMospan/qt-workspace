@@ -1,9 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { Button, Dialog, Input } from '@/components/ui';
 
 const STATUS_PRESETS = [
   { emoji: '💻', text: 'Весь в роботі' },
@@ -65,39 +64,22 @@ export default function UserStatusSetter() {
         )}
       </button>
 
-      <AnimatePresence>
-        {isEditing && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-[20px]">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsEditing(false)}
-              className="absolute inset-0 bg-ink/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-[340px] bg-white rounded-[24px] p-[24px] shadow-2xl flex flex-col gap-[20px]"
-            >
-              <div className="flex items-center justify-between px-[4px]">
-                <span className="text-[12px] font-bold text-muted uppercase tracking-wider">Ваш статус</span>
-                <div className="flex items-center gap-[12px]">
-                  {(currentUser?.status || currentUser?.statusEmoji) && (
-                    <button 
-                      onClick={() => handleUpdate('', '')}
-                      className="text-[11px] font-bold text-red-500 hover:underline uppercase"
-                    >
-                      Очистити
-                    </button>
-                  )}
-                  <button onClick={() => setIsEditing(false)} className="w-[32px] h-[32px] rounded-full bg-canvas flex items-center justify-center text-muted hover:text-ink hover:bg-line">
-                    <Plus size={18} className="rotate-45" />
-                  </button>
-                </div>
-              </div>
-              
+      {isEditing && (
+        <Dialog
+          isOpen
+          onClose={() => setIsEditing(false)}
+          title="Ваш статус"
+          titleContext="eyebrow"
+          presentation="dialog"
+          size="status"
+          bodyPadding="spacious"
+          headerAction={(currentUser?.status || currentUser?.statusEmoji) ? (
+            <Button style="ghost" color="red" size="sm" onClick={() => handleUpdate('', '')}>
+              Очистити
+            </Button>
+          ) : null}
+        >
+          <div className="flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-[8px]">
                 {STATUS_PRESETS.map((p, i) => (
                   <button
@@ -126,27 +108,26 @@ export default function UserStatusSetter() {
                   ))}
                 </div>
                 <div className="flex gap-[8px]">
-                  <input 
+                  <Input
                     autoFocus
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     placeholder="Що на думці?"
                     maxLength={35}
-                    className="flex-1 h-[44px] bg-canvas border border-transparent outline-none rounded-[12px] px-[16px] text-[13px] text-ink font-medium transition-all placeholder:text-faint focus:border-[#d0d0d0]"
+                    composition="status-entry"
                     onKeyDown={(e) => e.key === 'Enter' && handleUpdate(emoji, text)}
                   />
-                  <button 
+                  <Button
                     onClick={() => handleUpdate(emoji, text)}
-                    className="h-[44px] px-[20px] bg-ink text-white rounded-[12px] font-bold text-[13px] hover:bg-black transition-all active:scale-95"
+                    composition="status-submit"
                   >
                     OK
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </Dialog>
+      )}
     </>
   );
 }

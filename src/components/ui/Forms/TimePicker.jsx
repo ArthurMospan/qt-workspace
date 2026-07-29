@@ -8,6 +8,7 @@ export const TimePicker = forwardRef(({
   error,
   disabled = false,
   className = '',
+  size = 'lg',
   ...props
 }, ref) => {
   return (
@@ -22,8 +23,9 @@ export const TimePicker = forwardRef(({
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
+        data-ui-size={size}
         className={`
-          h-[36px] w-full bg-canvas border border-transparent rounded-[10px]
+          ui-control w-full bg-canvas border border-transparent rounded-[10px]
           text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] flex items-center
           pl-[36px] pr-[12px]

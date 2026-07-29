@@ -1,27 +1,38 @@
 'use client';
 
-// src/lib/hooks/useWorkspaceAnalytics.js
-// Loads project issues plus every organization time log. Calendar events may
-// intentionally have no project, but they still belong in team analytics.
+// Loads issues and time logs only for the already-authorized project list.
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { reportLoadError } from '@/lib/utils/errors';
 
-// Firestore 'in' supports up to 30 items; chunk to be safe
-function chunkArray(arr, size) {
+// Firestore `in` accepts at most 30 values; ten keeps query/index fan-out tame.
+function chunkArray(values, size) {
   const chunks = [];
-  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
   return chunks;
 }
+
+function flattenBuckets(buckets) {
+  const byId = {};
+  buckets.forEach(documents => {
+    documents.forEach(document => {
+      byId[document.id] = document;
+    });
+  });
+  return Object.values(byId);
+}
+
 export function useWorkspaceAnalytics(projectIds = []) {
-  const {
-    activeOrgId
-  } = useAppContext();
+  const { activeOrgId } = useAppContext();
   const [issues, setIssues] = useState([]);
   const [timeLogs, setTimeLogs] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (!activeOrgId) {
       queueMicrotask(() => {
@@ -30,101 +41,131 @@ export function useWorkspaceAnalytics(projectIds = []) {
         setIssueLinks([]);
         setLoading(false);
       });
-      return;
+      return undefined;
     }
+
     queueMicrotask(() => {
+      setLoading(true);
       setIssues([]);
       setTimeLogs([]);
       setIssueLinks([]);
-      setLoading(true);
     });
-    const chunks = chunkArray(projectIds, 10);
-    const allIssues = {};
-    const allTimeLogs = {};
-    const allIssueLinks = {};
-    let pendingIssues = chunks.length;
-    let pendingTimeLogs = 1;
-    let pendingLinks = 1; // Not partitioned by project, just one query per org
+
+    const chunks = chunkArray([...new Set(projectIds.filter(Boolean))], 10);
+    const issueBuckets = new Map();
+    const timeLogBuckets = new Map();
+    const readyStreams = new Set();
+    const expectedStreamCount = chunks.length + (chunks.length * 2) + 2;
     const unsubs = [];
-    const checkDone = () => {
-      if (pendingIssues === 0 && pendingTimeLogs === 0 && pendingLinks === 0) setLoading(false);
+    const markReady = key => {
+      readyStreams.add(key);
+      if (readyStreams.size >= expectedStreamCount) setLoading(false);
     };
-    const flushIssues = () => setIssues(Object.values(allIssues));
-    const flushLogs = () => setTimeLogs(Object.values(allTimeLogs));
-    const flushLinks = () => setIssueLinks(Object.values(allIssueLinks));
-    
-    // Fetch all links for the org (usually small enough)
-    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
-    const unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
-      snap.docs.forEach(d => { allIssueLinks[d.id] = { id: d.id, ...d.data() }; });
-      if (pendingLinks > 0) pendingLinks--;
-      flushLinks();
-      checkDone();
-    }, () => {
-      if (pendingLinks > 0) pendingLinks--;
-      checkDone();
-    });
-    unsubs.push(unsubLinks);
+    const subscribe = ({
+      key,
+      sourceQuery,
+      buckets,
+      publish,
+    }) => {
+      const unsubscribe = onSnapshot(
+        sourceQuery,
+        { serverTimestamps: 'estimate' },
+        snapshot => {
+          buckets.set(key, snapshot.docs.map(document => ({
+            id: document.id,
+            ...document.data(),
+          })));
+          publish(flattenBuckets(buckets));
+          markReady(key);
+        },
+        error => {
+          reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
+          buckets.set(key, []);
+          publish(flattenBuckets(buckets));
+          markReady(key);
+        },
+      );
+      unsubs.push(unsubscribe);
+    };
 
-    const tq = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId));
-    const unsubTimeLogs = onSnapshot(tq, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      const currentIds = new Set(snap.docs.map(d => d.id));
-      Object.keys(allTimeLogs).forEach(id => {
-        if (!currentIds.has(id)) delete allTimeLogs[id];
-      });
-      snap.docs.forEach(d => {
-        allTimeLogs[d.id] = {
-          id: d.id,
-          ...d.data()
-        };
-      });
-      if (pendingTimeLogs > 0) pendingTimeLogs--;
-      flushLogs();
-      checkDone();
-    }, () => {
-      if (pendingTimeLogs > 0) pendingTimeLogs--;
-      checkDone();
-    });
-    unsubs.push(unsubTimeLogs);
+    const linksKey = 'links';
+    const linksQuery = query(
+      collection(db, 'issueLinks'),
+      where('organizationId', '==', activeOrgId),
+    );
+    unsubs.push(onSnapshot(
+      linksQuery,
+      { serverTimestamps: 'estimate' },
+      snapshot => {
+        setIssueLinks(snapshot.docs.map(document => ({
+          id: document.id,
+          ...document.data(),
+        })));
+        markReady(linksKey);
+      },
+      error => {
+        reportLoadError('[useWorkspaceAnalytics:links]', error);
+        setIssueLinks([]);
+        markReady(linksKey);
+      },
+    ));
 
-    chunks.forEach(chunk => {
-      // Issues query
-      const iq = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', 'in', chunk));
-      const unsub1 = onSnapshot(iq, {
-        serverTimestamps: 'estimate'
-      }, snap => {
-        snap.docs.forEach(d => {
-          allIssues[d.id] = {
-            id: d.id,
-            ...d.data()
-          };
-        });
-        // Also remove any deleted docs
-        const chunkIssueIds = new Set(snap.docs.map(d => d.id));
-        // keep only issues from other chunks
-        Object.keys(allIssues).forEach(id => {
-          if (!chunkIssueIds.has(id) && chunk.includes(allIssues[id]?.projectId)) {
-            delete allIssues[id];
-          }
-        });
-        if (pendingIssues > 0) pendingIssues--;
-        flushIssues();
-        checkDone();
-      }, () => {
-        if (pendingIssues > 0) pendingIssues--;
-        checkDone();
-      });
-      unsubs.push(unsub1);
+    // Projectless team events are organization analytics only and cannot be
+    // invoiced until attached to a project.
+    subscribe({
+      key: 'calendar:organization',
+      buckets: timeLogBuckets,
+      publish: setTimeLogs,
+      sourceQuery: query(
+        collection(db, 'timeLogs'),
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', ''),
+        where('sourceType', '==', 'calendar_event'),
+        where('eventVisibility', '==', 'team'),
+      ),
     });
-    return () => unsubs.forEach(u => u());
-  }, [activeOrgId, projectIds.join(',')]); // eslint-disable-line
 
-  return {
-    issues,
-    timeLogs,
-    issueLinks,
-    loading
-  };
+    chunks.forEach((chunk, chunkIndex) => {
+      subscribe({
+        key: `issues:${chunkIndex}`,
+        buckets: issueBuckets,
+        publish: setIssues,
+        sourceQuery: query(
+          collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+        ),
+      });
+
+      // Task and calendar logs must remain separate queries. Rules can then
+      // prove that restricted calendar entries can never satisfy analytics.
+      subscribe({
+        key: `time:task:${chunkIndex}`,
+        buckets: timeLogBuckets,
+        publish: setTimeLogs,
+        sourceQuery: query(
+          collection(db, 'timeLogs'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+          where('issueId', '!=', ''),
+        ),
+      });
+      subscribe({
+        key: `time:calendar:${chunkIndex}`,
+        buckets: timeLogBuckets,
+        publish: setTimeLogs,
+        sourceQuery: query(
+          collection(db, 'timeLogs'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+          where('sourceType', '==', 'calendar_event'),
+          where('eventVisibility', '==', 'team'),
+        ),
+      });
+    });
+
+    return () => unsubs.forEach(unsubscribe => unsubscribe());
+  }, [activeOrgId, projectIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { issues, timeLogs, issueLinks, loading };
 }

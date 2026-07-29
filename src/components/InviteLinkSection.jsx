@@ -81,7 +81,7 @@ export default function InviteLinkSection({ role = 'member' }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-      <div className="flex min-w-0 flex-col justify-between gap-5 rounded-[16px] bg-canvas p-4">
+      <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface flex min-w-0 flex-col justify-between gap-5">
         <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink">
@@ -92,7 +92,7 @@ export default function InviteLinkSection({ role = 'member' }) {
               <p className="text-[11px] text-muted">Діє 7 днів · до {link.maxUses} використань</p>
             </div>
           </div>
-          <div className="mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2">
+          <div data-ui-surface="local" className="mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2">
             <p className="truncate px-2 py-1 text-[12px] font-medium text-[#5a5a5a]">{link.url}</p>
             <button
               type="button"
@@ -110,7 +110,7 @@ export default function InviteLinkSection({ role = 'member' }) {
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center rounded-[16px] border border-line bg-white p-4">
+      <div data-ui-surface="bordered-card" data-ui-padding="md" className="ui-surface flex flex-col items-center justify-center">
         <div className="mb-2 flex items-center gap-2 text-[12px] font-bold text-ink">
           <QrCode size={14} />
           QR-код

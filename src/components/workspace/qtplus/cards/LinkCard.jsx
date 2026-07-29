@@ -13,7 +13,7 @@ export default function LinkCard({ view }) {
 
   if (!view.url) {
     return (
-      <div className="rounded-[12px] border border-line bg-surface px-3 py-2">
+      <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface px-3 py-2">
         <p className="text-[13px] text-ink font-medium truncate">{title}</p>
         <p className="text-[12px] text-muted">Посилання недоступне</p>
       </div>

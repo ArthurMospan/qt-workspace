@@ -14,13 +14,13 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { PageHeader, useConfirm, Dialog, Input, Textarea } from '@/components/ui';
+import { Counter, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
-  ChevronDown, ChevronRight, ChevronUp,
+  ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   AlertCircle, Filter
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
@@ -33,10 +33,6 @@ import { db } from '@/lib/firebase';
 
 const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
-
-function Badge({ label, color }) {
-  return <span className="text-[10px] font-bold px-[6px] py-[2px] rounded-[5px]" style={{ color, background: color + '18' }}>{label}</span>;
-}
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -68,23 +64,19 @@ function SprintEditModal({ sprint, onClose, onSave }) {
       }
     >
         <form id="sprint-edit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
+          <FormGroup label="Назва спринта">
             <Input type="text" required value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
+          </FormGroup>
+          <FormGroup label="Ціль спринта">
             <Textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2} />
-          </div>
+          </FormGroup>
           <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
+            <FormGroup label="Дата початку" className="flex-1">
               <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </div>
-            <div className="flex-1">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
+            </FormGroup>
+            <FormGroup label="Дата завершення" className="flex-1">
               <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
+            </FormGroup>
           </div>
         </form>
     </Dialog>
@@ -121,23 +113,19 @@ function SprintCreateModal({ onClose, onSave }) {
       }
     >
         <form id="sprint-create-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Назва спринта</label>
+          <FormGroup label="Назва спринта">
             <Input type="text" required placeholder="Наприклад: Спринт 1" value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Ціль спринта</label>
+          </FormGroup>
+          <FormGroup label="Ціль спринта">
             <Textarea value={goal} placeholder="Опишіть ціль цього спринта..." onChange={e => setGoal(e.target.value)} rows={2} />
-          </div>
+          </FormGroup>
           <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата початку</label>
+            <FormGroup label="Дата початку" className="flex-1">
               <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </div>
-            <div className="flex-1">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Дата завершення</label>
+            </FormGroup>
+            <FormGroup label="Дата завершення" className="flex-1">
               <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
+            </FormGroup>
           </div>
         </form>
     </Dialog>
@@ -172,19 +160,17 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
           У цьому спринті залишилось <strong className="text-ink">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
         </p>
         <form id="sprint-complete-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wide block mb-1">Перенести завдання в</label>
-            <select 
-              value={moveToSprintId} 
-              onChange={e => setMoveToSprintId(e.target.value)}
-              className="w-full px-3 py-2 bg-canvas border border-[#efefef] rounded-xl text-[14px] font-medium text-ink focus:outline-none focus:border-ink"
-            >
-              <option value="backlog">Беклог</option>
-              {upcomingSprints.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+          <FormGroup label="Перенести завдання в">
+            <Select
+              value={moveToSprintId}
+              onChange={setMoveToSprintId}
+              options={[
+                { value: 'backlog', label: 'Беклог' },
+                ...upcomingSprints.map(s => ({ value: s.id, label: s.name })),
+              ]}
+              className="w-full"
+            />
+          </FormGroup>
         </form>
     </Dialog>
   );
@@ -194,7 +180,7 @@ export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
-  const { labels, statuses, doneStatusIds } = useWorkflowConfig();
+  const { labels, statuses, priorities, types, doneStatusIds } = useWorkflowConfig();
   const statusOrder = statuses.map(s => s.id);
   const isDoneCol = (id) => doneStatusIds.includes(id);
   const { formatDate } = useLocalization();
@@ -219,6 +205,7 @@ export default function GlobalSprintsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
+  const [backlogCollapsed, setBacklogCollapsed] = useState(false);
 
   const isManager = can(orgRole, 'manage:sprints');
   const projectIds = (projects || []).map(p => p.id);
@@ -363,7 +350,7 @@ export default function GlobalSprintsPage() {
       <Droppable droppableId={droppableId}>
         {(provided, snapshot) => (
           <div 
-            className="flex flex-col px-4 pb-4 pt-1 min-h-[60px]" 
+            className={`flex min-h-[60px] flex-col pb-4 pt-1 ${isBacklogCol ? 'px-[8px]' : 'px-4'}`}
             ref={provided.innerRef} 
             {...provided.droppableProps}
           >
@@ -407,6 +394,7 @@ export default function GlobalSprintsPage() {
                         sprints={sprints}
                         projectId={issue.projectId}
                         projectName={pName}
+                        showProjectName
                         onClick={() => setActiveIssue(issue)}
                       />
                     </div>
@@ -457,40 +445,46 @@ export default function GlobalSprintsPage() {
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
-                className="w-[200px]"
+                filterRole="project"
                 variant="ghost"
               />
               <Select
+                filterRole="member"
                 value={assigneeFilter}
                 onChange={setAssigneeFilter}
                 options={[
                   { value: 'all', label: 'Всі виконавці' },
                   { value: 'unassigned', label: 'Без виконавця' },
-                  ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email }))
+                  ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m }))
                 ]}
                 variant="ghost"
               />
               <Select
+                filterRole="priority"
                 value={priorityFilter}
                 onChange={setPriorityFilter}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
-                  { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                  { value: 'high', label: 'High', dotColor: '#f97316' },
-                  { value: 'medium', label: 'Medium', dotColor: '#eab308' },
-                  { value: 'low', label: 'Low', dotColor: '#9a9a9a' },
+                  ...priorities.map(priority => ({
+                    value: priority.id,
+                    label: priority.label,
+                    dotColor: priority.color,
+                  })),
                 ]}
                 variant="ghost"
               />
               <Select
+                filterRole="type"
                 value={typeFilter}
                 onChange={setTypeFilter}
                 options={[
                   { value: 'all', label: 'Всі типи' },
-                  { value: 'epic', label: 'Epic' },
-                  { value: 'feature', label: 'Feature' },
-                  { value: 'task', label: 'Task' },
-                  { value: 'bug', label: 'Bug' },
+                  ...types
+                    .map(type => ({
+                      value: type.id,
+                      label: type.label,
+                      dotColor: type.color,
+                    })),
                 ]}
                 variant="ghost"
               />
@@ -517,14 +511,14 @@ export default function GlobalSprintsPage() {
                   const isExpanded = isSectionExpanded(sprint.id, sprint.status !== 'completed');
 
                   return (
-                    <div key={sprint.id} className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
+                    <div key={sprint.id} data-ui-surface="local" className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
                       <div className="px-5 py-4 flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 cursor-pointer" onClick={() => toggleSection(sprint.id)}>
                           {isExpanded ? <ChevronDown size={16} className="text-muted" /> : <ChevronRight size={16} className="text-muted" />}
-                          <h3 className="text-[14px] font-bold text-ink truncate">{sprint.name}</h3>
-                          {sprint.status === 'active' && <Badge label="Активний" color="#10b981" />}
-                          {sprint.status === 'planned' && <Badge label="Запланований" color="#9a9a9a" />}
-                          {sprint.status === 'completed' && <Badge label="Завершено" color="#cbd5e1" />}
+                          <h3 className="ui-type-card-title text-ink truncate">{sprint.name}</h3>
+                          {sprint.status === 'active' && <StatusPill label="Активний" color="#10b981" />}
+                          {sprint.status === 'planned' && <StatusPill label="Запланований" color="#9a9a9a" />}
+                          {sprint.status === 'completed' && <StatusPill label="Завершено" color="#cbd5e1" />}
                           <span className="text-[11px] text-muted shrink-0">{sprintIssues.length} завдань</span>
                           {sprint.startDate && (
                             <span className="text-[11px] text-muted hidden sm:inline ml-2">
@@ -591,31 +585,72 @@ export default function GlobalSprintsPage() {
                   );
                 })}
                 {sprints.length === 0 && (
-                  <div className="py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]">
+                  <div data-ui-surface="local" className="py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]">
                     Немає запланованих або активних спринтів. Створіть новий спринт, щоб розпочати планування.
                   </div>
                 )}
               </div>
 
-              {/* Right Column: Backlog (28%) — mobile: full-width block under sprints */}
-              <Surface variant="panel" padding="none" className="w-full max-h-[60vh] lg:max-h-none lg:w-[28%] lg:min-w-[280px] overflow-hidden flex flex-col min-h-0">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-[14px] font-bold text-ink">Backlog</h3>
-                    <span className="text-[11px] font-bold text-muted bg-[#efefef] px-2 py-0.5 rounded-full">{backlogIssues.length} завдань</span>
-                  </div>
-                  <button
-                    onClick={() => setShowCreateTaskModal(true)}
-                    className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
-                    title="Додати завдання в беклог"
+              {/* Right column mirrors the global board column contract. */}
+              {backlogCollapsed ? (
+                <div
+                  data-ui-surface="local"
+                  className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
+                  onClick={() => setBacklogCollapsed(false)}
+                >
+                  <Button
+                    style="ghost"
+                    size="icon-xs"
+                    icon={ChevronRight}
+                    iconSize={16}
+                    className="mb-4 hover:!bg-white"
+                    title="Розгорнути колонку завдань"
+                  />
+                  <span className="mb-4 h-[8px] w-[8px] shrink-0 rounded-full bg-muted" />
+                  <h3
+                    className="ui-type-column-title whitespace-nowrap text-ink"
+                    style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                   >
-                    <Plus size={16} />
-                  </button>
+                    Завдання
+                  </h3>
+                  <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="mt-4" />
                 </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  {renderIssueTable(backlogIssues, 'backlog', true)}
-                </div>
-              </Surface>
+              ) : (
+                <Surface
+                  preset="panel"
+                  padding="none"
+                  className="flex max-h-[60vh] min-h-0 w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none lg:max-h-none"
+                >
+                  <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4">
+                    <div className="flex items-center gap-[6px]">
+                      <Button
+                        onClick={() => setBacklogCollapsed(true)}
+                        style="ghost"
+                        size="icon-xs"
+                        icon={ChevronLeft}
+                        iconSize={16}
+                        className="-ml-2 hover:!bg-white"
+                        title="Згорнути колонку завдань"
+                      />
+                      <span className="h-[8px] w-[8px] rounded-full bg-muted" />
+                      <h3 className="ui-type-column-title text-ink">Завдання</h3>
+                      <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="ml-1" />
+                    </div>
+                    <Button
+                      onClick={() => setShowCreateTaskModal(true)}
+                      style="ghost"
+                      size="icon-xs"
+                      icon={Plus}
+                      iconSize={16}
+                      className="hover:!bg-white"
+                      title="Додати завдання без спринту"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto hide-scrollbar">
+                    {renderIssueTable(backlogIssues, 'backlog', true)}
+                  </div>
+                </Surface>
+              )}
 
             </div>
           </DragDropContext>

@@ -37,9 +37,12 @@ import {
   Button,
   ContextMenu,
   DatePicker,
+  Dialog,
   EmptyState,
+  getTaskAttributeChrome,
   Input,
   LoadingSpinner,
+  Pill,
   Popover,
   Select,
   TaskAttributesPanel,
@@ -170,20 +173,16 @@ function CalendarEventTimeSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none"
-        onClick={clickEvent => clickEvent.stopPropagation()}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4 sm:px-6">
-          <div>
-            <h3 className="text-[16px] font-bold text-ink">Трекінг часу</h3>
-            <p className="mt-0.5 text-[11px] font-medium text-muted">Загалом списано: {formatMinutes(totalMinutes)}</p>
-          </div>
-          <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
-        </div>
-
-        <div className="custom-scrollbar flex flex-col gap-6 overflow-y-auto p-5 sm:p-6">
+    <Dialog
+      isOpen
+      onClose={onClose}
+      title="Трекінг часу"
+      description={`Загалом списано: ${formatMinutes(totalMinutes)}`}
+      titleContext="dialog"
+      size="md"
+      bodyPadding="responsive"
+      bodyClassName="custom-scrollbar flex flex-col gap-6"
+    >
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
@@ -191,25 +190,27 @@ function CalendarEventTimeSheet({
               </p>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <input
+                  <Input
                     type="number"
                     min="0"
+                    composition="duration-hours"
                     value={hours || ''}
                     placeholder="0"
                     onChange={inputEvent => updateDuration(Number(inputEvent.target.value) || 0, minutes)}
-                    className="w-full rounded-[10px] border border-line bg-white py-[10px] pl-4 pr-10 text-[15px] font-bold text-ink outline-none transition-colors focus:border-[#a8a8a8]"
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">год</span>
                 </div>
                 <div className="relative flex-1">
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     max="59"
+                    composition="duration-minutes"
                     value={minutes || ''}
                     placeholder="0"
                     onChange={inputEvent => updateDuration(hours, Number(inputEvent.target.value) || 0)}
-                    className="w-full rounded-[10px] border border-line bg-white py-[10px] pl-4 pr-9 text-[15px] font-bold text-ink outline-none transition-colors focus:border-[#a8a8a8]"
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">хв</span>
                 </div>
@@ -247,14 +248,14 @@ function CalendarEventTimeSheet({
 
           <div>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h4 className="text-[14px] font-bold text-ink">Журнал часу</h4>
+              <h4 className="ui-type-card-title text-ink">Журнал часу</h4>
               <span className="text-[11px] font-medium text-muted">{logs.length} записів</span>
             </div>
 
             {loading ? (
               <div className="flex min-h-[120px] items-center justify-center"><LoadingSpinner size="sm" /></div>
             ) : logs.length === 0 ? (
-              <div className="rounded-[14px] bg-canvas px-4 py-8 text-center">
+              <div data-ui-surface="local" className="rounded-[14px] bg-canvas px-4 py-8 text-center">
                 <Clock3 size={20} className="mx-auto mb-2 text-faint" />
                 <p className="text-[12px] font-medium text-muted">На цій події ще немає записів часу</p>
               </div>
@@ -265,14 +266,14 @@ function CalendarEventTimeSheet({
                   const logDate = asDate(log.loggedAt || log.createdAt);
                   const canChange = canManage || log.userId === currentUserId;
                   return (
-                    <div key={log.id} className="flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3">
+                    <div key={log.id} data-ui-surface="local" className="flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3">
                       <UserAvatar user={member || { name: memberLabel(member) }} size={30} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className="text-[12px] font-bold text-ink">{memberLabel(member)}</span>
-                          <span className="rounded-[6px] bg-white px-2 py-0.5 text-[11px] font-bold text-ink">
+                          <Pill tone="surface-ink" size="md" shape="badge">
                             {formatMinutes(log.spentMinutes)}
-                          </span>
+                          </Pill>
                           {logDate && (
                             <span className="text-[10px] font-medium text-muted">
                               {logDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -311,9 +312,7 @@ function CalendarEventTimeSheet({
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -361,10 +360,16 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     logs: timeLogs,
     totalMinutes,
     loading: timeLoading,
+    canTrackTime: serverCanTrackTime,
+    trackingDisabledReason,
     addTimeLog,
     updateTimeLog,
     deleteTimeLog,
-  } = useCalendarEventTimeLogs(event?.readOnly ? '' : sourceEventId, event?.startAt || '');
+  } = useCalendarEventTimeLogs(
+    event?.readOnly ? '' : sourceEventId,
+    event?.startAt || '',
+    event?.projectId || '',
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -383,7 +388,15 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     event.organizerId === currentUserId
     || (event.visibility !== 'private' && ['owner', 'admin'].includes(orgRole))
   ));
-  const canTrackTime = Boolean(event && !event.readOnly && currentUserId);
+  const canTrackTime = Boolean(
+    event
+    && !event.readOnly
+    && currentUserId
+    && serverCanTrackTime
+  );
+  const trackingDisabledMessage = trackingDisabledReason === 'visibility'
+    ? 'Трекінг часу доступний лише для командних подій'
+    : 'Немає доступу до трекінгу часу цієї події або її проєкту';
   const response = event?.participantResponses?.[currentUserId] || 'pending';
   const isParticipant = event?.participantIds?.includes(currentUserId);
   const organizer = members.find(member => (member.id || member.uid) === event?.organizerId);
@@ -422,7 +435,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const memberOptions = useMemo(() => members.map(member => ({
     value: member.id || member.uid,
     label: memberLabel(member),
-    avatar: member.avatar || member.photoURL || '',
+    user: member,
   })), [members]);
 
   const copyEventLink = useCallback(async () => {
@@ -598,7 +611,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       } else {
         await addTimeLog({
           userId: currentUserId,
-          projectId: event?.projectId || '',
           spentMinutes: form.minutes,
           description: form.description,
         });
@@ -617,7 +629,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const handleDeleteTime = async logId => {
     const approved = await confirm({
       title: 'Видалити запис часу?',
-      message: 'Цей час зникне з аналітики команди та рахунків.',
+      message: event?.projectId
+        ? 'Цей час зникне з аналітики команди та рахунків.'
+        : 'Цей час зникне з аналітики команди.',
       confirmText: 'Видалити',
       danger: true,
     });
@@ -661,8 +675,13 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     .map(value => CALENDAR_EVENT_REMINDER_OPTIONS.find(option => option.value === value)?.label)
     .filter(Boolean);
   const visibilityOption = VISIBILITY_OPTIONS.find(option => option.value === view.visibility);
-  const attributeItemClass = 'flex min-w-0 flex-col gap-[4px] rounded-[10px] px-2 py-1.5 transition-colors';
-  const attributeLabelClass = 'block overflow-hidden text-[10px] font-bold uppercase tracking-wider text-muted';
+  const {
+    attributeItemClass,
+    attributeLabelClass,
+    compactInputClass,
+    compactSelectClass,
+    detailsButtonClass,
+  } = getTaskAttributeChrome();
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-transparent">
@@ -680,15 +699,60 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                     placeholder="Назва події…"
                   />
                 ) : (
-                  <h1 className="text-[24px] font-bold leading-tight tracking-tight text-ink">{event.title}</h1>
+                  <h1 className="ui-type-page-title leading-tight tracking-tight text-ink">{event.title}</h1>
                 )}
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] font-medium text-muted">
-                  <div className="flex items-center gap-1.5">
-                    <span>Організатор:</span>
-                    <UserAvatar user={organizer || { name: 'Учасник' }} size={16} />
-                    <span className="font-semibold text-ink">{memberLabel(organizer)}</span>
-                  </div>
+                  <Popover
+                    position="bottom"
+                    align="start"
+                    gap={4}
+                    hideCloseIcon
+                    hideArrow
+                    minWidth="200px"
+                    padding="6px"
+                    triggerClassName="inline-flex"
+                    trigger={(
+                      <button
+                        type="button"
+                        data-ui-control="identity-meta-trigger"
+                        className="ui-native-control"
+                      >
+                        <span>Організатор:</span>
+                        <UserAvatar user={organizer || { name: 'Учасник' }} size={16} />
+                        <span className="font-semibold text-ink">{memberLabel(organizer)}</span>
+                      </button>
+                    )}
+                  >
+                    {({ close }) => (
+                      <div className="w-[188px]">
+                        <Button
+                          style="ghost"
+                          size="md"
+                          composition="menu-item"
+                          onClick={() => {
+                            close();
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set('member', organizer?.id || organizer?.uid || event.organizerId);
+                            router.push(`${pathname}?${params.toString()}`);
+                          }}
+                        >
+                          Переглянути профіль
+                        </Button>
+                        <Button
+                          style="ghost"
+                          size="md"
+                          composition="menu-item"
+                          onClick={() => {
+                            close();
+                            router.push(`/chat?dm=${encodeURIComponent(organizer?.id || organizer?.uid || event.organizerId)}`);
+                          }}
+                        >
+                          Написати в чат
+                        </Button>
+                      </div>
+                    )}
+                  </Popover>
                   <span className="h-[3px] w-[3px] rounded-full bg-faint" />
                   <span>створили <strong className="font-semibold text-ink">{relativeTime(event.createdAt)}</strong></span>
                   <span className="h-[3px] w-[3px] rounded-full bg-faint" />
@@ -747,11 +811,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             <div className="relative -mx-2 mt-[12px] px-2">
               <TaskAttributesPanel
                 singleRow
+                context="calendar"
                 compact
-                primaryClassName="grid w-full grid-cols-2 items-center gap-1.5 overflow-visible sm:grid-cols-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.1fr_1.15fr_92px] [&>*]:min-w-0"
                 primaryChildren={(
                   <>
-                    <div className={attributeItemClass}>
+                    <div
+                      className={attributeItemClass}
+                      onClick={clickEvent => {
+                        if (!canManage || clickEvent.target.closest('button')) return;
+                        clickEvent.currentTarget.querySelector('button')?.click();
+                      }}
+                    >
                       <span className={attributeLabelClass}>Тип</span>
                       {canManage ? (
                         <Select
@@ -760,14 +830,23 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                           value={view.type}
                           onChange={value => updateQuickField('type', value)}
                           options={CALENDAR_EVENT_TYPE_OPTIONS}
-                          buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[8px] bg-transparent px-0 text-[13px] font-medium"
+                          buttonClassName={compactSelectClass}
                         />
                       ) : (
-                        <AttributeValue><span className="mr-2 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: typeOption?.dotColor || '#8b5cf6' }} />{typeOption?.label || 'Подія'}</AttributeValue>
+                        <AttributeValue>
+                          {typeOption?.icon && <typeOption.icon size={13} className="mr-1.5 shrink-0 text-muted" />}
+                          {typeOption?.label || 'Подія'}
+                        </AttributeValue>
                       )}
                     </div>
 
-                    <div className={attributeItemClass}>
+                    <div
+                      className={attributeItemClass}
+                      onClick={clickEvent => {
+                        if (!canManage || clickEvent.target.closest('button')) return;
+                        clickEvent.currentTarget.querySelector('button')?.click();
+                      }}
+                    >
                       <span className={attributeLabelClass}>Проєкт</span>
                       {canManage ? (
                         <Select
@@ -776,22 +855,29 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                           value={view.projectId}
                           onChange={value => updateQuickField('projectId', value)}
                           options={projectOptions}
-                          buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[8px] bg-transparent px-0 text-[13px] font-medium"
+                          buttonClassName={compactSelectClass}
                         />
                       ) : (
                         <AttributeValue muted={!event.projectId}>{projectOption?.label || 'Без проєкту'}</AttributeValue>
                       )}
                     </div>
 
-                    <div className={attributeItemClass}>
+                    <div
+                      className={attributeItemClass}
+                      onClick={clickEvent => {
+                        if (!canManage || clickEvent.target.closest('input,button')) return;
+                        clickEvent.currentTarget.querySelector('input')?.click();
+                      }}
+                    >
                       <span className={attributeLabelClass}>Дата</span>
                       {canManage ? (
                         <DatePicker
+                          compact
                           hideIcon
                           disabled={attributeSaving}
                           value={view.startDate}
                           onChange={updateEventDate}
-                          inputClassName="h-[22px] w-full cursor-pointer bg-transparent p-0 text-[13px] font-medium text-ink outline-none"
+                          inputClassName={compactInputClass}
                         />
                       ) : (
                         <AttributeValue>{new Date(event.startAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}</AttributeValue>
@@ -806,7 +892,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         if (open) setScheduleDraft({ ...view });
                       }}
                       trigger={(
-                        <button type="button" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
+                        <button type="button" data-ui-control="calendar-attribute-trigger" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
                           <span className={attributeLabelClass}>Час події</span>
                           <AttributeValue>{event.allDay ? 'Весь день' : `${formatTime(event.startAt)}–${formatTime(event.endAt)}`}</AttributeValue>
                         </button>
@@ -890,7 +976,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       hideCloseIcon
                       className="h-full"
                       trigger={(
-                        <button type="button" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
+                        <button type="button" data-ui-control="calendar-attribute-trigger" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
                           <span className={attributeLabelClass}>Учасники</span>
                           <AttributeValue><Users size={13} className="mr-1.5 shrink-0 text-muted" />{event.participantIds?.length || 0} учасників</AttributeValue>
                         </button>
@@ -914,6 +1000,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
                     <div
                       className={`${attributeItemClass} ${canTrackTime ? 'cursor-pointer hover:bg-[#ebebeb]' : ''}`}
+                      title={canTrackTime ? 'Відкрити трекінг часу' : trackingDisabledMessage}
                       onClick={clickEvent => {
                         if (!canTrackTime || clickEvent.target.closest('button')) return;
                         setTimerMinutes(0);
@@ -962,7 +1049,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       trigger={(
                         <button
                           type="button"
-                          className={`flex h-[42px] w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-colors ${detailsOpen ? 'bg-white text-ink' : 'text-muted hover:bg-[#ebebeb] hover:text-ink'}`}
+                          className={`${detailsButtonClass} ${detailsOpen ? 'bg-white text-ink' : 'text-muted'}`}
                           aria-expanded={detailsOpen}
                         >
                           <Settings2 size={14} />
@@ -1058,7 +1145,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
           <main className="flex flex-col gap-6 py-1">
             <section>
               <div className="mb-3 flex items-center gap-3">
-                <h2 className="text-[14px] font-bold text-ink">Опис</h2>
+                <h2 className="ui-type-card-title text-ink">Опис</h2>
               </div>
               {isEditing ? (
                 <Textarea
@@ -1066,10 +1153,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   onChange={inputEvent => updateDraft('description', inputEvent.target.value)}
                   placeholder="Контекст, порядок денний або важливі деталі"
                   rows={7}
-                  className="min-h-[180px]"
+                composition="long-form"
                 />
               ) : (
-                <div className="min-h-[140px] w-full whitespace-pre-wrap rounded-[16px] bg-canvas px-4 py-3 text-[13px] leading-relaxed text-ink">
+                <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface min-h-[140px] w-full whitespace-pre-wrap text-[13px] leading-relaxed text-ink">
                   {event.description || <span className="text-faint">Опис не додано</span>}
                 </div>
               )}
@@ -1078,7 +1165,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <MapPin size={14} className="text-muted" />
-                <h2 className="text-[14px] font-bold text-ink">Місце</h2>
+                <h2 className="ui-type-card-title text-ink">Місце</h2>
               </div>
               {isEditing ? (
                 <Input
@@ -1087,16 +1174,22 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   placeholder="Офіс, кімната або адреса"
                 />
               ) : (
-                <div className="w-full rounded-[16px] bg-canvas px-4 py-3 text-[13px] font-medium text-ink">
+                <button
+                  type="button"
+                  onClick={canManage ? enterEdit : undefined}
+                  className={`w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${
+                    canManage ? 'cursor-pointer hover:bg-[#ebebeb]' : 'cursor-default'
+                  }`}
+                >
                   {event.location || <span className="text-faint">Не вказано</span>}
-                </div>
+                </button>
               )}
             </section>
 
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <Link2 size={14} className="text-muted" />
-                <h2 className="text-[14px] font-bold text-ink">Посилання</h2>
+                <h2 className="ui-type-card-title text-ink">Посилання</h2>
               </div>
               {isEditing ? (
                 <Input
@@ -1106,7 +1199,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   placeholder="https://meet…"
                 />
               ) : (
-                <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+                <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface w-full">
                   {event.meetingUrl ? (
                     <a
                       href={event.meetingUrl}
@@ -1114,7 +1207,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink hover:underline"
                     >
-                      Приєднатися до зустрічі <ExternalLink size={12} />
+                      Приєднатися до мітингу <ExternalLink size={12} />
                     </a>
                   ) : (
                     <p className="text-[13px] text-faint">Не вказано</p>
@@ -1126,20 +1219,20 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <Users size={14} className="text-muted" />
-                <h2 className="text-[14px] font-bold text-ink">Учасники</h2>
+                <h2 className="ui-type-card-title text-ink">Учасники</h2>
               </div>
-              <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+              <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface w-full">
                 {event.participantIds?.length ? (
                   <div className="flex flex-wrap gap-2">
                     {event.participantIds.map(uid => {
                       const member = members.find(item => (item.id || item.uid) === uid);
                       const state = event.participantResponses?.[uid] || 'pending';
                       return (
-                        <span key={uid} className="inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1.5 text-[11px] text-ink">
+                        <Pill key={uid} tone="surface-ink" size="participant" weight="medium">
                           <UserAvatar user={member || { name: memberLabel(member) }} size={20} />
                           <span className="font-semibold">{memberLabel(member)}</span>
                           <span className={responseClass(state)}>· {responseLabel(state)}</span>
-                        </span>
+                        </Pill>
                       );
                     })}
                   </div>

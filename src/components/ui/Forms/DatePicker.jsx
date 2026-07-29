@@ -48,7 +48,12 @@ export const DatePicker = forwardRef(({
   onDateRangeChange,
   inputClassName,
   hideIcon,
+  compact = false,
+  size = 'lg',
+  composition,
+  textTone = 'default',
   yearRange = null,
+  minDate = '',
   ...props
 }, ref) => {
   const { formatDate: formatLocal, getWeekdays, getFirstDayOffset } = useLocalization();
@@ -160,6 +165,8 @@ export const DatePicker = forwardRef(({
     { id: 'this-month', label: 'Цей місяць' },
     { id: 'last-30-days', label: 'Останні 30 днів' },
   ];
+  const minimumDate = minDate ? parseDate(minDate) : null;
+  minimumDate?.setHours(0, 0, 0, 0);
 
   const handlePreset = presetId => {
     const today = new Date();
@@ -170,6 +177,7 @@ export const DatePicker = forwardRef(({
       if (presetId === 'tomorrow') date.setDate(date.getDate() + 1);
       if (presetId === 'week-end') date.setDate(date.getDate() + ((7 - date.getDay()) % 7));
       if (presetId === 'month-end') date.setMonth(date.getMonth() + 1, 0);
+      if (minimumDate && date < minimumDate) date.setTime(minimumDate.getTime());
       setSelectedDate(date);
       setCurrentMonth(date);
       onChange?.(formatDate(date));
@@ -212,16 +220,20 @@ export const DatePicker = forwardRef(({
           value={displayValue}
           placeholder={placeholder}
           disabled={disabled}
-          readOnly
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={inputClassName || `
-            h-[36px] w-full bg-canvas border border-transparent rounded-[10px]
-            text-[13px] text-ink focus:border-ink outline-none
+        readOnly
+        data-ui-size={size}
+        data-ui-composition={composition}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`${inputClassName || `
+            ui-control w-full bg-canvas border border-transparent
+            text-[13px] focus:border-ink outline-none
             transition-colors placeholder:text-[#a3a3a3]
-            pl-[36px] pr-[12px] cursor-pointer
+            ${hideIcon ? 'pl-[12px]' : 'pl-[36px]'} pr-[12px] cursor-pointer
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
-          `}
+          `} ${
+            textTone === 'danger' ? 'text-[#ef4444]' : textTone === 'faint' ? 'text-faint' : 'text-ink'
+          } ${compact ? 'pr-[22px]' : ''}`}
           {...props}
         />
         {(selectedDate || rangeStart) && !disabled && (
@@ -236,9 +248,11 @@ export const DatePicker = forwardRef(({
               onChange?.('');
               onDateRangeChange?.('', '');
             }}
-            className="absolute right-[8px] top-1/2 -translate-y-1/2 text-muted hover:text-ink transition-colors"
+            className={`absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors hover:bg-black/[0.04] hover:text-ink ${
+              compact ? 'right-0 h-[22px] w-[22px]' : 'right-[8px] h-6 w-6'
+            }`}
           >
-            <X size={14} />
+            <X size={compact ? 12 : 14} strokeWidth={2} />
           </button>
         )}
       </div>
@@ -248,7 +262,7 @@ export const DatePicker = forwardRef(({
         <div
           ref={popupRef}
           data-qt-floating-overlay
-          className="fixed z-[200] w-[320px] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
+          className="fixed z-[1100] w-[320px] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
           style={{ top: popupPosition.top, left: popupPosition.left }}
         >
           {/* Header */}
@@ -308,16 +322,20 @@ export const DatePicker = forwardRef(({
               const isRangeStart = rangeStart && formatDate(date) === formatDate(rangeStart);
               const isRangeEnd = rangeEnd && formatDate(date) === formatDate(rangeEnd);
               const isInRange = rangeStart && rangeEnd && date >= rangeStart && date <= rangeEnd;
+              const isBeforeMinimum = minimumDate && date < minimumDate;
 
               return (
                 <button
                   key={day}
                   type="button"
+                  disabled={Boolean(isBeforeMinimum)}
                   aria-pressed={Boolean(isSelected || isRangeStart || isRangeEnd)}
                   onClick={() => handleDateClick(day)}
                   className={`
                     p-1 text-[12px] font-semibold rounded-[6px] transition-all
-                    ${isSelected || isRangeStart || isRangeEnd
+                    ${isBeforeMinimum
+                      ? 'cursor-not-allowed text-faint opacity-35'
+                      : isSelected || isRangeStart || isRangeEnd
                       ? 'bg-ink text-white'
                       : isInRange
                       ? 'bg-line text-ink'

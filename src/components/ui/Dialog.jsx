@@ -22,6 +22,8 @@ export default function Dialog({
   isOpen,
   onClose,
   title,
+  description,
+  headerAction,
   children,
   footer,
   className = '',
@@ -29,6 +31,8 @@ export default function Dialog({
   size = 'md', // sm, md, lg, xl
   showCloseButton = true,
   presentation = 'sheet', // sheet | dialog
+  titleContext = 'section', // section | dialog
+  bodyPadding = 'default', // default | spacious | responsive | invite | horizontal | flush
 }) {
   const titleId = useId();
 
@@ -45,11 +49,26 @@ export default function Dialog({
 
   const sizeClasses = {
     sm: 'sm:w-[440px]',
+    status: 'sm:w-[340px]',
+    workspace: 'sm:w-[480px]',
     md: 'sm:w-[560px]',
-    lg: 'sm:w-[720px]',
+    lg: 'sm:w-[min(760px,92vw)]',
     xl: 'sm:w-[960px]',
   };
   const isSheet = presentation === 'sheet';
+  const titleClass = titleContext === 'dialog'
+    ? 'ui-type-dialog-title'
+    : titleContext === 'eyebrow'
+      ? 'ui-type-eyebrow'
+      : 'ui-type-section-title';
+  const bodyPaddingClass = {
+    default: 'px-6 py-5',
+    spacious: 'p-6',
+    responsive: 'p-5 sm:p-6',
+    invite: 'px-5 py-5 sm:px-7',
+    horizontal: 'px-6 py-0',
+    flush: 'p-0',
+  }[bodyPadding] || 'px-6 py-5';
 
   return (
     <div
@@ -78,16 +97,24 @@ export default function Dialog({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
-            <h2 id={titleId} className="text-[16px] font-bold text-ink">{title}</h2>
-            {showCloseButton && (
-              <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" />
-            )}
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-line shrink-0">
+            <div className="min-w-0">
+              <h2 id={titleId} className={`${titleClass} text-ink`}>{title}</h2>
+              {description ? (
+                <p className="mt-0.5 text-[11px] font-medium text-muted">{description}</p>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {headerAction}
+              {showCloseButton && (
+                <Button style="secondary" size="icon-sm" icon={X} iconSize={16} onClick={onClose} aria-label="Закрити" />
+              )}
+            </div>
           </div>
         )}
 
         {/* Body */}
-        <div className={`px-6 py-5 overflow-y-auto flex-1 ${bodyClassName}`}>
+        <div className={`${bodyPaddingClass} overflow-y-auto flex-1 ${bodyClassName}`}>
           {children}
         </div>
 

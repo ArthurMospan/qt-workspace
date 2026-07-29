@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Download } from 'lucide-react';
 import { downloadMaterial } from '@/lib/portal/downloadMaterial';
+import IconAction from '@/components/ui/IconAction';
 
 function formatTime(t) {
   if (!Number.isFinite(t)) return '00:00';
@@ -89,7 +90,7 @@ export default function AudioCard({ view }) {
   };
 
   return (
-    <div className="rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group">
+    <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group">
       {view.url && <audio ref={audioRef} src={view.url} preload="metadata" playsInline />}
 
       <div className="flex items-center gap-2">
@@ -109,14 +110,15 @@ export default function AudioCard({ view }) {
         </div>
 
         {view.url && (
-          <button
-            type="button"
+          <IconAction
             onClick={() => downloadMaterial(view.url, view.title)}
-            aria-label={`Завантажити ${view.title}`}
-            className="w-7 h-7 rounded-full text-muted flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-canvas hover:text-ink shrink-0"
-          >
-            <Download size={13} />
-          </button>
+            label={`Завантажити ${view.title}`}
+            icon={Download}
+            iconSize={13}
+            size="sm"
+            shape="circle"
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          />
         )}
       </div>
 

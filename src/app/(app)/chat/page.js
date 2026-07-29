@@ -3,17 +3,18 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Hash, MessageSquare, Send, Smile, Paperclip, Plus, Edit2,
+  Hash, MessageSquare, Smile, Paperclip, Plus, Edit2,
   Trash2, X, Pin, ChevronDown, Info, UserPlus, ArrowLeft, Search
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
+import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, EmptyState, Counter } from '@/components/ui';
+import { useConfirm, EmptyState, Counter, IconAction, Label, Pill, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -171,7 +172,7 @@ function MessageBubble({
             </span>
             <span className="text-[11px] text-muted">{msg.time}</span>
             {msg.isPinned && (
-              <span className="text-[10px] font-bold text-ink bg-canvas px-2 py-0.5 rounded-full">📌 Закріплено</span>
+              <Pill size="sm">📌 Закріплено</Pill>
             )}
           </div>
         )}
@@ -247,17 +248,18 @@ function MessageBubble({
 
       {/* Action toolbar */}
       {(showActions || showEmoji) && !editing && (
-        <div className="absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20">
+        <div data-ui-surface="local" className="absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20">
           {/* Emoji */}
           <div className="relative">
-            <button
-              ref={emojiButtonRef}
+            <IconAction
+              buttonRef={emojiButtonRef}
               onClick={() => setShowEmoji(v => !v)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-canvas transition-colors text-[16px]"
-              title="Реакція"
-            >
-              <Smile size={15} />
-            </button>
+              icon={Smile}
+              iconSize={15}
+              label="Реакція"
+              size="sm"
+              appearance="soft"
+            />
             {showEmoji && typeof document !== 'undefined' && createPortal(
               <div
                 ref={emojiPickerRef}
@@ -295,7 +297,7 @@ function MessageBubble({
             <Button
               onClick={() => onPin(msg.id, !msg.isPinned)}
               style="ghost" size="icon-sm" icon={Pin} iconSize={15}
-              className={msg.isPinned ? '!text-ink !bg-canvas' : ''}
+              surface={msg.isPinned ? 'canvas' : 'default'}
               title={msg.isPinned ? 'Відкріпити' : 'Закріпити'}
             />
           )}
@@ -475,7 +477,7 @@ function MessageInput({
     <div className="relative px-4 pb-4">
       {/* Mention dropdown */}
       {mentionType === 'user' && filteredMembers.length > 0 && (
-        <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30">
+        <div data-ui-surface="local" className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30">
           {filteredMembers.map(m => (
             <button
               key={m.id || m.uid}
@@ -515,72 +517,45 @@ function MessageInput({
         document.body,
       )}
 
-      {/* Input card */}
-      <div className="overflow-hidden rounded-2xl border border-line bg-white transition-all hover:border-[#cfcfcf] focus-within:border-[#cfcfcf] focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]">
-        {/* Attachment previews */}
-        {attachments.length > 0 && (
+      <ChatComposerCore
+        variant="workspace"
+        textareaRef={textareaRef}
+        value={text}
+        onChange={handleChange}
+        onKeyDown={handleKey}
+        placeholder={placeholder}
+        attachments={attachments.length > 0 ? (
           <div className="border-b border-black/[0.05] p-2">
             <PendingChatAttachments
               files={attachments}
               onRemove={index => setAttachments(previous => previous.filter((_, itemIndex) => itemIndex !== index))}
             />
           </div>
-        )}
-
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={handleChange}
-          onKeyDown={handleKey}
-          placeholder={placeholder}
-          rows={1}
-          className="w-full px-4 py-3.5 text-[14px] text-ink placeholder-[#b0b0b0] bg-transparent outline-none resize-none max-h-[200px] leading-relaxed"
-        />
-
-        {/* Toolbar */}
-        <div className="flex items-center justify-between px-3 pb-3 border-t border-[#f0f0f0] pt-2">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              ref={emojiBtnRef}
+        ) : null}
+        toolbar={(
+          <>
+            <IconAction
+              buttonRef={emojiBtnRef}
               onClick={() => setShowEmoji(v => !v)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${showEmoji ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'}`}
-              title="Emoji"
-            >
-              <Smile size={17} />
-            </button>
+              icon={Smile}
+              iconSize={17}
+              label="Emoji"
+              appearance={showEmoji ? 'soft' : 'quiet'}
+            />
             <input type="file" multiple ref={fileRef} onChange={handleFiles} className="hidden" />
-            <button
-              type="button"
+            <IconAction
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors disabled:opacity-40"
-              title="Прикріпити файл"
-            >
-              <Paperclip size={17} />
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!canSend}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[13px] font-semibold transition-all ${
-              canSend
-                ? 'bg-ink text-white hover:bg-[#333] active:scale-95 shadow-sm'
-                : 'bg-[#f0f0f0] text-[#b0b0b0] cursor-not-allowed'
-            }`}
-          >
-            {uploading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-            <span>Надіслати</span>
-          </button>
-        </div>
-      </div>
+              icon={Paperclip}
+              iconSize={17}
+              label="Прикріпити файл"
+            />
+          </>
+        )}
+        onSubmit={handleSend}
+        canSubmit={Boolean(canSend)}
+        sending={uploading}
+      />
     </div>
   );
 }
@@ -610,27 +585,23 @@ function ThreadSidebar({
   if (!parentMsg) return null;
 
   return (
-    <div className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
+    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
       {/* Header */}
       <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <MessageSquare size={16} className="text-muted" />
-          <h3 className="font-bold text-[14px] text-ink">Гілка</h3>
+          <h3 className="ui-type-card-title text-ink">Гілка</h3>
           {replies.length > 0 && (
-            <span className="text-[11px] text-muted bg-white px-2 py-0.5 rounded-full">
-              {replies.length}
-            </span>
+            <Counter value={replies.length} size="sm" appearance="subtle" />
           )}
         </div>
-        <button
-          type="button"
+        <IconAction
           onClick={onClose}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white transition-colors"
-          aria-label="Закрити гілку"
-          title="Закрити"
-        >
-          <X size={16} />
-        </button>
+          icon={X}
+          iconSize={16}
+          label="Закрити гілку"
+          appearance="pane"
+        />
       </div>
 
       {/* Parent message */}
@@ -834,22 +805,20 @@ function ChannelInfoSidebar({
   };
 
   return (
-    <div className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
+    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
         <div className="flex items-center gap-2">
           <Info size={16} className="text-muted" />
-          <h3 className="font-bold text-[14px] text-ink">Про канал</h3>
+          <h3 className="ui-type-card-title text-ink">Про канал</h3>
         </div>
-        <button
-          type="button"
+        <IconAction
           onClick={onClose}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white transition-colors"
-          aria-label="Закрити інформацію про канал"
-          title="Закрити"
-        >
-          <X size={16} />
-        </button>
+          icon={X}
+          iconSize={16}
+          label="Закрити інформацію про канал"
+          appearance="pane"
+        />
       </div>
 
       <div className="flex shrink-0 gap-1 border-b border-line/70 px-3 py-2">
@@ -879,12 +848,12 @@ function ChannelInfoSidebar({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
             <Hash size={18} className="text-ink shrink-0" />
-            <h4 className="font-bold text-[16px] text-ink truncate">
+            <h4 className="ui-type-dialog-title text-ink truncate">
               {channel.name}
             </h4>
           </div>
           
-          <div className="mt-2 bg-white rounded-2xl p-4 border border-line/70">
+          <div data-ui-surface="local" className="mt-2 bg-white rounded-2xl p-4 border border-line/70">
             <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Опис</p>
             {isEditingDesc ? (
               <div className="flex flex-col gap-2 mt-1">
@@ -930,7 +899,7 @@ function ChannelInfoSidebar({
           </div>
 
           {showAddMembers && (
-            <div className="mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2">
+            <div data-ui-surface="local" className="mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2">
               <button
                 onClick={handleAddAllMembers}
                 className="w-full text-center py-2 bg-ink hover:bg-ink-hover text-white rounded-xl text-[12px] font-semibold transition-colors"
@@ -957,7 +926,7 @@ function ChannelInfoSidebar({
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2">
+          <div data-ui-surface="local" className="bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2">
             {membersInChannel.map(m => (
               <div key={m.id || m.uid} className="flex items-center justify-between py-0.5 group/m">
                 <div className="flex items-center gap-2">
@@ -1045,7 +1014,7 @@ function ChannelInfoSidebar({
             ) : (
               <div className="flex flex-col gap-2">
                 {visibleAttachments.map(attachment => (
-                  <div key={attachment.chatAttachmentKey} className="rounded-xl border border-line/70 bg-white p-2">
+                  <div key={attachment.chatAttachmentKey} data-ui-surface="local" className="rounded-xl border border-line/70 bg-white p-2">
                     <ChatAttachmentList
                       attachments={[attachment]}
                       compact
@@ -1430,7 +1399,7 @@ export default function ChatPage() {
     .map(member => ({
       value: member.id || member.uid,
       label: member.name || member.displayName || member.email || 'Учасник',
-      avatar: member.avatar || member.photoURL || '',
+      user: member,
     })), [members, myUid]);
 
   const handleSendMessage = async (text, attachments) => {
@@ -1536,7 +1505,6 @@ export default function ChatPage() {
         isOpen={isCreatingChannel}
         onClose={closeCreateChannelDialog}
         title="Новий канал"
-        presentation="dialog"
         size="md"
         footer={(
           <>
@@ -1560,11 +1528,9 @@ export default function ChatPage() {
           </>
         )}
       >
-        <form id="create-channel-form" onSubmit={handleCreateChannel} className="space-y-5">
-          <div className="space-y-2">
-            <label htmlFor="new-channel-name" className="block text-[11px] font-bold uppercase tracking-wide text-muted">
-              Назва каналу
-            </label>
+        <form id="create-channel-form" onSubmit={handleCreateChannel} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-[6px]">
+            <Label htmlFor="new-channel-name" required>Назва каналу</Label>
             <Input
               id="new-channel-name"
               autoFocus
@@ -1575,25 +1541,20 @@ export default function ChatPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="new-channel-description" className="block text-[11px] font-bold uppercase tracking-wide text-muted">
-              Опис
-            </label>
-            <textarea
+          <div className="flex flex-col gap-[6px]">
+            <Label htmlFor="new-channel-description">Опис</Label>
+            <Textarea
               id="new-channel-description"
               value={newChannelDescription}
               onChange={event => setNewChannelDescription(event.target.value)}
               placeholder="Про що цей канал?"
               rows={3}
               maxLength={240}
-              className="w-full resize-none rounded-[10px] border border-transparent bg-canvas px-3 py-2.5 text-[13px] text-ink outline-none transition-colors placeholder:text-[#a3a3a3] focus:border-ink"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-[11px] font-bold uppercase tracking-wide text-muted">
-              Учасники
-            </label>
+          <div className="flex flex-col gap-[6px]">
+            <Label>Учасники</Label>
             <MultiSelect
               value={newChannelMemberIds}
               onChange={setNewChannelMemberIds}
@@ -1621,16 +1582,18 @@ export default function ChatPage() {
               <div className="flex items-center justify-between px-3 pb-[8px] group">
                 <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Канали</span>
                 {isAdminOrOwner && (
-                  <button
+                  <Button
                     onClick={() => {
                       resetChannelDraft();
                       setIsCreatingChannel(true);
                     }}
-                    className="text-muted hover:text-ink hover:bg-white rounded-[6px] p-[2px] transition-colors"
+                    style="ghost"
+                    size="icon-xs"
+                    icon={Plus}
+                    iconSize={16}
+                    className="hover:!bg-white"
                     title="Новий канал"
-                  >
-                    <Plus size={16} />
-                  </button>
+                  />
                 )}
               </div>
 
@@ -1652,7 +1615,8 @@ export default function ChatPage() {
                       <button
                         key={c.id}
                         onClick={() => openChannel({ id: c.id, type: 'channel' })}
-                        className={`w-full flex items-center gap-[8px] px-3 py-2 rounded-xl text-left transition-all ${
+                        data-ui-control="chat-list-action"
+                        className={`ui-native-control ${
                           active
                             ? 'bg-[#ebebeb] text-ink font-semibold'
                             : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
@@ -1685,7 +1649,8 @@ export default function ChatPage() {
                       <button
                         key={u.id}
                         onClick={() => openChannel({ id: u.id, type: 'dm' })}
-                        className={`w-full flex items-center gap-[8px] px-3 py-2 rounded-xl text-left transition-all ${
+                        data-ui-control="chat-list-action"
+                        className={`ui-native-control ${
                           active
                             ? 'bg-[#ebebeb] text-ink font-semibold'
                             : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
@@ -1742,7 +1707,7 @@ export default function ChatPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-[15px] text-ink truncate flex items-center gap-1.5">
+                <h2 className="ui-type-compact-title text-ink truncate flex items-center gap-1.5">
                   {activeChannel.type === 'channel'
                     ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
                     : (
@@ -1784,7 +1749,7 @@ export default function ChatPage() {
               )}
 
               {/* Conversation info */}
-              <button
+              <IconAction
                   onClick={() => {
                     if (activeChannel.type === 'dm') {
                       router.push(`/chat?dm=${encodeURIComponent(activeChannel.id)}&member=${encodeURIComponent(activeChannel.id)}`);
@@ -1796,15 +1761,11 @@ export default function ChatPage() {
                       handleOpenChannelInfo('info');
                     }
                   }}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                    showChannelInfo
-                      ? 'text-ink bg-canvas'
-                      : 'text-muted hover:text-ink hover:bg-canvas'
-                  }`}
-                  title={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
-                >
-                  <Info size={16} />
-                </button>
+                  icon={Info}
+                  iconSize={16}
+                  label={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
+                  appearance={showChannelInfo ? 'soft' : 'quiet'}
+                />
             </div>
 
             {/* Search Results Banner */}
@@ -1865,9 +1826,7 @@ export default function ChatPage() {
                       {showDateSep && msg.createdAt && (
                         <div className="flex items-center gap-3 my-4">
                           <div className="flex-1 h-px bg-line" />
-                          <span className="text-[11px] font-bold text-muted shrink-0 bg-canvas px-3 py-0.5 rounded-full">
-                            {formatDateSep(msg.createdAt)}
-                          </span>
+                          <Pill size="md" className="shrink-0">{formatDateSep(msg.createdAt)}</Pill>
                           <div className="flex-1 h-px bg-line" />
                         </div>
                       )}

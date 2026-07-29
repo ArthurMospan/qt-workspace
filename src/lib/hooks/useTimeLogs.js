@@ -1,116 +1,156 @@
 'use client';
 
-// src/lib/hooks/useTimeLogs.js — Time log CRUD for a single issue
-import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, increment, serverTimestamp, writeBatch } from 'firebase/firestore';
+// Realtime task time-log reads plus server-authoritative mutations.
+import { useCallback, useEffect, useState } from 'react';
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import {
+  createTaskTimeLogViaApi,
+  deleteTaskTimeLogViaApi,
+  updateTaskTimeLogViaApi,
+} from '@/lib/services/timeLogs';
 import { reportLoadError } from '@/lib/utils/errors';
-export function useTimeLogs(issueId) {
-  const {
-    activeOrgId
-  } = useAppContext();
+
+export function useTimeLogs(issueId, projectId) {
+  const { activeOrgId } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!issueId || !activeOrgId) {
-      queueMicrotask(() => setLoading(false));
-      return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLogs([]);
+      setTotalMinutes(0);
+      setLoading(Boolean(issueId && projectId && activeOrgId));
+    });
+
+    if (!issueId || !projectId || !activeOrgId) {
+      return () => {
+        cancelled = true;
+      };
     }
 
-    // Two equality filters — no composite index required
-    const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('issueId', '==', issueId));
-    const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      const docs = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
+    const scopedQuery = query(
+      collection(db, 'timeLogs'),
+      where('organizationId', '==', activeOrgId),
+      where('projectId', '==', projectId),
+      where('issueId', '==', issueId),
+    );
+    const unsubscribe = onSnapshot(scopedQuery, {
+      serverTimestamps: 'estimate',
+    }, snapshot => {
+      if (cancelled) return;
+      const nextLogs = snapshot.docs.map(document => ({
+        id: document.id,
+        ...document.data(),
       }));
-
-      // Sort client-side by loggedAt desc
-      docs.sort((a, b) => {
-        const aTime = a.loggedAt?.toMillis?.() ?? 0;
-        const bTime = b.loggedAt?.toMillis?.() ?? 0;
-        return bTime - aTime;
-      });
-      const total = docs.reduce((sum, l) => sum + (l.spentMinutes || 0), 0);
-      setLogs(docs);
-      setTotalMinutes(total);
+      nextLogs.sort((left, right) => (
+        (right.loggedAt?.toMillis?.() ?? 0)
+        - (left.loggedAt?.toMillis?.() ?? 0)
+      ));
+      setLogs(nextLogs);
+      setTotalMinutes(nextLogs.reduce(
+        (total, log) => total + (Number(log.spentMinutes) || 0),
+        0,
+      ));
       setLoading(false);
-    }, err => {
-      reportLoadError('[useTimeLogs]', err);
+    }, error => {
+      if (cancelled) return;
+      reportLoadError('[useTimeLogs]', error);
+      setLogs([]);
+      setTotalMinutes(0);
       setLoading(false);
     });
-    return () => unsub();
-  }, [issueId, activeOrgId]);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [activeOrgId, issueId, projectId]);
 
-  // ---------------------------------------------------------------------------
-  // `issues/{id}.spentMinutes` is a denormalised mirror of these logs, read by
-  // the board and the backlog table. It used to be maintained by the caller as
-  // `read local value → add → write`, which loses one of two concurrent logs and
-  // leaves the mirror permanently wrong if the second write fails. Every change
-  // below therefore ships the log and the mirror in ONE batch, and moves the
-  // mirror with increment() so the server resolves concurrent updates.
-  // ---------------------------------------------------------------------------
-  const commitLogChange = useCallback(async (targetIssueId, mutate, minutesDelta) => {
-    if (!targetIssueId) throw new Error('Issue is required');
-    const batch = writeBatch(db);
-    mutate(batch);
-    if (minutesDelta !== 0) {
-      batch.update(doc(db, 'issues', targetIssueId), {
-        spentMinutes: increment(minutesDelta),
-        updatedAt: serverTimestamp(),
-      });
+  const addTimeLog = useCallback(async (
+    targetIssueId,
+    targetProjectId,
+    userId,
+    spentMinutes,
+    description = '',
+  ) => {
+    if (
+      !Number.isSafeInteger(spentMinutes)
+      || spentMinutes <= 0
+      || spentMinutes > 525_600
+    ) {
+      throw new Error('Вкажіть коректну кількість хвилин');
     }
-    await batch.commit();
-  }, []);
+    return createTaskTimeLogViaApi({
+      organizationId: activeOrgId,
+      projectId: targetProjectId,
+      issueId: targetIssueId,
+      userId,
+      spentMinutes,
+      description,
+    });
+  }, [activeOrgId]);
 
-  const addTimeLog = useCallback(async (targetIssueId, projectId, userId, minutes, description = '') => {
-    if (!minutes || minutes <= 0) throw new Error('minutes must be > 0');
-    const rounded = Math.round(minutes);
-    await commitLogChange(targetIssueId, batch => {
-      batch.set(doc(collection(db, 'timeLogs')), {
-        issueId: targetIssueId,
-        projectId,
-        userId,
-        organizationId: activeOrgId,
-        spentMinutes: rounded,
-        description: description || '',
-        loggedAt: serverTimestamp(),
-      });
-    }, rounded);
-  }, [activeOrgId, commitLogChange]);
-
-  const updateTimeLog = useCallback(async (logId, { spentMinutes, description }) => {
-    const current = logs.find(item => item.id === logId);
-    const updates = {};
-    let delta = 0;
-    if (spentMinutes !== undefined) {
-      if (spentMinutes <= 0) throw new Error('minutes must be > 0');
-      updates.spentMinutes = Math.round(spentMinutes);
-      delta = updates.spentMinutes - (Number(current?.spentMinutes) || 0);
+  const updateTimeLog = useCallback(async (
+    logId,
+    { spentMinutes, description },
+  ) => {
+    const current = logs.find(log => log.id === logId);
+    if (current?.invoiceId || current?.billedAt) {
+      throw new Error(
+        'Цей запис часу вже входить у рахунок і не може бути змінений',
+      );
     }
-    if (description !== undefined) updates.description = description;
-    if (Object.keys(updates).length === 0) return;
-    await commitLogChange(current?.issueId || issueId, batch => {
-      batch.update(doc(db, 'timeLogs', logId), updates);
-    }, delta);
-  }, [commitLogChange, issueId, logs]);
+    if (
+      spentMinutes !== undefined
+      && (
+        !Number.isSafeInteger(spentMinutes)
+        || spentMinutes <= 0
+        || spentMinutes > 525_600
+      )
+    ) {
+      throw new Error('Вкажіть коректну кількість хвилин');
+    }
+    if (spentMinutes === undefined && description === undefined) return undefined;
+    return updateTaskTimeLogViaApi({
+      organizationId: activeOrgId,
+      projectId,
+      issueId: current?.issueId || issueId,
+      logId,
+      ...(spentMinutes !== undefined ? { spentMinutes } : {}),
+      ...(description !== undefined ? { description } : {}),
+    });
+  }, [activeOrgId, issueId, logs, projectId]);
 
   const deleteTimeLog = useCallback(async logId => {
-    const current = logs.find(item => item.id === logId);
-    await commitLogChange(current?.issueId || issueId, batch => {
-      batch.delete(doc(db, 'timeLogs', logId));
-    }, -(Number(current?.spentMinutes) || 0));
-  }, [commitLogChange, issueId, logs]);
+    const current = logs.find(log => log.id === logId);
+    if (current?.invoiceId || current?.billedAt) {
+      throw new Error(
+        'Цей запис часу вже входить у рахунок і не може бути видалений',
+      );
+    }
+    return deleteTaskTimeLogViaApi({
+      organizationId: activeOrgId,
+      projectId,
+      issueId: current?.issueId || issueId,
+      logId,
+    });
+  }, [activeOrgId, issueId, logs, projectId]);
+
   return {
     logs,
     totalMinutes,
     loading,
     addTimeLog,
     updateTimeLog,
-    deleteTimeLog
+    deleteTimeLog,
   };
 }

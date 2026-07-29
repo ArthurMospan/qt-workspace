@@ -13,6 +13,7 @@ import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
+import Pill from '@/components/ui/DataDisplay/Pill';
 
 export default function ProjectTeamTab({
   members = [],
@@ -85,7 +86,7 @@ export default function ProjectTeamTab({
 
   return (
     <div className="flex flex-1 flex-col pb-8">
-      <div className="w-full rounded-[16px] bg-canvas p-[16px]">
+      <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface w-full">
         {members.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -127,11 +128,11 @@ export default function ProjectTeamTab({
                     <UserAvatar user={member} size={48} />
                     <div className="flex-1 min-w-0 flex flex-col pt-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-[14px] font-bold text-ink truncate">{member.name || 'Анонім'}</h3>
+                        <h3 className="ui-type-card-title text-ink truncate">{member.name || 'Анонім'}</h3>
                         {member.role && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted px-2 py-0.5 bg-[#f5f5f5] rounded-full">
+                          <Pill tone="neutral" size="sm" uppercase>
                             {member.role === 'admin' ? 'Адмін' : member.role === 'owner' ? 'Власник' : 'Учасник'}
-                          </span>
+                          </Pill>
                         )}
                       </div>
                       <div className="flex flex-col gap-[4px] mt-2">

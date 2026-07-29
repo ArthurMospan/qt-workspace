@@ -4,12 +4,17 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Calendar, Lock, Paperclip } from 'lucide-react';
+import { Calendar, CheckSquare, Lock, Paperclip } from 'lucide-react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { useAppContext } from '@/lib/context/AppContext';
+import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
+import Pill from '@/components/ui/DataDisplay/Pill';
+import { issueDisplayParticipants } from '@/lib/utils/issueParticipants.mjs';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
+import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -32,7 +37,7 @@ function hexToRgba(hex, alpha) {
 // project's own board every card would repeat the project you are already in.
 // `projectName` is still always accepted — the issue key prefix is derived from
 // it below, which has to work whether or not the badge is shown.
-export default function IssueCard({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, isTimerActive, isArchived, className = '' }) {
+export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, isTimerActive, isArchived, className = '' }) {
   const router   = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
@@ -40,27 +45,40 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();
   
-  const typeObj = types.find(t => t.id === issue.type) || types[0];
-  const typeLabel = typeObj ? typeObj.label : 'Task';
+  const typeObj = types.find(t => t.id === issue.type) || {
+    id: issue.type || 'task',
+    label: issue.type === 'epic' ? 'Епік (legacy)' : 'Задача',
+    color: issue.type === 'epic' ? '#8b5cf6' : '#9a9a9a',
+  };
+  const typeLabel = typeObj.label;
   
   const priObj = priorities.find(p => p.id === issue.priority) || priorities[0];
   const pri = {
-    label: priObj ? priObj.label.toUpperCase() : 'MEDIUM',
+    label: priObj ? priObj.label.toUpperCase() : 'СЕРЕДНІЙ',
     dot: priObj ? priObj.color : '#eab308',
     glow: priObj ? hexToRgba(priObj.color, 0.05) : 'transparent',
     bg: priObj ? hexToRgba(priObj.color, 0.01) : '#fefce8'
   };
 
-  const assignees = (issue.assigneeIds || [])
-    .map(uid => members.find(m => (m.id || m.uid) === uid))
+  const participantRoles = issueDisplayParticipants(issue);
+  const participants = participantRoles
+    .map(participant => {
+      const member = members.find(candidate => (candidate.id || candidate.uid) === participant.id);
+      return member ? { ...participant, member } : null;
+    })
     .filter(Boolean);
-  const first = assignees[0] || null;
 
   const due       = parseDueDate(issue.dueDate);
   const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
 
-  const subAll  = (issue.subtasks || []).length;
-  const subDone = (issue.subtasks || []).filter(s => s.done).length;
+  const contextIssues = allIssues || issues;
+  const parentIssueId = existingParentIssueId(issue);
+  const parentIssue = contextIssues.find(candidate => candidate.id === parentIssueId);
+  const childIssues = contextIssues.filter(candidate => existingParentIssueId(candidate) === issue.id);
+  const childAll = childIssues.length;
+  const childDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const checklistAll = (issue.subtasks || []).length;
+  const checklistDone = (issue.subtasks || []).filter(item => item.done).length;
   const attachCount = (issue.attachments || []).length;
 
   const isDraggable = typeof index === 'number';
@@ -82,11 +100,12 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
 
   const displayKey = getDisplayKey();
 
-  const isBlocked = issueLinks.some(l => 
-    l.targetIssueId === issue.id && 
-    l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
-  );
+  const isBlocked = openBlockerIssues(
+    issue.id,
+    contextIssues,
+    issueLinks,
+    doneStatusIds,
+  ).length > 0;
 
   const renderCardContent = (provided = {}, snapshot = {}) => {
     const { isDragging = false, isDropAnimating = false } = snapshot;
@@ -175,6 +194,11 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
             <span className="font-mono text-[#c5c5c5] font-bold text-[10px] tracking-wider select-none truncate max-w-[180px]">
               {displayKey}{showProjectName && projectName ? ` • ${projectName.toUpperCase()}` : ''}
             </span>
+            {parentIssueId && (
+              <span className="truncate text-[9px] font-semibold text-muted" title={parentIssue?.title || 'Підзадача'}>
+                ↳ {parentIssue?.issueKey || 'ПІДЗАДАЧА'}
+              </span>
+            )}
 
             {isTimerActive && (
               <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
@@ -191,18 +215,18 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
             {issue.title}
           </p>
 
-          {/* Row 3: Visual Checklist subtasks indicator (flat, 2.5px dashes, text first) */}
-          {subAll > 0 && (
+          {/* Real child issues roll up into the parent card. */}
+          {childAll > 0 && (
             <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-[#555555] font-medium">
               <span className="shrink-0">
-                <strong className="text-[#1a1a1a] font-semibold">{subDone}/{subAll}</strong> підзавдань
+                <strong className="text-[#1a1a1a] font-semibold">{childDone}/{childAll}</strong> підзадач
               </span>
               <div className="flex items-center gap-[3px] shrink-0">
-                {Array.from({ length: subAll }).map((_, idx) => (
+                {Array.from({ length: childAll }).map((_, idx) => (
                   <div 
                     key={idx}
                     className={`h-[2.5px] w-[12px] rounded-full transition-all duration-300 ${
-                      idx < subDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+                      idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
                     }`}
                   />
                 ))}
@@ -210,35 +234,40 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
             </div>
           )}
 
+          {checklistAll > 0 && (
+            <div className="mb-[12px] flex items-center gap-[5px] text-[10px] font-medium text-muted">
+              <CheckSquare size={11} />
+              <span><strong className="text-ink">{checklistDone}/{checklistAll}</strong> старий чекліст</span>
+            </div>
+          )}
+
           {/* Row 4: Sprint + Type + Labels (Using strict UI Kit Tag atom styling) */}
           <div className="flex flex-wrap gap-[6px] mb-[12px] items-center">
             {typeObj && (
-              <span 
-                className="text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 backdrop-blur-[2px]"
-                style={{
-                  background: hexToRgba(typeObj.color || '#9a9a9a', 0.08),
-                  color: typeObj.color || '#404040'
-                }}
-              >
-                {typeLabel}
-              </span>
+              <TypeBadge
+                label={typeLabel}
+                color={typeObj.color || '#9a9a9a'}
+              />
             )}
 
             {isBlocked && (
-              <span 
-                className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
-                title="Заблоковано іншою завданням"
+              <Pill
+                tone="danger"
+                size="sm"
+                shape="badge"
+                weight="medium"
+                title="Заблоковано іншою задачею"
               >
                 <Lock size={10} />
-                Blocked
-              </span>
+                Заблоковано
+              </Pill>
             )}
 
             {/* Sprint: Standard gray badge without emoji */}
             {issue.sprintId && (
-              <span className="inline-flex items-center px-[6px] py-[1.5px] bg-[#f0f0f0] text-[#555555] rounded-[4px] text-[10px] font-medium shrink-0">
+              <Pill tone="neutral" size="sm" shape="badge" weight="medium">
                 {sprints.find(s => s.id === issue.sprintId)?.name || 'Спринт'}
-              </span>
+              </Pill>
             )}
 
             {/* Labels */}
@@ -264,29 +293,50 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
             }`}>
               <Calendar size={11} strokeWidth={1.8} className="shrink-0" />
               <span>{formatDate(due)}</span>
-              {isOverdue && <span className="font-semibold">• Overdue</span>}
+              {isOverdue && <span className="font-semibold">• Прострочено</span>}
             </div>
           )}
 
-          {/* Row 6: Footer with overlapping assignees and flat modern indigo chat indicator */}
+          {/* Row 6: Footer with task participants and flat modern indigo chat indicator */}
           <div className="border-t border-[#f5f5f5] pt-[10px] flex items-center justify-between gap-2 mt-auto">
-            <div className="flex -space-x-[8px] overflow-visible">
-              {assignees.length > 0 ? (
-                assignees.map((m, idx) => (
-                  <div key={idx} title={m.name || m.email?.split('@')[0]} className="relative group/avatar">
-                    <UserAvatar user={m} size={22} className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
-                  </div>
-                ))
+            <div className="flex -space-x-[8px] overflow-visible" aria-label="Учасники завдання">
+              {participants.length > 0 ? (
+                participants.slice(0, 5).map(({ id, member, roles }) => {
+                  const roleLabels = roles.map(role => ({
+                    assignee: 'виконавець',
+                    author: 'автор',
+                    subscriber: 'підписник',
+                  })[role]);
+                  return (
+                    <div
+                      key={id}
+                      title={`${member.name || member.email?.split('@')[0]} · ${roleLabels.join(', ')}`}
+                      className="relative group/avatar"
+                    >
+                      <UserAvatar user={member} size={22} className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
+                    </div>
+                  );
+                })
               ) : (
-                <span className="text-[11px] text-faint italic">Unassigned</span>
+                <span className="text-[11px] text-faint italic">Без учасників</span>
               )}
+              {participants.length > 5 ? (
+                <Pill
+                  tone="neutral"
+                  size="md"
+                  preset="avatar-counter"
+                  title={`Ще ${participants.length - 5} учасників`}
+                >
+                  +{participants.length - 5}
+                </Pill>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-[10px] shrink-0">
               {/* Attachments indicator */}
               {attachCount > 0 && (
                 <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${attachCount} вкладень`}>
-                  <Paperclip size={12} />
+                  <Paperclip size={12} strokeWidth={2} />
                   <span className="font-mono">{attachCount}</span>
                 </div>
               )}
@@ -294,10 +344,10 @@ export default function IssueCard({ issue, issues = [], issueLinks = [], members
               {/* Chat count indicator: totally flat, no background, no border, no shadow */}
               {msgCount > 0 && (
                 <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-muted/10">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
-                  {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
+                  {isMentioned && <Pill tone="dark" size="micro">@</Pill>}
                   {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                   <span className="font-mono">{msgCount}</span>
                 </div>

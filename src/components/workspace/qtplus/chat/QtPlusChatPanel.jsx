@@ -6,6 +6,7 @@ import { toChatMessageView, dayLabel, unreadCount } from '@/lib/portal/qtplusCha
 import ChatMessage from './ChatMessage';
 import ChatComposer from './ChatComposer';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
+import { Counter, Pill } from '@/components/ui';
 
 function Spinner() {
   return <div className="w-4 h-4 border-2 border-line border-t-ink rounded-full animate-spin" />;
@@ -14,7 +15,7 @@ function Spinner() {
 function DayDivider({ label }) {
   return (
     <div className="flex items-center justify-center py-3">
-      <span className="rounded-full bg-white/75 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">{label}</span>
+      <Pill tone="surface" size="day-wide" uppercase>{label}</Pill>
     </div>
   );
 }
@@ -73,9 +74,7 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
           <MessagesSquare size={15} className="text-muted" />
           <span className="text-[13px] text-ink font-semibold">Чат</span>
           {unread > 0 && (
-            <span className="ml-auto text-[11px] font-semibold text-white bg-ink rounded-full px-2 py-[1px]">
-              {unread}
-            </span>
+            <Counter value={unread} size="md" className="ml-auto" />
           )}
         </div>
       )}
@@ -94,7 +93,8 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
             icon={MessagesSquare}
             title="Ще немає повідомлень"
             description="Напишіть перше повідомлення."
-            className="m-auto !py-8"
+            context="centered"
+            density="compact"
           />
         ) : (
           views.map((v, i) => {

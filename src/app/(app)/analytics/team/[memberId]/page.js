@@ -45,6 +45,12 @@ export default function MemberAnalyticsPage() {
     )),
     [projectFilters, projects],
   );
+  const hierarchyIssues = useMemo(
+    () => issues.filter(issue => (
+      projectFilters.length === 0 || projectFilters.includes(issue.projectId)
+    )),
+    [issues, projectFilters],
+  );
   const memberIssues = useMemo(
     () => filterTeamIssues(issues, projectFilters, memberId),
     [issues, memberId, projectFilters],
@@ -90,10 +96,11 @@ export default function MemberAnalyticsPage() {
   return (
     <div className="custom-scrollbar h-full flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
       <div className="workspace-page-layout min-h-full pb-[120px]">
-        <Surface variant="panel" padding="lg" className="min-h-[520px] flex-1">
+        <Surface preset="panel" padding="lg" className="min-h-[520px] flex-1">
           <WorkloadTab
             members={members}
             issues={memberIssues}
+            hierarchyIssues={hierarchyIssues}
             timeLogs={memberTimeLogs}
             events={events}
             projects={visibleProjects}
@@ -105,14 +112,14 @@ export default function MemberAnalyticsPage() {
             // header of their own — they read as controls for the analytics
             // they actually scope, next to the person being analysed.
             detailFilters={(
-              <FilterBar className="bg-white">
+              <FilterBar context="detail">
                 <MultiSelect
                   value={projectFilters}
                   onChange={setProjectFilters}
                   options={projects.map(project => ({ value: project.id, label: project.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту…"
-                  className="w-[210px]"
+                  filterRole="project"
                   variant="ghost"
                 />
                 <span className="mx-0.5 h-4 w-px shrink-0 bg-line" />

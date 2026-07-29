@@ -44,7 +44,7 @@ function expandRecurringEvents(sourceEvents) {
       start: originalStart,
       frequency,
       interval: event.recurrence?.interval,
-      until: event.recurrence?.until ? `${event.recurrence.until}T23:59:59` : null,
+      until: event.recurrence?.until ? `${event.recurrence.until}T23:59:59.999Z` : null,
       windowStart,
       windowEnd,
     });

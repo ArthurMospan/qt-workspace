@@ -1,108 +1,190 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 
-export function useCalendarEventTimeLogs(eventId, occurrenceStartAt) {
+async function calendarTimeLogRequest(path, options = {}) {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Потрібно увійти в акаунт');
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    const error = new Error(result.error || 'Не вдалося оновити списаний час');
+    error.code = result.code;
+    throw error;
+  }
+  return result;
+}
+
+function requestPath({
+  activeOrgId,
+  eventId,
+  occurrenceStartAt,
+  projectId,
+  logId,
+}) {
+  const params = new URLSearchParams({
+    organizationId: activeOrgId,
+    occurrenceStartAt,
+    projectId: projectId || '',
+  });
+  if (logId) params.set('logId', logId);
+  return `/api/calendar/events/${encodeURIComponent(eventId)}/time-logs?${params}`;
+}
+
+export function useCalendarEventTimeLogs(eventId, occurrenceStartAt, projectId) {
   const { activeOrgId } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(Boolean(eventId));
+  const [canTrackTime, setCanTrackTime] = useState(false);
+  const [trackingDisabledReason, setTrackingDisabledReason] = useState(null);
 
-  useEffect(() => {
+  const refresh = useCallback(async ({ signal } = {}) => {
     if (!eventId || !occurrenceStartAt || !activeOrgId) {
-      queueMicrotask(() => {
-        setLogs([]);
-        setLoading(false);
-      });
-      return undefined;
+      setLogs([]);
+      setCanTrackTime(false);
+      setTrackingDisabledReason(null);
+      setLoading(false);
+      return;
     }
 
-    const logsQuery = query(
-      collection(db, 'timeLogs'),
-      where('organizationId', '==', activeOrgId),
-      where('eventId', '==', eventId),
-      where('occurrenceStartAt', '==', occurrenceStartAt),
-    );
-    return onSnapshot(logsQuery, { serverTimestamps: 'estimate' }, snapshot => {
-      const nextLogs = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-      nextLogs.sort((a, b) => (b.loggedAt?.toMillis?.() ?? 0) - (a.loggedAt?.toMillis?.() ?? 0));
-      setLogs(nextLogs);
-      setLoading(false);
-    }, error => {
-      reportLoadError('[useCalendarEventTimeLogs]', error);
-      setLoading(false);
-    });
-  }, [activeOrgId, eventId, occurrenceStartAt]);
+    setLoading(true);
+    try {
+      const result = await calendarTimeLogRequest(requestPath({
+        activeOrgId,
+        eventId,
+        occurrenceStartAt,
+        projectId,
+      }), { signal });
+      setLogs(result.logs || []);
+      setCanTrackTime(result.canTrackTime === true);
+      setTrackingDisabledReason(result.trackingDisabledReason || null);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        reportLoadError('[useCalendarEventTimeLogs]', error);
+        setLogs([]);
+        setCanTrackTime(false);
+        setTrackingDisabledReason(error.code || 'unavailable');
+      }
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, [activeOrgId, eventId, occurrenceStartAt, projectId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      refresh({ signal: controller.signal });
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [refresh]);
 
   const addTimeLog = useCallback(async ({
     userId,
-    projectId = '',
     spentMinutes,
     description = '',
   }) => {
-    const minutes = Math.round(Number(spentMinutes));
-    if (!eventId || !occurrenceStartAt || !userId || !Number.isFinite(minutes) || minutes <= 0) {
+    const minutes = Number(spentMinutes);
+    if (
+      !eventId
+      || !occurrenceStartAt
+      || !userId
+      || !Number.isSafeInteger(minutes)
+      || minutes <= 0
+      || minutes > 525_600
+    ) {
       throw new Error('Вкажіть коректний час');
     }
-    const occurrenceDate = new Date(occurrenceStartAt);
-    if (!Number.isFinite(occurrenceDate.getTime())) {
-      throw new Error('Не вдалося визначити дату події');
-    }
-    await addDoc(collection(db, 'timeLogs'), {
-      organizationId: activeOrgId,
-      sourceType: 'calendar_event',
-      eventId,
-      occurrenceStartAt,
-      issueId: '',
-      projectId,
-      userId,
-      spentMinutes: minutes,
-      description: String(description || '').trim().slice(0, 2000),
-      // Calendar work belongs to the occurrence date, even when entered later.
-      loggedAt: Timestamp.fromDate(occurrenceDate),
-      createdAt: serverTimestamp(),
-    });
-  }, [activeOrgId, eventId, occurrenceStartAt]);
+    await calendarTimeLogRequest(
+      `/api/calendar/events/${encodeURIComponent(eventId)}/time-logs`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: activeOrgId,
+          projectId: projectId || '',
+          occurrenceStartAt,
+          userId,
+          spentMinutes: minutes,
+          description,
+        }),
+      },
+    );
+    await refresh();
+  }, [activeOrgId, eventId, occurrenceStartAt, projectId, refresh]);
 
   const deleteTimeLog = useCallback(async logId => {
-    await deleteDoc(doc(db, 'timeLogs', logId));
-  }, []);
+    const current = logs.find(log => log.id === logId);
+    if (current?.invoiceId || current?.billedAt) {
+      throw new Error('Цей запис часу вже входить у рахунок і не може бути видалений');
+    }
+    await calendarTimeLogRequest(requestPath({
+      activeOrgId,
+      eventId,
+      occurrenceStartAt,
+      projectId,
+      logId,
+    }), { method: 'DELETE' });
+    await refresh();
+  }, [activeOrgId, eventId, logs, occurrenceStartAt, projectId, refresh]);
 
   const updateTimeLog = useCallback(async (logId, {
     spentMinutes,
     description = '',
   }) => {
-    const minutes = Math.round(Number(spentMinutes));
-    if (!logId || !Number.isFinite(minutes) || minutes <= 0) {
+    const minutes = Number(spentMinutes);
+    const current = logs.find(log => log.id === logId);
+    if (current?.invoiceId || current?.billedAt) {
+      throw new Error('Цей запис часу вже входить у рахунок і не може бути змінений');
+    }
+    if (
+      !logId
+      || !Number.isSafeInteger(minutes)
+      || minutes <= 0
+      || minutes > 525_600
+    ) {
       throw new Error('Вкажіть коректний час');
     }
-    await updateDoc(doc(db, 'timeLogs', logId), {
-      spentMinutes: minutes,
-      description: String(description || '').trim().slice(0, 2000),
-      updatedAt: serverTimestamp(),
-    });
-  }, []);
+    await calendarTimeLogRequest(
+      `/api/calendar/events/${encodeURIComponent(eventId)}/time-logs`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          organizationId: activeOrgId,
+          projectId: projectId || '',
+          occurrenceStartAt,
+          logId,
+          spentMinutes: minutes,
+          description,
+        }),
+      },
+    );
+    await refresh();
+  }, [activeOrgId, eventId, logs, occurrenceStartAt, projectId, refresh]);
 
   return {
     logs,
     loading,
-    totalMinutes: logs.reduce((sum, log) => sum + (Number(log.spentMinutes) || 0), 0),
+    canTrackTime,
+    trackingDisabledReason,
+    totalMinutes: logs.reduce(
+      (sum, log) => sum + (Number(log.spentMinutes) || 0),
+      0,
+    ),
     addTimeLog,
     updateTimeLog,
     deleteTimeLog,
+    refresh,
   };
 }

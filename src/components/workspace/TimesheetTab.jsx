@@ -7,18 +7,17 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, Clock } from 'lucide-react';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Dialog, Button, Select, Input, EmptyState } from '@/components/ui';
+import { Dialog, Button, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
   calendarEventOccurrenceKey,
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
+import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -131,7 +130,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
               const issue = issuesById[targetKey];
               const event = eventsByKey[targetKey];
               return (
-                <div key={targetKey} className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
+                <div key={targetKey} data-ui-surface="local" className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
                       <Link href={`/${issue.projectId}/issue/${targetKey}`}
@@ -327,7 +326,7 @@ function todayStr() {
 }
 
 function LogTimeModal({ isOpen, onClose, projects, issues }) {
-  const { currentUser, activeOrgId } = useAppContext();
+  const { activeOrgId } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const [projectId, setProjectId] = useState('');
   const [issueId, setIssueId] = useState('');
@@ -346,21 +345,58 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
   );
 
   const handleSave = async () => {
-    const spentMinutes = (parseInt(hours) || 0) * 60 + (parseInt(mins) || 0);
+    const parsedHours = hours.trim() ? Number(hours) : 0;
+    const parsedMinutes = mins.trim() ? Number(mins) : 0;
+    const validDurationParts = (
+      Number.isSafeInteger(parsedHours)
+      && parsedHours >= 0
+      && Number.isSafeInteger(parsedMinutes)
+      && parsedMinutes >= 0
+      && parsedMinutes <= 59
+    );
+    const spentMinutes = validDurationParts
+      ? (parsedHours * 60) + parsedMinutes
+      : Number.NaN;
     const targetIssue = issues.find(i => i.id === issueId);
     if (!targetIssue) { showToast('Оберіть завдання', 'error'); return; }
-    if (spentMinutes <= 0) { showToast('Вкажіть витрачений час', 'error'); return; }
+    if (
+      !Number.isSafeInteger(spentMinutes)
+      || spentMinutes <= 0
+      || spentMinutes > 525_600
+    ) {
+      showToast('Вкажіть коректний витрачений час', 'error');
+      return;
+    }
+    if (
+      !activeOrgId
+      || targetIssue.organizationId !== activeOrgId
+      || !targetIssue.projectId
+    ) {
+      showToast('Завдання не належить активній організації', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const [y, m, d] = date.split('-').map(Number);
-      await addDoc(collection(db, 'timeLogs'), {
-        issueId: targetIssue.id,
-        projectId: targetIssue.projectId,
-        userId: currentUser?.uid || currentUser?.id,
+      const loggedAt = new Date(y, m - 1, d, 12, 0, 0);
+      if (
+        !Number.isSafeInteger(y)
+        || !Number.isSafeInteger(m)
+        || !Number.isSafeInteger(d)
+        || !Number.isFinite(loggedAt.getTime())
+        || loggedAt.getFullYear() !== y
+        || loggedAt.getMonth() !== m - 1
+        || loggedAt.getDate() !== d
+      ) {
+        throw new Error('Некоректна дата');
+      }
+      await createTaskTimeLogViaApi({
         organizationId: activeOrgId,
+        projectId: targetIssue.projectId,
+        issueId: targetIssue.id,
         spentMinutes,
-        description: desc || '',
-        loggedAt: Timestamp.fromDate(new Date(y, m - 1, d, 12, 0, 0)),
+        description: desc,
+        loggedAt: loggedAt.toISOString(),
       });
       showToast('Час списано ✓');
       setIssueId(''); setHours(''); setMins(''); setDesc('');
@@ -386,22 +422,19 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
     >
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Проєкт</label>
+          <FormGroup label="Проєкт" gap="md">
             <Select
               value={effectiveProjectId}
               onChange={val => { setProjectId(val); setIssueId(''); }}
               options={projects.map(p => ({ value: p.id, label: p.name }))}
             />
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Дата</label>
+          </FormGroup>
+          <FormGroup label="Дата" gap="md">
             <DatePicker value={date} onChange={val => setDate(val || todayStr())} />
-          </div>
+          </FormGroup>
         </div>
 
-        <div>
-          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Завдання</label>
+        <FormGroup label="Завдання" gap="md">
           <Select
             value={issueId}
             onChange={setIssueId}
@@ -410,26 +443,29 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
               ...projectIssues.map(i => ({ value: i.id, label: `${i.issueKey || ''} ${i.title}`.trim() })),
             ]}
           />
-        </div>
+        </FormGroup>
 
-        <div>
-          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Час</label>
+        <FormGroup label="Час" gap="md">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} className="pr-8" />
+              <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} composition="duration-compact-hours" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
             </div>
             <div className="relative flex-1">
-              <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} className="pr-7" />
+              <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} composition="duration-compact-minutes" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
             </div>
           </div>
-        </div>
+        </FormGroup>
 
-        <div>
-          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Опис (необовʼязково)</label>
-          <Input placeholder="Що було зроблено?" value={desc} onChange={e => setDesc(e.target.value)} />
-        </div>
+        <FormGroup label="Опис (необовʼязково)" gap="md">
+          <Input
+            placeholder="Що було зроблено?"
+            value={desc}
+            maxLength={2000}
+            onChange={e => setDesc(e.target.value)}
+          />
+        </FormGroup>
       </div>
     </Dialog>
   );
@@ -514,12 +550,12 @@ export default function TimesheetTab({
         <div className="flex items-end justify-between gap-4 flex-wrap mb-5 pt-1">
           <div className="flex items-center gap-3 min-w-0">
             {selectedMember && (
-              <div className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]">
+              <div data-ui-surface="local" className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]">
                 <UserAvatar user={selectedMember} size={24} />
                 <span className="text-[13px] font-bold text-ink truncate">{selectedMember.name || selectedMember.email}</span>
               </div>
             )}
-            <h2 className="text-[20px] font-bold text-ink tracking-tight">{rangeLabel}</h2>
+            <h2 className="ui-type-detail-title text-ink tracking-tight">{rangeLabel}</h2>
           </div>
           <p className="text-[13px] text-muted font-medium">
             Витрачений час{' '}

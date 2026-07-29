@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Pill from '@/components/ui/DataDisplay/Pill';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 
 const PRIORITY_CFG = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
@@ -37,11 +38,11 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
 
   return (
     <div id="search-dropdown" className="absolute top-[calc(100%+8px)] left-[8px] right-[8px] sm:left-[16px] sm:right-auto z-50 flex items-start">
-      <div className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col">
+      <div data-ui-surface="local" className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
           <div>
-            <h2 className="text-[13px] font-bold text-ink">Результати пошуку</h2>
+            <h2 className="ui-type-item-title text-ink">Результати пошуку</h2>
             {query && <p className="text-[11px] text-muted mt-[2px]">Запит: «{query}»</p>}
           </div>
         </div>
@@ -79,7 +80,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                       {/* Left: Type Icon */}
-                      <div className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm">
+                      <div data-ui-surface="local" className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm">
                         <TypeIcon size={12} style={{ color: type.c }} />
                       </div>
 
@@ -109,9 +110,9 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         </div>
                       )}
                       {project && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 bg-[#f5f5f5] text-muted rounded-full group-hover:bg-[#ebebeb] transition-colors">
+                        <Pill tone="neutral-hover" size="sm" weight="medium">
                           {project.name}
-                        </span>
+                        </Pill>
                       )}
                     </div>
                   </button>

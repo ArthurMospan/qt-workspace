@@ -12,9 +12,10 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import { usePortalSession }    from '@/lib/portal/usePortalSession';
 import QtPlusChatPanel from '@/components/workspace/qtplus/chat/QtPlusChatPanel';
 import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
-import { useIssueLinks }       from '@/lib/hooks/useIssueLinks';
+import { ISSUE_LINK_OPTIONS, issueLinkPerspective, useIssueLinks } from '@/lib/hooks/useIssueLinks';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import MarkdownViewer, { setTaskChecked } from '@/components/MarkdownViewer';
+import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
@@ -24,7 +25,7 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { Select } from '@/components/ui/Select';
-import { ContextMenu, Popover, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
@@ -36,12 +37,14 @@ import {
   FileText, Film, Music, Link2, Copy, Sparkles, Tag as TagIcon,
   ZoomIn, Maximize2,
 } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
 import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
+import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -222,14 +225,14 @@ function MaterialCard({ mat, onClick }) {
         {renderPreview()}
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/12 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+          <div data-ui-surface="local" className="w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
             {fileType === 'image' ? <ZoomIn size={16} className="text-white" /> : <Maximize2 size={16} className="text-white" />}
           </div>
         </div>
         {/* Status badge */}
         {statusIcon && (
           <div className="absolute top-2 right-2 z-10">
-            <div className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+            <div data-ui-surface="local" className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
               <statusIcon.Icon size={12} style={{ color: statusIcon.color }} />
             </div>
           </div>
@@ -237,9 +240,9 @@ function MaterialCard({ mat, onClick }) {
         {/* File type badge */}
         {fileType !== 'image' && fileType !== 'note' && fileUrl && (
           <div className="absolute bottom-2 left-2">
-            <span className="text-[8px] font-bold px-[5px] py-[2px] bg-black/40 text-white rounded-full backdrop-blur-sm uppercase">
+            <Pill tone="overlay" size="micro" uppercase>
               {fileType}
-            </span>
+            </Pill>
           </div>
         )}
       </div>
@@ -274,7 +277,7 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
           const url = getMatFileUrl(attachment);
           const fileType = detectFileType(attachment);
           return (
-            <div key={attachment.id || url} className="group flex min-w-0 items-center gap-3 rounded-[12px] bg-white px-2.5 py-2">
+            <div key={attachment.id || url} data-ui-surface="nested-card" data-ui-padding="compact-row" className="ui-surface group flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => onOpen(attachment)}
@@ -335,86 +338,15 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
 
 // ── Media viewer (lightbox) ────────────────────────────────────────
 function MediaViewer({ mat, onClose }) {
-  const fileType = detectFileType(mat);
-  const fileUrl  = getMatFileUrl(mat);
-  const name     = mat.title || mat.name || 'Матеріал';
-
-  useEffect(() => {
-    const fn = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', fn);
-    return () => window.removeEventListener('keydown', fn);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center"
-      onClick={onClose}
-    >
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/50 to-transparent z-10"
-        onClick={e => e.stopPropagation()}>
-        <p className="text-white font-semibold text-[14px] truncate max-w-[70vw]">{name}</p>
-        <div className="flex items-center gap-2">
-          {fileUrl && (
-            <a href={fileUrl} target="_blank" rel="noopener"
-              className="flex items-center gap-1 text-white/70 hover:text-white text-[12px] font-medium transition-colors px-3 py-[5px] bg-white/10 rounded-full hover:bg-white/20">
-              <ExternalLink size={12} /> Відкрити
-            </a>
-          )}
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
-        {fileType === 'image' && fileUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={fileUrl} alt={name}
-            className="max-w-full max-h-[85vh] rounded-[8px] shadow-2xl object-contain" />
-        )}
-        {fileType === 'pdf' && fileUrl && (
-          <iframe src={fileUrl} title={name} className="w-[80vw] h-[85vh] rounded-[8px] bg-white border-0" />
-        )}
-        {fileType === 'video' && fileUrl && (
-          <video src={fileUrl} controls autoPlay className="max-w-full max-h-[85vh] rounded-[8px] shadow-2xl" />
-        )}
-        {fileType === 'audio' && fileUrl && (
-          <div className="bg-ink rounded-[24px] px-8 py-10 flex flex-col items-center gap-4 min-w-[320px]">
-            <Music size={48} className="text-white/40" />
-            <p className="text-white font-semibold text-[15px] text-center">{name}</p>
-            <audio src={fileUrl} controls className="w-full" />
-          </div>
-        )}
-        {fileType === 'note' && (
-          <div className="bg-amber-50 rounded-[16px] p-8 max-w-[600px] max-h-[80vh] overflow-y-auto shadow-2xl">
-            <p className="text-amber-900 text-[14px] leading-relaxed whitespace-pre-wrap">{mat.content}</p>
-          </div>
-        )}
-        {fileType === 'link' && mat.url && (
-          <div className="bg-white rounded-[16px] p-8 flex flex-col items-center gap-4 shadow-2xl">
-            <Link2 size={40} className="text-blue-500" />
-            <p className="text-[14px] font-semibold text-ink">{name}</p>
-            <a href={mat.url} target="_blank" rel="noopener"
-              className="flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-[10px] font-semibold text-[13px] hover:bg-ink-hover">
-              <ExternalLink size={14} /> Перейти за посиланням
-            </a>
-          </div>
-        )}
-        {!fileUrl && fileType !== 'note' && fileType !== 'link' && fileType !== 'checklist' && (
-          <div className="text-white text-center">
-            <FileText size={48} className="mx-auto mb-3 text-white/40" />
-            <p>Превʼю недоступне</p>
-            {PORTAL_URL && (
-              <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer"
-                className="text-ink hover:underline text-[13px] mt-2 inline-block">Відкрити в порталі →</a>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <AttachmentViewer
+      attachment={{
+        ...mat,
+        name: mat.name || mat.title,
+        previewUrl: getMatFileUrl(mat),
+      }}
+      onClose={onClose}
+    />
   );
 }
 
@@ -422,21 +354,22 @@ function MediaViewer({ mat, onClose }) {
 // MAIN PAGE
 // ════════════════════════════════════════════════════════════════════
 
-const RELATION_LABELS = {
-  'blocks': 'Блокує',
-  'is-blocked-by': 'Блокується',
-  'duplicates': 'Дублює',
-  'relates-to': 'Повʼязана з',
-  'subtask-of': 'Підзавдання для'
-};
-
 export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { formatDate } = useLocalization();
-  const { projects, currentUser, activeOrg } = useAppContext();
-  const { issues, loading: issuesLoading, error: issuesError, updateIssue, deleteIssue, moveIssue } = useIssues(projectId, { includeLinks: false });
+  const { projects, currentUser, activeOrg, orgRole } = useAppContext();
+  const {
+    issues,
+    loading: issuesLoading,
+    error: issuesError,
+    createIssue,
+    updateIssue,
+    setIssueParent,
+    deleteIssue,
+    moveIssue,
+  } = useIssues(projectId, { includeLinks: false });
 
   const showToast      = useWorkspaceStore(s => s.showToast);
   const confirmDialog  = useConfirm();
@@ -465,8 +398,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const qtplusLink = project?.qtplusLink || null;
   const [chatView, setChatView] = useState('chat');
 
-  const { logs: timeLogs, totalMinutes: loggedMinutes, addTimeLog, updateTimeLog, deleteTimeLog } = useTimeLogs(issueId);
-  const { links = [], addLink, removeLink } = useIssueLinks(issueId);
+  const { logs: timeLogs, totalMinutes: loggedMinutes, addTimeLog, updateTimeLog, deleteTimeLog } = useTimeLogs(issueId, projectId);
+  const {
+    links = [],
+    refresh: refreshLinks,
+    addLink,
+    removeLink,
+  } = useIssueLinks(issueId);
 
   const {
     types: rawTypes, priorities: rawPriorities, statuses: STATUSES, labels: availableLabels = [], doneStatusIds
@@ -490,12 +428,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // ── UI state ──────────────────────────────────────────────────────
   const [showSubInput, setShowSubInput] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
+  const [creatingSubtask, setCreatingSubtask] = useState(false);
   const [showDetailsDropdown, setShowDetailsDropdown] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkRelation, setLinkRelation] = useState('relates-to');
   const [linkTargetId, setLinkTargetId] = useState('');
-  const [editingSubtaskIndex, setEditingSubtaskIndex] = useState(-1);
-  const [editingSubtaskText, setEditingSubtaskText] = useState('');
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [migratingChecklist, setMigratingChecklist] = useState(false);
+  const [parentSaving, setParentSaving] = useState(false);
   const [timeLogsPage, setTimeLogsPage] = useState(1);
   const [logForm,      setLogForm]      = useState(null);
   const [logTab, setLogTab] = useState('spend');
@@ -536,9 +476,20 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     const prompt = buildTaskAiPrompt({
       issue,
       projectName: project?.name || '',
-      statusName: STATUSES.find(item => item.id === (issue.status || issue.columnId))?.name || '',
-      priorityName: PRIORITIES.find(item => item.id === issue.priority)?.name || '',
-      typeName: TYPES.find(item => item.id === issue.type)?.name || '',
+      statusName: (() => {
+        const item = STATUSES.find(
+          option => option.id === (issue.status || issue.columnId),
+        );
+        return item?.label || item?.name || '';
+      })(),
+      priorityName: (() => {
+        const item = PRIORITIES.find(option => option.id === issue.priority);
+        return item?.label || item?.name || '';
+      })(),
+      typeName: (() => {
+        const item = TYPES.find(option => option.id === issue.type);
+        return item?.label || item?.name || '';
+      })(),
       assigneeNames: (issue.assigneeIds || [])
         .map(uid => members.find(member => (member.id || member.uid) === uid))
         .filter(Boolean)
@@ -606,8 +557,27 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const prev   = idx > 0 ? sorted[idx - 1] : null;
   const next   = idx < sorted.length - 1 ? sorted[idx + 1] : null;
 
-  const typeCfg     = TYPES.find(t => t.id === (isEditing ? draft.type : issue.type))         || TYPES[2] || TYPES[0];
-  const priorityCfg = PRIORITIES.find(p => p.id === (isEditing ? draft.priority : issue.priority)) || PRIORITIES[2] || PRIORITIES[0];
+  const selectedTypeId = isEditing ? draft.type : issue.type;
+  const legacyEpicType = {
+    id: 'epic',
+    label: 'Епік (legacy)',
+    color: '#8b5cf6',
+    icon: TYPE_ICONS.epic || CheckSquare,
+  };
+  const creatableTypes = TYPES.filter(type => type.id !== 'epic');
+  const EDITABLE_TYPES = issue.type === 'epic'
+    ? [
+        ...creatableTypes,
+        TYPES.find(type => type.id === 'epic') || legacyEpicType,
+      ]
+    : creatableTypes;
+  const typeCfg = EDITABLE_TYPES.find(t => t.id === selectedTypeId)
+    || EDITABLE_TYPES.find(t => t.id === 'task')
+    || EDITABLE_TYPES[0]
+    || legacyEpicType;
+  const priorityCfg = PRIORITIES.find(p => p.id === (isEditing ? draft.priority : issue.priority))
+    || PRIORITIES.find(p => p.id === 'medium')
+    || PRIORITIES[0];
   const statusCfg   = STATUSES.find(s => s.id === issue.columnId)                             || STATUSES[0];
   const TypeIcon    = typeCfg.icon;
   const PrioIcon    = priorityCfg.icon;
@@ -615,8 +585,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const due       = parseDueDate(issue.dueDate);
   const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
   const dueStr    = due ? formatDate(due) : null;
-  const attributeItemClass = `flex-1 min-w-0 flex flex-col rounded-[10px] px-2 cursor-pointer transition-[padding,gap,background-color] duration-200 hover:bg-[#ebebeb] ${isHeaderScrolled ? 'gap-0 py-1' : 'gap-[4px] py-1.5'}`;
-  const attributeLabelClass = `block overflow-hidden text-[10px] font-bold uppercase tracking-wider text-muted transition-[max-height,opacity] duration-200 ${isHeaderScrolled ? 'max-h-0 opacity-0' : 'max-h-4 opacity-100'}`;
+  const {
+    attributeItemClass,
+    attributeLabelClass,
+    compactInputClass,
+    compactSelectClass,
+    detailsButtonClass,
+  } = getTaskAttributeChrome({ condensed: isHeaderScrolled });
 
   const assignees     = (issue.assigneeIds || []).map(uid => members.find(m => (m.id || m.uid) === uid)).filter(Boolean);
   const reporterMatchByEmail = issue.reporterName ? members.find(m => m.email && m.email.toLowerCase() === issue.reporterName.toLowerCase()) : null;
@@ -638,10 +613,28 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       : issue.source === 'buggybag'
         ? 'Цю задачу створено через інтеграцію BuggyBag.'
         : 'Цю задачу створено зовнішньою інтеграцією.';
-  const subtasksDone  = (issue.subtasks || []).filter(s => s.done).length;
-  const subtasksAll   = (issue.subtasks || []).length;
+  const checklistDone = (issue.subtasks || []).filter(s => s.done).length;
+  const checklistAll = (issue.subtasks || []).length;
+  const parentIssueId = existingParentIssueId(issue);
+  const parentIssue = issues.find(candidate => candidate.id === parentIssueId) || null;
+  const childIssues = issues
+    .filter(candidate => existingParentIssueId(candidate) === issueId)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const childIssuesDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const openChildCount = childIssues.length - childIssuesDone;
+  const parentCandidates = issues.filter(candidate => (
+    candidate.id !== issueId
+    && !existingParentIssueId(candidate)
+  ));
   const visibleAttachments = issue.attachments || [];
-  const currentIssueLinks = links.filter(link => link.sourceIssueId === issueId);
+  const currentIssueLinks = links
+    .map(link => ({ link, perspective: issueLinkPerspective(link, issueId) }))
+    .filter(item => item.perspective);
+  const linkedIssueIds = new Set(currentIssueLinks.map(item => item.perspective.otherIssueId));
+  const availableLinkIssues = issues.filter(item => (
+    item.id !== issueId
+    && !linkedIssueIds.has(item.id)
+  ));
 
   const spentMin  = loggedMinutes;
   const estimMin  = isEditing ? (draft.estimateMinutes ?? issue.estimateMinutes ?? 0) : (issue.estimateMinutes || 0);
@@ -661,7 +654,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       estimateMinutes: issue.estimateMinutes || 0,
       dueDate:         toLocalDateInput(due),
       description:     issue.description || '',
-      parentEpicId:    issue.parentEpicId || null,
     });
     setIsEditing(true);
   };
@@ -675,7 +667,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (draft.priority        !== issue.priority)         patch.priority = draft.priority;
     if (draft.estimateMinutes !== issue.estimateMinutes)  patch.estimateMinutes = draft.estimateMinutes;
     if (draft.description     !== (issue.description||''))patch.description = draft.description;
-    if (draft.parentEpicId    !== (issue.parentEpicId || null)) patch.parentEpicId = draft.parentEpicId;
     // dueDate
     const originalDueInput = toLocalDateInput(due);
     if ((draft.dueDate || '') !== originalDueInput) {
@@ -697,6 +688,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleStatusChange = async (s) => {
+    if (doneStatusIds.includes(s)) {
+      const freshLinks = await refreshLinks();
+      if (!freshLinks) {
+        showToast('Не вдалося перевірити залежності. Оновіть сторінку й повторіть.', 'error');
+        return;
+      }
+      const blockers = issueCompletionBlockers({
+        issueId,
+        issues,
+        issueLinks: freshLinks,
+        doneStatusIds,
+      });
+      if (blockers.dependencies.length > 0) {
+        showToast(`Задачу ще блокують: ${blockers.dependencies.length}`, 'error');
+        return;
+      }
+    }
     try { await moveIssue(issueId, s, issue.order ?? 0, actor); }
     catch (err) { showToast(err.message, 'error'); }
   };
@@ -741,6 +749,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     } else {
       if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
       startTimer(issueId, projectId);
+    }
+  };
+
+  const handleParentChange = async nextParentIssueId => {
+    if (parentSaving) return;
+    if (nextParentIssueId && childIssues.length > 0) {
+      showToast('Задачу з підзадачами не можна зробити підзадачею', 'error');
+      return;
+    }
+    try {
+      setParentSaving(true);
+      await setIssueParent(issueId, nextParentIssueId || null);
+      showToast(nextParentIssueId ? 'Основну задачу змінено' : 'Задача стала самостійною');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося змінити основну задачу', 'error');
+    } finally {
+      setParentSaving(false);
     }
   };
 
@@ -833,45 +858,80 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleAddSubtask = async () => {
-    if (!subtaskText.trim()) return;
-    // arrayUnion appends server-side, so a colleague adding a subtask at the
-    // same moment no longer loses theirs to our stale copy of the array.
-    await update({ subtasks: arrayUnion({ title: subtaskText.trim(), done: false }) });
-    setSubtaskText(''); setShowSubInput(false);
+    const title = subtaskText.trim();
+    if (!title || creatingSubtask) return;
+    if (parentIssueId) {
+      showToast('Підзадача не може мати власні підзадачі', 'error');
+      return;
+    }
+    const initialStatus = (
+      visibleStatuses.find(status => status.id === 'todo' && !doneStatusIds.includes(status.id))
+      || visibleStatuses.find(status => !doneStatusIds.includes(status.id))
+      || visibleStatuses[0]
+    )?.id || 'backlog';
+    const childTypeId = creatableTypes.find(type => type.id === 'task')?.id || creatableTypes[0]?.id;
+    if (!childTypeId) {
+      showToast('Спершу додайте активний тип задачі в налаштуваннях', 'error');
+      return;
+    }
+    try {
+      setCreatingSubtask(true);
+      const created = await createIssue({
+        title,
+        description: '',
+        type: childTypeId,
+        priority: issue.priority || 'medium',
+        status: initialStatus,
+        columnId: initialStatus,
+        parentIssueId: issueId,
+        assigneeIds: issue.assigneeIds || [],
+        labelIds: [],
+        estimateMinutes: 0,
+      }, actor);
+      setSubtaskText('');
+      setShowSubInput(false);
+      showToast(`${created.issueKey || 'Підзадачу'} створено`);
+    } catch (error) {
+      showToast(error.message || 'Не вдалося створити підзадачу', 'error');
+    } finally {
+      setCreatingSubtask(false);
+    }
   };
 
-  const handleToggleSubtask = async (i) => {
-    const subs = [...(issue.subtasks || [])]; subs[i] = { ...subs[i], done: !subs[i].done };
-    await update({ subtasks: subs });
-  };
-
-  const handleDeleteSubtask = async (index) => {
-    if (!(await confirmDialog({
-      title: 'Видалити це підзавдання?',
-      confirmText: 'Видалити', danger: true,
-    }))) return;
-    const subs = (issue.subtasks || []).filter((_, idx) => idx !== index);
-    await update({ subtasks: subs });
-    showToast('Підзавдання видалено ✓');
-  };
-
-  const handleSaveSubtaskEdit = async (index) => {
-    if (!editingSubtaskText.trim()) return;
-    const subs = [...(issue.subtasks || [])];
-    subs[index] = { ...subs[index], title: editingSubtaskText.trim() };
-    await update({ subtasks: subs });
-    setEditingSubtaskIndex(-1);
-    setEditingSubtaskText('');
-    showToast('Підзавдання оновлено ✓');
+  const handleMoveLegacyChecklistToDescription = async () => {
+    if (migratingChecklist) return;
+    try {
+      setMigratingChecklist(true);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Потрібна авторизація');
+      const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/legacy-checklist`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Не вдалося перенести чекліст');
+      showToast('Чекліст перенесено в опис');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося перенести чекліст', 'error');
+    } finally {
+      setMigratingChecklist(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
+      message: childIssues.length > 0
+        ? `${childIssues.length} підзадач не буде видалено — вони стануть самостійними задачами без батьківської.`
+        : 'Задачу та її службові дані буде видалено без можливості відновлення.',
       confirmText: 'Видалити', danger: true,
     }))) return;
-    await deleteIssue(issueId);
-    router.push(`/${projectId}`);
+    try {
+      await deleteIssue(issueId, childIssues.length > 0 ? { childPolicy: 'promote' } : undefined);
+      router.push(`/${projectId}`);
+    } catch (error) {
+      showToast(error.message || 'Не вдалося видалити задачу', 'error');
+    }
   };
 
   // Built once and placed by the description block below — inside the canvas
@@ -899,12 +959,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
-      {/* pb-0 used to let the last row of the left column sit flush against the
-          bottom edge of the panel. The gutter belongs on this wrapper rather
-          than on the column, so the chat beside it ends on the same line. */}
+      {/* The bottom breathing room belongs only to the data column. Putting it
+          on this shared wrapper shortens the chat by the same amount and makes
+          the fixed panel jump upward. */}
       <div
         onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pt-[56px] pb-[20px]'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
+        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pt-[56px] pb-0'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
       >
 
         <div className={`grid grid-cols-1 gap-[20px] items-stretch ${isModal ? '' : 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] lg:flex-1 lg:min-h-0'}`}>
@@ -913,30 +973,63 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           <div
             ref={leftScrollRef}
             onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-            className={`flex flex-col overflow-visible ${isModal ? '' : 'custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
+            className={`flex flex-col overflow-visible ${isModal ? '' : 'pb-[20px] custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
           >
             <div
               className={`sticky ${isModal ? 'top-0' : 'top-[56px] lg:top-0'} z-[30]`}
             >
 
-            {/* TITLE & ACTIONS */}
-            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
-              <div className="flex flex-col gap-[4px] flex-1 min-w-0">
+             {/* TITLE & ACTIONS */}
+             <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
+               <div className="flex flex-col gap-[4px] flex-1 min-w-0">
+            {parentIssueId && (
+              <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
+                <Layers size={12} className="shrink-0" />
+                <span className="shrink-0">Підзадача для</span>
+                <Link
+                  href={`/${projectId}/issue/${parentIssueId}`}
+                  className="min-w-0 truncate font-semibold text-ink hover:underline"
+                >
+                  {parentIssue?.issueKey || parentIssueId}
+                  {parentIssue?.title ? ` — ${parentIssue.title}` : ''}
+                </Link>
+                {!isArchived && (
+                  <Button
+                    style="ghost"
+                    size="icon-xs"
+                    icon={X}
+                    iconSize={11}
+                    onClick={() => handleParentChange(null)}
+                    disabled={parentSaving}
+                    aria-label="Відв’язати від основної задачі"
+                    title="Зробити самостійною задачею"
+                    className="shrink-0"
+                  />
+                )}
+              </div>
+            )}
             {isEditing ? (
               <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full" placeholder="Назва завдання..." />
             ) : (
-              <h1 className="text-[24px] font-bold text-ink tracking-tight leading-tight">{issue.title}</h1>
+              <h1 className="ui-type-page-title text-ink tracking-tight leading-tight">{issue.title}</h1>
             )}
             
             {/* Metadata strip for non-editable details */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
               <Popover
                 position="bottom"
+                align="start"
+                gap={4}
                 hideCloseIcon
+                hideArrow
+                minWidth="200px"
+                padding={isExternalReporter ? '16px' : '6px'}
+                triggerClassName="inline-flex"
                 trigger={(
                   <button
                     type="button"
-                    className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-0.5 transition-colors hover:bg-[#f0f0f0]"
+                    data-ui-control="identity-meta-trigger"
+                    className="ui-native-control"
                   >
                     <span>Автор:</span>
                     <UserAvatar user={reporter} size={16} />
@@ -963,26 +1056,31 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     )}
                   </div>
                 ) : (
-                  <div className="w-[180px] space-y-1">
-                    <button
-                      type="button"
+                  <div className="w-[188px]">
+                    <Button
+                      style="ghost"
+                      size="md"
+                      composition="menu-item"
                       onClick={() => {
                         close();
                         const params = new URLSearchParams(searchParams.toString());
                         params.set('member', reporterMember.id || reporterMember.uid);
                         router.push(`${pathname}?${params.toString()}`);
                       }}
-                      className="flex h-[32px] w-full items-center px-[10px] text-left text-[13px] font-medium text-ink transition-colors hover:bg-canvas"
                     >
                       Переглянути профіль
-                    </button>
-                    <Link
-                      href={`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`}
-                      onClick={close}
-                      className="flex h-[32px] w-full items-center px-[10px] text-left text-[13px] font-medium text-ink transition-colors hover:bg-canvas"
+                    </Button>
+                    <Button
+                      style="ghost"
+                      size="md"
+                      composition="menu-item"
+                      onClick={() => {
+                        close();
+                        router.push(`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`);
+                      }}
                     >
                       Написати в чат
-                    </Link>
+                    </Button>
                   </div>
                 )}
               </Popover>
@@ -1011,7 +1109,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               {isOverdue && (
                 <>
                   <span className="w-[3px] h-[3px] rounded-full bg-faint" />
-                  <span className="text-[11px] font-bold text-[#ef4444] bg-red-50 px-2 py-[1px] rounded-full">Прострочено</span>
+                  <Pill tone="danger" size="thin-md">Прострочено</Pill>
                 </>
               )}
             </div>
@@ -1045,7 +1143,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       icon: isWatching ? EyeOff : Eye,
                       onClick: toggleWatch,
                     },
-                    { label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true },
+                    ...(can(orgRole, 'delete:issue')
+                      ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
+                      : []),
                   ] : []),
                 ]}
               />
@@ -1081,9 +1181,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
             />
             <TaskAttributesPanel
               singleRow
+              context="task"
               compact
               condensed={isHeaderScrolled}
-              primaryClassName="grid w-full grid-cols-[repeat(3,minmax(0,1fr))_32px] items-center gap-1.5 overflow-visible sm:grid-cols-[repeat(5,minmax(0,1fr))_92px] [&>*]:min-w-0"
               cardClassName="transition-[background-color,padding] duration-200"
               cardStyle={{
                 backgroundColor: isHeaderScrolled ? 'rgba(244,244,245,0.36)' : undefined,
@@ -1095,13 +1195,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   {/* Status */}
                   <div className={attributeItemClass} onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className={attributeLabelClass}>Статус</span>
-                    <Select compact disabled={isArchived} value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]" />
+                    <Select compact disabled={isArchived} value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName={compactSelectClass} />
                   </div>
 
                   {/* Assignee */}
                   <div className={attributeItemClass} onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
                     <span className={attributeLabelClass}>Виконавець</span>
-                    <Select compact disabled={isArchived} value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, avatar: m.avatar }))]} buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]" />
+                    <Select compact disabled={isArchived} value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, user: m }))]} buttonClassName={compactSelectClass} />
                   </div>
 
                   {/* Sprint */}
@@ -1116,7 +1216,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         { value: '', label: 'Беклог (без спринта)' },
                         ...sprints.map(s => ({ value: s.id, label: s.name }))
                       ]} 
-                      buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]"
+                      buttonClassName={compactSelectClass}
                     />
                   </div>
 
@@ -1124,9 +1224,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   <div className={`max-sm:hidden ${attributeItemClass}`}>
                     <span className={attributeLabelClass}>Дедлайн</span>
                     <DatePicker 
+                      compact
                       disabled={isArchived}
                       hideIcon 
-                      inputClassName={`m-0 h-[22px] w-full cursor-pointer bg-transparent p-0 text-[13px] font-medium leading-[22px] outline-none placeholder:font-medium placeholder:text-faint placeholder:opacity-100 ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
+                      inputClassName={`${compactInputClass} ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                       onChange={(val) => {
                         if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
@@ -1189,7 +1290,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     trigger={(
                       <button
                         type="button"
-                        className={`flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 max-sm:px-0 ${isHeaderScrolled ? 'h-[28px]' : 'h-[42px]'} ${showDetailsDropdown ? 'bg-white text-ink' : 'text-muted hover:bg-[#ebebeb] hover:text-ink'}`}
+                        className={`${detailsButtonClass} max-sm:px-0 ${showDetailsDropdown ? 'bg-white text-ink' : 'text-muted'}`}
                         aria-expanded={showDetailsDropdown}
                         aria-label="Деталі завдання"
                         title={`Пріоритет: ${PRIORITIES.find(item => item.id === issue.priority)?.label || 'не вказано'} · Тип: ${TYPES.find(item => item.id === issue.type)?.label || 'не вказано'}`}
@@ -1207,14 +1308,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             value={issue.sprintId || ''}
                             onChange={val => update({ sprintId: val || null })}
                             options={[{ value: '', label: 'Беклог (без спринта)' }, ...sprints.map(item => ({ value: item.id, label: item.name }))]}
-                            buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium"
                           />
                         </div>
                         <div className="flex flex-col gap-1.5 sm:hidden">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Дедлайн</span>
                           <DatePicker
+                            compact
                             disabled={isArchived}
-                            inputClassName={`h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium outline-none cursor-pointer ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
+                            textTone={isOverdue ? 'danger' : dueStr ? 'default' : 'faint'}
                             value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                             onChange={val => {
                               if (isEditing) setDraft(current => ({ ...current, dueDate: val }));
@@ -1233,7 +1334,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                               if (isEditing) setDraft(current => ({ ...current, priority: val }));
                             }}
                             options={PRIORITIES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))}
-                            buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium"
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -1245,9 +1345,29 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                               update({ type: val });
                               if (isEditing) setDraft(current => ({ ...current, type: val }));
                             }}
-                            options={TYPES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))}
-                            buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium"
+                            options={EDITABLE_TYPES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))}
                           />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Основна задача</span>
+                          <Select
+                            disabled={isArchived || childIssues.length > 0 || parentSaving}
+                            value={parentIssueId || ''}
+                            onChange={handleParentChange}
+                            options={[
+                              { value: '', label: 'Самостійна задача' },
+                              ...parentCandidates.map(candidate => ({
+                                value: candidate.id,
+                                label: `${candidate.issueKey || candidate.id} — ${candidate.title}`,
+                              })),
+                            ]}
+                            placeholder={childIssues.length > 0 ? 'Це основна задача' : 'Самостійна задача'}
+                          />
+                          {childIssues.length > 0 && (
+                            <span className="text-[10px] leading-relaxed text-faint">
+                              Спершу відв’яжіть підзадачі, щоб змінити рівень.
+                            </span>
+                          )}
                         </div>
                       </div>
                   </Popover>
@@ -1259,20 +1379,25 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
             {/* LOG TIME FORM MODAL */}
             {logForm && (
-              <div className="fixed inset-0 z-[100] flex items-end justify-end bg-black/40 backdrop-blur-sm" onClick={() => setLogForm(null)}>
-                <div className="flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-2xl sm:h-full sm:w-[560px] sm:rounded-none" onClick={event => event.stopPropagation()}>
-                  <div className="px-5 sm:px-6 py-4 border-b border-line flex items-center justify-between shrink-0">
-                    <h3 className="text-[16px] font-bold text-ink">Трекінг часу</h3>
-                    <Button style="secondary" size="icon" icon={X} onClick={() => setLogForm(null)} aria-label="Закрити" />
-                  </div>
-                  
-                  <div className="custom-scrollbar overflow-y-auto p-5 sm:p-6 flex flex-col gap-5">
-                  <div className="flex gap-1 rounded-[10px] bg-canvas p-1">
-                    <button onClick={() => setLogTab('spend')} className={`flex-1 rounded-[8px] px-3 py-2 text-[12px] font-bold transition-colors ${logTab === 'spend' ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}>Списати час</button>
-                    {!logForm.id && (
-                      <button onClick={() => setLogTab('estim')} className={`flex-1 rounded-[8px] px-3 py-2 text-[12px] font-bold transition-colors ${logTab === 'estim' ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}>Оцінка часу</button>
-                    )}
-                  </div>
+              <Dialog
+                isOpen
+                onClose={() => setLogForm(null)}
+                title="Трекінг часу"
+                titleContext="dialog"
+                size="md"
+                bodyPadding="responsive"
+                bodyClassName="custom-scrollbar flex flex-col gap-5"
+              >
+                  <Segmented
+                    value={logTab}
+                    onChange={setLogTab}
+                    surface="canvas"
+                    composition="dialog-tabs"
+                    options={[
+                      { value: 'spend', label: 'Списати час' },
+                      ...(!logForm.id ? [{ value: 'estim', label: 'Оцінка часу' }] : []),
+                    ]}
+                  />
                   
                   {logTab === 'spend' ? (
                     <div className="flex gap-4">
@@ -1280,19 +1405,19 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Списати час</p>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
-                            <input type="number" min="0" placeholder="0" value={Math.floor(logForm.minutes / 60) || ''} onChange={e => {
+                            <Input size="lg" type="number" min="0" placeholder="0" value={Math.floor(logForm.minutes / 60) || ''} onChange={e => {
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = logForm.minutes % 60;
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + mins }));
-                            }} className="w-full text-[15px] font-bold bg-white rounded-[10px] pl-4 pr-8 py-[10px] outline-none border border-line focus:border-[#a8a8a8] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-hours" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
-                            <input type="number" min="0" max="59" placeholder="0" value={logForm.minutes % 60 || ''} onChange={e => {
+                            <Input size="lg" type="number" min="0" max="59" placeholder="0" value={logForm.minutes % 60 || ''} onChange={e => {
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor(logForm.minutes / 60);
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + Math.min(mins, 59) }));
-                            }} className="w-full text-[15px] font-bold bg-white rounded-[10px] pl-4 pr-7 py-[10px] outline-none border border-line focus:border-[#a8a8a8] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-minutes" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>
@@ -1304,19 +1429,19 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Запланувати час</p>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
-                            <input type="number" min="0" placeholder="0" value={Math.floor((logForm.estim || 0) / 60) || ''} onChange={e => {
+                            <Input size="lg" type="number" min="0" placeholder="0" value={Math.floor((logForm.estim || 0) / 60) || ''} onChange={e => {
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = (logForm.estim || 0) % 60;
                                setLogForm(f => ({ ...f, estim: hrs * 60 + mins }));
-                            }} className="w-full text-[15px] font-bold bg-white rounded-[10px] pl-4 pr-8 py-[10px] outline-none border border-line focus:border-[#a8a8a8] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-hours" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
-                            <input type="number" min="0" max="59" placeholder="0" value={(logForm.estim || 0) % 60 || ''} onChange={e => {
+                            <Input size="lg" type="number" min="0" max="59" placeholder="0" value={(logForm.estim || 0) % 60 || ''} onChange={e => {
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor((logForm.estim || 0) / 60);
                                setLogForm(f => ({ ...f, estim: hrs * 60 + Math.min(mins, 59) }));
-                            }} className="w-full text-[15px] font-bold bg-white rounded-[10px] pl-4 pr-7 py-[10px] outline-none border border-line focus:border-[#a8a8a8] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-minutes" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>
@@ -1327,7 +1452,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   {logTab === 'spend' && (
                     <div>
                       <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Опис (необовʼязково)</p>
-                      <input type="text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} className="w-full text-[14px] bg-white rounded-[10px] px-4 py-[10px] outline-none border border-line focus:border-[#a8a8a8] transition-colors" />
+                      <Input size="lg" type="text" composition="metric-text" placeholder="Що було зроблено?" value={logForm.desc} onChange={e => setLogForm(f => ({ ...f, desc: e.target.value }))} />
                     </div>
                   )}
                   
@@ -1338,7 +1463,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                   <div className="border-t border-line pt-5">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <h4 className="text-[13px] font-bold text-ink">Журнал часу</h4>
+                      <h4 className="ui-type-item-title text-ink">Журнал часу</h4>
                       {timeLogs.length > 0 && (
                         <span className="text-[11px] font-semibold text-muted">
                           {timeLogs.length} {timeLogs.length === 1 ? 'запис' : timeLogs.length < 5 ? 'записи' : 'записів'}
@@ -1350,12 +1475,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         const logMember = members.find(member => (member.id || member.uid) === log.userId);
                         const isLogAuthor = log.userId === currentUser?.uid || log.userId === currentUser?.id;
                         return (
-                          <div key={log.id} className="group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5">
+                          <div key={log.id} data-ui-surface="local" className="group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5">
                             <UserAvatar user={logMember} size={24} className="mt-0.5 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-[12px] font-bold text-ink">{logMember?.name || 'Невідомий'}</span>
-                                <span className="rounded-[6px] bg-white px-2 py-0.5 text-[11px] font-bold text-ink">{fmtMin(log.spentMinutes)}</span>
+                                <Pill tone="surface-ink" size="md" shape="badge">{fmtMin(log.spentMinutes)}</Pill>
                                 <span className="text-[10px] text-muted">
                                   {log.loggedAt?.toDate ? formatDate(log.loggedAt.toDate()) : log.loggedAt ? formatDate(new Date(log.loggedAt)) : ''}
                                 </span>
@@ -1377,20 +1502,18 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       )}
                     </div>
                   </div>
-                  </div>
-                </div>
-              </div>
+              </Dialog>
             )}
 
             {/* MAIN SECTIONS PANEL */}
             <div className="mt-1 flex w-full flex-col gap-5">
               <div className="flex flex-col gap-5 overflow-visible">
               {/* DESCRIPTION */}
-              <div className="flex flex-col gap-6 py-1">
-                <div>
-                  <div className="mb-3 flex items-center gap-3">
-                    <h2 className="text-[14px] font-bold text-ink">Опис</h2>
-                  </div>
+              <div className="flex flex-col gap-3 py-1">
+                <div className="flex items-center gap-3">
+                  <h2 className="ui-type-card-title text-ink">Опис</h2>
+                </div>
+                <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface flex w-full flex-col gap-4">
                   {isEditing ? (
                     <>
                       <MarkdownEditor
@@ -1402,13 +1525,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         minHeight="320px"
                       />
                       {visibleAttachments.length > 0 && (
-                        <div className="mt-3 w-full rounded-[16px] bg-canvas px-4 py-3">
+                        <div className="mt-3">
                           {attachmentRows}
                         </div>
                       )}
                     </>
                   ) : (issue.description || visibleAttachments.length > 0) ? (
-                    <div className="w-full rounded-[16px] bg-canvas px-4 py-3">
+                    <>
                       {issue.description && (
                         <MarkdownViewer
                           content={issue.description}
@@ -1419,207 +1542,216 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       {visibleAttachments.length > 0 && (
                         <div className={issue.description ? 'mt-4' : ''}>{attachmentRows}</div>
                       )}
-                    </div>
+                    </>
                   ) : (
                     <button onClick={enterEdit} className="text-[13px] text-faint italic hover:text-muted transition-colors text-left">
                       Натисни Редагувати щоб додати опис...
                     </button>
                   )}
-                </div>
 
                 {(issue.labelIds || []).length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {(issue.labelIds || []).map(id => {
-                      const label = availableLabels.find(item => item.id === id);
-                      if (!label) return null;
-                      return <Tag key={id} label={label.label || label.name} color={label.color} onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== id) })} />;
-                    })}
-                  </div>
-                )}
-
-                {!isArchived && (
-                  <div className="relative flex flex-nowrap items-center gap-1.5 mb-[24px]">
-                    <ContextMenu
-                      trigger={(
-                        <button
-                          type="button"
-                          aria-label="Додати мітку"
-                          disabled={availableLabels.length === 0}
-                          title={availableLabels.length === 0 ? 'Немає доступних міток' : undefined}
-                          className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Plus size={11} /><span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
-                        </button>
-                      )}
-                      dropdownClassName="w-[220px]"
-                      items={availableLabels.map(label => {
-                        const active = (issue.labelIds || []).includes(label.id);
-                        return {
-                          label: `${active ? '✓ ' : ''}${label.label || label.name}`,
-                          icon: TagIcon,
-                          color: active ? label.color : undefined,
-                          onClick: () => {
-                            const current = issue.labelIds || [];
-                            update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });
-                          },
-                        };
+                  <div className="pt-1">
+                    <div className="mb-2 flex items-center gap-1.5 text-muted">
+                      <TagIcon size={12} />
+                      <span className="text-[11px] font-semibold">Мітки</span>
+                      <span className="text-[11px] font-semibold text-faint">{issue.labelIds.length}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(issue.labelIds || []).map(id => {
+                        const label = availableLabels.find(item => item.id === id);
+                        if (!label) return null;
+                        return <Tag key={id} label={label.label || label.name} color={label.color} onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== id) })} />;
                       })}
-                    />
-                    <button aria-label="Додати підзавдання" onClick={() => setShowSubInput(value => !value)} className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
-                      <Plus size={11} /><span className="sm:hidden">Підзавдання</span><span className="hidden sm:inline">Додати підзавдання</span>
-                    </button>
-                    <button onClick={() => {
-                      setShowLinkInput(value => !value);
-                      const availableIssues = issues.filter(item => item.id !== issueId);
-                      if (availableIssues.length > 0) setLinkTargetId(availableIssues[0].id);
-                    }} aria-label="Додати зв’язок" className="flex shrink-0 items-center gap-1.5 rounded-[8px] bg-canvas px-2.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-line hover:text-ink">
-                      <Plus size={11} /><span className="sm:hidden">Зв’язок</span><span className="hidden sm:inline">Додати зв’язок</span>
-                    </button>
+                    </div>
                   </div>
                 )}
 
-              {/* SUBTASKS */}
-              {(subtasksAll > 0 || showSubInput) && (
-              <div className="mt-1">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-[12px] font-bold text-ink">Підзавдання</h3>
-                {subtasksAll > 0 && <span className="rounded-full bg-line px-2 py-[1px] text-[10px] font-bold text-ink">{subtasksDone}/{subtasksAll}</span>}
-              </div>
-              {subtasksAll > 0 && (
-                <div className="h-[4px] bg-line rounded-full mb-4 overflow-hidden">
-                  <div className="h-full bg-[#10b981] rounded-full transition-all" style={{ width: `${(subtasksDone / subtasksAll) * 100}%` }} />
-                </div>
-              )}
-              <div className="flex flex-col gap-[6px]">
-                 {(issue.subtasks || []).map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-[9px] bg-canvas rounded-[10px] hover:bg-[#eeeeee] transition-colors group">
-                    {editingSubtaskIndex === i ? (
-                      <div className="flex items-center gap-2 flex-1">
-                        <Input
-                          autoFocus
-                          value={editingSubtaskText}
-                          onChange={e => setEditingSubtaskText(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleSaveSubtaskEdit(i);
-                            if (e.key === 'Escape') setEditingSubtaskIndex(-1);
-                          }}
-                          className="flex-1 text-[13px] h-[30px]"
-                        />
-                        <button
-                          onClick={() => handleSaveSubtaskEdit(i)}
-                          className="text-green-500 hover:text-green-600 p-1"
-                          title="Зберегти"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          onClick={() => setEditingSubtaskIndex(-1)}
-                          className="text-muted hover:text-ink p-1"
-                          title="Скасувати"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          disabled={isArchived}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleSubtask(i);
-                          }}
-                          className="text-faint hover:text-muted transition-colors shrink-0"
-                        >
-                          {s.done ? <CheckSquare size={16} className="text-[#10b981]" /> : <Square size={16} />}
-                        </button>
-                        <span
-                          className={`text-[13px] font-medium flex-1 ${s.done ? 'line-through text-faint' : 'text-ink'} ${!isArchived ? 'cursor-pointer' : ''}`}
-                          onClick={() => {
-                            if (isArchived) return;
-                            setEditingSubtaskIndex(i);
-                            setEditingSubtaskText(s.title);
-                          }}
-                          title={!isArchived ? "Натисніть для редагування" : ""}
-                        >
-                          {s.title}
-                        </span>
-                        
-                        {!isArchived && (
-                        <div className="flex items-center gap-1 transition-opacity">
-                          <button
-                            onClick={() => {
-                              setEditingSubtaskIndex(i);
-                              setEditingSubtaskText(s.title);
-                            }}
-                            className="text-muted hover:text-ink p-1 rounded hover:bg-canvas transition-colors"
-                            title="Редагувати"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSubtask(i)}
-                            className="text-faint hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
-                            title="Видалити"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                        )}
-                      </>
+              {/* REAL CHILD ISSUES */}
+              {(childIssues.length > 0 || showSubInput) && (
+                <div className="pt-2">
+                  <div className="mb-3 flex items-center gap-2">
+                    <h3 className="ui-type-item-title text-ink">Підзадачі</h3>
+                    {childIssues.length > 0 && (
+                      <Pill tone="line" size="sm">{childIssuesDone}/{childIssues.length}</Pill>
+                    )}
+                    {openChildCount > 0 && (
+                      <span className="text-[10px] font-medium text-muted">
+                        {openChildCount} ще в роботі
+                      </span>
                     )}
                   </div>
-                ))}
-                {showSubInput && (
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      autoFocus
-                      value={subtaskText}
-                      onChange={e => setSubtaskText(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleAddSubtask(); if (e.key === 'Escape') { setShowSubInput(false); setSubtaskText(''); } }}
-                      placeholder="Що потрібно зробити?"
-                    />
-                    <Button style="primary" onClick={handleAddSubtask}>Додати</Button>
-                    <Button style="secondary" size="icon-lg" icon={X} onClick={() => { setShowSubInput(false); setSubtaskText(''); }}>Закрити</Button>
+                  {childIssues.length > 0 && (
+                    <div className="mb-4 h-[4px] overflow-hidden rounded-full bg-line">
+                      <div
+                        className="h-full rounded-full bg-[#10b981] transition-all"
+                        style={{ width: `${(childIssuesDone / childIssues.length) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-[6px]">
+                    {childIssues.map(child => {
+                      const childStatus = STATUSES.find(status => status.id === (child.columnId || child.status));
+                      const childAssignees = (child.assigneeIds || [])
+                        .map(uid => members.find(member => (member.id || member.uid) === uid))
+                        .filter(Boolean);
+                      return (
+                        <Surface
+                          key={child.id}
+                          preset="nested-card"
+                          padding="sm"
+                          className="flex items-center justify-between gap-3 transition-colors hover:bg-[#eeeeee]"
+                        >
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full"
+                              style={{ background: childStatus?.color || '#9a9a9a' }}
+                            />
+                            <Link
+                              href={`/${projectId}/issue/${child.id}`}
+                              className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink hover:underline"
+                            >
+                              <span className="mr-1 font-mono text-[10px] font-bold uppercase text-muted">
+                                {child.issueKey || child.id}
+                              </span>
+                              {child.title}
+                            </Link>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="hidden text-[10px] font-medium text-muted sm:inline">
+                              {childStatus?.label || 'Без статусу'}
+                            </span>
+                            {childAssignees.slice(0, 3).map(member => (
+                              <UserAvatar key={member.id || member.uid} user={member} size={18} />
+                            ))}
+                            {childAssignees.length > 3 && (
+                              <Pill tone="neutral" size="sm">+{childAssignees.length - 3}</Pill>
+                            )}
+                          </div>
+                        </Surface>
+                      );
+                    })}
+                    {showSubInput && (
+                      <Surface preset="compact-bordered-card" padding="md" className="mt-2 flex flex-col gap-3">
+                        <Input
+                          autoFocus
+                          size="md"
+                          value={subtaskText}
+                          onChange={event => setSubtaskText(event.target.value)}
+                          onKeyDown={event => {
+                            if (event.key === 'Enter') handleAddSubtask();
+                            if (event.key === 'Escape') {
+                              setShowSubInput(false);
+                              setSubtaskText('');
+                            }
+                          }}
+                          placeholder="Назва повноцінної підзадачі"
+                        />
+                        <p className="text-[10px] leading-relaxed text-muted">
+                          Підзадача отримає власний ключ, статус, виконавців, час і аналітику.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <Button style="secondary" size="sm" onClick={() => { setShowSubInput(false); setSubtaskText(''); }}>Скасувати</Button>
+                          <Button
+                            style="primary"
+                            size="sm"
+                            disabled={!subtaskText.trim() || creatingSubtask}
+                            loading={creatingSubtask}
+                            onClick={handleAddSubtask}
+                          >
+                            Створити підзадачу
+                          </Button>
+                        </div>
+                      </Surface>
+                    )}
                   </div>
+                </div>
+              )}
+
+              {/* LEGACY CHECKLIST — new lightweight steps live in description Markdown */}
+              {checklistAll > 0 && (
+              <div className="pt-2">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <h3 className="ui-type-item-title text-ink">Старий чекліст</h3>
+                <Pill tone="line" size="sm">{checklistDone}/{checklistAll}</Pill>
+                {!isArchived && (
+                  <Button
+                    style="ghost"
+                    size="sm"
+                    onClick={handleMoveLegacyChecklistToDescription}
+                    loading={migratingChecklist}
+                    disabled={migratingChecklist}
+                    className="ml-auto"
+                  >
+                    Перенести в опис
+                  </Button>
                 )}
+              </div>
+              <p className="mb-3 text-[10px] leading-relaxed text-muted">
+                Це старий формат. Нові чеклісти додавайте як checkbox у описі задачі.
+              </p>
+              <div className="h-[4px] bg-line rounded-full mb-4 overflow-hidden">
+                <div className="h-full bg-[#10b981] rounded-full transition-all" style={{ width: `${(checklistDone / checklistAll) * 100}%` }} />
+              </div>
+              <div className="flex flex-col gap-[6px]">
+                 {(issue.subtasks || []).map((s, i) => (
+                  <div key={s.id || i} data-ui-surface="local" className="flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]">
+                    {s.done
+                      ? <CheckSquare size={16} className="shrink-0 text-[#10b981]" />
+                      : <Square size={16} className="shrink-0 text-faint" />}
+                    <span className={`text-[13px] font-medium ${s.done ? 'line-through text-faint' : 'text-ink'}`}>
+                      {s.title}
+                    </span>
+                  </div>
+                ))}
               </div>
               </div>
               )}
-            </div>
-
               {/* ISSUE LINKS */}
               {(currentIssueLinks.length > 0 || showLinkInput) && (
-              <div className="mt-1 flex flex-col gap-3 px-1 sm:px-2">
+              <div className="flex flex-col gap-3 pt-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-[12px] font-bold text-ink">Зв’язки</h3>
-                {currentIssueLinks.length > 0 && <span className="rounded-full bg-line px-2 py-[1px] text-[10px] font-bold text-ink">{currentIssueLinks.length}</span>}
+                <h3 className="ui-type-item-title text-ink">Зв’язки</h3>
+                {currentIssueLinks.length > 0 && <Pill tone="line" size="sm">{currentIssueLinks.length}</Pill>}
               </div>
 
               <div className="flex flex-col gap-[6px]">
-                {currentIssueLinks.map(l => {
-                    const targetIssue = issues.find(i => i.id === l.targetIssueId);
-                    if (!targetIssue) return null;
-                    const relationLabel = RELATION_LABELS[l.relationType] || l.relationType;
+                {currentIssueLinks.map(({ link, perspective }) => {
+                    const otherIssue = issues.find(candidate => candidate.id === perspective.otherIssueId)
+                      || perspective.otherIssue;
+                    const otherProjectId = otherIssue?.projectId || projectId;
+                    const otherKey = otherIssue?.issueKey || perspective.otherIssueId;
+                    const otherTitle = otherIssue?.title || 'Пов’язане завдання';
+                    const requiresReview = link.requiresReview || link.legacyRelationType === 'subtask-of';
 
                     return (
-                      <div key={l.id} className="flex items-center justify-between gap-3 px-3 py-[9px] bg-canvas rounded-[10px] hover:bg-[#eeeeee] transition-colors group">
+                      <div key={link.id} data-ui-surface="local" className="flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="text-[10px] font-bold bg-[#f3f4f6] text-[#4b5563] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">
-                            {relationLabel}
-                          </span>
+                          <Pill tone="neutral" size="sm" shape="badge" uppercase>
+                            {perspective.label}
+                          </Pill>
+                          {requiresReview && (
+                            <Pill
+                              tone="warning"
+                              size="sm"
+                              shape="badge"
+                              title="Старий зв’язок «підзавдання»: напрямок не можна відновити автоматично"
+                            >
+                              Потребує перевірки
+                            </Pill>
+                          )}
                           <Link
-                            href={`/${projectId}/issue/${targetIssue.id}`}
+                            href={`/${otherProjectId}/issue/${perspective.otherIssueId}`}
                             className="text-[13px] font-semibold text-ink hover:underline truncate"
                           >
-                            <span className="text-muted font-medium mr-1 uppercase">{targetIssue.issueKey}</span>
-                            {targetIssue.title}
+                            <span className="text-muted font-medium mr-1 uppercase">{otherKey}</span>
+                            {otherTitle}
                           </Link>
                         </div>
                         {!isArchived && (
                         <button
                           onClick={async () => {
                             try {
-                              await removeLink(l.id);
+                              await removeLink(link.id);
                               showToast('Звʼязок видалено');
                             } catch (err) {
                               showToast('Помилка видалення: ' + err.message, 'error');
@@ -1636,53 +1768,50 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   })}
 
                 {showLinkInput && (
-                  <div className="mt-2 flex flex-col gap-4 rounded-[12px] border border-line bg-white p-4">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-                      <div className="min-w-0">
-                        <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Зв’язок</label>
+                  <div data-ui-surface="compact-bordered-card" data-ui-padding="md" className="ui-surface mt-2 flex flex-col gap-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                         <Select
+                          ariaLabel="Тип зв’язку"
                           value={linkRelation}
                           onChange={setLinkRelation}
                           className="w-full"
                           dropdownClassName="w-full max-w-none"
-                          options={Object.entries(RELATION_LABELS).map(([value, label]) => ({
-                            value,
-                            label,
-                          }))}
+                          options={ISSUE_LINK_OPTIONS}
                         />
-                      </div>
-                      <div className="min-w-0">
-                        <label className="text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">Завдання</label>
                         <Select
+                          ariaLabel="Пов’язане завдання"
                           value={linkTargetId}
                           onChange={setLinkTargetId}
                           className="w-full"
                           dropdownClassName="w-full max-w-none"
-                          disabled={issues.filter(item => item.id !== issueId).length === 0}
-                          placeholder="Немає інших завдань у проєкті"
-                          options={issues
-                            .filter(item => item.id !== issueId)
+                          disabled={availableLinkIssues.length === 0}
+                          placeholder="Немає доступних завдань у проєкті"
+                          options={availableLinkIssues
                             .map(item => ({
                               value: item.id,
                               label: `${item.issueKey} — ${item.title}`,
                             }))}
                         />
-                      </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button style="secondary" size="sm" onClick={() => { setShowLinkInput(false); }}>Скасувати</Button>
                       <Button
                         style="primary"
                         size="sm"
-                        disabled={!linkTargetId}
+                        disabled={!linkTargetId || linkSaving}
+                        loading={linkSaving}
                         onClick={async () => {
-                          if (!linkTargetId) return;
+                          if (!linkTargetId || linkSaving) return;
                           try {
+                            setLinkSaving(true);
                             await addLink(issueId, linkTargetId, linkRelation, currentUser?.uid || currentUser?.id);
                             showToast('Звʼязок додано');
                             setShowLinkInput(false);
+                            setLinkTargetId('');
                           } catch (err) {
                             showToast('Помилка: ' + err.message, 'error');
+                          } finally {
+                            setLinkSaving(false);
                           }
                         }}
                       >Додати зв’язок</Button>
@@ -1692,17 +1821,77 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </div>
             </div>
             )}
+                </div>
+                {!isArchived && (
+                  <div className="relative flex flex-wrap items-center gap-1.5">
+                    <ContextMenu
+                      trigger={(
+                        <Button
+                          aria-label="Додати мітку"
+                          style="ghost"
+                          size="sm"
+                          composition="inline-add-action"
+                          icon={Plus}
+                          iconSize={11}
+                          disabled={availableLabels.length === 0}
+                          title={availableLabels.length === 0 ? 'Немає доступних міток' : undefined}
+                        >
+                          <span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
+                        </Button>
+                      )}
+                      dropdownClassName="w-[220px]"
+                      items={availableLabels.map(label => {
+                        const active = (issue.labelIds || []).includes(label.id);
+                        return {
+                          label: `${active ? '✓ ' : ''}${label.label || label.name}`,
+                          icon: TagIcon,
+                          color: active ? label.color : undefined,
+                          onClick: () => {
+                            const current = issue.labelIds || [];
+                            update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });
+                          },
+                        };
+                      })}
+                    />
+                    {!parentIssueId && <Button
+                      aria-label="Додати підзадачу"
+                      style="ghost"
+                      size="sm"
+                      composition="inline-add-action"
+                      icon={Plus}
+                      iconSize={11}
+                      onClick={() => setShowSubInput(value => !value)}
+                    >
+                      <span className="sm:hidden">Підзадача</span><span className="hidden sm:inline">Додати підзадачу</span>
+                    </Button>}
+                    <Button
+                      aria-label="Додати зв’язок"
+                      style="ghost"
+                      size="sm"
+                      composition="inline-add-action"
+                      icon={Plus}
+                      iconSize={11}
+                      onClick={() => {
+                        setShowLinkInput(value => !value);
+                        setLinkTargetId(availableLinkIssues[0]?.id || '');
+                      }}
+                    >
+                      <span className="sm:hidden">Зв’язок</span><span className="hidden sm:inline">Додати зв’язок</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {/* TIME LOGS LIST */}
               {false && (
-              <div className="bg-white rounded-[12px] p-5 flex flex-col gap-5">
+              <div data-ui-surface="nested-card" data-ui-padding="lg" className="ui-surface flex flex-col gap-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Журнал часу</h2>
+                  <h2 className="ui-type-eyebrow text-muted uppercase tracking-wider">Журнал часу</h2>
                   {timeLogs.length > 0 && (
-                    <span className="text-[11px] font-bold bg-line text-ink px-2 py-[1px] rounded-full">
+                    <Pill tone="line" size="thin-md">
                       {timeLogs.length}
-                    </span>
+                    </Pill>
                   )}
                 </div>
                 {!isArchived && <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '' })}>Списати</Button>}
@@ -1714,7 +1903,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   const isLogAuthor = log.userId === currentUser?.uid || log.userId === currentUser?.id;
                   
                   return (
-                    <div key={log.id} className="flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group">
+                    <div key={log.id} data-ui-surface="local" className="flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group">
                       <div className="flex items-start gap-2 min-w-0 flex-1">
                         <UserAvatar user={logMember} size={20} className="shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
@@ -1722,9 +1911,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                             <span className="text-[12px] font-semibold text-ink">
                               {logMember?.name || 'Невідомий'}
                             </span>
-                            <span className="text-[11px] font-bold text-[#3b82f6] bg-[#eff6ff] px-1.5 py-0.5 rounded">
+                            <Pill tone="info" size="compact-md" shape="badge">
                               {fmtMin(log.spentMinutes)}
-                            </span>
+                            </Pill>
                           </div>
                           {log.description && (
                             <p className="text-[12px] text-[#4b5563] mt-0.5 break-words">
@@ -1773,7 +1962,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   </button>
                 )}
                 {timeLogs.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line">
+                  <div data-ui-surface="local" className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line">
                     <Clock size={32} className="text-faint mb-3" />
                     <p className="text-[13px] text-muted font-medium max-w-[200px]">
                       Час ще не залоговано — запустіть таймер або додайте запис вручну.

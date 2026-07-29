@@ -9,36 +9,41 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import ContextMenu from '@/components/ui/ContextMenu';
 import {
-  ButtonGroup, AvatarGroup, Breadcrumb, FormGroup, Badge, StatusBadge, PriorityBadge, Tag, Counter,
-  Checkbox, ToggleSwitch, DatePicker,
+  FormGroup, IconAction, Label, Pill, PriorityBadge, TypeBadge, Tag, Counter,
+  Checkbox, ToggleSwitch, DatePicker, TimePicker,
   Alert, LoadingSpinner, EmptyState,
-  Popover, Tooltip, TaskAttributesPanel, KpiCard,
+  Popover, Tooltip, TaskAttributesPanel, getTaskAttributeChrome, KpiCard,
   SidebarLayout, InnerNavigation, PageHeader, Card, Segmented, ImageUpload, UserAvatar,
-  ConfirmProvider, useConfirm
+  ConfirmProvider, useConfirm, ChatComposerCore, ProjectSettingsForm, StatusPill, StatusVisibilityPicker, TaskListView
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import TopHeader from '@/components/ui/Layout/TopHeader';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
-import TaskCard from '@/components/ui/TaskManagement/TaskCard';
+import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import CreateTaskModal from '@/components/CreateTaskModal';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import KitStatus from './KitStatus';
+import DecisionLab from './DecisionLab';
+import FidelitySurvey from './FidelitySurvey';
+import FidelityFollowUpSurvey from './FidelityFollowUpSurvey';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
 import {
   Plus, Edit2, Trash2, Archive, Search, ChevronDown,
   User, Bell, Settings, Settings2, Check, X, AlertCircle, Info,
   LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft,
   Layers, MessageSquare, Zap, Hash, Calendar, Clock, Filter,
-  ArrowUp, ArrowDown, Minus, Star, Bug, CheckSquare, Flag,
+  ArrowDown, Minus, Star, Bug, CheckSquare, Flag,
   Play, Pause, RefreshCw, MoreVertical, Copy, ExternalLink,
   TrendingUp, BarChart2, PieChart, Users, Tag as TagIcon, Lock,
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
   ChevronLeft, ChevronsUpDown, GripVertical, Move,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
-  PanelLeftOpen, Building
+  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +57,9 @@ const GROUPS = [
     title: 'Реальність',
     items: [
       { id: 'kit-status',   label: 'Стан кіту',          icon: Activity },
+      { id: 'fidelity-survey', label: 'Опитування розбіжностей', icon: Settings2 },
+      { id: 'fidelity-follow-up', label: 'Follow-up рішення', icon: ScanSearch },
+      { id: 'decision-lab', label: 'Затверджені рішення', icon: CheckSquare },
     ]
   },
   {
@@ -63,7 +71,7 @@ const GROUPS = [
       { id: 'inputs',       label: 'Inputs, Selectors & Pickers',  icon: AlignLeft },
       { id: 'selects',      label: 'Selects & Dropdowns',icon: ToggleLeft },
       { id: 'tabs',         label: 'Tabs',               icon: LayoutGrid },
-      { id: 'badges',       label: 'Badges, Status & Priority', icon: Hash },
+      { id: 'badges',       label: 'Priority, Tags & Counters', icon: Hash },
       { id: 'avatars',      label: 'Avatars & Teams',    icon: Users },
       { id: 'surfaces',     label: 'Surfaces',           icon: Layers },
       { id: 'tooltips',     label: 'Tooltips',           icon: MessageSquare },
@@ -73,6 +81,7 @@ const GROUPS = [
     title: 'Молекули (Molecules)',
     items: [
       { id: 'task-attributes', label: 'Task Attributes Panel', icon: Settings },
+      { id: 'form-groups',  label: 'Form Groups',        icon: AlignLeft },
       { id: 'filters',      label: 'Filter Bar',         icon: Filter },
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
       { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
@@ -83,7 +92,7 @@ const GROUPS = [
   {
     title: 'Організми (Organisms)',
     items: [
-      { id: 'task-crm',     label: 'Task Cards & Rows',  icon: CheckSquare },
+      { id: 'task-crm',     label: 'Task Rows',          icon: CheckSquare },
       { id: 'dialogs',      label: 'Dialogs & Modals',   icon: MessageSquare },
     ]
   },
@@ -356,13 +365,18 @@ function InputsSection() {
   const [chk, setChk] = useState(false);
   const [tgl, setTgl] = useState(true);
   const [dateSingle, setDateSingle] = useState('');
+  const [timeSingle, setTimeSingle] = useState('09:00');
+  const [hiddenStatusIds, setHiddenStatusIds] = useState(['done']);
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Standard Input — 36px" description="Стандартні текстові поля. Висота: 36px. Кольори: фон #f4f4f5, рамка transparent, фокус-рамка #1f1f1f. Текст #1f1f1f, placeholder #cfcfcf. Скруглення: 10px." fullWidth>
+      <PreviewBlock title="Named Input sizes — sm / md / lg" description="Три живі висоти для Input та суміжних controls: sm 28px, md 32px, lg 36px. lg є стандартом за замовчуванням." fullWidth>
         <div className="max-w-[400px] flex flex-col gap-[12px]">
-          <Input placeholder="Введіть text..." value={val} onChange={e => setVal(e.target.value)} />
-          <Input placeholder="Заблоковане поле" disabled />
+          <Input size="sm" placeholder="Small — 28px" />
+          <Input size="md" placeholder="Medium — 32px" />
+          <Input size="lg" placeholder="Large — 36px" value={val} onChange={e => setVal(e.target.value)} />
+          <Input size="md" preset="money" type="number" defaultValue="125" aria-label="Грошове значення" />
+          <Input size="lg" placeholder="Заблоковане поле" disabled />
         </div>
       </PreviewBlock>
 
@@ -373,23 +387,32 @@ function InputsSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Date Picker" description="Живий DatePicker, який використовується у задачах, календарі та налаштуваннях." fullWidth>
-        <div className="max-w-[260px]">
+      <PreviewBlock title="Project Status Visibility" description="Shared picker для створення й налаштувань проєкту. Беклог заблокований як обов’язкова fallback-колонка." fullWidth>
+        <div className="max-w-[520px]">
+          <StatusVisibilityPicker
+            statuses={DEFAULT_STATUSES}
+            hiddenStatusIds={hiddenStatusIds}
+            onChange={setHiddenStatusIds}
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock title="Date & Time Pickers" description="Живі DatePicker і TimePicker, які використовуються у задачах, календарі та налаштуваннях." fullWidth>
+        <div className="grid max-w-[532px] gap-3 sm:grid-cols-2">
           <div>
             <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Оберіть дату</label>
             <DatePicker value={dateSingle} onChange={setDateSingle} placeholder="Оберіть день..." />
           </div>
+          <div>
+            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Оберіть час</label>
+            <TimePicker value={timeSingle} onChange={setTimeSingle} aria-label="Демонстраційний час" />
+          </div>
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Brand image upload" description="Живий ImageUpload із двома брендовими поверхнями. Зміна sidebar theme не змінює його API й не ламає контраст." fullWidth>
-        <div className="grid max-w-[760px] grid-cols-1 gap-[16px] md:grid-cols-2">
-          <div className="rounded-[16px] bg-ink p-[20px]">
-            <ImageUpload value="/favicon.ico" onChange={() => {}} theme="dark" />
-          </div>
-          <div className="rounded-[16px] border border-line bg-white p-[20px]">
-            <ImageUpload value="/favicon.ico" onChange={() => {}} theme="light" />
-          </div>
+      <PreviewBlock title="Brand image upload" description="Фактичний світлий ImageUpload із налаштувань профілю та брендування." filePath="src/app/(app)/settings/page.js" fullWidth>
+        <div className="max-w-[380px] rounded-[16px] border border-line bg-white p-[20px]">
+          <ImageUpload value="/favicon.ico" onChange={() => {}} theme="light" />
         </div>
       </PreviewBlock>
 
@@ -439,12 +462,12 @@ function InputsSection() {
       <PreviewBlock title="Form label pattern" description="Always 11px, bold, uppercase, tracking-wider, color #9a9a9a." fullWidth>
         <div className="max-w-[400px] flex flex-col gap-[16px]">
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
-            <Input placeholder="Наприклад: Редизайн сайту" />
+            <Label htmlFor="kit-project-name" required className="mb-[6px] block">Назва проєкту</Label>
+            <Input id="kit-project-name" placeholder="Наприклад: Редизайн сайту" />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Опис</label>
-            <Textarea placeholder="Короткий опис..." rows={3} />
+            <Label htmlFor="kit-project-description" className="mb-[6px] block">Опис</Label>
+            <Textarea id="kit-project-description" placeholder="Короткий опис..." rows={3} />
           </div>
         </div>
       </PreviewBlock>
@@ -472,18 +495,19 @@ function SelectsSection() {
   return (
     <div className="flex flex-col gap-[40px]">
       {/* ─── Standard Selects ─── */}
-      <PreviewBlock title="Standard Selects" description="Випадаючі списки для форм. Висота: 36px. Кольори: кнопка #f4f4f5 (hover #ebebeb), текст #1f1f1f, рамка випадаючого списку #f0f0f0, тінь dropdown. Скруглення: 10px. Опції містять кольорові маркери (dotColor)." fullWidth>
-        <div className="flex items-center gap-[8px]">
-          <Select options={statusOpts} value={v1} onChange={setV1} placeholder="Статус..." className="w-[180px]" />
-          <Select options={priorityOpts} value={v2} onChange={setV2} placeholder="Пріоритет..." className="w-[160px]" />
+      <PreviewBlock title="Standard Selects — sm / md / lg" description="Named sizes збігаються з Input і Button: 28 / 32 / 36px. Ghost-фільтри мають окремий compact preset." fullWidth>
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <Select size="sm" options={statusOpts} value={v1} onChange={setV1} placeholder="Small — 28px" className="w-[160px]" />
+          <Select size="md" options={priorityOpts} value={v2} onChange={setV2} placeholder="Medium — 32px" className="w-[160px]" />
+          <Select size="lg" options={statusOpts} value={v1} onChange={setV1} placeholder="Large — 36px" className="w-[180px]" />
         </div>
       </PreviewBlock>
 
       {/* ─── Ghost Select & MultiSelect ─── */}
       <PreviewBlock title="Ghost Select & MultiSelect" description="Безмежові селектори для панелей фільтрів (FilterBar). Висота: 28px (вбудована в FilterBar висотою 36px). Кольори: фон transparent (hover #ebebeb), текст #1f1f1f, маркер #9a9a9a. Скруглення: 8px. Активуються при наведенні, мають уніфікований шрифт (font-medium)." fullWidth>
         <FilterBar>
-          <Select options={statusOpts} value={v4} onChange={setV4} placeholder="Всі статуси" variant="ghost" />
-          <MultiSelect options={memberOpts} value={v5} onChange={setV5} placeholder="Всі виконавці" searchPlaceholder="Шукати..." variant="ghost" />
+          <Select filterRole="type" options={statusOpts} value={v4} onChange={setV4} placeholder="Всі статуси" variant="ghost" />
+          <MultiSelect filterRole="member" options={memberOpts} value={v5} onChange={setV5} placeholder="Всі виконавці" searchPlaceholder="Шукати..." variant="ghost" />
         </FilterBar>
       </PreviewBlock>
 
@@ -496,7 +520,7 @@ function SelectsSection() {
               value={v6} 
               onChange={setV6} 
               options={statusOpts} 
-              buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" 
+              buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]"
             />
           </div>
         </div>
@@ -554,7 +578,7 @@ function SurfacesSection() {
       <PreviewBlock title="Панельна ієрархія (Layout Surfaces)" description="Головні будівельні блоки для контент-зони. Дотримуються правил вкладеності: сіра підкладка (Level 1) -> вкладені білі картки або сірі інсети (Level 2)." fullWidth>
         
         {/* Level 1: Gray Main Panel */}
-        <Surface variant="panel" padding="lg" className="w-full">
+        <Surface preset="panel" padding="lg" className="w-full">
           <div className="mb-[16px]">
             <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider bg-white border border-[#e9e9e9] px-[8px] py-[3px] rounded-[6px]">
               Level 1: Main Panel (#f4f4f5, rounded-[16px])
@@ -564,7 +588,7 @@ function SurfacesSection() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
             {/* Level 2: White Card Surface */}
-            <Surface variant="card" padding="lg" className="!rounded-[12px]">
+            <Surface preset="nested-card" padding="lg">
               <span className="text-[10px] font-bold text-[#6366f1] uppercase tracking-wider bg-[#6366f1]/8 border border-[#6366f1]/15 px-[8px] py-[3px] rounded-[6px]">
                 Level 2: White Card (rounded-[12px])
               </span>
@@ -572,13 +596,12 @@ function SurfacesSection() {
               <p className="text-[12px] text-[#9a9a9a] mt-[4px]">Без рамки та без тіней. Чиста біла поверхня для розміщення окремих завдань, деталей або списків.</p>
             </Surface>
 
-            {/* Level 2: Surface Inset */}
-            <Surface variant="inset" padding="lg">
-              <span className="text-[10px] font-bold text-[#b45309] uppercase tracking-wider bg-[#fbbf24]/8 border border-[#fbbf24]/15 px-[8px] py-[3px] rounded-[6px]">
-                Level 2: Inset Surface (#f0f0f0, rounded-[12px])
+            <Surface preset="card" padding="md" className="flex flex-col">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                Team page card (rounded-[16px])
               </span>
-              <p className="text-[13px] text-[#1f1f1f] font-semibold mt-[12px]">Вкладений інсет-блок</p>
-              <p className="text-[12px] text-[#9a9a9a] mt-[4px]">Втоплена темніша панель із меншим скругленням (12px) для вкладених блоків, форм або додаткової інформації.</p>
+              <p className="mt-[12px] text-[13px] font-semibold text-ink">Біла продуктова поверхня</p>
+              <p className="mt-[4px] text-[12px] text-muted">Другий реально використаний Surface-варіант.</p>
             </Surface>
           </div>
 
@@ -587,14 +610,41 @@ function SurfacesSection() {
 
       <PreviewBlock title="Card variants" description="Живий Card, який використовується на сторінках аналітики, налаштувань, інтеграцій та порталу." fullWidth>
         <div className="grid w-full grid-cols-1 gap-[16px] md:grid-cols-2">
-          <Card variant="white" padding="lg">
+          <Card preset="bordered" padding="lg">
             <p className="text-[13px] font-bold text-ink">White card</p>
             <p className="mt-[4px] text-[12px] text-muted">Стандартна продуктова картка з border-line.</p>
           </Card>
-          <Card variant="gray" padding="lg" interactive>
-            <p className="text-[13px] font-bold text-ink">Interactive gray card</p>
-            <p className="mt-[4px] text-[12px] text-muted">Той самий hover і радіус, що на сайті.</p>
+          <Card preset="borderless" padding="lg">
+            <p className="text-[13px] font-bold text-ink">Borderless white card</p>
+            <p className="mt-[4px] text-[12px] text-muted">Найпоширеніший фактичний варіант у Settings та Analytics.</p>
           </Card>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock title="Outline danger — Profile emergency call" description="Єдиний фактичний outline-варіант на сайті." filePath="src/components/profile/ProfileView.jsx">
+        <Button
+          style="outline"
+          color="red"
+          size="lg"
+          icon={Zap}
+          className="!bg-red-50 hover:!bg-red-100 !border !border-[#ef4444]"
+        >
+          Виклик
+        </Button>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="IconAction — neutral compact actions"
+        description="Живе semantic family для close/edit/more/download та інших нейтральних icon-actions. Geometry і appearance названі, тому product та /ui-kit використовують один контракт."
+        filePath="src/components/ui/IconAction.jsx"
+        fullWidth
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <IconAction label="Редагувати" icon={Edit2} size="xs" appearance="quiet" />
+          <IconAction label="Налаштування" icon={Settings} size="sm" appearance="soft" />
+          <IconAction label="Більше" icon={MoreVertical} size="md" appearance="surface" />
+          <IconAction label="Закрити" icon={X} size="md" appearance="floating" />
+          <IconAction label="Видалити" icon={Trash2} size="sm" appearance="surface-danger" />
         </div>
       </PreviewBlock>
     </div>
@@ -604,43 +654,41 @@ function SurfacesSection() {
 function BadgesSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      {/* ─── Standard Badge Component ─── */}
-      <PreviewBlock title="Badge Component" description="Універсальний компонент Badge. Підтримує 3 розміри (sm, md, lg) та 6 варіантів оформлення (default, success, warning, danger, error, info).">
-        <div className="flex flex-col gap-[16px] w-full">
-          <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Sizes (sm, md, lg)</h4>
-            <div className="flex items-center gap-[12px]">
-              <Badge size="sm">Small</Badge>
-              <Badge size="md">Medium (Default)</Badge>
-              <Badge size="lg">Large</Badge>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Variants</h4>
-            <div className="flex flex-wrap items-center gap-[8px]">
-              <Badge variant="default">Default</Badge>
-              <Badge variant="info">Info / Indigo</Badge>
-              <Badge variant="success">Success</Badge>
-              <Badge variant="warning">Warning</Badge>
-              <Badge variant="error">Error / Orange</Badge>
-              <Badge variant="danger">Danger</Badge>
-            </div>
-          </div>
+      <PreviewBlock
+        title="Pill — semantic metadata family"
+        description="Спільна geometry для neutral metadata, status-like tones і compact badges. Counter, StatusPill та TypeBadge зберігають окрему семантику поверх тієї самої системи."
+        filePath="src/components/ui/DataDisplay/Pill.jsx"
+        fullWidth
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <Pill tone="neutral" size="sm">Metadata</Pill>
+          <Pill tone="dark" size="md">Dark</Pill>
+          <Pill tone="success" size="md">Готово</Pill>
+          <Pill tone="warning" size="md">Очікує</Pill>
+          <Pill tone="danger" size="md">Прострочено</Pill>
+          <Pill tone="info" size="compact-md" shape="badge">1г 25хв</Pill>
+          <Pill tone="surface" size="wide-sm" appearance="soft-outline">Проєкт</Pill>
+          <Pill tone="neutral" size="md" preset="avatar-counter">+3</Pill>
         </div>
       </PreviewBlock>
 
-      {/* ─── StatusBadge Component ─── */}
-      <PreviewBlock title="StatusBadge Component" description="Динамічний статусний бейдж, що автоматично використовує колірні налаштування з конфігурації робочого простору.">
-        <div className="flex items-center gap-[8px]">
-          <StatusBadge status="todo" />
-          <StatusBadge status="in-progress" />
-          <StatusBadge status="done" />
-          <StatusBadge status="blocked" />
+      <PreviewBlock
+        title="TypeBadge — task type"
+        description="Єдиний бейдж типу, який напряму використовують IssueCard, TaskRow та рядки рахунку в аналітиці."
+        filePath="src/components/ui/DataDisplay/TypeBadge.jsx"
+      >
+        <div className="flex flex-wrap items-center gap-[8px]">
+          {DEFAULT_TYPES.map(type => (
+            <TypeBadge key={type.id} label={type.label} color={type.color} />
+          ))}
         </div>
       </PreviewBlock>
 
-      {/* ─── PriorityBadge Component (Priority Indicators) ─── */}
-      <PreviewBlock title="PriorityBadge Component (Priority Indicators)" description="Спеціалізований бейдж пріоритету завдання. Автоматично підбирає колір, іконку та текст.">
+      <PreviewBlock
+        title="PriorityBadge — Billing task rows"
+        description="Живий бейдж пріоритету з BillingTab. Значення приходить із завдання, тому показані всі можливі пріоритети."
+        filePath="src/components/workspace/BillingTab.jsx"
+      >
         <div className="flex items-center gap-[8px]">
           <PriorityBadge priority="low" />
           <PriorityBadge priority="medium" />
@@ -650,91 +698,55 @@ function BadgesSection() {
         </div>
       </PreviewBlock>
 
-      {/* ─── Issue Type Chips ─── */}
-      <PreviewBlock title="Issue Type Chips" description="Epic, Feature, Task, Bug — використовуються в таблицях спринтів та беклозі. Мають спокійні скляні кольори без іконок.">
-        <div className="flex items-center gap-[8px]">
-          <Tag label="Epic" color="#8b5cf6" showIcon={false} />
-          <Tag label="Feature" color="#0891b2" showIcon={false} />
-          <Tag label="Task" color="#059669" showIcon={false} />
-          <Tag label="Bug" color="#dc2626" showIcon={false} />
+      <PreviewBlock
+        title="Tag — issue labels"
+        description="Два фактичні розміри мітки: компактний у IssueCard та стандартний у IssueDetail. Колір завжди приходить із конфігурації мітки бренду/проєкту."
+        filePath="src/components/workspace/IssueCard.jsx"
+      >
+        <div className="flex items-center gap-[12px]">
+          <Tag label="Фронтенд" color="#3b82f6" size="small" className="shrink-0" />
+          <Tag label="Дизайн" color="#db2777" />
         </div>
       </PreviewBlock>
 
-
-      {/* ─── Tag Component ─── */}
-      <PreviewBlock title="Tag Component (Мітки)" description="Компонент міток із вбудованою іконкою Lucide 'Tag'. Підтримує 6 спокійних скляних варіантів та можливість видалення (кліку по хрестику).">
-        <div className="flex flex-col gap-[12px] w-full">
-          <div className="flex flex-wrap items-center gap-[8px]">
-            <Tag label="Frontend" variant="info" />
-            <Tag label="Design" variant="success" />
-            <Tag label="Bug" variant="danger" />
-            <Tag label="DevOps" variant="warning" />
-            <Tag label="Backend" variant="error" />
-            <Tag label="Archive" variant="default" />
+      <PreviewBlock
+        title="Counter — chat and branded navigation"
+        description="Живі sm-лічильники: subtle для колонок дошки, світлий для чату, темний для навігації та dot-індикатор організації."
+        filePath="src/components/WorkspaceSidebar.jsx"
+        fullWidth
+      >
+        <div className="grid gap-[16px] md:grid-cols-3">
+          <div>
+            <h4 className="mb-[10px] text-[11px] font-bold uppercase tracking-wider text-muted">Board column · subtle</h4>
+            <Counter value={337} size="sm" appearance="subtle" />
           </div>
           <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Removable Tags</h4>
-            <div className="flex flex-wrap items-center gap-[8px]">
-              <Tag label="React" variant="info" onRemove={() => alert('Видалити React')} />
-              <Tag label="Tailwind" variant="success" onRemove={() => alert('Видалити Tailwind')} />
-              <Tag label="Next.js" variant="default" onRemove={() => alert('Видалити Next.js')} />
+            <h4 className="mb-[10px] text-[11px] font-bold uppercase tracking-wider text-muted">Chat list · light surface</h4>
+            <Counter value={12} size="sm" status="muted" className="shrink-0" />
+          </div>
+          <div className="rounded-[12px] bg-ink p-[16px]">
+            <h4 className="mb-[10px] text-[11px] font-bold uppercase tracking-wider text-white/50">Sidebar · branded dark surface</h4>
+            <div className="flex items-center gap-[12px]">
+              <Counter value={7} size="sm" status="muted" dark />
+              <Counter value={3} size="sm" status="info" dark />
+              <Counter variant="dot" size="sm" status="info" dark />
             </div>
           </div>
         </div>
       </PreviewBlock>
 
-      {/* ─── Counter Component ─── */}
-      <PreviewBlock title="Counter Component (Каунтери & Індикатори)" description="Універсальний каунтер для сайдбару, чату чи проектів. Підтримує числові значення, звичайні точки сповіщень (dot) у різних розмірах (sm, md, lg) та статусах, адаптуючись до світлих і темних поверхонь (dark={true}).">
-        <div className="flex flex-col gap-[24px] w-full">
-          {/* Light Mode */}
-          <div>
-            <h4 className="text-[11px] font-bold text-[#1f1f1f] uppercase tracking-wider mb-[12px]">Світлий фон (Замовчування)</h4>
-            <div className="flex flex-col gap-[12px]">
-              <div className="flex items-center gap-[16px] flex-wrap">
-                <span className="text-[11px] font-bold text-[#9a9a9a] w-[140px]">Count Mode (sm, md, lg):</span>
-                <Counter value={5} size="sm" status="info" />
-                <Counter value={12} size="md" status="danger" />
-                <Counter value={99} size="md" status="success" />
-                <Counter value={120} size="lg" status="muted" />
-              </div>
-              <div className="flex items-center gap-[16px] flex-wrap">
-                <span className="text-[11px] font-bold text-[#9a9a9a] w-[140px]">Dot Mode (sm, md, lg):</span>
-                <Counter variant="dot" size="sm" status="info" />
-                <Counter variant="dot" size="md" status="danger" />
-                <Counter variant="dot" size="lg" status="success" />
-              </div>
-            </div>
-          </div>
-
-          {/* Dark Mode */}
-          <div className="bg-[#1f1f1f] -mx-[24px] -mb-[24px] p-[24px] rounded-b-[16px]">
-            <h4 className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-[12px]">Темний фон (Для сайдбару: dark={`{true}`})</h4>
-            <div className="flex flex-col gap-[12px]">
-              <div className="flex items-center gap-[16px] flex-wrap">
-                <span className="text-[11px] font-bold text-white/30 w-[140px]">Count Mode (sm, md, lg):</span>
-                <Counter value={5} size="sm" status="info" dark />
-                <Counter value={12} size="md" status="danger" dark />
-                <Counter value={99} size="md" status="success" dark />
-                <Counter value={120} size="lg" status="muted" dark />
-              </div>
-              <div className="flex items-center gap-[16px] flex-wrap">
-                <span className="text-[11px] font-bold text-white/30 w-[140px]">Dot Mode (sm, md, lg):</span>
-                <Counter variant="dot" size="sm" status="info" dark />
-                <Counter variant="dot" size="md" status="danger" dark />
-                <Counter variant="dot" size="lg" status="success" dark />
-              </div>
-            </div>
-          </div>
+      <PreviewBlock
+        title="StatusPill — sprint states"
+        description="Спільний компактний статус зі сторінки спринтів. Геометрія однакова, а label і semantic color приходять із контексту."
+        filePath="src/app/(app)/sprints/page.js"
+      >
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <StatusPill label="Активний" color="#10b981" />
+          <StatusPill label="Запланований" color="#9a9a9a" />
+          <StatusPill label="Завершено" color="#cbd5e1" />
         </div>
       </PreviewBlock>
 
-      {/* ─── Role Badges ─── */}
-      <PreviewBlock title="Role Badges" description="Бейджі ролей учасників проєкту.">
-        <Badge variant="primary" size="sm">Owner</Badge>
-        <Badge variant="info" size="sm">Admin</Badge>
-        <Badge variant="default" size="sm">Member</Badge>
-        <Badge variant="success" size="sm">Client</Badge>
-      </PreviewBlock>
     </div>
   );
 }
@@ -804,6 +816,37 @@ function NavigationOverlaysSection() {
             </div>
           </Popover>
 
+          <Popover
+            position="bottom"
+            align="start"
+            gap={4}
+            hideCloseIcon
+            hideArrow
+            minWidth="200px"
+            padding="6px"
+            triggerClassName="inline-flex"
+            trigger={(
+              <button
+                type="button"
+                data-ui-control="identity-meta-trigger"
+                className="ui-native-control text-[12px] font-medium text-muted"
+              >
+                <span>Автор:</span>
+                <UserAvatar user={{ id: 'u1', name: 'Артур Моспан' }} size={16} />
+                <span className="font-semibold text-ink">Артур Моспан</span>
+              </button>
+            )}
+          >
+            <div className="w-[188px]">
+              <Button style="ghost" size="md" composition="menu-item">
+                Переглянути профіль
+              </Button>
+              <Button style="ghost" size="md" composition="menu-item">
+                Написати в чат
+              </Button>
+            </div>
+          </Popover>
+
           <Tooltip content="Це підказка при наведенні" position="top">
             <Button style="secondary">Наведіть для підказки</Button>
           </Tooltip>
@@ -850,10 +893,16 @@ function ConfirmDialogPreview() {
 
 function DialogsSection() {
   const [open1, setOpen1] = useState(false);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
+  const [projectSettingsName, setProjectSettingsName] = useState('QuickTeam Website');
+  const [projectSettingsDescription, setProjectSettingsDescription] = useState('Основний продукт команди');
+  const [projectSettingsHidden, setProjectSettingsHidden] = useState(['done']);
+  const [projectSettingsTeam, setProjectSettingsTeam] = useState(['owner-demo', 'designer-demo']);
   return (
     <ConfirmProvider>
       <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Standard Dialog" description="rounded-[24px] overlay modal. Default width 480px.">
+      <PreviewBlock title="Standard Dialog" description="Спільний chrome: sm 440px, md 560px, lg 760px, xl 960px. Приклад нижче — sm dialog.">
         <Button style="primary" size="lg" onClick={() => setOpen1(true)}>Відкрити форму</Button>
         <Dialog isOpen={open1} onClose={() => setOpen1(false)} title="Редагувати проєкт" size="sm">
           <div className="flex flex-col gap-[16px]">
@@ -875,6 +924,71 @@ function DialogsSection() {
 
       <PreviewBlock title="Danger / Confirm Dialog" description="Живий ConfirmProvider, який продукт використовує замість native confirm()/prompt().">
         <ConfirmDialogPreview />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Project Settings Dialog"
+        description="Точний shared organism з проєкту: правий sm sheet, як форма створення проєкту."
+        filePath="src/components/ui/TaskManagement/ProjectSettingsForm.jsx"
+      >
+        <Button style="secondary" size="lg" icon={Settings} onClick={() => setProjectSettingsOpen(true)}>
+          Налаштування проєкту
+        </Button>
+        <Dialog
+          isOpen={projectSettingsOpen}
+          onClose={() => setProjectSettingsOpen(false)}
+          title="Налаштування проєкту"
+          size="sm"
+          footer={(
+            <>
+              <Button style="secondary" size="md" onClick={() => setProjectSettingsOpen(false)}>
+                Скасувати
+              </Button>
+              <Button style="primary" size="md" onClick={() => setProjectSettingsOpen(false)}>
+                Зберегти зміни
+              </Button>
+            </>
+          )}
+        >
+          <ProjectSettingsForm
+            name={projectSettingsName}
+            onNameChange={setProjectSettingsName}
+            description={projectSettingsDescription}
+            onDescriptionChange={setProjectSettingsDescription}
+            statuses={DEFAULT_STATUSES}
+            hiddenStatusIds={projectSettingsHidden}
+            onHiddenStatusIdsChange={setProjectSettingsHidden}
+            backlogStatusId="backlog"
+            teamMembers={[
+              { id: 'owner-demo', name: 'Олена Коваль', email: 'olena@example.com' },
+              { id: 'designer-demo', name: 'Іван Петренко', email: 'ivan@example.com' },
+              { id: 'developer-demo', name: 'Марія Бондар', email: 'maria@example.com' },
+            ]}
+            teamMemberIds={projectSettingsTeam}
+            onTeamMemberIdsChange={setProjectSettingsTeam}
+            ownerId="owner-demo"
+            layout="stacked"
+          />
+        </Dialog>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="CreateTaskModal — large sheet"
+        description="Живий великий організм створення задачі. Він використовує Dialog size=lg, тому ширина, заголовок, close та footer не дублюються локально."
+        filePath="src/components/CreateTaskModal.jsx"
+      >
+        <Button style="primary" size="lg" icon={Plus} onClick={() => setCreateTaskOpen(true)}>
+          Створити завдання
+        </Button>
+        <CreateTaskModal
+          isOpen={createTaskOpen}
+          onClose={() => setCreateTaskOpen(false)}
+          onSubmit={async () => setCreateTaskOpen(false)}
+          stages={[]}
+          teamMembers={[]}
+          projectContext={{ id: 'ui-kit', name: 'UI Kit' }}
+          sprints={[]}
+        />
       </PreviewBlock>
       </div>
     </ConfirmProvider>
@@ -904,7 +1018,12 @@ function HeadersSection() {
         <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
           <TopHeader 
             mode="project" 
-            projectName="Mobile App Redesign" 
+            projectName="Mobile App Redesign"
+            projectMembers={[
+              { id: 'owner-demo', name: 'Олена Коваль', online: true },
+              { id: 'designer-demo', name: 'Іван Петренко', online: true },
+              { id: 'developer-demo', name: 'Марія Бондар', online: false },
+            ]}
             unreadCount={5} 
           />
         </div>
@@ -965,6 +1084,7 @@ function PageHeadersSection() {
               <div className="flex items-center justify-between w-full">
                 <FilterBar>
                   <MultiSelect
+                    filterRole="project"
                     variant="ghost"
                     value={project}
                     onChange={setProject}
@@ -976,13 +1096,14 @@ function PageHeadersSection() {
                     searchPlaceholder="Пошук проєкту..."
                   />
                   <Select
+                    filterRole="type"
                     variant="ghost"
                     value={priority}
                     onChange={setPriority}
                     options={[
                       { value: 'all', label: 'Всі пріоритети' },
-                      { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                      { value: 'high', label: 'High', dotColor: '#f97316' }
+                      { value: 'blocker', label: 'Блокер', dotColor: '#ef4444' },
+                      { value: 'high', label: 'Високий', dotColor: '#f97316' }
                     ]}
                   />
                 </FilterBar>
@@ -1029,8 +1150,8 @@ function PageHeadersSection() {
                   onChange={setPriority}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    { value: 'blocker', label: 'Blocker', dotColor: '#ef4444' },
-                    { value: 'high', label: 'High', dotColor: '#f97316' }
+                    { value: 'blocker', label: 'Блокер', dotColor: '#ef4444' },
+                    { value: 'high', label: 'Високий', dotColor: '#f97316' }
                     ]}
                   />
                 </FilterBar>
@@ -1062,6 +1183,7 @@ function PageHeadersSection() {
 }
 
 function FeedbackSection() {
+  const [qtPlusProject, setQtPlusProject] = useState('');
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Alerts" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
@@ -1069,7 +1191,7 @@ function FeedbackSection() {
           <Alert variant="success" title="Операція успішна">Проєкт успішно створено та додано до бази даних.</Alert>
           <Alert variant="info" title="Потребує уваги">Будь ласка, перевірте правильність введених даних.</Alert>
           <Alert variant="warning" title="Попередження">Термін виконання завдання спливає сьогодні.</Alert>
-          <Alert variant="danger" title="Помилка доступу">У вас немає прав для видалення цього проєкту.</Alert>
+          <Alert variant="error" title="Не вдалося завантажити проєкти">Спробуйте оновити сторінку.</Alert>
         </div>
       </PreviewBlock>
 
@@ -1077,28 +1199,78 @@ function FeedbackSection() {
         <div className="flex items-center gap-[24px]">
           <LoadingSpinner size="sm" />
           <LoadingSpinner size="md" />
-          <LoadingSpinner size="lg" />
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Empty States" description="Заглушки для порожніх списків або результатів пошуку (Преміум дизайн з сайту)." fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] w-full">
-          <div className="bg-white rounded-[16px] border border-[#efefef] shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+      <PreviewBlock
+        title="Empty States — продуктові контексти"
+        description="Не вигадані картки: ліворуч точний empty state головної сторінки, праворуч точний empty state workspace-чату."
+        filePath="src/components/ui/Feedback/EmptyState.jsx"
+        fullWidth
+      >
+        <div className="grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2">
+          <Surface preset="panel" padding="md" className="w-full">
+            <EmptyState
+              icon={Folder}
+              title="Ще немає проєктів"
+              description="Створіть перший проєкт, щоб організувати завдання та роботу команди."
+              action="Створити проєкт"
+              onAction={() => {}}
+              context="page"
+            />
+          </Surface>
+          <div className="flex min-h-[328px] flex-1 items-center justify-center rounded-[16px] bg-canvas">
             <EmptyState
               icon={MessageSquare}
-              title="Немає коментарів"
-              description="Будьте першим, хто прокоментує це завдання!"
+              title="Ще немає повідомлень"
+              description="Почніть розмову! 👋"
+              context="page"
             />
           </div>
-          <div className="bg-white rounded-[16px] border border-[#efefef] shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
-            <EmptyState
-              icon={CheckSquare}
-              title="Задач не знайдено"
-              description="Спробуйте змінити параметри пошуку або фільтрації."
-              action="Створити завдання"
-              onAction={() => alert('Створення завдання...')}
-            />
-          </div>
+        </div>
+        <div className="mt-[16px] grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2">
+          <EmptyState
+            icon={User}
+            title="Нікого не знайдено"
+            description="Спробуйте змінити пошуковий запит."
+            density="compact"
+          />
+          <EmptyState
+            icon={MessageSquare}
+            title="Ще немає повідомлень"
+            description="Почніть обговорення завдання з командою."
+            context="flexible"
+          />
+          <EmptyState
+            icon={Plug}
+            title="Підключіть QuickTeam+"
+            description="Підключіть акаунт, щоб працювати з матеріалами та чатом."
+            action="Підключити QuickTeam+"
+            onAction={() => {}}
+            context="inset"
+            surface="card"
+          />
+          <EmptyState
+            icon={Plug}
+            title="Оберіть проєкт QuickTeam+"
+            description="Привʼяжіть клієнтський проєкт, щоб бачити етапи, матеріали та чат."
+            context="inset"
+            surface="card"
+          >
+            <div className="mx-auto flex w-full max-w-[420px] flex-col gap-2 sm:flex-row">
+              <Select
+                value={qtPlusProject}
+                onChange={setQtPlusProject}
+                options={[
+                  { value: 'brand', label: 'Brand redesign' },
+                  { value: 'mobile', label: 'Mobile application' },
+                ]}
+                placeholder="Оберіть проєкт QuickTeam+"
+                className="min-w-0 flex-1 text-left"
+              />
+              <Button style="primary" size="lg" disabled={!qtPlusProject}>Привʼязати</Button>
+            </div>
+          </EmptyState>
         </div>
       </PreviewBlock>
     </div>
@@ -1106,27 +1278,107 @@ function FeedbackSection() {
 }
 
 function ChatComposerSection() {
+  const [message, setMessage] = useState('');
+  const canSend = Boolean(message.trim());
+
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
-        title="Chat Composer Dock"
-        description="Живий layout-molecule з чату, timeline та QuickTeam+: висота composer визначає overlap автоматично через ResizeObserver."
-        filePath="src/components/ui/ChatComposerDock.jsx"
+        title="Workspace Chat Composer"
+        description="Точна композиція основного workspace-чату: той самий canvas, textarea, toolbar, attachment/emoji controls і send state. ChatComposerDock відповідає лише за overlap."
+        filePath="src/app/(app)/chat/page.js"
         fullWidth
       >
-        <div className="h-[260px] w-full overflow-hidden rounded-[16px] border border-line bg-canvas">
-          <div className="h-full overflow-y-auto bg-white px-[20px] py-[16px]">
-            <div className="max-w-[70%] rounded-[12px] bg-canvas px-[12px] py-[10px] text-[12px] text-ink">
-              Це той самий composer dock, який використовується у трьох продуктових сценаріях.
+        <div className="h-[420px] w-full">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas h-full">
+          <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
+            <Hash size={17} className="shrink-0 text-ink" />
+            <div className="min-w-0 flex-1">
+              <h2 className="flex items-center gap-1.5 truncate text-[15px] font-bold text-ink">general</h2>
+              <p className="truncate text-[11px] text-muted">Загальний канал для всієї команди</p>
             </div>
-            <div className="h-[120px]" />
+            <Info size={16} className="text-muted" />
           </div>
-          <ChatComposerDock className="px-[16px] pb-[16px]">
-            <div className="flex items-center gap-[8px] rounded-[16px] border border-line bg-white p-[8px] shadow-sm">
-              <Input placeholder="Написати повідомлення…" />
-              <Button style="primary" size="icon" icon={ArrowUp}>Надіслати</Button>
+
+          <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2 scroll-pb-12">
+            <div className="flex h-full flex-1 items-center justify-center">
+              <EmptyState
+                icon={MessageSquare}
+                title="Ще немає повідомлень"
+                description="Почніть розмову! 👋"
+              />
+            </div>
+          </div>
+
+          <ChatComposerDock>
+            <div className="relative px-4 pb-4">
+              <ChatComposerCore
+                variant="workspace"
+                value={message}
+                onChange={event => setMessage(event.target.value)}
+                placeholder="Написати в #general..."
+                toolbar={(
+                  <>
+                    <button
+                      type="button"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors"
+                      title="Emoji"
+                    >
+                      <Smile size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors"
+                      title="Прикріпити файл"
+                    >
+                      <Paperclip size={17} />
+                    </button>
+                  </>
+                )}
+                onSubmit={() => setMessage('')}
+                canSubmit={canSend}
+              />
             </div>
           </ChatComposerDock>
+        </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task Timeline & QuickTeam+ composers"
+        description="Спільне ядро ChatComposerCore з двома продуктовими оболонками: timeline має attachment-control, QuickTeam+ — компактну shell без нього."
+        filePath="src/components/workspace/UnifiedTimeline.jsx"
+        fullWidth
+      >
+        <div className="grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2">
+          <div className="flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas">
+            <div className="flex-1 p-4 text-[12px] text-muted">Task timeline</div>
+            <ChatComposerDock className="px-4 pb-5 pt-3">
+              <ChatComposerCore
+                variant="timeline"
+                value=""
+                onChange={() => {}}
+                placeholder="Написати повідомлення..."
+                leading={<Button className="self-center rounded-full" style="ghost" size="icon-sm" icon={Paperclip} type="button" aria-label="Додати файл" />}
+                onSubmit={() => {}}
+                canSubmit={false}
+              />
+            </ChatComposerDock>
+          </div>
+
+          <div className="flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas">
+            <div className="flex-1 p-4 text-[12px] text-muted">QuickTeam+ chat</div>
+            <ChatComposerDock className="px-4 pb-5 pt-3">
+              <ChatComposerCore
+                variant="qtplus"
+                value=""
+                onChange={() => {}}
+                placeholder="Повідомлення…"
+                onSubmit={() => {}}
+                canSubmit={false}
+              />
+            </ChatComposerDock>
+          </div>
         </div>
       </PreviewBlock>
     </div>
@@ -1134,15 +1386,20 @@ function ChatComposerSection() {
 }
 
 function TaskCRMSection() {
+  const { statuses } = useWorkflowConfig();
+  const firstStatusId = statuses[0]?.id || DEFAULT_STATUSES[0].id;
+  const secondStatusId = statuses[1]?.id || firstStatusId;
+  const thirdStatusId = statuses[2]?.id || secondStatusId;
+  const lastStatusId = statuses.at(-1)?.id || thirdStatusId;
   const demoMembers = [
     { uid: '1', name: 'Артур Моспан', initials: 'АМ', bg: '#6366f1' },
     { uid: '2', name: 'Іван Петренко', initials: 'ІП', bg: '#10b981' }
   ];
 
   const demoLabels = [
-    { id: 'frontend', label: 'Frontend', color: '#3b82f6' },
-    { id: 'design', label: 'Design', color: '#db2777' },
-    { id: 'bug', label: 'Bug', color: '#ef4444' }
+    { id: 'frontend', label: 'Фронтенд', color: '#3b82f6' },
+    { id: 'design', label: 'Дизайн', color: '#db2777' },
+    { id: 'bug', label: 'Баг', color: '#ef4444' }
   ];
 
   const demoSprints = [
@@ -1151,6 +1408,9 @@ function TaskCRMSection() {
 
   const task1 = {
     id: 't1',
+    issueKey: 'QUI-41',
+    projectId: 'ui-kit-project',
+    columnId: firstStatusId,
     title: "Редизайн головної сторінки з новими компонентами",
     priority: "high",
     type: "feature",
@@ -1163,6 +1423,9 @@ function TaskCRMSection() {
 
   const task2 = {
     id: 't2',
+    issueKey: 'QUI-42',
+    projectId: 'ui-kit-project',
+    columnId: secondStatusId,
     title: "Критична помилка при авторизації користувачів через Google",
     priority: "critical",
     type: "bug",
@@ -1174,9 +1437,13 @@ function TaskCRMSection() {
 
   const task3 = {
     id: 't3',
+    issueKey: 'QUI-43',
+    projectId: 'ui-kit-project',
+    columnId: thirdStatusId,
     title: "Написати юніт-тести для нового контролера авторизації",
     priority: "low",
     type: "task",
+    parentIssueId: 't1',
     assigneeIds: [],
     dueDate: null,
     subtasks: []
@@ -1184,6 +1451,9 @@ function TaskCRMSection() {
 
   const task4 = {
     id: 't4',
+    issueKey: 'QUI-44',
+    projectId: 'ui-kit-project',
+    columnId: lastStatusId,
     title: "Інтеграція Stripe для автоматичного прийому платіжних карток",
     priority: "medium",
     type: "feature",
@@ -1195,6 +1465,9 @@ function TaskCRMSection() {
 
   const task5 = {
     id: 't5',
+    issueKey: 'QUI-45',
+    projectId: 'ui-kit-project',
+    columnId: firstStatusId,
     title: "Додати кнопку швидкого експорту звітів аналітики у CSV та PDF",
     priority: "low",
     type: "feature",
@@ -1203,85 +1476,97 @@ function TaskCRMSection() {
     subtasks: [],
     labelIds: ['frontend']
   };
+  const demoIssues = [task1, task2, task3, task4, task5];
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Task Card (Kanban)" description="Основна картка завдання для канбан дошки." fullWidth>
-        <div className="bg-[#f4f4f5] p-6 rounded-[16px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-          <TaskCard
+      <PreviewBlock title="Task Row (List View)" description="Один shared row для project і cross-project контекстів; назву проєкту вмикає лише semantic prop showProjectName." fullWidth>
+        <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
+          <p className="ui-type-eyebrow uppercase tracking-wider text-muted">Project context — назва проєкту прихована</p>
+          <TaskRow
             issue={task1}
+            allIssues={demoIssues}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}
             projectName="QuickTeam"
           />
-          <TaskCard
+          <p className="ui-type-eyebrow mt-2 uppercase tracking-wider text-muted">Cross-project context — назва проєкту видима</p>
+          <TaskRow
             issue={task2}
+            allIssues={demoIssues}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}
             projectName="QuickTeam"
+            showProjectName
           />
-          <TaskCard
+          <TaskRow
             issue={task3}
+            allIssues={demoIssues}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}
             projectName="QuickTeam"
+            showProjectName
           />
-          <TaskCard
+          <TaskRow
             issue={task4}
+            allIssues={demoIssues}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}
             projectName="QuickTeam"
+            showProjectName
           />
-          <TaskCard
+          <TaskRow
             issue={task5}
+            allIssues={demoIssues}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}
             projectName="QuickTeam"
+            showProjectName
           />
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Task Row (List View)" description="Компактне відображення завдання у вигляді рядка для списків." fullWidth>
-        <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
-          <TaskRow
-            issue={task1}
+      <PreviewBlock
+        title="Task List View — живий shared organism"
+        description="Саме цей organism рендерить обидва списки: hiddenStatusIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view."
+        filePath="src/components/ui/TaskManagement/TaskListView.jsx"
+        fullWidth
+      >
+        <TaskListView
+          issues={demoIssues}
+          allIssues={demoIssues}
+          members={demoMembers}
+          labels={demoLabels}
+          sprints={demoSprints}
+          projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+          showProjectName
+          hiddenStatusIds={[lastStatusId]}
+        />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Agile Board — живий shared organism"
+        description="Та сама Kanban-дошка використовується в проєкті та в «Мої завдання». Відмінності контексту задаються явними props, а не другою копією верстки."
+        filePath="src/components/workspace/AgileBoard.jsx"
+        fullWidth
+      >
+        <div className="h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4">
+          <AgileBoard
+            issues={demoIssues}
+            allIssues={demoIssues}
+            collapseHierarchy
             members={demoMembers}
-            labels={demoLabels}
+            projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+            projectId="ui-kit-project"
+            project={{ id: 'ui-kit-project', name: 'QuickTeam', hiddenColumns: [] }}
             sprints={demoSprints}
-            projectName="QuickTeam"
-          />
-          <TaskRow
-            issue={task2}
-            members={demoMembers}
-            labels={demoLabels}
-            sprints={demoSprints}
-            projectName="QuickTeam"
-          />
-          <TaskRow
-            issue={task3}
-            members={demoMembers}
-            labels={demoLabels}
-            sprints={demoSprints}
-            projectName="QuickTeam"
-          />
-          <TaskRow
-            issue={task4}
-            members={demoMembers}
-            labels={demoLabels}
-            sprints={demoSprints}
-            projectName="QuickTeam"
-          />
-          <TaskRow
-            issue={task5}
-            members={demoMembers}
-            labels={demoLabels}
-            sprints={demoSprints}
-            projectName="QuickTeam"
+            onAddIssue={() => {}}
+            onMoveIssue={() => {}}
           />
         </div>
       </PreviewBlock>
@@ -1324,77 +1609,6 @@ function SidebarSection() {
   );
 }
 
-function ButtonGroupsSection() {
-  return (
-    <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Secondary Button Group (Horizontal)" description="Група другорядних кнопок. Зовнішні кути заокруглені до L2.5 (10px), а внутрішні стикуються через тонку роздільну лінію." fullWidth>
-        <ButtonGroup>
-          <Button style="secondary">Огляд</Button>
-          <Button style="secondary">Активність</Button>
-          <Button style="secondary">Налаштування</Button>
-        </ButtonGroup>
-      </PreviewBlock>
-
-      <PreviewBlock title="Primary Button Group (Horizontal)" description="Група головних темних дій з темними контрастними роздільниками." fullWidth>
-        <ButtonGroup>
-          <Button style="primary">Запуск</Button>
-          <Button style="primary">Пауза</Button>
-          <Button style="primary">Зупинка</Button>
-        </ButtonGroup>
-      </PreviewBlock>
-
-      <PreviewBlock title="Vertical Button Group" description="Вертикальна орієнтація. Верхні та нижні кути заокруглені, проміжні кути пласкі." fullWidth>
-        <div className="max-w-[200px]">
-          <ButtonGroup orientation="vertical" className="w-full">
-            <Button style="secondary" className="justify-start">Редагувати</Button>
-            <Button style="secondary" className="justify-start">Дублювати</Button>
-            <Button style="secondary" className="justify-start">Видалити</Button>
-          </ButtonGroup>
-        </div>
-      </PreviewBlock>
-    </div>
-  );
-}
-
-function AvatarGroupsSection() {
-  const dummyAvatars = [
-    { name: 'Артур Моспан', initials: 'АМ', bg: '#6366f1', email: 'arthur@quickteam.io' },
-    { name: 'Іван Петренко', initials: 'ІП', bg: '#10b981', email: 'ivan@quickteam.io' },
-    { name: 'Марина Коваль', initials: 'МК', bg: '#f59e0b', email: 'marina@quickteam.io' },
-    { name: 'Дмитро Сірко', initials: 'ДС', bg: '#ec4899', email: 'dmytro@quickteam.io' },
-    { name: 'Олена Зоря', initials: 'ОЗ', bg: '#14b8a6', email: 'olena@quickteam.io' },
-  ];
-  return (
-    <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Avatar Group (Overlapping)" description="Компонент групи аватарів учасників проєкту. Завдяки білій обводці (ring-2 ring-white) аватари елегантно набігають один на одного, утворюючи візуально розділену групу. Автоматично розраховує та показує залишок (+N).">
-        <div className="flex flex-col gap-[20px] w-full">
-          <div>
-            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Sizes (sm, md, lg, xl)</h4>
-            <div className="flex flex-col gap-[16px]">
-              <div className="flex items-center gap-[12px]">
-                <span className="text-[12px] text-[#9a9a9a] w-[100px]">Small (20px)</span>
-                <AvatarGroup avatars={dummyAvatars} maxDisplay={4} size="sm" />
-              </div>
-              <div className="flex items-center gap-[12px]">
-                <span className="text-[12px] text-[#9a9a9a] w-[100px]">Medium (28px)</span>
-                <AvatarGroup avatars={dummyAvatars} maxDisplay={3} size="md" />
-              </div>
-              <div className="flex items-center gap-[12px]">
-                <span className="text-[12px] text-[#9a9a9a] w-[100px]">Large (36px)</span>
-                <AvatarGroup avatars={dummyAvatars} maxDisplay={3} size="lg" />
-              </div>
-              <div className="flex items-center gap-[12px]">
-                <span className="text-[12px] text-[#9a9a9a] w-[100px]">X-Large (44px)</span>
-                <AvatarGroup avatars={dummyAvatars} maxDisplay={3} size="xl" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </PreviewBlock>
-    </div>
-  );
-}
-
 function TooltipsSection() {
   return (
     <div className="flex flex-col gap-[32px]">
@@ -1418,96 +1632,204 @@ function TooltipsSection() {
   );
 }
 
-function BreadcrumbsSection() {
-  const [projectSearchActive, setProjectSearchActive] = useState(false);
-  const [projectQuery, setProjectQuery] = useState('');
-
-  const projectCrumbs = [
-    { label: 'Проєкти', href: '/' },
-    { label: 'Mobile App Redesign', href: null },
-  ];
-
-  const taskCrumbs = [
-    { label: 'Проєкти', href: '/' },
-    { label: 'Mobile App Redesign', href: '/project-1' },
-    { label: 'QT-104: Зворотній звʼязок', href: null },
-  ];
-
-  return (
-    <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="1) Project Breadcrumbs with Search (Навігація Проєкту)" description="Використовується в шапці проєкту. Містить кнопку для активації внутрішньопроєктного пошуку." fullWidth>
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <Breadcrumb 
-            items={projectCrumbs} 
-            showSearchButton={true}
-            isSearchActive={projectSearchActive}
-            onSearchToggle={() => setProjectSearchActive(true)}
-            searchValue={projectQuery}
-            onSearchChange={setProjectQuery}
-            onSearchClear={() => { setProjectQuery(''); setProjectSearchActive(false); }}
-            searchPlaceholder="Пошук по Mobile App Redesign..."
-          />
-          {projectSearchActive && (
-            <Button style="secondary" size="sm" onClick={() => { setProjectQuery(''); setProjectSearchActive(false); }} className="mt-[4px]">
-              Скинути пошук (Показати крихти знову)
-            </Button>
-          )}
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock title="2) Nested Task Breadcrumbs (Навігація детального перегляду)" description="Показує повний шлях до конкретного таску/субтаску." fullWidth>
-        <Breadcrumb items={taskCrumbs} />
-      </PreviewBlock>
-    </div>
-  );
-}
-
 function TaskAttributesSection() {
   const [statusVal, setStatusVal] = useState('todo');
-  const [memberVal, setMemberVal] = useState([]);
+  const [memberVal, setMemberVal] = useState('1');
+  const [sprintVal, setSprintVal] = useState('sprint-12');
+  const [dueDate, setDueDate] = useState('2026-08-07');
+  const [priority, setPriority] = useState('medium');
+  const [type, setType] = useState('feature');
+  const [eventType, setEventType] = useState('meeting');
+  const [eventProject, setEventProject] = useState('quickteam');
   
   const statusOpts = DEFAULT_STATUSES.map(s => ({ value: s.id, label: s.label, dotColor: s.color }));
   
   const memberOpts = [
-    { value: '1', label: 'Артур М.' },
-    { value: '2', label: 'Олена К.' },
-    { value: '3', label: 'Дмитро П.' }
+    { value: '', label: 'Не призначено' },
+    { value: '1', label: 'Артур Моспан' },
+    { value: '2', label: 'Олена Коваль' },
+    { value: '3', label: 'Дмитро Петренко' }
   ];
+  const {
+    attributeItemClass,
+    attributeLabelClass,
+    compactInputClass,
+    compactSelectClass,
+    detailsButtonClass,
+  } = getTaskAttributeChrome();
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Task Attributes Panel Layout" description="Панель властивостей завдання. Використовує flex-wrap для запобігання обрізанню випадних списків, розбиває параметри на первинні та другорядні з анімованим згортанням." fullWidth>
-        <TaskAttributesPanel
-          primaryChildren={
-            <>
-              <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Статус</span>
-                <Select value={statusVal} onChange={setStatusVal} options={statusOpts} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
-              </div>
-              <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Виконавець</span>
-                <Select value={memberVal[0] || ''} onChange={val => setMemberVal(val ? [val] : [])} options={memberOpts} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
-              </div>
-              <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Пріоритет</span>
-                <Select value="medium" onChange={() => {}} options={[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]} buttonClassName="bg-transparent rounded-[10px] px-0 h-[22px] font-medium text-[13px] justify-start gap-1 w-full" />
-              </div>
-            </>
-          }
-          secondaryChildren={
-            <>
-              <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Створено</span>
-                <span className="text-[13px] font-medium text-[#1f1f1f] h-[22px] flex items-center">30.05.2026</span>
-              </div>
-              <div className="flex flex-col gap-[4px] min-w-[130px] hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] cursor-pointer transition-colors" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Оцінка (Story Points)</span>
-                <span className="text-[13px] font-medium text-[#1f1f1f] h-[22px] flex items-center">5 SP</span>
-              </div>
-            </>
-          }
-        />
+      <PreviewBlock
+        title="Task Attributes Panel — Issue Detail"
+        description="Точний primary strip зі сторінки завдання: ті самі compact/singleRow props, grid, поля, кнопка таймера та Details popover."
+        filePath="src/components/workspace/IssueDetail.jsx"
+        fullWidth
+      >
+        <div className="relative isolate -mx-2 px-2">
+          <TaskAttributesPanel
+            singleRow
+            context="task"
+            compact
+            cardClassName="transition-[background-color,padding] duration-200"
+            primaryChildren={
+              <>
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Статус</span>
+                  <Select compact value={statusVal} onChange={setStatusVal} options={statusOpts} buttonClassName={compactSelectClass} />
+                </div>
+
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Виконавець</span>
+                  <Select compact value={memberVal} onChange={setMemberVal} options={memberOpts} buttonClassName={compactSelectClass} />
+                </div>
+
+                <div className={`max-sm:hidden ${attributeItemClass}`}>
+                  <span className={attributeLabelClass}>Спринт</span>
+                  <Select
+                    compact
+                    value={sprintVal}
+                    onChange={setSprintVal}
+                    options={[
+                      { value: '', label: 'Беклог (без спринта)' },
+                      { value: 'sprint-12', label: 'Спринт 12' },
+                    ]}
+                    buttonClassName={compactSelectClass}
+                  />
+                </div>
+
+                <div className={`max-sm:hidden ${attributeItemClass}`}>
+                  <span className={attributeLabelClass}>Дедлайн</span>
+                  <DatePicker
+                    compact
+                    hideIcon
+                    inputClassName={compactInputClass}
+                    value={dueDate}
+                    onChange={setDueDate}
+                    placeholder="Без дедлайну"
+                  />
+                </div>
+
+                <div className={`${attributeItemClass} max-sm:px-1.5`}>
+                  <span className={attributeLabelClass}><span className="sm:hidden">Час</span><span className="max-sm:hidden">Трекінг часу</span></span>
+                  <div className="flex h-[22px] min-w-0 items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="Запустити таймер"
+                      title="Запустити таймер"
+                      className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] bg-line leading-none text-ink transition-colors hover:bg-[#d9d9d9]"
+                    >
+                      <Play size={10} strokeWidth={0} className="block translate-x-[1px] fill-current" />
+                    </button>
+                    <button type="button" className="min-w-0 truncate text-[11px] font-bold text-ink">
+                      1г 25хв <span className="font-medium text-muted max-sm:hidden"> / 3г</span>
+                    </button>
+                  </div>
+                </div>
+
+                <Popover
+                  position="bottom"
+                  hideCloseIcon
+                  className="flex h-full items-center"
+                  trigger={(
+                    <button
+                      type="button"
+                      className={`${detailsButtonClass} max-sm:px-0 text-muted`}
+                      aria-label="Деталі завдання"
+                      title="Пріоритет і тип"
+                    >
+                      <Settings2 size={14} />
+                      <span className="max-sm:hidden">Деталі</span>
+                    </button>
+                  )}
+                >
+                  <div className="flex w-[248px] max-w-full flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Пріоритет</span>
+                      <Select value={priority} onChange={setPriority} options={DEFAULT_PRIORITIES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Тип</span>
+                      <Select value={type} onChange={setType} options={DEFAULT_TYPES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
+                    </div>
+                  </div>
+                </Popover>
+              </>
+            }
+          />
+        </div>
       </PreviewBlock>
+
+      <PreviewBlock
+        title="Task Attributes Panel — Calendar Event"
+        description="Другий фактичний організм на тому самому TaskAttributesPanel: 7 колонок, event type/project/date, час, учасники, трекінг і details."
+        filePath="src/components/workspace/calendar/CalendarEventPage.jsx"
+        fullWidth
+      >
+        <div className="relative -mx-2 mt-[12px] px-2">
+          <TaskAttributesPanel
+            singleRow
+            context="calendar"
+            compact
+            primaryChildren={(
+              <>
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Тип</span>
+                  <Select
+                    compact
+                    value={eventType}
+                    onChange={setEventType}
+                    options={CALENDAR_EVENT_TYPE_OPTIONS}
+                    buttonClassName={compactSelectClass}
+                  />
+                </div>
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Проєкт</span>
+                  <Select
+                    compact
+                    value={eventProject}
+                    onChange={setEventProject}
+                    options={[{ value: 'quickteam', label: 'QuickTeam' }, { value: '', label: 'Без проєкту' }]}
+                    buttonClassName={compactSelectClass}
+                  />
+                </div>
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Дата</span>
+                  <DatePicker
+                    compact
+                    hideIcon
+                    value={dueDate}
+                    onChange={setDueDate}
+                    inputClassName={compactInputClass}
+                  />
+                </div>
+                <button type="button" className={`${attributeItemClass} h-full w-full text-left`}>
+                  <span className={attributeLabelClass}>Час події</span>
+                  <span className="flex h-[22px] items-center truncate text-[13px] font-medium text-ink">10:00–11:00</span>
+                </button>
+                <button type="button" className={`${attributeItemClass} h-full w-full text-left`}>
+                  <span className={attributeLabelClass}>Учасники</span>
+                  <span className="flex h-[22px] items-center truncate text-[13px] font-medium text-ink"><Users size={13} className="mr-1.5 shrink-0 text-muted" />3 учасники</span>
+                </button>
+                <div className={attributeItemClass}>
+                  <span className={attributeLabelClass}>Трекінг часу</span>
+                  <div className="flex h-[22px] min-w-0 items-center gap-1">
+                    <button type="button" className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors bg-line text-ink hover:bg-[#d9d9d9]">
+                      <Play size={10} strokeWidth={0} className="block translate-x-[1px] fill-current" />
+                    </button>
+                    <button type="button" className="min-w-0 truncate text-[11px] font-bold text-ink">45 хв</button>
+                  </div>
+                </div>
+                <button type="button" className={`${detailsButtonClass} text-muted`}>
+                  <Settings2 size={14} />
+                  <span>Деталі</span>
+                </button>
+              </>
+            )}
+          />
+        </div>
+      </PreviewBlock>
+
     </div>
   );
 }
@@ -1544,8 +1866,8 @@ function NavMenuSection() {
   ];
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="InnerNavigation з контентною зоною" description="Патерн навігації всередині сторінок з групуванням елементів, іконками, активним та небезпечним станами, з відображенням сірої контентної зони праворуч." filePath="src/components/ui/Navigation/InnerNavigation.jsx" fullWidth>
-        <div className="h-[400px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
+      <PreviewBlock title="Settings Sidebar Layout" description="Точний layout сторінки налаштувань: InnerNavigation у SidebarLayout і реальна content-area справа." filePath="src/app/(app)/settings/page.js" fullWidth>
+        <div className="h-[500px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
           <SidebarLayout
             sidebar={(
               <InnerNavigation
@@ -1554,13 +1876,19 @@ function NavMenuSection() {
               onChange={setActive}
               />
             )}
-            sidebarWidth="280px"
             hasBorder={false}
           >
-            <div className="flex flex-1 flex-col items-center justify-center rounded-[16px] bg-canvas p-6 text-center">
-              <span className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-muted">Контент зона (Content Area)</span>
-              <p className="max-w-[280px] text-[12px] leading-relaxed text-faint">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>
-            </div>
+            <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
+              <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
+                <div className="flex-1 pb-[100px]">
+                  <h2 className="text-[22px] font-bold text-ink">Особистий профіль</h2>
+                  <p className="mt-1 text-[13px] text-muted">Керуйте особистими даними та налаштуваннями профілю.</p>
+                  <Surface preset="card" padding="lg" className="mt-6">
+                    <div className="h-[180px]" />
+                  </Surface>
+                </div>
+              </div>
+            </main>
           </SidebarLayout>
         </div>
       </PreviewBlock>
@@ -1569,35 +1897,45 @@ function NavMenuSection() {
 }
 
 function FiltersSection() {
-  const [status, setStatus] = useState('');
-  const [priority, setPriority] = useState('');
-  const [view, setView] = useState('kanban');
-  const statusOpts = [
-    { value: '', label: 'Всі статуси' },
-    ...DEFAULT_STATUSES.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))
+  const [selectedMember, setSelectedMember] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [sortOption, setSortOption] = useState('updated');
+  const memberOptions = [
+    { value: 'all', label: 'Всі учасники', icon: Users },
+    { value: 'u1', label: 'Артур Моспан', user: { id: 'u1', name: 'Артур Моспан' } },
+    { value: 'u2', label: 'Олена Коваль', user: { id: 'u2', name: 'Олена Коваль' } },
   ];
-  const priorityOpts = [
-    { value: '', label: 'Всі пріоритети' },
-    ...DEFAULT_PRIORITIES.map(p => ({ value: p.id, label: p.label, dotColor: p.color }))
+  const dateOptions = [
+    { value: 'all', label: 'За весь час' },
+    { value: '7days', label: 'Створено за 7 днів' },
+    { value: '30days', label: 'Створено за 30 днів' },
+  ];
+  const sortOptions = [
+    { value: 'updated', label: 'Нещодавно оновлені' },
+    { value: 'name', label: 'За назвою (А-Я)' },
+    { value: 'progress-desc', label: 'Прогрес (за спаданням)' },
+    { value: 'progress-asc', label: 'Прогрес (за зростанням)' },
   ];
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Full filter toolbar" description="Молекулярний елемент фільтрації сторінок. Поєднує FilterBar із примарними селекторами (variant='ghost') та перемикач вигляду (плитка/список) висотою 36px." fullWidth>
-        <div className="flex items-center justify-between w-full bg-white border border-[#f0f0f0] p-4 rounded-[20px] shadow-sm">
-          <FilterBar>
-            <Select options={statusOpts} value={status} onChange={setStatus} placeholder="Всі статуси" variant="ghost" />
-            <Select options={priorityOpts} value={priority} onChange={setPriority} placeholder="Всі пріоритети" variant="ghost" />
-          </FilterBar>
-          
-          <Tabs
-            tabs={[
-              { id: 'kanban', icon: Kanban },
-              { id: 'list', icon: List }
-            ]}
-            activeTab={view}
-            onTabChange={setView}
-          />
-        </div>
+      <PreviewBlock
+        title="Filter Bar — Projects Page"
+        description="Точний filter slot головної сторінки проєктів, а не довільна toolbar-композиція."
+        filePath="src/app/(app)/page.js"
+        fullWidth
+      >
+        <PageHeader
+          variant="main"
+          title="Проєкти"
+          actions={<Button style="primary" color="dark" size="lg" icon={Plus}>Новий проєкт</Button>}
+          filters={(
+            <FilterBar>
+              <Select filterRole="member" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant="ghost" />
+              <Select filterRole="date" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant="ghost" />
+              <Select filterRole="sort" options={sortOptions} value={sortOption} onChange={setSortOption} variant="ghost" />
+            </FilterBar>
+          )}
+        />
       </PreviewBlock>
     </div>
   );
@@ -1605,20 +1943,22 @@ function FiltersSection() {
 
 function TypographySection() {
   const types = [
-    { tag: 'h1', label: 'Page Title', size: '24px', weight: '700', cls: 'text-[24px] font-bold text-[#1f1f1f]', note: 'Every page main title — text-2xl' },
-    { tag: 'h2', label: 'Section Title', size: '18px', weight: '700', cls: 'text-[18px] font-bold text-[#1f1f1f]', note: 'Card/modal headings' },
-    { tag: 'h3', label: 'Subsection', size: '16px', weight: '700', cls: 'text-[16px] font-bold text-[#1f1f1f]', note: 'Sprint header, panel title' },
-    { tag: 'h4', label: 'Card Title', size: '15px', weight: '700', cls: 'text-[15px] font-bold text-[#1f1f1f]', note: 'Project/issue card title' },
-    { tag: 'body', label: 'Body', size: '14px', weight: '600', cls: 'text-[14px] font-semibold text-[#1f1f1f]', note: 'Primary content text' },
-    { tag: 'sm', label: 'Secondary', size: '13px', weight: '600', cls: 'text-[13px] font-semibold text-[#1f1f1f]', note: 'Descriptions, input text, buttons' },
-    { tag: 'xs', label: 'Small', size: '12px', weight: '600', cls: 'text-[12px] font-semibold text-[#1f1f1f]', note: 'Captions, tab labels' },
-    { tag: 'label', label: 'Form Label', size: '11px', weight: '700', cls: 'text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider', note: 'ALWAYS uppercase + tracking-wider' },
-    { tag: 'mono', label: 'Mono / ID', size: '11px', weight: '700', cls: 'text-[11px] font-bold font-mono text-[#9a9a9a]', note: 'Issue keys: QT-001, IDs' },
-    { tag: 'muted', label: 'Muted', size: '13px', weight: '600', cls: 'text-[13px] font-semibold text-[#9a9a9a]', note: 'Secondary/inactive text' },
+    { tag: 'display', label: 'Display Title', size: '32px', weight: '700', cls: 'ui-type-display-title text-ink', note: 'Organization switcher hero' },
+    { tag: 'metric', label: 'Metric Title', size: '28px', weight: '900', cls: 'ui-type-metric-title text-ink', note: 'Billing and large project card' },
+    { tag: 'page', label: 'Page Title', size: '24px', weight: '700', cls: 'ui-type-page-title text-ink', note: 'Workspace primary title' },
+    { tag: 'detail', label: 'Detail Title', size: '20px', weight: '700', cls: 'ui-type-detail-title text-ink', note: 'Detail and settings title' },
+    { tag: 'section', label: 'Section Title', size: '18px', weight: '700', cls: 'ui-type-section-title text-ink', note: 'Section and sheet title' },
+    { tag: 'feature', label: 'Feature Title', size: '17px', weight: '700', cls: 'ui-type-feature-title text-ink', note: 'Feature card title' },
+    { tag: 'dialog', label: 'Dialog Title', size: '16px', weight: '700', cls: 'ui-type-dialog-title text-ink', note: 'Dialog chrome' },
+    { tag: 'compact', label: 'Compact Title', size: '15px', weight: '700', cls: 'ui-type-compact-title text-ink', note: 'Dense panel title' },
+    { tag: 'card', label: 'Card Title', size: '14px', weight: '700', cls: 'ui-type-card-title text-ink', note: 'Cards and detail sections' },
+    { tag: 'item', label: 'Item Title', size: '12px', weight: '700', cls: 'ui-type-item-title text-ink', note: 'Rows and small groups' },
+    { tag: 'micro', label: 'Micro Title', size: '11px', weight: '700', cls: 'ui-type-micro-title text-ink', note: 'Dense data panels' },
+    { tag: 'eyebrow', label: 'Eyebrow', size: '11px', weight: '700', cls: 'ui-type-eyebrow', note: 'Uppercase section marker' },
   ];
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Type Scale" description="Full typography system." fullWidth>
+      <PreviewBlock title="Named typography contexts" description="Ці semantic classes є живим джерелом typography для authenticated workspace і /ui-kit." fullWidth>
         <div className="flex flex-col gap-[20px]">
           {types.map(t => (
             <div key={t.tag} className="flex items-baseline gap-[24px] border-b border-[#f0f0f0] pb-[16px] last:border-0">
@@ -1663,7 +2003,9 @@ function TokensSection() {
     { label: 'Button lg (CTA, default)', value: sizing.button.lg },
     { label: 'Button md (action)', value: sizing.button.md },
     { label: 'Button sm (compact)', value: sizing.button.sm },
-    { label: 'Input / Select / Tabs height', value: sizing.control },
+    { label: 'Input sm', value: sizing.input.sm },
+    { label: 'Input md', value: sizing.input.md },
+    { label: 'Input lg / Select / Tabs', value: sizing.input.lg },
     { label: 'L0: Global / Modal radius', value: `${sizing.radius.max} (rounded-[24px])` },
     { label: 'L1: Panel / Card radius', value: `${sizing.radius.full} (rounded-[16px])` },
     { label: 'L2: Inset Surface radius', value: `${sizing.radius.xl} (rounded-[12px])` },
@@ -1729,6 +2071,9 @@ function TokensSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
+  'fidelity-survey': <FidelitySurvey />,
+  'fidelity-follow-up': <FidelityFollowUpSurvey />,
+  'decision-lab': <DecisionLab />,
   'kit-status': <KitStatus />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
@@ -1750,9 +2095,6 @@ const SECTION_MAP = {
   'task-crm':  <TaskCRMSection />,
   feedback:   <FeedbackSection />,
   'chat-composer': <ChatComposerSection />,
-  'button-groups': <ButtonGroupsSection />,
-  'avatar-groups': <AvatarGroupsSection />,
-  'breadcrumbs':   <BreadcrumbsSection />,
   tooltips:        <TooltipsSection />,
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,
@@ -1763,7 +2105,7 @@ const SECTION_MAP = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function UIKitPage() {
-  const [activeSection, setActiveSection] = useState('buttons');
+  const [activeSection, setActiveSection] = useState('kit-status');
   const current = SECTIONS.find(s => s.id === activeSection);
 
   return (

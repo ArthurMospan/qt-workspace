@@ -1,6 +1,7 @@
-// Shared recurrence maths for the calendar. The client (useCalendarEvents) and
-// the reminder job (/api/calendar/reminders) MUST agree on which occurrences
-// exist, otherwise a reminder fires for a slot the calendar never showed.
+// Shared UTC recurrence maths for the calendar. The client, reminders, billing,
+// and server validation MUST generate the same instant for each occurrence.
+// Events currently do not store an IANA timezone, so local-time arithmetic
+// would make occurrence identity depend on the machine evaluating the series.
 
 // Advancing a monthly series with setMonth() alone drifts: 31 January + 1 month
 // lands on 3 March, and every later occurrence inherits the shift. The day of
@@ -9,22 +10,77 @@
 export function addRecurrence(date, frequency, interval, anchorDayOfMonth = null) {
   const next = new Date(date);
   if (frequency === 'daily') {
-    next.setDate(next.getDate() + interval);
+    next.setUTCDate(next.getUTCDate() + interval);
     return next;
   }
   if (frequency === 'weekly') {
-    next.setDate(next.getDate() + 7 * interval);
+    next.setUTCDate(next.getUTCDate() + 7 * interval);
     return next;
   }
   if (frequency === 'monthly') {
-    const anchorDay = anchorDayOfMonth ?? date.getDate();
-    next.setDate(1);
-    next.setMonth(next.getMonth() + interval);
-    const daysInTargetMonth = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
-    next.setDate(Math.min(anchorDay, daysInTargetMonth));
+    const anchorDay = anchorDayOfMonth ?? date.getUTCDate();
+    next.setUTCDate(1);
+    next.setUTCMonth(next.getUTCMonth() + interval);
+    const daysInTargetMonth = new Date(Date.UTC(
+      next.getUTCFullYear(),
+      next.getUTCMonth() + 1,
+      0,
+    )).getUTCDate();
+    next.setUTCDate(Math.min(anchorDay, daysInTargetMonth));
     return next;
   }
   return next;
+}
+
+function occurrenceAtIndex(
+  seriesStart,
+  frequency,
+  interval,
+  index,
+  anchorDayOfMonth,
+) {
+  const occurrence = new Date(seriesStart);
+  if (frequency === 'daily' || frequency === 'weekly') {
+    const days = frequency === 'weekly' ? 7 : 1;
+    occurrence.setUTCDate(
+      occurrence.getUTCDate() + (days * interval * index),
+    );
+    return occurrence;
+  }
+
+  occurrence.setUTCDate(1);
+  occurrence.setUTCMonth(
+    seriesStart.getUTCMonth() + (interval * index),
+  );
+  const daysInTargetMonth = new Date(Date.UTC(
+    occurrence.getUTCFullYear(),
+    occurrence.getUTCMonth() + 1,
+    0,
+  )).getUTCDate();
+  occurrence.setUTCDate(Math.min(anchorDayOfMonth, daysInTargetMonth));
+  return occurrence;
+}
+
+function occurrenceIndexNearWindow(
+  seriesStart,
+  windowStart,
+  frequency,
+  interval,
+) {
+  if (frequency === 'monthly') {
+    const elapsedMonths = (
+      (windowStart.getUTCFullYear() - seriesStart.getUTCFullYear()) * 12
+      + windowStart.getUTCMonth()
+      - seriesStart.getUTCMonth()
+    );
+    return Math.max(0, Math.floor(elapsedMonths / interval));
+  }
+
+  const intervalDays = frequency === 'weekly' ? 7 * interval : interval;
+  const elapsedDays = (
+    windowStart.getTime() - seriesStart.getTime()
+  ) / 86_400_000;
+  return Math.max(0, Math.floor(elapsedDays / intervalDays));
 }
 
 // Occurrences of a series that overlap [windowStart, windowEnd].
@@ -56,24 +112,47 @@ export function expandOccurrences({
     ? new Date(Math.min(new Date(until).getTime(), windowEnd.getTime()))
     : windowEnd;
 
-  const anchorDayOfMonth = seriesStart.getDate();
+  const anchorDayOfMonth = seriesStart.getUTCDate();
   let cursor = new Date(seriesStart);
 
-  // Jump close to the window instead of stepping through years of history.
+  // Seed directly by occurrence index. In particular, a calendar month is not
+  // 30 days: estimating a 20-year monthly series in days can jump past the
+  // requested month and reject a real occurrence used by time logs/invoices.
   if (cursor < windowStart) {
-    const approxStepDays = frequency === 'daily' ? step : frequency === 'weekly' ? 7 * step : 30 * step;
-    const behindDays = (windowStart.getTime() - cursor.getTime()) / 86_400_000;
-    const skip = Math.max(0, Math.floor(behindDays / approxStepDays) - 1);
-    for (let index = 0; index < skip; index += 1) {
-      cursor = addRecurrence(cursor, frequency, step, anchorDayOfMonth);
+    let index = occurrenceIndexNearWindow(
+      seriesStart,
+      windowStart,
+      frequency,
+      step,
+    );
+    cursor = occurrenceAtIndex(
+      seriesStart,
+      frequency,
+      step,
+      index,
+      anchorDayOfMonth,
+    );
+    while (index > 0 && cursor > windowStart) {
+      index -= 1;
+      cursor = occurrenceAtIndex(
+        seriesStart,
+        frequency,
+        step,
+        index,
+        anchorDayOfMonth,
+      );
     }
-    // The estimate is deliberately short; close the remaining gap exactly.
-    let guard = 0;
-    while (cursor < windowStart && guard < maxOccurrences) {
-      const next = addRecurrence(cursor, frequency, step, anchorDayOfMonth);
+    while (cursor < windowStart) {
+      const next = occurrenceAtIndex(
+        seriesStart,
+        frequency,
+        step,
+        index + 1,
+        anchorDayOfMonth,
+      );
       if (next.getTime() <= cursor.getTime()) break;
       cursor = next;
-      guard += 1;
+      index += 1;
     }
   }
 

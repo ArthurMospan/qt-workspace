@@ -3,6 +3,14 @@ import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
+import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import {
+  DEFAULT_PRIORITY_IDS,
+  DEFAULT_STATUS_IDS,
+  DEFAULT_TYPE_IDS,
+  resolveDoneStatusIds,
+  workflowIds,
+} from '@/lib/utils/workflowDefaults.mjs';
 
 function config() {
   return {
@@ -120,21 +128,16 @@ export async function createIssueFromTelegram({
 
   const db = getAdminDb();
   const projectRef = db.collection('projects').doc(projectId);
-  const [projectSnapshot, workflowSnapshot] = await Promise.all([
-    projectRef.get(),
-    db.collection('organizations').doc(organizationId).collection('settings').doc('workflow').get(),
-  ]);
+  const workflowRef = db.collection('organizations')
+    .doc(organizationId)
+    .collection('settings')
+    .doc('workflow');
+  const projectSnapshot = await projectRef.get();
   if (!projectSnapshot.exists || projectSnapshot.data().organizationId !== organizationId) {
     throw new Error('Проєкт для Telegram-групи більше недоступний');
   }
   if (projectSnapshot.data().status === 'archived') throw new Error('Проєкт архівовано');
 
-  const workflow = workflowSnapshot.data() || {};
-  const status = workflow.statuses?.[0]?.id || 'backlog';
-  const priorities = workflow.priorities || [];
-  const types = workflow.types || [];
-  const priority = priorities.some(item => item.id === 'medium') ? 'medium' : priorities[0]?.id || 'medium';
-  const type = types.some(item => item.id === 'task') ? 'task' : types[0]?.id || 'task';
   const issueRef = db.collection('issues').doc();
   let issueKey = '';
   const telegramUsername = String(telegramUser.username || '').replace(/^@/, '').trim();
@@ -145,11 +148,37 @@ export async function createIssueFromTelegram({
     : `QuickTeam (${authorName})`;
 
   await db.runTransaction(async transaction => {
-    const freshProject = await transaction.get(projectRef);
+    const [freshProject, workflowSnapshot] = await Promise.all([
+      transaction.get(projectRef),
+      transaction.get(workflowRef),
+    ]);
     if (!freshProject.exists || freshProject.data().organizationId !== organizationId) {
       throw new Error('Проєкт не знайдено');
     }
     const project = freshProject.data();
+    if (project.deletionPending === true) throw new Error('Проєкт уже видаляється');
+    if (project.status === 'archived') throw new Error('Проєкт архівовано');
+    const workflow = workflowSnapshot.data() || {};
+    const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
+    const hiddenStatusIds = new Set(
+      Array.isArray(project.hiddenColumns) ? project.hiddenColumns : [],
+    );
+    const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
+    const status = visibleStatusIds.includes('backlog')
+      ? 'backlog'
+      : visibleStatusIds[0];
+    if (!status) throw new Error('У проєкті немає доступного статусу');
+    const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
+    const priority = priorityIds.includes('medium')
+      ? 'medium'
+      : priorityIds[0];
+    const typeSelection = resolveNewIssueType(
+      'task',
+      workflowIds(workflow.types, DEFAULT_TYPE_IDS),
+    );
+    if (typeSelection.error) throw new Error(typeSelection.error.message);
+    const type = typeSelection.type;
+    const completed = resolveDoneStatusIds(workflow.statuses).includes(status);
     const next = (project.issueCounter || 0) + 1;
     issueKey = `${projectPrefix(project)}-${next}`;
     const now = admin.firestore.FieldValue.serverTimestamp();
@@ -169,8 +198,10 @@ export async function createIssueFromTelegram({
       sprintId: null,
       reporterId: `telegram:${telegramUser.id || 'unknown'}`,
       estimateMinutes: null,
-      parentEpicId: null,
-      subtasks: [],
+      spentMinutes: 0,
+      spentMinutesMirrorVersion: 1,
+      timeLogMutationVersion: 0,
+      parentIssueId: null,
       watcherIds: [],
       order: next,
       source: 'telegram',
@@ -185,6 +216,7 @@ export async function createIssueFromTelegram({
       createdBy: 'telegram-bot',
       createdAt: now,
       updatedAt: now,
+      ...(completed ? { completedAt: now } : {}),
     });
     transaction.update(projectRef, { issueCounter: next, updatedAt: now });
     transaction.create(issueRef.collection('audit').doc(), {

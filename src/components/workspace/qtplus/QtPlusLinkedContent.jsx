@@ -9,8 +9,8 @@ import QtPlusChatPanel from './chat/QtPlusChatPanel';
  */
 export default function QtPlusLinkedContent({ qtProjectId, portalUser, currentUser, header = null }) {
   return (
-    <div className="grid min-h-[520px] grid-cols-1 items-stretch gap-4 lg:h-[calc(100dvh-160px)] lg:min-h-[620px] lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex min-h-[520px] min-w-0 flex-col gap-4 rounded-[16px] bg-canvas p-4 lg:min-h-0">
+    <div className="grid min-h-[520px] flex-1 grid-cols-1 items-stretch gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface flex min-h-[520px] min-w-0 flex-col gap-4 overflow-y-auto hide-scrollbar lg:min-h-0">
         {header}
         <QtPlusStagesView qtProjectId={qtProjectId} />
       </div>

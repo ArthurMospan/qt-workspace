@@ -51,7 +51,7 @@ export function formatMsgTime(ms) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-/** Мітка дня для роздільника (Сьогодні / Вчора / DD.MM.YYYY) з мілісекунд. */
+/** Мітка дня для роздільника у тому самому форматі, що й timeline завдання. */
 export function dayLabel(ms, now = Date.now()) {
   if (typeof ms !== 'number' || !Number.isFinite(ms)) return '';
   const d = new Date(ms);
@@ -61,7 +61,11 @@ export function dayLabel(ms, now = Date.now()) {
   yesterday.setDate(t.getDate() - 1);
   if (sameDay(d, t)) return 'Сьогодні';
   if (sameDay(d, yesterday)) return 'Вчора';
-  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+  return d.toLocaleDateString('uk-UA', {
+    day: 'numeric',
+    month: 'long',
+    ...(d.getFullYear() !== t.getFullYear() ? { year: 'numeric' } : {}),
+  });
 }
 
 /**

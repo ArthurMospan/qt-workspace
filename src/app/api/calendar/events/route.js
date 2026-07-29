@@ -6,13 +6,18 @@ import {
   normalizedCalendarEventInput,
   serializeCalendarEvent,
   serializeTimestamp,
-  validateCalendarReferences,
 } from '@/lib/server/calendarEvents';
 
 // Deadline horizon the calendar can actually display. Matches the client's
 // recurrence window in useCalendarEvents.
 const DEADLINE_WINDOW_BEHIND_MONTHS = 6;
 const DEADLINE_WINDOW_AHEAD_MONTHS = 24;
+
+function calendarCreateError(code, message, status = 409) {
+  const error = new Error(code);
+  error.calendarEventCreate = { code, message, status };
+  return error;
+}
 
 export async function GET(request) {
   try {
@@ -135,7 +140,21 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({
+        error: 'Некоректний JSON',
+        code: 'CALENDAR_EVENT_JSON_INVALID',
+      }, { status: 400 });
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({
+        error: 'Тіло запиту має бути об’єктом',
+        code: 'CALENDAR_EVENT_JSON_INVALID',
+      }, { status: 400 });
+    }
     const organizationId = typeof body.organizationId === 'string' ? body.organizationId.trim() : '';
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) {
@@ -153,13 +172,6 @@ export async function POST(request) {
     } else if (!eventData.participantIds.includes(authorization.user.uid)) {
       eventData.participantIds.unshift(authorization.user.uid);
     }
-    const referenceError = await validateCalendarReferences({
-      organizationId,
-      ...eventData,
-      authorization,
-    });
-    if (referenceError) return NextResponse.json({ error: referenceError }, { status: 400 });
-
     const db = getAdminDb();
     const ref = db.collection('calendarEvents').doc();
     const now = admin.firestore.FieldValue.serverTimestamp();
@@ -169,13 +181,78 @@ export async function POST(request) {
         uid === authorization.user.uid ? 'accepted' : 'pending',
       ]),
     );
-    await ref.set({
-      ...eventData,
-      organizationId,
-      organizerId: authorization.user.uid,
-      participantResponses,
-      createdAt: now,
-      updatedAt: now,
+    await db.runTransaction(async transaction => {
+      const membershipRefs = eventData.participantIds.map(
+        uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`),
+      );
+      const memberships = membershipRefs.length
+        ? await transaction.getAll(...membershipRefs)
+        : [];
+      if (memberships.some((snapshot, index) => (
+        !snapshot.exists
+        || snapshot.data().orgId !== organizationId
+        || snapshot.data().userId !== eventData.participantIds[index]
+      ))) {
+        throw calendarCreateError(
+          'CALENDAR_PARTICIPANT_INVALID',
+          'Один або кілька учасників уже не належать до команди',
+        );
+      }
+
+      let projectRef = null;
+      if (eventData.projectId) {
+        projectRef = db.collection('projects').doc(eventData.projectId);
+        const projectSnapshot = await transaction.get(projectRef);
+        const project = projectSnapshot.exists ? projectSnapshot.data() : null;
+        if (!project || project.organizationId !== organizationId) {
+          throw calendarCreateError(
+            'CALENDAR_PROJECT_SCOPE_MISMATCH',
+            'Обраний проєкт не належить цій організації',
+          );
+        }
+        if (project.deletionPending === true) {
+          throw calendarCreateError(
+            'CALENDAR_PROJECT_DELETION_IN_PROGRESS',
+            'Обраний проєкт уже видаляють',
+          );
+        }
+        if (project.status === 'archived') {
+          throw calendarCreateError(
+            'CALENDAR_PROJECT_ARCHIVED',
+            'Не можна додавати події до архівованого проєкту',
+          );
+        }
+        const isPrivileged = ['owner', 'admin'].includes(
+          authorization.membership?.role,
+        );
+        if (
+          !isPrivileged
+          && !(
+            Array.isArray(project.team)
+            && project.team.includes(authorization.user.uid)
+          )
+        ) {
+          throw calendarCreateError(
+            'CALENDAR_PROJECT_FORBIDDEN',
+            'Ви не належите до команди обраного проєкту',
+            403,
+          );
+        }
+      }
+
+      transaction.create(ref, {
+        ...eventData,
+        organizationId,
+        organizerId: authorization.user.uid,
+        participantResponses,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (projectRef) {
+        transaction.update(projectRef, {
+          invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+        });
+      }
     });
 
     await createCalendarNotifications({
@@ -188,11 +265,17 @@ export async function POST(request) {
       body: eventData.allDay
         ? 'Вас додали до події на весь день'
         : `Початок: ${eventData.startAt.toDate().toLocaleString('uk-UA')}`,
+    }).catch(error => {
+      console.warn('[calendar] create notification failed after commit:', error);
     });
 
     const created = await ref.get();
     return NextResponse.json({ event: serializeCalendarEvent(created) }, { status: 201 });
   } catch (error) {
+    if (error?.calendarEventCreate) {
+      const { message, status, ...payload } = error.calendarEventCreate;
+      return NextResponse.json({ error: message, ...payload }, { status });
+    }
     return routeErrorResponse(error, {
       context: 'calendar-events POST',
       fallbackMessage: 'Не вдалося створити подію',

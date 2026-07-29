@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { issueParticipants } from '../src/lib/utils/issueParticipants.mjs';
+import {
+  issueDisplayParticipants,
+  issueParticipants,
+} from '../src/lib/utils/issueParticipants.mjs';
 
 const issue = {
   reporterId: 'author',
@@ -56,4 +59,17 @@ test('malformed records do not throw and contribute nothing', () => {
 test('empty and non-string ids are dropped rather than sent to', () => {
   const messy = { assigneeIds: ['', null, undefined, 0, 'real'], reporterId: '' };
   assert.deepEqual(issueParticipants(messy, { actorId: 'x' }), ['real']);
+});
+
+test('task cards show assignees, author and subscribers once with all of their roles', () => {
+  assert.deepEqual(issueDisplayParticipants({
+    assigneeIds: ['dev', 'both'],
+    reporterId: 'author',
+    watcherIds: ['watcher', 'both'],
+  }), [
+    { id: 'dev', roles: ['assignee'] },
+    { id: 'both', roles: ['assignee', 'subscriber'] },
+    { id: 'author', roles: ['author'] },
+    { id: 'watcher', roles: ['subscriber'] },
+  ]);
 });

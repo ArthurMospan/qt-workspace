@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAppContext } from '@/lib/context/AppContext';
 import { Plus, X, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { IconAction } from '@/components/ui';
 
 export default function AuthLayout({ children, hideCreateOrg = false, onClose }) {
   const { currentUser, signOut } = useAppContext();
@@ -37,7 +38,7 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
         <div className="w-full flex items-center justify-between pt-[24px] px-[20px] pb-[16px] shrink-0 relative z-50">
           <div className="flex items-center gap-[12px]">
             <Image src="/logo-min.svg" alt="QT" width={32} height={32} loading="eager" className="object-contain" />
-            <h1 className="text-white text-[18px] font-bold tracking-tight leading-tight truncate">QuickTeam</h1>
+            <h1 className="ui-type-section-title text-white tracking-tight leading-tight truncate">QuickTeam</h1>
           </div>
 
           <div className="flex items-center gap-6">
@@ -52,12 +53,19 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
             )}
             
             {onClose ? (
-              <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-white/70 hover:text-white shrink-0">
-                <X size={16} />
-              </button>
+              <IconAction
+                label="Закрити"
+                icon={X}
+                size="md"
+                iconSize={16}
+                appearance="auth-close"
+                shape="circle"
+                onClick={onClose}
+              />
             ) : currentUser ? (
               <div className="relative">
                 <button 
+                  data-ui-action="avatar-menu"
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="w-8 h-8 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 hover:border-white/30 transition-colors cursor-pointer"
                 >

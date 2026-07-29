@@ -78,7 +78,7 @@ export default function PortalPage({ params }) {
         {/* ── Materials ─────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13px] font-bold text-ink">
+            <h3 className="ui-type-item-title text-ink">
               Матеріали <span className="text-muted font-normal">({materials.length})</span>
             </h3>
             {PORTAL_URL && (
@@ -94,7 +94,7 @@ export default function PortalPage({ params }) {
               <LoadingSpinner size="md" />
             </div>
           ) : materials.length === 0 ? (
-            <Card variant="white" padding="lg">
+            <Card preset="bordered" padding="lg">
               <EmptyState
                 icon={ImageIcon}
                 title="Матеріалів поки немає"
@@ -106,7 +106,7 @@ export default function PortalPage({ params }) {
                 const stageMats = stage.materials || [];
                 if (stageMats.length === 0) return null;
                 return (
-                  <Card key={stage.id} variant="white" padding="none" className="overflow-hidden">
+                  <Card key={stage.id} preset="bordered" padding="none" className="overflow-hidden">
                     <div className="px-5 py-3 border-b border-[#f0f0f0] flex items-center gap-2">
                       <FileCheck size={13} className="text-muted" />
                       <p className="text-[12px] font-bold text-ink">{stage.title || stage.name || 'Без назви'}</p>
@@ -156,10 +156,10 @@ export default function PortalPage({ params }) {
         </div>
 
         {/* ── Chat ──────────────────────────────────────────────────── */}
-        <Card variant="white" padding="none" className="overflow-hidden sticky top-0">
+        <Card preset="bordered" padding="none" className="overflow-hidden sticky top-0">
           <div className="px-5 py-4 border-b border-[#f0f0f0] flex items-center gap-2">
             <MessageSquare size={14} className="text-muted" />
-            <h3 className="text-[13px] font-bold text-ink">Чат з клієнтом</h3>
+            <h3 className="ui-type-item-title text-ink">Чат з клієнтом</h3>
           </div>
 
           <div className="flex flex-col gap-0 max-h-[500px] overflow-y-auto divide-y divide-canvas">

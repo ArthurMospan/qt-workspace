@@ -7,13 +7,14 @@ import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import MobileNav from '@/components/MobileNav';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
-import Toast from '@/components/Toast';
+import WorkspaceToastHost from '@/components/WorkspaceToastHost';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
+import Button from '@/components/ui/Button';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
@@ -86,10 +87,10 @@ export default function WorkspaceLayout({ children }) {
   if (orgError) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
-        <div className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
-          <h1 className="text-[18px] font-bold text-ink mb-2">QuickTeam тимчасово недоступний</h1>
+        <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
+          <h1 className="ui-type-section-title text-ink mb-2">QuickTeam тимчасово недоступний</h1>
           <p className="text-[13px] text-muted mb-5">Не вдалося прочитати дані організації. Ваші дані не видалені.</p>
-          <button onClick={() => window.location.reload()} className="rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-ink-hover">Спробувати ще раз</button>
+          <Button onClick={() => window.location.reload()} size="lg" composition="workspace-guard">Спробувати ще раз</Button>
         </div>
       </div>
     );
@@ -116,7 +117,7 @@ export default function WorkspaceLayout({ children }) {
         <div className="w-[64px] h-[64px] bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </div>
-        <h1 className="text-[24px] font-bold text-ink mb-2">Доступ заборонено</h1>
+        <h1 className="ui-type-page-title text-ink mb-2">Доступ заборонено</h1>
         <p className="text-[14px] text-muted max-w-[320px] mb-8">
           Ви намагаєтесь увійти у внутрішній простір команди. Щоб керувати своїми проєктами, перейдіть на клієнтський портал.
         </p>
@@ -178,7 +179,7 @@ export default function WorkspaceLayout({ children }) {
         </div>
       )}
 
-      <Toast />
+      <WorkspaceToastHost />
       <ProfileModal />
     </div>
     </WorkspaceOrganizationRouteGuard>

@@ -60,9 +60,9 @@ export default function IntegrationCard({
   const dotStyle = STATUS_DOTS[status] || STATUS_DOTS.off;
 
   return (
-    <Card variant="white" padding="lg" className="mb-4 !border-none">
+    <Card preset="borderless" padding="lg" className="mb-4">
       <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
+        <div data-ui-surface="local" className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
           <Image src={logoSrc} alt={logoAlt} width={30} height={30} className="h-[30px] w-[30px] object-contain" />
         </div>
 

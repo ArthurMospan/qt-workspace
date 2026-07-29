@@ -5,6 +5,7 @@ import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import PdfThumb from '../previews/PdfThumb';
 import TextThumb from '../previews/TextThumb';
 import OfficeThumb from '../previews/OfficeThumb';
+import IconAction from '@/components/ui/IconAction';
 
 const FALLBACK_ICON = { image: ImageIcon, video: Film, pdf: FileText, text: FileText, office: FileText, file: File };
 
@@ -47,7 +48,7 @@ export default function FileCard({ view, onOpen }) {
   }
 
   return (
-    <div className="rounded-[12px] border border-line bg-surface overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow">
+    <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow">
       <div className="relative">
         {thumb || (
           <div className="w-full h-[160px] flex items-center justify-center" style={{ backgroundColor: view.badge.bg }}>
@@ -77,14 +78,16 @@ export default function FileCard({ view, onOpen }) {
         </span>
 
         {view.url && (
-          <button
-            type="button"
+          <IconAction
             onClick={handleDownload}
-            aria-label={`Завантажити ${view.title}`}
-            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/70"
-          >
-            <Download size={13} />
-          </button>
+            label={`Завантажити ${view.title}`}
+            icon={Download}
+            iconSize={13}
+            size="sm"
+            shape="circle"
+            appearance="overlay"
+            className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          />
         )}
       </div>
 

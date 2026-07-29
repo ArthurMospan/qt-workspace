@@ -6,7 +6,7 @@ export default function ChecklistCard({ view }) {
   const { items, checkedItems, done, total, percent } = view.checklist;
 
   return (
-    <div className="rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden">
+    <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden">
       <div className="px-3 py-2 flex items-center gap-2 border-b border-line">
         <div className="w-7 h-7 rounded-[8px] bg-canvas flex items-center justify-center shrink-0">
           <ListChecks size={14} className="text-muted" />

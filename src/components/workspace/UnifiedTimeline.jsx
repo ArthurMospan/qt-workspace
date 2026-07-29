@@ -1,14 +1,15 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
-import { Popover, useConfirm } from '@/components/ui';
+import ChatComposerCore from '@/components/ui/ChatComposerCore';
+import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useComments } from '@/lib/hooks/useComments';
@@ -30,13 +31,13 @@ const FIELD_LABELS = {
 };
 
 const STATUS_LABELS = {
-  backlog: 'Backlog',
-  todo: 'To Do',
-  'in-progress': 'In Progress',
-  'code-review': 'Code Review',
+  backlog: 'Беклог',
+  todo: 'До виконання',
+  'in-progress': 'У роботі',
+  'code-review': 'Код-ревʼю',
   qa: 'QA',
-  'client-approval': 'Client Approval',
-  done: 'Done',
+  'client-approval': 'Погодження клієнтом',
+  done: 'Готово',
 };
 
 function fmtTime(minutes) {
@@ -140,7 +141,7 @@ function StatusEmoji({ member }) {
 function SystemEventMessage({ text, time, actorName }) {
   return (
     <div className="flex justify-center px-3">
-      <div className="flex max-w-[92%] items-center gap-2 rounded-full bg-black/[0.045] px-3 py-2 text-[11px] text-muted">
+      <div data-ui-surface="system-message" className="ui-surface flex max-w-[92%] items-center gap-2 text-[11px] text-muted">
         <span className="min-w-0 text-center leading-4">
           {actorName && <strong className="font-bold text-ink">{actorName} · </strong>}
           {text}
@@ -158,9 +159,9 @@ function DaySeparator({ timestamp }) {
     <div className="flex justify-center py-2.5" aria-label={`Дата: ${label}`}>
       {/* A date marker is a landmark, not content: bold + widest tracking made
           it heavier than the messages it separates. */}
-      <span className="rounded-full bg-white/75 px-2.5 py-[3px] text-[9px] font-semibold uppercase tracking-wide text-faint">
+      <Pill tone="surface" size="day" weight="medium" uppercase>
         {label}
-      </span>
+      </Pill>
     </div>
   );
 }
@@ -174,7 +175,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
 
   const { comments, addComment, updateComment, deleteComment, markCommentsRead } = useComments(issueId);
   const { entries: auditLogs } = useAuditLog(issueId);
-  const { logs: timeLogs } = useTimeLogs(issueId);
+  const { logs: timeLogs } = useTimeLogs(issueId, projectId);
 
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -407,7 +408,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             icon={MessageSquare}
             title="Ще немає повідомлень"
             description="Почніть обговорення завдання з командою."
-            className="flex-1"
+            context="flexible"
           />
         )}
 
@@ -513,9 +514,9 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                     )}
                     {!isArchived && (
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
-                        <button type="button" onClick={() => beginReply(item)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Відповісти" title="Відповісти"><Reply size={12} /></button>
-                        {isMe && <button type="button" onClick={() => beginEdit(item)} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Редагувати повідомлення" title="Редагувати"><Pencil size={12} /></button>}
-                        {isMe && <button type="button" onClick={() => handleDelete(item)} className="rounded-[6px] p-1 text-muted hover:bg-red-100 hover:text-red-500" aria-label="Видалити повідомлення" title="Видалити"><Trash2 size={12} /></button>}
+                        <IconAction label="Відповісти" icon={Reply} iconSize={12} size="micro" appearance="quiet" shape="micro" onClick={() => beginReply(item)} title="Відповісти" />
+                        {isMe && <IconAction label="Редагувати повідомлення" icon={Pencil} iconSize={12} size="micro" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
+                        {isMe && <IconAction label="Видалити повідомлення" icon={Trash2} iconSize={12} size="micro" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item)} title="Видалити" />}
                       </div>
                     )}
                 </div>
@@ -557,7 +558,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
       {!isArchived && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} className="px-4 pb-5 pt-3">
           {mentionState.active && filteredMembers.length > 0 && (
-            <div className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
+            <div data-ui-surface="local" className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
               {filteredMembers.map((member, index) => (
                 <button
                   key={member.id || member.uid}
@@ -578,72 +579,62 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                 <div className="text-[11px] font-bold text-ink">{editingComment ? 'Редагування повідомлення' : `Відповідь для ${replyTo.authorName || 'учасника'}`}</div>
                 <div className="truncate text-[11px] text-muted">{editingComment?.text || replyTo?.text || 'Вкладення'}</div>
               </div>
-              <button type="button" onClick={resetComposer} className="rounded-[6px] p-1 text-muted hover:bg-black/[0.06] hover:text-ink" aria-label="Скасувати"><X size={13} /></button>
+              <IconAction label="Скасувати" icon={X} iconSize={13} size="micro" appearance="quiet" shape="micro" onClick={resetComposer} />
             </div>
           )}
 
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
-          <div className="overflow-hidden rounded-[18px] bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]">
-            {pendingFiles.length > 0 && (
+          <ChatComposerCore
+            variant="timeline"
+            textareaRef={inputRef}
+            value={input}
+            onChange={event => {
+              setInput(event.target.value);
+              checkMentions(event.target.value, event.target.selectionStart);
+              event.target.style.height = 'auto';
+              event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+            }}
+            onClick={event => checkMentions(event.target.value, event.target.selectionStart)}
+            onKeyDown={event => {
+              if (mentionState.active && filteredMembers.length > 0) {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  const delta = event.key === 'ArrowDown' ? 1 : -1;
+                  setMentionState(previous => ({ ...previous, selectedIndex: (previous.selectedIndex + delta + filteredMembers.length) % filteredMembers.length }));
+                  return;
+                }
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  selectMention(filteredMembers[mentionState.selectedIndex]);
+                  return;
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setMentionState(previous => ({ ...previous, active: false, ignoreIndex: previous.startIndex }));
+                  return;
+                }
+              }
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
+            textareaStyle={{ height: '32px' }}
+            attachments={pendingFiles.length > 0 ? (
               <div className="border-b border-black/[0.05] p-2">
                 <PendingChatAttachments
                   files={pendingFiles}
                   onRemove={index => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))}
                 />
               </div>
-            )}
-            <div className="flex min-h-[44px] items-end gap-1 p-1">
-              {!editingComment && <Button className="self-center" style="ghost" size="icon" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" />}
-              <textarea
-              ref={inputRef}
-              rows={1}
-              value={input}
-              onChange={event => {
-                setInput(event.target.value);
-                checkMentions(event.target.value, event.target.selectionStart);
-                event.target.style.height = 'auto';
-                event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
-              }}
-              onClick={event => checkMentions(event.target.value, event.target.selectionStart)}
-              onKeyDown={event => {
-                if (mentionState.active && filteredMembers.length > 0) {
-                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                    event.preventDefault();
-                    const delta = event.key === 'ArrowDown' ? 1 : -1;
-                    setMentionState(previous => ({ ...previous, selectedIndex: (previous.selectedIndex + delta + filteredMembers.length) % filteredMembers.length }));
-                    return;
-                  }
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    selectMention(filteredMembers[mentionState.selectedIndex]);
-                    return;
-                  }
-                  if (event.key === 'Escape') {
-                    event.preventDefault();
-                    setMentionState(previous => ({ ...previous, active: false, ignoreIndex: previous.startIndex }));
-                    return;
-                  }
-                }
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
-              className="custom-scrollbar min-h-[36px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[14px] leading-5 text-ink outline-none placeholder:text-muted"
-              style={{ height: '32px' }}
-              />
-              <button
-              type="button"
-              disabled={(!input.trim() && pendingFiles.length === 0) || sending}
-              onClick={handleSend}
-              aria-label={editingComment ? 'Зберегти зміни' : 'Надіслати'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100"
-              >
-                <ArrowUp size={16} />
-              </button>
-            </div>
-          </div>
+            ) : null}
+            leading={!editingComment ? <Button className="self-center" shape="circle" style="ghost" size="icon-sm" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" /> : null}
+            onSubmit={handleSend}
+            canSubmit={Boolean(input.trim() || pendingFiles.length > 0)}
+            sending={sending}
+            sendAriaLabel={editingComment ? 'Зберегти зміни' : 'Надіслати'}
+          />
         </ChatComposerDock>
       )}
     </div>

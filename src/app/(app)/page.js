@@ -6,13 +6,20 @@ import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Edit2, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
-import { PageHeader, EmptyState, useConfirm } from '@/components/ui';
+import {
+  Counter,
+  EmptyState,
+  FormGroup,
+  PageHeader,
+  StatusVisibilityPicker,
+  useConfirm,
+} from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
@@ -29,65 +36,6 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
-
-// ── Edit Project Modal ───────────────────────────────────────────────────────
-function EditProjectModal({ project, onClose }) {
-  const [name, setName] = useState(project.name || '');
-  const [description, setDescription] = useState(project.description || '');
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (!name.trim()) return;
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'projects', project.id), {
-        name: name.trim(),
-        description: description.trim(),
-        updatedAt: serverTimestamp(),
-      });
-      onClose();
-    } catch (err) { console.error(err); }
-    setSaving(false);
-  };
-
-  return (
-    <Dialog
-      isOpen={true}
-      onClose={onClose}
-      title="Редагувати проєкт"
-      size="sm"
-      footer={
-        <>
-          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
-          <Button onClick={handleSave} disabled={!name.trim() || saving} style="primary" size="md">
-            {saving ? 'Збереження...' : 'Зберегти'}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-[16px]">
-        <div>
-          <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
-          <Input
-            autoFocus
-            value={name}
-            onChange={e => setName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSave()}
-          />
-        </div>
-        <div>
-          <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Опис</label>
-          <Textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            rows={3}
-            placeholder="Короткий опис проєкту..."
-          />
-        </div>
-      </div>
-    </Dialog>
-  );
-}
 
 // ── Add Member Modal ─────────────────────────────────────────────────────────
 function AddMemberModal({ project, allMembers, onClose }) {
@@ -177,12 +125,11 @@ function AddMemberModal({ project, allMembers, onClose }) {
 }
 
 // ── Project Card ─────────────────────────────────────────────────────────────
-const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
+const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
   const router = useRouter();
   const { currentUser, activeOrgId } = useAppContext();
   const confirmDialog = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -234,18 +181,20 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
   return (
     <>
       <div
+        data-ui-surface="project-card"
+        data-ui-density={isLarge ? 'large' : 'default'}
         onClick={handleCardClick}
-        className={`group relative flex flex-col justify-between bg-white !rounded-[16px] cursor-pointer overflow-visible transition-all duration-300 hover:ring-4 hover:ring-[#ECECEC] border border-transparent ${menuOpen ? 'z-30' : 'hover:z-10'} ${
+        className={`ui-surface group relative flex flex-col justify-between cursor-pointer overflow-visible transition-all duration-300 ${menuOpen ? 'z-30' : 'hover:z-10'} ${
           isLarge 
-            ? 'md:col-span-2 md:row-span-2 p-[32px] pb-[40px] gap-[32px] min-h-[280px]' 
-            : 'p-[24px] pb-[28px] gap-[20px] min-h-[220px]'
+            ? 'md:col-span-2 md:row-span-2'
+            : ''
         }`}
       >
         {/* Top row: avatars + kebab */}
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
           <div className="flex -space-x-[10px]">
             {teamCount === 0 && (
-              <div className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+              <div data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                 <Users size={13} className="text-muted" />
               </div>
             )}
@@ -254,7 +203,7 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
               return m ? (
                 <UserAvatar key={uid} user={m} size={30} className="border-2 border-white shadow-none" />
               ) : (
-                <div key={uid} className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                <div key={uid} data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                   <User size={13} className="text-muted" />
                 </div>
               );
@@ -288,9 +237,8 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
                 </button>
               }
               items={[
-                { icon: Settings2, label: 'Налаштувати', onClick: () => setShowBoardConfig(true) },
+                { icon: Settings2, label: 'Налаштування проєкту', onClick: () => setShowBoardConfig(true) },
                 { icon: UserPlus, label: 'Учасники', onClick: () => setShowAddMember(true) },
-                { icon: Edit2, label: 'Редагувати', onClick: () => setShowEdit(true) },
                 { isDivider: true },
                 !isArchived ? (
                   { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
@@ -314,14 +262,13 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
 
         {/* Title + description */}
         <div className="flex flex-col gap-[8px] z-10">
-          <h2 className={`font-bold text-ink leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap ${
-            isLarge ? 'text-[28px]' : 'text-[18px]'
-          }`}>
+          <h2
+            data-ui-density={isLarge ? 'large' : 'default'}
+            className="ui-type-project-card-title text-ink leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap"
+          >
             <span>{project.name}</span>
             {unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center bg-ink text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] h-[20px]" title="Непрочитані повідомлення">
-                {unreadCount}
-              </span>
+              <Counter value={unreadCount} size="md" className="shrink-0" />
             )}
           </h2>
           {project.description && (
@@ -338,9 +285,8 @@ const ProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers 
       </div>
 
       {/* Modals */}
-      {showEdit && <EditProjectModal project={project} onClose={() => setShowEdit(false)} />}
       {showAddMember && <AddMemberModal project={project} allMembers={allOrgMembers} onClose={() => setShowAddMember(false)} />}
-      {showBoardConfig && <BoardConfigModal project={project} onClose={() => setShowBoardConfig(false)} />}
+      {showBoardConfig && <BoardConfigModal project={project} issues={issues} onClose={() => setShowBoardConfig(false)} />}
     </>
   );
 };
@@ -417,6 +363,11 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           title: newestIssue.title,
           actor: actorName,
           actorAvatar,
+          actorUser: actorUser || {
+            id: newestIssue.lastActivityActorId || newestIssue.updatedBy || newestIssue.reporterId || undefined,
+            name: actorName,
+            avatar: actorAvatar,
+          },
           action: newestIssue.lastActivityType === 'comment' ? 'написав у чаті завдання' : 'оновив завдання',
           time: newestIssue.lastActivityAt || newestIssue.updatedAt || newestIssue.createdAt,
           projectId: newestIssue.projectId,
@@ -447,20 +398,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     <div className="z-10 mt-auto flex flex-col gap-[14px] w-full">
       {isLarge && stats.lastAction && (
         <div className="bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
-          {/* Actor Avatar */}
-          {stats.lastAction.actorAvatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={stats.lastAction.actorAvatar} 
-              alt={stats.lastAction.actor} 
-              referrerPolicy="no-referrer"
-              className="w-7 h-7 rounded-full object-cover shrink-0" 
-            />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-ink/5 text-ink font-bold flex items-center justify-center text-[9px] shrink-0 uppercase">
-              {stats.lastAction.actor ? stats.lastAction.actor.slice(0, 2) : 'АМ'}
-            </div>
-          )}
+          <UserAvatar user={stats.lastAction.actorUser} size={28} />
 
           {/* Activity Text details */}
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
@@ -508,12 +446,13 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 }
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [] }) {
+function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [], statuses = [] }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
   const [saving,      setSaving]      = useState(false);
   const [team,        setTeam]        = useState([]);
+  const [hiddenColumns, setHiddenColumns] = useState([]);
 
   const isFree      = orgPlan !== 'pro';
   const limitReached = isFree && activeProjectsCount >= 3;
@@ -531,6 +470,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
         visibility,
         organizationId: orgId,
         team,
+        hiddenColumns,
       };
 
       const token = await auth.currentUser?.getIdToken();
@@ -559,7 +499,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
-          <Button onClick={() => { onClose(); window.location.href = '/settings#billing'; }} style="primary" color="blue" size="md" className="w-full">Перейти на PRO →</Button>
+          <Button onClick={() => { onClose(); window.location.href = '/settings#billing'; }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
           <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
       ) : (
@@ -574,7 +514,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
           <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-muted" />
           </div>
-          <h3 className="text-[17px] font-bold text-ink mb-2">Ліміт Free плану</h3>
+          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт Free плану</h3>
           <p className="text-[13px] text-muted leading-relaxed">
             На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
             Перейдіть на Pro для необмеженої кількості проєктів.
@@ -595,36 +535,33 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
               )}
             </div>
           )}
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Назва проєкту *</label>
-            <input
+          <FormGroup label="Назва проєкту" required>
+            <Input
               autoFocus
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
               placeholder="Наприклад: Редизайн сайту"
-              className="w-full text-[15px] font-semibold bg-canvas rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-ink transition-colors"
+              composition="project-name"
             />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Опис</label>
-            <textarea
+          </FormGroup>
+          <FormGroup label="Опис">
+            <Textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Короткий опис проєкту..."
               rows={3}
-              className="w-full text-[14px] bg-canvas rounded-[10px] px-[14px] py-[10px] outline-none border border-transparent focus:border-ink transition-colors resize-none"
+              composition="project-description"
             />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-muted uppercase tracking-wider mb-[6px] block">Учасники</label>
+          </FormGroup>
+          <FormGroup label="Учасники">
             <MultiSelect
               value={team}
               onChange={setTeam}
               options={members.map(member => ({
                 value: member.id || member.uid,
                 label: member.name || member.displayName || member.email || 'Учасник',
-                avatar: member.avatar || member.photoURL || '',
+                user: member,
               }))}
               placeholder="Додати учасників одразу"
               searchPlaceholder="Знайти учасника..."
@@ -634,7 +571,18 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
               selectAllLabel="Вибрати всіх учасників"
             />
             <p className="mt-1.5 text-[11px] text-muted">Ви як автор проєкту будете додані автоматично.</p>
-          </div>
+          </FormGroup>
+          <FormGroup label="Колонки проєкту">
+            <p className="text-[11px] text-muted">
+              Оберіть потрібні колонки одразу. Беклог залишається видимим завжди.
+            </p>
+            <StatusVisibilityPicker
+              statuses={statuses}
+              hiddenStatusIds={hiddenColumns}
+              onChange={setHiddenColumns}
+              backlogStatusId={statuses.some(status => status.id === 'backlog') ? 'backlog' : statuses[0]?.id}
+            />
+          </FormGroup>
         </div>
       )}
     </Dialog>
@@ -645,7 +593,7 @@ export default function WorkspacePage() {
   const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members, loading: orgLoading } = useOrganization();
-  const { labels, doneStatusIds } = useWorkflowConfig();
+  const { labels, doneStatusIds, statuses } = useWorkflowConfig();
   const { sprints } = useSprints();
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -818,7 +766,8 @@ export default function WorkspacePage() {
       { value: 'all', label: 'Всі учасники' },
       ...(members || []).map(m => ({
         value: m.id || m.uid,
-        label: m.name || m.email?.split('@')[0] || 'Учасник'
+        label: m.name || m.email?.split('@')[0] || 'Учасник',
+        user: m,
       }))
     ];
   }, [members]);
@@ -890,9 +839,9 @@ export default function WorkspacePage() {
           }
           filters={
             <FilterBar>
-              <Select options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant="ghost" />
-              <Select options={dateOptions} value={dateFilter} onChange={setDateFilter} variant="ghost" />
-              <Select options={sortOptions} value={sortOption} onChange={setSortOption} variant="ghost" />
+              <Select filterRole="member" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant="ghost" />
+              <Select filterRole="date" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant="ghost" />
+              <Select filterRole="sort" options={sortOptions} value={sortOption} onChange={setSortOption} variant="ghost" />
             </FilterBar>
           }
         />
@@ -914,10 +863,10 @@ export default function WorkspacePage() {
         <div className="w-full flex-1 flex flex-col">
           {projectsLoading ? (
             // Skeleton cards — shown while projects load to prevent empty state flash
-            <Surface variant="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
+            <Surface preset="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="rounded-[16px] border border-line bg-canvas p-[20px] flex flex-col gap-[12px] animate-pulse">
+                  <div key={i} data-ui-surface="bordered-panel" data-ui-padding="lg" className="ui-surface flex flex-col gap-[12px] animate-pulse">
                     <div className="h-[18px] w-2/3 bg-line rounded-[6px]" />
                     <div className="h-[12px] w-full bg-line rounded-[6px]" />
                     <div className="h-[12px] w-4/5 bg-line rounded-[6px]" />
@@ -930,21 +879,21 @@ export default function WorkspacePage() {
               </div>
             </Surface>
           ) : filteredProjects.length === 0 ? (
-            <Surface variant="panel" padding="md" className="w-full">
+            <Surface preset="panel" padding="md" className="w-full">
               <EmptyState
                 icon={Folder}
                 title={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Ще немає проєктів' : 'Проєкти не знайдені'}
                 description={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Створіть перший проєкт, щоб організувати завдання та роботу команди.' : 'Спробуйте змінити параметри фільтрації.'}
                 action={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? 'Створити проєкт' : null}
                 onAction={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? () => setShowNewProject(true) : null}
-                className="min-h-[328px]"
+                context="page"
               />
             </Surface>
           ) : (
-            <Surface variant="panel" padding="lg" className="w-full">
+            <Surface preset="panel" padding="lg" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {filteredProjects.map((p, index) => (
-                  <ProjectCard 
+                  <WorkspaceProjectCard
                     key={p.id} 
                     project={p} 
                     archive={archive} 
@@ -971,6 +920,7 @@ export default function WorkspacePage() {
         orgPlan={activeOrg?.plan}
         activeProjectsCount={stats.total}
         members={members}
+        statuses={statuses}
       />
     )}
 

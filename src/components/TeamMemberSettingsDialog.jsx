@@ -4,6 +4,7 @@ import { Briefcase, Check, Crown, Shield, Trash2, UserRound } from 'lucide-react
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import Pill from '@/components/ui/DataDisplay/Pill';
 
 const ROLES = [
   { value: 'member', label: 'Учасник', description: 'Працює із завданнями та проєктами.', icon: UserRound },
@@ -55,13 +56,13 @@ export default function TeamMemberSettingsDialog({
   return (
     <Dialog isOpen onClose={onClose} title="Налаштування учасника" size="md">
       <div className="flex flex-col gap-7">
-        <div className="flex items-center gap-3 rounded-[16px] bg-canvas p-4">
+        <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface flex items-center gap-3">
           <UserAvatar user={member} size={48} />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold text-ink">{member.name || member.email}</p>
             <p className="truncate text-[12px] text-muted">{member.email}</p>
           </div>
-          {isMe && <span className="ml-auto rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted">Ви</span>}
+          {isMe && <Pill tone="surface" size="lg" uppercase className="ml-auto">Ви</Pill>}
         </div>
 
         <section>

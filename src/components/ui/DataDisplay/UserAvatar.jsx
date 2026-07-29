@@ -2,8 +2,6 @@
 import { useState } from 'react';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 
-const failedAvatarUrls = new Set();
-
 // src/components/UserAvatar.jsx — Fixed: uses size prop, supports avatar/photoURL
 export default function UserAvatar({ user, size = 32, className = '', tooltip = false }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState(null);
@@ -19,7 +17,6 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
   const showAvatarImage = Boolean(
     avatarUrl
     && failedAvatarUrl !== avatarUrl
-    && !failedAvatarUrls.has(avatarUrl)
   );
   const name = user.name || user.email || '?';
   const initials = name.charAt(0).toUpperCase();
@@ -48,10 +45,7 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
           src={avatarUrl}
           alt={name}
           referrerPolicy="no-referrer"
-          onError={() => {
-            failedAvatarUrls.add(avatarUrl);
-            setFailedAvatarUrl(avatarUrl);
-          }}
+          onError={() => setFailedAvatarUrl(avatarUrl)}
           style={{ width: size, height: size }}
           className="object-cover"
         />

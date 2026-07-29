@@ -27,7 +27,20 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
  *   <div>Popover content goes here</div>
  * </Popover>
  */
-export function Popover({ trigger, children, position = 'bottom', className = '', hideCloseIcon = false, onOpenChange }) {
+export function Popover({
+  trigger,
+  children,
+  position = 'bottom',
+  align = 'center',
+  gap = 8,
+  className = '',
+  hideCloseIcon = false,
+  hideArrow = false,
+  minWidth = '240px',
+  padding = spacing.lg,
+  triggerClassName = '',
+  onOpenChange,
+}) {
   const [isOpen, setIsOpenState] = useState(false);
   const setIsOpen = useCallback((value) => {
     setIsOpenState(value);
@@ -41,7 +54,8 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
     anchorRef: triggerRef,
     overlayRef: popoverRef,
     preferredPlacement: position,
-    align: 'center',
+    align,
+    gap,
   });
 
   useEffect(() => {
@@ -74,7 +88,7 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
       <div
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        style={{ cursor: 'pointer' }}
+        className={triggerClassName}
       >
         {trigger}
       </div>
@@ -93,16 +107,15 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
             borderRadius: sizing.radius.xl,
             boxShadow: shadows.xl,
             zIndex: 1000,
-            minWidth: '240px',
+            minWidth,
             maxWidth: 'calc(100vw - 16px)',
             maxHeight: 'calc(100dvh - 16px)',
             overflowY: 'auto',
-            padding: spacing.lg,
+            padding,
           }}
-          className="animate-in fade-in-0 zoom-in-95 duration-200"
         >
           {/* Arrow pointing to trigger */}
-          <div
+          {!hideArrow && <div
             style={{
               position: 'absolute',
               width: 10,
@@ -111,7 +124,7 @@ export function Popover({ trigger, children, position = 'bottom', className = ''
               border: `1px solid ${colors.border.light}`,
               ...arrowStyle,
             }}
-          />
+          />}
 
           {/* Close button — content may opt out (hideCloseIcon) and render its
               own cancel/apply controls via function-children instead */}

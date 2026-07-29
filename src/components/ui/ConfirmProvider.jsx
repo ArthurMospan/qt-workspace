@@ -66,7 +66,7 @@ export function ConfirmProvider({ children }) {
         title={title}
         size="sm"
         presentation="dialog"
-        bodyClassName={hasBody ? '' : '!py-0'}
+        bodyPadding={hasBody ? 'default' : 'horizontal'}
         footer={
           <>
             <Button style="secondary" size="md" onClick={handleCancel}>{cancelText}</Button>

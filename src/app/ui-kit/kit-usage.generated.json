@@ -1,22 +1,22 @@
 {
   "generatedBy": "scripts/scan-kit-usage.mjs",
+  "scope": "authenticated-workspace",
   "totals": {
-    "components": 69,
-    "used": 37,
+    "components": 77,
+    "used": 45,
     "unused": 32,
-    "covered": 37,
+    "covered": 45,
     "uncovered": 0
   },
   "components": {
     "Alert": {
       "file": "src/components/ui/Feedback/Alert.jsx",
-      "count": 5,
+      "count": 4,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/[projectId]/portal/page.js",
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/page.js",
-        "src/app/(app)/settings/page.js",
+        "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/BillingTab.jsx"
       ]
     },
@@ -34,11 +34,9 @@
     },
     "Badge": {
       "file": "src/components/ui/DataDisplay/Badge.jsx",
-      "count": 1,
-      "showcased": true,
-      "usedIn": [
-        "src/components/profile/ProfileView.jsx"
-      ]
+      "count": 0,
+      "showcased": false,
+      "usedIn": []
     },
     "Breadcrumb": {
       "file": "src/components/ui/Navigation/Breadcrumb.jsx",
@@ -48,7 +46,7 @@
     },
     "Button": {
       "file": "src/components/ui/Button.jsx",
-      "count": 31,
+      "count": 33,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
@@ -58,16 +56,19 @@
         "src/app/(app)/calendar/page.js",
         "src/app/(app)/chat/page.js",
         "src/app/(app)/error.js",
+        "src/app/(app)/layout.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
+        "src/app/(app)/team/page.js",
         "src/components/AudioTaskPanel.jsx",
         "src/components/CreateTaskModal.jsx",
         "src/components/InviteMemberDialog.jsx",
-        "src/components/SearchModal.jsx",
         "src/components/TeamMemberSettingsDialog.jsx",
+        "src/components/UserStatusSetter.jsx",
         "src/components/WorkspaceHeader.jsx",
+        "src/components/WorkspaceOrganizationRouteGuard.jsx",
         "src/components/integrations/IntegrationCard.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/profile/ProfileView.jsx",
@@ -75,7 +76,6 @@
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/BoardConfigModal.jsx",
         "src/components/workspace/IssueDetail.jsx",
-        "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/QtPlusProjectTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
         "src/components/workspace/UnifiedTimeline.jsx",
@@ -92,19 +92,26 @@
     },
     "Card": {
       "file": "src/components/ui/Layout/Card.jsx",
-      "count": 10,
+      "count": 7,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/portal/page.js",
         "src/app/(app)/ai-call/page.js",
         "src/app/(app)/analytics/page.js",
-        "src/app/(app)/my/page.js",
-        "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/components/integrations/IntegrationCard.jsx",
         "src/components/migrations/DataMigrationSettings.jsx",
-        "src/components/profile/ProfileView.jsx",
         "src/components/workspace/BillingTab.jsx"
+      ]
+    },
+    "ChatComposerCore": {
+      "file": "src/components/ui/ChatComposerCore.jsx",
+      "count": 3,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/chat/page.js",
+        "src/components/workspace/UnifiedTimeline.jsx",
+        "src/components/workspace/qtplus/chat/ChatComposer.jsx"
       ]
     },
     "ChatComposerDock": {
@@ -165,42 +172,53 @@
     },
     "Counter": {
       "file": "src/components/ui/DataDisplay/Counter.jsx",
-      "count": 3,
+      "count": 9,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/chat/page.js",
+        "src/app/(app)/page.js",
+        "src/app/(app)/sprints/page.js",
         "src/components/MobileNav.jsx",
-        "src/components/WorkspaceSidebar.jsx"
+        "src/components/OrgSwitcherScreen.jsx",
+        "src/components/WorkspaceHeader.jsx",
+        "src/components/WorkspaceSidebar.jsx",
+        "src/components/workspace/AgileBoard.jsx",
+        "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx"
       ]
     },
     "DatePicker": {
       "file": "src/components/ui/Forms/DatePicker.jsx",
-      "count": 5,
+      "count": 6,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/settings/page.js",
         "src/components/CreateTaskModal.jsx",
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/TimesheetTab.jsx",
+        "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
     },
     "Dialog": {
       "file": "src/components/ui/Dialog.jsx",
-      "count": 11,
+      "count": 15,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/chat/page.js",
+        "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
-        "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
+        "src/components/CreateTaskModal.jsx",
         "src/components/InviteMemberDialog.jsx",
         "src/components/TeamMemberSettingsDialog.jsx",
+        "src/components/UserStatusSetter.jsx",
         "src/components/profile/ProfileModal.jsx",
         "src/components/workspace/BillingTab.jsx",
-        "src/components/workspace/ProjectTeamTab.jsx",
+        "src/components/workspace/BoardConfigModal.jsx",
+        "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/TimesheetTab.jsx",
-        "src/components/workspace/calendar/CalendarEventDialog.jsx"
+        "src/components/workspace/calendar/CalendarEventDialog.jsx",
+        "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
     },
     "Dropdown": {
@@ -211,10 +229,9 @@
     },
     "EmptyState": {
       "file": "src/components/ui/Feedback/EmptyState.jsx",
-      "count": 18,
+      "count": 16,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/[projectId]/portal/page.js",
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
@@ -224,7 +241,6 @@
         "src/app/(app)/team/page.js",
         "src/components/profile/ProfileView.jsx",
         "src/components/workspace/AnalyticsTab.jsx",
-        "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/QtPlusProjectTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
         "src/components/workspace/UnifiedTimeline.jsx",
@@ -242,7 +258,7 @@
     },
     "FilterBar": {
       "file": "src/components/ui/FilterBar.jsx",
-      "count": 8,
+      "count": 7,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
@@ -251,15 +267,20 @@
         "src/app/(app)/calendar/page.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
-        "src/app/(app)/sprints/page.js",
-        "src/components/workspace/AnalyticsTab.jsx"
+        "src/app/(app)/sprints/page.js"
       ]
     },
     "FormGroup": {
       "file": "src/components/ui/Forms/FormGroup.jsx",
-      "count": 0,
-      "showcased": false,
-      "usedIn": []
+      "count": 5,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/ai-call/page.js",
+        "src/app/(app)/page.js",
+        "src/app/(app)/sprints/page.js",
+        "src/components/AudioTaskPanel.jsx",
+        "src/components/workspace/TimesheetTab.jsx"
+      ]
     },
     "Grid": {
       "file": "src/components/ui/Layout/Grid.jsx",
@@ -272,6 +293,26 @@
       "count": 0,
       "showcased": false,
       "usedIn": []
+    },
+    "IconAction": {
+      "file": "src/components/ui/IconAction.jsx",
+      "count": 13,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/ai-call/page.js",
+        "src/app/(app)/chat/page.js",
+        "src/app/(app)/settings/page.js",
+        "src/components/AuthLayout.jsx",
+        "src/components/MarkdownEditor.jsx",
+        "src/components/MobileNav.jsx",
+        "src/components/WorkspaceHeader.jsx",
+        "src/components/profile/ProfileModal.jsx",
+        "src/components/workspace/QtPlusProjectTab.jsx",
+        "src/components/workspace/UnifiedTimeline.jsx",
+        "src/components/workspace/qtplus/MediaLightbox.jsx",
+        "src/components/workspace/qtplus/cards/AudioCard.jsx",
+        "src/components/workspace/qtplus/cards/FileCard.jsx"
+      ]
     },
     "ImageUpload": {
       "file": "src/components/ui/ImageUpload.jsx",
@@ -301,10 +342,10 @@
         "src/app/(app)/sprints/page.js",
         "src/components/CreateTaskModal.jsx",
         "src/components/InviteMemberDialog.jsx",
+        "src/components/UserStatusSetter.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/IssueDetail.jsx",
-        "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
@@ -323,9 +364,16 @@
     },
     "Label": {
       "file": "src/components/ui/Forms/Label.jsx",
-      "count": 0,
-      "showcased": false,
-      "usedIn": []
+      "count": 6,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/chat/page.js",
+        "src/app/(app)/settings/page.js",
+        "src/components/CreateTaskModal.jsx",
+        "src/components/InviteMemberDialog.jsx",
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/calendar/CalendarEventDialog.jsx"
+      ]
     },
     "ListItem": {
       "file": "src/components/ui/Layout/ListItem.jsx",
@@ -353,7 +401,7 @@
     },
     "MultiSelect": {
       "file": "src/components/ui/Select.jsx",
-      "count": 9,
+      "count": 10,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/analytics/page.js",
@@ -363,6 +411,7 @@
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js",
+        "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
@@ -375,7 +424,7 @@
     },
     "PageHeader": {
       "file": "src/components/ui/Layout/PageHeader.jsx",
-      "count": 9,
+      "count": 8,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
@@ -385,7 +434,6 @@
         "src/app/(app)/calendar/page.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
-        "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js"
       ]
     },
@@ -400,6 +448,31 @@
       "count": 0,
       "showcased": false,
       "usedIn": []
+    },
+    "Pill": {
+      "file": "src/components/ui/DataDisplay/Pill.jsx",
+      "count": 18,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/[projectId]/page.js",
+        "src/app/(app)/chat/page.js",
+        "src/app/(app)/settings/page.js",
+        "src/app/(app)/team/page.js",
+        "src/components/SearchModal.jsx",
+        "src/components/TeamMemberSettingsDialog.jsx",
+        "src/components/WorkspaceHeader.jsx",
+        "src/components/migrations/DataMigrationSettings.jsx",
+        "src/components/workspace/AgileBoard.jsx",
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/HoverCard.jsx",
+        "src/components/workspace/IssueCard.jsx",
+        "src/components/workspace/IssueDetail.jsx",
+        "src/components/workspace/UnifiedTimeline.jsx",
+        "src/components/workspace/VelocityTab.jsx",
+        "src/components/workspace/calendar/CalendarEventDialog.jsx",
+        "src/components/workspace/calendar/CalendarEventPage.jsx",
+        "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx"
+      ]
     },
     "Popover": {
       "file": "src/components/ui/Navigation/Popover.jsx",
@@ -438,6 +511,14 @@
       "showcased": false,
       "usedIn": []
     },
+    "ProjectSettingsForm": {
+      "file": "src/components/ui/TaskManagement/ProjectSettingsForm.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedIn": [
+        "src/components/workspace/BoardConfigModal.jsx"
+      ]
+    },
     "RadioButton": {
       "file": "src/components/ui/Forms/RadioButton.jsx",
       "count": 0,
@@ -452,18 +533,20 @@
     },
     "Segmented": {
       "file": "src/components/ui/Segmented.jsx",
-      "count": 4,
+      "count": 6,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/components/WorkspaceHeader.jsx",
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/WorkloadTab.jsx"
       ]
     },
     "Select": {
       "file": "src/components/ui/Select.jsx",
-      "count": 18,
+      "count": 17,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/page.js",
@@ -477,7 +560,6 @@
         "src/components/AudioTaskPanel.jsx",
         "src/components/CreateTaskModal.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
-        "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/QtPlusProjectTab.jsx",
@@ -520,10 +602,25 @@
     },
     "StatusBadge": {
       "file": "src/components/ui/DataDisplay/StatusBadge.jsx",
+      "count": 0,
+      "showcased": false,
+      "usedIn": []
+    },
+    "StatusPill": {
+      "file": "src/components/ui/DataDisplay/StatusPill.jsx",
       "count": 1,
       "showcased": true,
       "usedIn": [
-        "src/components/profile/ProfileView.jsx"
+        "src/app/(app)/sprints/page.js"
+      ]
+    },
+    "StatusVisibilityPicker": {
+      "file": "src/components/ui/TaskManagement/StatusVisibilityPicker.jsx",
+      "count": 2,
+      "showcased": true,
+      "usedIn": [
+        "src/app/(app)/my/page.js",
+        "src/app/(app)/page.js"
       ]
     },
     "Stepper": {
@@ -534,20 +631,18 @@
     },
     "Surface": {
       "file": "src/components/ui/Surface.jsx",
-      "count": 11,
+      "count": 9,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/app/(app)/calendar/page.js",
-        "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
         "src/app/(app)/team/page.js",
-        "src/components/profile/ProfileView.jsx",
-        "src/components/workspace/BillingTab.jsx"
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/IssueDetail.jsx"
       ]
     },
     "Table": {
@@ -590,10 +685,17 @@
     },
     "TaskCard": {
       "file": "src/components/ui/TaskManagement/TaskCard.jsx",
-      "count": 1,
+      "count": 0,
+      "showcased": false,
+      "usedIn": []
+    },
+    "TaskListView": {
+      "file": "src/components/ui/TaskManagement/TaskListView.jsx",
+      "count": 2,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/page.js"
+        "src/app/(app)/[projectId]/page.js",
+        "src/app/(app)/my/page.js"
       ]
     },
     "TaskRow": {
@@ -601,10 +703,10 @@
       "count": 4,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/[projectId]/page.js",
-        "src/app/(app)/my/page.js",
+        "src/app/(app)/analytics/page.js",
         "src/app/(app)/sprints/page.js",
-        "src/components/profile/ProfileView.jsx"
+        "src/components/profile/ProfileView.jsx",
+        "src/components/workspace/AnalyticsTab.jsx"
       ]
     },
     "TeamMemberCard": {
@@ -615,13 +717,15 @@
     },
     "Textarea": {
       "file": "src/components/ui/Forms/Textarea.jsx",
-      "count": 7,
+      "count": 9,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/[projectId]/portal/page.js",
+        "src/app/(app)/ai-call/page.js",
+        "src/app/(app)/chat/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
+        "src/components/AudioTaskPanel.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
@@ -635,9 +739,11 @@
     },
     "TimePicker": {
       "file": "src/components/ui/Forms/TimePicker.jsx",
-      "count": 0,
-      "showcased": false,
-      "usedIn": []
+      "count": 1,
+      "showcased": true,
+      "usedIn": [
+        "src/components/workspace/calendar/CalendarEventDialog.jsx"
+      ]
     },
     "Toast": {
       "file": "src/components/ui/Feedback/Toast.jsx",
@@ -673,9 +779,18 @@
         "src/components/WorkspaceHeader.jsx"
       ]
     },
+    "TypeBadge": {
+      "file": "src/components/ui/DataDisplay/TypeBadge.jsx",
+      "count": 2,
+      "showcased": true,
+      "usedIn": [
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/IssueCard.jsx"
+      ]
+    },
     "UserAvatar": {
       "file": "src/components/ui/DataDisplay/UserAvatar.jsx",
-      "count": 23,
+      "count": 22,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/ai-call/page.js",
@@ -695,7 +810,6 @@
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/MentionText.jsx",
         "src/components/workspace/MessageContent.jsx",
-        "src/components/workspace/ProjectTeamTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
         "src/components/workspace/UnifiedTimeline.jsx",
         "src/components/workspace/WorkloadTab.jsx",

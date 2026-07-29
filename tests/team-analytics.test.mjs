@@ -44,6 +44,33 @@ test('projectless event time remains visible when no project filter is active', 
   assert.equal(filterTeamTimeLogs(logs, [], 'all').some(log => log.id === 'l3'), true);
 });
 
+test('a task with several assignees contributes to every assignee analytics view', () => {
+  const sharedIssue = { id: 'shared', projectId: 'p1', assigneeIds: ['u1', 'u2'] };
+  const sharedIssues = [...issues, sharedIssue];
+
+  assert.equal(filterTeamIssues(sharedIssues, [], 'u1').includes(sharedIssue), true);
+  assert.equal(filterTeamIssues(sharedIssues, [], 'u2').includes(sharedIssue), true);
+  assert.equal(filterTeamIssues(sharedIssues, [], 'all').filter(issue => issue.id === 'shared').length, 1);
+});
+
+test('team analytics counts leaf and standalone work but never its summary parent', () => {
+  const hierarchicalIssues = [
+    { id: 'parent', projectId: 'p1', assigneeIds: ['u1'] },
+    { id: 'child-u1', projectId: 'p1', parentIssueId: 'parent', assigneeIds: ['u1'] },
+    { id: 'child-u2', projectId: 'p1', parentIssueId: 'parent', assigneeIds: ['u2'] },
+    { id: 'standalone', projectId: 'p1', assigneeIds: ['u1'] },
+  ];
+
+  assert.deepEqual(
+    filterTeamIssues(hierarchicalIssues, ['p1'], 'all').map(issue => issue.id),
+    ['child-u1', 'child-u2', 'standalone'],
+  );
+  assert.deepEqual(
+    filterTeamIssues(hierarchicalIssues, ['p1'], 'u1').map(issue => issue.id),
+    ['child-u1', 'standalone'],
+  );
+});
+
 test('employee analytics opens as a dedicated encoded route', () => {
   assert.equal(memberAnalyticsHref('user/42'), '/analytics/team/user%2F42');
   assert.equal(memberAnalyticsHref(''), '/analytics?tab=workload');

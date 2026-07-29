@@ -4,23 +4,31 @@ import { useCallback, useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { createResponseError, reportLoadError } from '@/lib/utils/errors';
+import { issueLinkRequestFromPerspective } from '@/lib/utils/issueLinkPresentation.mjs';
+export {
+  ISSUE_LINK_OPTIONS,
+  issueLinkPerspective,
+} from '@/lib/utils/issueLinkPresentation.mjs';
 
-const GET_CACHE_MS = 5_000;
 const requestCache = new Map();
 
 async function requestLinks(issueId, method = 'GET', body = null) {
   const cacheKey = String(issueId);
   if (method === 'GET') {
     const cached = requestCache.get(cacheKey);
-    if (cached && Date.now() - cached.createdAt < GET_CACHE_MS) return cached.promise;
+    if (cached) return cached;
+    const request = performRequest(issueId, method, body);
+    requestCache.set(cacheKey, request);
+    try {
+      return await request;
+    } finally {
+      if (requestCache.get(cacheKey) === request) requestCache.delete(cacheKey);
+    }
   }
 
-  const promise = performRequest(issueId, method, body);
-  if (method === 'GET') requestCache.set(cacheKey, { createdAt: Date.now(), promise });
-
   try {
-    const result = await promise;
-    if (method !== 'GET') requestCache.delete(cacheKey);
+    const result = await performRequest(issueId, method, body);
+    requestCache.delete(cacheKey);
     return result;
   } catch (error) {
     requestCache.delete(cacheKey);
@@ -49,20 +57,27 @@ export function useIssueLinks(issueId) {
   const { doneStatusIds } = useWorkflowConfig();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
     if (!issueId) {
       setLinks([]);
+      setError(null);
       setLoading(false);
-      return;
+      return [];
     }
     setLoading(true);
     try {
       const result = await requestLinks(issueId);
-      setLinks(result.links || []);
+      const nextLinks = result.links || [];
+      setLinks(nextLinks);
+      setError(null);
+      return nextLinks;
     } catch (error) {
       reportLoadError('[useIssueLinks]', error);
       setLinks([]);
+      setError(error);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -79,7 +94,13 @@ export function useIssueLinks(issueId) {
   }, [refresh]);
 
   const addLink = useCallback(async (sourceId, targetId, relationType) => {
-    await requestLinks(sourceId, 'POST', { targetIssueId: targetId, relationType });
+    const request = issueLinkRequestFromPerspective(sourceId, targetId, relationType);
+    await requestLinks(request.sourceIssueId, 'POST', {
+      targetIssueId: request.targetIssueId,
+      relationType: request.relationType,
+    });
+    requestCache.delete(String(sourceId));
+    requestCache.delete(String(targetId));
     await refresh();
   }, [refresh]);
 
@@ -91,10 +112,10 @@ export function useIssueLinks(issueId) {
   const hasBlocker = useCallback((targetIssueId, allIssues) => {
     const blockingLinks = links.filter(link => link.relationType === 'blocks' && link.targetIssueId === targetIssueId);
     return blockingLinks.some(link => {
-      const blocker = allIssues.find(issue => issue.id === link.sourceIssueId);
+      const blocker = allIssues.find(issue => issue.id === link.sourceIssueId) || link.sourceIssue;
       return blocker && !doneStatusIds.includes(blocker.columnId ?? blocker.status);
     });
   }, [links, doneStatusIds]);
 
-  return { links, loading, addLink, removeLink, hasBlocker };
+  return { links, loading, error, refresh, addLink, removeLink, hasBlocker };
 }

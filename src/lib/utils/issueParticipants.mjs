@@ -32,3 +32,30 @@ export function issueParticipants(issue, {
     candidates.filter(uid => typeof uid === 'string' && uid.length > 0 && !excluded.has(uid)),
   )];
 }
+
+export function issueDisplayParticipants(issue) {
+  const participants = new Map();
+  const addRole = (userId, role) => {
+    if (typeof userId !== 'string' || userId.length === 0) return;
+    const current = participants.get(userId) || { id: userId, roles: [] };
+    if (!current.roles.includes(role)) current.roles.push(role);
+    participants.set(userId, current);
+  };
+
+  const assigneeIds = Array.isArray(issue?.assigneeIds)
+    ? issue.assigneeIds
+    : Array.isArray(issue?.assignees)
+      ? issue.assignees
+      : [];
+  assigneeIds.forEach(userId => addRole(userId, 'assignee'));
+  addRole(issue?.reporterId || issue?.createdBy, 'author');
+
+  const watcherIds = Array.isArray(issue?.watcherIds)
+    ? issue.watcherIds
+    : Array.isArray(issue?.subscriberIds)
+      ? issue.subscriberIds
+      : [];
+  watcherIds.forEach(userId => addRole(userId, 'subscriber'));
+
+  return [...participants.values()];
+}

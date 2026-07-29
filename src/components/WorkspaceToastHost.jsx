@@ -1,11 +1,11 @@
 'use client';
-// src/components/Toast.jsx
+// src/components/WorkspaceToastHost.jsx
 // Store connector: reads the toast from useWorkspaceStore and renders it
 // through the ui-kit Toast (single source of truth for the toast visuals).
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UiToast from '@/components/ui/Feedback/Toast';
 
-export default function Toast() {
+export default function WorkspaceToastHost() {
   const toast = useWorkspaceStore(s => s.toast);
   const clearToast = useWorkspaceStore(s => s.clearToast);
 

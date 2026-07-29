@@ -6,6 +6,7 @@ export default function Counter({
   variant = 'count', // count, dot
   status = 'info',   // info, danger, muted, success
   size = 'md',       // sm, md, lg
+  appearance = 'solid', // solid, subtle
   dark = false,      // dark theme support (high contrast on dark surfaces)
   className = '',
 }) {
@@ -37,21 +38,26 @@ export default function Counter({
 
   // Count variant
   const outerSizes = {
+    xs: 'min-w-[12px] h-[12px] px-[2px] text-[8px] font-bold',
     sm: 'min-w-[16px] h-[16px] px-[4px] text-[9px] font-bold',
     md: 'min-w-[20px] h-[20px] px-[6px] text-[10px] font-bold',
     lg: 'min-w-[24px] h-[24px] px-[8px] text-[11px] font-bold',
   };
 
-  const statusStyles = dark
-    ? { info: 'bg-white text-ink', danger: 'bg-white text-ink', success: 'bg-white text-ink', muted: 'bg-white text-ink' }
-    : { info: 'bg-ink text-white', danger: 'bg-ink text-white', success: 'bg-ink text-white', muted: 'bg-ink text-white' };
+  const statusStyles = appearance === 'subtle'
+    ? 'bg-white/60 text-muted'
+    : appearance === 'inverse-outline'
+      ? 'border-[3px] border-[#171717] bg-white text-[#171717]'
+      : dark
+        ? 'bg-white text-ink'
+        : 'bg-ink text-white';
 
   // Format value (e.g. 99+)
   const displayValue = typeof value === 'number' && value > 99 ? '99+' : value;
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full ${outerSizes[size]} ${statusStyles[status]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full tabular-nums ${outerSizes[size]} ${statusStyles} ${className}`}
     >
       {displayValue}
     </span>

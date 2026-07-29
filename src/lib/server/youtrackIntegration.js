@@ -78,6 +78,23 @@ export async function youTrackClientFor(organizationId) {
 export async function discoverYouTrack(organizationId) {
   const { client, connection } = await youTrackClientFor(organizationId);
   const [projects, users] = await Promise.all([client.projects(), client.users()]);
+  const stateBundleIds = [...new Set(projects.flatMap(project => (
+    (project.customFields || [])
+      .filter(field => (
+        String(field?.$type || '').includes('StateProjectCustomField')
+        || String(field?.field?.name || '').toLowerCase() === 'state'
+      ))
+      .map(field => String(field?.bundle?.id || ''))
+      .filter(Boolean)
+  )))];
+  const stateBundles = new Map();
+  for (let index = 0; index < stateBundleIds.length; index += 8) {
+    const batch = stateBundleIds.slice(index, index + 8);
+    const values = await Promise.all(batch.map(bundleId => client.stateBundle(bundleId)));
+    batch.forEach((bundleId, bundleIndex) => {
+      if (values[bundleIndex]) stateBundles.set(bundleId, values[bundleIndex]);
+    });
+  }
   return {
     connectionId: connection.connectionId,
     projects: projects
@@ -88,6 +105,19 @@ export async function discoverYouTrack(organizationId) {
         shortName: String(project.shortName || project.id),
         description: String(project.description || ''),
         archived: project.archived === true,
+        statuses: (project.customFields || [])
+          .filter(field => (
+            String(field?.$type || '').includes('StateProjectCustomField')
+            || String(field?.field?.name || '').toLowerCase() === 'state'
+          ))
+          .flatMap(field => stateBundles.get(String(field?.bundle?.id || ''))?.values || [])
+          .filter(status => status?.name)
+          .sort((a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0))
+          .map(status => ({
+            id: String(status.id || status.name),
+            name: String(status.name),
+            archived: status.archived === true,
+          })),
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'uk')),
     users: users

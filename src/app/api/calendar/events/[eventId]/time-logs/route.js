@@ -1,0 +1,557 @@
+import { NextResponse } from 'next/server';
+import {
+  admin,
+  authorizeOrgRequest,
+  enforceRateLimit,
+  getAdminDb,
+} from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  canAccessCalendarEventProject,
+  canViewCalendarEvent,
+} from '@/lib/server/calendarEvents';
+import {
+  isCalendarEventOccurrence,
+  isCanonicalCalendarOccurrence,
+} from '@/lib/utils/calendarTimeLog.mjs';
+
+const MAX_MINUTES = 525_600;
+
+function calendarTimeError(code, status, message, details = {}) {
+  const error = new Error(code);
+  error.calendarTimeLog = { code, status, message, ...details };
+  return error;
+}
+
+function expectedErrorResponse(error) {
+  const { message, status, ...payload } = error.calendarTimeLog;
+  return NextResponse.json({ error: message, ...payload }, { status });
+}
+
+function cleanId(value, maxLength = 256) {
+  return typeof value === 'string'
+    && value.trim().length > 0
+    && value.trim().length <= maxLength
+    && !value.includes('/')
+    && !value.includes('\0')
+    ? value.trim()
+    : '';
+}
+
+function cleanDescription(value) {
+  return typeof value === 'string' ? value.trim().slice(0, 2_000) : '';
+}
+
+function exactMinutes(value) {
+  const minutes = Number(value);
+  return Number.isSafeInteger(minutes) && minutes > 0 && minutes <= MAX_MINUTES
+    ? minutes
+    : null;
+}
+
+function timestampIso(value) {
+  if (!value) return null;
+  const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function serializeTimeLog(snapshot) {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    loggedAt: timestampIso(data.loggedAt),
+    createdAt: timestampIso(data.createdAt),
+    updatedAt: timestampIso(data.updatedAt),
+    billedAt: timestampIso(data.billedAt),
+  };
+}
+
+async function authorizeCalendarTimeRequest(request, organizationId) {
+  if (!organizationId) {
+    return {
+      response: NextResponse.json({
+        error: 'Не вказано організацію',
+        code: 'CALENDAR_TIME_ORGANIZATION_REQUIRED',
+      }, { status: 400 }),
+    };
+  }
+  const authorization = await authorizeOrgRequest(
+    request,
+    organizationId,
+    ['owner', 'admin', 'member'],
+  );
+  if (authorization.error) {
+    return {
+      response: NextResponse.json(
+        { error: authorization.error },
+        { status: authorization.status },
+      ),
+    };
+  }
+  return { authorization };
+}
+
+function validateOccurrence(occurrenceStartAt) {
+  if (!isCanonicalCalendarOccurrence(occurrenceStartAt)) {
+    throw calendarTimeError(
+      'CALENDAR_TIME_OCCURRENCE_INVALID',
+      400,
+      'Повтор події має бути в канонічному ISO-форматі',
+    );
+  }
+}
+
+async function readLiveEventContext({
+  transaction,
+  db,
+  eventRef,
+  organizationId,
+  occurrenceStartAt,
+  authorization,
+  expectedProjectId,
+}) {
+  const eventSnapshot = await transaction.get(eventRef);
+  if (
+    !eventSnapshot.exists
+    || eventSnapshot.data().organizationId !== organizationId
+  ) {
+    throw calendarTimeError(
+      'CALENDAR_EVENT_NOT_FOUND',
+      404,
+      'Подію не знайдено',
+    );
+  }
+
+  const event = eventSnapshot.data();
+  if (
+    typeof expectedProjectId === 'string'
+    && expectedProjectId !== (event.projectId || '')
+  ) {
+    throw calendarTimeError(
+      'CALENDAR_EVENT_PROJECT_CHANGED',
+      409,
+      'Проєкт події змінився. Оновіть подію перед списанням часу',
+    );
+  }
+  if (!canViewCalendarEvent(event, authorization)) {
+    throw calendarTimeError(
+      'CALENDAR_EVENT_FORBIDDEN',
+      403,
+      'У вас немає доступу до цієї події',
+    );
+  }
+  const canTrackTime = event.visibility === 'team';
+  if (!isCalendarEventOccurrence(event, occurrenceStartAt)) {
+    throw calendarTimeError(
+      'CALENDAR_TIME_OCCURRENCE_MISMATCH',
+      409,
+      'Ця дата не є повтором поточної події',
+    );
+  }
+
+  let projectRef = null;
+  let project = null;
+  if (event.projectId) {
+    projectRef = db.collection('projects').doc(event.projectId);
+    const projectSnapshot = await transaction.get(projectRef);
+    project = projectSnapshot.exists ? projectSnapshot.data() : null;
+    if (
+      !project
+      || project.organizationId !== organizationId
+      || project.deletionPending === true
+      || project.status === 'archived'
+    ) {
+      throw calendarTimeError(
+        'CALENDAR_EVENT_PROJECT_UNAVAILABLE',
+        409,
+        'Проєкт події видалено, архівовано або він більше недоступний',
+      );
+    }
+    if (!canAccessCalendarEventProject(event, project, authorization)) {
+      throw calendarTimeError(
+        'CALENDAR_EVENT_PROJECT_FORBIDDEN',
+        403,
+        'Списувати час можуть лише учасники команди цього проєкту',
+      );
+    }
+  }
+
+  return {
+    event,
+    eventSnapshot,
+    project,
+    projectRef,
+    canTrackTime,
+  };
+}
+
+function validateLogIdentity({
+  snapshot,
+  eventId,
+  event,
+  organizationId,
+  occurrenceStartAt,
+}) {
+  const log = snapshot.exists ? snapshot.data() : null;
+  if (
+    !log
+    || log.organizationId !== organizationId
+    || log.projectId !== (event.projectId || '')
+    || log.issueId !== ''
+    || log.sourceType !== 'calendar_event'
+    || log.eventId !== eventId
+    || log.occurrenceStartAt !== occurrenceStartAt
+  ) {
+    throw calendarTimeError(
+      'CALENDAR_TIME_LOG_NOT_FOUND',
+      404,
+      'Запис часу не знайдено для цієї події',
+    );
+  }
+  return log;
+}
+
+function ensureLogIsMutable(log) {
+  if (
+    (typeof log.invoiceId === 'string' && log.invoiceId.trim())
+    || log.billedAt
+  ) {
+    throw calendarTimeError(
+      'CALENDAR_TIME_LOG_BILLED',
+      409,
+      'Цей запис часу вже входить у рахунок і є незмінним',
+    );
+  }
+}
+
+function incrementMutationLocks(transaction, eventRef, projectRef) {
+  transaction.update(eventRef, {
+    timeLogMutationVersion: admin.firestore.FieldValue.increment(1),
+  });
+  if (projectRef) {
+    transaction.update(projectRef, {
+      invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+    });
+  }
+}
+
+export async function GET(request, context) {
+  try {
+    const { eventId: rawEventId } = await context.params;
+    const eventId = cleanId(rawEventId);
+    const url = new URL(request.url);
+    const organizationId = cleanId(url.searchParams.get('organizationId'));
+    const occurrenceStartAt = url.searchParams.get('occurrenceStartAt') || '';
+    const expectedProjectId = url.searchParams.get('projectId');
+    if (!eventId) {
+      return NextResponse.json({ error: 'Некоректна подія' }, { status: 400 });
+    }
+    validateOccurrence(occurrenceStartAt);
+    const authResult = await authorizeCalendarTimeRequest(request, organizationId);
+    if (authResult.response) return authResult.response;
+
+    const db = getAdminDb();
+    const eventRef = db.collection('calendarEvents').doc(eventId);
+    const logsQuery = db.collection('timeLogs')
+      .where('organizationId', '==', organizationId)
+      .where('sourceType', '==', 'calendar_event')
+      .where('eventId', '==', eventId)
+      .where('occurrenceStartAt', '==', occurrenceStartAt);
+    const logs = await db.runTransaction(async transaction => {
+      const { event, canTrackTime } = await readLiveEventContext({
+        transaction,
+        db,
+        eventRef,
+        organizationId,
+        occurrenceStartAt,
+        authorization: authResult.authorization,
+        expectedProjectId,
+      });
+      const snapshot = await transaction.get(logsQuery);
+      return {
+        logs: snapshot.docs
+        .filter(document => (
+          document.data().projectId === (event.projectId || '')
+          && document.data().issueId === ''
+        ))
+        .map(serializeTimeLog)
+        .sort((left, right) => (
+          new Date(right.loggedAt || 0).getTime()
+          - new Date(left.loggedAt || 0).getTime()
+        )),
+        canTrackTime,
+        trackingDisabledReason: canTrackTime ? null : 'visibility',
+      };
+    });
+
+    return NextResponse.json(
+      logs,
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
+  } catch (error) {
+    if (error?.calendarTimeLog) return expectedErrorResponse(error);
+    return routeErrorResponse(error, {
+      context: 'calendar event time logs GET',
+      fallbackMessage: 'Не вдалося завантажити списаний час',
+    });
+  }
+}
+
+export async function POST(request, context) {
+  try {
+    const { eventId: rawEventId } = await context.params;
+    const eventId = cleanId(rawEventId);
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({
+        error: 'Некоректний JSON',
+        code: 'CALENDAR_TIME_JSON_INVALID',
+      }, { status: 400 });
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({
+        error: 'Тіло запиту має бути об’єктом',
+        code: 'CALENDAR_TIME_JSON_INVALID',
+      }, { status: 400 });
+    }
+    const organizationId = cleanId(body.organizationId);
+    const occurrenceStartAt = body.occurrenceStartAt || '';
+    const minutes = exactMinutes(body.spentMinutes);
+    if (!eventId || minutes === null) {
+      return NextResponse.json({
+        error: 'Вкажіть коректний час',
+        code: 'CALENDAR_TIME_INVALID',
+      }, { status: 400 });
+    }
+    validateOccurrence(occurrenceStartAt);
+    const authResult = await authorizeCalendarTimeRequest(request, organizationId);
+    if (authResult.response) return authResult.response;
+    if (body.userId && body.userId !== authResult.authorization.user.uid) {
+      return NextResponse.json({
+        error: 'Не можна списувати час від імені іншого користувача',
+        code: 'CALENDAR_TIME_USER_MISMATCH',
+      }, { status: 403 });
+    }
+    if (!(await enforceRateLimit(
+      'calendar-time-log-create',
+      authResult.authorization.user.uid,
+      60,
+      60,
+    ))) {
+      return NextResponse.json({
+        error: 'Забагато записів часу за короткий проміжок',
+        code: 'CALENDAR_TIME_RATE_LIMIT',
+      }, { status: 429 });
+    }
+
+    const db = getAdminDb();
+    const eventRef = db.collection('calendarEvents').doc(eventId);
+    const logRef = db.collection('timeLogs').doc();
+    await db.runTransaction(async transaction => {
+      const { event, projectRef, canTrackTime } = await readLiveEventContext({
+        transaction,
+        db,
+        eventRef,
+        organizationId,
+        occurrenceStartAt,
+        authorization: authResult.authorization,
+        expectedProjectId: typeof body.projectId === 'string' ? body.projectId.trim() : undefined,
+      });
+      if (!canTrackTime) {
+        throw calendarTimeError(
+          'CALENDAR_TIME_VISIBILITY_DISABLED',
+          409,
+          'Списання часу доступне лише для командних подій',
+        );
+      }
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      transaction.create(logRef, {
+        organizationId,
+        projectId: event.projectId || '',
+        issueId: '',
+        sourceType: 'calendar_event',
+        eventId,
+        eventVisibility: 'team',
+        calendarOrganizerId: event.organizerId,
+        occurrenceStartAt,
+        userId: authResult.authorization.user.uid,
+        spentMinutes: minutes,
+        description: cleanDescription(body.description),
+        loggedAt: admin.firestore.Timestamp.fromDate(new Date(occurrenceStartAt)),
+        createdAt: now,
+        updatedAt: now,
+      });
+      incrementMutationLocks(transaction, eventRef, projectRef);
+    });
+
+    const created = await logRef.get();
+    return NextResponse.json({ log: serializeTimeLog(created) }, { status: 201 });
+  } catch (error) {
+    if (error?.calendarTimeLog) return expectedErrorResponse(error);
+    return routeErrorResponse(error, {
+      context: 'calendar event time logs POST',
+      fallbackMessage: 'Не вдалося списати час',
+    });
+  }
+}
+
+export async function PATCH(request, context) {
+  try {
+    const { eventId: rawEventId } = await context.params;
+    const eventId = cleanId(rawEventId);
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({
+        error: 'Некоректний JSON',
+        code: 'CALENDAR_TIME_JSON_INVALID',
+      }, { status: 400 });
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({
+        error: 'Тіло запиту має бути об’єктом',
+        code: 'CALENDAR_TIME_JSON_INVALID',
+      }, { status: 400 });
+    }
+    const organizationId = cleanId(body.organizationId);
+    const occurrenceStartAt = body.occurrenceStartAt || '';
+    const logId = cleanId(body.logId);
+    const minutes = exactMinutes(body.spentMinutes);
+    if (!eventId || !logId || minutes === null) {
+      return NextResponse.json({
+        error: 'Вкажіть коректний запис і час',
+        code: 'CALENDAR_TIME_INVALID',
+      }, { status: 400 });
+    }
+    validateOccurrence(occurrenceStartAt);
+    const authResult = await authorizeCalendarTimeRequest(request, organizationId);
+    if (authResult.response) return authResult.response;
+
+    const db = getAdminDb();
+    const eventRef = db.collection('calendarEvents').doc(eventId);
+    const logRef = db.collection('timeLogs').doc(logId);
+    await db.runTransaction(async transaction => {
+      const { event, projectRef, canTrackTime } = await readLiveEventContext({
+        transaction,
+        db,
+        eventRef,
+        organizationId,
+        occurrenceStartAt,
+        authorization: authResult.authorization,
+        expectedProjectId: typeof body.projectId === 'string' ? body.projectId.trim() : undefined,
+      });
+      if (!canTrackTime) {
+        throw calendarTimeError(
+          'CALENDAR_TIME_VISIBILITY_DISABLED',
+          409,
+          'Змінювати час можна лише для командних подій',
+        );
+      }
+      const logSnapshot = await transaction.get(logRef);
+      const log = validateLogIdentity({
+        snapshot: logSnapshot,
+        eventId,
+        event,
+        organizationId,
+        occurrenceStartAt,
+      });
+      if (
+        log.userId !== authResult.authorization.user.uid
+        && !['owner', 'admin'].includes(authResult.authorization.membership?.role)
+      ) {
+        throw calendarTimeError(
+          'CALENDAR_TIME_LOG_FORBIDDEN',
+          403,
+          'Змінювати цей запис може лише його автор або адміністратор',
+        );
+      }
+      ensureLogIsMutable(log);
+      transaction.update(logRef, {
+        spentMinutes: minutes,
+        description: cleanDescription(body.description),
+        eventVisibility: 'team',
+        calendarOrganizerId: event.organizerId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      incrementMutationLocks(transaction, eventRef, projectRef);
+    });
+
+    const updated = await logRef.get();
+    return NextResponse.json({ log: serializeTimeLog(updated) });
+  } catch (error) {
+    if (error?.calendarTimeLog) return expectedErrorResponse(error);
+    return routeErrorResponse(error, {
+      context: 'calendar event time logs PATCH',
+      fallbackMessage: 'Не вдалося змінити списаний час',
+    });
+  }
+}
+
+export async function DELETE(request, context) {
+  try {
+    const { eventId: rawEventId } = await context.params;
+    const eventId = cleanId(rawEventId);
+    const url = new URL(request.url);
+    const organizationId = cleanId(url.searchParams.get('organizationId'));
+    const occurrenceStartAt = url.searchParams.get('occurrenceStartAt') || '';
+    const logId = cleanId(url.searchParams.get('logId'));
+    const expectedProjectId = url.searchParams.get('projectId');
+    if (!eventId || !logId) {
+      return NextResponse.json({
+        error: 'Некоректний запис часу',
+        code: 'CALENDAR_TIME_INVALID',
+      }, { status: 400 });
+    }
+    validateOccurrence(occurrenceStartAt);
+    const authResult = await authorizeCalendarTimeRequest(request, organizationId);
+    if (authResult.response) return authResult.response;
+
+    const db = getAdminDb();
+    const eventRef = db.collection('calendarEvents').doc(eventId);
+    const logRef = db.collection('timeLogs').doc(logId);
+    await db.runTransaction(async transaction => {
+      const { event, projectRef } = await readLiveEventContext({
+        transaction,
+        db,
+        eventRef,
+        organizationId,
+        occurrenceStartAt,
+        authorization: authResult.authorization,
+        expectedProjectId,
+      });
+      const logSnapshot = await transaction.get(logRef);
+      const log = validateLogIdentity({
+        snapshot: logSnapshot,
+        eventId,
+        event,
+        organizationId,
+        occurrenceStartAt,
+      });
+      if (
+        log.userId !== authResult.authorization.user.uid
+        && !['owner', 'admin'].includes(authResult.authorization.membership?.role)
+      ) {
+        throw calendarTimeError(
+          'CALENDAR_TIME_LOG_FORBIDDEN',
+          403,
+          'Видаляти цей запис може лише його автор або адміністратор',
+        );
+      }
+      ensureLogIsMutable(log);
+      transaction.delete(logRef);
+      incrementMutationLocks(transaction, eventRef, projectRef);
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error?.calendarTimeLog) return expectedErrorResponse(error);
+    return routeErrorResponse(error, {
+      context: 'calendar event time logs DELETE',
+      fallbackMessage: 'Не вдалося видалити списаний час',
+    });
+  }
+}

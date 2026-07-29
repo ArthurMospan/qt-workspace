@@ -2,15 +2,19 @@
 
 // src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
-import { createIssueViaApi } from '@/lib/services/issues';
-import { reportLoadError } from '@/lib/utils/errors';
+import {
+  createIssueViaApi,
+  transitionIssueStatusViaApi,
+} from '@/lib/services/issues';
+import { createResponseError, reportLoadError } from '@/lib/utils/errors';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { compareIssues, pickPatchableFields, planMove } from '@/lib/utils/optimistic.mjs';
 
@@ -56,6 +60,8 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   const { doneStatusIds, statuses } = useWorkflowConfig();
   const [snapshotIssues, setSnapshotIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
+  const [linksReady, setLinksReady] = useState(!includeLinks);
+  const [linksError, setLinksError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // A drag & drop is painted from this overlay until Firestore echoes it back.
@@ -84,6 +90,8 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       queueMicrotask(() => {
         setSnapshotIssues([]);
         setIssueLinks([]);
+        setLinksReady(!includeLinks);
+        setLinksError(null);
         setError(null);
         setLoading(false);
       });
@@ -94,6 +102,8 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       queueMicrotask(() => {
         setSnapshotIssues([]);
         setIssueLinks([]);
+        setLinksReady(!includeLinks);
+        setLinksError(null);
         setError(null);
         setLoading(true);
       });
@@ -144,8 +154,12 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
       unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
         setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setLinksReady(true);
+        setLinksError(null);
       }, err => {
         reportLoadError('[useIssues] links', err);
+        setLinksReady(false);
+        setLinksError(err);
       });
     }
 
@@ -207,6 +221,24 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // Find current issue for diff
     const current = issues.find(i => i.id === issueId);
 
+    const hasStatusUpdate = data.status !== undefined || data.columnId !== undefined;
+    if (
+      data.status !== undefined
+      && data.columnId !== undefined
+      && data.status !== data.columnId
+    ) {
+      throw new Error('Статус і колонка задачі мають збігатися');
+    }
+    if (data.completedAt !== undefined && !hasStatusUpdate) {
+      throw new Error('Дата завершення керується статусом задачі');
+    }
+    const requestedStatus = data.columnId ?? data.status;
+    const directData = { ...data };
+    delete directData.status;
+    delete directData.columnId;
+    delete directData.completedAt;
+    if (hasStatusUpdate) delete directData.order;
+
     // Mirror board-position fields locally right away. Backlog and sprint views
     // drag cards by writing sprintId/assigneeIds through here, and without the
     // overlay the card springs back until the round-trip completes.
@@ -214,28 +246,39 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     if (optimistic) applyPatch({ [issueId]: optimistic });
 
     try {
-      await updateDoc(doc(db, 'issues', issueId), {
-        ...data,
-        updatedAt: serverTimestamp()
-      });
+      if (hasStatusUpdate) {
+        await transitionIssueStatusViaApi({
+          issueId,
+          status: requestedStatus,
+          ...(data.order !== undefined ? { order: data.order } : {}),
+        });
+      }
+      if (Object.keys(directData).length > 0) {
+        await updateDoc(doc(db, 'issues', issueId), {
+          ...directData,
+          updatedAt: serverTimestamp()
+        });
+      }
     } catch (err) {
       if (optimistic) revertPatch([issueId]);
       throw err;
     }
 
     // Touch parent project
-    await updateDoc(doc(db, 'projects', projectId), {
-      updatedAt: serverTimestamp()
-    }).catch(() => {});
+    if (Object.keys(directData).length > 0) {
+      await updateDoc(doc(db, 'projects', projectId), {
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
+    }
 
     // Write audit for notable field changes. Arrays are compared by VALUE —
     // comparing them by reference logged a "changed_assigneeIds" entry on every
     // single save, because a fresh array is never `===` the stored one.
-    const auditFields = ['status', 'priority', 'title', 'columnId', 'assigneeIds'];
+    const auditFields = ['priority', 'title', 'assigneeIds'];
     for (const field of auditFields) {
-      if (data[field] === undefined || !current) continue;
+      if (directData[field] === undefined || !current) continue;
       const from = auditValue(current[field]);
-      const to = auditValue(data[field]);
+      const to = auditValue(directData[field]);
       if (from === to) continue;
       await writeAudit(issueId, {
         userId,
@@ -250,40 +293,87 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   // -------------------------------------------------------------------------
   // deleteIssue
   // -------------------------------------------------------------------------
-  const deleteIssue = useCallback(async issueId => {
+  const deleteIssue = useCallback(async (issueId, { childPolicy } = {}) => {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Authentication required');
-    const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, {
+    const policyQuery = childPolicy ? `?childPolicy=${encodeURIComponent(childPolicy)}` : '';
+    const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}${policyQuery}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Не вдалося видалити задачу');
+    if (!response.ok) {
+      throw createResponseError(response, result, 'Не вдалося видалити задачу');
+    }
   }, []);
+
+  // Hierarchy writes go through the authenticated server route, which validates
+  // same-project scope and the one-level invariant transactionally.
+  const setIssueParent = useCallback(async (issueId, parentIssueId) => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Authentication required');
+    applyPatch({ [issueId]: { parentIssueId: parentIssueId || null } });
+    try {
+      const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/parent`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ parentIssueId: parentIssueId || null }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw createResponseError(response, result, 'Не вдалося змінити основну задачу');
+      }
+      return result;
+    } catch (error) {
+      revertPatch([issueId]);
+      throw error;
+    }
+  }, [applyPatch, revertPatch]);
 
   // -------------------------------------------------------------------------
   // moveIssue — batch reorder + columnId/status update + audit
   //   Guards:
-  //     - 'done': blocks if open subtasks exist
+  //     - terminal statuses: block while real child issues remain open
   //   Side-effects:
   //     - 'client-approval': sets clientApprovalPending on linked stage
   // -------------------------------------------------------------------------
   const moveIssue = useCallback(async (issueId, newColumnId, newOrder, actorUser = {}) => {
-    const {
-      userId,
-      userName
-    } = actorUser;
+    const { userId } = actorUser;
     const issue = issues.find(i => i.id === issueId);
     if (!issue) throw new Error('Issue not found');
 
-    // Guard: cannot move to a terminal status if open subtasks exist
+    // A parent is a roll-up container, so closing it while a real child issue is
+    // still open would make the hierarchy contradict the board and analytics.
+    // Description checkboxes and legacy `subtasks[]` are lightweight checklist
+    // items and deliberately do not participate in this guard.
     if (doneStatusIds.includes(newColumnId)) {
-      const hasOpenSubtasks = issue.subtasks?.some(s => !s.done);
-      if (hasOpenSubtasks) {
-        throw new Error('Є незакриті підзавдання');
+      if (includeLinks && !linksReady) {
+        throw new Error(linksError
+          ? 'Не вдалося перевірити залежності. Оновіть сторінку й повторіть.'
+          : 'Зачекайте, перевіряємо залежності задачі');
+      }
+      const blockers = issueCompletionBlockers({
+        issueId,
+        issues,
+        issueLinks,
+        doneStatusIds,
+      });
+      if (blockers.children.length > 0) {
+        throw new Error(`Спершу закрийте підзадачі: ${blockers.children.length} ще в роботі`);
+      }
+      if (blockers.dependencies.length > 0) {
+        const names = blockers.dependencies
+          .slice(0, 2)
+          .map(blocker => blocker.issueKey || blocker.title)
+          .filter(Boolean)
+          .join(', ');
+        throw new Error(`Задачу ще блокують: ${names || blockers.dependencies.length}`);
       }
     }
-    const oldColumnId = issue.columnId;
+    const oldColumnId = issue.columnId || issue.status;
 
     // One plan drives both the repaint and the writes, so the overlay retires
     // the moment Firestore echoes back instead of disagreeing with it. Cards
@@ -296,41 +386,20 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     applyPatch(plan.patches);
 
     try {
-      const batch = writeBatch(db);
-
-      // `subtasks` is deliberately NOT written here: echoing back our local copy
-      // overwrote whatever a colleague had just ticked off, and moving a card
-      // never changes its subtasks anyway.
-      for (const [id, patch] of Object.entries(plan.patches)) {
-        const updates = { ...patch, updatedAt: serverTimestamp() };
-        if (id === issueId) {
-          const wasDone = doneStatusIds.includes(oldColumnId);
-          const willBeDone = doneStatusIds.includes(newColumnId);
-          if (willBeDone && !wasDone) updates.completedAt = serverTimestamp();
-          if (!willBeDone && wasDone) updates.completedAt = deleteField();
-        }
-        batch.update(doc(db, 'issues', id), updates);
-      }
-
-      // Touch parent project in the same batch
-      batch.update(doc(db, 'projects', projectId), {
-        updatedAt: serverTimestamp()
+      const movedPatch = plan.patches[issueId] || {};
+      const orderUpdates = Object.entries(plan.patches)
+        .filter(([, patch]) => patch.order !== undefined)
+        .map(([id, patch]) => ({ issueId: id, order: patch.order }));
+      await transitionIssueStatusViaApi({
+        issueId,
+        status: newColumnId,
+        order: movedPatch.order,
+        orderUpdates,
       });
-
-      await batch.commit();
     } catch (err) {
       revertPatch(Object.keys(plan.patches));
       throw err;
     }
-
-    // Audit
-    await writeAudit(issueId, {
-      userId,
-      userName,
-      action: 'moved',
-      from: oldColumnId,
-      to: newColumnId
-    });
 
     // Tell the task's participants it moved (same-column reorders are not a
     // status change and notify nobody). Shared rule, so the person who opened
@@ -362,14 +431,17 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [activeOrgId, issues, projectId, doneStatusIds, statuses, applyPatch, revertPatch]);
+  }, [activeOrgId, includeLinks, issues, issueLinks, linksError, linksReady, projectId, doneStatusIds, statuses, applyPatch, revertPatch]);
   return {
     issues,
     issueLinks,
+    linksLoading: includeLinks && !linksReady && !linksError,
+    linksError,
     loading,
     error,
     createIssue,
     updateIssue,
+    setIssueParent,
     deleteIssue,
     moveIssue
   };

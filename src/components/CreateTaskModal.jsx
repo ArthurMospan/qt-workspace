@@ -2,12 +2,14 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { X, Check, ListTodo, Mic2, Tag as TagIcon } from 'lucide-react';
+import { Check, ListTodo, Play, Tag as TagIcon } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import Label from '@/components/ui/Forms/Label';
 import { Input } from '@/components/ui/Input';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import { fromDateInput } from '@/lib/utils/date';
@@ -16,7 +18,7 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 
 
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, epics = [] }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null }) {
   const { currentUser } = useAppContext();
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
@@ -25,18 +27,26 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     title: '', description: '', status: 'todo',
     priority: 'medium', type: 'task',
     assignees: [], labelIds: [], dueDate: '',
-    parentEpicId: '', estimateHours: '',
+    estimateHours: '',
     projectId: projects && projects.length > 0 ? projects[0].id : '',
     sprintId: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const selectedProject = projects?.find(p => p.id === form.projectId);
+  const selectedProject = projects?.find(p => p.id === form.projectId) || projectContext;
   const activeHiddenCols = selectedProject?.hiddenColumns;
+  const availableSprints = useMemo(
+    () => (sprints || []).filter(sprint => sprint.status !== 'completed'),
+    [sprints],
+  );
   const visibleStatuses = useMemo(
     () => statuses.filter(s => !(activeHiddenCols || []).includes(s.id)),
     [statuses, activeHiddenCols],
+  );
+  const creatableTypes = useMemo(
+    () => types.filter(type => type.id !== 'epic'),
+    [types],
   );
 
   useEffect(() => {
@@ -60,6 +70,21 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       }
     }
   }, [form.projectId, form.status, isOpen, visibleStatuses]);
+
+  useEffect(() => {
+    if (isOpen && form.sprintId && !availableSprints.some(sprint => sprint.id === form.sprintId)) {
+      queueMicrotask(() => setForm(current => ({ ...current, sprintId: '' })));
+    }
+  }, [availableSprints, form.sprintId, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && !creatableTypes.some(type => type.id === form.type)) {
+      queueMicrotask(() => setForm(current => ({
+        ...current,
+        type: creatableTypes.find(type => type.id === 'task')?.id || creatableTypes[0]?.id || 'task',
+      })));
+    }
+  }, [creatableTypes, form.type, isOpen]);
 
   if (!isOpen) return null;
 
@@ -89,10 +114,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         createdBy: currentUser?.id || currentUser?.uid,
         dueDate: form.dueDate ? fromDateInput(form.dueDate, { endOfDay: true }) : null,
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
-        parentEpicId: form.parentEpicId || null,
         sprintId: form.sprintId || null
       });
-      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], parentEpicId: '', estimateHours: '', projectId: '', sprintId: '' });
+      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], estimateHours: '', projectId: '', sprintId: '' });
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
@@ -103,35 +127,35 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end">
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal — mobile: bottom sheet */}
-      <form
-        onSubmit={handleSubmit}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-task-title"
-        className="relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:w-[min(760px,92vw)] sm:rounded-none sm:pb-0"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-line shrink-0">
-          <div className="min-w-0">
-            <h2 id="create-task-title" className="text-[18px] font-bold text-ink">Нове завдання</h2>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button style="ghost" size="icon" icon={X} onClick={onClose} type="button" aria-label="Закрити">
-              Закрити
-            </Button>
-          </div>
-        </div>
-
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Нове завдання"
+      size="lg"
+      bodyPadding="flush"
+      footer={mode === 'task' ? (
+        <>
+          <Button style="secondary" size="md" onClick={onClose} type="button">
+            Скасувати
+          </Button>
+          <Button
+            type="submit"
+            form="create-task-form"
+            style="primary"
+            size="md"
+            disabled={!form.title.trim() || loading || creatableTypes.length === 0}
+            loading={loading}
+          >
+            {loading ? 'Створення...' : 'Створити завдання'}
+          </Button>
+        </>
+      ) : undefined}
+    >
         <div className="border-b border-line px-5 py-3 sm:px-7">
           <Tabs
             tabs={[
               { id: 'task', label: 'Завдання', icon: ListTodo },
-              { id: 'audio', label: 'Аудіо-завдання (AI)', icon: Mic2 },
+              { id: 'audio', label: 'Аудіо-завдання (AI)', icon: Play },
             ]}
             activeTab={mode}
             onTabChange={setMode}
@@ -140,10 +164,14 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         </div>
 
         {mode === 'task' ? (
-        <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5 overflow-y-auto flex-1">
+        <form
+          id="create-task-form"
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:p-7 lg:grid-cols-2"
+        >
           {/* Title */}
-          <div className="lg:col-span-2">
-            <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Назва *</label>
+          <div className="flex flex-col gap-[6px] lg:col-span-2">
+            <Label required>Назва</Label>
             <Input
               autoFocus
               value={form.title}
@@ -154,8 +182,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Project Selector (if projects passed) */}
           {projects && projects.length > 0 && (
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Проєкт *</label>
+            <div className="flex flex-col gap-[6px]">
+              <Label required>Проєкт</Label>
               <Select
                 value={form.projectId}
                 onChange={val => set('projectId', val)}
@@ -165,25 +193,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             </div>
           )}
 
-          {/* Sprint Selector */}
-          {sprints && sprints.length > 0 && (
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Спринт</label>
-              <Select
-                value={form.sprintId}
-                onChange={val => set('sprintId', val)}
-                options={[
-                  { value: '', label: 'Без спринта (Беклог)' },
-                  ...sprints.map(s => ({ value: s.id, label: s.name }))
-                ]}
-                placeholder="Оберіть спринт..."
-              />
-            </div>
-          )}
-
           {/* Description */}
-          <div className="flex flex-col gap-1 lg:col-span-2">
-            <label className="text-[12px] font-bold text-ink pl-1">Опис завдання</label>
+          <div className="flex flex-col gap-[6px] lg:col-span-2">
+            <Label>Опис</Label>
             <MarkdownEditor 
               value={form.description}
               onChange={(val) => set('description', val)}
@@ -192,22 +204,24 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             />
           </div>
 
-          {/* Row: Type + Priority */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Тип</label>
+          {/* Metadata controls share one grid, so every field has identical
+              geometry and a deterministic reading order. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 lg:col-span-2">
+            <div className="flex flex-col gap-[6px]">
+              <Label>Тип</Label>
               <Select
                 value={form.type}
                 onChange={val => set('type', val)}
-                options={types.map(t => ({
+                options={creatableTypes.map(t => ({
                   value: t.id,
                   label: t.label,
-                  badgeColor: t.color,
+                  dotColor: t.color,
                 }))}
+                placeholder={creatableTypes.length > 0 ? 'Оберіть тип' : 'Додайте тип у налаштуваннях'}
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Пріоритет</label>
+            <div className="flex flex-col gap-[6px]">
+              <Label>Пріоритет</Label>
               <Select
                 value={form.priority}
                 onChange={val => set('priority', val)}
@@ -218,12 +232,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 }))}
               />
             </div>
-          </div>
-
-          {/* Row: Status + Due date */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Статус</label>
+            <div className="flex flex-col gap-[6px]">
+              <Label>Статус</Label>
               <Select
                 value={form.status}
                 onChange={val => set('status', val)}
@@ -234,33 +244,30 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 }))}
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Дедлайн</label>
+            {availableSprints.length > 0 && (
+              <div className="flex flex-col gap-[6px]">
+                <Label>Спринт</Label>
+                <Select
+                  value={form.sprintId}
+                  onChange={val => set('sprintId', val)}
+                  options={[
+                    { value: '', label: 'Без спринта (Беклог)' },
+                    ...availableSprints.map(s => ({ value: s.id, label: s.name }))
+                  ]}
+                  placeholder="Оберіть спринт..."
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-[6px]">
+              <Label>Дедлайн</Label>
               <DatePicker
                 value={form.dueDate}
                 onChange={value => set('dueDate', value)}
                 placeholder="Без дедлайну"
               />
             </div>
-          </div>
-
-          {/* Row: Epic + Estimate */}
-          <div className="grid grid-cols-2 gap-3">
-            {epics.length > 0 && (
-              <div>
-                <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Епік (Батьківська)</label>
-                <Select
-                  value={form.parentEpicId}
-                  onChange={val => set('parentEpicId', val)}
-                  options={[
-                    { value: '', label: 'Без епіка' },
-                    ...epics.map(e => ({ value: e.id, label: e.title || e.issueKey || e.id }))
-                  ]}
-                />
-              </div>
-            )}
-            <div className={epics.length > 0 ? '' : 'col-span-2'}>
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Оцінка (год)</label>
+            <div className="flex flex-col gap-[6px]">
+              <Label>Оцінка (год)</Label>
               <Input
                 type="number" min="0" step="0.5"
                 value={form.estimateHours}
@@ -272,8 +279,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
           {/* Assignees */}
           {teamMembers.length > 0 && (
-            <div className="lg:col-span-2">
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Виконавці</label>
+            <div className="flex flex-col gap-[6px] lg:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <Label>Виконавці</Label>
+                <span className="text-[10px] font-medium text-muted">Можна вибрати кількох</span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {teamMembers.map(m => {
                   const uid = m.uid || m.id;
@@ -297,13 +307,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   );
                 })}
               </div>
+              <p className="text-[10px] leading-[1.4] text-muted">
+                У персональній аналітиці завдання врахується кожному вибраному виконавцю.
+              </p>
             </div>
           )}
 
           {/* Labels */}
           {availableLabels.length > 0 && (
-            <div className="lg:col-span-2">
-              <label className="block text-[11px] font-semibold text-muted uppercase tracking-wide mb-2">Мітки (Теги)</label>
+            <div className="flex flex-col gap-[6px] lg:col-span-2">
+              <Label>Мітки (Теги)</Label>
               <div className="flex flex-wrap gap-2">
                 {availableLabels.map(l => {
                   const selected = form.labelIds.includes(l.id);
@@ -332,7 +345,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {error && (
             <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2 lg:col-span-2">{error}</p>
           )}
-        </div>
+        </form>
         ) : (
           <div className="flex-1 overflow-y-auto p-5 sm:p-7">
             <AudioTaskPanel
@@ -344,25 +357,6 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             />
           </div>
         )}
-
-        {/* Footer */}
-        {mode === 'task' && (
-        <div className="px-5 sm:px-7 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
-          <Button style="secondary" size="md" onClick={onClose} type="button">
-            Скасувати
-          </Button>
-          <Button
-            type="submit"
-            style="primary"
-            size="md"
-            disabled={!form.title.trim() || loading}
-            loading={loading}
-          >
-            {loading ? 'Створення...' : 'Створити завдання'}
-          </Button>
-        </div>
-        )}
-      </form>
-    </div>
+    </Dialog>
   );
 }

@@ -75,7 +75,7 @@ export function PageHeader({
           {title}
         </h1>
 
-        <div className="flex items-center gap-[8px] md:gap-[12px] shrink-0">
+        <div className="flex items-center gap-[8px] shrink-0">
           {tabs?.length > 0 && (
             <div className="hidden md:block">
               <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />

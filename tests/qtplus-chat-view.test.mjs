@@ -63,7 +63,8 @@ test('dayLabel: Сьогодні / Вчора / дата', () => {
   const now = new Date(2026, 6, 17, 12, 0).getTime();
   assert.equal(dayLabel(new Date(2026, 6, 17, 8, 0).getTime(), now), 'Сьогодні');
   assert.equal(dayLabel(new Date(2026, 6, 16, 23, 0).getTime(), now), 'Вчора');
-  assert.equal(dayLabel(new Date(2026, 6, 10, 8, 0).getTime(), now), '10.07.2026');
+  assert.equal(dayLabel(new Date(2026, 6, 10, 8, 0).getTime(), now), '10 липня');
+  assert.equal(dayLabel(new Date(2025, 4, 1, 8, 0).getTime(), now), '1 травня 2025 р.');
   assert.equal(dayLabel(null, now), '');
 });
 

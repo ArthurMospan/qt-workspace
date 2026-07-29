@@ -6,8 +6,49 @@ import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_STATUS_IDS,
   DEFAULT_TYPE_IDS,
+  resolveDoneStatusIds,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
+import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+
+function resolveIntegrationWorkflow({ workflow, project = null, requestedPriority }) {
+  const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
+  const hiddenStatusIds = new Set(
+    Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
+  );
+  const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
+  const status = visibleStatusIds.includes('backlog')
+    ? 'backlog'
+    : visibleStatusIds[0];
+  if (!status) {
+    const error = new Error('INVALID_PROJECT_WORKFLOW');
+    error.issueApi = {
+      code: 'INVALID_PROJECT_WORKFLOW',
+      status: 409,
+      message: 'У проєкті немає доступного статусу для нової задачі',
+    };
+    throw error;
+  }
+
+  const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
+  const typeSelection = resolveNewIssueType(
+    'bug',
+    workflowIds(workflow.types, DEFAULT_TYPE_IDS),
+  );
+  if (typeSelection.error) {
+    const error = new Error(typeSelection.error.code);
+    error.issueApi = typeSelection.error;
+    throw error;
+  }
+  return {
+    status,
+    priority: priorityIds.includes(requestedPriority)
+      ? requestedPriority
+      : (priorityIds.includes('high') ? 'high' : priorityIds[0]),
+    type: typeSelection.type,
+    completed: resolveDoneStatusIds(workflow.statuses).includes(status),
+  };
+}
 
 export async function POST(req) {
   try {
@@ -52,6 +93,12 @@ export async function POST(req) {
       if (!projectSnap.exists || projectSnap.data().organizationId !== organizationId) {
         return NextResponse.json({ error: 'Project does not belong to this organization' }, { status: 400 });
       }
+      if (projectSnap.data().deletionPending === true) {
+        return NextResponse.json({
+          error: 'Проєкт уже видаляється',
+          code: 'PROJECT_DELETING',
+        }, { status: 409 });
+      }
     }
 
     const safeAttachments = (Array.isArray(attachments) ? attachments : []).slice(0, 10).flatMap(attachment => {
@@ -75,53 +122,114 @@ export async function POST(req) {
       if (serializedMetadata.length <= 20_000) safeMetadata = JSON.parse(serializedMetadata);
     }
 
-    // 2. Resolve the organization's workflow. Hardcoding 'backlog'/'bug' and
-    // trusting the caller's priority dropped externally created tasks into a
-    // column that may not exist in this org's board, where nobody ever sees
-    // them.
-    const workflowSnapshot = await orgRef.collection('settings').doc('workflow').get();
-    const workflow = workflowSnapshot.data() || {};
-    const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
-    const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
-    const typeIds = workflowIds(workflow.types, DEFAULT_TYPE_IDS);
-    const status = statusIds.includes('backlog') ? 'backlog' : statusIds[0];
-    const resolvedPriority = priorityIds.includes(priority)
-      ? priority
-      : (priorityIds.includes('high') ? 'high' : priorityIds[0]);
-    const resolvedType = typeIds.includes('bug') ? 'bug' : typeIds[0];
-
-    const payload = {
-      issueKey: `EXT-${randomUUID().slice(0, 8).toUpperCase()}`,
-      title: title.trim(),
-      description: description ? String(description).trim().slice(0, 50_000) : '',
-      status,
-      columnId: status,
-      priority: resolvedPriority,
-      type: resolvedType,
-      organizationId,
-      projectId: projectId || null, 
-      attachments: safeAttachments,
-      metadata: safeMetadata,
-      source: 'buggybag',
-      order: 0,
-      assigneeIds: [],
-      reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-    
-    // 3. Save to Firestore
-    const issueRef = await db.collection('issues').add(payload);
-    
-    // 4. Add audit log to make it look clean in activity feed
-    await db.collection('issues').doc(issueRef.id).collection('audit').add({
-      userId: null,
-      userName: 'Buggy Bag Integration',
-      action: 'експортував баг з Buggy Bag',
-      from: null,
-      to: null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    // 2. Resolve workflow and save atomically. Reading the workflow in this
+    // transaction prevents an admin status/type edit from racing task creation.
+    const workflowRef = orgRef.collection('settings').doc('workflow');
+    const issueRef = db.collection('issues').doc();
+    const issueKey = `EXT-${randomUUID().slice(0, 8).toUpperCase()}`;
+    let payload;
+    if (projectId) {
+      const projectRef = db.collection('projects').doc(projectId);
+      await db.runTransaction(async transaction => {
+        const [freshProject, workflowSnapshot] = await Promise.all([
+          transaction.get(projectRef),
+          transaction.get(workflowRef),
+        ]);
+        if (
+          !freshProject.exists
+          || freshProject.data().organizationId !== organizationId
+        ) {
+          throw new Error('PROJECT_NOT_FOUND');
+        }
+        if (freshProject.data().deletionPending === true) {
+          throw new Error('PROJECT_DELETING');
+        }
+        if (freshProject.data().status === 'archived') {
+          throw new Error('PROJECT_ARCHIVED');
+        }
+        const resolved = resolveIntegrationWorkflow({
+          workflow: workflowSnapshot.data() || {},
+          project: freshProject.data(),
+          requestedPriority: priority,
+        });
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        payload = {
+          issueKey,
+          title: title.trim(),
+          description: description ? String(description).trim().slice(0, 50_000) : '',
+          status: resolved.status,
+          columnId: resolved.status,
+          priority: resolved.priority,
+          type: resolved.type,
+          organizationId,
+          projectId,
+          attachments: safeAttachments,
+          metadata: safeMetadata,
+          source: 'buggybag',
+          parentIssueId: null,
+          spentMinutes: 0,
+          spentMinutesMirrorVersion: 1,
+          timeLogMutationVersion: 0,
+          order: 0,
+          assigneeIds: [],
+          reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
+          createdAt: now,
+          updatedAt: now,
+          ...(resolved.completed ? { completedAt: now } : {}),
+        };
+        transaction.create(issueRef, payload);
+        transaction.create(issueRef.collection('audit').doc(), {
+          userId: null,
+          userName: 'Buggy Bag Integration',
+          action: 'експортував баг з Buggy Bag',
+          from: null,
+          to: null,
+          createdAt: now,
+        });
+      });
+    } else {
+      await db.runTransaction(async transaction => {
+        const workflowSnapshot = await transaction.get(workflowRef);
+        const resolved = resolveIntegrationWorkflow({
+          workflow: workflowSnapshot.data() || {},
+          requestedPriority: priority,
+        });
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        payload = {
+          issueKey,
+          title: title.trim(),
+          description: description ? String(description).trim().slice(0, 50_000) : '',
+          status: resolved.status,
+          columnId: resolved.status,
+          priority: resolved.priority,
+          type: resolved.type,
+          organizationId,
+          projectId: null,
+          attachments: safeAttachments,
+          metadata: safeMetadata,
+          source: 'buggybag',
+          parentIssueId: null,
+          spentMinutes: 0,
+          spentMinutesMirrorVersion: 1,
+          timeLogMutationVersion: 0,
+          order: 0,
+          assigneeIds: [],
+          reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
+          createdAt: now,
+          updatedAt: now,
+          ...(resolved.completed ? { completedAt: now } : {}),
+        };
+        transaction.create(issueRef, payload);
+        transaction.create(issueRef.collection('audit').doc(), {
+          userId: null,
+          userName: 'Buggy Bag Integration',
+          action: 'експортував баг з Buggy Bag',
+          from: null,
+          to: null,
+          createdAt: now,
+        });
+      });
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -134,6 +242,30 @@ export async function POST(req) {
     });
 
   } catch (error) {
+    if (error?.issueApi) {
+      return NextResponse.json({
+        error: error.issueApi.message,
+        code: error.issueApi.code,
+      }, { status: error.issueApi.status });
+    }
+    if (error?.message === 'PROJECT_DELETING') {
+      return NextResponse.json({
+        error: 'Проєкт уже видаляється',
+        code: 'PROJECT_DELETING',
+      }, { status: 409 });
+    }
+    if (error?.message === 'PROJECT_NOT_FOUND') {
+      return NextResponse.json({
+        error: 'Проєкт не знайдено',
+        code: 'PROJECT_NOT_FOUND',
+      }, { status: 404 });
+    }
+    if (error?.message === 'PROJECT_ARCHIVED') {
+      return NextResponse.json({
+        error: 'Проєкт архівовано',
+        code: 'PROJECT_ARCHIVED',
+      }, { status: 409 });
+    }
     return routeErrorResponse(error, { context: 'API v1 Tasks Create', fallbackMessage: 'Internal Server Error' });
   }
 }

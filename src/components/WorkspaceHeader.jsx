@@ -1,10 +1,10 @@
 'use client';
 // src/components/WorkspaceHeader.jsx — Smart contextual header with 5 modes
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useAppContext }    from '@/lib/context/AppContext';
-import { useDeadlineReminders } from '@/lib/hooks/useDeadlineReminders';
+import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useSearch } from '@/lib/hooks/useSearch';
 import useWorkspaceStore    from '@/store/useWorkspaceStore';
 import UserAvatar           from '@/components/ui/DataDisplay/UserAvatar';
@@ -18,11 +18,15 @@ import {
   ChevronRight, X, Hash, ArrowLeft,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import IconAction from '@/components/ui/IconAction';
+import { Counter, Pill } from '@/components/ui';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { reportLoadError } from '@/lib/utils/errors';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
@@ -86,6 +90,41 @@ function NotifIcon({ n, size = 28 }) {
 }
 
 // ── Detect header mode from pathname ────────────────────────────────
+function CalendarResponseActions({
+  notification,
+  response,
+  responding,
+  onRespond,
+  surface = 'surface',
+}) {
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      {[
+        ['accepted', 'Буду'],
+        ['tentative', 'Можливо'],
+        ['declined', 'Не буду'],
+      ].map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          data-ui-control="notification-response"
+          onClick={event => onRespond(notification, value, event)}
+          disabled={responding}
+          className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
+            response === value
+              ? 'bg-ink text-white'
+              : surface === 'surface'
+                ? 'bg-white text-muted ring-1 ring-black/[0.07] hover:text-ink'
+                : 'bg-canvas text-muted hover:text-ink'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function useHeaderMode(pathname, projects, breadcrumbs = []) {
   const EXCLUDED = ['my', 'team', 'analytics', 'calendar', 'chat', 'settings', 'sprints'];
 
@@ -278,9 +317,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             >
               {hasEmergency ? <span className="animate-bounce text-[16px]">🔥</span> : <Bell size={18} />}
               {unreadCount > 0 && !hasEmergency && (
-                <span className="absolute top-[6px] right-[6px] min-w-[12px] h-[12px] bg-ink text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[2px]">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+                <Counter value={unreadCount > 9 ? '9+' : unreadCount} size="xs" className="absolute right-[6px] top-[6px]" />
               )}
             </button>
 
@@ -291,7 +328,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               role="dialog"
               aria-label="Центр сповіщень"
               data-qt-global-notification-layer
-              className="fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+              data-ui-surface="local" className="fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
               style={{
                 top: notificationPanelPosition.top,
                 left: notificationPanelPosition.left,
@@ -302,33 +339,42 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-canvas">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-[14px] font-bold text-ink">Сповіщення</h3>
+                  <h3 className="ui-type-card-title text-ink">Сповіщення</h3>
                   {unreadCount > 0 && (
-                    <span className="text-[9px] font-bold px-[6px] py-[2px] bg-ink/8 text-ink rounded-full">
-                      {unreadCount} нових
-                    </span>
+                    <Pill tone="ink-subtle" size="xs">{unreadCount} нових</Pill>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
-                    <button onClick={handleMarkAllRead} title="Позначити всі прочитаними"
-                      className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
-                      <CheckCheck size={14} />
-                    </button>
+                    <Button
+                      onClick={handleMarkAllRead}
+                      title="Позначити всі прочитаними"
+                      style="ghost"
+                      size="icon-sm"
+                      icon={CheckCheck}
+                      iconSize={14}
+                      shape="compact"
+                      surface="canvas"
+                    />
                   )}
-                  <button
+                  <Button
                     onClick={() => { setBellOpen(false); router.push('/settings?section=notifications'); }}
                     title="Налаштування сповіщень"
-                    className="w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-muted hover:text-ink hover:bg-canvas transition-all">
-                    <Settings size={13} />
-                  </button>
+                    style="ghost"
+                    size="icon-sm"
+                    icon={Settings}
+                    iconSize={13}
+                    shape="compact"
+                    surface="canvas"
+                  />
                 </div>
               </div>
 
               {/* Filter */}
               <div className="px-4 pt-[10px] pb-2">
                 <Segmented
-                  className="bg-canvas w-max"
+                  className="w-max"
+                  surface="canvas"
                   value={notifFilter}
                   onChange={setNotifFilter}
                   options={[
@@ -364,27 +410,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                           </p>
                           {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
                           {n.type === 'calendar_invite' && n.calendarEventId && (
-                            <div className="mt-2 flex items-center gap-1.5">
-                              {[
-                                ['accepted', 'Буду'],
-                                ['tentative', 'Можливо'],
-                                ['declined', 'Не буду'],
-                              ].map(([value, label]) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={event => handleCalendarResponse(n, value, event)}
-                                  disabled={respondingNotificationId === n.id}
-                                  className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
-                                    calendarResponses[n.id] === value
-                                      ? 'bg-ink text-white'
-                                      : 'bg-white text-muted ring-1 ring-black/[0.07] hover:text-ink'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
+                            <CalendarResponseActions
+                              notification={n}
+                              response={calendarResponses[n.id]}
+                              responding={respondingNotificationId === n.id}
+                              onRespond={handleCalendarResponse}
+                            />
                           )}
                           <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
                             <span>{timeAgo(n.createdAt)}</span>
@@ -395,25 +426,29 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                         )}
                         {/* Hover actions */}
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            title={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
+                          <IconAction
+                            label={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
                             onClick={e => {
                               e.stopPropagation();
                               const action = n.read ? markUnread : markRead;
                               action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
                             }}
-                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-ink shadow-sm transition-colors">
-                            {n.read ? <Mail size={12} /> : <Check size={12} />}
-                          </button>
-                          <button
-                            title="Видалити"
+                            icon={n.read ? Mail : Check}
+                            iconSize={12}
+                            size="notification"
+                            appearance="surface"
+                          />
+                          <IconAction
+                            label="Видалити"
                             onClick={e => {
                               e.stopPropagation();
                               removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
                             }}
-                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[8px] bg-white border border-line text-muted hover:text-red-500 shadow-sm transition-colors">
-                            <Trash2 size={12} />
-                          </button>
+                            icon={Trash2}
+                            iconSize={12}
+                            size="notification"
+                            appearance="surface-danger"
+                          />
                         </div>
                       </div>
                     ))}
@@ -447,13 +482,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         {/* ── User avatar ───────────────── */}
         <div className="relative" ref={userRef}>
           <button
+            data-ui-action="avatar-menu"
             onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
             className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
             <UserAvatar user={currentUser} size={28} />
           </button>
           {userOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
+            <div data-ui-surface="local" className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-canvas">
                 <p className="text-[13px] font-bold text-ink truncate">{currentUser?.name}</p>
                 <p className="text-[11px] text-muted truncate">{currentUser?.email}</p>
@@ -479,9 +515,9 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         return (
           <div
             data-qt-global-notification-layer
-            className={`fixed bottom-[72px] right-[12px] w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.12)] md:bottom-5 md:right-[24px] ${
-              liveNotif.type === 'emergency' ? 'border-2 border-red-500' : 'border border-[#f0f0f0]'
-            }`}
+            data-ui-surface="notification"
+            data-ui-tone={liveNotif.type === 'emergency' ? 'emergency' : 'default'}
+            className="ui-surface fixed bottom-[72px] right-[12px] w-[min(320px,calc(100vw-24px))] overflow-hidden md:bottom-5 md:right-[24px]"
             style={{
               animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)',
               zIndex: GLOBAL_NOTIFICATION_Z_INDEX,
@@ -502,27 +538,13 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                   <p className="text-[11px] text-muted mt-1 line-clamp-2">{liveNotif.body}</p>
                 )}
                 {liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId && (
-                  <div className="mt-2 flex items-center gap-1.5">
-                    {[
-                      ['accepted', 'Буду'],
-                      ['tentative', 'Можливо'],
-                      ['declined', 'Не буду'],
-                    ].map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={event => handleCalendarResponse(liveNotif, value, event)}
-                        disabled={respondingNotificationId === liveNotif.id}
-                        className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
-                          calendarResponses[liveNotif.id] === value
-                            ? 'bg-ink text-white'
-                            : 'bg-canvas text-muted hover:text-ink'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <CalendarResponseActions
+                    notification={liveNotif}
+                    response={calendarResponses[liveNotif.id]}
+                    responding={respondingNotificationId === liveNotif.id}
+                    onRespond={handleCalendarResponse}
+                    surface="canvas"
+                  />
                 )}
                 {liveNotif.link && (
                   <button
@@ -545,8 +567,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 }
 
 export default function WorkspaceHeader() {
-  const { currentUser, signOut, projects } = useAppContext();
-  const uid  = currentUser?.id || currentUser?.uid;
+  const { currentUser, signOut, projects, activeOrgId } = useAppContext();
+  const { members: organizationMembers } = useOrganization();
 
   const breadcrumbs    = useWorkspaceStore(s => s.breadcrumbs);
   const chatSearch     = useWorkspaceStore(s => s.chatSearch);
@@ -570,16 +592,55 @@ export default function WorkspaceHeader() {
   const router   = useRouter();
   const pathname = usePathname();
   const { mode, project, placeholder, label } = useHeaderMode(pathname, projects, breadcrumbs);
+  const [projectPresenceMap, setProjectPresenceMap] = useState({});
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
 
   const [projectSearch,   setProjectSearch]   = useState(false); // inline search toggle for project mode
   const [globalQuery,     setGlobalQuery]     = useState('');
   const [showSearch,      setShowSearch]      = useState(false);
 
   const { results: searchResults, loading: searchLoading, search } = useSearch();
-  const { activeOrgId } = useAppContext();
 
-  // Client-side deadline reminders (24h before due + daily for overdue)
-  useDeadlineReminders(uid, activeOrgId);
+  useEffect(() => {
+    if (mode !== 'project' || !activeOrgId) return undefined;
+    const presenceQuery = query(collection(db, 'organizations', activeOrgId, 'presence'));
+    return onSnapshot(presenceQuery, snapshot => {
+      const nextPresence = {};
+      snapshot.forEach(document => {
+        nextPresence[document.id] = document.data().lastSeen?.toMillis?.() ?? 0;
+      });
+      setProjectPresenceMap(nextPresence);
+    }, error => {
+      reportLoadError('[WorkspaceHeader] project presence', error);
+    });
+  }, [activeOrgId, mode]);
+
+  useEffect(() => {
+    if (mode !== 'project') return undefined;
+    const timer = setInterval(() => setPresenceNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, [mode]);
+
+  const projectMembers = useMemo(() => {
+    if (mode !== 'project' || !project) return [];
+    const teamIds = new Set(Array.isArray(project.team) ? project.team : []);
+    return organizationMembers
+      .filter(member => teamIds.has(member.id || member.uid))
+      .map(member => {
+        const userId = member.id || member.uid;
+        const lastActive = Object.prototype.hasOwnProperty.call(projectPresenceMap, userId)
+          ? projectPresenceMap[userId]
+          : member.lastActive;
+        return {
+          ...member,
+          online: Boolean(lastActive && presenceNow - new Date(lastActive).getTime() < 15 * 60 * 1000),
+        };
+      })
+      .sort((a, b) => {
+        if (a.online !== b.online) return a.online ? -1 : 1;
+        return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'uk');
+      });
+  }, [mode, organizationMembers, presenceNow, project, projectPresenceMap]);
 
   // A search belongs to the page where it was entered. Clear every contextual
   // query on navigation so text from Chat/Team/Analytics never leaks into the
@@ -690,6 +751,7 @@ export default function WorkspaceHeader() {
         onProjectSearchToggle={() => setProjectSearch(true)}
         breadcrumbs={breadcrumbs}
         onlineUsers={chatOnlineUsers}
+        projectMembers={projectMembers}
         onOnlineUserClick={user => router.push(`/chat?dm=${encodeURIComponent(user.id || user.uid)}`)}
         rightContent={<WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} mode={mode} />}
       />

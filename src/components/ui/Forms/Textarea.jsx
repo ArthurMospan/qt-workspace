@@ -7,6 +7,7 @@ export const Textarea = forwardRef(({
   error,
   rows = 4,
   maxRows,
+  composition,
   ...props
 }, ref) => {
   return (
@@ -15,8 +16,9 @@ export const Textarea = forwardRef(({
         ref={ref}
         rows={rows}
         placeholder={placeholder}
+        data-ui-composition={composition}
         className={`
-          w-full bg-canvas border border-transparent rounded-[10px]
+          ui-textarea w-full bg-canvas border border-transparent rounded-[10px]
           text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] resize-none
           disabled:opacity-50 disabled:cursor-not-allowed

@@ -7,25 +7,47 @@ import { useProjectAllTimeLogs } from '@/lib/hooks/useProjectAllTimeLogs';
 import { useAppContext } from '@/lib/context/AppContext';
 import { db } from '@/lib/firebase';
 import {
-  collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, getDoc,
+  collection, query, where, onSnapshot, doc, getDoc,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { CalendarDays, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
+import { Ban, CalendarDays, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
-  Dialog, Card, Alert, PriorityBadge,
+  Dialog, Card, Alert, Label, Pill, PriorityBadge, Segmented, TypeBadge,
+  useConfirm,
 } from '@/components/ui';
-import { useWorkflowConfig, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { buildCalendarBillingItems } from '@/lib/utils/calendarBillingItems.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import {
+  aggregateIssueTimeLogs,
+  buildIssueAccountingIndex,
+  calculateBillingAutoPrice,
+  collectReservedInvoiceTimeLogIds,
+  collectSourceTimeLogIds,
+  findInvoiceTimeLogOverlap,
+  isValidRawTimeLogMinutes,
+  selectIncrementalBillableIssues,
+} from '@/lib/utils/issueAccounting.mjs';
+import {
+  createInvoiceViaApi,
+  voidInvoiceViaApi,
+} from '@/lib/services/invoices';
+import {
+  applyBillingRatePreset,
+  emptyBillingMemberState,
+  reconcileBillingMemberState,
+  setBillingMemberPreset,
+  setBillingMemberRate,
+} from '@/lib/utils/billingProjectState.mjs';
 
 // ── Defaults ─────────────────────────────────────────────────────────
 
-const TYPE_META = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, t]));
-
 const CURRENCIES = ['USD', 'EUR', 'UAH', 'GBP', 'PLN'];
+const EMPTY_INVOICES = Object.freeze([]);
+const EMPTY_MEMBER_VALUES = Object.freeze({});
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -41,17 +63,13 @@ function fmtMoney(amount, currency) {
 function fmtDate(d = new Date()) {
   return new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
 }
-function invoiceNumber() {
-  const now = new Date();
-  return `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 900 + 100)}`;
-}
 
 // ── Field Component matching TaskDetailPanel ──────────────────────────
 
 function Field({ label, children }) {
   return (
-    <div className="w-full">
-      <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{label}</label>
+    <div className="flex w-full flex-col gap-2">
+      <Label>{label}</Label>
       {children}
     </div>
   );
@@ -60,11 +78,23 @@ function Field({ label, children }) {
 // ── Rate row component ────────────────────────────────────────────────
 
 function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, currency, positions = [] }) {
+  const memberName = member?.name || member?.email || uid;
+  const rateInputId = `billing-rate-${uid}`;
+
   return (
-    <div className="flex items-center gap-3 py-[10px] border-b border-[#f0f0f0] last:border-0">
-      <UserAvatar user={member} size={28} />
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-ink truncate">{member?.name || member?.email || uid}</p>
+    <div className="grid gap-3 border-b border-[#f0f0f0] py-3 last:border-0 sm:grid-cols-[minmax(180px,1fr)_minmax(170px,0.9fr)_150px] sm:items-end">
+      <div className="flex min-w-0 items-center gap-3 sm:pb-1">
+        <UserAvatar user={member} size={36} />
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-bold text-ink">{memberName}</p>
+          {member?.email && member.email !== memberName ? (
+            <p className="mt-0.5 truncate text-[11px] text-muted">{member.email}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <Label className="mb-1.5 block">Посада</Label>
         <Select
           value={preset || member?.positionId || ''}
           onChange={val => {
@@ -77,19 +107,29 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
             ...positions.map(p => ({ value: p.id, label: p.label }))
           ]}
           placeholder="Посада..."
-          className="w-[120px] mt-[2px]"
-          dropdownClassName="w-[160px]"
+          size="md"
+          className="w-full"
+          dropdownClassName="min-w-[220px]"
+          ariaLabel={`Посада: ${memberName}`}
         />
       </div>
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-[12px] text-muted font-semibold">{currency}/г</span>
-        <input
-          type="number"
-          min={0}
-          value={rate}
-          onChange={e => onRateChange(Number(e.target.value))}
-          className="w-[60px] h-[32px] text-[13px] font-semibold bg-canvas border-0 rounded-[8px] px-2 outline-none focus:bg-[#efefef] text-right"
-        />
+
+      <div className="min-w-0">
+        <Label htmlFor={rateInputId} className="mb-1.5 block">Ставка</Label>
+        <div className="relative">
+          <Input
+            id={rateInputId}
+            size="md"
+            type="number"
+            min={0}
+            value={rate}
+            onChange={e => onRateChange(Number(e.target.value))}
+            preset="money"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted">
+            {currency}/г
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -97,7 +137,23 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
 
 // ── Billable row component ───────────────────────────────────────────
 
-function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPrice, onManualPrice, currency, useManual, onUseManual }) {
+function IssueRow({
+  issue,
+  checked,
+  onCheck,
+  timeLogs,
+  rates,
+  members,
+  manualPrice,
+  onManualPrice,
+  currency,
+  useManual,
+  onUseManual,
+  statusLabel: issueStatusLabel,
+  typeMeta,
+  isSummaryParent,
+  billingConflictCount = 0,
+}) {
   const issueLogs = useMemo(
     () => timeLogs[issue.id] || { totalMinutes: 0, byUser: {} },
     [timeLogs, issue.id],
@@ -109,111 +165,147 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
   // time was tracked, not on whether the money came out to zero. Testing the
   // total meant that 8 logged hours at a rate of 0 silently fell through to
   // billing the estimate instead, quietly inventing a charge.
-  const autoPrice = useMemo(() => {
-    if (issueLogs.totalMinutes > 0) {
-      return Object.entries(issueLogs.byUser).reduce(
-        (total, [uid, minutes]) => total + (minutes / 60) * (rates[uid] ?? 0),
-        0,
-      );
-    }
-    if (issue.estimateMinutes) {
-      const uid = issue.assigneeIds?.[0];
-      return (issue.estimateMinutes / 60) * (uid ? (rates[uid] ?? 0) : 0);
-    }
-    return 0;
-  }, [issueLogs, rates, issue]);
+  const autoPrice = useMemo(
+    () => calculateBillingAutoPrice({
+      issue,
+      logSummary: issueLogs,
+      rates,
+      isSummaryParent,
+    }),
+    [isSummaryParent, issue, issueLogs, rates],
+  );
 
   const price = useManual ? (manualPrice ?? 0) : autoPrice;
   const type = issue.type || 'task';
   const isEvent = type === 'calendar_event';
+  const contributorIds = Object.keys(issueLogs.byUser).length > 0
+    ? Object.keys(issueLogs.byUser)
+    : issue.assigneeIds || [];
+  const contributors = contributorIds
+    .map(uid => members.find(member => (member.id || member.uid) === uid))
+    .filter(Boolean);
+  const effortLabel = issueLogs.totalMinutes > 0
+    ? `Списано ${fmtMin(issueLogs.totalMinutes)}`
+    : issue.estimateMinutes
+      ? `Оцінка ${fmtMin(issue.estimateMinutes)}`
+      : 'Без часу й оцінки';
+  const contributorSummary = Object.entries(issueLogs.byUser)
+    .map(([uid, minutes]) => {
+      const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
+      const cost = rates[uid] ? ` · ${fmtMoney((minutes / 60) * rates[uid], currency)}` : '';
+      return `${member?.name || uid.slice(0, 6)} ${fmtMin(minutes)}${cost}`;
+    })
+    .join(' · ');
 
   return (
-    <div 
+    <div
+      data-ui-surface="billing-item"
+      data-ui-padding="compact-row"
+      data-ui-muted={!checked}
       onClick={onCheck}
-      className={`bg-white border border-[#efefef] hover:border-[#dfdfdf] rounded-[18px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.02)] cursor-pointer select-none ${
-        !checked ? 'opacity-65 bg-[#fafafa]/50' : ''
-      }`}
+      className="ui-surface grid cursor-pointer select-none gap-3 transition-all md:grid-cols-[auto_minmax(240px,1fr)_minmax(210px,0.85fr)_190px] md:items-center"
     >
-      <div className="flex items-start gap-[12px] min-w-0 flex-1">
-        <div className="mt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
-          <Checkbox checked={checked} onChange={onCheck} />
-        </div>
-
-        <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <div className="flex items-center gap-[8px] flex-wrap">
-            <span className="text-[10px] font-bold text-muted bg-[#f5f5f5] px-2 py-0.5 rounded tracking-wide">
-              {issue.issueKey || (isEvent ? 'ПОДІЯ' : 'TASK')}
-            </span>
-            <span className="text-[10px] font-semibold px-2 py-[2px] rounded-full" style={{ color: TYPE_META[type]?.color || '#059669', background: (TYPE_META[type]?.color || '#059669') + '18' }}>
-              {isEvent ? <span className="inline-flex items-center gap-1"><CalendarDays size={10} /> Подія</span> : (TYPE_META[type]?.label || type)}
-            </span>
-            {!isEvent && <PriorityBadge priority={issue.priority} />}
-          </div>
-
-          <h4 className="text-[14px] font-bold text-[#1a1a1a] mt-1 truncate">
-            {issue.title}
-          </h4>
-
-          {issueLogs.totalMinutes > 0 ? (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {Object.entries(issueLogs.byUser).map(([uid, min]) => {
-                const m = members.find(me => (me.id || me.uid) === uid);
-                return (
-                  <div key={uid} className="flex items-center gap-1.5 text-[11px] font-semibold text-muted bg-canvas px-2 py-0.5 rounded-full">
-                    <Clock size={10} />
-                    <span>{m?.name || uid.slice(0, 6)}: {fmtMin(min)}</span>
-                    {rates[uid] ? (
-                      <span className="text-ink font-bold">({fmtMoney((min / 60) * rates[uid], currency)})</span>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            issue.estimateMinutes ? (
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-muted mt-1.5">
-                <Clock size={11} />
-                <span>Оцінка: {fmtMin(issue.estimateMinutes)}</span>
-              </div>
-            ) : (
-              <span className="text-[11px] text-faint italic mt-1 block">Часу не списано, немає оцінки</span>
-            )
-          )}
-        </div>
+      <div className="shrink-0 md:self-center" onClick={event => event.stopPropagation()}>
+        <Checkbox checked={checked} onChange={onCheck} />
       </div>
 
-      <div 
-        className="flex items-center gap-4 shrink-0 justify-between sm:justify-end"
-        onClick={e => e.stopPropagation()}
+      <div className="min-w-0">
+        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[10px] font-bold tracking-wide text-faint">
+            {issue.issueKey || (isEvent ? 'ПОДІЯ' : 'ЗАВДАННЯ')}
+          </span>
+          <TypeBadge
+            label={isEvent ? 'Подія' : (typeMeta?.[type]?.label || type)}
+            color={typeMeta?.[type]?.color || '#059669'}
+            icon={isEvent ? CalendarDays : undefined}
+          />
+          {!isEvent && <PriorityBadge priority={issue.priority} />}
+          {issueStatusLabel ? (
+            <Pill tone="neutral" size="sm" shape="badge">{issueStatusLabel}</Pill>
+          ) : null}
+          {billingConflictCount > 0 ? (
+            <Pill tone="warning" size="sm" shape="badge">
+              Уже в рахунку · {billingConflictCount}
+            </Pill>
+          ) : null}
+        </div>
+        <h4 className="ui-type-card-title truncate leading-[1.35] text-ink">
+          {issue.title}
+        </h4>
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-muted">
+            <Clock size={12} />
+            {effortLabel}
+          </span>
+          {contributors.length > 0 ? (
+            <div className="flex -space-x-1.5">
+              {contributors.slice(0, 3).map(member => (
+                <UserAvatar
+                  key={member.id || member.uid}
+                  user={member}
+                  size={20}
+                  className="ring-2 ring-white"
+                />
+              ))}
+              {contributors.length > 3 ? (
+                <Pill
+                  tone="neutral"
+                  size="md"
+                  preset="avatar-counter"
+                >
+                  +{contributors.length - 3}
+                </Pill>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        {contributorSummary ? (
+          <p className="mt-1 truncate text-[10px] text-faint" title={contributorSummary}>
+            {contributorSummary}
+          </p>
+        ) : null}
+      </div>
+
+      <div
+        className="flex min-w-0 items-center justify-between gap-2 md:justify-end"
+        onClick={event => event.stopPropagation()}
       >
-        <div className="flex flex-col items-end gap-1">
-          <div>
-            <button 
-              onClick={onUseManual} 
-              title={useManual ? 'Перейти на авто' : 'Ввести вручну'}
-              className={`text-[10px] font-bold px-2 py-[2.5px] rounded-full transition-colors uppercase tracking-wider ${
-                useManual ? 'bg-ink text-white' : 'bg-canvas text-muted hover:bg-[#efefef]'
-              }`}
-            >
-              {useManual ? 'ручна' : 'авто'}
-            </button>
-          </div>
-          {useManual ? (
+        <Segmented
+          value={useManual ? 'manual' : 'auto'}
+          onChange={value => {
+            if ((value === 'manual') !== useManual) onUseManual();
+          }}
+          options={[
+            { value: 'auto', label: 'Авто' },
+            { value: 'manual', label: 'Вручну' },
+          ]}
+          surface="canvas"
+        />
+        {useManual ? (
+          <div className="relative w-[104px]">
             <Input
               type="number"
+              size="md"
               min={0}
               step="0.01"
               value={manualPrice ?? ''}
-              onChange={e => onManualPrice(e.target.value === '' ? null : Number(e.target.value))}
+              onChange={event => onManualPrice(event.target.value === '' ? null : Number(event.target.value))}
               placeholder="0.00"
-              className="w-[90px] h-[32px] text-right"
+              preset="money"
+              aria-label={`Ручна вартість: ${issue.title}`}
             />
-          ) : (
-            <span className={`text-[14px] font-bold ${price > 0 ? 'text-ink' : 'text-faint'}`}>
-              {price > 0 ? fmtMoney(price, currency) : '—'}
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted">
+              {currency}
             </span>
-          )}
-        </div>
+          </div>
+        ) : (
+          <span className={`min-w-[88px] text-right text-[13px] font-bold ${price > 0 ? 'text-ink' : 'text-faint'}`}>
+            {price > 0 ? fmtMoney(price, currency) : '—'}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -221,10 +313,30 @@ function IssueRow({ issue, checked, onCheck, timeLogs, rates, members, manualPri
 
 // ── Invoice Preview Component ─────────────────────────────────────────
 
-function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopied, onCopyFailed }) {
+function InvoicePreview({
+  invoice,
+  project,
+  isSaved = false,
+  onClose,
+  onPrintBlocked,
+  onCopied,
+  onCopyFailed,
+}) {
   const printRef = useRef(null);
+  const invoiceItems = Array.isArray(invoice?.items) ? invoice.items : [];
+  const officialNumber = typeof invoice?.number === 'string'
+    ? invoice.number.trim()
+    : '';
+  const projectLabel = project?.name || invoice?.projectId || '—';
+  const canExport = isSaved && officialNumber.length > 0;
+  const dialogTitle = !isSaved
+    ? 'Попередній перегляд чернетки'
+    : canExport
+      ? `Рахунок ${officialNumber}`
+      : 'Перегляд збереженого рахунку';
 
   const handlePrint = () => {
+    if (!canExport) return;
     const content = printRef.current?.innerHTML;
     if (!content) return;
     // window.open returns null when a popup blocker is active; the old code
@@ -239,7 +351,7 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
       <html>
       <head>
         <meta charset="utf-8">
-        <title>${invoice.number}</title>
+        <title>${officialNumber}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: Inter, -apple-system, sans-serif; color: #1f1f1f; padding: 48px; max-width: 800px; margin: 0 auto; }
@@ -273,14 +385,16 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
   };
 
   const handleCopy = () => {
+    if (!canExport) return;
     const lines = [
-      `РАХУНОК ${invoice.number}`,
+      `РАХУНОК ${officialNumber}`,
       `Дата: ${invoice.date}`,
-      `Клієнт: ${invoice.clientName || org?.name || '—'}`,
-      `Проєкт: ${project?.name}`,
+      `Клієнт: ${invoice.clientName || '—'}`,
+      `Проєкт: ${projectLabel}`,
+      invoice.status === 'void' ? 'Статус: Анульовано' : '',
       '',
       'Послуги:',
-      ...invoice.items.map(i => `  ${i.title} (${i.key}) — ${fmtMoney(i.price, invoice.currency)}`),
+      ...invoiceItems.map(i => `  ${i.title} (${i.key}) — ${fmtMoney(i.price, invoice.currency)}`),
       '',
       `Підсумок: ${fmtMoney(invoice.subtotal, invoice.currency)}`,
       invoice.discount > 0 ? `Знижка (${invoice.discountPct}%): -${fmtMoney(invoice.discount, invoice.currency)}` : '',
@@ -289,7 +403,12 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
     ].filter(l => l !== '').join('\n');
     // Clipboard access is denied in insecure contexts and by some browsers;
     // silently swallowing that left the user thinking the copy worked.
-    navigator.clipboard?.writeText(lines).then(
+    const copyPromise = navigator.clipboard?.writeText?.(lines);
+    if (!copyPromise) {
+      onCopyFailed?.();
+      return;
+    }
+    copyPromise.then(
       () => onCopied?.(),
       () => onCopyFailed?.(),
     );
@@ -299,20 +418,47 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
     <Dialog
       isOpen
       onClose={onClose}
-      title="Попередній перегляд рахунку"
+      title={dialogTitle}
       size="md"
       footer={
-        <>
-          <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
-          <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
-        </>
+        canExport ? (
+          <>
+            <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
+            <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
+          </>
+        ) : (
+          <Button onClick={onClose} style="secondary" size="md">Закрити</Button>
+        )
       }
     >
+          {!isSaved && (
+            <Alert
+              variant="info"
+              title="Незбережена чернетка"
+              description="Офіційний номер рахунку з’явиться після збереження. Друк і копіювання доступні лише для збереженого рахунку."
+              className="mb-4"
+            />
+          )}
+          {isSaved && !canExport && (
+            <Alert
+              variant="warning"
+              title="Збережений рахунок не має номера"
+              description="Це застарілий або пошкоджений запис. Його можна переглянути, але не друкувати чи копіювати як офіційний рахунок."
+              className="mb-4"
+            />
+          )}
           <div ref={printRef} className="px-2 py-3 max-w-[640px] mx-auto">
             <div className="flex items-start justify-between mb-8">
               <div>
-                <h1 className="text-[28px] font-black text-ink tracking-tight">РАХУНОК</h1>
-                <p className="text-[14px] font-semibold text-muted">{invoice.number}</p>
+                <h1 className="ui-type-metric-title text-ink tracking-tight">РАХУНОК</h1>
+                <div className="mt-1 flex items-center gap-2">
+                  {canExport ? (
+                    <p className="text-[14px] font-semibold text-muted">{officialNumber}</p>
+                  ) : (
+                    <Pill tone="neutral" size="sm">Номер після збереження</Pill>
+                  )}
+                  {invoice.status === 'void' && <Pill tone="neutral" size="sm">Анульовано</Pill>}
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-[12px] text-muted">Дата виставлення</p>
@@ -333,9 +479,9 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
               </div>
             </div>
 
-            <div className="bg-canvas rounded-[10px] px-4 py-3 mb-6">
+            <div data-ui-surface="local" className="bg-canvas rounded-[10px] px-4 py-3 mb-6">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Проєкт</p>
-              <p className="text-[13px] font-semibold text-ink mt-[2px]">{project?.name}</p>
+              <p className="text-[13px] font-semibold text-ink mt-[2px]">{projectLabel}</p>
             </div>
 
             <table className="w-full mb-2" style={{ borderCollapse: 'collapse' }}>
@@ -347,8 +493,8 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
                 </tr>
               </thead>
               <tbody>
-                {invoice.items.map((item, i) => (
-                  <tr key={i}>
+                {invoiceItems.map((item, index) => (
+                  <tr key={item.itemId || item.issueId || item.key || index}>
                     <td className="py-3 border-b border-[#f0f0f0]">
                       <p className="text-[13px] font-medium text-ink">{item.title}</p>
                       <p className="text-[10px] text-muted">{item.key} · {item.status}</p>
@@ -401,20 +547,91 @@ function InvoicePreview({ invoice, project, org, onClose, onPrintBlocked, onCopi
 // ── MAIN COMPONENT ────────────────────────────────────────────────────
 
 export default function BillingTab({ issues = [], events = [], members = [], project, projectId }) {
-  const { currentUser, activeOrgId } = useAppContext();
+  const { activeOrgId } = useAppContext();
+  const billingProjectKey = `${activeOrgId || ''}:${projectId || ''}`;
   const showToast = useWorkspaceStore(state => state.showToast);
-  const { logs, byIssue, loading: logsLoading } = useProjectAllTimeLogs(projectId);
-  const { statuses, doneStatusIds } = useWorkflowConfig();
+  const confirmDialog = useConfirm();
+  const { logs, loading: logsLoading } = useProjectAllTimeLogs(projectId);
+  const { statuses, doneStatusIds, types = [] } = useWorkflowConfig();
+  const [savedInvoiceState, setSavedInvoiceState] = useState({
+    projectKey: '',
+    invoices: [],
+  });
+  const savedInvoices = savedInvoiceState.projectKey === billingProjectKey
+    ? savedInvoiceState.invoices
+    : EMPTY_INVOICES;
+  const typeMeta = useMemo(
+    () => Object.fromEntries(types.map(type => [type.id, type])),
+    [types],
+  );
   // Status labels come from the live workflow config, falling back to the
   // shared defaults rather than a local copy of the same map.
   const statusLabelOf = (id) => id === 'calendar_event' ? 'Подія' : statusLabel(id, statuses);
 
+  const reservedTimeLogIds = useMemo(
+    () => collectReservedInvoiceTimeLogIds(savedInvoices),
+    [savedInvoices],
+  );
+  const billableLogs = useMemo(
+    () => logs.filter(log => (
+      !log.invoiceId
+      && !log.billedAt
+      && (!log.id || !reservedTimeLogIds.has(log.id))
+    )),
+    [logs, reservedTimeLogIds],
+  );
+  const allIssueTimeLogs = useMemo(
+    () => aggregateIssueTimeLogs(logs),
+    [logs],
+  );
+  const invalidTimeLogCount = useMemo(
+    () => logs.filter(log => !isValidRawTimeLogMinutes(log.spentMinutes)).length,
+    [logs],
+  );
+  const invalidTimeLogIssueIds = useMemo(
+    () => new Set(logs.flatMap(log => (
+      !isValidRawTimeLogMinutes(log.spentMinutes) && log.issueId
+        ? [log.issueId]
+        : []
+    ))),
+    [logs],
+  );
+  const issueTimeLogs = useMemo(
+    () => aggregateIssueTimeLogs(billableLogs),
+    [billableLogs],
+  );
   const { billableEvents, timeLogsByItem } = useMemo(() => {
-    return buildCalendarBillingItems({ byIssue, events, logs, projectId });
-  }, [byIssue, events, logs, projectId]);
+    return buildCalendarBillingItems({
+      byIssue: issueTimeLogs,
+      events,
+      logs: billableLogs,
+      projectId,
+    });
+  }, [billableLogs, events, issueTimeLogs, projectId]);
+  const hierarchyIndex = useMemo(
+    () => buildIssueAccountingIndex(issues),
+    [issues],
+  );
+  const billableIssues = useMemo(
+    () => selectIncrementalBillableIssues(
+      issues,
+      timeLogsByItem,
+      allIssueTimeLogs,
+    ).filter(issue => !invalidTimeLogIssueIds.has(issue.id)),
+    [
+      allIssueTimeLogs,
+      invalidTimeLogIssueIds,
+      issues,
+      timeLogsByItem,
+    ],
+  );
   const billingItems = useMemo(
-    () => [...issues, ...billableEvents],
-    [billableEvents, issues],
+    () => [...billableIssues, ...billableEvents],
+    [billableEvents, billableIssues],
+  );
+  const billingItemsById = useMemo(
+    () => new Map(billingItems.map(item => [item.id, item])),
+    [billingItems],
   );
   const billingItemIds = useMemo(
     () => billingItems.map(item => item.id).join(','),
@@ -422,8 +639,15 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   );
 
   // ── Rate settings per member
-  const [memberRates, setMemberRates] = useState({}); // { uid: number }
-  const [memberPresets, setMemberPresets] = useState({}); // { uid: presetId }
+  const [memberRateState, setMemberRateState] = useState(
+    () => emptyBillingMemberState(),
+  );
+  const memberRates = memberRateState.projectKey === billingProjectKey
+    ? memberRateState.rates
+    : EMPTY_MEMBER_VALUES;
+  const memberPresets = memberRateState.projectKey === billingProjectKey
+    ? memberRateState.presets
+    : EMPTY_MEMBER_VALUES;
 
   // ── Issue selection
   const [checkedIds, setCheckedIds] = useState(new Set());
@@ -442,12 +666,31 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
 
   // ── UI state
   const [tab, setTab] = useState('details'); // 'details' | 'issues' | 'history'
+  const [invoicePreviewState, setInvoicePreviewState] = useState(null);
+  const invoicePreview = invoicePreviewState?.projectKey === billingProjectKey
+    ? invoicePreviewState
+    : null;
   const [saving, setSaving] = useState(false);
-  const [savedInvoices, setSavedInvoices] = useState([]);
+  const [voidingInvoiceId, setVoidingInvoiceId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [positions, setPositions] = useState([]);
   const selectionProjectRef = useRef('');
+  const invoiceOverlap = useMemo(
+    () => findInvoiceTimeLogOverlap(billingItems, timeLogsByItem, savedInvoices),
+    [billingItems, savedInvoices, timeLogsByItem],
+  );
+  const conflictingItemIds = useMemo(
+    () => new Set(invoiceOverlap.itemIds),
+    [invoiceOverlap.itemIds],
+  );
+  const safeBillingItemIds = useMemo(
+    () => billingItems
+      .filter(item => !conflictingItemIds.has(item.id))
+      .map(item => item.id),
+    [billingItems, conflictingItemIds],
+  );
+  const safeBillingItemIdsKey = safeBillingItemIds.join(',');
 
   // Load positions
   useEffect(() => {
@@ -477,60 +720,99 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
     if (logsLoading) return;
     if (selectionProjectRef.current !== projectId) {
       selectionProjectRef.current = projectId || '';
-      queueMicrotask(() => setCheckedIds(new Set(billingItems.map(item => item.id))));
+      queueMicrotask(() => setCheckedIds(new Set(safeBillingItemIds)));
       return;
     }
-    const availableIds = new Set(billingItems.map(item => item.id));
+    const availableIds = new Set(safeBillingItemIds);
     queueMicrotask(() => setCheckedIds(previous => (
       new Set([...previous].filter(id => availableIds.has(id)))
     )));
-  }, [billingItemIds, billingItems, logsLoading, projectId]);
+  }, [
+    billingItemIds,
+    logsLoading,
+    projectId,
+    safeBillingItemIds,
+    safeBillingItemIdsKey,
+  ]);
 
-  // Initialize rates based on member profiles and positions
+  // Keep rate edits scoped to one project. A project switch resets immediately;
+  // later member/log refreshes only fill or refresh untouched members.
   useEffect(() => {
-    if (billingMembers.length > 0 && Object.keys(memberRates).length === 0) {
-      const initialRates = {};
-      const initialPresets = {};
-      billingMembers.forEach(m => {
-        const uid = m.id || m.uid;
-        let rate = m.hourlyRate || 0;
-        if (m.positionId && !rate) {
-          const pos = positions.find(p => p.id === m.positionId);
-          if (pos) rate = pos.hourlyRate || 0;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setMemberRateState(previous => {
+        if (previous.projectKey !== billingProjectKey) {
+          return emptyBillingMemberState(billingProjectKey);
         }
-        initialRates[uid] = rate;
-        if (m.positionId) {
-          initialPresets[uid] = m.positionId;
-        }
+        if (logsLoading) return previous;
+        return reconcileBillingMemberState({
+          state: previous,
+          projectKey: billingProjectKey,
+          members: billingMembers,
+          positions,
+        });
       });
-      queueMicrotask(() => {
-        setMemberRates(initialRates);
-        setMemberPresets(initialPresets);
-      });
-    }
-  }, [billingMembers, positions, memberRates]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [billingMembers, billingProjectKey, logsLoading, positions]);
 
   // Load saved invoices
   useEffect(() => {
-    if (!projectId || !activeOrgId) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setSavedInvoiceState(previous => (
+        previous.projectKey === billingProjectKey
+          ? previous
+          : { projectKey: billingProjectKey, invoices: [] }
+      ));
+      setInvoicePreviewState(previous => (
+        previous?.projectKey === billingProjectKey ? previous : null
+      ));
+    });
+    if (!projectId || !activeOrgId) {
+      return () => {
+        active = false;
+      };
+    }
     const q = query(
       collection(db, 'invoices'),
       where('projectId', '==', projectId),
       where('organizationId', '==', activeOrgId),
     );
     const unsub = onSnapshot(q, snap => {
+      if (!active) return;
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       docs.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
-      setSavedInvoices(docs);
+      setSavedInvoiceState({
+        projectKey: billingProjectKey,
+        invoices: docs,
+      });
     });
-    return () => unsub();
-  }, [projectId, activeOrgId]);
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [activeOrgId, billingProjectKey, projectId]);
 
   // ── Filtered billable positions ──
   const filteredItems = useMemo(() => {
     return billingItems.filter(iss => {
-      if (filterStatus !== 'all' && iss.columnId !== filterStatus) return false;
-      if (filterType !== 'all' && iss.type !== filterType) return false;
+      if (
+        filterStatus !== 'all'
+        && (iss.columnId || iss.status) !== filterStatus
+      ) {
+        return false;
+      }
+      if (
+        filterType !== 'all'
+        && (iss.type || 'task') !== filterType
+      ) {
+        return false;
+      }
       return true;
     });
   }, [billingItems, filterStatus, filterType]);
@@ -538,86 +820,201 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   // ── Compute per-issue price ──
   const computePrice = useCallback((issue) => {
     if (useManualMap[issue.id]) return manualPrices[issue.id] ?? 0;
-    const issueLogs = timeLogsByItem[issue.id] || { byUser: {} };
-    let total = 0;
-    Object.entries(issueLogs.byUser).forEach(([uid, minutes]) => {
-      total += (minutes / 60) * (memberRates[uid] ?? 0);
+    return calculateBillingAutoPrice({
+      issue,
+      logSummary: timeLogsByItem[issue.id],
+      rates: memberRates,
+      isSummaryParent: hierarchyIndex.summaryIssueIds.has(issue.id),
     });
-    if (total === 0 && issue.estimateMinutes) {
-      const uid = issue.assigneeIds?.[0];
-      total = (issue.estimateMinutes / 60) * (memberRates[uid] ?? 0);
-    }
-    return total;
-  }, [timeLogsByItem, memberRates, useManualMap, manualPrices]);
+  }, [
+    hierarchyIndex.summaryIssueIds,
+    manualPrices,
+    memberRates,
+    timeLogsByItem,
+    useManualMap,
+  ]);
 
   // ── Summary ──
   const { subtotal, discount, tax, total } = useMemo(() => {
     let sub = 0;
     [...checkedIds].forEach(id => {
-      const iss = billingItems.find(i => i.id === id);
+      const iss = billingItemsById.get(id);
       if (iss) sub += computePrice(iss);
     });
     const disc = sub * (discountPct / 100);
     const taxAmt = (sub - disc) * (taxPct / 100);
     return { subtotal: sub, discount: disc, tax: taxAmt, total: sub - disc + taxAmt };
-  }, [checkedIds, billingItems, computePrice, discountPct, taxPct]);
+  }, [billingItemsById, checkedIds, computePrice, discountPct, taxPct]);
 
   // ── Build invoice object ──
-  const buildInvoice = () => ({
-    number: invoiceNumber(),
-    date: fmtDate(),
-    currency,
-    clientName, clientDetails,
-    fromName, fromDetails,
-    notes,
-    discountPct, taxPct,
-    discount, tax, subtotal, total,
-    items: [...checkedIds].map(id => {
-      const iss = billingItems.find(i => i.id === id);
-      if (!iss) return null;
+  const buildInvoice = () => {
+    const selectedItems = [...checkedIds]
+      .map(id => billingItemsById.get(id))
+      .filter(Boolean);
+    const invoiceItems = selectedItems.map(iss => {
+      const logSummary = timeLogsByItem[iss.id] || {
+        totalMinutes: 0,
+        byUser: {},
+        logIds: [],
+      };
+      const isSummaryParent = hierarchyIndex.summaryIssueIds.has(iss.id);
+      const hasActualTime = logSummary.totalMinutes > 0;
       return {
+        itemId: iss.id,
+        issueId: iss.type === 'calendar_event' ? null : iss.id,
         key: iss.issueKey,
         title: iss.title,
-        status: statusLabelOf(iss.columnId),
-        minutes: timeLogsByItem[iss.id]?.totalMinutes || iss.estimateMinutes || 0,
+        status: statusLabelOf(iss.columnId || iss.status),
+        minutes: hasActualTime
+          ? logSummary.totalMinutes
+          : isSummaryParent
+            ? 0
+            : iss.estimateMinutes || 0,
         price: computePrice(iss),
+        sourceKind: useManualMap[iss.id]
+          ? 'manual'
+          : hasActualTime
+            ? 'actual'
+            : 'estimate',
+        sourceTimeLogIds: [...(logSummary.logIds || [])],
       };
-    }).filter(Boolean),
-  });
+    });
+
+    return {
+      date: fmtDate(),
+      currency,
+      clientName, clientDetails,
+      fromName, fromDetails,
+      notes,
+      discountPct, taxPct,
+      discount, tax, subtotal, total,
+      items: invoiceItems,
+      sourceTimeLogIds: collectSourceTimeLogIds(selectedItems, timeLogsByItem),
+    };
+  };
 
   // ── Save invoice ──
   const saveInvoice = async () => {
     if (!checkedIds.size) return;
+    const selectedItems = billingItems.filter(item => checkedIds.has(item.id));
+    const selectedOverlap = findInvoiceTimeLogOverlap(
+      selectedItems,
+      timeLogsByItem,
+      savedInvoices,
+    );
+    if (selectedOverlap.itemIds.length > 0) {
+      setTab('issues');
+      showToast(
+        'Частина вибраних позицій або списаного часу вже входить в інший рахунок. Зніміть позиції з попередженням.',
+        'error',
+      );
+      return;
+    }
     setSaving(true);
     try {
       const inv = buildInvoice();
-      await addDoc(collection(db, 'invoices'), {
-        ...inv,
+      const created = await createInvoiceViaApi({
+        invoice: inv,
         projectId,
         organizationId: activeOrgId,
-        createdBy: currentUser?.uid || currentUser?.id || null,
-        status: 'draft',
-        createdAt: serverTimestamp(),
       });
-    } catch (err) { console.error(err); }
-    setSaving(false);
+      showToast(`Чернетку ${created.number} збережено`);
+    } catch (err) {
+      console.error(err);
+      if ([
+        'INVOICE_TIME_LOG_CONFLICT',
+        'INVOICE_TIME_CHANGED',
+        'INVOICE_ITEM_CONFLICT',
+        'INVOICE_SOURCE_CONFLICT',
+        'INVOICE_LEGACY_AMBIGUITY',
+        'INVOICE_ISSUE_INVALID',
+        'INVOICE_SUMMARY_ESTIMATE_CONFLICT',
+        'INVOICE_ESTIMATE_HAS_ACTUAL_TIME',
+        'INVOICE_ESTIMATE_CHANGED',
+      ].includes(err?.code)) {
+        setTab('issues');
+        showToast(
+          err?.message || 'Частина позицій більше недоступна для рахунку. Оновіть вибір.',
+          'error',
+        );
+      } else {
+        showToast(err?.message || 'Не вдалося зберегти рахунок', 'error');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const voidInvoice = async invoice => {
+    if (!(await confirmDialog({
+      title: 'Анулювати чернетку рахунку?',
+      message: 'Рахунок залишиться в історії як анульований, а його записи часу та позиції знову стануть доступними.',
+      confirmText: 'Анулювати',
+      danger: true,
+    }))) return;
+    setVoidingInvoiceId(invoice.id);
+    try {
+      await voidInvoiceViaApi(invoice.id);
+      showToast(`Рахунок ${invoice.number} анульовано`);
+    } catch (error) {
+      showToast(error?.message || 'Не вдалося анулювати рахунок', 'error');
+    } finally {
+      setVoidingInvoiceId(null);
+    }
   };
 
   const checkedCount = checkedIds.size;
-  const statusOptions = [...new Set(billingItems.map(i => i.columnId))];
+  const statusOptions = [...new Set(
+    billingItems.map(i => i.columnId || i.status).filter(Boolean),
+  )];
   const typeOptions = [...new Set(billingItems.map(i => i.type || 'task'))];
   const totalLoggedMin = [...checkedIds].reduce((sum, id) => sum + (timeLogsByItem[id]?.totalMinutes || 0), 0);
+  const allIssueIds = safeBillingItemIds;
+  const doneIssueIds = billingItems
+    .filter(issue => (
+      !conflictingItemIds.has(issue.id)
+      && doneStatusIds.includes(issue.columnId || issue.status)
+    ))
+    .map(issue => issue.id);
+  const selectedConflictCount = [...checkedIds].filter(
+    id => conflictingItemIds.has(id),
+  ).length;
+  const matchesSelection = ids => checkedIds.size === ids.length && ids.every(id => checkedIds.has(id));
+  const selectionPreset = checkedIds.size === 0
+    ? 'none'
+    : matchesSelection(allIssueIds)
+      ? 'all'
+      : matchesSelection(doneIssueIds)
+        ? 'done'
+        : 'custom';
+  const applySelectionPreset = preset => {
+    if (preset === 'all') setCheckedIds(new Set(allIssueIds));
+    if (preset === 'none') setCheckedIds(new Set());
+    if (preset === 'done') setCheckedIds(new Set(doneIssueIds));
+  };
 
-  const showPreviewModal = () => setShowPreview(true);
-
-  const [showPreview, setShowPreview] = useState(false);
+  const showDraftPreview = () => {
+    setInvoicePreviewState({
+      projectKey: billingProjectKey,
+      kind: 'draft',
+      invoice: buildInvoice(),
+    });
+  };
+  const showSavedInvoice = invoice => {
+    setInvoicePreviewState({
+      projectKey: billingProjectKey,
+      kind: 'saved',
+      invoice,
+    });
+  };
+  const closeInvoicePreview = () => setInvoicePreviewState(null);
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
       <div className="w-full pb-16 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
         {/* LEFT: invoice form & task selection — біла картка на сірій панелі аналітики */}
-        <div className="lg:col-span-2 flex flex-col gap-4 min-w-0 bg-white rounded-[16px] p-5">
+        <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface lg:col-span-2 flex flex-col gap-4 min-w-0">
           <Tabs
             tabs={[
               { id: 'details', label: 'Деталі' },
@@ -651,7 +1048,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
 
               {/* Rates section */}
               <Field label="Ставки виконавців">
-                <Surface variant="panel" padding="none" className="overflow-hidden border border-line rounded-2xl">
+                <Surface preset="bordered-panel" padding="none" className="overflow-hidden">
                   {positions.length > 0 && (
                     <div className="px-4 pt-3 pb-2 bg-[#fafafa]">
                       <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Швидкі пресети</p>
@@ -659,9 +1056,11 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                         {positions.map(preset => (
                           <Button key={preset.id}
                             onClick={() => {
-                              const newRates = { ...memberRates };
-                              billingMembers.forEach(m => { newRates[m.id || m.uid] = preset.hourlyRate; });
-                              setMemberRates(newRates);
+                              setMemberRateState(previous => applyBillingRatePreset(previous, {
+                                projectKey: billingProjectKey,
+                                memberIds: billingMembers.map(member => member.id || member.uid),
+                                rate: preset.hourlyRate,
+                              }));
                             }}
                             style="secondary"
                             size="sm"
@@ -684,9 +1083,21 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                             uid={uid}
                             member={m}
                             rate={memberRates[uid] ?? 0}
-                            onRateChange={v => setMemberRates(p => ({ ...p, [uid]: v }))}
+                            onRateChange={rate => setMemberRateState(previous => (
+                              setBillingMemberRate(previous, {
+                                projectKey: billingProjectKey,
+                                uid,
+                                rate,
+                              })
+                            ))}
                             preset={memberPresets[uid] || ''}
-                            onPresetChange={v => setMemberPresets(p => ({ ...p, [uid]: v }))}
+                            onPresetChange={presetId => setMemberRateState(previous => (
+                              setBillingMemberPreset(previous, {
+                                projectKey: billingProjectKey,
+                                uid,
+                                presetId,
+                              })
+                            ))}
                             currency={currency}
                             positions={positions}
                           />
@@ -702,20 +1113,29 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
 
           {tab === 'issues' && (
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-line">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-ink">Позиції:</span>
-                  <span className="text-[12px] text-muted">({checkedCount} обрано)</span>
-                </div>
-                
-                <div className="flex gap-1">
-                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(filteredItems.map(i => i.id)))}>Всі</Button>
-                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set())}>Жодну</Button>
-                  <Button style="ghost" size="sm" onClick={() => setCheckedIds(new Set(billingItems.filter(i => doneStatusIds.includes(i.columnId || i.status)).map(i => i.id)))}>Done</Button>
-                </div>
+              {invalidTimeLogCount > 0 && (
+                <Alert
+                  variant="warning"
+                  title={`${invalidTimeLogCount} некоректних записів часу не включено`}
+                  description="Перевірте legacy-записи часу: потрібні цілі хвилини від 1 до 525 600."
+                />
+              )}
+              <div className="flex flex-wrap items-center gap-3 border-b border-line pb-3">
+                <Segmented
+                  value={selectionPreset}
+                  onChange={applySelectionPreset}
+                  options={[
+                    { value: 'all', label: 'Всі' },
+                    { value: 'none', label: 'Жодної' },
+                    { value: 'done', label: 'Виконані' },
+                  ]}
+                  surface="canvas"
+                  composition="billing-selection"
+                />
 
                 <div className="ml-auto flex items-center gap-2">
                   <Select
+                    filterRole="status"
                     value={filterStatus}
                     onChange={val => setFilterStatus(val)}
                     options={[
@@ -725,13 +1145,14 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                     className="w-[120px]"
                   />
                   <Select
+                    filterRole="type"
                     value={filterType}
                     onChange={val => setFilterType(val)}
                     options={[
                       { value: 'all', label: 'Всі типи' },
                       ...typeOptions.map(t => ({
                         value: t,
-                        label: t === 'calendar_event' ? 'Події календаря' : (TYPE_META[t]?.label || t),
+                        label: t === 'calendar_event' ? 'Події календаря' : (typeMeta[t]?.label || t),
                       }))
                     ]}
                     className="w-[110px]"
@@ -765,6 +1186,13 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                       currency={currency}
                       useManual={useManualMap[iss.id] ?? false}
                       onUseManual={() => setUseManualMap(p => ({ ...p, [iss.id]: !p[iss.id] }))}
+                      statusLabel={statusLabelOf(iss.columnId || iss.status)}
+                      typeMeta={typeMeta}
+                      isSummaryParent={hierarchyIndex.summaryIssueIds.has(iss.id)}
+                      billingConflictCount={Math.max(
+                        invoiceOverlap.byItemId[iss.id]?.length || 0,
+                        invoiceOverlap.sourceItemIds.includes(iss.id) ? 1 : 0,
+                      )}
                     />
                   ))
                 )}
@@ -780,10 +1208,37 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 savedInvoices.map(inv => (
                   <div key={inv.id} className="flex items-center justify-between p-4 border border-line rounded-2xl bg-[#fafafa]">
                     <div>
-                      <p className="text-[13px] font-bold text-ink">{inv.number}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-bold text-ink">{inv.number}</p>
+                        {inv.status === 'void' && (
+                          <Pill tone="neutral">Анульовано</Pill>
+                        )}
+                      </div>
                       <p className="text-[11px] text-muted font-medium mt-1">{inv.date} · {inv.items?.length} позицій</p>
                     </div>
-                    <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        style="ghost"
+                        size="icon-sm"
+                        icon={Eye}
+                        title="Переглянути збережений рахунок"
+                        onClick={() => showSavedInvoice(inv)}
+                      >
+                        Переглянути рахунок
+                      </Button>
+                      <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
+                      {inv.status === 'draft' && (
+                        <Button
+                          style="ghost"
+                          color="red"
+                          size="icon-sm"
+                          icon={Ban}
+                          title="Анулювати чернетку"
+                          loading={voidingInvoiceId === inv.id}
+                          onClick={() => voidInvoice(inv)}
+                        />
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -792,8 +1247,8 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
         </div>
 
         {/* RIGHT: always-visible invoice summary rail — біла на сірій панелі */}
-        <Card variant="white" padding="lg" className="lg:col-span-1 flex flex-col gap-4 !border-none">
-          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wider">
+        <Card preset="borderless" padding="lg" className="lg:col-span-1 flex flex-col gap-4">
+          <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider">
             Рахунок · {project?.name || 'Проєкт'}
           </h3>
 
@@ -816,13 +1271,13 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-canvas rounded-[12px] p-3">
+            <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Обрано позицій</p>
               <p className="text-[18px] font-bold text-ink mt-[2px]">
                 {checkedCount}<span className="text-[12px] text-faint font-semibold"> / {billingItems.length}</span>
               </p>
             </div>
-            <div className="bg-canvas rounded-[12px] p-3">
+            <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Списано часу</p>
               <p className="text-[18px] font-bold text-ink mt-[2px]">{fmtMin(totalLoggedMin)}</p>
             </div>
@@ -858,10 +1313,17 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
               description="Без ставок вартість завдань і подій буде нульовою"
             />
           )}
+          {selectedConflictCount > 0 ? (
+            <Alert
+              variant="warning"
+              title={`${selectedConflictCount} позицій уже є в рахунках`}
+              description="Зніміть їх з вибору перед збереженням, щоб не виставити той самий списаний час двічі."
+            />
+          ) : null}
 
           <div className="flex flex-col gap-2 mt-1">
             <Button
-              onClick={showPreviewModal}
+              onClick={showDraftPreview}
               disabled={checkedCount === 0}
               style="primary"
               size="lg"
@@ -886,12 +1348,12 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
       </div>
 
       {/* Invoice preview modal */}
-      {showPreview && (
+      {invoicePreview && (
         <InvoicePreview
-          invoice={buildInvoice()}
+          invoice={invoicePreview.invoice}
           project={project}
-          org={{ name: fromName }}
-          onClose={() => setShowPreview(false)}
+          isSaved={invoicePreview.kind === 'saved'}
+          onClose={closeInvoicePreview}
           onPrintBlocked={() => showToast('Дозвольте спливаючі вікна, щоб надрукувати рахунок', 'error')}
           onCopied={() => showToast('Рахунок скопійовано ✓')}
           onCopyFailed={() => showToast('Не вдалося скопіювати рахунок', 'error')}

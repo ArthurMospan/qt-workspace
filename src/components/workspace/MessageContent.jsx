@@ -45,7 +45,7 @@ export default function MessageContent({ text, members, searchTerm }) {
         }
         if (line.startsWith('📎 ')) {
           return (
-             <div key={idx} className="h-[40px] px-3 mt-1 inline-flex items-center bg-canvas rounded-[6px] border border-line text-[12px] font-medium text-ink">
+             <div key={idx} data-ui-surface="local" className="h-[40px] px-3 mt-1 inline-flex items-center bg-canvas rounded-[6px] border border-line text-[12px] font-medium text-ink">
                {line}
              </div>
           );

@@ -5,6 +5,7 @@ import { Check, Mail, Shield, UserRound } from 'lucide-react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import Label from '@/components/ui/Forms/Label';
 import Tabs from '@/components/ui/Tabs';
 import InviteLinkSection from '@/components/InviteLinkSection';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -70,7 +71,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
       onClose={onClose}
       title="Запросити нового учасника"
       size="lg"
-      bodyClassName="!px-5 sm:!px-7"
+      bodyPadding="invite"
     >
       <div className="flex flex-col gap-6">
         <section>
@@ -114,15 +115,16 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
 
         {tab === 'email' ? (
           <form onSubmit={handleInvite} className="flex flex-col gap-3">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Email учасника</label>
+            <Label>Email учасника</Label>
             <div className="relative">
               <Input
                 autoFocus
+                size="lg"
                 type="email"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 placeholder="name@example.com"
-                className="!h-[52px] !rounded-[14px] !pr-[150px]"
+                composition="invite-field"
               />
               <Button
                 type="submit"

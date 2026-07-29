@@ -3,6 +3,7 @@ import 'server-only';
 import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
+import { normalizeCalendarRecurrenceInterval } from '@/lib/utils/calendarTimeLog.mjs';
 
 export const CALENDAR_EVENT_TYPES = new Set([
   'meeting',
@@ -65,7 +66,7 @@ export function normalizedCalendarEventInput(input, current = null) {
   )].slice(0, 50);
   const rawRecurrence = input.recurrence ?? current?.recurrence ?? {};
   const recurrenceFrequency = cleanText(rawRecurrence.frequency, 16) || 'none';
-  const recurrenceInterval = Math.max(1, Math.min(12, Number(rawRecurrence.interval) || 1));
+  const recurrenceInterval = normalizeCalendarRecurrenceInterval(rawRecurrence.interval);
   const recurrenceUntil = cleanText(rawRecurrence.until, 32);
   const recurrence = {
     frequency: recurrenceFrequency,
@@ -141,6 +142,12 @@ export async function validateCalendarReferences({
     if (!projectSnapshot.exists || projectSnapshot.data().organizationId !== organizationId) {
       return 'Обраний проєкт не належить цій команді';
     }
+    if (projectSnapshot.data().deletionPending === true) {
+      return 'Обраний проєкт уже видаляють';
+    }
+    if (projectSnapshot.data().status === 'archived') {
+      return 'Не можна додавати події до архівованого проєкту';
+    }
     const isPrivileged = ['owner', 'admin'].includes(authorization?.membership?.role);
     const projectTeam = projectSnapshot.data().team;
     if (
@@ -159,6 +166,36 @@ export function canManageCalendarEvent(event, authorization) {
   if (event.visibility === 'private') return event.organizerId === authorization.user.uid;
   return event.organizerId === authorization.user.uid ||
     ['owner', 'admin'].includes(authorization.membership?.role);
+}
+
+export function canViewCalendarEvent(event, authorization) {
+  if (!event || !authorization?.user?.uid) return false;
+  if (event.visibility === 'private') {
+    return event.organizerId === authorization.user.uid;
+  }
+  if (event.visibility === 'participants') {
+    return event.organizerId === authorization.user.uid
+      || event.participantIds?.includes(authorization.user.uid)
+      || ['owner', 'admin'].includes(authorization.membership?.role);
+  }
+  return true;
+}
+
+export function canAccessCalendarEventProject(event, project, authorization) {
+  if (!event?.projectId) return true;
+  if (
+    !project
+    || project.organizationId !== event.organizationId
+    || project.deletionPending === true
+    || project.status === 'archived'
+  ) {
+    return false;
+  }
+  return ['owner', 'admin'].includes(authorization?.membership?.role)
+    || (
+      Array.isArray(project.team)
+      && project.team.includes(authorization?.user?.uid)
+    );
 }
 
 export async function createCalendarNotifications({

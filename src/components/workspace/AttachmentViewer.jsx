@@ -49,6 +49,7 @@ export default function AttachmentViewer({ attachment, onClose }) {
 
   return createPortal(
     <div
+      data-ui-overlay="media-viewer"
       className="fixed inset-0 z-[200] flex flex-col bg-black/85"
       role="dialog"
       aria-modal="true"
@@ -62,7 +63,7 @@ export default function AttachmentViewer({ attachment, onClose }) {
         <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{name}</span>
         {kind === 'image' && (
           <div className="flex items-center gap-1" aria-label="Масштаб зображення">
-            <button type="button" onClick={() => setScale(value => Math.max(0.5, value - 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Зменшити"><ZoomOut size={17} /></button>
+            <button data-ui-control="media-action" type="button" onClick={() => setScale(value => Math.max(0.5, value - 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Зменшити"><ZoomOut size={17} /></button>
             <button
               type="button"
               onClick={() => setScale(1)}
@@ -73,12 +74,12 @@ export default function AttachmentViewer({ attachment, onClose }) {
             >
               {Math.round(scale * 100)}%
             </button>
-            <button type="button" onClick={() => setScale(value => Math.min(3, value + 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Збільшити"><ZoomIn size={17} /></button>
+            <button data-ui-control="media-action" type="button" onClick={() => setScale(value => Math.min(3, value + 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Збільшити"><ZoomIn size={17} /></button>
           </div>
         )}
         <a href={downloadUrlFor(url)} download={name} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Завантажити" title="Завантажити"><Download size={17} /></a>
         <a href={url} target="_blank" rel="noopener noreferrer" className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Відкрити оригінал" title="Відкрити оригінал"><ExternalLink size={17} /></a>
-        <button type="button" onClick={onClose} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Закрити"><X size={19} /></button>
+        <button data-ui-control="media-action" type="button" onClick={onClose} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Закрити"><X size={19} /></button>
       </header>
 
       <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
@@ -90,7 +91,7 @@ export default function AttachmentViewer({ attachment, onClose }) {
         {kind === 'video' && <video src={url} controls autoPlay className="max-h-full max-w-full" />}
         {kind === 'audio' && <audio src={url} controls autoPlay className="w-full max-w-xl" />}
         {kind === 'file' && (
-          <div className="flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center">
+          <div data-ui-surface="local" className="flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center">
             <FileText size={40} className="text-muted" />
             <p className="max-w-full break-words text-[14px] font-semibold text-ink">{name}</p>
             <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-[7px] bg-ink px-4 py-2 text-[13px] font-semibold text-white"><ExternalLink size={15} /> Відкрити файл</a>

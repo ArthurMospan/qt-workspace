@@ -7,8 +7,8 @@ import {
   CircleHelp,
   Check,
   Clock3,
-  Diamond,
   ExternalLink,
+  Flag,
   Link2,
   LockKeyhole,
   MapPin,
@@ -17,23 +17,34 @@ import {
   StickyNote,
   Trash2,
   Users,
+  Video,
   X,
 } from 'lucide-react';
-import { Button, Dialog, Input, Select, Textarea, ToggleSwitch } from '@/components/ui';
+import {
+  Button,
+  DatePicker,
+  Dialog,
+  Input,
+  Label,
+  Pill,
+  Select,
+  Textarea,
+  TimePicker,
+  ToggleSwitch,
+} from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 
 export const CALENDAR_EVENT_TYPE_OPTIONS = [
-  { value: 'meeting', label: 'Мітинг', dotColor: '#3b82f6' },
-  { value: 'event', label: 'Подія', dotColor: '#8b5cf6' },
-  { value: 'focus', label: 'Фокус-час', dotColor: '#14b8a6' },
-  { value: 'absence', label: 'Відсутність', dotColor: '#f59e0b' },
-  { value: 'release', label: 'Реліз / етап', dotColor: '#ef4444' },
-  { value: 'note', label: 'Нотатка', icon: StickyNote },
-  { value: 'reminder', label: 'Нагадування', icon: BellRing },
-  { value: 'milestone', label: 'Віха', icon: Diamond },
+  { value: 'meeting', label: 'Мітинг', color: '#3b82f6', bg: '#eff6ff', icon: Video },
+  { value: 'event', label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarDays },
+  { value: 'focus', label: 'Фокус-час', color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
+  { value: 'absence', label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
+  { value: 'release', label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
+  { value: 'note', label: 'Нотатка', color: '#64748b', bg: '#f8fafc', icon: StickyNote },
+  { value: 'reminder', label: 'Нагадування', color: '#f97316', bg: '#fff7ed', icon: BellRing },
 ];
 const TYPE_LABELS = new Map([
   ...CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option.label]),
@@ -89,7 +100,11 @@ export function calendarEventFormInitialValue(event, initialStart, currentUserId
   const end = editableEnd ? new Date(editableEnd) : new Date(start.getTime() + 60 * 60 * 1000);
   return {
     title: event?.title || '',
-    type: event?.type || 'meeting',
+    type: CALENDAR_EVENT_TYPE_OPTIONS.some(option => option.value === event?.type)
+      ? event.type
+      : event?.type
+        ? 'event'
+        : 'meeting',
     description: event?.description || '',
     location: event?.location || '',
     meetingUrl: event?.meetingUrl || '',
@@ -174,6 +189,8 @@ export function CalendarEventDetails({
   totalMinutes,
   timeLoading,
   timeSaving,
+  canTrackTime,
+  trackingDisabledReason,
   onAddTime,
   onDeleteTime,
   onRespond,
@@ -190,25 +207,25 @@ export function CalendarEventDetails({
     <div className="space-y-[18px]">
       {showOverview && (
         <>
-      <div className="overflow-hidden rounded-[18px] border border-black/[0.05] bg-white">
+      <div data-ui-surface="local" className="overflow-hidden rounded-[18px] border border-black/[0.05] bg-white">
         <div className="bg-gradient-to-br from-black/[0.035] to-transparent p-[18px]">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-bold text-white">
+            <Pill tone="dark" size="wide-sm">
               {TYPE_LABELS.get(event.type) || 'Подія'}
-            </span>
-            {project && <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-muted ring-1 ring-black/[0.05]">{project.name}</span>}
-            {event.recurrence?.frequency !== 'none' && <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-muted ring-1 ring-black/[0.05]"><Repeat2 size={11} /> {recurrence?.label}</span>}
+            </Pill>
+            {project && <Pill tone="surface" size="wide-sm" appearance="soft-outline">{project.name}</Pill>}
+            {event.recurrence?.frequency !== 'none' && <Pill tone="surface" size="wide-sm" appearance="soft-outline" icon={Repeat2}>{recurrence?.label}</Pill>}
           </div>
-          <h2 className="text-[20px] font-bold leading-tight text-ink">{event.title}</h2>
+          <h2 className="ui-type-detail-title leading-tight text-ink">{event.title}</h2>
           <div className="mt-4 grid gap-2 text-[12px] text-muted sm:grid-cols-2">
-            <div className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
+            <div data-ui-surface="local" className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
               <CalendarDays size={15} className="mt-0.5 shrink-0 text-ink" />
               <span>{event.allDay ? start.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' }) : `${start.toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'long' })}, ${start.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`}</span>
             </div>
             {(event.location || event.meetingUrl) && (
-              <div className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
+              <div data-ui-surface="local" className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
                 {event.meetingUrl ? <Link2 size={15} className="mt-0.5 shrink-0 text-ink" /> : <MapPin size={15} className="mt-0.5 shrink-0 text-ink" />}
-                <span className="truncate">{event.location || 'Онлайн-зустріч'}</span>
+                <span className="truncate">{event.location || 'Онлайн-мітинг'}</span>
               </div>
             )}
           </div>
@@ -238,7 +255,7 @@ export function CalendarEventDetails({
             const member = members.find(item => (item.id || item.uid) === uid);
             const state = event.participantResponses?.[uid] || 'pending';
             return (
-              <div key={uid} className="flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5">
+              <div key={uid} data-ui-surface="local" className="flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5">
                 <span className="h-8 w-8 overflow-hidden rounded-full"><UserAvatar user={member || { name: memberLabel(member || {}) }} size={32} /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12px] font-bold text-ink">{memberLabel(member || {})}</p>
@@ -251,7 +268,7 @@ export function CalendarEventDetails({
       </div>
 
       {isParticipant && event.organizerId !== currentUserId && (
-        <div className="rounded-[16px] bg-canvas p-[14px]">
+        <div data-ui-surface="panel" data-ui-padding="compact-md" className="ui-surface">
           <p className="mb-2 text-[12px] font-bold text-ink">Ви приєднаєтесь?</p>
           <div className="grid grid-cols-3 gap-2">
             {RESPONSE_OPTIONS.map(option => {
@@ -275,12 +292,12 @@ export function CalendarEventDetails({
 
       {event.meetingUrl && (
         <a href={event.meetingUrl} target="_blank" rel="noreferrer" className="flex h-[42px] w-full items-center justify-center gap-2 rounded-[12px] bg-ink px-4 text-[13px] font-bold text-white hover:bg-ink-hover">
-          <ExternalLink size={15} /> Приєднатися до зустрічі
+          <ExternalLink size={15} /> Приєднатися до мітингу
         </a>
       )}
 
       {!event.readOnly && ['meeting', 'event', 'focus', 'release'].includes(event.type) && (
-        <div className="rounded-[16px] border border-line bg-white p-[14px]">
+        <div data-ui-surface="bordered-card" data-ui-padding="compact-md" className="ui-surface">
           <div className="mb-3 flex items-start justify-between gap-4">
             <div>
               <p className="text-[12px] font-bold text-ink">Фактично витрачений час</p>
@@ -294,16 +311,24 @@ export function CalendarEventDetails({
               </p>
             </div>
             {!event.allDay && (
-              <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-bold text-muted">
+              <Pill tone="neutral" size="wide-sm">
                 План: {Math.max(1, Math.round((end.getTime() - start.getTime()) / 60_000))} хв
-              </span>
+              </Pill>
             )}
           </div>
-          <form className="grid gap-2 sm:grid-cols-[110px_1fr_auto]" onSubmit={onAddTime}>
-            <Input name="minutes" type="number" min="1" max="10080" required placeholder="Хвилини" aria-label="Витрачено хвилин" />
-            <Input name="description" maxLength={2000} placeholder="Що зроблено (необов’язково)" aria-label="Опис роботи" />
-            <Button type="submit" size="sm" loading={timeSaving}>Додати</Button>
-          </form>
+          {canTrackTime ? (
+            <form className="grid gap-2 sm:grid-cols-[110px_1fr_auto]" onSubmit={onAddTime}>
+              <Input name="minutes" type="number" min="1" max="10080" required placeholder="Хвилини" aria-label="Витрачено хвилин" />
+              <Input name="description" maxLength={2000} placeholder="Що зроблено (необов’язково)" aria-label="Опис роботи" />
+              <Button type="submit" size="sm" loading={timeSaving}>Додати</Button>
+            </form>
+          ) : (
+            <p className="rounded-[10px] bg-canvas px-3 py-2 text-[11px] text-muted">
+              {trackingDisabledReason === 'visibility'
+                ? 'Трекінг часу доступний лише для командних подій, щоб деталі подій з обмеженою видимістю не потрапили в командну аналітику.'
+                : 'У вас немає доступу до трекінгу часу цієї події або її проєкту.'}
+            </p>
+          )}
           {timeLogs.length > 0 && (
             <div className="mt-3 divide-y divide-line border-t border-line">
               {timeLogs.map(log => {
@@ -359,14 +384,20 @@ export default function CalendarEventDialog({
     logs: timeLogs,
     totalMinutes,
     loading: timeLoading,
+    canTrackTime,
+    trackingDisabledReason,
     addTimeLog,
     deleteTimeLog,
-  } = useCalendarEventTimeLogs(event?.readOnly ? '' : eventId, occurrenceStartAt);
+  } = useCalendarEventTimeLogs(
+    event?.readOnly ? '' : eventId,
+    occurrenceStartAt,
+    event?.projectId || '',
+  );
 
   const memberOptions = useMemo(() => members.map(member => ({
     value: member.id || member.uid,
     label: memberLabel(member),
-    avatar: member.avatar || member.photoURL || '',
+    user: member,
   })), [members]);
   const projectOptions = useMemo(() => [
     { value: '', label: 'Без проєкту' },
@@ -431,7 +462,6 @@ export default function CalendarEventDialog({
     try {
       await addTimeLog({
         userId: currentUserId,
-        projectId: event?.projectId || '',
         spentMinutes: Number(data.get('minutes')),
         description: data.get('description'),
       });
@@ -478,6 +508,8 @@ export default function CalendarEventDialog({
           totalMinutes={totalMinutes}
           timeLoading={timeLoading}
           timeSaving={timeSaving}
+          canTrackTime={canTrackTime}
+          trackingDisabledReason={trackingDisabledReason}
           onAddTime={handleAddTime}
           onDeleteTime={handleDeleteTime}
           onRespond={handleResponse}
@@ -529,8 +561,8 @@ export default function CalendarEventDialog({
       footer={footer}
     >
       <form id="calendar-event-form" onSubmit={submit} className="flex flex-col gap-[20px]">
-        <div className="space-y-[8px]">
-          <label className="text-[12px] font-bold text-ink">Назва</label>
+        <div className="flex flex-col gap-[6px]">
+          <Label required>Назва</Label>
           <Input
             autoFocus
             required
@@ -542,8 +574,8 @@ export default function CalendarEventDialog({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-          <div className="space-y-[8px]">
-            <label className="text-[12px] font-bold text-ink">Тип</label>
+          <div className="flex flex-col gap-[6px]">
+            <Label>Тип</Label>
             <Select
               value={form.type}
               onChange={value => update('type', value)}
@@ -551,8 +583,8 @@ export default function CalendarEventDialog({
               disabled={!canManage}
             />
           </div>
-          <div className="space-y-[8px]">
-            <label className="text-[12px] font-bold text-ink">Проєкт</label>
+          <div className="flex flex-col gap-[6px]">
+            <Label>Проєкт</Label>
             <Select
               value={form.projectId}
               onChange={value => update('projectId', value)}
@@ -563,18 +595,23 @@ export default function CalendarEventDialog({
         </div>
 
         <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2">
-          <div className="space-y-[8px]">
-            <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink"><Repeat2 size={14} /> Повторення</label>
+          <div className="flex flex-col gap-[6px]">
+            <Label className="flex items-center gap-1.5"><Repeat2 size={13} /> Повторення</Label>
             <Select value={form.recurrenceFrequency} onChange={value => update('recurrenceFrequency', value)} options={CALENDAR_EVENT_RECURRENCE_OPTIONS} />
             {form.recurrenceFrequency !== 'none' && (
               <div className="grid grid-cols-[110px_1fr] gap-2">
                 <Input type="number" min="1" max="12" value={form.recurrenceInterval} onChange={eventObject => update('recurrenceInterval', eventObject.target.value)} aria-label="Інтервал повторення" />
-                <Input type="date" value={form.recurrenceUntil} min={form.startDate} onChange={eventObject => update('recurrenceUntil', eventObject.target.value)} aria-label="Повторювати до дати" />
+                <DatePicker
+                  value={form.recurrenceUntil}
+                  minDate={form.startDate}
+                  onChange={value => update('recurrenceUntil', value)}
+                  aria-label="Повторювати до дати"
+                />
               </div>
             )}
           </div>
-          <div className="space-y-[8px]">
-            <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink"><BellRing size={14} /> Нагадування</label>
+          <div className="flex flex-col gap-[6px]">
+            <Label className="flex items-center gap-1.5"><BellRing size={13} /> Нагадування</Label>
             <MultiSelect
               value={form.reminderMinutes}
               onChange={value => update('reminderMinutes', value)}
@@ -588,7 +625,7 @@ export default function CalendarEventDialog({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[14px] border border-line bg-white">
+        <div data-ui-surface="local" className="overflow-hidden rounded-[14px] border border-line bg-white">
           <div className="flex items-center justify-between gap-4 border-b border-line bg-canvas px-[14px] py-[12px]">
             <span>
               <span className="block text-[12px] font-bold text-ink">Подія на весь день</span>
@@ -602,36 +639,60 @@ export default function CalendarEventDialog({
             />
           </div>
           <div className="grid grid-cols-1 gap-[12px] p-[14px] sm:grid-cols-2">
-            <div className="space-y-[6px]">
-              <label className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
+            <div className="flex flex-col gap-[6px]">
+              <Label className="flex items-center gap-1.5">
                 <CalendarDays size={13} /> Початок
-              </label>
+              </Label>
               <div className="flex gap-[8px]">
-                <Input type="date" value={form.startDate} onChange={e => update('startDate', e.target.value)} disabled={!canManage} />
-                {!form.allDay && <Input type="time" value={form.startTime} onChange={e => update('startTime', e.target.value)} disabled={!canManage} />}
+                <DatePicker
+                  value={form.startDate}
+                  onChange={value => update('startDate', value)}
+                  disabled={!canManage}
+                  aria-label="Дата початку"
+                />
+                {!form.allDay && (
+                  <TimePicker
+                    value={form.startTime}
+                    onChange={value => update('startTime', value)}
+                    disabled={!canManage}
+                    aria-label="Час початку"
+                  />
+                )}
               </div>
             </div>
-            <div className="space-y-[6px]">
-              <label className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
+            <div className="flex flex-col gap-[6px]">
+              <Label className="flex items-center gap-1.5">
                 <Clock3 size={13} /> Завершення
-              </label>
+              </Label>
               <div className="flex gap-[8px]">
-                <Input type="date" value={form.endDate} onChange={e => update('endDate', e.target.value)} disabled={!canManage} />
-                {!form.allDay && <Input type="time" value={form.endTime} onChange={e => update('endTime', e.target.value)} disabled={!canManage} />}
+                <DatePicker
+                  value={form.endDate}
+                  onChange={value => update('endDate', value)}
+                  disabled={!canManage}
+                  aria-label="Дата завершення"
+                />
+                {!form.allDay && (
+                  <TimePicker
+                    value={form.endTime}
+                    onChange={value => update('endTime', value)}
+                    disabled={!canManage}
+                    aria-label="Час завершення"
+                  />
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-[8px]">
-          <label className="text-[12px] font-bold text-ink flex items-center gap-1.5">
+        <div className="flex flex-col gap-[6px]">
+          <Label className="flex items-center gap-1.5">
             {form.visibility === 'private' ? <LockKeyhole size={14} /> : <Users size={14} />}
             {form.visibility === 'private'
               ? (form.type === 'note' ? 'Приватна нотатка' : 'Приватна подія')
               : 'Учасники'}
-          </label>
+          </Label>
           {form.visibility === 'private' ? (
-            <div className="rounded-[12px] border border-line bg-canvas px-3 py-2.5 text-[12px] text-muted">
+            <div data-ui-surface="compact-bordered-panel" data-ui-padding="row" className="ui-surface text-[12px] text-muted">
               Цю подію бачите лише ви. Запрошення та командні сповіщення не надсилаються.
             </div>
           ) : (
@@ -652,12 +713,12 @@ export default function CalendarEventDialog({
                 const member = members.find(item => (item.id || item.uid) === uid);
                 const state = event.participantResponses?.[uid] || 'pending';
                 return (
-                  <span key={uid} className="inline-flex items-center gap-1.5 rounded-full bg-canvas px-2.5 py-1 text-[11px] text-ink">
+                  <Pill key={uid} tone="neutral" size="wide-md" weight="medium">
                     {memberLabel(member || {})}
                     <span className={state === 'accepted' ? 'text-emerald-600' : state === 'declined' ? 'text-red-500' : 'text-muted'}>
                       · {state === 'accepted' ? 'буде' : state === 'tentative' ? 'можливо' : state === 'declined' ? 'не буде' : 'очікуємо'}
                     </span>
-                  </span>
+                  </Pill>
                 );
               })}
             </div>
@@ -665,27 +726,27 @@ export default function CalendarEventDialog({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-          <div className="space-y-[8px]">
-            <label className="text-[12px] font-bold text-ink flex items-center gap-1.5">
+          <div className="flex flex-col gap-[6px]">
+            <Label className="flex items-center gap-1.5">
               <MapPin size={14} /> Місце
-            </label>
+            </Label>
             <Input value={form.location} onChange={e => update('location', e.target.value)} placeholder="Офіс або кімната" disabled={!canManage} />
           </div>
-          <div className="space-y-[8px]">
-            <label className="text-[12px] font-bold text-ink flex items-center gap-1.5">
+          <div className="flex flex-col gap-[6px]">
+            <Label className="flex items-center gap-1.5">
               <Link2 size={14} /> Посилання
-            </label>
+            </Label>
             <Input type="url" value={form.meetingUrl} onChange={e => update('meetingUrl', e.target.value)} placeholder="https://meet..." disabled={!canManage} />
           </div>
         </div>
 
-        <div className="space-y-[8px]">
-          <label className="text-[12px] font-bold text-ink">Опис</label>
+        <div className="flex flex-col gap-[6px]">
+          <Label>Опис</Label>
           <Textarea value={form.description} onChange={e => update('description', e.target.value)} placeholder="Контекст, порядок денний або важливі деталі" disabled={!canManage} rows={4} />
         </div>
 
-        <div className="space-y-[8px]">
-          <label className="text-[12px] font-bold text-ink">Видимість</label>
+        <div className="flex flex-col gap-[6px]">
+          <Label>Видимість</Label>
           <Select
             value={form.visibility}
             onChange={value => update('visibility', value)}

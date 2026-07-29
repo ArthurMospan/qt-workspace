@@ -3,7 +3,7 @@ import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const PUBLIC_PROFILE_FIELDS = [
-  'name', 'email', 'avatar', 'photoURL', 'phone', 'title', 'status', 'statusEmoji',
+  'name', 'email', 'customAvatar', 'avatar', 'photoURL', 'phone', 'title', 'status', 'statusEmoji',
   'bio', 'skills', 'telegram', 'location', 'timezone', 'birthday', 'lastActive',
 ];
 const NESTED_PROFILE_FIELDS = ['bio', 'skills', 'telegram', 'phone', 'location', 'timezone', 'birthday'];

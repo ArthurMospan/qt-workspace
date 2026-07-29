@@ -10,7 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
-import { Counter } from '@/components/ui';
+import { Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
   Folder, CheckCircle2, MessageSquare, PieChart, Menu, X,
@@ -51,10 +51,15 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
           <Clock size={14} className="text-[#3b82f6] animate-pulse" />
           <span className="text-white text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
         </div>
-        <button onClick={onStop} title="Зупинити та зберегти"
-          className="flex items-center justify-center w-[30px] h-[30px] rounded-[8px] bg-[#ef4444] text-white">
-          <StopIcon size={12} className="fill-current" />
-        </button>
+        <IconAction
+          label="Зупинити та зберегти"
+          icon={StopIcon}
+          iconSize={12}
+          size="compact"
+          appearance="danger"
+          shape="compact"
+          onClick={onStop}
+        />
       </div>
     </div>
   );
@@ -182,7 +187,7 @@ export default function MobileNav() {
 
       {/* ── «Ще» bottom sheet ──────────────────────────────────────── */}
       {moreOpen && (
-        <div className="fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
+        <div data-ui-overlay="navigation-sheet" className="fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
             onClick={e => e.stopPropagation()}

@@ -5,15 +5,6 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { auth } from '@/lib/firebase';
-
-// How often a visible tab asks the server whether a reminder is due. The
-// server's look-back window (REMINDER_LOOKBACK_MS) must stay comfortably
-// larger than this, or a reminder could fall between two polls.
-const REMINDER_POLL_MS = 180_000;
-// Floor between two requests from one tab, whatever triggers them. Kept well
-// under the server's 10-minute look-back so nothing can be missed.
-const REMINDER_MIN_GAP_MS = 60_000;
 
 // Synthesised locally instead of streamed from assets.mixkit.co. Pulling an
 // alarm sound off a third-party CDN meant the emergency alert silently failed
@@ -81,49 +72,6 @@ export default function WorkspaceNotificationBridge() {
     restoreTimer();
   }, [restoreTimer]);
 
-  // Reminder polling is the single largest source of Firestore reads in the
-  // app: it runs in every open tab, for every user, forever. A hidden tab has
-  // nobody to show a reminder to, so it does not poll at all — it catches up
-  // the moment it becomes visible. Reminders are idempotent (deterministic
-  // notification ids) and the server looks back further than this interval, so
-  // a slower cadence cannot drop one.
-  useEffect(() => {
-    if (!activeOrgId || !userId) return undefined;
-    let cancelled = false;
-    let lastPollAt = 0;
-    const checkCalendarReminders = async ({ force = false } = {}) => {
-      if (cancelled || document.hidden) return;
-      // Hard floor between requests. Without it, alt-tabbing repeatedly would
-      // fire a request per switch — making the visibility trigger worse than
-      // the fixed interval it was meant to improve on.
-      const now = Date.now();
-      if (!force && now - lastPollAt < REMINDER_MIN_GAP_MS) return;
-      lastPollAt = now;
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token || cancelled) return;
-        await fetch('/api/calendar/reminders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ organizationId: activeOrgId }),
-        });
-      } catch {
-        // Best-effort poll: the next interval safely retries deterministic reminders.
-      }
-    };
-    checkCalendarReminders({ force: true });
-    const timer = window.setInterval(() => checkCalendarReminders({ force: true }), REMINDER_POLL_MS);
-    const onVisible = () => { if (!document.hidden) checkCalendarReminders(); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [activeOrgId, userId]);
   const actions = useMemo(() => ({
     markAllRead: notificationCenter.markAllRead,
     markRead: notificationCenter.markRead,

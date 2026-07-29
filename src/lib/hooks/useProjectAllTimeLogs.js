@@ -1,70 +1,115 @@
 'use client';
 
-// src/lib/hooks/useProjectAllTimeLogs.js
-// Loads ALL time logs for a project with per-issue aggregation
-// Returns: logs[], byIssue{ issueId -> { totalMinutes, byUser{ uid -> minutes } } }
+// Loads task logs plus explicitly team-visible calendar logs for one project.
+// Keeping these as separate Firestore queries lets security rules prove that a
+// broad analytics subscription can never return a restricted calendar log.
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { isValidRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
+import { reportLoadError } from '@/lib/utils/errors';
+
+function uniqueLogs(logs) {
+  const seenIds = new Set();
+  return logs.filter(log => {
+    if (!log.id) return true;
+    if (seenIds.has(log.id)) return false;
+    seenIds.add(log.id);
+    return true;
+  });
+}
+
+function aggregateLogs(logs) {
+  const byIssue = {};
+  logs.forEach(log => {
+    const { issueId, userId, spentMinutes } = log;
+    if (!issueId || !isValidRawTimeLogMinutes(spentMinutes)) return;
+    if (!byIssue[issueId]) {
+      byIssue[issueId] = { totalMinutes: 0, byUser: {} };
+    }
+    byIssue[issueId].totalMinutes += spentMinutes;
+    if (userId) {
+      byIssue[issueId].byUser[userId] = (
+        byIssue[issueId].byUser[userId] || 0
+      ) + spentMinutes;
+    }
+  });
+  return byIssue;
+}
+
 export function useProjectAllTimeLogs(projectId) {
-  const {
-    activeOrgId
-  } = useAppContext();
+  const { activeOrgId } = useAppContext();
   const [logs, setLogs] = useState([]);
   const [byIssue, setByIssue] = useState({});
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!projectId || !activeOrgId) {
-      queueMicrotask(() => {
-        setLogs([]);
-        setByIssue({});
-        setLoading(false);
-      });
-      return;
-    }
+    let cancelled = false;
     queueMicrotask(() => {
+      if (cancelled) return;
       setLogs([]);
       setByIssue({});
-      setLoading(true);
+      setLoading(Boolean(projectId && activeOrgId));
     });
-    const q = query(collection(db, 'timeLogs'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
-    const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      const docs = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
 
-      // Build per-issue map
-      const map = {};
-      docs.forEach(l => {
-        const {
-          issueId,
-          userId,
-          spentMinutes = 0
-        } = l;
-        if (!issueId) return;
-        if (!map[issueId]) map[issueId] = {
-          totalMinutes: 0,
-          byUser: {}
-        };
-        map[issueId].totalMinutes += spentMinutes;
-        if (userId) {
-          map[issueId].byUser[userId] = (map[issueId].byUser[userId] || 0) + spentMinutes;
-        }
-      });
-      setLogs(docs);
-      setByIssue(map);
-      setLoading(false);
-    }, () => setLoading(false));
-    return () => unsub();
-  }, [projectId, activeOrgId]);
+    if (!projectId || !activeOrgId) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
-  return {
-    logs,
-    byIssue,
-    loading
-  };
+    const buckets = { task: [], calendar: [] };
+    const ready = new Set();
+    const publish = () => {
+      if (cancelled) return;
+      const merged = uniqueLogs([...buckets.task, ...buckets.calendar]);
+      setLogs(merged);
+      setByIssue(aggregateLogs(merged));
+      if (ready.size === 2) setLoading(false);
+    };
+    const subscribe = (key, sourceQuery) => onSnapshot(
+      sourceQuery,
+      { serverTimestamps: 'estimate' },
+      snapshot => {
+        if (cancelled) return;
+        buckets[key] = snapshot.docs.map(document => ({
+          id: document.id,
+          ...document.data(),
+        }));
+        ready.add(key);
+        publish();
+      },
+      error => {
+        if (cancelled) return;
+        reportLoadError(`[useProjectAllTimeLogs:${key}]`, error);
+        buckets[key] = [];
+        ready.add(key);
+        publish();
+      },
+    );
+
+    const base = collection(db, 'timeLogs');
+    const unsubs = [
+      subscribe('task', query(
+        base,
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', projectId),
+        where('issueId', '!=', ''),
+      )),
+      subscribe('calendar', query(
+        base,
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', projectId),
+        where('sourceType', '==', 'calendar_event'),
+        where('eventVisibility', '==', 'team'),
+      )),
+    ];
+    return () => {
+      cancelled = true;
+      unsubs.forEach(unsubscribe => unsubscribe());
+    };
+  }, [activeOrgId, projectId]);
+
+  return { logs, byIssue, loading };
 }

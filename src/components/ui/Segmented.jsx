@@ -9,9 +9,26 @@ import React from 'react';
 // <Segmented value={period} onChange={setPeriod}
 //   options={[7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }))} />
 
-export default function Segmented({ value, onChange, options = [], className = '' }) {
+const SURFACES = {
+  transparent: '',
+  canvas: 'bg-canvas',
+};
+
+export default function Segmented({
+  value,
+  onChange,
+  options = [],
+  surface = 'transparent',
+  composition,
+  className = '',
+}) {
   return (
-    <div role="group" aria-label="Вибір режиму" className={`flex items-center gap-[2px] p-[2px] rounded-[8px] shrink-0 ${className}`}>
+    <div
+      role="group"
+      aria-label="Вибір режиму"
+      data-ui-composition={composition}
+      className={`ui-segmented flex items-center gap-[2px] p-[2px] rounded-[8px] shrink-0 ${SURFACES[surface] ?? ''} ${className}`}
+    >
       {options.map(o => (
         <button
           key={o.value}

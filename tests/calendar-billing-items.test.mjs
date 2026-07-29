@@ -14,6 +14,7 @@ test('groups event time by occurrence and keeps each member contribution', () =>
     }],
     logs: [
       {
+        id: 'event-log-1',
         sourceType: 'calendar_event',
         eventId: 'event-1',
         occurrenceStartAt,
@@ -21,11 +22,20 @@ test('groups event time by occurrence and keeps each member contribution', () =>
         spentMinutes: 30,
       },
       {
+        id: 'event-log-2',
         sourceType: 'calendar_event',
         eventId: 'event-1',
         occurrenceStartAt,
         userId: 'member-2',
         spentMinutes: 45,
+      },
+      {
+        id: 'invalid-negative',
+        sourceType: 'calendar_event',
+        eventId: 'event-1',
+        occurrenceStartAt,
+        userId: 'member-1',
+        spentMinutes: -30,
       },
     ],
   });
@@ -36,6 +46,7 @@ test('groups event time by occurrence and keeps each member contribution', () =>
   const aggregate = result.timeLogsByItem[result.billableEvents[0].id];
   assert.equal(aggregate.totalMinutes, 75);
   assert.deepEqual(aggregate.byUser, { 'member-1': 30, 'member-2': 45 });
+  assert.deepEqual(aggregate.logIds, ['event-log-1', 'event-log-2']);
 });
 
 test('does not turn ordinary task logs into duplicate account positions', () => {

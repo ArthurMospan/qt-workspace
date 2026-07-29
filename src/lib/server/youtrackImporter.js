@@ -8,36 +8,60 @@ import {
   fieldMinutes,
   fieldPresentation,
   fieldTimestamp,
+  filterYouTrackIssuesByStatuses,
   firstFieldValue,
   mapYouTrackPriority,
   mapYouTrackStatus,
   mapYouTrackType,
+  normalizeYouTrackRelation,
   normalizeMappingKey,
-  relationTypeFromYouTrack,
   serializeCustomFields,
   sourceUserId,
   sourceUserName,
+  strongestYouTrackRelationRow,
+  youTrackImportedWorkLogMatches,
   youTrackField,
 } from '@/lib/utils/youtrackImport.mjs';
+import {
+  canonicalIssueLinkDocumentId,
+  canonicalizeRequestedIssueLink,
+  findDirectionalIssueLinkCycle,
+  normalizeStoredIssueLinks,
+} from '@/lib/utils/issueRelations.mjs';
+import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
+import {
+  isTaskEstimateReservationIdentity,
+  taskTimeLogMirrorTransition,
+} from '@/lib/utils/taskTimeLog.mjs';
+import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import {
+  evaluateIssueStatusTransition,
+  issueBlockLinkStatusConflict,
+  normalizedIssueBlockEdges,
+} from '@/lib/utils/issueStatusTransition.mjs';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
+import {
+  resolveDoneStatusIds,
+} from '@/lib/utils/workflowDefaults.mjs';
 
 const DEFAULT_WORKFLOW = {
   statuses: [
-    { id: 'backlog', label: 'Backlog' },
-    { id: 'todo', label: 'To Do' },
-    { id: 'in-progress', label: 'In Progress' },
-    { id: 'done', label: 'Done', isDone: true },
+    { id: 'backlog', label: 'Беклог' },
+    { id: 'todo', label: 'До виконання' },
+    { id: 'in-progress', label: 'У роботі' },
+    { id: 'done', label: 'Готово', isDone: true },
   ],
   priorities: [
-    { id: 'blocker', label: 'Blocker' },
-    { id: 'high', label: 'High' },
-    { id: 'medium', label: 'Medium' },
-    { id: 'low', label: 'Low' },
+    { id: 'blocker', label: 'Блокер' },
+    { id: 'high', label: 'Високий' },
+    { id: 'medium', label: 'Середній' },
+    { id: 'low', label: 'Низький' },
   ],
   types: [
-    { id: 'epic', label: 'Epic' },
-    { id: 'feature', label: 'Feature' },
-    { id: 'task', label: 'Task' },
-    { id: 'bug', label: 'Bug' },
+    { id: 'feature', label: 'Фіча' },
+    { id: 'task', label: 'Задача' },
+    { id: 'bug', label: 'Баг' },
   ],
   labels: [],
 };
@@ -312,6 +336,82 @@ function workflowValues(snapshot) {
   };
 }
 
+function issueRecord(document) {
+  return document?.exists
+    ? { id: document.id, ...document.data() }
+    : null;
+}
+
+function serializedLink(document) {
+  return {
+    id: document.id,
+    ...document.data(),
+  };
+}
+
+function sameIssueScope(issue, organizationId, projectId) {
+  return issue
+    && issue.organizationId === organizationId
+    && issue.projectId === projectId;
+}
+
+async function transactionGetAll(transaction, references) {
+  return references.length > 0
+    ? transaction.getAll(...references)
+    : [];
+}
+
+function importedWorkflowFields({
+  issue,
+  project,
+  workflow,
+  stateName,
+  priorityName,
+  typeName,
+  tags,
+}) {
+  const statusIds = workflow.statuses.map(item => item.id);
+  const mappedStatus = mapYouTrackStatus(stateName, workflow.statuses)
+    || statusIds[0];
+  const hiddenStatusIds = new Set(
+    Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
+  );
+  const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
+  const fallbackStatus = visibleStatusIds.includes('backlog')
+    ? 'backlog'
+    : visibleStatusIds[0] || statusIds[0];
+  const status = hiddenStatusIds.has(mappedStatus)
+    ? fallbackStatus
+    : mappedStatus;
+  if (!status || hiddenStatusIds.has(status)) {
+    throw new Error(
+      `У проєкті немає доступного статусу для імпорту ${issue.idReadable || issue.id}`,
+    );
+  }
+  const priority = mapYouTrackPriority(priorityName, workflow.priorities)
+    || workflow.priorities[0]?.id
+    || null;
+  const mappedType = mapYouTrackType(typeName, workflow.types);
+  const typeSelection = resolveNewIssueType(
+    mappedType,
+    workflow.types.map(item => item.id),
+  );
+  if (typeSelection.error) {
+    throw new Error(
+      `Не вдалося імпортувати тип задачі ${issue.idReadable || issue.id}: ${typeSelection.error.message}`,
+    );
+  }
+
+  return {
+    columnId: status,
+    status,
+    priority,
+    type: typeSelection.type,
+    labelIds: labelIdsFor(tags, workflow),
+    doneStatusIds: resolveDoneStatusIds(workflow.statuses),
+  };
+}
+
 function sourceTags(issue) {
   return (issue.tags || []).map(tag => String(tag?.name || '')).filter(Boolean).slice(0, 50);
 }
@@ -381,9 +481,13 @@ async function importAttachments({ client, job, issue, existingAttachments = [] 
   return { attachments: imported, warnings };
 }
 
-async function upsertIssue({ job, sourceProject, issue, targetProjectId, workflow, attachments }) {
+async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachments }) {
   const db = getAdminDb();
   const projectRef = db.collection('projects').doc(targetProjectId);
+  const workflowRef = db.collection('organizations')
+    .doc(job.organizationId)
+    .collection('settings')
+    .doc('workflow');
   const linkRef = externalLinkRef(job.organizationId, job.connectionId, 'issue', issue.id);
   const existingLink = await linkRef.get();
   const existingIssue = existingLink.exists
@@ -393,9 +497,6 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, workflo
   const stateName = fieldPresentation(youTrackField(issue, 'State'));
   const priorityName = fieldPresentation(youTrackField(issue, 'Priority'));
   const typeName = fieldPresentation(youTrackField(issue, 'Type'));
-  const status = mapYouTrackStatus(stateName, workflow.statuses);
-  const priority = mapYouTrackPriority(priorityName, workflow.priorities);
-  const type = mapYouTrackType(typeName, workflow.types);
   const reporter = actorFor(issue.reporter, job);
   const assigneeActors = issueAssignees(issue, job);
   const watcherActors = (issue.watchers?.users || []).map(user => actorFor(user, job));
@@ -404,19 +505,12 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, workflo
   const estimateMinutes = fieldMinutes(youTrackField(issue, 'Estimation'));
   const sourceCreatedAt = timestamp(issue.created, admin.firestore.Timestamp.now());
   const sourceUpdatedAt = timestamp(issue.updated, sourceCreatedAt);
-  const doneStatus = workflow.statuses.find(item => item.id === status)?.isDone === true
-    || status === 'done';
 
   const importedFields = {
     title: String(issue.summary || issue.idReadable || 'Без назви').trim().slice(0, 240),
     description: String(issue.description || '').slice(0, 50_000),
-    columnId: status,
-    status,
-    priority,
-    type,
     assigneeIds: assigneeActors.filter(actor => !actor.external).map(actor => actor.id).slice(0, 20),
     watcherIds: watcherActors.filter(actor => !actor.external).map(actor => actor.id).slice(0, 50),
-    labelIds: labelIdsFor(tags, workflow),
     dueDate: dueDate ? timestamp(dueDate) : null,
     estimateMinutes,
     attachments,
@@ -437,43 +531,230 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, workflo
       externalWatchers: watcherActors.filter(actor => actor.external),
       tags,
       customFields: serializeCustomFields(issue.customFields),
-      adapterVersion: 1,
-      mappingVersion: 1,
+      adapterVersion: 2,
+      mappingVersion: 2,
     },
     createdAt: sourceCreatedAt,
     updatedAt: sourceUpdatedAt,
-    ...(doneStatus ? { completedAt: timestamp(issue.resolved || issue.updated, sourceUpdatedAt) } : {}),
   };
+  const actors = [reporter, ...assigneeActors, ...watcherActors];
 
   if (existingIssue?.exists) {
-    await existingIssue.ref.set(importedFields, { merge: true });
-    await linkRef.set({
-      externalUpdatedAt: sourceUpdatedAt,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-    return { issueId: existingIssue.id, created: false, actors: [reporter, ...assigneeActors, ...watcherActors] };
+    const updateResult = await db.runTransaction(async transaction => {
+      const [projectSnapshot, currentIssueSnapshot, freshLink, workflowSnapshot] = await Promise.all([
+        transaction.get(projectRef),
+        transaction.get(existingIssue.ref),
+        transaction.get(linkRef),
+        transaction.get(workflowRef),
+      ]);
+      if (
+        !projectSnapshot.exists
+        || projectSnapshot.data().organizationId !== job.organizationId
+      ) {
+        throw new Error('Проєкт-призначення не знайдено');
+      }
+      if (projectSnapshot.data().deletionPending === true) {
+        throw new Error('Проєкт-призначення вже видаляється');
+      }
+      if (
+        !currentIssueSnapshot.exists
+        || !freshLink.exists
+        || freshLink.data().quickTeamId !== currentIssueSnapshot.id
+      ) {
+        throw new Error('Імпортована задача була видалена під час оновлення');
+      }
+      const currentIssue = issueRecord(currentIssueSnapshot);
+      if (!sameIssueScope(currentIssue, job.organizationId, targetProjectId)) {
+        throw new Error('Імпортована задача більше не належить проєкту-призначенню');
+      }
+      if (currentIssue.deletionPending === true) {
+        throw new Error('Імпортовану задачу вже видаляють');
+      }
+
+      const project = projectSnapshot.data();
+      const freshWorkflow = workflowValues(workflowSnapshot);
+      const workflowFields = importedWorkflowFields({
+        issue,
+        project,
+        workflow: freshWorkflow,
+        stateName,
+        priorityName,
+        typeName,
+        tags,
+      });
+      const currentStatus = currentIssue.columnId || currentIssue.status || null;
+      const nextStatus = workflowFields.status;
+      const doneStatusSet = new Set(workflowFields.doneStatusIds);
+      const enteringTerminal = (
+        !doneStatusSet.has(currentStatus)
+        && doneStatusSet.has(nextStatus)
+      );
+      const leavingTerminal = (
+        doneStatusSet.has(currentStatus)
+        && !doneStatusSet.has(nextStatus)
+      );
+      let transitionError = null;
+
+      if (currentStatus !== nextStatus && (enteringTerminal || leavingTerminal)) {
+        let childDocuments = [];
+        if (enteringTerminal) {
+          const canonicalChildren = await transaction.get(
+            db.collection('issues').where('parentIssueId', '==', currentIssue.id),
+          );
+          const legacyChildren = await transaction.get(
+            db.collection('issues').where('parentEpicId', '==', currentIssue.id),
+          );
+          childDocuments = [...new Map(
+            [...canonicalChildren.docs, ...legacyChildren.docs]
+              .map(document => [document.id, document]),
+          ).values()];
+        }
+
+        const links = db.collection('issueLinks');
+        const sourceLinks = await transaction.get(
+          links.where('sourceIssueId', '==', currentIssue.id),
+        );
+        const targetLinks = await transaction.get(
+          links.where('targetIssueId', '==', currentIssue.id),
+        );
+        const rawLinks = [...new Map(
+          [...sourceLinks.docs, ...targetLinks.docs]
+            .filter(document => {
+              const link = document.data();
+              return link.organizationId === job.organizationId
+                && (!link.projectId || link.projectId === targetProjectId);
+            })
+            .map(document => [document.id, serializedLink(document)]),
+        ).values()];
+        const parentIssueId = leavingTerminal
+          ? existingParentIssueId(currentIssue)
+          : null;
+        const relatedIssueIds = normalizedIssueBlockEdges(rawLinks)
+          .flatMap(link => [link.sourceIssueId, link.targetIssueId])
+          .filter(id => id && id !== currentIssue.id);
+        const additionalIssueIds = [...new Set([
+          ...relatedIssueIds,
+          ...(parentIssueId ? [parentIssueId] : []),
+        ])];
+        const additionalDocuments = await transactionGetAll(
+          transaction,
+          additionalIssueIds.map(id => db.collection('issues').doc(id)),
+        );
+        const childIssues = childDocuments
+          .map(issueRecord)
+          .filter(child => sameIssueScope(child, job.organizationId, targetProjectId));
+        const relatedIssues = additionalDocuments
+          .map(issueRecord)
+          .filter(related => sameIssueScope(related, job.organizationId, targetProjectId));
+        const parentIssue = parentIssueId
+          ? relatedIssues.find(related => related.id === parentIssueId) || null
+          : null;
+        transitionError = evaluateIssueStatusTransition({
+          issueId: currentIssue.id,
+          issue: currentIssue,
+          nextStatusId: nextStatus,
+          doneStatusIds: workflowFields.doneStatusIds,
+          childIssues,
+          parentIssue,
+          issueLinks: rawLinks,
+          relatedIssues,
+        }).error;
+      }
+
+      const acceptedWorkflowFields = {
+        priority: workflowFields.priority,
+        type: workflowFields.type,
+        labelIds: workflowFields.labelIds,
+      };
+      if (!transitionError) {
+        acceptedWorkflowFields.columnId = nextStatus;
+        acceptedWorkflowFields.status = nextStatus;
+        acceptedWorkflowFields.completedAt = doneStatusSet.has(nextStatus)
+          ? timestamp(issue.resolved || issue.updated, sourceUpdatedAt)
+          : admin.firestore.FieldValue.delete();
+      }
+      transaction.set(existingIssue.ref, {
+        ...importedFields,
+        ...acceptedWorkflowFields,
+      }, { merge: true });
+      transaction.set(linkRef, {
+        externalUpdatedAt: sourceUpdatedAt,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      if (!transitionError && currentStatus !== nextStatus) {
+        transaction.update(projectRef, {
+          issueStatusVersion: admin.firestore.FieldValue.increment(1),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+      return {
+        warning: transitionError
+          ? `Статус ${issue.idReadable || issue.id} не імпортовано: ${transitionError.message}`
+          : null,
+      };
+    });
+    return {
+      issueId: existingIssue.id,
+      created: false,
+      actors,
+      warnings: updateResult.warning ? [updateResult.warning] : [],
+    };
   }
 
   const issueRef = db.collection('issues').doc();
-  await db.runTransaction(async transaction => {
-    const [freshLink, project] = await Promise.all([
+  const creationResult = await db.runTransaction(async transaction => {
+    const [freshLink, projectSnapshot, workflowSnapshot] = await Promise.all([
       transaction.get(linkRef),
       transaction.get(projectRef),
+      transaction.get(workflowRef),
     ]);
-    if (freshLink.exists) return;
-    if (!project.exists || project.data().organizationId !== job.organizationId) {
+    if (freshLink.exists) {
+      const linkedIssue = await transaction.get(
+        db.collection('issues').doc(freshLink.data().quickTeamId),
+      );
+      const linkedIssueData = issueRecord(linkedIssue);
+      if (
+        !sameIssueScope(linkedIssueData, job.organizationId, targetProjectId)
+        || linkedIssueData.deletionPending === true
+      ) {
+        throw new Error('Імпортована задача була змінена або видаляється');
+      }
+      return { issueId: linkedIssue.id, created: false };
+    }
+    if (!projectSnapshot.exists || projectSnapshot.data().organizationId !== job.organizationId) {
       throw new Error('Проєкт-призначення не знайдено');
     }
-    const next = (project.data().issueCounter || 0) + 1;
-    const issueKey = `${cleanProjectPrefix(project.data().issuePrefix || project.data().name)}-${next}`;
+    if (projectSnapshot.data().deletionPending === true) {
+      throw new Error('Проєкт-призначення вже видаляється');
+    }
+    const project = projectSnapshot.data();
+    const freshWorkflow = workflowValues(workflowSnapshot);
+    const workflowFields = importedWorkflowFields({
+      issue,
+      project,
+      workflow: freshWorkflow,
+      stateName,
+      priorityName,
+      typeName,
+      tags,
+    });
+    const { doneStatusIds, ...persistedWorkflowFields } = workflowFields;
+    const next = (project.issueCounter || 0) + 1;
+    const issueKey = `${cleanProjectPrefix(project.issuePrefix || project.name)}-${next}`;
     transaction.create(issueRef, {
       ...importedFields,
+      ...persistedWorkflowFields,
+      ...(doneStatusIds.includes(workflowFields.status)
+        ? { completedAt: timestamp(issue.resolved || issue.updated, sourceUpdatedAt) }
+        : {}),
       organizationId: job.organizationId,
       projectId: targetProjectId,
       issueKey,
       sprintId: null,
-      parentEpicId: null,
-      subtasks: [],
+      parentIssueId: null,
+      spentMinutes: 0,
+      spentMinutesMirrorVersion: 1,
+      timeLogMutationVersion: 0,
       order: next,
       createdBy: job.createdBy,
     });
@@ -501,95 +782,346 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, workflo
       to: issueKey,
       createdAt: sourceCreatedAt,
     });
+    return { issueId: issueRef.id, created: true };
   });
-  const finalLink = await linkRef.get();
   return {
-    issueId: finalLink.exists ? finalLink.data().quickTeamId : issueRef.id,
-    created: true,
-    actors: [reporter, ...assigneeActors, ...watcherActors],
+    ...creationResult,
+    actors,
+    warnings: [],
   };
 }
 
-async function importComments({ job, issueId, comments }) {
+async function importComments({ job, issueId, projectId, comments }) {
   if (!comments.length) return [];
+  const db = getAdminDb();
+  const issueRef = db.collection('issues').doc(issueId);
+  const projectRef = db.collection('projects').doc(projectId);
   const actors = [];
-  await writeInChunks(comments, (batch, comment) => {
+  const rows = comments.map(comment => {
     const actor = actorFor(comment.author, job);
     actors.push(actor);
-    const ref = getAdminDb().collection('issues').doc(issueId).collection('comments')
-      .doc(`yt_${hashId(job.connectionId, comment.id).slice(0, 36)}`);
-    batch.set(ref, {
-      authorId: actor.id,
-      authorName: actor.name,
-      authorAvatar: actor.avatar,
-      text: comment.deleted ? '[Коментар видалено в YouTrack]' : String(comment.text || '').slice(0, 50_000),
-      attachments: [],
-      readBy: [],
-      replyTo: null,
-      source: 'youtrack',
-      sourceId: String(comment.id),
-      createdAt: timestamp(comment.created, admin.firestore.Timestamp.now()),
-      ...(comment.updated && comment.updated !== comment.created ? { editedAt: timestamp(comment.updated) } : {}),
-    }, { merge: true });
+    return {
+      ref: issueRef.collection('comments')
+        .doc(`yt_${hashId(job.connectionId, comment.id).slice(0, 36)}`),
+      fields: {
+        authorId: actor.id,
+        authorName: actor.name,
+        authorAvatar: actor.avatar,
+        text: comment.deleted ? '[Коментар видалено в YouTrack]' : String(comment.text || '').slice(0, 50_000),
+        attachments: [],
+        readBy: [],
+        replyTo: null,
+        source: 'youtrack',
+        sourceId: String(comment.id),
+        createdAt: timestamp(comment.created, admin.firestore.Timestamp.now()),
+        ...(comment.updated && comment.updated !== comment.created
+          ? { editedAt: timestamp(comment.updated) }
+          : {}),
+      },
+    };
   });
-  await getAdminDb().collection('issues').doc(issueId).set({ commentCount: comments.length }, { merge: true });
+
+  for (let offset = 0; offset < rows.length; offset += 350) {
+    const chunk = rows.slice(offset, offset + 350);
+    await db.runTransaction(async transaction => {
+      const [issueSnapshot, projectSnapshot] = await Promise.all([
+        transaction.get(issueRef),
+        transaction.get(projectRef),
+      ]);
+      if (
+        !issueSnapshot.exists
+        || issueSnapshot.data().organizationId !== job.organizationId
+        || issueSnapshot.data().projectId !== projectId
+        || issueSnapshot.data().deletionPending === true
+      ) {
+        throw new Error('Задача була змінена або видаляється під час імпорту коментарів');
+      }
+      if (
+        !projectSnapshot.exists
+        || projectSnapshot.data().organizationId !== job.organizationId
+        || projectSnapshot.data().deletionPending === true
+      ) {
+        throw new Error('Проєкт був змінений або видаляється під час імпорту коментарів');
+      }
+      chunk.forEach(row => transaction.set(row.ref, row.fields, { merge: true }));
+      transaction.update(issueRef, {
+        commentCount: comments.length,
+      });
+    });
+  }
   return actors;
 }
 
 async function importWorkItems({ job, issueId, projectId, workItems }) {
-  const validItems = workItems.filter(item => {
-    const minutes = Number(item.duration?.minutes || 0);
-    return Number.isFinite(minutes) && minutes > 0;
-  });
-  if (!validItems.length) return [];
+  const normalizedItems = workItems.map(item => ({
+    item,
+    spentMinutes: Math.round(Number(item?.duration?.minutes)),
+  }));
+  const validItems = normalizedItems.filter(({ item, spentMinutes }) => (
+    item?.id
+    && Number.isSafeInteger(spentMinutes)
+    && spentMinutes > 0
+    && spentMinutes <= 525_600
+  ));
+  const invalidWorkItemCount = normalizedItems.length - validItems.length;
+  const invalidWarnings = invalidWorkItemCount > 0
+    ? [
+      `Пропущено ${invalidWorkItemCount} записів часу YouTrack з некоректною тривалістю або ID`,
+    ]
+    : [];
+  if (!validItems.length) {
+    return { actors: [], warnings: invalidWarnings };
+  }
+  const db = getAdminDb();
+  const issueRef = db.collection('issues').doc(issueId);
+  const projectRef = db.collection('projects').doc(projectId);
+  const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
+    invoiceEstimateReservationId(job.organizationId, projectId, issueId),
+  );
   const actors = [];
-  await writeInChunks(validItems, (batch, item) => {
+  const rows = validItems.map(({ item, spentMinutes }) => {
     const actor = actorFor(item.author || item.creator, job);
     actors.push(actor);
-    const minutes = Number(item.duration?.minutes || 0);
-    const ref = getAdminDb().collection('timeLogs')
-      .doc(`yt_${hashId(job.connectionId, item.id).slice(0, 36)}`);
-    batch.set(ref, {
-      issueId,
-      projectId,
-      userId: actor.id,
-      organizationId: job.organizationId,
-      spentMinutes: Math.round(minutes),
-      description: String(item.text || item.type?.name || '').slice(0, 5_000),
-      loggedAt: timestamp(item.date || item.created, admin.firestore.Timestamp.now()),
-      source: 'youtrack',
-      sourceId: String(item.id),
-      externalActor: actor.external ? actor : null,
-    }, { merge: true });
+    return {
+      id: String(item.id),
+      ref: db.collection('timeLogs')
+        .doc(`yt_${hashId(job.connectionId, item.id).slice(0, 36)}`),
+      fields: {
+        issueId,
+        projectId,
+        userId: actor.id,
+        organizationId: job.organizationId,
+        spentMinutes,
+        description: String(item.text || item.type?.name || '').slice(0, 5_000),
+        loggedAt: timestamp(item.date || item.created, admin.firestore.Timestamp.now()),
+        source: 'youtrack',
+        sourceId: String(item.id),
+        externalActor: actor.external ? actor : null,
+      },
+    };
   });
-  return actors;
+  const billedSourceIds = new Set();
+
+  for (let offset = 0; offset < rows.length; offset += 350) {
+    const chunk = rows.slice(offset, offset + 350);
+    const skipped = await db.runTransaction(async transaction => {
+      const [
+        issueSnapshot,
+        projectSnapshot,
+        estimateReservationSnapshot,
+        ...timeLogSnapshots
+      ] = await Promise.all([
+        transaction.get(issueRef),
+        transaction.get(projectRef),
+        transaction.get(estimateReservationRef),
+        ...chunk.map(row => transaction.get(row.ref)),
+      ]);
+      if (
+        !issueSnapshot.exists
+        || issueSnapshot.data().organizationId !== job.organizationId
+        || issueSnapshot.data().projectId !== projectId
+        || issueSnapshot.data().deletionPending === true
+      ) {
+        throw new Error('Задача була змінена або видаляється під час імпорту часу');
+      }
+      if (
+        !projectSnapshot.exists
+        || projectSnapshot.data().organizationId !== job.organizationId
+        || projectSnapshot.data().deletionPending === true
+        || projectSnapshot.data().status === 'archived'
+      ) {
+        throw new Error('Проєкт був змінений або видаляється під час імпорту часу');
+      }
+
+      const issue = issueSnapshot.data();
+      const skippedIds = [];
+      let spentMinutesDelta = 0;
+      const changedRows = [];
+      chunk.forEach((row, index) => {
+        const currentSnapshot = timeLogSnapshots[index];
+        const current = currentSnapshot.exists ? currentSnapshot.data() : null;
+        if (
+          current
+          && (
+            current.organizationId !== job.organizationId
+            || current.projectId !== projectId
+            || current.issueId !== issueId
+          )
+        ) {
+          throw new Error(`Запис часу ${row.id} вже належить іншій задачі`);
+        }
+        if (current && isBilledTimeLog(current)) {
+          skippedIds.push(row.id);
+          return;
+        }
+        if (
+          current
+          && (
+            !Number.isSafeInteger(current.spentMinutes)
+            || current.spentMinutes <= 0
+            || current.spentMinutes > 525_600
+          )
+        ) {
+          throw new Error(
+            `Запис часу ${row.id} потребує звірки перед імпортом`,
+          );
+        }
+        if (youTrackImportedWorkLogMatches(current, row.fields)) return;
+        spentMinutesDelta += row.fields.spentMinutes - (current?.spentMinutes || 0);
+        changedRows.push(row);
+      });
+
+      const changedLogs = changedRows.length;
+      if (changedLogs === 0) return skippedIds;
+      if (estimateReservationSnapshot.exists) {
+        const reservation = estimateReservationSnapshot.data();
+        if (!isTaskEstimateReservationIdentity(reservation, {
+          issueId,
+          organizationId: job.organizationId,
+          projectId,
+        })) {
+          const error = new Error(
+            'Резерв оцінки задачі має некоректну область. Потрібна звірка рахунку перед імпортом часу',
+          );
+          error.code = 'YOUTRACK_TIME_ESTIMATE_RESERVATION_SCOPE_CONFLICT';
+          throw error;
+        }
+        const error = new Error(
+          'Оцінку цієї задачі вже включено до рахунку, тому імпортувати новий або змінений фактичний час не можна',
+        );
+        error.code = 'YOUTRACK_TIME_ESTIMATE_ALREADY_INVOICED';
+        throw error;
+      }
+
+      let initializeSpentMinutesMirror = false;
+      if (issue.spentMinutesMirrorVersion !== 1) {
+        const existingLogs = await transaction.get(
+          db.collection('timeLogs')
+            .where('issueId', '==', issueId)
+            .limit(1),
+        );
+        if (!existingLogs.empty) {
+          throw new Error(
+            'Історичні записи часу треба звірити перед імпортом нових',
+          );
+        }
+        initializeSpentMinutesMirror = true;
+      }
+
+      const mirrorTransition = taskTimeLogMirrorTransition({
+        currentSpentMinutes: issue.spentMinutes,
+        spentMinutesDelta,
+        initialize: initializeSpentMinutesMirror,
+      });
+      if (!mirrorTransition) {
+        throw new Error(
+          'Підсумок часу завдання потребує звірки перед імпортом',
+        );
+      }
+      changedRows.forEach(row => {
+        transaction.set(row.ref, row.fields, { merge: true });
+      });
+      transaction.update(issueRef, {
+        spentMinutes: initializeSpentMinutesMirror
+          ? mirrorTransition.next
+          : admin.firestore.FieldValue.increment(spentMinutesDelta),
+        spentMinutesMirrorVersion: 1,
+        timeLogMutationVersion: admin.firestore.FieldValue.increment(1),
+      });
+      transaction.update(projectRef, {
+        timeLogImportVersion: admin.firestore.FieldValue.increment(1),
+        invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return skippedIds;
+    });
+    skipped.forEach(id => billedSourceIds.add(id));
+  }
+
+  return {
+    actors,
+    warnings: [
+      ...invalidWarnings,
+      ...(billedSourceIds.size > 0
+        ? [
+        `Не оновлено ${billedSourceIds.size} виставлених у рахунок записів часу YouTrack: ${
+          [...billedSourceIds].slice(0, 20).join(', ')
+        }`,
+          ]
+        : []),
+    ],
+  };
 }
 
 async function enqueueLinks(jobRef, job, sourceIssue, links) {
-  const rows = links.flatMap(link => (link.issues || []).flatMap(target => {
+  const candidateRows = links.flatMap(link => (link.issues || []).flatMap(target => {
     if (!target?.id || String(target.id) === String(sourceIssue.id)) return [];
-    const relationType = relationTypeFromYouTrack(link.linkType, link.direction);
-    const id = hashId(job.connectionId, sourceIssue.id, target.id, relationType);
+    const normalized = normalizeYouTrackRelation(link.linkType, link.direction);
+    const sourceExternalId = String(normalized.reverse ? target.id : sourceIssue.id);
+    const targetExternalId = String(normalized.reverse ? sourceIssue.id : target.id);
+    const pair = [sourceExternalId, targetExternalId].sort();
+    const id = hashId(job.connectionId, 'issue-link-v2', pair[0], pair[1]);
     return [{
       id,
-      sourceExternalId: String(sourceIssue.id),
-      targetExternalId: String(target.id),
+      sourceExternalId,
+      targetExternalId,
       targetReadableId: String(target.idReadable || ''),
-      relationType,
+      relationType: normalized.relationType,
+      hierarchyHint: normalized.hierarchyHint,
       externalRelation: String(link.linkType?.name || ''),
     }];
   }));
+  // QuickTeam deliberately allows one logical relation per issue pair. When
+  // YouTrack exposes more than one, select the strongest meaning
+  // deterministically so import order cannot change the result.
+  const rowsById = new Map();
+  for (const row of candidateRows) {
+    rowsById.set(
+      row.id,
+      strongestYouTrackRelationRow(rowsById.get(row.id), row),
+    );
+  }
+  const rows = [...rowsById.values()];
   if (!rows.length) return;
-  const refs = rows.map(row => jobRef.collection('links').doc(row.id));
-  const existing = await getAdminDb().getAll(...refs);
-  const missing = rows.filter((row, index) => !existing[index].exists);
-  await writeInChunks(missing, (batch, row) => {
-    batch.create(jobRef.collection('links').doc(row.id), {
-      ...row,
-      status: 'pending',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  const db = getAdminDb();
+  for (let offset = 0; offset < rows.length; offset += 350) {
+    const chunk = rows.slice(offset, offset + 350);
+    await db.runTransaction(async transaction => {
+      const refs = chunk.map(row => jobRef.collection('links').doc(row.id));
+      const existing = await transaction.getAll(...refs);
+      chunk.forEach((row, index) => {
+        const snapshot = existing[index];
+        if (!snapshot.exists) {
+          transaction.create(snapshot.ref, {
+            ...row,
+            status: 'pending',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return;
+        }
+        if (snapshot.data().status !== 'pending') return;
+        const strongest = strongestYouTrackRelationRow(snapshot.data(), row);
+        if (
+          strongest.relationType !== snapshot.data().relationType
+          || strongest.sourceExternalId !== snapshot.data().sourceExternalId
+          || strongest.targetExternalId !== snapshot.data().targetExternalId
+          || strongest.hierarchyHint !== (snapshot.data().hierarchyHint === true)
+          || strongest.externalRelation !== snapshot.data().externalRelation
+          || strongest.targetReadableId !== snapshot.data().targetReadableId
+        ) {
+          transaction.update(snapshot.ref, {
+            sourceExternalId: strongest.sourceExternalId,
+            targetExternalId: strongest.targetExternalId,
+            targetReadableId: strongest.targetReadableId,
+            relationType: strongest.relationType,
+            hierarchyHint: strongest.hierarchyHint === true,
+            externalRelation: strongest.externalRelation,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      });
     });
-  });
+  }
 }
 
 async function processIssue(jobRef, job, queueItem) {
@@ -602,8 +1134,7 @@ async function processIssue(jobRef, job, queueItem) {
   const existingIssue = issueLink.exists
     ? await getAdminDb().collection('issues').doc(issueLink.data().quickTeamId).get()
     : null;
-  const [workflowSnapshot, comments, workItems, links, attachmentResult] = await Promise.all([
-    getAdminDb().collection('organizations').doc(job.organizationId).collection('settings').doc('workflow').get(),
+  const [comments, workItems, links, attachmentResult] = await Promise.all([
     client.comments(issue.id),
     client.workItems(issue.id),
     client.links(issue.id),
@@ -614,27 +1145,34 @@ async function processIssue(jobRef, job, queueItem) {
       existingAttachments: existingIssue?.exists ? existingIssue.data().attachments || [] : [],
     }),
   ]);
-  const workflow = workflowValues(workflowSnapshot);
   const saved = await upsertIssue({
     job,
     sourceProject,
     issue,
     targetProjectId,
-    workflow,
     attachments: attachmentResult.attachments,
   });
-  const [commentActors, workItemActors] = await Promise.all([
-    importComments({ job, issueId: saved.issueId, comments }),
+  const [commentActors, workItemResult] = await Promise.all([
+    importComments({
+      job,
+      issueId: saved.issueId,
+      projectId: targetProjectId,
+      comments,
+    }),
     importWorkItems({ job, issueId: saved.issueId, projectId: targetProjectId, workItems }),
   ]);
   await Promise.all([
-    saveExternalActors(job, [...saved.actors, ...commentActors, ...workItemActors]),
+    saveExternalActors(job, [...saved.actors, ...commentActors, ...workItemResult.actors]),
     enqueueLinks(jobRef, job, issue, links),
   ]);
   return {
     issueId: saved.issueId,
     created: saved.created,
-    warnings: attachmentResult.warnings,
+    warnings: [
+      ...attachmentResult.warnings,
+      ...(saved.warnings || []),
+      ...workItemResult.warnings,
+    ],
   };
 }
 
@@ -658,42 +1196,204 @@ async function processPendingLink(jobRef, job) {
 
   const sourceId = source.data().quickTeamId;
   const targetId = target.data().quickTeamId;
-  const forwardId = hashId(job.organizationId, sourceId, targetId, row.relationType);
-  const reverseType = {
-    blocks: 'is-blocked-by',
-    'is-blocked-by': 'blocks',
-    duplicates: 'duplicates',
-    'subtask-of': 'subtask-of',
-    'relates-to': 'relates-to',
-  }[row.relationType] || 'relates-to';
-  const reverseId = hashId(job.organizationId, targetId, sourceId, reverseType);
-  const batch = getAdminDb().batch();
-  batch.set(getAdminDb().collection('issueLinks').doc(forwardId), {
-    organizationId: job.organizationId,
+  const db = getAdminDb();
+  const [sourceIssue, targetIssue] = await Promise.all([
+    db.collection('issues').doc(sourceId).get(),
+    db.collection('issues').doc(targetId).get(),
+  ]);
+  if (
+    !sourceIssue.exists
+    || !targetIssue.exists
+    || sourceIssue.data().organizationId !== job.organizationId
+    || targetIssue.data().organizationId !== job.organizationId
+    || !sourceIssue.data().projectId
+    || sourceIssue.data().projectId !== targetIssue.data().projectId
+  ) {
+    await rowSnapshot.ref.update({
+      status: 'skipped',
+      reason: 'Зв’язок між різними проєктами або недоступними задачами не імпортовано',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { skipped: true };
+  }
+
+  const canonical = canonicalizeRequestedIssueLink({
     sourceIssueId: sourceId,
     targetIssueId: targetId,
     relationType: row.relationType,
-    source: 'youtrack',
-    externalRelation: row.externalRelation,
-    createdBy: job.createdBy,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-  batch.set(getAdminDb().collection('issueLinks').doc(reverseId), {
-    organizationId: job.organizationId,
-    sourceIssueId: targetId,
-    targetIssueId: sourceId,
-    relationType: reverseType,
-    source: 'youtrack',
-    externalRelation: row.externalRelation,
-    createdBy: job.createdBy,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-  batch.update(rowSnapshot.ref, {
-    status: 'completed',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
-  await batch.commit();
-  return { skipped: false };
+  const linkId = canonical && canonicalIssueLinkDocumentId({
+    organizationId: job.organizationId,
+    projectId: sourceIssue.data().projectId,
+    ...canonical,
+  });
+  if (!canonical || !linkId) {
+    await rowSnapshot.ref.update({
+      status: 'skipped',
+      reason: 'Некоректний тип або напрямок зв’язку',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { skipped: true };
+  }
+
+  const linkRef = db.collection('issueLinks').doc(linkId);
+  const projectId = sourceIssue.data().projectId;
+  const projectRef = db.collection('projects').doc(projectId);
+  const workflowRef = db.collection('organizations')
+    .doc(job.organizationId)
+    .collection('settings')
+    .doc('workflow');
+  return db.runTransaction(async transaction => {
+    const freshRow = await transaction.get(rowSnapshot.ref);
+    const freshSource = await transaction.get(db.collection('issues').doc(sourceId));
+    const freshTarget = await transaction.get(db.collection('issues').doc(targetId));
+    const existingLink = await transaction.get(linkRef);
+    const projectSnapshot = await transaction.get(projectRef);
+    const workflowSnapshot = await transaction.get(workflowRef);
+    const organizationRelations = await transaction.get(
+      db.collection('issueLinks').where('organizationId', '==', job.organizationId),
+    );
+    const projectIssues = await transaction.get(
+      db.collection('issues').where('projectId', '==', projectId),
+    );
+
+    if (!freshRow.exists || freshRow.data().status !== 'pending') {
+      return { skipped: freshRow.data()?.status === 'skipped' };
+    }
+    if (
+      !freshSource.exists
+      || !freshTarget.exists
+      || freshSource.data().organizationId !== job.organizationId
+      || freshTarget.data().organizationId !== job.organizationId
+      || freshSource.data().projectId !== projectId
+      || freshTarget.data().projectId !== projectId
+      || freshSource.data().deletionPending === true
+      || freshTarget.data().deletionPending === true
+      || !projectSnapshot.exists
+      || projectSnapshot.data().organizationId !== job.organizationId
+      || projectSnapshot.data().deletionPending === true
+    ) {
+      transaction.update(rowSnapshot.ref, {
+        status: 'skipped',
+        reason: projectSnapshot.data()?.deletionPending === true
+          ? 'Проєкт уже видаляється'
+          : freshSource.data()?.deletionPending === true
+            || freshTarget.data()?.deletionPending === true
+            ? 'Одну з пов’язаних задач уже видаляють'
+          : 'Проєкт або одна з пов’язаних задач змінилися під час імпорту',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { skipped: true };
+    }
+
+    const isSameCanonicalLink = existingLink.exists
+      && existingLink.data().relationType === canonical.relationType
+      && existingLink.data().sourceIssueId === canonical.sourceIssueId
+      && existingLink.data().targetIssueId === canonical.targetIssueId;
+    if (existingLink.exists && !isSameCanonicalLink) {
+      transaction.update(rowSnapshot.ref, {
+        status: 'skipped',
+        reason: 'Для цієї пари задач уже існує інший логічний зв’язок',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { skipped: true };
+    }
+
+    const pairHasLegacyLink = !existingLink.exists
+      && organizationRelations.docs.some(document => {
+        const data = document.data();
+        return (
+          (data.sourceIssueId === sourceId && data.targetIssueId === targetId)
+          || (data.sourceIssueId === targetId && data.targetIssueId === sourceId)
+        );
+      });
+    if (pairHasLegacyLink) {
+      transaction.update(rowSnapshot.ref, {
+        status: 'skipped',
+        reason: 'Для цієї пари вже є старий зв’язок. Спершу виконайте міграцію зв’язків',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { skipped: true };
+    }
+
+    if (!existingLink.exists) {
+      const doneStatusIds = resolveDoneStatusIds(
+        workflowValues(workflowSnapshot).statuses,
+      );
+      const statusConflict = issueBlockLinkStatusConflict({
+        sourceIssue: {
+          id: freshSource.id,
+          ...freshSource.data(),
+        },
+        targetIssue: {
+          id: freshTarget.id,
+          ...freshTarget.data(),
+        },
+        relationType: canonical.relationType,
+        doneStatusIds,
+      });
+      if (statusConflict) {
+        transaction.update(rowSnapshot.ref, {
+          status: 'skipped',
+          reason: statusConflict.message,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return { skipped: true };
+      }
+
+      const graphLinks = normalizeStoredIssueLinks(
+        organizationRelations.docs.map(document => ({
+          id: document.id,
+          ...document.data(),
+        })),
+      );
+      const knownIssueIds = projectIssues.docs
+        .filter(document => document.data().organizationId === job.organizationId)
+        .map(document => document.id);
+      const cyclePath = findDirectionalIssueLinkCycle({
+        ...canonical,
+        links: graphLinks,
+        knownIssueIds,
+      });
+      if (cyclePath) {
+        transaction.update(rowSnapshot.ref, {
+          status: 'skipped',
+          reason: canonical.relationType === 'blocks'
+            ? `Зв’язок створив би циклічну залежність: ${cyclePath.join(' → ')}`
+            : `Зв’язок створив би циклічний ланцюг дублікатів: ${cyclePath.join(' → ')}`,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return { skipped: true };
+      }
+    }
+
+    if (!existingLink.exists) {
+      transaction.create(linkRef, {
+        schemaVersion: 2,
+        organizationId: job.organizationId,
+        projectId,
+        ...canonical,
+        source: 'youtrack',
+        externalRelation: row.externalRelation,
+        ...(row.hierarchyHint ? {
+          requiresReview: true,
+          legacyRelationType: 'youtrack-hierarchy',
+        } : {}),
+        createdBy: job.createdBy,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      transaction.update(projectRef, {
+        issueLinkVersion: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    transaction.update(rowSnapshot.ref, {
+      status: 'completed',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { skipped: false };
+  });
 }
 
 export async function prepareYouTrackImport({
@@ -702,6 +1402,7 @@ export async function prepareYouTrackImport({
   selectedProjectIds,
   projectMappings = {},
   userMappings = {},
+  statusFilters = {},
 }) {
   const selected = [...new Set((selectedProjectIds || []).filter(Boolean))].slice(0, 20);
   if (!selected.length) throw new Error('Оберіть хоча б один проєкт YouTrack');
@@ -744,7 +1445,15 @@ export async function prepareYouTrackImport({
   const queue = [];
   for (const sourceProject of sourceProjects) {
     const stubs = await client.issueStubs(sourceProject.shortName);
-    stubs.forEach(issue => queue.push({
+    const hasStatusFilter = Object.prototype.hasOwnProperty.call(statusFilters || {}, sourceProject.id);
+    const selectedStatuses = hasStatusFilter
+      ? [...new Set((statusFilters[sourceProject.id] || [])
+        .map(value => String(value || '').trim())
+        .filter(Boolean))]
+        .slice(0, 200)
+      : undefined;
+    const filteredStubs = filterYouTrackIssuesByStatuses(stubs, selectedStatuses);
+    filteredStubs.forEach(issue => queue.push({
       sourceProjectId: sourceProject.id,
       sourceIssueId: String(issue.id),
       sourceReadableId: String(issue.idReadable || ''),
@@ -769,6 +1478,13 @@ export async function prepareYouTrackImport({
       projectMappings[project.id] || 'create',
     ])),
     userMappings,
+    statusFilters: Object.fromEntries(sourceProjects.flatMap(project => (
+      Object.prototype.hasOwnProperty.call(statusFilters || {}, project.id)
+        ? [[project.id, [...new Set((statusFilters[project.id] || [])
+          .map(value => String(value || '').trim())
+          .filter(Boolean))].slice(0, 200)]]
+        : []
+    ))),
     totalIssues: queue.length,
     processedIssues: 0,
     failedIssues: 0,
@@ -776,8 +1492,8 @@ export async function prepareYouTrackImport({
     skippedLinks: 0,
     nextIndex: 0,
     warnings: [],
-    adapterVersion: 1,
-    mappingVersion: 1,
+    adapterVersion: 2,
+    mappingVersion: 2,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });

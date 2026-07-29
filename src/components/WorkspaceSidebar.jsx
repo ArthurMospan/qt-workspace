@@ -45,6 +45,7 @@ export default function WorkspaceSidebar() {
   const unreadChatNotifications = notifications.filter(item =>
     !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
   const displayedUnreadChats = unreadChatNotifications || unreadChats;
+  const showUnreadChatBadge = !pathname.startsWith('/chat') && displayedUnreadChats > 0;
   const otherOrgUnreadCount = notifications.filter(item => !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
   // ── Sidebar theme & Preview ──
@@ -198,6 +199,7 @@ export default function WorkspaceSidebar() {
                         місцями, а висота блоку "стрибає" на 1-2px. */}
                     <Link href="/" className="hover:opacity-80 transition-opacity">
                        <h1
+                         data-ui-type="branding-title"
                          className="tracking-tight truncate transition-all h-[16px]"
                          style={{ color: isBranded ? (theme.mutedHeader || theme.muted) : theme.text, fontSize: isBranded ? 12 : 16, lineHeight: '16px', fontWeight: isBranded ? 500 : 700 }}
                        >QuickTeam</h1>
@@ -212,7 +214,7 @@ export default function WorkspaceSidebar() {
                         style={{ fontSize: isBranded ? 16 : 12, lineHeight: '20px', fontWeight: isBranded ? 700 : 500 }}
                       >{activeOrg?.name || 'Company name'}</span>
                       {otherOrgUnreadCount > 0 && (
-                        <span className="min-w-[16px] h-[16px] px-1 rounded-full bg-ink text-white text-[9px] font-bold flex items-center justify-center">
+                        <span data-ui-pill="branding-counter" className="min-w-[16px] h-[16px] px-1 rounded-full bg-ink text-white text-[9px] font-bold flex items-center justify-center">
                           {otherOrgUnreadCount > 99 ? '99+' : otherOrgUnreadCount}
                         </span>
                       )}
@@ -223,6 +225,7 @@ export default function WorkspaceSidebar() {
               </div>
               <button
                 onClick={() => setCollapsed(true)}
+                data-ui-control="branding-action"
                 className="mt-1 transition-colors shrink-0 ml-[8px]"
                 style={{ color: 'var(--sb-muted)' }}
                 title="Сховати панель"
@@ -235,6 +238,7 @@ export default function WorkspaceSidebar() {
               <Tooltip content="Розгорнути панель" position="right" className="flex items-center justify-center w-full h-full">
                 <button
                   onClick={() => setCollapsed(false)}
+                  data-ui-control="branding-action"
                   className="transition-colors"
                   style={{ color: 'var(--sb-muted)' }}
                 >
@@ -264,7 +268,7 @@ export default function WorkspaceSidebar() {
                 <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
                   <Icon size={18} className="shrink-0" />
                   {!collapsed && <span className="text-[13px] font-medium">{label}</span>}
-                  {!collapsed && label === 'Чат' && displayedUnreadChats > 0 && (
+                  {!collapsed && label === 'Чат' && showUnreadChatBadge && (
                     <Counter value={displayedUnreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
                   )}
                 </div>
@@ -284,6 +288,7 @@ export default function WorkspaceSidebar() {
             {can(orgRole, 'create:project') && (
               <button
                 onClick={() => router.push('/?new=1')}
+                data-ui-control="branding-action"
                 className="transition-colors" title="Новий проєкт"
                 style={{ color: 'var(--sb-muted-header)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = 'var(--sb-text)'; }}

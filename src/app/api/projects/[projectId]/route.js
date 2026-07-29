@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
+import {
+  DEFAULT_STATUS_IDS,
+  resolveDoneStatusIds,
+  workflowIds,
+} from '@/lib/utils/workflowDefaults.mjs';
+
+const MAX_PROJECT_SETTINGS_TRANSACTION_WRITES = 450;
+
+function projectTransactionError(code, status, message, details = {}) {
+  const error = new Error(code);
+  error.projectApi = { code, status, message, ...details };
+  return error;
+}
 
 async function loadAuthorizedProject(request, projectId) {
   const db = getAdminDb();
@@ -18,8 +32,9 @@ export async function PATCH(request, context) {
     const { projectId } = await context.params;
     const loaded = await loadAuthorizedProject(request, projectId);
     if (loaded.error) return NextResponse.json({ error: loaded.error }, { status: loaded.status });
-    const { action, team } = await request.json();
-    if (!['archive', 'restore', 'update-team'].includes(action)) {
+    const body = await request.json();
+    const { action, team } = body;
+    if (!['archive', 'restore', 'update-team', 'update-settings'].includes(action)) {
       return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
@@ -37,6 +52,204 @@ export async function PATCH(request, context) {
       }
       await ref.update({ team: nextTeam, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       return NextResponse.json({ success: true, team: nextTeam });
+    }
+    if (action === 'update-settings') {
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const description = typeof body.description === 'string' ? body.description.trim() : '';
+      if (!name || name.length > 160 || description.length > 10_000) {
+        return NextResponse.json({ error: 'Некоректна назва або опис проєкту' }, { status: 400 });
+      }
+
+      if (body.team !== undefined && !Array.isArray(body.team)) {
+        return NextResponse.json({ error: 'Некоректний склад команди проєкту' }, { status: 400 });
+      }
+      const requestedSettingsTeam = Array.isArray(body.team)
+        ? [...new Set(body.team.filter(Boolean))].slice(0, 100)
+        : (Array.isArray(project.team) ? project.team : []);
+      const nextSettingsTeam = project.createdBy && !requestedSettingsTeam.includes(project.createdBy)
+        ? [project.createdBy, ...requestedSettingsTeam]
+        : requestedSettingsTeam;
+      if (nextSettingsTeam.length > 0) {
+        const memberships = await db.getAll(...nextSettingsTeam.map(
+          userId => db.collection('orgMemberships').doc(`${project.organizationId}_${userId}`),
+        ));
+        if (memberships.some(
+          (membership, index) => !membership.exists || membership.data().userId !== nextSettingsTeam[index],
+        )) {
+          return NextResponse.json(
+            { error: 'У команді може бути лише учасник організації' },
+            { status: 400 },
+          );
+        }
+      }
+
+      const workflowRef = db.collection('organizations')
+        .doc(project.organizationId)
+        .collection('settings')
+        .doc('workflow');
+      const requestedHidden = Array.isArray(body.hiddenColumns)
+        ? [...new Set(body.hiddenColumns.filter(value => typeof value === 'string'))]
+        : [];
+      const settingsResult = await db.runTransaction(async transaction => {
+        const freshProject = await transaction.get(ref);
+        const workflowSnap = await transaction.get(workflowRef);
+        if (
+          !freshProject.exists
+          || freshProject.data().organizationId !== project.organizationId
+        ) {
+          throw projectTransactionError(
+            'PROJECT_NOT_FOUND',
+            404,
+            'Проєкт не знайдено',
+          );
+        }
+        if (freshProject.data().deletionPending === true) {
+          throw projectTransactionError(
+            'PROJECT_DELETING',
+            409,
+            'Проєкт уже видаляється',
+          );
+        }
+
+        const workflow = workflowSnap.data() || {};
+        const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
+        const backlogStatusId = statusIds.includes('backlog')
+          ? 'backlog'
+          : statusIds[0];
+        if (
+          requestedHidden.some(statusId => !statusIds.includes(statusId))
+          || requestedHidden.includes(backlogStatusId)
+          || requestedHidden.length >= statusIds.length
+        ) {
+          throw projectTransactionError(
+            'INVALID_HIDDEN_COLUMNS',
+            400,
+            'Некоректна конфігурація колонок',
+          );
+        }
+
+        const issuesSnapshot = requestedHidden.length
+          ? await transaction.get(
+            db.collection('issues')
+              .where('organizationId', '==', project.organizationId)
+              .where('projectId', '==', projectId),
+          )
+          : null;
+        const currentIssues = issuesSnapshot
+          ? issuesSnapshot.docs.map(document => ({
+            id: document.id,
+            ...document.data(),
+          }))
+          : [];
+        const issueIdsToMove = new Set(
+          currentIssues
+            .filter(issue => (
+              issue.deletionPending !== true
+              && requestedHidden.includes(issue.columnId || issue.status)
+            ))
+            .map(issue => issue.id),
+        );
+        const nextIssues = currentIssues.map(issue => (
+          issueIdsToMove.has(issue.id)
+            ? { ...issue, columnId: backlogStatusId, status: backlogStatusId }
+            : issue
+        ));
+
+        let scopedLinks = [];
+        if (issueIdsToMove.size > 0) {
+          const linksSnapshot = await transaction.get(
+            db.collection('issueLinks')
+              .where('organizationId', '==', project.organizationId),
+          );
+          const projectIssueIds = new Set(currentIssues.map(issue => issue.id));
+          scopedLinks = linksSnapshot.docs
+            .map(document => ({ id: document.id, ...document.data() }))
+            .filter(link => (
+              projectIssueIds.has(link.sourceIssueId)
+              && projectIssueIds.has(link.targetIssueId)
+            ));
+        }
+        const doneStatusIds = resolveDoneStatusIds(workflow.statuses);
+        const violations = introducedIssueExecutionViolations({
+          currentIssues,
+          nextIssues,
+          issueLinks: scopedLinks,
+          currentDoneStatusIds: doneStatusIds,
+          nextDoneStatusIds: doneStatusIds,
+        });
+        if (violations.length > 0) {
+          throw projectTransactionError(
+            'HIDDEN_COLUMN_EXECUTION_CONFLICT',
+            409,
+            'Не можна приховати колонку: перенесення задач порушить ієрархію або залежності',
+            {
+              violationCount: violations.length,
+              violations: violations.slice(0, 50),
+            },
+          );
+        }
+        const plannedWrites = issueIdsToMove.size * 2 + 1;
+        if (plannedWrites > MAX_PROJECT_SETTINGS_TRANSACTION_WRITES) {
+          throw projectTransactionError(
+            'HIDDEN_COLUMN_MIGRATION_TOO_LARGE',
+            409,
+            'Забагато задач для однієї безпечної зміни колонок',
+            {
+              affectedIssues: issueIdsToMove.size,
+              maxTransactionWrites: MAX_PROJECT_SETTINGS_TRANSACTION_WRITES,
+            },
+          );
+        }
+
+        const doneSet = new Set(doneStatusIds);
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        for (const issue of currentIssues.filter(item => issueIdsToMove.has(item.id))) {
+          const issueRef = db.collection('issues').doc(issue.id);
+          const wasDone = doneSet.has(issue.columnId || issue.status);
+          const willBeDone = doneSet.has(backlogStatusId);
+          transaction.update(issueRef, {
+            columnId: backlogStatusId,
+            status: backlogStatusId,
+            updatedAt: now,
+            ...(willBeDone && !issue.completedAt
+              ? { completedAt: now }
+              : {}),
+            ...(!willBeDone && Object.prototype.hasOwnProperty.call(issue, 'completedAt')
+              ? { completedAt: admin.firestore.FieldValue.delete() }
+              : {}),
+          });
+          transaction.create(issueRef.collection('audit').doc(), {
+            userId: loaded.authorization.user.uid,
+            userName: loaded.authorization.user.name
+              || loaded.authorization.user.email
+              || '',
+            action: 'hidden-column-migrated',
+            from: issue.columnId || issue.status || null,
+            to: backlogStatusId,
+            fromCompleted: wasDone,
+            toCompleted: willBeDone,
+            createdAt: now,
+          });
+        }
+        transaction.update(ref, {
+          name,
+          description,
+          hiddenColumns: requestedHidden,
+          team: nextSettingsTeam,
+          issueStatusVersion: admin.firestore.FieldValue.increment(1),
+          updatedAt: now,
+        });
+        return {
+          hiddenColumns: requestedHidden,
+          movedIssues: issueIdsToMove.size,
+        };
+      });
+      return NextResponse.json({
+        success: true,
+        hiddenColumns: settingsResult.hiddenColumns,
+        team: nextSettingsTeam,
+        movedIssues: settingsResult.movedIssues,
+      });
     }
 
     const orgRef = db.collection('organizations').doc(project.organizationId);
@@ -58,6 +271,13 @@ export async function PATCH(request, context) {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error?.projectApi) {
+      const { message, status, ...details } = error.projectApi;
+      return NextResponse.json({
+        error: message,
+        ...details,
+      }, { status });
+    }
     if (error.message === 'PROJECT_LIMIT_REACHED') {
       return NextResponse.json({ error: 'Ліміт активних проєктів вичерпано' }, { status: 403 });
     }
@@ -72,17 +292,128 @@ export async function DELETE(request, context) {
     if (loaded.error) return NextResponse.json({ error: loaded.error }, { status: loaded.status });
     const { db, ref, project } = loaded;
 
-    const [issues, stages, timeLogs, invoices, orgLinks] = await Promise.all([
+    // Accounting documents are audit evidence, never cascade garbage. The
+    // project lock makes this guard conflict with invoice/calendar mutations
+    // before the deletion marker closes all later creation paths.
+    await db.runTransaction(async transaction => {
+      const current = await transaction.get(ref);
+      if (
+        !current.exists
+        || current.data().organizationId !== project.organizationId
+      ) {
+        throw new Error('NOT_FOUND');
+      }
+
+      const scoped = collectionName => db.collection(collectionName)
+        .where('organizationId', '==', project.organizationId)
+        .where('projectId', '==', projectId)
+        .limit(1);
+      const [
+        invoiceEvidence,
+        timeReservations,
+        estimateReservations,
+        invoiceMarkedLogs,
+        billedAtLogs,
+        calendarEvents,
+      ] = await Promise.all([
+        transaction.get(scoped('invoices')),
+        transaction.get(scoped('invoiceTimeLogReservations')),
+        transaction.get(scoped('invoiceEstimateReservations')),
+        transaction.get(
+          db.collection('timeLogs')
+            .where('organizationId', '==', project.organizationId)
+            .where('projectId', '==', projectId)
+            .where('invoiceId', '>', '')
+            .limit(1),
+        ),
+        transaction.get(
+          db.collection('timeLogs')
+            .where('organizationId', '==', project.organizationId)
+            .where('projectId', '==', projectId)
+            .where(
+              'billedAt',
+              '>',
+              admin.firestore.Timestamp.fromMillis(0),
+            )
+            .limit(1),
+        ),
+        transaction.get(
+          db.collection('calendarEvents')
+            .where('organizationId', '==', project.organizationId)
+            .where('projectId', '==', projectId)
+            .limit(1),
+        ),
+      ]);
+      if (
+        !invoiceEvidence.empty
+        || !timeReservations.empty
+        || !estimateReservations.empty
+        || !invoiceMarkedLogs.empty
+        || !billedAtLogs.empty
+      ) {
+        throw projectTransactionError(
+          'PROJECT_HAS_ACCOUNTING_EVIDENCE',
+          409,
+          'Проєкт має рахунки або зафіксований у них час. Архівуйте проєкт; рахунки можна лише анулювати, а облікові докази не видаляються.',
+        );
+      }
+      if (!calendarEvents.empty) {
+        throw projectTransactionError(
+          'PROJECT_HAS_CALENDAR_EVENTS',
+          409,
+          'Спочатку перенесіть або видаліть усі календарні події цього проєкту',
+          { calendarEventId: calendarEvents.docs[0].id },
+        );
+      }
+      if (current.data().deletionPending !== true) {
+        transaction.update(ref, {
+          deletionPending: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    });
+
+    const [
+      issues,
+      stages,
+      timeLogs,
+      orgLinks,
+    ] = await Promise.all([
       db.collection('issues').where('organizationId', '==', project.organizationId).where('projectId', '==', projectId).get(),
       db.collection('stages').where('projectId', '==', projectId).get(),
       db.collection('timeLogs').where('organizationId', '==', project.organizationId).where('projectId', '==', projectId).get(),
-      db.collection('invoices').where('organizationId', '==', project.organizationId).where('projectId', '==', projectId).get(),
       db.collection('issueLinks').where('organizationId', '==', project.organizationId).get(),
     ]);
+    const unexpectedBilledLog = timeLogs.docs.find(document => {
+      const log = document.data();
+      return (
+        (typeof log.invoiceId === 'string' && log.invoiceId.trim())
+        || log.billedAt
+      );
+    });
+    if (unexpectedBilledLog) {
+      await db.runTransaction(async transaction => {
+        const current = await transaction.get(ref);
+        if (
+          current.exists
+          && current.data().organizationId === project.organizationId
+        ) {
+          transaction.update(ref, {
+            deletionPending: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      });
+      throw projectTransactionError(
+        'PROJECT_HAS_ACCOUNTING_EVIDENCE',
+        409,
+        'Видалення зупинено: знайдено незмінний запис часу з рахунку',
+        { timeLogId: unexpectedBilledLog.id },
+      );
+    }
     const issueIds = new Set(issues.docs.map(document => document.id));
     const simpleRefs = [
       ...timeLogs.docs.map(document => document.ref),
-      ...invoices.docs.map(document => document.ref),
       ...orgLinks.docs
         .filter(document => issueIds.has(document.data().sourceIssueId) || issueIds.has(document.data().targetIssueId))
         .map(document => document.ref),
@@ -101,6 +432,10 @@ export async function DELETE(request, context) {
     await db.recursiveDelete(ref);
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error?.projectApi) {
+      const { message, status, ...details } = error.projectApi;
+      return NextResponse.json({ error: message, ...details }, { status });
+    }
     return routeErrorResponse(error, { context: 'Project DELETE', fallbackMessage: 'Internal Server Error' });
   }
 }

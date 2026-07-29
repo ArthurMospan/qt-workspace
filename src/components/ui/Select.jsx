@@ -1,11 +1,29 @@
 'use client';
 import React, { useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, Search } from 'lucide-react';
+import {
+  ArrowUpDown,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleDot,
+  Flag,
+  Folder,
+  Layers,
+  Search,
+  Shapes,
+  Users,
+} from 'lucide-react';
+import { getFilterControlWidth } from './FilterBar';
+import UserAvatar from './DataDisplay/UserAvatar';
 
 // UI Kit Select Component
-// Strict rule enforced: Select buttons are 36px height (h-9)
-// Matches input and button heights for consistent form alignment
+// Named form-control sizes match Input and Button.
+const CONTROL_SIZES = {
+  sm: 'text-[12px]',
+  md: 'text-[13px]',
+  lg: 'text-[13px]',
+};
 
 // The trigger width is a floor for the dropdown, never a cap. Matching it
 // exactly turned every compact inline control into an unreadable column — the
@@ -14,6 +32,28 @@ import { ChevronDown, Check, Search } from 'lucide-react';
 // two bounds, which only ever makes a dropdown wider than it was.
 const DROPDOWN_MIN_WIDTH = 200;
 const DROPDOWN_MAX_WIDTH = 360;
+const FILTER_ROLE_ICONS = {
+  type: Shapes,
+  priority: Flag,
+  sprint: Layers,
+  status: CircleDot,
+  date: CalendarDays,
+  member: Users,
+  project: Folder,
+  sort: ArrowUpDown,
+};
+
+function OptionIdentity({ option, size = 14 }) {
+  if (!option?.user && !option?.avatar) return null;
+  return (
+    <span aria-hidden="true" className="shrink-0">
+      <UserAvatar
+        user={option.user || { name: option.label, avatar: option.avatar }}
+        size={size}
+      />
+    </span>
+  );
+}
 
 function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
   const [position, setPosition] = useState({
@@ -83,12 +123,17 @@ export function Select({
   options = [],
   placeholder = 'Оберіть...',
   className = '',
-  buttonClassName = 'bg-canvas hover:bg-[#ebebeb] rounded-[10px] px-[12px] h-[36px]',
+  buttonClassName,
   dropdownClassName = '',
   disabled = false,
   variant = 'default',
   triggerIcon: TriggerIcon,
   compact = false,
+  size = 'lg',
+  composition,
+  filterRole,
+  filterContext = 'default',
+  ariaLabel,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -97,6 +142,8 @@ export function Select({
   const triggerRef = useRef(null);
   const listboxId = useId();
   const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
+  const filterWidth = getFilterControlWidth(filterRole, filterContext);
+  const defaultButtonClass = `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -114,6 +161,8 @@ export function Select({
 
   const selectedOption = options.find(o => o.value === value);
   const selectedIndex = options.findIndex(o => o.value === value);
+  const ResolvedTriggerIcon = TriggerIcon
+    || (selectedOption?.icon ? null : FILTER_ROLE_ICONS[filterRole]);
 
   // Keep the highlighted row in view while arrowing through a long list.
   useEffect(() => {
@@ -175,28 +224,28 @@ export function Select({
   };
 
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div className={`relative ${filterWidth} ${className}`} ref={containerRef}>
       <button
         ref={triggerRef}
         type="button"
         disabled={disabled}
         role="combobox"
         aria-haspopup="listbox"
+        aria-label={ariaLabel}
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
+        data-ui-size={variant === 'ghost' ? 'sm' : size}
+        data-ui-composition={composition}
         onKeyDown={handleKeyDown}
         onClick={() => (isOpen ? close({ focusTrigger: false }) : open())}
-        className={`w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : buttonClassName}`}
+        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
       >
         <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
-          {TriggerIcon && <TriggerIcon size={14} className="text-muted shrink-0" />}
+          {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
           {selectedOption?.dotColor && (
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
           )}
-          {selectedOption?.avatar && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={selectedOption.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
-          )}
+          <OptionIdentity option={selectedOption} />
           {selectedOption?.icon && (
             <selectedOption.icon size={14} className="text-muted shrink-0" />
           )}
@@ -217,7 +266,7 @@ export function Select({
         <div
           ref={dropdownRef}
           data-qt-floating-overlay
-          className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-[6px] overflow-hidden ${dropdownClassName}`}
+          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-[6px] overflow-hidden ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -243,10 +292,7 @@ export function Select({
                   {opt.dotColor && (
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                   )}
-                  {opt.avatar && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
-                  )}
+                  <OptionIdentity option={opt} />
                   {opt.icon && (
                     <opt.icon size={14} className={value === opt.value ? 'text-ink' : 'text-muted'} />
                   )}
@@ -284,12 +330,17 @@ export function MultiSelect({
   variant = 'default',
   triggerIcon: TriggerIcon,
   selectAllLabel = '',
+  size = 'lg',
+  composition,
+  filterRole,
+  filterContext = 'default',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef(null);
   const dropdownRef = useRef(null);
   const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
+  const filterWidth = getFilterControlWidth(filterRole, filterContext);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -324,16 +375,22 @@ export function MultiSelect({
   const selectedLabels = options
     .filter(o => value.includes(o.value))
     .map(o => o.label);
+  const singleSelectedOption = value.length === 1
+    ? options.find(option => option.value === value[0])
+    : null;
+  const ResolvedTriggerIcon = TriggerIcon || FILTER_ROLE_ICONS[filterRole];
 
   let triggerText = placeholder;
   if (value.length === 1) triggerText = selectedLabels[0];
   else if (value.length > 1) triggerText = `Обрано (${value.length})`;
 
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div className={`relative ${filterWidth} ${className}`} ref={containerRef}>
       <button
         type="button"
         disabled={disabled}
+        data-ui-size={variant === 'ghost' ? 'sm' : size}
+        data-ui-composition={composition}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onKeyDown={event => {
@@ -344,10 +401,11 @@ export function MultiSelect({
           }
         }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? 'bg-transparent hover:bg-[#ebebeb] rounded-[8px] px-[10px] h-[28px] w-auto inline-flex gap-1.5' : 'bg-canvas hover:bg-[#ebebeb] rounded-[10px] px-[12px] h-[36px]'}`}
+        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`}`}
       >
         <div className="flex items-center gap-[8px] overflow-hidden">
-          {TriggerIcon && <TriggerIcon size={14} className="text-muted shrink-0" />}
+          {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
+          <OptionIdentity option={singleSelectedOption} />
           <span className="text-[13px] truncate font-medium text-ink">
             {triggerText}
           </span>
@@ -359,7 +417,7 @@ export function MultiSelect({
         <div
           ref={dropdownRef}
           data-qt-floating-overlay
-          className={`fixed z-[300] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
+          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -426,10 +484,7 @@ export function MultiSelect({
                     {opt.dotColor && (
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                     )}
-                    {opt.avatar && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={opt.avatar} alt="" className="w-[14px] h-[14px] rounded-full object-cover shrink-0" />
-                    )}
+                    <OptionIdentity option={opt} />
                     {opt.icon && (
                       <opt.icon size={14} className={isSelected ? 'text-ink' : 'text-muted'} />
                     )}

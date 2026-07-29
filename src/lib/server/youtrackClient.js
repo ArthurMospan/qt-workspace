@@ -71,10 +71,21 @@ export class YouTrackClient {
 
   async projects() {
     return this.listAll('admin/projects', {
-      fields: `id,name,shortName,description,archived,leader(${USER_FIELDS})`,
+      fields: `id,name,shortName,description,archived,leader(${USER_FIELDS}),customFields(id,$type,field(id,name),bundle(id,$type))`,
       top: 100,
       limit: 5_000,
     });
+  }
+
+  async stateBundle(bundleId) {
+    try {
+      return await this.request(`admin/customFieldSettings/bundles/state/${encodeURIComponent(bundleId)}`, {
+        params: { fields: 'id,values(id,name,archived,ordinal)' },
+      });
+    } catch (error) {
+      if (error.status === 403 || error.status === 404) return null;
+      throw error;
+    }
   }
 
   async users() {
@@ -88,7 +99,7 @@ export class YouTrackClient {
 
   async issueStubs(projectShortName) {
     return this.listAll('issues', {
-      fields: 'id,idReadable,summary,created,updated',
+      fields: 'id,idReadable,summary,created,updated,customFields(name,value(name,presentation))',
       query: `project: {${projectShortName}} sort by: created asc`,
       top: 100,
       limit: 50_000,

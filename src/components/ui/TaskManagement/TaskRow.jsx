@@ -8,6 +8,9 @@ import { useRef } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
+import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
+import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -30,7 +33,20 @@ function fmtDate(raw) {
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
-export default function TaskRow({ issue, issues = [], issueLinks = [], members = [], labels = [], sprints = [], projectId, projectName, isTimerActive, onClick }) {
+export default function TaskRow({
+  issue,
+  issues = [],
+  allIssues,
+  issueLinks = [],
+  members = [],
+  labels = [],
+  sprints = [],
+  projectId,
+  projectName,
+  showProjectName = false,
+  isTimerActive,
+  onClick,
+}) {
   const router = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
@@ -40,12 +56,16 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   const task = issue;
   if (!task) return null;
 
-  const typeObj = types.find(t => t.id === task.type) || types[0];
-  const typeLabel = typeObj ? typeObj.label : 'Task';
+  const typeObj = types.find(t => t.id === task.type) || {
+    id: task.type || 'task',
+    label: task.type === 'epic' ? 'Епік (legacy)' : 'Задача',
+    color: task.type === 'epic' ? '#8b5cf6' : '#9a9a9a',
+  };
+  const typeLabel = typeObj.label;
 
   const priObj = priorities.find(p => p.id === task.priority) || priorities[0];
   const pri = {
-    label: priObj ? priObj.label.toUpperCase() : 'MEDIUM',
+    label: priObj ? priObj.label.toUpperCase() : 'СЕРЕДНІЙ',
     dot: priObj ? priObj.color : '#eab308',
     glow: priObj ? hexToRgba(priObj.color, 0.05) : 'transparent',
     bg: priObj ? hexToRgba(priObj.color, 0.08) : '#fefce8'
@@ -58,8 +78,14 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
   const due = parseDueDate(task.dueDate);
   const isOverdue = due && due < new Date() && !doneStatusIds.includes(task.columnId) && !doneStatusIds.includes(task.status);
 
-  const subAll = (task.subtasks || []).length;
-  const subDone = (task.subtasks || []).filter(s => s.done).length;
+  const contextIssues = allIssues || issues;
+  const parentIssueId = existingParentIssueId(task);
+  const parentIssue = contextIssues.find(candidate => candidate.id === parentIssueId);
+  const childIssues = contextIssues.filter(candidate => existingParentIssueId(candidate) === task.id);
+  const childAll = childIssues.length;
+  const childDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const checklistAll = (task.subtasks || []).length;
+  const checklistDone = (task.subtasks || []).filter(item => item.done).length;
 
   const msgCount = task.commentCount || task.commentsCount || task.comments?.length || (task.hasUnreadChat ? 1 : 0);
   const hasUnreadChat = Boolean(
@@ -86,11 +112,12 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
 
   const displayKey = getDisplayKey();
 
-  const isBlocked = issueLinks.some(l => 
-    l.targetIssueId === task.id && 
-    l.relationType === 'blocks' && 
-    issues.some(i => i.id === l.sourceIssueId && !doneStatusIds.includes(i.columnId || i.status))
-  );
+  const isBlocked = openBlockerIssues(
+    task.id,
+    contextIssues,
+    issueLinks,
+    doneStatusIds,
+  ).length > 0;
 
   const handleRowClick = (e) => {
     if (onClick) {
@@ -121,8 +148,13 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
           {/* Issue Key, Project, Due Date, Subtasks (Top Row) */}
           <div className="flex items-center gap-[8px] flex-wrap">
             <span className="font-mono text-[#c5c5c5] font-bold text-[9px] tracking-wider select-none shrink-0">
-              {displayKey}{projectName ? ` • ${projectName.toUpperCase()}` : ''}
+              {displayKey}{showProjectName && projectName ? ` • ${projectName.toUpperCase()}` : ''}
             </span>
+            {parentIssueId && (
+              <span className="max-w-[160px] truncate text-[8px] font-semibold text-muted" title={parentIssue?.title || 'Підзадача'}>
+                ↳ {parentIssue?.issueKey || 'ПІДЗАДАЧА'}
+              </span>
+            )}
 
             {/* Due Date */}
             {due && (
@@ -131,24 +163,31 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
               }`}>
                 <Calendar size={10} strokeWidth={2} className="shrink-0" />
                 <span>{fmtDate(due)}</span>
-                {isOverdue && <span className="font-bold uppercase text-[8px] ml-0.5">• Overdue</span>}
+                {isOverdue && <span className="font-bold uppercase text-[8px] ml-0.5">• Прострочено</span>}
               </div>
             )}
 
-            {/* Subtasks Progress */}
-            {subAll > 0 && (
+            {/* Real child issue progress */}
+            {childAll > 0 && (
               <div className="flex items-center gap-[4px] text-[9px] text-[#555555] font-bold shrink-0 ml-1">
-                <span className="text-[#1a1a1a]">{subDone}/{subAll}</span>
+                <span className="text-[#1a1a1a]">{childDone}/{childAll} підзадач</span>
                 <div className="flex gap-[2px]">
-                  {Array.from({ length: subAll }).map((_, idx) => (
+                  {Array.from({ length: childAll }).map((_, idx) => (
                     <div 
                       key={idx}
                       className={`h-[1.5px] w-[6px] rounded-full transition-all duration-300 ${
-                        idx < subDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+                        idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
                       }`}
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {checklistAll > 0 && (
+              <div className="flex items-center gap-[3px] text-[9px] font-bold text-muted">
+                <CheckSquare size={9} />
+                <span>{checklistDone}/{checklistAll} чекліст</span>
               </div>
             )}
 
@@ -166,7 +205,7 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
             {/* Chat Count */}
             {msgCount > 0 && (
               <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="fill-black/5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
@@ -182,24 +221,19 @@ export default function TaskRow({ issue, issues = [], issueLinks = [], members =
           
           {/* Type Badge */}
           {typeObj && (
-            <span 
-              className="text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 backdrop-blur-[2px]"
-              style={{
-                background: hexToRgba(typeObj.color || '#9a9a9a', 0.08),
-                color: typeObj.color || '#404040'
-              }}
-            >
-              {typeLabel}
-            </span>
+            <TypeBadge
+              label={typeLabel}
+              color={typeObj.color || '#9a9a9a'}
+            />
           )}
 
           {isBlocked && (
             <span 
               className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
-              title="Заблоковано іншою завданням"
+              title="Заблоковано іншою задачею"
             >
               <Lock size={10} />
-              Blocked
+              Заблоковано
             </span>
           )}
 

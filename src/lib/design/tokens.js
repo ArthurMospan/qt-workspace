@@ -56,40 +56,19 @@ export const colors = {
   // Button color variants - Primary style (dark bg)
   buttonPrimary: {
     dark: { bg: '#1f1f1f', text: '#ffffff', hover: '#303030', border: '#0a0a0a' },
-    blue: { bg: '#3b82f6', text: '#ffffff', hover: '#2563eb', border: '#1d4ed8' },
-    green: { bg: '#10b981', text: '#ffffff', hover: '#059669', border: '#047857' },
     red: { bg: '#ef4444', text: '#ffffff', hover: '#dc2626', border: '#b91c1c' },
-    orange: { bg: '#f97316', text: '#ffffff', hover: '#ea580c', border: '#c2410c' },
-    purple: { bg: '#7c3aed', text: '#ffffff', hover: '#6d28d9', border: '#5b21b6' },
-    pink: { bg: '#ec4899', text: '#ffffff', hover: '#db2777', border: '#be185d' },
-    teal: { bg: '#14b8a6', text: '#ffffff', hover: '#0d9488', border: '#0f766e' },
-    yellow: { bg: '#eab308', text: '#1f1f1f', hover: '#ca8a04', border: '#a16207' },
   },
 
   // Button color variants - Secondary style (light bg)
   buttonSecondary: {
     dark: { bg: '#f5f5f5', text: '#1f1f1f', hover: '#e9e9e9', border: '#d1d1d1' },
-    blue: { bg: '#dbeafe', text: '#1e40af', hover: '#bfdbfe', border: '#93c5fd' },
-    green: { bg: '#ecfdf5', text: '#065f46', hover: '#d1fae5', border: '#a7f3d0' },
     red: { bg: '#fee2e2', text: '#7f1d1d', hover: '#fecaca', border: '#fca5a5' },
-    orange: { bg: '#fed7aa', text: '#92400e', hover: '#fdba74', border: '#fb923c' },
-    purple: { bg: '#ede9fe', text: '#5b21b6', hover: '#ddd6fe', border: '#c4b5fd' },
-    pink: { bg: '#fce7f3', text: '#831843', hover: '#fbcfe8', border: '#f472b6' },
-    teal: { bg: '#ccfbf1', text: '#0f766e', hover: '#99f6e4', border: '#5eead4' },
-    yellow: { bg: '#fef3c7', text: '#92400e', hover: '#fde68a', border: '#fcd34d' },
   },
 
   // Button color variants - Ghost style (transparent)
   buttonGhost: {
     dark: { bg: 'transparent', text: '#1f1f1f', border: '#1f1f1f', hover: '#f4f4f5' },
-    blue: { bg: 'transparent', text: '#3b82f6', border: '#3b82f6', hover: '#dbeafe' },
-    green: { bg: 'transparent', text: '#10b981', border: '#10b981', hover: '#ecfdf5' },
     red: { bg: 'transparent', text: '#ef4444', border: '#ef4444', hover: '#fee2e2' },
-    orange: { bg: 'transparent', text: '#f97316', border: '#f97316', hover: '#fed7aa' },
-    purple: { bg: 'transparent', text: '#7c3aed', border: '#7c3aed', hover: '#ede9fe' },
-    pink: { bg: 'transparent', text: '#ec4899', border: '#ec4899', hover: '#fce7f3' },
-    teal: { bg: 'transparent', text: '#14b8a6', border: '#14b8a6', hover: '#ccfbf1' },
-    yellow: { bg: 'transparent', text: '#eab308', border: '#eab308', hover: '#fef3c7' },
   },
 };
 
@@ -102,8 +81,8 @@ export const typography = {
 
   // Font sizes and weights (in pixels)
   sizes: {
-    h1: { size: '32px', weight: 700 },      // Page title
-    h2: { size: '24px', weight: 700 },      // Section title
+    h1: { size: '24px', weight: 700 },      // Page title
+    h2: { size: '18px', weight: 700 },      // Section title
     h3: { size: '18px', weight: 700 },      // Subsection
     h4: { size: '16px', weight: 700 },      // Small title
     body: { size: '14px', weight: 600 },    // Primary text
@@ -111,6 +90,36 @@ export const typography = {
     xs: { size: '12px', weight: 600 },      // Small text
     label: { size: '11px', weight: 700 },   // Form labels, badges
     tag: { size: '9px', weight: 700 },      // Type tags, tiny text
+  },
+};
+
+// Live semantic contract. These references point at globals.css instead of
+// duplicating geometry/typography values in JavaScript. Use them for inline
+// styles or documentation that cannot consume the semantic CSS classes.
+export const semanticContract = {
+  controls: {
+    sm: 'var(--ui-control-sm)',
+    md: 'var(--ui-control-md)',
+    lg: 'var(--ui-control-lg)',
+    workspaceGuard: 'var(--ui-composition-guard)',
+    metricEditor: 'var(--ui-composition-metric)',
+    inviteField: 'var(--ui-composition-invite)',
+  },
+  radii: {
+    action: 'var(--ui-radius-action)',
+    field: 'var(--ui-radius-field)',
+    inset: 'var(--ui-radius-inset)',
+    surface: 'var(--ui-radius-surface)',
+    dialog: 'var(--ui-radius-dialog)',
+  },
+  typography: {
+    pageTitle: 'var(--ui-type-page-title-size)',
+    detailTitle: 'var(--ui-type-detail-title-size)',
+    sectionTitle: 'var(--ui-type-section-title-size)',
+    dialogTitle: 'var(--ui-type-dialog-title-size)',
+    cardTitle: 'var(--ui-type-card-title-size)',
+    itemTitle: 'var(--ui-type-item-title-size)',
+    eyebrow: 'var(--ui-type-eyebrow-size)',
   },
 };
 
@@ -143,8 +152,13 @@ export const sizing = {
     lg: '36px',           // h-9 (default/primary)
   },
 
-  // Input heights
-  input: '36px',          // h-9 (standard input height)
+  // Named input heights. Context-specific compositions may still be taller
+  // when they contain another control (for example the invite field + button).
+  input: {
+    sm: '28px',
+    md: '32px',
+    lg: '36px',
+  },
   control: '36px',        // Standard height for controls (inputs, selects, tabs)
 
   // Border radius
