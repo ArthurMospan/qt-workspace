@@ -19,7 +19,7 @@ CRON_SECRET=<random production-only bearer secret>
 
 `NEXT_PUBLIC_APP_URL` must be the public HTTPS production origin. The webhook is registered automatically through Bot API `setWebhook` when someone starts either connection flow.
 
-Vercel calls `/api/cron/notifications` every five minutes with `Authorization: Bearer $CRON_SECRET`. The server job creates calendar and deadline notifications even when no browser tab is open. Notification IDs are deterministic, so the ten-minute calendar look-back and repeated deadline sweeps cannot resend the same occurrence.
+The `.github/workflows/scheduled-notifications.yml` schedule calls `/api/cron/notifications` every five minutes with `Authorization: Bearer $CRON_SECRET`, so `CRON_SECRET` must hold the same value as a production environment variable and as a repository secret. The server job creates calendar and deadline notifications even when no browser tab is open. Notification IDs are deterministic, so the ten-minute calendar look-back and repeated deadline sweeps cannot resend the same occurrence — which also makes a late or retried run harmless.
 
 Recommended BotFather settings:
 

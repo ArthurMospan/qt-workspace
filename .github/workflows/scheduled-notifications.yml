@@ -1,0 +1,52 @@
+name: Scheduled notifications
+
+# Vercel Hobby caps cron jobs at one run per day, which is useless for calendar
+# reminders that need to fire minutes before an event. The sweep therefore runs
+# from here instead of vercel.json until the app moves to a plan or host that
+# can schedule it natively.
+#
+# Requires the CRON_SECRET repository secret to hold exactly the same value as
+# the CRON_SECRET environment variable in the production deployment.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# A late run must never pile up behind the previous one: the sweep is
+# idempotent, but two concurrent sweeps only waste Firestore reads.
+concurrency:
+  group: scheduled-notifications
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger the notification sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "CRON_SECRET repository secret is not set — the endpoint would answer 401." >&2
+            exit 1
+          fi
+
+          status=$(curl --silent --show-error --location \
+            --max-time 60 \
+            --output response.json \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/notifications")
+
+          cat response.json
+          echo
+
+          if [ "${status}" != "200" ]; then
+            echo "Notification sweep failed with HTTP ${status}." >&2
+            exit 1
+          fi

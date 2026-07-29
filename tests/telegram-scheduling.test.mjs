@@ -11,12 +11,21 @@ test('scheduled notifications require a production bearer secret', async () => {
   assert.match(source, /runScheduledNotificationSweep\(\)/);
 });
 
-test('Vercel invokes the notification sweep independently of a browser', async () => {
-  const config = JSON.parse(await read('../vercel.json'));
-  assert.deepEqual(config.crons, [{
-    path: '/api/cron/notifications',
-    schedule: '*/5 * * * *',
-  }]);
+test('a schedule invokes the notification sweep independently of a browser', async () => {
+  // Vercel Hobby allows one cron run per day, so the five-minute sweep is
+  // driven from GitHub Actions rather than vercel.json.
+  const workflow = await read('../.github/workflows/scheduled-notifications.yml');
+  assert.match(workflow, /cron: '\*\/5 \* \* \* \*'/);
+  assert.match(workflow, /\$\{APP_URL\}\/api\/cron\/notifications/);
+  assert.match(workflow, /Authorization: Bearer \$\{CRON_SECRET\}/);
+
+  // An unset secret must fail loudly instead of silently sending no header and
+  // reading the endpoint's 401 as a healthy run.
+  assert.match(workflow, /if \[ -z "\$\{CRON_SECRET\}" \]/);
+  assert.match(workflow, /if \[ "\$\{status\}" != "200" \]/);
+
+  await assert.rejects(read('../vercel.json'), /ENOENT/);
+
   const bridge = await read('../src/components/WorkspaceNotificationBridge.jsx');
   const header = await read('../src/components/WorkspaceHeader.jsx');
   assert.doesNotMatch(bridge, /\/api\/calendar\/reminders/);
