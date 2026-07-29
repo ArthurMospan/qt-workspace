@@ -51,18 +51,10 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/orgMemberships/$(orgId + '_' + uid));
     }
 
-    function projectOrg(projectId) {
-      return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
-    }
-
     function projectAcceptsNestedWrites(projectId) {
       return exists(/databases/$(database)/documents/projects/$(projectId)) &&
         get(/databases/$(database)/documents/projects/$(projectId))
           .data.get('deletionPending', false) != true;
-    }
-
-    function issueOrg(issueId) {
-      return get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId;
     }
 
     function issueAcceptsNestedWrites(issueId) {
@@ -115,12 +107,6 @@ service cloud.firestore {
         canAccessIssueData(get(issuePath).data);
     }
 
-    function isOrganizationCalendarTimeLog(data) {
-      return data.get('projectId', '') == '' &&
-        data.get('issueId', '') == '' &&
-        data.get('sourceType', '') == 'calendar_event';
-    }
-
     function isCalendarEventTimeLog(data) {
       return data.get('issueId', '') == '' &&
         data.get('sourceType', '') == 'calendar_event';
@@ -141,55 +127,6 @@ service cloud.firestore {
         data.get('issueId', '') != '' &&
         canAccessProject(data.projectId, data.organizationId)
       );
-    }
-
-    function validTimeLogTarget(data) {
-      let issueId = data.get('issueId', '');
-      return isOrganizationCalendarTimeLog(data) || (
-        exists(/databases/$(database)/documents/projects/$(data.projectId)) &&
-        get(/databases/$(database)/documents/projects/$(data.projectId)).data.organizationId ==
-          data.organizationId &&
-        get(/databases/$(database)/documents/projects/$(data.projectId)).data.get('deletionPending', false) != true &&
-        (issueId == '' || (
-        exists(/databases/$(database)/documents/issues/$(issueId)) &&
-        get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId ==
-          data.organizationId &&
-        get(/databases/$(database)/documents/issues/$(issueId)).data.projectId ==
-          data.projectId &&
-        get(/databases/$(database)/documents/issues/$(issueId)).data.get('deletionPending', false) != true
-      )));
-    }
-
-    function validTimeLogPayload(data) {
-      return data.spentMinutes is int &&
-        data.spentMinutes > 0 &&
-        data.spentMinutes <= 525600 &&
-        !data.keys().hasAny(['invoiceId', 'billedAt']);
-    }
-
-    function validTimeLogIdentity(data) {
-      let issueId = data.get('issueId', '');
-      let calendarSource = data.get('sourceType', '');
-      let eventId = data.get('eventId', '');
-      let occurrenceStartAt = data.get('occurrenceStartAt', '');
-      return (
-        issueId != '' &&
-        !data.keys().hasAny(['sourceType', 'eventId', 'occurrenceStartAt'])
-      ) || (
-        issueId == '' &&
-        calendarSource == 'calendar_event' &&
-        eventId is string &&
-        eventId.size() > 0 &&
-        eventId.size() <= 256 &&
-        occurrenceStartAt is string &&
-        occurrenceStartAt.size() > 0 &&
-        occurrenceStartAt.size() <= 100
-      );
-    }
-
-    function timeLogIsUnbilled(data) {
-      return data.get('invoiceId', '') == '' &&
-        data.get('billedAt', null) == null;
     }
 
     // ── organizations/{orgId} ──────────────────────────────────────────
