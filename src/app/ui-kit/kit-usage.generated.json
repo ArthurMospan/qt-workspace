@@ -272,11 +272,10 @@
     },
     "FormGroup": {
       "file": "src/components/ui/Forms/FormGroup.jsx",
-      "count": 5,
+      "count": 4,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/ai-call/page.js",
-        "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/AudioTaskPanel.jsx",
         "src/components/workspace/TimesheetTab.jsx"
@@ -332,12 +331,11 @@
     },
     "Input": {
       "file": "src/components/ui/Input.jsx",
-      "count": 14,
+      "count": 13,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/[projectId]/portal/page.js",
         "src/app/(app)/chat/page.js",
-        "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/CreateTaskModal.jsx",
@@ -409,9 +407,9 @@
         "src/app/(app)/calendar/page.js",
         "src/app/(app)/chat/page.js",
         "src/app/(app)/my/page.js",
-        "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/integrations/YouTrackImportCard.jsx",
+        "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
@@ -513,9 +511,10 @@
     },
     "ProjectSettingsForm": {
       "file": "src/components/ui/TaskManagement/ProjectSettingsForm.jsx",
-      "count": 1,
+      "count": 2,
       "showcased": true,
       "usedIn": [
+        "src/app/(app)/page.js",
         "src/components/workspace/BoardConfigModal.jsx"
       ]
     },
@@ -616,11 +615,10 @@
     },
     "StatusVisibilityPicker": {
       "file": "src/components/ui/TaskManagement/StatusVisibilityPicker.jsx",
-      "count": 2,
+      "count": 1,
       "showcased": true,
       "usedIn": [
-        "src/app/(app)/my/page.js",
-        "src/app/(app)/page.js"
+        "src/app/(app)/my/page.js"
       ]
     },
     "Stepper": {
@@ -700,13 +698,14 @@
     },
     "TaskRow": {
       "file": "src/components/ui/TaskManagement/TaskRow.jsx",
-      "count": 4,
+      "count": 5,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/profile/ProfileView.jsx",
-        "src/components/workspace/AnalyticsTab.jsx"
+        "src/components/workspace/AnalyticsTab.jsx",
+        "src/components/workspace/IssueDetail.jsx"
       ]
     },
     "TeamMemberCard": {
@@ -717,12 +716,11 @@
     },
     "Textarea": {
       "file": "src/components/ui/Forms/Textarea.jsx",
-      "count": 9,
+      "count": 8,
       "showcased": true,
       "usedIn": [
         "src/app/(app)/ai-call/page.js",
         "src/app/(app)/chat/page.js",
-        "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/AudioTaskPanel.jsx",

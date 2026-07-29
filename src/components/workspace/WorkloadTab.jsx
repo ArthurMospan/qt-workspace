@@ -131,6 +131,8 @@ function riskMeta(stat) {
   };
 }
 
+// Open work is neutral, not black: a full-width ink bar read as an alert on a
+// row where nothing was actually wrong. Same muted palette as the timesheet.
 function WorkloadBar({ open, done, overdue }) {
   const total = Math.max(open + done, 1);
   const doneWidth = (done / total) * 100;
@@ -138,9 +140,9 @@ function WorkloadBar({ open, done, overdue }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-canvas">
-        <span className="h-full bg-emerald-500" style={{ width: `${doneWidth}%` }} />
+        <span className="h-full bg-[#7ba98d]" style={{ width: `${doneWidth}%` }} />
         <span
-          className={overdue > 0 ? 'h-full bg-red-500' : 'h-full bg-ink'}
+          className={overdue > 0 ? 'h-full bg-[#c96a5a]' : 'h-full bg-[#b8b8b8]'}
           style={{ width: `${openWidth}%` }}
         />
       </div>

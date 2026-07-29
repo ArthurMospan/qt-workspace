@@ -1,33 +1,31 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, updateDoc, collection, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Check, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Search, Settings2, UserPlus, Activity, MessageSquare } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Settings2, Activity, MessageSquare } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
 import {
   Counter,
   EmptyState,
-  FormGroup,
   PageHeader,
-  StatusVisibilityPicker,
+  ProjectSettingsForm,
   useConfirm,
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Forms/Textarea';
 import Alert from '@/components/ui/Feedback/Alert';
 import Card from '@/components/ui/Layout/Card';
-import { Select, MultiSelect } from '@/components/ui/Select';
+import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import TaskCard from '@/components/ui/TaskManagement/TaskCard';
@@ -37,100 +35,12 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 
-// ── Add Member Modal ─────────────────────────────────────────────────────────
-function AddMemberModal({ project, allMembers, onClose }) {
-  const [search, setSearch] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [localTeam, setLocalTeam] = useState(project.team || []);
-
-  const filtered = allMembers.filter(m => {
-    const uid = m.id || m.uid;
-    const q = search.toLowerCase();
-    return (m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q));
-  });
-
-  const toggleMember = (uid) => {
-    setLocalTeam(prev =>
-      prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
-    );
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'projects', project.id), {
-        team: localTeam,
-        updatedAt: serverTimestamp(),
-      });
-      onClose();
-    } catch (err) { console.error(err); }
-    setSaving(false);
-  };
-
-  return (
-    <Dialog
-      isOpen={true}
-      onClose={onClose}
-      title="Учасники проєкту"
-      size="sm"
-      footer={
-        <>
-          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
-          <Button onClick={handleSave} disabled={saving} style="primary" size="md">
-            {saving ? 'Збереження...' : `Зберегти (${localTeam.length})`}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-[16px]">
-        <Input
-          autoFocus
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Пошук по імені або email..."
-          icon={Search}
-        />
-        <div className="flex-1 overflow-y-auto max-h-[300px] flex flex-col gap-[4px] -mx-1 px-1">
-          {filtered.length === 0 && (
-            <p className="text-center text-[13px] text-muted py-8">Нікого не знайдено</p>
-          )}
-          {filtered.map(m => {
-            const uid = m.id || m.uid;
-            const isIn = localTeam.includes(uid);
-            return (
-              <button
-                key={uid}
-                onClick={() => toggleMember(uid)}
-                className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[12px] transition-colors text-left ${
-                  isIn ? 'bg-[#eef2ff]' : 'hover:bg-canvas'
-                }`}
-              >
-                <UserAvatar user={m} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-ink truncate">{m.name || m.email}</p>
-                  <p className="text-[12px] text-muted truncate">{m.email}</p>
-                </div>
-                <div className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center shrink-0 ${
-                  isIn ? 'bg-ink border-ink' : 'border-line'
-                }`}>
-                  {isIn && <Check size={11} strokeWidth={3} className="text-white" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </Dialog>
-  );
-}
-
 // ── Project Card ─────────────────────────────────────────────────────────────
 const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
   const router = useRouter();
-  const { currentUser, activeOrgId } = useAppContext();
+  const { currentUser, activeOrgId, orgRole } = useAppContext();
   const confirmDialog = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showAddMember, setShowAddMember] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -237,8 +147,10 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
                 </button>
               }
               items={[
-                { icon: Settings2, label: 'Налаштування проєкту', onClick: () => setShowBoardConfig(true) },
-                { icon: UserPlus, label: 'Учасники', onClick: () => setShowAddMember(true) },
+                // One entry, one dialog — the same one the project page opens.
+                // Splitting settings from members meant two different dialogs
+                // edited the same project record.
+                { icon: Settings2, label: 'Налаштування', onClick: () => setShowBoardConfig(true) },
                 { isDivider: true },
                 !isArchived ? (
                   { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
@@ -285,8 +197,19 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       </div>
 
       {/* Modals */}
-      {showAddMember && <AddMemberModal project={project} allMembers={allOrgMembers} onClose={() => setShowAddMember(false)} />}
-      {showBoardConfig && <BoardConfigModal project={project} issues={issues} onClose={() => setShowBoardConfig(false)} />}
+      {showBoardConfig && (
+        <BoardConfigModal
+          project={project}
+          issues={issues}
+          organizationMembers={allOrgMembers}
+          canManageTeam={can(orgRole, 'manage:team')}
+          canInvite={can(orgRole, 'manage:team')}
+          onArchive={archive}
+          onUnarchive={unarchive}
+          onDelete={deleteProject}
+          onClose={() => setShowBoardConfig(false)}
+        />
+      )}
     </>
   );
 };
@@ -446,13 +369,16 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 }
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [], statuses = [] }) {
+function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [], statuses = [], canInvite = false }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
   const [saving,      setSaving]      = useState(false);
   const [team,        setTeam]        = useState([]);
   const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [nameError, setNameError] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
+  const { inviteMember } = useOrganization();
 
   const isFree      = orgPlan !== 'pro';
   const limitReached = isFree && activeProjectsCount >= 3;
@@ -460,7 +386,12 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const [error, setError] = useState(null);
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    // A disabled primary button gave no reason why, so the form now says what
+    // is missing and marks the field instead of silently refusing the click.
+    if (!name.trim()) {
+      setNameError('Вкажіть назву проєкту');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -496,6 +427,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   };
 
   return (
+    <>
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
@@ -505,7 +437,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       ) : (
         <>
           <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
-          <Button onClick={handleCreate} disabled={!name.trim() || saving} loading={saving} style="primary" size="md">Створити проєкт</Button>
+          <Button onClick={handleCreate} disabled={saving} loading={saving} style="primary" size="md">Створити проєкт</Button>
         </>
       )
     }>
@@ -514,7 +446,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
           <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-muted" />
           </div>
-          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт Free плану</h3>
+          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт Free плану</h3>
           <p className="text-[13px] text-muted leading-relaxed">
             На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
             Перейдіть на Pro для необмеженої кількості проєктів.
@@ -523,69 +455,49 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       ) : (
         <div className="flex flex-col gap-[16px]">
           {error && (
-            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-[10px] text-[13px] border border-red-100 flex flex-col gap-2">
-              <span className="font-semibold">{error}</span>
-              {error.includes('Pro') && (
-                <button 
+            <Alert variant="error" title={error}>
+              {error.includes('Pro') ? (
+                <Button
+                  style="primary"
+                  color="red"
+                  size="sm"
+                  className="mt-1"
                   onClick={() => { onClose(); window.location.href = '/settings#billing'; }}
-                  className="bg-red-600 text-white font-bold px-3 py-1.5 rounded-[6px] w-fit hover:bg-red-700 transition-colors"
                 >
                   Перейти на PRO →
-                </button>
-              )}
-            </div>
+                </Button>
+              ) : null}
+            </Alert>
           )}
-          <FormGroup label="Назва проєкту" required>
-            <Input
-              autoFocus
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              placeholder="Наприклад: Редизайн сайту"
-              composition="project-name"
-            />
-          </FormGroup>
-          <FormGroup label="Опис">
-            <Textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Короткий опис проєкту..."
-              rows={3}
-              composition="project-description"
-            />
-          </FormGroup>
-          <FormGroup label="Учасники">
-            <MultiSelect
-              value={team}
-              onChange={setTeam}
-              options={members.map(member => ({
-                value: member.id || member.uid,
-                label: member.name || member.displayName || member.email || 'Учасник',
-                user: member,
-              }))}
-              placeholder="Додати учасників одразу"
-              searchPlaceholder="Знайти учасника..."
-              className="w-full"
-              dropdownClassName="w-full max-w-none"
-              triggerIcon={Users}
-              selectAllLabel="Вибрати всіх учасників"
-            />
-            <p className="mt-1.5 text-[11px] text-muted">Ви як автор проєкту будете додані автоматично.</p>
-          </FormGroup>
-          <FormGroup label="Колонки проєкту">
-            <p className="text-[11px] text-muted">
-              Оберіть потрібні колонки одразу. Беклог залишається видимим завжди.
-            </p>
-            <StatusVisibilityPicker
-              statuses={statuses}
-              hiddenStatusIds={hiddenColumns}
-              onChange={setHiddenColumns}
-              backlogStatusId={statuses.some(status => status.id === 'backlog') ? 'backlog' : statuses[0]?.id}
-            />
-          </FormGroup>
+          {/* Same shared form the settings dialog renders — the two used to be
+              hand-written separately and drifted apart field by field. */}
+          <ProjectSettingsForm
+            name={name}
+            onNameChange={value => { setName(value); if (nameError) setNameError(''); }}
+            nameError={nameError}
+            description={description}
+            onDescriptionChange={setDescription}
+            statuses={statuses}
+            hiddenStatusIds={hiddenColumns}
+            onHiddenStatusIdsChange={setHiddenColumns}
+            backlogStatusId={statuses.some(status => status.id === 'backlog') ? 'backlog' : statuses[0]?.id}
+            teamMembers={members}
+            teamMemberIds={team}
+            onTeamMemberIdsChange={setTeam}
+            teamPlaceholder="Оберіть учасників проєкту"
+            teamHint="Ви як автор проєкту будете додані автоматично."
+            onInvite={canInvite ? () => setShowInvite(true) : undefined}
+          />
         </div>
       )}
     </Dialog>
+
+    <InviteMemberDialog
+      isOpen={showInvite}
+      onClose={() => setShowInvite(false)}
+      inviteMember={inviteMember}
+    />
+    </>
   );
 }
 
@@ -921,6 +833,7 @@ export default function WorkspacePage() {
         activeProjectsCount={stats.total}
         members={members}
         statuses={statuses}
+        canInvite={can(orgRole, 'manage:team')}
       />
     )}
 

@@ -11,8 +11,8 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 147,
-    "styledNativeControls": 115,
+    "nativeControls": 145,
+    "styledNativeControls": 113,
     "reviewedNativeControls": 15,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -25,7 +25,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 126,
+    "button": 124,
     "input": 15,
     "textarea": 6,
     "select": 0
@@ -108,10 +108,6 @@
       "count": 5
     },
     {
-      "file": "src/app/(app)/page.js",
-      "count": 4
-    },
-    {
       "file": "src/components/MobileNav.jsx",
       "count": 4
     },
@@ -142,6 +138,10 @@
     {
       "file": "src/components/workspace/AgileBoard.jsx",
       "count": 3
+    },
+    {
+      "file": "src/app/(app)/page.js",
+      "count": 2
     },
     {
       "file": "src/app/(app)/team/page.js",
@@ -273,7 +273,7 @@
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1029",
+      "location": "src/components/workspace/IssueDetail.jsx:1058",
       "tag": "button",
       "context": "identity-meta-trigger"
     },
@@ -344,12 +344,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:197",
+      "location": "src/app/(app)/page.js:107",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:206",
+      "location": "src/app/(app)/page.js:116",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -394,12 +394,12 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:588",
+      "location": "src/app/(app)/sprints/page.js:604",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:596",
+      "location": "src/app/(app)/sprints/page.js:612",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -424,12 +424,12 @@
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:454",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:465",
       "tag": "div",
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:514",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:525",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },
@@ -474,7 +474,7 @@
       "className": "flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:482",
+      "location": "src/components/workspace/BillingTab.jsx:487",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
@@ -519,37 +519,37 @@
       "className": "absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1478",
+      "location": "src/components/workspace/IssueDetail.jsx:1520",
       "tag": "div",
       "className": "group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1697",
+      "location": "src/components/workspace/IssueDetail.jsx:1707",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1727",
+      "location": "src/components/workspace/IssueDetail.jsx:1734",
       "tag": "div",
       "className": "flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1906",
+      "location": "src/components/workspace/IssueDetail.jsx:1915",
       "tag": "div",
       "className": "flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1965",
+      "location": "src/components/workspace/IssueDetail.jsx:1974",
       "tag": "div",
       "className": "flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:228",
+      "location": "src/components/workspace/IssueDetail.jsx:229",
       "tag": "div",
       "className": "w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:235",
+      "location": "src/components/workspace/IssueDetail.jsx:236",
       "tag": "div",
       "className": "w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
     },
@@ -599,12 +599,12 @@
       "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:133",
+      "location": "src/components/workspace/TimesheetTab.jsx:140",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:553",
+      "location": "src/components/workspace/TimesheetTab.jsx:560",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
@@ -614,7 +614,7 @@
       "className": "absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:551",
+      "location": "src/components/workspace/WorkloadTab.jsx:553",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

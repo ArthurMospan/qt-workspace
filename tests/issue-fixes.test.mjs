@@ -197,7 +197,11 @@ test('QUI-69 lays out overlaps and renders people as avatar plus name', async ()
   assert.match(eventDialog, /label: memberLabel\(member\),\s*user: member/);
   assert.match(eventPage, /label: memberLabel\(member\),\s*user: member/);
   assert.match(select, /function OptionIdentity\(\{ option, size = 14 \}\)/);
-  assert.match(select, /<OptionIdentity option=\{singleSelectedOption\} \/>/);
+  assert.match(select, /<OptionIdentity option=\{selectedOption\} \/>/);
+  // QUI-106: a MultiSelect of people still shows the person, and once more than
+  // one is picked it shows the stack rather than a bare "Обрано (N)".
+  assert.match(select, /<OptionIdentity option=\{showSelectedAvatars \? \(avatarOptions\[0\] \|\| singleSelectedOption\) : singleSelectedOption\} \/>/);
+  assert.match(select, /avatarOptions\.slice\(0, 3\)\.map/);
   assert.match(kit, /label: 'Артур Моспан', user: \{ id: 'u1'/);
 });
 
@@ -227,9 +231,13 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   ]);
 
   assert.doesNotMatch(workspace, /function EditProjectModal/);
-  assert.match(workspace, /label: 'Налаштування проєкту'/);
+  // QUI-99: the project card offers one settings entry, not a settings/members
+  // split, and it opens the very dialog the project page opens.
+  assert.match(workspace, /label: 'Налаштування'/);
+  assert.doesNotMatch(workspace, /function AddMemberModal/);
   assert.match(workspace, /hiddenColumns,\s*\n/);
-  assert.match(workspace, /<StatusVisibilityPicker[\s\S]{0,240}onChange=\{setHiddenColumns\}/);
+  assert.match(workspace, /<BoardConfigModal[\s\S]{0,400}canManageTeam=\{can\(orgRole, 'manage:team'\)\}/);
+  assert.match(workspace, /<ProjectSettingsForm[\s\S]{0,400}onHiddenStatusIdsChange=\{setHiddenColumns\}/);
   assert.match(projectPage, /title="Налаштування проєкту"/);
   assert.ok(
     projectPage.indexOf('title="Налаштування проєкту"')
@@ -242,9 +250,15 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   assert.match(settingsDialog, /title: 'Приховати колонки проєкту\?'/);
   assert.match(settingsDialog, /updateProjectSettings\(project\.id/);
   assert.match(settingsDialog, /<ProjectSettingsForm/);
-  assert.match(settingsDialog, /layout="stacked"/);
-  assert.match(settingsForm, /lg:grid-cols-\[minmax\(0,0\.8fr\)_minmax\(320px,1\.2fr\)\]/);
+  // QUI-98: settings and create render the same shared form, and archiving or
+  // deleting the project is reachable from the settings dialog itself.
+  assert.match(settingsDialog, /dangerZone=\{dangerZone\}/);
+  assert.match(settingsDialog, /Небезпечна зона/);
+  assert.match(settingsDialog, /<InviteMemberDialog/);
+  assert.match(workspace, /<ProjectSettingsForm/);
   assert.match(settingsForm, /<StatusVisibilityPicker/);
+  assert.match(settingsForm, /<MultiSelect/);
+  assert.match(settingsForm, /Запросити/);
   assert.match(picker, /disabled=\{disabled \|\| isBacklog\}/);
   assert.match(projectRoute, /'update-settings'/);
   assert.match(projectRoute, /columnId: backlogStatusId,\s*status: backlogStatusId/);

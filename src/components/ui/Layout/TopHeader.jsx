@@ -210,12 +210,16 @@ export default function TopHeader({
     <header className={`h-[56px] shrink-0 bg-white flex items-center pl-[16px] pr-[10px] justify-between z-30 w-full ${!hideBorder ? 'border-b border-[#f0f0f0]' : ''}`}>
       <div className="flex-1 min-w-0 flex items-center">
         {renderLeft()}
-        {mode === 'project' && projectMembers.length > 0 ? (
-          <div className="ml-3 shrink-0">
-            <ProjectMembersMenu members={projectMembers} onMemberClick={onOnlineUserClick} />
-          </div>
-        ) : null}
       </div>
+
+      {/* Team avatars sit on the right in every mode. In project mode they used
+          to hang off the breadcrumb on the left, which is not where the chat
+          header — the reference for this pattern — puts them. */}
+      {mode === 'project' && projectMembers.length > 0 ? (
+        <div className="ml-3 mr-2 shrink-0">
+          <ProjectMembersMenu members={projectMembers} onMemberClick={onOnlineUserClick} />
+        </div>
+      ) : null}
 
       {mode === 'chat' && onlineUsers.length > 0 && (
         <div className="ml-3 mr-2 shrink-0">{renderOnlineUsers()}</div>

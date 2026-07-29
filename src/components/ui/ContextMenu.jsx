@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Check } from 'lucide-react';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 // UI Kit: ContextMenu Component (Atom)
@@ -8,10 +9,14 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 export default function ContextMenu({
   trigger, // React element that triggers the menu (e.g. Button)
-  items = [], // Array of items: { label, icon, onClick, isDivider, isDanger, color }
+  // Array of items: { label, icon, onClick, isDivider, isDanger, color, selected }
+  // `selected` turns the row into a toggle: it stays open-menu styling but gets
+  // a trailing checkmark instead of callers prefixing "✓ " into the label.
+  items = [],
   className = '',
   dropdownClassName = '',
   onOpenChange, // Callback when open state changes
+  closeOnSelect = true, // Toggle menus keep the panel open while ticking items
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -75,30 +80,44 @@ export default function ContextMenu({
 
               const Icon = item.icon;
               const isDanger = item.isDanger || item.color === 'red' || item.color === '#ef4444';
+              const isToggle = item.selected !== undefined;
 
               return (
                 <button
                   key={item.label || idx}
                   type="button"
+                  role={isToggle ? 'menuitemcheckbox' : 'menuitem'}
+                  aria-checked={isToggle ? Boolean(item.selected) : undefined}
                   onClick={(e) => {
                     e.stopPropagation();
                     item.onClick?.(e);
-                    setIsOpen(false);
+                    if (closeOnSelect) setIsOpen(false);
                   }}
-                  className={`w-full text-left px-[14px] py-[9px] text-[13px] font-medium flex items-center gap-[8px] transition-colors ${
-                    isDanger 
-                      ? 'text-[#ef4444] hover:bg-red-50' 
+                  className={`w-full text-left px-[14px] py-[9px] text-[13px] flex items-center gap-[8px] transition-colors ${
+                    item.selected ? 'font-bold' : 'font-medium'
+                  } ${
+                    isDanger
+                      ? 'text-[#ef4444] hover:bg-red-50'
                       : 'text-ink hover:bg-canvas'
                   }`}
                   style={item.color && !isDanger ? { color: item.color } : {}}
                 >
                   {Icon && (
-                    <Icon 
-                      size={14} 
-                      className={isDanger ? 'text-[#ef4444]' : 'text-muted'} 
+                    <Icon
+                      size={14}
+                      className={isDanger ? 'text-[#ef4444]' : 'text-muted'}
                     />
                   )}
-                  <span>{item.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {isToggle && (
+                    <Check
+                      size={14}
+                      strokeWidth={3}
+                      className={`shrink-0 transition-opacity ${
+                        item.selected ? 'text-ink opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                  )}
                 </button>
               );
             })}

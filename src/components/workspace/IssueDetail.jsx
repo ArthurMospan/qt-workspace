@@ -19,12 +19,13 @@ import AttachmentViewer from '@/components/workspace/AttachmentViewer';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { fromDateInput, parseDueDate, toLocalDateInput } from '@/lib/utils/date';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
-import { Select } from '@/components/ui/Select';
+import { MultiSelect, Select } from '@/components/ui/Select';
 import { ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -35,7 +36,7 @@ import {
   Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, Download, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   CheckCircle, XCircle, Play, Square as StopIcon,
   FileText, Film, Music, Link2, Copy, Sparkles, Tag as TagIcon,
-  ZoomIn, Maximize2,
+  ZoomIn, Maximize2, ListTree,
 } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
@@ -258,6 +259,23 @@ function MaterialCard({ mat, onClick }) {
   );
 }
 
+// ── Section heading ────────────────────────────────────────────────
+// Мітки, Вкладення, Підзадачі and Зв’язки all label a list on the same panel,
+// so they get one heading instead of four near-identical ones. Local on
+// purpose: it is a composition of kit primitives (icon + ui-type-item-title +
+// Pill) bound to this detail view, not a new reusable visual component.
+function SectionHeading({ icon: Icon, title, count, meta, action }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <Icon size={13} className="shrink-0 text-muted" />
+      <h3 className="ui-type-item-title text-ink">{title}</h3>
+      {count > 0 && <Pill tone="line" size="sm">{count}</Pill>}
+      {meta && <span className="text-[10px] font-medium text-muted">{meta}</span>}
+      {action}
+    </div>
+  );
+}
+
 // ── Attachment rows ────────────────────────────────────────────────
 // Lives on the description's canvas panel, so each row is a white surface —
 // the same card-on-canvas relationship the rest of the workspace uses. There
@@ -267,11 +285,7 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
   if (attachments.length === 0) return null;
   return (
     <div>
-      <div className="mb-2 flex items-center gap-1.5 text-muted">
-        <Paperclip size={12} />
-        <span className="text-[11px] font-semibold">Вкладення</span>
-        <span className="text-[11px] font-semibold text-faint">{attachments.length}</span>
-      </div>
+      <SectionHeading icon={Paperclip} title="Вкладення" count={attachments.length} />
       <div className="flex flex-col gap-1.5">
         {attachments.map(attachment => {
           const url = getMatFileUrl(attachment);
@@ -709,29 +723,44 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     catch (err) { showToast(err.message, 'error'); }
   };
 
-  const toggleAssignee = async (uid) => {
-    const cur  = issue.assigneeIds || [];
-    const adding = !cur.includes(uid);
-    const next = adding ? [...cur, uid] : cur.filter(a => a !== uid);
+  // Writes the whole assignee list in one go, then replays the per-person side
+  // effects for everyone newly added. Doing it list-first (instead of once per
+  // toggle) is what lets the multi-select hand over several changes at a time
+  // without each write clobbering the previous one.
+  const setAssignees = async (next) => {
+    const cur = issue.assigneeIds || [];
+    const added = next.filter(uid => !cur.includes(uid));
+    if (added.length === 0 && next.length === cur.length) return;
     await update({ assigneeIds: next });
+
     // Under team-gated project visibility, an assignee who isn't on the
     // project team could not open the task they were just given. Add them to
     // the team so the assignment is actually usable. Best-effort: only
     // owners/admins may write `team` (Firestore rules), so a member assigner's
     // write is denied and swallowed — the assignment itself still stands.
-    if (adding && !teamUids.includes(uid)) {
+    const missingFromTeam = added.filter(uid => !teamUids.includes(uid));
+    if (missingFromTeam.length > 0) {
       try {
-        await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(uid) });
+        await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(...missingFromTeam) });
       } catch { /* member assigner lacks team-write permission — non-fatal */ }
     }
-    if (adding && uid !== (currentUser?.id || currentUser?.uid))
-      await sendNotification({ userIds: [uid], type: 'assigned',
+
+    const myId = currentUser?.id || currentUser?.uid;
+    const notifyIds = added.filter(uid => uid !== myId);
+    if (notifyIds.length > 0) {
+      await sendNotification({ userIds: notifyIds, type: 'assigned',
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
         link: `/${projectId}/issue/${issueId}`, issueId, projectId,
         organizationId: activeOrg?.id || activeOrg?.organizationId || '',
         // `actor` is resolved server-side from the ID token; passing it here
         // was silently dropped by /api/notifications.
       }).catch(() => {});
+    }
+  };
+
+  const toggleAssignee = async (uid) => {
+    const cur = issue.assigneeIds || [];
+    await setAssignees(cur.includes(uid) ? cur.filter(a => a !== uid) : [...cur, uid]);
   };
 
   // ── Watchers (follow a task you're not assigned to, to get its notifications) ──
@@ -1198,10 +1227,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     <Select compact disabled={isArchived} value={issue.columnId || issue.status || visibleStatuses[0]?.id} onChange={val => handleStatusChange(val)} options={visibleStatuses.map(s => ({ value: s.id, label: s.label, dotColor: s.color }))} buttonClassName={compactSelectClass} />
                   </div>
 
-                  {/* Assignee */}
+                  {/* Assignees — the task model has always been multi-assignee;
+                      the single Select silently hid everyone past the first. */}
                   <div className={attributeItemClass} onClick={e => { if (isArchived) return; if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
-                    <span className={attributeLabelClass}>Виконавець</span>
-                    <Select compact disabled={isArchived} value={issue.assigneeIds?.[0] || ''} onChange={val => toggleAssignee(val)} options={[{ value: '', label: 'Не призначено' }, ...members.map(m => ({ value: m.id || m.uid, label: m.name, user: m }))]} buttonClassName={compactSelectClass} />
+                    <span className={attributeLabelClass}>Виконавці</span>
+                    <MultiSelect
+                      compact
+                      showSelectedAvatars
+                      ariaLabel="Виконавці завдання"
+                      disabled={isArchived}
+                      value={issue.assigneeIds || []}
+                      onChange={setAssignees}
+                      options={members.map(m => ({ value: m.id || m.uid, label: m.name, user: m }))}
+                      placeholder="Не призначено"
+                      searchPlaceholder="Знайти учасника..."
+                      buttonClassName={compactSelectClass}
+                      dropdownClassName="w-[260px]"
+                    />
                   </div>
 
                   {/* Sprint */}
@@ -1551,11 +1593,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
 
                 {(issue.labelIds || []).length > 0 && (
                   <div className="pt-1">
-                    <div className="mb-2 flex items-center gap-1.5 text-muted">
-                      <TagIcon size={12} />
-                      <span className="text-[11px] font-semibold">Мітки</span>
-                      <span className="text-[11px] font-semibold text-faint">{issue.labelIds.length}</span>
-                    </div>
+                    <SectionHeading icon={TagIcon} title="Мітки" count={issue.labelIds.length} />
                     <div className="flex flex-wrap items-center gap-2">
                       {(issue.labelIds || []).map(id => {
                         const label = availableLabels.find(item => item.id === id);
@@ -1569,17 +1607,12 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               {/* REAL CHILD ISSUES */}
               {(childIssues.length > 0 || showSubInput) && (
                 <div className="pt-2">
-                  <div className="mb-3 flex items-center gap-2">
-                    <h3 className="ui-type-item-title text-ink">Підзадачі</h3>
-                    {childIssues.length > 0 && (
-                      <Pill tone="line" size="sm">{childIssuesDone}/{childIssues.length}</Pill>
-                    )}
-                    {openChildCount > 0 && (
-                      <span className="text-[10px] font-medium text-muted">
-                        {openChildCount} ще в роботі
-                      </span>
-                    )}
-                  </div>
+                  <SectionHeading
+                    icon={ListTree}
+                    title="Підзадачі"
+                    count={childIssues.length}
+                    meta={openChildCount > 0 ? `${childIssuesDone}/${childIssues.length} · ${openChildCount} ще в роботі` : `${childIssuesDone}/${childIssues.length}`}
+                  />
                   {childIssues.length > 0 && (
                     <div className="mb-4 h-[4px] overflow-hidden rounded-full bg-line">
                       <div
@@ -1588,48 +1621,24 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       />
                     </div>
                   )}
-                  <div className="flex flex-col gap-[6px]">
-                    {childIssues.map(child => {
-                      const childStatus = STATUSES.find(status => status.id === (child.columnId || child.status));
-                      const childAssignees = (child.assigneeIds || [])
-                        .map(uid => members.find(member => (member.id || member.uid) === uid))
-                        .filter(Boolean);
-                      return (
-                        <Surface
-                          key={child.id}
-                          preset="nested-card"
-                          padding="sm"
-                          className="flex items-center justify-between gap-3 transition-colors hover:bg-[#eeeeee]"
-                        >
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <span
-                              className="h-2 w-2 shrink-0 rounded-full"
-                              style={{ background: childStatus?.color || '#9a9a9a' }}
-                            />
-                            <Link
-                              href={`/${projectId}/issue/${child.id}`}
-                              className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink hover:underline"
-                            >
-                              <span className="mr-1 font-mono text-[10px] font-bold uppercase text-muted">
-                                {child.issueKey || child.id}
-                              </span>
-                              {child.title}
-                            </Link>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="hidden text-[10px] font-medium text-muted sm:inline">
-                              {childStatus?.label || 'Без статусу'}
-                            </span>
-                            {childAssignees.slice(0, 3).map(member => (
-                              <UserAvatar key={member.id || member.uid} user={member} size={18} />
-                            ))}
-                            {childAssignees.length > 3 && (
-                              <Pill tone="neutral" size="sm">+{childAssignees.length - 3}</Pill>
-                            )}
-                          </div>
-                        </Surface>
-                      );
-                    })}
+                  <div className="flex flex-col gap-2">
+                    {/* Subtasks are real issues, so they get the same shared row the
+                        list view uses instead of a lookalike built here. */}
+                    {childIssues.map(child => (
+                      <TaskRow
+                        key={child.id}
+                        issue={child}
+                        issues={issues}
+                        allIssues={issues}
+                        issueLinks={links}
+                        members={members}
+                        labels={availableLabels}
+                        sprints={sprints}
+                        projectId={child.projectId || projectId}
+                        projectName={project?.name}
+                        isTimerActive={activeTimer?.issueId === child.id}
+                      />
+                    ))}
                     {showSubInput && (
                       <Surface preset="compact-bordered-card" padding="md" className="mt-2 flex flex-col gap-3">
                         <Input
@@ -1670,10 +1679,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               {/* LEGACY CHECKLIST — new lightweight steps live in description Markdown */}
               {checklistAll > 0 && (
               <div className="pt-2">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <h3 className="ui-type-item-title text-ink">Старий чекліст</h3>
-                <Pill tone="line" size="sm">{checklistDone}/{checklistAll}</Pill>
-                {!isArchived && (
+              <SectionHeading
+                icon={CheckSquare}
+                title="Старий чекліст"
+                meta={`${checklistDone}/${checklistAll}`}
+                action={!isArchived ? (
                   <Button
                     style="ghost"
                     size="sm"
@@ -1684,8 +1694,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   >
                     Перенести в опис
                   </Button>
-                )}
-              </div>
+                ) : null}
+              />
               <p className="mb-3 text-[10px] leading-relaxed text-muted">
                 Це старий формат. Нові чеклісти додавайте як checkbox у описі задачі.
               </p>
@@ -1708,11 +1718,8 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               )}
               {/* ISSUE LINKS */}
               {(currentIssueLinks.length > 0 || showLinkInput) && (
-              <div className="flex flex-col gap-3 pt-2">
-              <div className="flex items-center gap-2">
-                <h3 className="ui-type-item-title text-ink">Зв’язки</h3>
-                {currentIssueLinks.length > 0 && <Pill tone="line" size="sm">{currentIssueLinks.length}</Pill>}
-              </div>
+              <div className="flex flex-col pt-2">
+              <SectionHeading icon={Link2} title="Зв’язки" count={currentIssueLinks.length} />
 
               <div className="flex flex-col gap-[6px]">
                 {currentIssueLinks.map(({ link, perspective }) => {
@@ -1840,12 +1847,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         </Button>
                       )}
                       dropdownClassName="w-[220px]"
+                      closeOnSelect={false}
                       items={availableLabels.map(label => {
                         const active = (issue.labelIds || []).includes(label.id);
                         return {
-                          label: `${active ? '✓ ' : ''}${label.label || label.name}`,
+                          label: label.label || label.name,
                           icon: TagIcon,
                           color: active ? label.color : undefined,
+                          selected: active,
                           onClick: () => {
                             const current = issue.labelIds || [];
                             update({ labelIds: active ? current.filter(id => id !== label.id) : [...current, label.id] });

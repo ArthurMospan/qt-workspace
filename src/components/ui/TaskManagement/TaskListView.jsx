@@ -1,6 +1,8 @@
 'use client';
 
-import { ClipboardList } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
@@ -24,6 +26,12 @@ export default function TaskListView({
   emptyDescription = 'Змініть фільтри або створіть нове завдання.',
 }) {
   const { statuses } = useWorkflowConfig();
+  const [collapsedSections, setCollapsedSections] = useState([]);
+  const toggleSection = sectionId => setCollapsedSections(current => (
+    current.includes(sectionId)
+      ? current.filter(id => id !== sectionId)
+      : [...current, sectionId]
+  ));
   const firstStatusId = statuses[0]?.id;
   const visibleStatuses = statuses.filter(status => !hiddenStatusIds.includes(status.id));
   const statusIdForIssue = issue => issue.columnId || issue.status || firstStatusId;
@@ -58,14 +66,32 @@ export default function TaskListView({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {sections.map(section => (
+      {sections.map(section => {
+        const isCollapsed = collapsedSections.includes(section.id);
+        return (
           <Surface key={section.id} preset="panel" padding="lg" className="w-full">
-            <div className="mb-4 flex select-none items-center gap-2 border-b border-line pb-2">
+            {/* No rule under the heading — the panel edge already separates the
+                sections, and the collapse control mirrors the board column. */}
+            <div
+              className={`flex cursor-pointer select-none items-center gap-2 ${isCollapsed ? '' : 'mb-4'}`}
+              onClick={() => toggleSection(section.id)}
+            >
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: section.color }} />
               <h3 className="ui-type-column-title uppercase tracking-wide text-ink">{section.label}</h3>
               <Counter value={section.issues.length} size="sm" appearance="subtle" className="ml-1" />
+              <Button
+                style="ghost"
+                size="icon-xs"
+                icon={isCollapsed ? ChevronRight : ChevronDown}
+                iconSize={16}
+                className="ml-auto hover:!bg-white"
+                aria-expanded={!isCollapsed}
+                title={isCollapsed ? 'Розгорнути' : 'Згорнути'}
+                aria-label={`${isCollapsed ? 'Розгорнути' : 'Згорнути'} ${section.label}`}
+              />
             </div>
 
+            {!isCollapsed && (
             <div className="flex flex-col gap-2">
               {section.issues.map(issue => {
                 const resolvedProject = projects.find(project => project.id === issue.projectId);
@@ -89,8 +115,10 @@ export default function TaskListView({
                 );
               })}
             </div>
+            )}
           </Surface>
-      ))}
+        );
+      })}
     </div>
   );
 }

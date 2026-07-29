@@ -64,12 +64,19 @@ function fmtWork(min) {
   return parts.join(' ');
 }
 
+// ── Timesheet accent palette ─────────────────────────────────────────────────
+// Saturated emerald/orange read badly against the grey canvas — the chips
+// fought the content instead of ranking it. Muted, warm equivalents below keep
+// text contrast above 4.5:1 on their own fill:
+//   норма виконана  #e6f2ea / #2f6b4b   частково  #fdf0e3 / #9a5b18
+//   сьогодні        #f4f8f5 / ring #dbe9e0 / #2f6b4b
+
 // Colored capacity chip: "6г 20хв з 8г"
 function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
   const cls = minutes >= capacity
-    ? 'bg-[#dcfce7] text-[#15803d]'
+    ? 'bg-[#e6f2ea] text-[#2f6b4b]'
     : minutes > 0
-      ? 'bg-[#ffedd5] text-[#c2410c]'
+      ? 'bg-[#fdf0e3] text-[#9a5b18]'
       : 'bg-[#efefef] text-muted';
   return (
     <span className={`inline-flex items-center text-[11px] font-bold px-[8px] py-[3px] rounded-[6px] whitespace-nowrap ${cls}`}>
@@ -113,15 +120,15 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
           <div key={key}
             className={`rounded-[16px] border p-[8px] flex flex-col gap-[8px] min-h-[260px] transition-colors ${
               isToday
-                ? 'border-emerald-200 bg-white ring-2 ring-emerald-100'
+                ? 'border-[#dbe9e0] bg-white ring-2 ring-[#eaf2ed]'
                 : isWeekend
                   ? 'border-black/[0.05] bg-white'
                   : 'border-black/[0.05] bg-white'
             }`}>
             {/* Day header */}
             <div className="flex items-center justify-between px-[4px] pt-[2px]">
-              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-[#15803d]' : 'text-muted'}`}>
-                {DAY_LABELS[i]} <span className={`text-[13px] ${isToday ? 'text-[#166534]' : 'text-ink'}`}>{d.getDate()}</span>
+              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-[#2f6b4b]' : 'text-muted'}`}>
+                {DAY_LABELS[i]} <span className={`text-[13px] ${isToday ? 'text-[#2f6b4b]' : 'text-ink'}`}>{d.getDate()}</span>
               </span>
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
@@ -194,8 +201,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-emerald-50/70' : 'bg-white'}`}>
-                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#15803d]' : 'text-muted'}`}>
+              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
+                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#2f6b4b]' : 'text-muted'}`}>
                   {DAY_LABELS[i]} {d.getDate()}
                 </span>
               </th>
@@ -216,7 +223,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-emerald-50/70' : 'bg-white'}`}>
+                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
@@ -294,11 +301,11 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
                 title="Відкрити тиждень"
                 className={`rounded-[14px] border p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${
                   !inMonth ? 'border-black/[0.03] bg-white/60 opacity-45'
-                    : isToday ? 'border-emerald-200 bg-white ring-2 ring-emerald-100 hover:border-emerald-300'
+                    : isToday ? 'border-[#dbe9e0] bg-white ring-2 ring-[#eaf2ed] hover:border-[#c6dccd]'
                     : isWeekend ? 'border-black/[0.05] bg-white hover:border-black/10'
                     : 'border-black/[0.05] bg-white hover:border-black/10 hover:shadow-sm'
                 }`}>
-                <span className={`text-[12px] font-bold ${isToday ? 'text-[#15803d]' : inMonth ? 'text-ink' : 'text-muted'}`}>
+                <span className={`text-[12px] font-bold ${isToday ? 'text-[#2f6b4b]' : inMonth ? 'text-ink' : 'text-muted'}`}>
                   {d.getDate()}
                 </span>
                 {cell?.minutes > 0 && (

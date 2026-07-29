@@ -269,6 +269,9 @@ function IssueRow({
         ) : null}
       </div>
 
+      {/* Both price states occupy the same 104px slot. Letting the auto label
+          and the manual input size themselves shifted the Авто/Вручну switch
+          horizontally row by row, so a column of rows never lined up. */}
       <div
         className="flex min-w-0 items-center justify-between gap-2 md:justify-end"
         onClick={event => event.stopPropagation()}
@@ -284,28 +287,30 @@ function IssueRow({
           ]}
           surface="canvas"
         />
-        {useManual ? (
-          <div className="relative w-[104px]">
-            <Input
-              type="number"
-              size="md"
-              min={0}
-              step="0.01"
-              value={manualPrice ?? ''}
-              onChange={event => onManualPrice(event.target.value === '' ? null : Number(event.target.value))}
-              placeholder="0.00"
-              preset="money"
-              aria-label={`Ручна вартість: ${issue.title}`}
-            />
-            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted">
-              {currency}
+        <div className="relative h-[32px] w-[104px] shrink-0">
+          {useManual ? (
+            <>
+              <Input
+                type="number"
+                size="md"
+                min={0}
+                step="0.01"
+                value={manualPrice ?? ''}
+                onChange={event => onManualPrice(event.target.value === '' ? null : Number(event.target.value))}
+                placeholder="0.00"
+                preset="money"
+                aria-label={`Ручна вартість: ${issue.title}`}
+              />
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted">
+                {currency}
+              </span>
+            </>
+          ) : (
+            <span className={`flex h-full items-center justify-end text-right text-[13px] font-bold tabular-nums ${price > 0 ? 'text-ink' : 'text-faint'}`}>
+              {price > 0 ? fmtMoney(price, currency) : '—'}
             </span>
-          </div>
-        ) : (
-          <span className={`min-w-[88px] text-right text-[13px] font-bold ${price > 0 ? 'text-ink' : 'text-faint'}`}>
-            {price > 0 ? fmtMoney(price, currency) : '—'}
-          </span>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

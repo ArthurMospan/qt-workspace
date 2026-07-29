@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
@@ -8,7 +9,9 @@ import {
   ProjectSettingsForm,
   useConfirm,
 } from '@/components/ui';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { useOrganization } from '@/lib/hooks/useOrganization';
 import { updateProjectSettings } from '@/lib/services/projects';
 
 export default function BoardConfigModal({
@@ -16,12 +19,18 @@ export default function BoardConfigModal({
   issues = [],
   organizationMembers = [],
   canManageTeam = false,
+  canInvite = false,
+  onArchive,
+  onUnarchive,
+  onDelete,
   onClose,
 }) {
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirm = useConfirm();
   const { statuses, loading } = useWorkflowConfig();
+  const { inviteMember } = useOrganization();
   const [name, setName] = useState(project?.name || '');
+  const [nameError, setNameError] = useState('');
   const [description, setDescription] = useState(project?.description || '');
   const [hiddenColumns, setHiddenColumns] = useState(
     (project?.hiddenColumns || []).filter(statusId => statusId !== 'backlog'),
@@ -30,6 +39,8 @@ export default function BoardConfigModal({
     Array.isArray(project?.team) ? project.team : [],
   );
   const [saving, setSaving] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const isArchived = project?.status === 'archived';
   const backlogStatusId = statuses.some(status => status.id === 'backlog')
     ? 'backlog'
     : statuses[0]?.id;
@@ -43,7 +54,10 @@ export default function BoardConfigModal({
   );
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setNameError('Вкажіть назву проєкту');
+      return;
+    }
     if (statuses.length > 0 && statusesToHide.length >= statuses.length) {
       showToast('Дошка повинна мати хоча б одну видиму колонку', 'error');
       return;
@@ -89,45 +103,112 @@ export default function BoardConfigModal({
     }
   };
 
-  return (
-    <Dialog
-      isOpen
-      onClose={onClose}
-      title="Налаштування проєкту"
-      size="sm"
-      footer={(
-        <>
-          <Button style="secondary" size="md" onClick={onClose}>
-            Скасувати
-          </Button>
+  const handleDelete = async () => {
+    const accepted = await confirm({
+      title: 'Видалити проєкт?',
+      message: `Ви видаляєте «${project?.name}». Цю дію неможливо скасувати.`,
+      confirmText: 'Видалити',
+      danger: true,
+    });
+    if (!accepted) return;
+    try {
+      await onDelete(project.id);
+      onClose();
+    } catch (error) {
+      showToast(error.message || 'Не вдалося видалити проєкт', 'error');
+    }
+  };
+
+  // Archiving and deleting live at the bottom of the same dialog: they belong to
+  // the project's settings, and hiding them behind a separate kebab menu was the
+  // reason the settings dialog and the create dialog drifted apart.
+  const dangerZone = (onArchive || onDelete) ? (
+    <section className="mt-2 border-t border-line pt-4">
+      <h3 className="ui-type-item-title mb-1 text-ink">Небезпечна зона</h3>
+      <p className="mb-3 text-[11px] leading-relaxed text-muted">
+        Архівований проєкт зникає зі списків, але його завдання та історія зберігаються.
+        Видалення незворотне.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {onArchive && !isArchived ? (
           <Button
-            style="primary"
+            style="secondary"
             size="md"
-            onClick={handleSave}
-            disabled={!name.trim() || saving || loading}
-            loading={saving}
+            icon={Archive}
+            onClick={async () => { await onArchive(project.id); onClose(); }}
           >
-            Зберегти зміни
+            Заархівувати
           </Button>
-        </>
-      )}
-    >
-      <ProjectSettingsForm
-        name={name}
-        onNameChange={setName}
-        description={description}
-        onDescriptionChange={setDescription}
-        statuses={statuses}
-        hiddenStatusIds={statusesToHide}
-        onHiddenStatusIdsChange={setHiddenColumns}
-        backlogStatusId={backlogStatusId}
-        teamMembers={canManageTeam ? organizationMembers : []}
-        teamMemberIds={teamMemberIds}
-        onTeamMemberIdsChange={canManageTeam ? setTeamMemberIds : undefined}
-        ownerId={project?.createdBy}
-        loading={loading}
-        layout="stacked"
+        ) : null}
+        {onUnarchive && isArchived ? (
+          <Button
+            style="secondary"
+            size="md"
+            icon={ArchiveRestore}
+            onClick={async () => { await onUnarchive(project.id); onClose(); }}
+          >
+            Розархівувати
+          </Button>
+        ) : null}
+        {onDelete ? (
+          <Button style="secondary" color="red" size="md" icon={Trash2} onClick={handleDelete}>
+            Видалити проєкт
+          </Button>
+        ) : null}
+      </div>
+    </section>
+  ) : null;
+
+  return (
+    <>
+      <Dialog
+        isOpen
+        onClose={onClose}
+        title="Налаштування проєкту"
+        size="sm"
+        footer={(
+          <>
+            <Button style="secondary" size="md" onClick={onClose}>
+              Скасувати
+            </Button>
+            <Button
+              style="primary"
+              size="md"
+              onClick={handleSave}
+              disabled={saving || loading}
+              loading={saving}
+            >
+              Зберегти зміни
+            </Button>
+          </>
+        )}
+      >
+        <ProjectSettingsForm
+          name={name}
+          onNameChange={value => { setName(value); if (nameError) setNameError(''); }}
+          nameError={nameError}
+          description={description}
+          onDescriptionChange={setDescription}
+          statuses={statuses}
+          hiddenStatusIds={statusesToHide}
+          onHiddenStatusIdsChange={setHiddenColumns}
+          backlogStatusId={backlogStatusId}
+          teamMembers={canManageTeam ? organizationMembers : []}
+          teamMemberIds={teamMemberIds}
+          onTeamMemberIdsChange={canManageTeam ? setTeamMemberIds : undefined}
+          ownerId={project?.createdBy}
+          teamHint="Учасники поза цим списком не бачитимуть проєкт."
+          onInvite={canManageTeam && canInvite ? () => setShowInvite(true) : undefined}
+          loading={loading}
+          dangerZone={dangerZone}
+        />
+      </Dialog>
+
+      <InviteMemberDialog
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+        inviteMember={inviteMember}
       />
-    </Dialog>
+    </>
   );
 }

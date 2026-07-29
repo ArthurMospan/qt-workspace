@@ -485,11 +485,13 @@ function SelectsSection() {
 
   const statusOpts = DEFAULT_STATUSES.map(s => ({ value: s.id, label: s.label, dotColor: s.color }));
   const priorityOpts = DEFAULT_PRIORITIES.map(p => ({ value: p.id, label: p.label, dotColor: p.color }));
+  // `user` on every option so the previews show the avatar treatment the
+  // product actually renders, not a bare list of names.
   const memberOpts = [
-    { value: 'u1', label: 'Артур Моспан' },
-    { value: 'u2', label: 'Іван Петренко' },
-    { value: 'u3', label: 'Марина Коваль' },
-    { value: 'u4', label: 'Дмитро Сірко' },
+    { value: 'u1', label: 'Артур Моспан', user: { id: 'u1', name: 'Артур Моспан' } },
+    { value: 'u2', label: 'Іван Петренко', user: { id: 'u2', name: 'Іван Петренко' } },
+    { value: 'u3', label: 'Марина Коваль', user: { id: 'u3', name: 'Марина Коваль' } },
+    { value: 'u4', label: 'Дмитро Сірко', user: { id: 'u4', name: 'Дмитро Сірко' } },
   ];
 
   return (
@@ -504,7 +506,7 @@ function SelectsSection() {
       </PreviewBlock>
 
       {/* ─── Ghost Select & MultiSelect ─── */}
-      <PreviewBlock title="Ghost Select & MultiSelect" description="Безмежові селектори для панелей фільтрів (FilterBar). Висота: 28px (вбудована в FilterBar висотою 36px). Кольори: фон transparent (hover #ebebeb), текст #1f1f1f, маркер #9a9a9a. Скруглення: 8px. Активуються при наведенні, мають уніфікований шрифт (font-medium)." fullWidth>
+      <PreviewBlock title="Ghost Select & MultiSelect" description="Безмежові селектори для панелей фільтрів (FilterBar). Висота: 28px (вбудована в FilterBar висотою 36px). Кольори: фон transparent (hover #ebebeb), текст #1f1f1f, маркер #9a9a9a. Скруглення: 8px. Активуються при наведенні, мають уніфікований шрифт (font-medium). Контекст context=&quot;stacked&quot; розтягує кожен контрол на всю ширину — його використовує PageHeader у мобільній модалці фільтрів." fullWidth>
         <FilterBar>
           <Select filterRole="type" options={statusOpts} value={v4} onChange={setV4} placeholder="Всі статуси" variant="ghost" />
           <MultiSelect filterRole="member" options={memberOpts} value={v5} onChange={setV5} placeholder="Всі виконавці" searchPlaceholder="Шукати..." variant="ghost" />
@@ -512,15 +514,29 @@ function SelectsSection() {
       </PreviewBlock>
 
       {/* ─── Inline Attribute Select ─── */}
-      <PreviewBlock title="Inline Attribute Select" description="Ультракомпактний селектор для бічних панелей деталей та таблиць. Висота: 22px. Кольори: bg-transparent, текст #1f1f1f. Скруглення: 10px. Охоплює ховер-ефектом (#ebebeb) увесь стовпчик разом із заголовком." fullWidth>
+      <PreviewBlock title="Inline Attribute Select" description="Ультракомпактний селектор для бічних панелей деталей та таблиць. Висота: 22px. Кольори: bg-transparent, текст #1f1f1f. Скруглення: 10px. Охоплює ховер-ефектом (#ebebeb) увесь стовпчик разом із заголовком. Атрибути з кількома значеннями (виконавці) використовують MultiSelect із compact + showSelectedAvatars — стек аватарів і «Ім’я +N» замість «Обрано (N)»." fullWidth>
         <div className="max-w-[200px] bg-[#f4f4f5] p-4 rounded-[12px]">
           <div className="hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] transition-colors flex flex-col gap-[4px] w-full cursor-pointer" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
             <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Статус</span>
-            <Select 
-              value={v6} 
-              onChange={setV6} 
-              options={statusOpts} 
+            <Select
+              value={v6}
+              onChange={setV6}
+              options={statusOpts}
               buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]"
+            />
+          </div>
+          <div className="mt-3 hover:bg-[#ebebeb] p-2 -m-2 rounded-[10px] transition-colors flex flex-col gap-[4px] w-full cursor-pointer" onClick={e => { if (e.target.tagName === 'SPAN' || e.target === e.currentTarget) e.currentTarget.querySelector('button')?.click(); }}>
+            <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider">Виконавці</span>
+            <MultiSelect
+              compact
+              showSelectedAvatars
+              value={v3}
+              onChange={setV3}
+              options={memberOpts}
+              placeholder="Не призначено"
+              searchPlaceholder="Знайти учасника..."
+              buttonClassName="h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]"
+              dropdownClassName="w-[260px]"
             />
           </div>
         </div>
@@ -792,7 +808,14 @@ function ProgressSection() {
 
 
 
+const KIT_MENU_LABELS = [
+  { id: 'frontend', label: 'Фронтенд' },
+  { id: 'bug', label: 'Баг' },
+  { id: 'design', label: 'Дизайн' },
+];
+
 function NavigationOverlaysSection() {
+  const [menuLabelIds, setMenuLabelIds] = useState(['frontend']);
   const menuItems = [
     { icon: Edit2, label: 'Редагувати', onClick: () => alert('Редагувати') },
     { icon: Copy, label: 'Дублювати', onClick: () => alert('Дублювати') },
@@ -801,6 +824,16 @@ function NavigationOverlaysSection() {
     { isDivider: true },
     { icon: Trash2, label: 'Видалити', isDanger: true, onClick: () => alert('Видалити') },
   ];
+  const toggleMenuItems = KIT_MENU_LABELS.map(label => ({
+    icon: TagIcon,
+    label: label.label,
+    selected: menuLabelIds.includes(label.id),
+    onClick: () => setMenuLabelIds(current => (
+      current.includes(label.id)
+        ? current.filter(id => id !== label.id)
+        : [...current, label.id]
+    )),
+  }));
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -853,13 +886,26 @@ function NavigationOverlaysSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Context Menu" description="Живий ContextMenu з продуктовими станами елементів." fullWidth>
+      <PreviewBlock title="Context Menu" description="Живий ContextMenu з продуктовими станами елементів. Пункт із prop selected стає перемикачем: галочка праворуч, напівжирна назва, панель не закривається (closeOnSelect={false})." fullWidth>
         <div className="flex items-start gap-[40px] flex-wrap">
           <div className="flex flex-col gap-[8px]">
             <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Інтерактивне меню</span>
-            <ContextMenu 
-              trigger={<Button style="secondary" size="icon" icon={MoreVertical}>Меню</Button>} 
+            <ContextMenu
+              trigger={<Button style="secondary" size="icon" icon={MoreVertical}>Меню</Button>}
               items={menuItems}
+            />
+          </div>
+          <div className="flex flex-col gap-[8px]">
+            <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Меню-перемикач (мітки задачі)</span>
+            <ContextMenu
+              trigger={(
+                <Button style="ghost" size="sm" composition="inline-add-action" icon={Plus} iconSize={11}>
+                  Додати мітку
+                </Button>
+              )}
+              dropdownClassName="w-[220px]"
+              closeOnSelect={false}
+              items={toggleMenuItems}
             />
           </div>
         </div>
@@ -1014,7 +1060,7 @@ function HeadersSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="3) Хлібні крихти з пошуком (Project Mode)" description="Навігація проєкту з розсувним пошуком." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
+      <PreviewBlock title="3) Хлібні крихти з пошуком (Project Mode)" description="Навігація проєкту з розсувним пошуком. Аватарки команди проєкту стоять праворуч — у тій самій позиції, що й онлайн-учасники в Chat Mode." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
           <TopHeader 
             mode="project" 
@@ -1069,7 +1115,7 @@ function PageHeadersSection() {
   return (
     <div className="flex flex-col gap-[32px]">
       {/* Варіант 1: Повний (Заголовок + Дії + Таби + Фільтри + Switcher) */}
-      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
+      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання). На екранах вужче 768px рядок фільтрів ховається: замість нього — іконка з лічильником активних фільтрів, яка відкриває їх у модалці (звузьте вікно, щоб перевірити)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
             variant="main"
@@ -1533,7 +1579,7 @@ function TaskCRMSection() {
 
       <PreviewBlock
         title="Task List View — живий shared organism"
-        description="Саме цей organism рендерить обидва списки: hiddenStatusIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view."
+        description="Саме цей organism рендерить обидва списки: hiddenStatusIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view. Кожну секцію можна згорнути кнопкою праворуч (той самий ghost icon, що згортає колонку канбану); розділювальної лінії під заголовком немає — секції відділяє відступ."
         filePath="src/components/ui/TaskManagement/TaskListView.jsx"
         fullWidth
       >
@@ -1837,7 +1883,7 @@ function TaskAttributesSection() {
 function FormGroupsSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Form Group Layouts" description="Контейнери для полів форми. Зв'язують заголовок Label (атом) та поле вводу (Input). Відображають зірочку (*) для обов'язкових полів та опис помилки під інпутом." fullWidth>
+      <PreviewBlock title="Form Group Layouts" description="Контейнери для полів форми. Зв'язують заголовок Label (атом) та поле вводу (Input). Обов'язкове поле позначається текстом «обов'язково» праворуч у заголовку (не червоною зірочкою), помилка — червоною рамкою поля й текстом під ним." fullWidth>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]">
           <FormGroup label="Назва проєкту">
             <Input placeholder="Введіть назву..." />

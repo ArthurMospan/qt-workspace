@@ -513,8 +513,24 @@ export default function GlobalSprintsPage() {
                   return (
                     <div key={sprint.id} data-ui-surface="local" className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
                       <div className="px-5 py-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0 cursor-pointer" onClick={() => toggleSection(sprint.id)}>
-                          {isExpanded ? <ChevronDown size={16} className="text-muted" /> : <ChevronRight size={16} className="text-muted" />}
+                        {/* The bare 16px chevron was the only reliable target and
+                            the row shrank to its content, so the empty space beside
+                            the title did nothing. Now the whole strip toggles and
+                            the chevron is the same ghost icon button as the board. */}
+                        <div
+                          className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-[#ebebeb]"
+                          onClick={() => toggleSection(sprint.id)}
+                        >
+                          <Button
+                            style="ghost"
+                            size="icon"
+                            icon={isExpanded ? ChevronDown : ChevronRight}
+                            iconSize={16}
+                            className="shrink-0 hover:!bg-white"
+                            aria-expanded={isExpanded}
+                            title={isExpanded ? 'Згорнути спринт' : 'Розгорнути спринт'}
+                            aria-label={`${isExpanded ? 'Згорнути' : 'Розгорнути'} спринт ${sprint.name}`}
+                          />
                           <h3 className="ui-type-card-title text-ink truncate">{sprint.name}</h3>
                           {sprint.status === 'active' && <StatusPill label="Активний" color="#10b981" />}
                           {sprint.status === 'planned' && <StatusPill label="Запланований" color="#9a9a9a" />}

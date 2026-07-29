@@ -445,8 +445,19 @@ export default function YouTrackImportCard({
                 <div data-ui-surface="compact-bordered-panel" data-ui-padding="sm" className="ui-surface space-y-4">
                   <div>
                     <p className="text-[12px] font-semibold text-ink">1. Проєкти та місце імпорту</p>
-                    <p className="mt-1 text-[11px] text-muted">Повторний запуск оновлює вже імпортовані записи без дублів.</p>
+                    <p className="mt-1 text-[11px] text-muted">
+                      Оберіть проєкти й статуси задач, які переносимо. Повторний запуск оновлює вже
+                      імпортовані записи без дублів.
+                    </p>
                   </div>
+                  {/* The import is driven step by step from this tab, so the tab has to
+                      stay open. Warning only once a job exists came too late — by then
+                      the page had already been closed once. */}
+                  <Alert
+                    variant="info"
+                    title="Імпорт іде з цієї вкладки — тримайте її відкритою"
+                    description="Закрита або перезавантажена сторінка призупиняє перенесення. Продовжити можна тією ж кнопкою й без дублів, але процес не рухається, доки вкладка закрита."
+                  />
                   <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                     {discovery.projects.map(project => {
                       const checked = selectedProjectIds.includes(project.id);

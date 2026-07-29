@@ -9,10 +9,10 @@ import {
   CircleDot,
   Flag,
   Folder,
-  Layers,
   Search,
   Shapes,
   Users,
+  Zap,
 } from 'lucide-react';
 import { getFilterControlWidth } from './FilterBar';
 import UserAvatar from './DataDisplay/UserAvatar';
@@ -35,7 +35,7 @@ const DROPDOWN_MAX_WIDTH = 360;
 const FILTER_ROLE_ICONS = {
   type: Shapes,
   priority: Flag,
-  sprint: Layers,
+  sprint: Zap,
   status: CircleDot,
   date: CalendarDays,
   member: Users,
@@ -325,6 +325,7 @@ export function MultiSelect({
   placeholder = 'Оберіть...',
   searchPlaceholder = 'Пошук...',
   className = '',
+  buttonClassName,
   dropdownClassName = '',
   disabled = false,
   variant = 'default',
@@ -334,6 +335,12 @@ export function MultiSelect({
   composition,
   filterRole,
   filterContext = 'default',
+  compact = false,
+  ariaLabel,
+  // Renders the selected people as an overlapping avatar stack in the trigger
+  // instead of "Обрано (N)". Task attributes need to read the assignees at a
+  // glance, which a bare count cannot do.
+  showSelectedAvatars = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -372,17 +379,22 @@ export function MultiSelect({
     }
   };
 
-  const selectedLabels = options
-    .filter(o => value.includes(o.value))
-    .map(o => o.label);
-  const singleSelectedOption = value.length === 1
-    ? options.find(option => option.value === value[0])
-    : null;
+  const selectedOptions = options.filter(o => value.includes(o.value));
+  const selectedLabels = selectedOptions.map(o => o.label);
+  const singleSelectedOption = value.length === 1 ? selectedOptions[0] : null;
+  const avatarOptions = showSelectedAvatars
+    ? selectedOptions.filter(option => option.user || option.avatar)
+    : [];
   const ResolvedTriggerIcon = TriggerIcon || FILTER_ROLE_ICONS[filterRole];
 
   let triggerText = placeholder;
   if (value.length === 1) triggerText = selectedLabels[0];
-  else if (value.length > 1) triggerText = `Обрано (${value.length})`;
+  else if (value.length > 1) {
+    triggerText = showSelectedAvatars
+      ? `${selectedLabels[0]} +${value.length - 1}`
+      : `Обрано (${value.length})`;
+  }
+  const defaultButtonClass = `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
 
   return (
     <div className={`relative ${filterWidth} ${className}`} ref={containerRef}>
@@ -392,6 +404,7 @@ export function MultiSelect({
         data-ui-size={variant === 'ghost' ? 'sm' : size}
         data-ui-composition={composition}
         aria-haspopup="listbox"
+        aria-label={ariaLabel}
         aria-expanded={isOpen}
         onKeyDown={event => {
           if (event.key === 'Escape' && isOpen) {
@@ -401,16 +414,26 @@ export function MultiSelect({
           }
         }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`}`}
+        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
       >
-        <div className="flex items-center gap-[8px] overflow-hidden">
+        <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
-          <OptionIdentity option={singleSelectedOption} />
+          {avatarOptions.length > 1 ? (
+            <span aria-hidden="true" className="flex shrink-0 items-center -space-x-1.5">
+              {avatarOptions.slice(0, 3).map(option => (
+                <span key={option.value} className="rounded-full ring-2 ring-white">
+                  <UserAvatar user={option.user || { name: option.label, avatar: option.avatar }} size={16} />
+                </span>
+              ))}
+            </span>
+          ) : (
+            <OptionIdentity option={showSelectedAvatars ? (avatarOptions[0] || singleSelectedOption) : singleSelectedOption} />
+          )}
           <span className="text-[13px] truncate font-medium text-ink">
             {triggerText}
           </span>
         </div>
-        <ChevronDown size={14} className={`text-muted shrink-0 ml-[8px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={compact ? 12 : 14} className={`text-muted shrink-0 transition-transform ${compact ? 'ml-1' : 'ml-[8px]'} ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && typeof document !== 'undefined' && createPortal(

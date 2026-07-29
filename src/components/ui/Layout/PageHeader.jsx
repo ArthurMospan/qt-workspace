@@ -1,8 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { Children, cloneElement, isValidElement, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Filter } from 'lucide-react';
 import Tabs from '../Tabs';
 import Button from '../Button';
+import Dialog from '../Dialog';
+import Counter from '../DataDisplay/Counter';
+import { countActiveFilters } from '../FilterBar';
 
 // ─── UI Kit: PageHeader Component ────────────────────────────────────────────
 // Standard page header used across ALL workspace pages.
@@ -28,8 +32,24 @@ export function PageHeader({
   filters,
   className  = '',
 }) {
-  // Mobile-only: filters are collapsed behind a toggle button
+  // Mobile-only: filters live in a dialog. Expanding them inline pushed the
+  // page content off a phone screen — four fixed-width selects wrap onto three
+  // rows and ate most of the viewport before a single task was visible.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const activeFilterCount = countActiveFilters(filters);
+
+  // Inside the dialog every control spans the full width instead of keeping its
+  // desktop fixed width. The filters slot is an arbitrary tree (fragment, flex
+  // wrapper, …), so find the bar wherever it sits.
+  const stackFilters = node => Children.map(node, child => {
+    if (!isValidElement(child)) return child;
+    if (child.type?.isFilterBar) return cloneElement(child, { context: 'stacked' });
+    if (child.props?.children) {
+      return cloneElement(child, { children: stackFilters(child.props.children) });
+    }
+    return child;
+  });
+  const stackedFilters = stackFilters(filters);
 
   // ── Alt variant: compact bar inside a white panel ──────────────────────────
   if (variant === 'alt') {
@@ -83,14 +103,23 @@ export function PageHeader({
           )}
           {/* Mobile filters toggle — sits with the action buttons */}
           {filters && (
-            <Button
-              style={mobileFiltersOpen ? 'primary' : 'secondary'}
-              size="icon-lg"
-              icon={Filter}
-              onClick={() => setMobileFiltersOpen(o => !o)}
-              title="Фільтри"
-              className="md:hidden"
-            />
+            <div className="relative md:hidden">
+              <Button
+                style={activeFilterCount > 0 ? 'primary' : 'secondary'}
+                size="icon-lg"
+                icon={Filter}
+                onClick={() => setMobileFiltersOpen(true)}
+                title="Фільтри"
+                aria-label="Фільтри"
+              />
+              {activeFilterCount > 0 && (
+                <Counter
+                  value={activeFilterCount}
+                  size="sm"
+                  className="pointer-events-none absolute -right-1 -top-1"
+                />
+              )}
+            </div>
           )}
           {mobileActions && (
             <div className="md:hidden flex items-center gap-[8px] shrink-0">
@@ -112,13 +141,35 @@ export function PageHeader({
         </div>
       )}
 
-      {/* Row 2: Filters — mobile: hidden until toggled */}
+      {/* Row 2: Filters — desktop only; phones get the dialog below */}
       {filters && (
-        <div className={`${mobileFiltersOpen ? 'flex' : 'hidden'} md:flex items-center gap-[12px] flex-wrap`}>
+        <div className="hidden md:flex items-center gap-[12px] flex-wrap">
           <div className="flex items-center gap-[12px] flex-wrap flex-1 min-w-0">
             {filters}
           </div>
         </div>
+      )}
+
+      {/* Portaled to the body: this header is sticky and sits under blurred
+          layers, which give `position: fixed` a containing block and would
+          otherwise anchor the overlay to the header instead of the viewport. */}
+      {filters && mobileFiltersOpen && typeof document !== 'undefined' && createPortal(
+        <Dialog
+          isOpen
+          onClose={() => setMobileFiltersOpen(false)}
+          title="Фільтри"
+          size="sm"
+          footer={(
+            <Button style="primary" size="md" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+              Готово
+            </Button>
+          )}
+        >
+          <div className="flex flex-col gap-[16px]">
+            {stackedFilters}
+          </div>
+        </Dialog>,
+        document.body,
       )}
     </div>
   );

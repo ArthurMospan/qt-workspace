@@ -236,14 +236,21 @@ function AnalyticsContent({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card preset="borderless" padding="lg">
             <SectionTitle>По статусах</SectionTitle>
-            <div className="flex flex-col gap-[10px]">
+            {/* Label above the bar rather than squeezed into a 90px column:
+                at 10px in that width every status name was truncated. */}
+            <div className="flex flex-col gap-[14px]">
               {stats.byStatus.map(({ id, label, color, count }) => (
-                <div key={id} className="flex items-center gap-3">
-                  <span className="w-[90px] text-[10px] font-medium text-muted shrink-0 truncate">{label}</span>
-                  <div className="flex-1 h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: color }} />
+                <div key={id} className="flex flex-col gap-[6px]">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                      <span className="truncate text-[13px] font-semibold text-ink">{label}</span>
+                    </span>
+                    <span className="shrink-0 text-[14px] font-bold text-ink tabular-nums">{count}</span>
                   </div>
-                  <span className="text-[11px] font-bold text-ink w-5 text-right shrink-0">{count}</span>
+                  <div className="h-[6px] overflow-hidden rounded-full bg-[#f0f0f0]">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: color }} />
+                  </div>
                 </div>
               ))}
             </div>
