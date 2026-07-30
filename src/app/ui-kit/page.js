@@ -27,7 +27,7 @@ import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
-import BypassSurvey from './BypassSurvey';
+import SurfaceElements from './SurfaceElements';
 import LiveControl from './LiveControl';
 import fidelityAudit from './fidelity-audit.generated.json';
 import kitUsage from './kit-usage.generated.json';
@@ -51,12 +51,32 @@ import {
 // NAV SECTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
+const STRUCTURE_NAV = Object.fromEntries(
+  Object.entries(fidelityAudit.structureLabels || {})
+    .map(([id, label]) => [id, `${label} (${fidelityAudit.totals.structures?.[id] || 0})`]),
+);
+STRUCTURE_NAV.other = fidelityAudit.totals.structures?.other
+  ? `Інше (${fidelityAudit.totals.structures.other})`
+  : '';
+
 const GROUPS = [
   {
-    title: 'Поза кітом',
+    // Each product surface and the elements it is built from. Not a defect
+    // list: these are the working parts of Calendar, Tasks and the rest, shown
+    // together so each can grow its own components the way chat did.
+    title: 'Поверхні (Surfaces)',
     items: [
-      { id: 'bypass', label: 'Обходять кіт', icon: AlertCircle },
-    ]
+      { id: 'surface-chat', label: STRUCTURE_NAV['chat'], icon: Layers },
+      { id: 'surface-tasks', label: STRUCTURE_NAV['tasks'], icon: Layers },
+      { id: 'surface-shell', label: STRUCTURE_NAV['shell'], icon: Layers },
+      { id: 'surface-calendar', label: STRUCTURE_NAV['calendar'], icon: Layers },
+      { id: 'surface-settings', label: STRUCTURE_NAV['settings'], icon: Layers },
+      { id: 'surface-ai-call', label: STRUCTURE_NAV['ai-call'], icon: Layers },
+      { id: 'surface-board', label: STRUCTURE_NAV['board'], icon: Layers },
+      { id: 'surface-qtplus', label: STRUCTURE_NAV['qtplus'], icon: Layers },
+      { id: 'surface-analytics', label: STRUCTURE_NAV['analytics'], icon: Layers },
+      { id: 'surface-other', label: STRUCTURE_NAV['other'], icon: Layers },
+    ].filter(item => item.label)
   },
   {
     title: 'Атоми (Atoms)',
@@ -2338,7 +2358,16 @@ function TokensSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
-  bypass: <BypassSurvey />,
+  'surface-chat': <SurfaceElements structure="chat" />,
+  'surface-tasks': <SurfaceElements structure="tasks" />,
+  'surface-shell': <SurfaceElements structure="shell" />,
+  'surface-calendar': <SurfaceElements structure="calendar" />,
+  'surface-settings': <SurfaceElements structure="settings" />,
+  'surface-ai-call': <SurfaceElements structure="ai-call" />,
+  'surface-board': <SurfaceElements structure="board" />,
+  'surface-qtplus': <SurfaceElements structure="qtplus" />,
+  'surface-analytics': <SurfaceElements structure="analytics" />,
+  'surface-other': <SurfaceElements structure="other" />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
   selects:    <SelectsSection />,

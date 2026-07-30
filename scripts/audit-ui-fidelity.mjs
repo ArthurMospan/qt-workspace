@@ -163,13 +163,30 @@ function sortLocations(entries) {
 
 // Which kit component this native control is probably a hand-rolled copy of.
 // A hint only — the classification is a judgement call, so the survey asks.
-// Files that make up the chat surface. Chat has its own scale in the kit
-// (chat-message avatars, chat-*-action icon sizes, chat-day separators), so its
-// native controls are one family to decide about, not scattered one-offs.
-const CHAT_FILE = /(?:\/chat\/|Chat[A-Z]|ChatAttachments|MessageContent|UnifiedTimeline|HoverCard)/;
+// Which product surface a control belongs to.
+//
+// These are not strays to be folded into generic components — they are the
+// working parts of Calendar, Chat, Analytics and the rest. Each surface has
+// its own section in /ui-kit for the same reason chat does: a control only
+// makes sense next to the others it works with.
+const STRUCTURES = [
+  { id: 'chat', label: 'Чат', file: /(?:\/chat\/|Chat[A-Z]|ChatAttachments|MessageContent|UnifiedTimeline|HoverCard)/ },
+  { id: 'calendar', label: 'Календар', file: /calendar/i },
+  { id: 'analytics', label: 'Аналітика', file: /(?:analytics|BillingTab|TimesheetTab|WorkloadTab)/i },
+  { id: 'qtplus', label: 'QuickTeam+', file: /qtplus/i },
+  { id: 'ai-call', label: 'AI-дзвінок', file: /(?:ai-call|AudioTask)/i },
+  { id: 'tasks', label: 'Задачі', file: /(?:IssueDetail|IssueCard|CreateTaskModal|TaskRow|TaskListView|AttachmentViewer|Markdown)/ },
+  { id: 'board', label: 'Дошка й проєкт', file: /(?:AgileBoard|BoardConfig|ProjectTeamTab|QtPlusProjectTab|\(app\)\/\[projectId\]|\(app\)\/page\.js)/ },
+  { id: 'sprints', label: 'Спринти', file: /sprints/i },
+  { id: 'settings', label: 'Налаштування', file: /(?:settings|TeamMemberSettings|InviteLink|InviteMemberDialog|OrgSwitcher|YouTrackImport)/i },
+  { id: 'shell', label: 'Оболонка', file: /(?:WorkspaceHeader|WorkspaceSidebar|MobileNav|AuthLayout|SearchModal|UserStatusSetter|TopHeader|NotificationCenter|profile\/)/ },
+];
+
+export const STRUCTURE_LABELS = Object.fromEntries(STRUCTURES.map(item => [item.id, item.label]));
 
 function structureOf(file) {
-  return CHAT_FILE.test(file) ? 'chat' : '';
+  const match = STRUCTURES.find(item => item.file.test(file));
+  return match ? match.id : 'other';
 }
 
 function resemblesKitComponent(tag, className, text, childElements) {
@@ -491,8 +508,12 @@ export function auditUiFidelity() {
       parsedFiles: results.length - parseErrors.length,
       parseErrors: parseErrors.length,
       nativeControls: nativeControls.length,
-      chatControls: nativeControls.filter(control => structureOf(control.location) === 'chat').length,
-      bypassControls: nativeControls.filter(control => structureOf(control.location) !== 'chat').length,
+      structures: Object.fromEntries(
+        [...STRUCTURES, { id: 'other' }].map(item => [
+          item.id,
+          nativeControls.filter(control => structureOf(control.location) === item.id).length,
+        ]).filter(([, count]) => count > 0),
+      ),
       styledNativeControls: nativeControls.filter(control => control.styled).length,
       reviewedNativeControls: nativeControls.filter(control => control.reviewed).length,
       manualLabels: manualLabels.length,
@@ -518,12 +539,8 @@ export function auditUiFidelity() {
     // controls are reported separately too. Mixing them into the bypass list
     // framed the chat's own elements as strays to be folded into generic
     // components, which is the opposite of the intent.
-    nativeControls: sortLocations(nativeControls)
-      .map(withContext)
-      .filter(control => control.structure !== 'chat'),
-    chatControls: sortLocations(nativeControls)
-      .map(withContext)
-      .filter(control => control.structure === 'chat'),
+    nativeControls: sortLocations(nativeControls).map(withContext),
+    structureLabels: STRUCTURE_LABELS,
     nativeHotspots: [...nativeHotspots.entries()]
       .map(([file, count]) => ({ file, count }))
       .sort((a, b) => b.count - a.count || a.file.localeCompare(b.file)),
