@@ -275,7 +275,7 @@ function LoginMethodItem({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-[14px]">
       <div className="flex items-center gap-3 min-w-0">
-        <div data-ui-surface="local" className="w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink">
+        <div data-ui-surface="local" className="w-[36px] h-[36px] rounded-[10px] bg-canvas flex items-center justify-center shrink-0 text-ink">
           {icon}
         </div>
         <div className="min-w-0">

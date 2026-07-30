@@ -6,6 +6,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
   Dialog,
+  Label,
   ProjectSettingsForm,
   useConfirm,
 } from '@/components/ui';
@@ -124,7 +125,7 @@ export default function BoardConfigModal({
   // reason the settings dialog and the create dialog drifted apart.
   const dangerZone = (onArchive || onDelete) ? (
     <section className="mt-2 border-t border-line pt-4">
-      <h3 className="ui-type-item-title mb-1 text-ink">Небезпечна зона</h3>
+      <div className="mb-1"><Label>Небезпечна зона</Label></div>
       <p className="mb-3 text-[11px] leading-relaxed text-muted">
         Архівований проєкт зникає зі списків, але його завдання та історія зберігаються.
         Видалення незворотне.
@@ -137,7 +138,7 @@ export default function BoardConfigModal({
             icon={Archive}
             onClick={async () => { await onArchive(project.id); onClose(); }}
           >
-            Заархівувати
+            Архівувати
           </Button>
         ) : null}
         {onUnarchive && isArchived ? (

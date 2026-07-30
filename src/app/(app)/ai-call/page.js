@@ -17,7 +17,7 @@ import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 const PRIORITY_OPTIONS = [
-  { value: 'blocker', label: 'Блокер' },
+  { value: 'blocker', label: 'Критичний' },
   { value: 'high', label: 'Високий' },
   { value: 'medium', label: 'Середній' },
   { value: 'low', label: 'Низький' },

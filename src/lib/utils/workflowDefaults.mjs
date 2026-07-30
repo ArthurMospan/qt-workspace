@@ -43,7 +43,7 @@ const BUILT_IN_LABEL_TRANSLATIONS = {
     bug: { Bug: 'Баг' },
   },
   priorities: {
-    blocker: { Blocker: 'Блокер' },
+    blocker: { Blocker: 'Критичний', 'Блокер': 'Критичний' },
     high: { High: 'Високий' },
     medium: { Medium: 'Середній' },
     low: { Low: 'Низький' },

@@ -27,9 +27,12 @@ function ProjectMembersMenu({ members, onMemberClick }) {
           aria-label="Переглянути команду проєкту"
         >
           <span className="flex items-center -space-x-2.5">
-            {members.slice(0, 5).map(member => (
+            {members.slice(0, 5).map((member, index) => (
               <span
                 key={member.id || member.uid}
+                // Earlier avatars stack on top, so a neighbour's white ring can
+                // no longer cover the online dot sitting under it.
+                style={{ zIndex: members.length - index }}
                 className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-2 ring-white"
               >
                 <UserAvatar user={member} size="sm" />

@@ -1,10 +1,14 @@
 'use client';
 
 // src/lib/hooks/useAllMyTasks.js — Fetch all tasks assigned to current user across all projects
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import {
+  chunkProjectIds,
+  flattenDocumentBuckets,
+} from '@/lib/utils/projectScopedQueries.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -18,7 +22,8 @@ function issueLabel(issue) {
 
 export function useAllMyTasks(userId) {
   const {
-    activeOrgId
+    activeOrgId,
+    projects,
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
   const [snapshotTasks, setSnapshotTasks] = useState([]);
@@ -30,8 +35,18 @@ export function useAllMyTasks(userId) {
   // `order`, so the merged list needs no re-sort.
   const [tasks, applyPatch, revertPatch] = useOptimisticPatch(snapshotTasks);
   const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(snapshotAllIssues);
+  // Only the projects this user can already open. An organization-wide query
+  // is rejected in full the moment it touches one project they are not on the
+  // team of, which is what used to empty this page for every member.
+  const projectScope = useMemo(
+    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))]
+      .sort()
+      .join(','),
+    [projects],
+  );
   useEffect(() => {
-    if (!activeOrgId || !userId) {
+    const projectIds = projectScope ? projectScope.split(',') : [];
+    if (!activeOrgId || !userId || projectIds.length === 0) {
       queueMicrotask(() => {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
@@ -46,9 +61,19 @@ export function useAllMyTasks(userId) {
       setIssueLinks([]);
       setLoading(true);
     });
-    const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId));
-    const unsub = onSnapshot(q, snap => {
-      const allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const chunks = chunkProjectIds(projectIds);
+    const issueBuckets = new Map();
+    const linkBuckets = new Map();
+    const readyStreams = new Set();
+    const expectedStreamCount = chunks.length * 2;
+    const unsubs = [];
+    const markReady = key => {
+      readyStreams.add(key);
+      if (readyStreams.size >= expectedStreamCount) setLoading(false);
+    };
+    const publishIssues = () => {
+      const allDocs = flattenDocumentBuckets(issueBuckets);
       const docs = allDocs
         .filter(issue => issue.assigneeIds?.includes(userId));
       docs.sort((a, b) => {
@@ -58,21 +83,52 @@ export function useAllMyTasks(userId) {
       });
       setSnapshotAllIssues(allDocs);
       setSnapshotTasks(docs);
-      setLoading(false);
-    }, err => {
-      reportLoadError('[useAllMyTasks]', err);
-      setLoading(false);
+    };
+
+    chunks.forEach((chunk, chunkIndex) => {
+      const issuesKey = `issues:${chunkIndex}`;
+      unsubs.push(onSnapshot(
+        query(
+          collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+        ),
+        snap => {
+          issueBuckets.set(issuesKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          publishIssues();
+          markReady(issuesKey);
+        },
+        err => {
+          reportLoadError('[useAllMyTasks]', err);
+          issueBuckets.set(issuesKey, []);
+          publishIssues();
+          markReady(issuesKey);
+        },
+      ));
+
+      const linksKey = `links:${chunkIndex}`;
+      unsubs.push(onSnapshot(
+        query(
+          collection(db, 'issueLinks'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+        ),
+        snap => {
+          linkBuckets.set(linksKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          setIssueLinks(flattenDocumentBuckets(linkBuckets));
+          markReady(linksKey);
+        },
+        err => {
+          reportLoadError('[useAllMyTasks] links', err);
+          linkBuckets.set(linksKey, []);
+          setIssueLinks(flattenDocumentBuckets(linkBuckets));
+          markReady(linksKey);
+        },
+      ));
     });
 
-    const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
-    const unsubLinks = onSnapshot(lq, snap => {
-      setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, err => {
-      reportLoadError('[useAllMyTasks] links', err);
-    });
-
-    return () => { unsub(); unsubLinks(); };
-  }, [userId, activeOrgId]);
+    return () => unsubs.forEach(unsubscribe => unsubscribe());
+  }, [userId, activeOrgId, projectScope]);
   const updateTask = useCallback(async (taskId, data) => {
     const current = tasks.find(task => task.id === taskId);
     if (

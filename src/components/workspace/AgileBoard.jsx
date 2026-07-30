@@ -8,7 +8,6 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import Pill from '@/components/ui/DataDisplay/Pill';
-import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -62,7 +61,6 @@ export default function AgileBoard({
   projects = [],
   sprints = [],
   showProjectName = false,
-  collapseHierarchy = false,
   activeTimerIssueId,
   onAddIssue,
   onRequestAddIssue,
@@ -76,18 +74,11 @@ export default function AgileBoard({
   const [mounted, setMounted] = useState(dndReady);
   const { statuses: globalStatuses, labels } = useWorkflowConfig();
   const contextIssues = allIssues || issues;
-  // In a project board the parent is the single Kanban card and its children
-  // are managed from that card. In filtered/cross-project views a child remains
-  // visible when its parent is not part of the current result set.
-  const boardIssues = useMemo(() => {
-    if (!collapseHierarchy) return issues;
-    const visibleIds = new Set(issues.map(issue => issue.id));
-    return issues.filter(issue => {
-      const parentId = existingParentIssueId(issue);
-      return !parentId || !visibleIds.has(parentId);
-    });
-  }, [collapseHierarchy, issues]);
-  
+  // A subtask carries its own status, so it is a card of its own on every
+  // board. IssueCard prints the parent's key on it, which is what keeps the
+  // hierarchy readable without hiding work from the column it belongs to.
+  const boardIssues = issues;
+
   // Both sources hand back a fresh array on every render, which would defeat
   // the memos below; collapse them to a value that only changes on content.
   const hiddenColsKey = (project ? (project.hiddenColumns || []) : hiddenColumns).join(',');
@@ -219,7 +210,7 @@ export default function AgileBoard({
          if(grouped[p]) grouped[p].push(i);
       });
       return [
-        { id: 'priority-blocker', title: 'Блокер 🔴', issues: grouped.blocker },
+        { id: 'priority-blocker', title: 'Критичний 🔴', issues: grouped.blocker },
         { id: 'priority-high', title: 'Високий 🟠', issues: grouped.high },
         { id: 'priority-medium', title: 'Середній 🟡', issues: grouped.medium },
         { id: 'priority-low', title: 'Низький ⚪', issues: grouped.low },

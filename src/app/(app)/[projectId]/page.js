@@ -370,7 +370,6 @@ export default function BoardPage({ params }) {
             <AgileBoard
               issues={boardIssues}
               allIssues={issues}
-              collapseHierarchy
               members={members}
               projectId={projectId}
               project={project}

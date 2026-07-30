@@ -4,6 +4,10 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import {
+  chunkProjectIds,
+  flattenDocumentBuckets,
+} from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Settings2, Activity, MessageSquare } from 'lucide-react';
@@ -535,23 +539,44 @@ export default function WorkspacePage() {
     }
   }, [searchParams, router]);
 
-  // Real-time listener for all issues in this organization
+  // Real-time listener for the issues of every project this user can open.
+  // Querying the whole organization is rejected as soon as one project is out
+  // of reach, because Firestore applies the read rule to every candidate row.
+  const projectScope = useMemo(
+    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))]
+      .sort()
+      .join(','),
+    [projects],
+  );
   useEffect(() => {
-    if (!activeOrgId) return;
-    const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId));
-    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data({ serverTimestamps: 'estimate' }),
-      }));
-      setAllIssues(list);
-      setIssuesError(null);
-    }, (err) => {
-      reportLoadError('[WorkspacePage] issues', err);
-      setIssuesError(err);
-    });
-    return () => unsubscribe();
-  }, [activeOrgId]);
+    const projectIds = projectScope ? projectScope.split(',') : [];
+    if (!activeOrgId || projectIds.length === 0) {
+      queueMicrotask(() => setAllIssues([]));
+      return undefined;
+    }
+    const buckets = new Map();
+    const unsubs = chunkProjectIds(projectIds).map((chunk, chunkIndex) => onSnapshot(
+      query(
+        collection(db, 'issues'),
+        where('organizationId', '==', activeOrgId),
+        where('projectId', 'in', chunk),
+      ),
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        buckets.set(chunkIndex, snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data({ serverTimestamps: 'estimate' }),
+        })));
+        setAllIssues(flattenDocumentBuckets(buckets));
+        setIssuesError(null);
+      },
+      (err) => {
+        reportLoadError('[WorkspacePage] issues', err);
+        setIssuesError(err);
+      },
+    ));
+    return () => unsubs.forEach(unsubscribe => unsubscribe());
+  }, [activeOrgId, projectScope]);
 
   useEffect(() => {
     const handleIssueActivity = event => {
@@ -762,7 +787,9 @@ export default function WorkspacePage() {
           <div className="flex flex-col items-start gap-2">
             <Alert
               variant="error"
-              title="Не вдалося завантажити проєкти"
+              title={projectsError
+                ? 'Не вдалося завантажити проєкти'
+                : 'Не вдалося завантажити завдання'}
               description="Перевірте підключення до інтернету та спробуйте ще раз."
             />
             <Button onClick={() => window.location.reload()} style="secondary" size="sm">

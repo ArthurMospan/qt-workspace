@@ -344,7 +344,7 @@ function AnalyticsContent({
               {stats.blockerPriority > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.blockerPriority} завдань із пріоритетом «Блокер»`}
+                  title={`${stats.blockerPriority} завдань із пріоритетом «Критичний»`}
                   description="Потребують негайної уваги"
                 />
               )}

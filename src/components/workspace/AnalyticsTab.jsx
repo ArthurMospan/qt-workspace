@@ -352,7 +352,7 @@ export default function AnalyticsTab({
                 <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-[12px]">
                   <AlertCircle size={14} className="text-amber-600 shrink-0" />
                   <p className="text-[12px] font-medium text-amber-800">
-                    <span className="font-bold">{stats.blockerPriority}</span> завдань із пріоритетом «Блокер»
+                    <span className="font-bold">{stats.blockerPriority}</span> завдань із пріоритетом «Критичний»
                   </p>
                 </div>
               )}

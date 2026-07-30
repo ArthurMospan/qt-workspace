@@ -894,6 +894,62 @@ test('issue links are readable but all client writes go through the canonical AP
   await assertFails(deleteDoc(doc(adminDb, 'issueLinks', 'link-a')));
 });
 
+test('issue links stay listable for the projects a user can already open', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'project-locked'), {
+      organizationId: 'org-a',
+      name: 'Locked',
+      status: 'active',
+      team: ['owner-a'],
+    });
+    for (const [id, projectId] of [
+      ['list-link-a', 'project-a'],
+      ['list-link-b', 'project-a'],
+      ['list-link-locked', 'project-locked'],
+    ]) {
+      await setDoc(doc(db, 'issueLinks', id), {
+        schemaVersion: 2,
+        organizationId: 'org-a',
+        projectId,
+        sourceIssueId: 'issue-a',
+        targetIssueId: 'issue-b',
+        relationType: 'blocks',
+      });
+    }
+  });
+
+  const scopedLinks = (db, projectIds) => query(
+    collection(db, 'issueLinks'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', projectIds),
+  );
+
+  // The workspace only ever asks for links of projects it already resolved,
+  // so this is the shape every hook has to keep using.
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const memberSnapshot = await assertSucceeds(getDocs(scopedLinks(memberDb, ['project-a'])));
+  assert.equal(memberSnapshot.size, 2);
+
+  // An owner sees both projects, and the unscoped query still has to work for
+  // them — reading resource.data.projectId directly used to fail it outright.
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const ownerSnapshot = await assertSucceeds(getDocs(query(
+    collection(ownerDb, 'issueLinks'),
+    where('organizationId', '==', 'org-a'),
+  )));
+  assert.equal(ownerSnapshot.size, 3);
+
+  // Scoping is still enforced: a member cannot widen the query to a project
+  // whose team they are not on.
+  await assertFails(getDocs(scopedLinks(memberDb, ['project-a', 'project-locked'])));
+  await assertFails(getDocs(query(
+    collection(environment.authenticatedContext('member-offteam').firestore(), 'issueLinks'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+  )));
+});
+
 test('project-scoped data follows live team membership while admins retain access', async () => {
   await environment.withSecurityRulesDisabled(async context => {
     const db = context.firestore();

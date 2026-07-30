@@ -119,7 +119,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
             <div className="relative">
               <Input
                 autoFocus
-                size="lg"
+                size="md"
                 type="email"
                 value={email}
                 onChange={event => setEmail(event.target.value)}

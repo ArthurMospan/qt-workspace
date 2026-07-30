@@ -151,7 +151,15 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
 
     let unsubLinks = () => {};
     if (includeLinks) {
-      const lq = query(collection(db, 'issueLinks'), where('organizationId', '==', activeOrgId));
+      // Scoped to this project, like the issue stream above. Links never cross
+      // projects, and an organization-wide link query is rejected outright:
+      // Firestore evaluates the read rule per document, so a single link in a
+      // project this user cannot open fails the whole query.
+      const lq = query(
+        collection(db, 'issueLinks'),
+        where('organizationId', '==', activeOrgId),
+        where('projectId', '==', projectId),
+      );
       unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
         setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         setLinksReady(true);

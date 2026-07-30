@@ -53,7 +53,7 @@ const DEFAULT_WORKFLOW = {
     { id: 'done', label: 'Готово', isDone: true },
   ],
   priorities: [
-    { id: 'blocker', label: 'Блокер' },
+    { id: 'blocker', label: 'Критичний' },
     { id: 'high', label: 'Високий' },
     { id: 'medium', label: 'Середній' },
     { id: 'low', label: 'Низький' },

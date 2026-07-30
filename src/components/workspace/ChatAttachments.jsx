@@ -64,7 +64,6 @@ function AttachmentTile({
             <span className="block truncate text-[12px] font-semibold">{name}</span>
             {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
           </span>
-          {!onRemove && <Eye size={14} className={dark ? 'text-white/55' : 'text-faint'} />}
         </span>
       </>
     );
@@ -108,7 +107,7 @@ function AttachmentTile({
         >
           <X size={13} />
         </button>
-      ) : <Eye size={14} className={dark ? 'text-white/45' : 'text-faint'} />}
+      ) : null}
     </>
   );
   const className = `flex min-w-0 w-full items-center gap-3 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${

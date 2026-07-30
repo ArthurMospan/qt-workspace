@@ -6,7 +6,7 @@ export default function PriorityBadge({ priority = 'low', className = '' }) {
       bg: 'bg-[#ef4444]/8',
       text: 'text-[#ef4444]',
       dot: 'bg-[#ef4444]',
-      label: 'Блокер',
+      label: 'Критичний',
     },
     high: {
       bg: 'bg-[#f97316]/8',

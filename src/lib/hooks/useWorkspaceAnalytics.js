@@ -6,25 +6,10 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
-
-// Firestore `in` accepts at most 30 values; ten keeps query/index fan-out tame.
-function chunkArray(values, size) {
-  const chunks = [];
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size));
-  }
-  return chunks;
-}
-
-function flattenBuckets(buckets) {
-  const byId = {};
-  buckets.forEach(documents => {
-    documents.forEach(document => {
-      byId[document.id] = document;
-    });
-  });
-  return Object.values(byId);
-}
+import {
+  chunkProjectIds,
+  flattenDocumentBuckets,
+} from '@/lib/utils/projectScopedQueries.mjs';
 
 export function useWorkspaceAnalytics(projectIds = []) {
   const { activeOrgId } = useAppContext();
@@ -51,11 +36,12 @@ export function useWorkspaceAnalytics(projectIds = []) {
       setIssueLinks([]);
     });
 
-    const chunks = chunkArray([...new Set(projectIds.filter(Boolean))], 10);
+    const chunks = chunkProjectIds(projectIds);
     const issueBuckets = new Map();
     const timeLogBuckets = new Map();
+    const linkBuckets = new Map();
     const readyStreams = new Set();
-    const expectedStreamCount = chunks.length + (chunks.length * 2) + 2;
+    const expectedStreamCount = (chunks.length * 4) + 1;
     const unsubs = [];
     const markReady = key => {
       readyStreams.add(key);
@@ -75,40 +61,18 @@ export function useWorkspaceAnalytics(projectIds = []) {
             id: document.id,
             ...document.data(),
           })));
-          publish(flattenBuckets(buckets));
+          publish(flattenDocumentBuckets(buckets));
           markReady(key);
         },
         error => {
           reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
           buckets.set(key, []);
-          publish(flattenBuckets(buckets));
+          publish(flattenDocumentBuckets(buckets));
           markReady(key);
         },
       );
       unsubs.push(unsubscribe);
     };
-
-    const linksKey = 'links';
-    const linksQuery = query(
-      collection(db, 'issueLinks'),
-      where('organizationId', '==', activeOrgId),
-    );
-    unsubs.push(onSnapshot(
-      linksQuery,
-      { serverTimestamps: 'estimate' },
-      snapshot => {
-        setIssueLinks(snapshot.docs.map(document => ({
-          id: document.id,
-          ...document.data(),
-        })));
-        markReady(linksKey);
-      },
-      error => {
-        reportLoadError('[useWorkspaceAnalytics:links]', error);
-        setIssueLinks([]);
-        markReady(linksKey);
-      },
-    ));
 
     // Projectless team events are organization analytics only and cannot be
     // invoiced until attached to a project.
@@ -132,6 +96,20 @@ export function useWorkspaceAnalytics(projectIds = []) {
         publish: setIssues,
         sourceQuery: query(
           collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', 'in', chunk),
+        ),
+      });
+
+      // Links must be scoped to the same authorized project list. An
+      // organization-wide link query is rejected outright, because Firestore
+      // evaluates the rule per document and one unreachable project fails all.
+      subscribe({
+        key: `links:${chunkIndex}`,
+        buckets: linkBuckets,
+        publish: setIssueLinks,
+        sourceQuery: query(
+          collection(db, 'issueLinks'),
           where('organizationId', '==', activeOrgId),
           where('projectId', 'in', chunk),
         ),

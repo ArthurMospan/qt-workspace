@@ -34,7 +34,7 @@ export const DEFAULT_STATUSES = [{
 }, {
   id: 'in-progress',
   label: 'У роботі',
-  color: '#0891b2'
+  color: '#f59e0b'
 }, {
   id: 'done',
   label: 'Готово',
@@ -76,7 +76,7 @@ export function getCompletedAtMillis(issue) {
 export const DEFAULT_TYPES = [{
   id: 'feature',
   label: 'Фіча',
-  color: '#0891b2'
+  color: '#f59e0b'
 }, {
   id: 'task',
   label: 'Задача',
@@ -88,7 +88,7 @@ export const DEFAULT_TYPES = [{
 }];
 export const DEFAULT_PRIORITIES = [{
   id: 'blocker',
-  label: 'Блокер',
+  label: 'Критичний',
   color: '#ef4444'
 }, {
   id: 'high',

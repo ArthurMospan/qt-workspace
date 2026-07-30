@@ -13,7 +13,7 @@ import { FormGroup, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [
-  { value: 'blocker', label: 'Блокер' },
+  { value: 'blocker', label: 'Критичний' },
   { value: 'high', label: 'Високий' },
   { value: 'medium', label: 'Середній' },
   { value: 'low', label: 'Низький' },
