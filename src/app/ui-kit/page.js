@@ -1071,6 +1071,7 @@ function DialogsSection() {
   const [projectSettingsDescription, setProjectSettingsDescription] = useState('Основний продукт команди');
   const [projectSettingsHidden, setProjectSettingsHidden] = useState(['done']);
   const [projectSettingsTeam, setProjectSettingsTeam] = useState(['owner-demo', 'designer-demo']);
+  const [projectSettingsInvites, setProjectSettingsInvites] = useState('');
   return (
     <ConfirmProvider>
       <div className="flex flex-col gap-[32px]">
@@ -1140,6 +1141,8 @@ function DialogsSection() {
             onTeamMemberIdsChange={setProjectSettingsTeam}
             ownerId="owner-demo"
             layout="stacked"
+            inviteEmails={projectSettingsInvites}
+            onInviteEmailsChange={setProjectSettingsInvites}
           />
         </Dialog>
       </PreviewBlock>

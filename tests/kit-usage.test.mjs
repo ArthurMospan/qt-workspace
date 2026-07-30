@@ -309,10 +309,17 @@ test('high-risk composed previews keep the product markup signatures', () => {
   assert.match(kit, /<EmptyState[\s\S]{0,1200}context="page"/);
   assert.doesNotMatch(projects, /<EmptyState[\s\S]{0,320}className="min-h-\[328px\]"/);
 
-  assert.match(issueDetail, /getTaskAttributeChrome\(\{ condensed: isHeaderScrolled \}\)/);
+  // Both attribute strips condense on scroll (QUI-123). The event card used to
+  // keep its selects pinned at full height inside the sticky header while the
+  // task card collapsed its labels and faded behind it, so the same control
+  // behaved differently depending on which record you had open.
+  for (const source of [issueDetail, calendarEvent]) {
+    assert.match(source, /getTaskAttributeChrome\(\{ condensed: isHeaderScrolled \}\)/);
+    assert.match(source, /condensed=\{isHeaderScrolled\}/);
+    assert.match(source, /scrollTop > 4/);
+  }
   assert.match(issueDetail, /<TaskAttributesPanel[\s\S]{0,120}context="task"/);
-  assert.match(calendarEvent, /getTaskAttributeChrome\(\)/);
-  assert.match(calendarEvent, /<TaskAttributesPanel[\s\S]{0,120}context="calendar"/);
+  assert.match(calendarEvent, /<TaskAttributesPanel[\s\S]{0,180}context="calendar"/);
   assert.match(taskAttributes, /task: 'grid w-full grid-cols-\[repeat\(3,minmax\(0,1fr\)\)_32px\]/);
   assert.match(taskAttributes, /calendar: 'grid w-full grid-cols-2/);
   assert.match(taskAttributes, /compactSelectClass: 'h-\[22px\][^']*rounded-\[10px\]/);

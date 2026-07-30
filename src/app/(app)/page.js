@@ -16,7 +16,6 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
-import InviteMemberDialog from '@/components/InviteMemberDialog';
 import {
   Counter,
   EmptyState,
@@ -381,13 +380,20 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const [team,        setTeam]        = useState([]);
   const [hiddenColumns, setHiddenColumns] = useState([]);
   const [nameError, setNameError] = useState('');
-  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteEmailsError, setInviteEmailsError] = useState('');
   const { inviteMember } = useOrganization();
 
   const isFree      = orgPlan !== 'pro';
   const limitReached = isFree && activeProjectsCount >= 3;
 
   const [error, setError] = useState(null);
+
+  // One address per line. Blank lines are ignored so a trailing newline — what
+  // you get from pasting a column out of a spreadsheet — is not an error.
+  const parsedInviteEmails = [...new Set(
+    inviteEmails.split('\n').map(line => line.trim().toLowerCase()).filter(Boolean),
+  )];
 
   const handleCreate = async () => {
     // A disabled primary button gave no reason why, so the form now says what
@@ -396,6 +402,12 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       setNameError('Вкажіть назву проєкту');
       return;
     }
+    const malformed = parsedInviteEmails.filter(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    if (malformed.length) {
+      setInviteEmailsError(`Не схоже на email: ${malformed.slice(0, 3).join(', ')}`);
+      return;
+    }
+    setInviteEmailsError('');
     setSaving(true);
     setError(null);
     try {
@@ -422,6 +434,26 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Не вдалося створити проєкт');
 
+      // Invitations are sent after the project exists so each one can carry its
+      // id: accepting then joins the organization and this project in one step.
+      // The project is already created, so a failing address is reported rather
+      // than thrown — it must not read as "the project was not created".
+      if (parsedInviteEmails.length) {
+        const failed = [];
+        for (const email of parsedInviteEmails) {
+          try {
+            await inviteMember(email, null, 'member', [result.id]);
+          } catch (inviteError) {
+            failed.push(`${email} — ${inviteError.message}`);
+          }
+        }
+        if (failed.length) {
+          setInviteEmailsError(`Проєкт створено, але не вдалося запросити: ${failed.join('; ')}`);
+          setSaving(false);
+          return;
+        }
+      }
+
       onClose();
     } catch (err) {
       console.error('[NewProject]', err);
@@ -431,7 +463,6 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   };
 
   return (
-    <>
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
@@ -490,18 +521,16 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
             onTeamMemberIdsChange={setTeam}
             teamPlaceholder="Оберіть учасників проєкту"
             teamHint="Ви як автор проєкту будете додані автоматично."
-            onInvite={canInvite ? () => setShowInvite(true) : undefined}
+            inviteEmails={inviteEmails}
+            onInviteEmailsChange={canInvite ? value => {
+              setInviteEmails(value);
+              if (inviteEmailsError) setInviteEmailsError('');
+            } : undefined}
+            inviteEmailsError={inviteEmailsError}
           />
         </div>
       )}
     </Dialog>
-
-    <InviteMemberDialog
-      isOpen={showInvite}
-      onClose={() => setShowInvite(false)}
-      inviteMember={inviteMember}
-    />
-    </>
   );
 }
 

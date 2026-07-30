@@ -6,6 +6,7 @@ import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
+import Label from '@/components/ui/Forms/Label';
 import { MultiSelect } from '@/components/ui/Select';
 import StatusVisibilityPicker from './StatusVisibilityPicker';
 
@@ -29,10 +30,17 @@ export default function ProjectSettingsForm({
   teamHint = 'Ви як автор проєкту будете додані автоматично.',
   teamPlaceholder = 'Оберіть учасників проєкту',
   onInvite,
+  // Inline invitations, one email per line, sent when the surrounding form is
+  // submitted. Project creation uses this instead of `onInvite`: opening the
+  // full invite dialog mid-flow abandons the project being created.
+  inviteEmails,
+  onInviteEmailsChange,
+  inviteEmailsError = '',
   loading = false,
   dangerZone = null,
 }) {
   const showTeamSettings = teamMembers.length > 0 && typeof onTeamMemberIdsChange === 'function';
+  const showInlineInvite = typeof onInviteEmailsChange === 'function';
 
   const memberOptions = teamMembers.flatMap(member => {
     const userId = member.id || member.uid;
@@ -90,6 +98,21 @@ export default function ProjectSettingsForm({
               triggerIcon={Users}
               selectAllLabel="Вибрати всіх учасників"
               showSelectedAvatars
+              footer={showInlineInvite ? (
+                <div className="flex flex-col gap-[6px]">
+                  <Label icon={UserPlus}>Запросити по email</Label>
+                  <Textarea
+                    value={inviteEmails}
+                    onChange={event => onInviteEmailsChange(event.target.value)}
+                    rows={3}
+                    placeholder={'ivan@company.com\nolena@company.com'}
+                    error={Boolean(inviteEmailsError)}
+                  />
+                  <p className={`text-[11px] ${inviteEmailsError ? 'text-[#ef4444]' : 'text-muted'}`}>
+                    {inviteEmailsError || 'Кожен рядок — окрема адреса. Запрошення підуть після створення проєкту; хто прийме — одразу потрапить і в організацію, і в цей проєкт.'}
+                  </p>
+                </div>
+              ) : null}
             />
             {onInvite ? (
               <Button

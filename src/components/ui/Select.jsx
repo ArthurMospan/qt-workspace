@@ -341,6 +341,11 @@ export function MultiSelect({
   // instead of "Обрано (N)". Task attributes need to read the assignees at a
   // glance, which a bare count cannot do.
   showSelectedAvatars = false,
+  // Block pinned below the option list, inside the dropdown. The project team
+  // picker uses it to invite someone who is not in the organization yet: the
+  // choice "pick an existing member" and "invite a new one" is one decision and
+  // belongs in one surface.
+  footer = null,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -519,6 +524,11 @@ export function MultiSelect({
               })
             )}
           </div>
+          {footer && (
+            <div className="shrink-0 border-t border-[#f0f0f0] p-[8px]">
+              {footer}
+            </div>
+          )}
         </div>,
         document.body,
       )}

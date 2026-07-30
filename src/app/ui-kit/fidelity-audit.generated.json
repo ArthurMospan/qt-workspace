@@ -729,7 +729,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:135",
+      "location": "src/app/(app)/page.js:134",
       "className": "px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav",
       "text": "Розархівувати",
       "childElements": [
@@ -746,7 +746,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:149",
+      "location": "src/app/(app)/page.js:148",
       "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
       "text": "",
       "childElements": [
@@ -1054,7 +1054,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/integrations/YouTrackImportCard.jsx:468",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:477",
       "className": "h-4 w-4 accent-ink",
       "text": "",
       "childElements": [],
@@ -1532,7 +1532,25 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1012",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1001",
+      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
+      "text": "",
+      "childElements": [
+        "span",
+        "AttributeValue"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "calendar-attribute-trigger",
+      "resembles": "IconAction",
+      "structure": "calendar",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1034",
       "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1547,7 +1565,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1026",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1048",
       "className": "min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted",
       "text": "",
       "childElements": [],
@@ -1562,7 +1580,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1050",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1072",
       "className": "${…} ${…}",
       "text": "",
       "childElements": [
@@ -1580,7 +1598,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1177",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1198",
       "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -1595,7 +1613,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1247",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1268",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1644,7 +1662,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:694",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:698",
       "className": "w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none",
       "text": "",
       "childElements": [],
@@ -1659,7 +1677,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:716",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:720",
       "className": "ui-native-control",
       "text": "",
       "childElements": [
@@ -1677,25 +1695,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:895",
-      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
-      "text": "",
-      "childElements": [
-        "span",
-        "AttributeValue"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "calendar-attribute-trigger",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:979",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:917",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -2681,17 +2681,17 @@
       "context": "media-action"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:716",
-      "tag": "button",
-      "context": "identity-meta-trigger"
-    },
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1001",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:979",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:720",
+      "tag": "button",
+      "context": "identity-meta-trigger"
+    },
+    {
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:917",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
@@ -2767,12 +2767,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:111",
+      "location": "src/app/(app)/page.js:110",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:120",
+      "location": "src/app/(app)/page.js:119",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -2842,12 +2842,12 @@
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:465",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:474",
       "tag": "div",
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:525",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:534",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },

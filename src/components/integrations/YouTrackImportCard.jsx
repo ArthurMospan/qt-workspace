@@ -197,10 +197,14 @@ export default function YouTrackImportCard({
       setDiscovery(result);
       setSelectedProjectIds(projectIds);
       setProjectMappings(Object.fromEntries(projectIds.map(id => [id, 'create'])));
-      setStatusFilters(Object.fromEntries(result.projects.map(project => [
-        project.id,
-        (project.statuses || []).map(status => status.name),
-      ])));
+      // Only projects whose statuses were actually discovered get a filter. A
+      // project whose state bundle is unreadable has nothing to choose from,
+      // and sending it an empty list would read as "import no statuses".
+      setStatusFilters(Object.fromEntries(result.projects.flatMap(project => (
+        (project.statuses || []).length
+          ? [[project.id, project.statuses.map(status => status.name)]]
+          : []
+      ))));
       setUserMappings(suggestUserMappings(result.users, members));
       showToast(`Знайдено ${result.projects.length} проєктів YouTrack`);
     } catch (error) {
@@ -246,7 +250,12 @@ export default function YouTrackImportCard({
         }),
       });
       setJob(result.job);
-      showToast(`Перевірено: до імпорту готово ${result.job.totalIssues} задач`);
+      showToast(
+        result.job.totalIssues
+          ? `Перевірено: до імпорту готово ${result.job.totalIssues} задач`
+          : 'Перевірено, але жодна задача не підпала під вибір. Перевірте обрані статуси.',
+        result.job.totalIssues ? 'success' : 'error',
+      );
     } catch (error) {
       showToast(error.message, 'error');
     } finally {

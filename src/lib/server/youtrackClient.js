@@ -99,7 +99,7 @@ export class YouTrackClient {
 
   async issueStubs(projectShortName) {
     return this.listAll('issues', {
-      fields: 'id,idReadable,summary,created,updated,customFields(name,value(name,presentation))',
+      fields: 'id,idReadable,summary,created,updated,customFields(name,$type,value(name,presentation))',
       query: `project: {${projectShortName}} sort by: created asc`,
       top: 100,
       limit: 50_000,

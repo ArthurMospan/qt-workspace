@@ -33,6 +33,26 @@ export async function POST(request) {
       const organizationSnap = await db.collection('organizations').doc(organizationId).get();
       if (!organizationSnap.exists) continue;
 
+      // Projects the inviter scoped this invitation to. They are re-checked
+      // here rather than trusted: a project can be deleted or moved between the
+      // invitation being written and the invitee signing in.
+      const invitedProjectIds = Array.isArray(invitation.projectIds)
+        ? [...new Set(invitation.projectIds.filter(id => typeof id === 'string' && id.trim()))].slice(0, 20)
+        : [];
+      if (invitedProjectIds.length) {
+        const projectSnaps = await db.getAll(
+          ...invitedProjectIds.map(id => db.collection('projects').doc(id)),
+        );
+        projectSnaps
+          .filter(snapshot => snapshot.exists && snapshot.data().organizationId === organizationId)
+          .forEach(snapshot => {
+            batch.update(snapshot.ref, {
+              team: admin.firestore.FieldValue.arrayUnion(uid),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          });
+      }
+
       const membershipId = `${organizationId}_${uid}`;
       const role = invitation.role === 'admin' ? 'admin' : 'member';
       batch.set(db.collection('orgMemberships').doc(membershipId), {

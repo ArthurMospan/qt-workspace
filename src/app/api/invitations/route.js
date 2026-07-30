@@ -32,9 +32,28 @@ async function sendInvitationEmail(db, { email, organizationId, inviterUid, role
   }
 }
 
+// Projects an invitation may pre-assign. Every id has to belong to the same
+// organization the caller was authorized for, otherwise a project id from
+// another workspace would add the invitee to a project nobody vetted.
+async function resolveInvitedProjectIds(db, requested, organizationId) {
+  const ids = [...new Set(
+    (Array.isArray(requested) ? requested : [])
+      .filter(id => typeof id === 'string' && id.trim())
+      .map(id => id.trim()),
+  )].slice(0, 20);
+  if (!ids.length) return [];
+  const snapshots = await db.getAll(...ids.map(id => db.collection('projects').doc(id)));
+  if (snapshots.some(snapshot => (
+    !snapshot.exists || snapshot.data().organizationId !== organizationId
+  ))) {
+    throw new Error('INVALID_PROJECT_SCOPE');
+  }
+  return snapshots.map(snapshot => snapshot.id);
+}
+
 export async function POST(request) {
   try {
-    const { organizationId, email, role } = await request.json();
+    const { organizationId, email, role, projectIds } = await request.json();
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
@@ -49,6 +68,7 @@ export async function POST(request) {
     }
     const safeRole = role === 'admin' ? 'admin' : 'member';
     const db = getAdminDb();
+    const invitedProjectIds = await resolveInvitedProjectIds(db, projectIds, organizationId);
 
     const userSnap = await db.collection('users').where('email', '==', normalizedEmail).limit(1).get();
     if (!userSnap.empty) {
@@ -58,7 +78,8 @@ export async function POST(request) {
       if ((await membershipRef.get()).exists) {
         return NextResponse.json({ error: 'User is already a member' }, { status: 409 });
       }
-      await membershipRef.set({
+      const batch = db.batch();
+      batch.set(membershipRef, {
         id: membershipId,
         orgId: organizationId,
         userId,
@@ -67,6 +88,15 @@ export async function POST(request) {
         hourlyRate: 0,
         invitedBy: authorization.user.uid,
       });
+      // An existing QuickTeam account never sees a pending invitation, so the
+      // project scope has to be applied here or it would be dropped silently.
+      invitedProjectIds.forEach(projectId => {
+        batch.update(db.collection('projects').doc(projectId), {
+          team: admin.firestore.FieldValue.arrayUnion(userId),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+      await batch.commit();
       const emailSent = await sendInvitationEmail(db, {
         email: normalizedEmail,
         organizationId,
@@ -91,6 +121,7 @@ export async function POST(request) {
       organizationId,
       invitedBy: authorization.user.uid,
       role: safeRole,
+      projectIds: invitedProjectIds,
       status: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -102,6 +133,9 @@ export async function POST(request) {
     });
     return NextResponse.json({ type: 'invitation_sent', emailSent }, { status: 201 });
   } catch (error) {
+    if (error.message === 'INVALID_PROJECT_SCOPE') {
+      return NextResponse.json({ error: 'Проєкт недоступний для цієї організації' }, { status: 400 });
+    }
     return routeErrorResponse(error, { context: 'Invitation POST', fallbackMessage: 'Internal Server Error' });
   }
 }

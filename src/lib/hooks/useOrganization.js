@@ -156,13 +156,16 @@ export function useOrganization() {
   }, [activeOrgId]);
 
   // Invite by email
-  const inviteMember = useCallback(async (email, invitedBy, role = 'member') => {
+  // `projectIds` scopes the invitation to projects the invitee joins the moment
+  // they accept, so inviting from the project form does not need a second trip
+  // through project settings once the person shows up in the organization.
+  const inviteMember = useCallback(async (email, invitedBy, role = 'member', projectIds = []) => {
     if (!activeOrgId || !auth.currentUser) throw new Error('Authentication required');
     const token = await auth.currentUser.getIdToken();
     const response = await fetch('/api/invitations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ email, organizationId: activeOrgId, role, invitedBy }),
+      body: JSON.stringify({ email, organizationId: activeOrgId, role, invitedBy, projectIds }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Не вдалося запросити користувача');

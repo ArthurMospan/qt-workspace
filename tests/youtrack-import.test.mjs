@@ -13,6 +13,7 @@ import {
   suggestUserMappings,
   youTrackImportedWorkLogMatches,
   youTrackField,
+  youTrackStateName,
 } from '../src/lib/utils/youtrackImport.mjs';
 
 const workflow = {
@@ -143,8 +144,39 @@ test('filters import stubs by the selected YouTrack statuses', () => {
     { id: 'done', customFields: [{ name: 'State', value: { name: 'Done' } }] },
   ];
   assert.deepEqual(filterYouTrackIssuesByStatuses(issues, ['Open']).map(issue => issue.id), ['open']);
-  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, []).map(issue => issue.id), []);
   assert.equal(filterYouTrackIssuesByStatuses(issues, undefined), issues);
+});
+
+// The prepared job reported "0 / 0 задач" for projects that were full of
+// issues: a token without admin rights on bundles discovers no statuses, the
+// picker sent back an empty list, and an empty list excluded everything.
+test('an empty status selection imports everything instead of nothing', () => {
+  const issues = [
+    { id: 'open', customFields: [{ name: 'State', value: { name: 'Open' } }] },
+    { id: 'done', customFields: [{ name: 'State', value: { name: 'Done' } }] },
+  ];
+  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, []).map(issue => issue.id), ['open', 'done']);
+  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, ['', '  ']).map(issue => issue.id), ['open', 'done']);
+});
+
+// Discovery recognises the state field by `$type`, so a renamed or localized
+// one still offers its statuses. Matching the literal name "State" here made
+// the picker offer statuses no issue could ever match.
+test('the workflow state is read from a renamed or localized state field', () => {
+  const renamed = {
+    customFields: [
+      { name: 'Стан', $type: 'StateIssueCustomField', value: { name: 'У роботі' } },
+      { name: 'Priority', $type: 'SingleEnumIssueCustomField', value: { name: 'Critical' } },
+    ],
+  };
+  assert.equal(youTrackStateName(renamed), 'У роботі');
+  assert.deepEqual(
+    filterYouTrackIssuesByStatuses([renamed], ['У роботі']).length,
+    1,
+  );
+  // Responses without `$type` still resolve through the field name.
+  assert.equal(youTrackStateName({ customFields: [{ name: 'State', value: { name: 'Open' } }] }), 'Open');
+  assert.equal(youTrackStateName({ customFields: [] }), '');
 });
 
 test('normalizes link types', () => {

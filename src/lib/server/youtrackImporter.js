@@ -21,6 +21,7 @@ import {
   strongestYouTrackRelationRow,
   youTrackImportedWorkLogMatches,
   youTrackField,
+  youTrackStateName,
 } from '@/lib/utils/youtrackImport.mjs';
 import {
   canonicalIssueLinkDocumentId,
@@ -494,7 +495,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     ? await db.collection('issues').doc(existingLink.data().quickTeamId).get()
     : null;
 
-  const stateName = fieldPresentation(youTrackField(issue, 'State'));
+  const stateName = youTrackStateName(issue);
   const priorityName = fieldPresentation(youTrackField(issue, 'Priority'));
   const typeName = fieldPresentation(youTrackField(issue, 'Type'));
   const reporter = actorFor(issue.reporter, job);

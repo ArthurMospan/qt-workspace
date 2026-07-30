@@ -68,6 +68,23 @@ export function youTrackField(issue, fieldName) {
   return (issue?.customFields || []).find(field => normalizeMappingKey(field?.name) === wanted)?.value ?? null;
 }
 
+/**
+ * Reads an issue's workflow state.
+ *
+ * Discovery recognises the state field by its `$type`, so a YouTrack whose
+ * field is renamed or localized still offers its statuses for selection. Doing
+ * the lookup here by the literal name "State" made the two disagree: the picker
+ * listed statuses that no issue could ever match, and the prepared job counted
+ * zero. Match on type first and keep the name as the fallback for responses
+ * that do not carry `$type`.
+ */
+export function youTrackStateName(issue) {
+  const fields = issue?.customFields || [];
+  const byType = fields.find(field => /State\w*IssueCustomField/u.test(String(field?.$type || '')));
+  const field = byType || fields.find(candidate => normalizeMappingKey(candidate?.name) === 'state');
+  return fieldPresentation(field?.value ?? null);
+}
+
 export function firstFieldValue(value) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
@@ -181,9 +198,14 @@ export function mapYouTrackStatus(sourceName, statuses = []) {
 export function filterYouTrackIssuesByStatuses(issues = [], allowedStatusNames) {
   if (!Array.isArray(allowedStatusNames)) return issues;
   const allowed = new Set(allowedStatusNames.map(normalizeMappingKey).filter(Boolean));
-  return issues.filter(issue => (
-    allowed.has(normalizeMappingKey(fieldPresentation(youTrackField(issue, 'State'))))
-  ));
+  // An empty selection is never a user asking to import nothing — the picker
+  // cannot even be emptied for a project whose statuses were discovered. It
+  // only ever arrives when the state bundle could not be read at all (a token
+  // without admin rights on bundles returns none), and treating that as "match
+  // nothing" is what reported "Перевірено · 0 / 0 задач" for projects that are
+  // full of issues. No statuses to choose from means no status filter.
+  if (allowed.size === 0) return issues;
+  return issues.filter(issue => allowed.has(normalizeMappingKey(youTrackStateName(issue))));
 }
 
 export function mapYouTrackPriority(sourceName, priorities = []) {

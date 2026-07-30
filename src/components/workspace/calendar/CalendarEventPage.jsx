@@ -383,6 +383,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const [timerMinutes, setTimerMinutes] = useState(0);
   const [actionError, setActionError] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
 
   const canManage = Boolean(event && !event.readOnly && (
     event.organizerId === currentUserId
@@ -681,14 +682,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     compactInputClass,
     compactSelectClass,
     detailsButtonClass,
-  } = getTaskAttributeChrome();
+  } = getTaskAttributeChrome({ condensed: isHeaderScrolled });
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-transparent">
-      <div className="page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px] pt-[56px]">
+      <div
+        onScroll={scrollEvent => setIsHeaderScrolled(scrollEvent.currentTarget.scrollTop > 4)}
+        className="page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px] pt-[56px]"
+      >
         <div className="mx-auto flex w-full max-w-[1120px] flex-col">
-          <div className="sticky top-0 z-[30] bg-white pb-[12px] pt-[12px]">
-            <div className="flex w-full items-start justify-between gap-[16px]">
+          <div className="sticky top-0 z-[30]">
+            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
               <div className="min-w-0 flex-1">
                 {isEditing ? (
                   <input
@@ -807,12 +811,30 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="relative -mx-2 mt-[12px] px-2">
+          {/* ATTRIBUTES STRIP — same behaviour as the task card: it scrolls out
+              from under the sticky title, condensing its labels and fading
+              behind the header instead of staying pinned at full height. */}
+          <div className="relative isolate -mx-2 mt-[12px] px-2">
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-x-2 top-0 z-[5] h-1/2 transition-opacity duration-200 ${isHeaderScrolled ? 'opacity-100' : 'opacity-0'}`}
+              style={{
+                background: 'linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.92) 34%, rgba(255,255,255,0) 100%)',
+              }}
+            />
               <TaskAttributesPanel
                 singleRow
                 context="calendar"
                 compact
+                condensed={isHeaderScrolled}
+                cardClassName="transition-[background-color,padding] duration-200"
+                cardStyle={{
+                  backgroundColor: isHeaderScrolled ? 'rgba(244,244,245,0.36)' : undefined,
+                  backdropFilter: isHeaderScrolled ? 'blur(4px)' : undefined,
+                  WebkitBackdropFilter: isHeaderScrolled ? 'blur(4px)' : undefined,
+                }}
                 primaryChildren={(
                   <>
                     <div
@@ -1139,7 +1161,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   </>
                 )}
               />
-            </div>
           </div>
 
           <main className="flex flex-col gap-6 py-1">

@@ -14,7 +14,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { Counter, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
+import { Counter, DatePicker, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -72,10 +72,10 @@ function SprintEditModal({ sprint, onClose, onSave }) {
           </FormGroup>
           <div className="flex gap-4">
             <FormGroup label="Дата початку" className="flex-1">
-              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <DatePicker value={startDate} onChange={setStartDate} aria-label="Дата початку" />
             </FormGroup>
             <FormGroup label="Дата завершення" className="flex-1">
-              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <DatePicker value={endDate} onChange={setEndDate} aria-label="Дата завершення" />
             </FormGroup>
           </div>
         </form>
@@ -121,10 +121,10 @@ function SprintCreateModal({ onClose, onSave }) {
           </FormGroup>
           <div className="flex gap-4">
             <FormGroup label="Дата початку" className="flex-1">
-              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <DatePicker value={startDate} onChange={setStartDate} aria-label="Дата початку" />
             </FormGroup>
             <FormGroup label="Дата завершення" className="flex-1">
-              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <DatePicker value={endDate} onChange={setEndDate} aria-label="Дата завершення" />
             </FormGroup>
           </div>
         </form>
