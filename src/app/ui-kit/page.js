@@ -1274,7 +1274,7 @@ function PageHeadersSection() {
                     onChange={setPriority}
                     options={[
                       { value: 'all', label: 'Всі пріоритети' },
-                      { value: 'blocker', label: 'Блокер', dotColor: '#ef4444' },
+                      { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },
                       { value: 'high', label: 'Високий', dotColor: '#f97316' }
                     ]}
                   />
@@ -1322,7 +1322,7 @@ function PageHeadersSection() {
                   onChange={setPriority}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    { value: 'blocker', label: 'Блокер', dotColor: '#ef4444' },
+                    { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },
                     { value: 'high', label: 'Високий', dotColor: '#f97316' }
                     ]}
                   />
@@ -1449,6 +1449,13 @@ function FeedbackSection() {
   );
 }
 
+// Chat's own native controls. The audit used to hand these over as a separate
+// `chatControls` list, from back when chat was the only surface split out of
+// the flat bypass list. Every control now carries the surface it belongs to,
+// so chat is filtered the same way as every other structure.
+const CHAT_CONTROLS = (fidelityAudit.nativeControls || [])
+  .filter(control => control.structure === 'chat');
+
 function ChatElementsSection() {
   const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
   return (
@@ -1495,11 +1502,11 @@ function ChatElementsSection() {
 
       <PreviewBlock
         title="Чат — власні контроли"
-        description={`${fidelityAudit.chatControls.length} інтерактивних елементів чату написані власною розміткою, а не компонентом кіту. Вони належать чату й не входять до списку «Обходять кіт»: їх треба оформити як чат-компоненти, а не зводити до загальних. Кожен відрендерений своїми ж класами.`}
+        description={`${CHAT_CONTROLS.length} інтерактивних елементів чату написані власною розміткою, а не компонентом кіту. Вони належать чату: їх треба оформити як чат-компоненти, а не зводити до загальних. Кожен відрендерений своїми ж класами.`}
         fullWidth
       >
         <div className="flex w-full flex-col gap-[10px]">
-          {Object.entries(fidelityAudit.chatControls.reduce((groups, control) => {
+          {Object.entries(CHAT_CONTROLS.reduce((groups, control) => {
             const file = control.location.split(':')[0];
             (groups[file] = groups[file] || []).push(control);
             return groups;
@@ -1824,7 +1831,6 @@ function TaskCRMSection() {
           <AgileBoard
             issues={demoIssues}
             allIssues={demoIssues}
-            collapseHierarchy
             members={demoMembers}
             projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
             projectId="ui-kit-project"

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { scanKitUsage } from '../scripts/scan-kit-usage.mjs';
 import { auditUiFidelity } from '../scripts/audit-ui-fidelity.mjs';
 
@@ -33,6 +33,36 @@ test('the committed UI fidelity audit matches every product UI file', () => {
   );
   assert.equal(committedFidelityAudit.totals.parseErrors, 0);
   assert.deepEqual(committedFidelityAudit.parseErrors, []);
+});
+
+// Regenerating the audit into a different shape is a silent break: /ui-kit
+// reads the JSON directly, so a renamed or dropped top-level field only shows
+// up as a runtime crash on whichever tab happens to read it. That is exactly
+// how `chatControls` died — the audit stopped emitting it when chat became one
+// structure among many, and the chat tab kept reading `.chatControls.length`.
+test('every audit field /ui-kit reads is really generated', () => {
+  const uiKit = new URL('../src/app/ui-kit/', import.meta.url);
+  const missing = new Set();
+
+  for (const name of readdirSync(uiKit, { recursive: true })) {
+    if (!/\.jsx?$/.test(name)) continue;
+    const source = readFileSync(new URL(name.replaceAll('\\', '/'), uiKit), 'utf8');
+    const binding = source.match(/^import\s+(\w+)\s+from\s+'\.\/fidelity-audit\.generated\.json'/m);
+    if (!binding) continue;
+
+    // The lookbehind keeps the file's own name out of the results: inside
+    // `fidelity-audit.generated.json` — written in the import and again in the
+    // copyable prompt — the tail reads as `audit.generated`.
+    for (const [, field] of source.matchAll(new RegExp(`(?<![\\w$.-])${binding[1]}\\.(\\w+)`, 'g'))) {
+      if (!(field in committedFidelityAudit)) missing.add(`${name}: ${binding[1]}.${field}`);
+    }
+  }
+
+  assert.deepEqual(
+    [...missing],
+    [],
+    `/ui-kit reads audit fields that scripts/audit-ui-fidelity.mjs no longer emits: ${[...missing].join(', ')}`,
+  );
 });
 
 // The kit is the source of truth only while the product stays inside what the
@@ -128,6 +158,7 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   const createTask = readFileSync(new URL('../src/components/CreateTaskModal.jsx', import.meta.url), 'utf8');
   const issueDetail = readFileSync(new URL('../src/components/workspace/IssueDetail.jsx', import.meta.url), 'utf8');
   const agileBoard = readFileSync(new URL('../src/components/workspace/AgileBoard.jsx', import.meta.url), 'utf8');
+  const issueCard = readFileSync(new URL('../src/components/workspace/IssueCard.jsx', import.meta.url), 'utf8');
   const myTasks = readFileSync(new URL('../src/app/(app)/my/page.js', import.meta.url), 'utf8');
   const project = readFileSync(new URL('../src/app/(app)/[projectId]/page.js', import.meta.url), 'utf8');
   assert.match(taskList, /hiddenStatusIds = \[\]/);
@@ -148,8 +179,15 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   assert.match(issueDetail, /legacy-checklist/);
   assert.doesNotMatch(issueDetail, /update\(\{\s*subtasks|subtasks:\s*arrayUnion/);
   assert.match(issueDetail, /ISSUE_LINK_OPTIONS/);
-  assert.match(agileBoard, /collapseHierarchy = false/);
-  assert.match(project, /collapseHierarchy/);
+  // QUI-127 approved the opposite of what this used to assert: a subtask keeps
+  // its own status, so it is a card of its own in whatever column that status
+  // puts it in, and the card prints `↳ PARENT-KEY` to keep the hierarchy
+  // readable. Collapsing children into the parent hid real work from its
+  // column, so the `collapseHierarchy` prop and its filter are gone for good.
+  assert.doesNotMatch(agileBoard, /collapseHierarchy/);
+  assert.doesNotMatch(project, /collapseHierarchy/);
+  assert.match(agileBoard, /const boardIssues = issues;/);
+  assert.match(issueCard, /↳ \{parentIssue\?\.issueKey \|\| 'ПІДЗАДАЧА'\}/);
   assert.doesNotMatch(agileBoard, /parentEpicId|swimlane === 'epic'/);
 });
 
