@@ -27,6 +27,7 @@ import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
+import BypassSurvey from './BypassSurvey';
 import kitUsage from './kit-usage.generated.json';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
@@ -49,6 +50,12 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GROUPS = [
+  {
+    title: 'Поза кітом',
+    items: [
+      { id: 'bypass', label: 'Обходять кіт', icon: AlertCircle },
+    ]
+  },
   {
     title: 'Атоми (Atoms)',
     items: [
@@ -2235,6 +2242,7 @@ function TokensSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
+  bypass: <BypassSurvey />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
   selects:    <SelectsSection />,

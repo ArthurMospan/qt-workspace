@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from '@babel/parser';
 import traverseModule from '@babel/traverse';
 import { scanKitUsage } from './scan-kit-usage.mjs';
-import { collectWorkspaceUiFiles } from './workspace-ui-files.mjs';
+import { collectWorkspaceUiFiles, collectWorkspaceRouteMap } from './workspace-ui-files.mjs';
 
 const traverse = traverseModule.default || traverseModule;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -161,6 +161,24 @@ function sortLocations(entries) {
   return [...entries].sort((a, b) => a.location.localeCompare(b.location));
 }
 
+// Which kit component this native control is probably a hand-rolled copy of.
+// A hint only — the classification is a judgement call, so the survey asks.
+function resemblesKitComponent(tag, className, text, childElements) {
+  if (tag === 'input') return 'Input';
+  if (tag === 'textarea') return 'Textarea';
+  if (tag === 'select') return 'Select';
+  if (tag !== 'button') return '';
+
+  const iconOnly = !text && childElements.length > 0;
+  if (/rounded-full/.test(className)) return iconOnly ? 'IconAction shape="circle"' : 'Pill / Button shape="circle"';
+  if (iconOnly) return 'IconAction';
+  if (/(?:bg-ink|bg-\[#1f1f1f\]|bg-black)/.test(className)) return 'Button style="primary"';
+  if (/(?:bg-canvas|bg-\[#f4f4f5\]|bg-\[#f5f5f5\])/.test(className)) return 'Button style="secondary"';
+  if (/border/.test(className)) return 'Button style="ghost"';
+  if (/rounded/.test(className)) return 'Button';
+  return '';
+}
+
 function auditFile(file, inventoryNames) {
   const source = readFileSync(file, 'utf8');
   let ast;
@@ -225,12 +243,29 @@ function auditFile(file, inventoryNames) {
       const entryLocation = location(file, path.node);
 
       if (NATIVE_CONTROLS.has(name)) {
+        // The label and child icons are what make a control recognisable on a
+        // screen. A file:line alone cannot answer "which button is this?".
+        const children = path.parentPath?.node?.children || [];
+        const text = children
+          .filter(child => child.type === 'JSXText')
+          .map(child => child.value.replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+          .join(' ')
+          .slice(0, 60);
+        const childElements = [...new Set(children
+          .filter(child => child.type === 'JSXElement')
+          .map(child => jsxName(child.openingElement.name))
+          .filter(Boolean))];
         nativeControls.push({
           tag: name,
           location: entryLocation,
           className,
+          text,
+          childElements,
+          ariaLabel: attributes.get('aria-label') || attributes.get('title') || '',
           styled: hasControlChrome(className),
           reviewed: attributes.get('data-ui-control') || '',
+          resembles: resemblesKitComponent(name, className, text, childElements),
         });
       }
 
@@ -376,6 +411,7 @@ function repeatedNativeFingerprints(nativeControls) {
 
 export function auditUiFidelity() {
   const kitUsage = scanKitUsage();
+  const routeMap = collectWorkspaceRouteMap();
   const inventoryNames = new Set(Object.keys(kitUsage.components));
   const workspaceFiles = collectWorkspaceUiFiles();
   const results = workspaceFiles.map(file => ({
@@ -459,6 +495,10 @@ export function auditUiFidelity() {
         .sort(),
     },
     parseErrors: sortLocations(parseErrors),
+    nativeControls: sortLocations(nativeControls).map(control => ({
+      ...control,
+      routes: routeMap.fileRoutes[control.location.split(':')[0]] || [],
+    })),
     nativeHotspots: [...nativeHotspots.entries()]
       .map(([file, count]) => ({ file, count }))
       .sort((a, b) => b.count - a.count || a.file.localeCompare(b.file)),

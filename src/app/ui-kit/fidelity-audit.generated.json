@@ -76,6 +76,2258 @@
     ]
   },
   "parseErrors": [],
+  "nativeControls": [
+    {
+      "tag": "input",
+      "location": "src/app/(app)/ai-call/page.js:183",
+      "className": "hidden",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/ai-call"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/app/(app)/ai-call/page.js:268",
+      "className": "mt-[6px] h-4 w-4 shrink-0 accent-[#1f1f1f]",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Створювати цю задачу",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/ai-call"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/app/(app)/ai-call/page.js:276",
+      "className": "w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-ink outline-none focus:border-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/ai-call"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/app/(app)/ai-call/page.js:281",
+      "className": "w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/ai-call"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/app/(app)/ai-call/page.js:303",
+      "className": "rounded-[8px] border border-line bg-white px-2 py-[7px] text-[12px] text-ink outline-none focus:border-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/ai-call"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:119",
+      "className": "w-full text-left rounded-[8px] border-l-[3px] transition-[filter,transform] hover:brightness-[0.98] active:scale-[0.99] ${…}",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:142",
+      "className": "w-full text-left rounded-[8px] bg-white border border-line hover:border-[#d4d4d4] transition-colors ${…} ${…}",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:238",
+      "className": "absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Створити подію о  ${…} :00",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:301",
+      "className": "w-7 h-7 rounded-full text-[11px] font-bold ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:310",
+      "className": "w-6 h-6 rounded-[7px] opacity-0 group-hover:opacity-100 hover:bg-canvas flex items-center justify-center text-muted transition-all",
+      "text": "",
+      "childElements": [
+        "Plus"
+      ],
+      "ariaLabel": "Додати подію",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/calendar/page.js:319",
+      "className": "text-[10px] font-semibold text-muted hover:text-ink pl-1",
+      "text": "ще",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1019",
+      "className": "mt-1 w-full truncate px-1 text-left text-[10px] text-muted hover:text-ink",
+      "text": "· перейти до повідомлення",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:139",
+      "className": "w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity",
+      "text": "",
+      "childElements": [
+        "UserAvatar"
+      ],
+      "ariaLabel": "Переглянути профіль",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1609",
+      "className": "ui-native-control ${…}",
+      "text": "",
+      "childElements": [
+        "Hash",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "chat-list-action",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1643",
+      "className": "ui-native-control ${…}",
+      "text": "",
+      "childElements": [
+        "div",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "chat-list-action",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1684",
+      "className": "md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0",
+      "text": "",
+      "childElements": [
+        "ArrowLeft"
+      ],
+      "ariaLabel": "До списку чатів",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1735",
+      "className": "flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]",
+      "text": "",
+      "childElements": [
+        "Pin",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1770",
+      "className": "text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline",
+      "text": "Очистити",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1799",
+      "className": "rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink",
+      "text": "Показати давніші повідомлення",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/app/(app)/chat/page.js:182",
+      "className": "w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-3 text-[14px] outline-none resize-none transition-colors",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:1865",
+      "className": "flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95",
+      "text": "нових",
+      "childElements": [
+        "ChevronDown"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:195",
+      "className": "font-semibold text-ink hover:underline",
+      "text": "Зберегти",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:196",
+      "className": "font-semibold text-muted hover:text-ink",
+      "text": "Скасувати",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:218",
+      "className": "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] border transition-all hover:scale-105 active:scale-95 ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:237",
+      "className": "mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-ink hover:underline transition-colors",
+      "text": "",
+      "childElements": [
+        "MessageSquare"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:481",
+      "className": "w-full flex items-center gap-3 px-4 py-2.5 hover:bg-canvas transition-colors text-left",
+      "text": "",
+      "childElements": [
+        "UserAvatar",
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/app/(app)/chat/page.js:543",
+      "className": "hidden",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:663",
+      "className": "opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-lg text-muted hover:text-[#ef4444] hover:bg-red-50 transition-all shrink-0",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити відповідь",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:825",
+      "className": "flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/app/(app)/chat/page.js:855",
+      "className": "w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-2.5 text-[13px] outline-none resize-none transition-colors",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:862",
+      "className": "text-[12px] font-semibold text-muted hover:text-ink",
+      "text": "Скасувати",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:863",
+      "className": "text-[12px] font-semibold text-ink hover:underline",
+      "text": "Зберегти",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:872",
+      "className": "text-muted hover:text-ink text-[12px] font-semibold",
+      "text": "Редагувати",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:886",
+      "className": "text-[11px] font-semibold text-ink hover:underline flex items-center gap-1",
+      "text": "Додати",
+      "childElements": [
+        "UserPlus"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:898",
+      "className": "w-full text-center py-2 bg-ink hover:bg-ink-hover text-white rounded-xl text-[12px] font-semibold transition-colors",
+      "text": "Додати всіх учасників",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:907",
+      "className": "w-full flex items-center justify-between text-left px-2 py-1.5 hover:bg-canvas rounded-lg transition-colors",
+      "text": "",
+      "childElements": [
+        "div",
+        "Plus"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:932",
+      "className": "opacity-0 group-hover/m:opacity-100 text-red-500 hover:text-red-700 text-[11px] font-semibold transition-opacity",
+      "text": "Видалити",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:954",
+      "className": "rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]",
+      "text": "",
+      "childElements": [
+        "div",
+        "p"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/app/(app)/chat/page.js:976",
+      "className": "w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-[#cfcfcf] focus:border-[#cfcfcf]",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/chat/page.js:990",
+      "className": "rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/chat"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/page.js:131",
+      "className": "px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav",
+      "text": "Розархівувати",
+      "childElements": [
+        "ArchiveRestore"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/page.js:145",
+      "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
+      "text": "",
+      "childElements": [
+        "MoreVertical"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/settings/page.js:2348",
+      "className": "flex flex-col items-center gap-[6px] group/theme",
+      "text": "",
+      "childElements": [
+        "div",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/settings/page.js:3080",
+      "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors",
+      "text": "Всі налаштування",
+      "childElements": [
+        "ArrowLeft"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/settings/page.js:367",
+      "className": "w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/settings/page.js:375",
+      "className": "w-[18px] h-[18px] rounded-full transition-transform hover:scale-110",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/settings/page.js:429",
+      "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
+      "text": "Завершальний",
+      "childElements": [
+        "Check"
+      ],
+      "ariaLabel": "Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати) Позначити завершальним",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/team/page.js:103",
+      "className": "w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${…}",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/app/(app)/team/page.js:138",
+      "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors",
+      "text": "До списку команди",
+      "childElements": [
+        "ArrowLeft"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AudioTaskPanel.jsx:156",
+      "className": "rounded-full p-2 text-muted hover:bg-white hover:text-ink",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "Прибрати файл",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/AudioTaskPanel.jsx:163",
+      "className": "hidden",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AudioTaskPanel.jsx:211",
+      "className": "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/AudioTaskPanel.jsx:219",
+      "className": "w-full bg-transparent text-[13px] font-bold text-ink outline-none",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/components/AudioTaskPanel.jsx:224",
+      "className": "w-full resize-none bg-transparent text-[12px] leading-5 text-muted outline-none",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AuthLayout.jsx:46",
+      "className": "hidden md:flex items-center gap-2 text-white/70 hover:text-white transition-colors text-[13px] font-medium",
+      "text": "Створити організацію",
+      "childElements": [
+        "Plus"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AuthLayout.jsx:67",
+      "className": "w-8 h-8 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 hover:border-white/30 transition-colors cursor-pointer",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AuthLayout.jsx:84",
+      "className": "w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-400 hover:bg-white/5 transition-colors text-left",
+      "text": "Вийти",
+      "childElements": [
+        "LogOut"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/CreateTaskModal.jsx:292",
+      "className": "flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/CreateTaskModal.jsx:324",
+      "className": "inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium transition-colors ${…}",
+      "text": "",
+      "childElements": [
+        "TagIcon"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:468",
+      "className": "h-4 w-4 accent-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/InviteLinkSection.jsx:120",
+      "className": "mt-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink",
+      "text": "Завантажити PNG",
+      "childElements": [
+        "Download"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/settings",
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/InviteLinkSection.jsx:97",
+      "className": "mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-bold text-white transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/settings",
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/InviteMemberDialog.jsx:84",
+      "className": "flex items-start gap-3 rounded-[16px] border-2 p-4 text-left transition-all ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/settings",
+        "/team"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/MarkdownEditor.jsx:323",
+      "className": "hidden",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/components/MarkdownEditor.jsx:353",
+      "className": "custom-scrollbar w-full resize-none bg-white p-4 text-[14px] leading-6 text-ink outline-none placeholder:text-faint ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/MarkdownViewer.jsx:12",
+      "className": "mr-2 mt-1 h-4 w-4 cursor-pointer rounded-[4px] accent-[#1f1f1f] disabled:cursor-default disabled:opacity-70",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/MarkdownViewer.jsx:68",
+      "className": "",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/my",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:169",
+      "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${…}",
+      "text": "",
+      "childElements": [
+        "Menu",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:208",
+      "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
+      "text": "",
+      "childElements": [
+        "span",
+        "ChevronsUpDown"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:217",
+      "className": "text-muted p-[6px] -mr-[6px]",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:248",
+      "className": "text-[#666666] p-[4px] -mr-[4px]",
+      "text": "",
+      "childElements": [
+        "Plus"
+      ],
+      "ariaLabel": "Новий проєкт",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/OrgSwitcherScreen.jsx:27",
+      "className": "flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/profile/ProfileView.jsx:354",
+      "className": "flex w-full items-center gap-3 rounded-[14px] border border-line bg-white p-3 text-left transition-colors hover:bg-canvas",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/SearchModal.jsx:76",
+      "className": "w-full flex items-center justify-between px-4 py-2.5 hover:bg-canvas transition-colors text-left group",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/TeamMemberSettingsDialog.jsx:16",
+      "className": "flex w-full items-center gap-3 rounded-[14px] border-2 p-3 text-left transition-all disabled:cursor-default disabled:opacity-55 ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/settings"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/UserStatusSetter.jsx:101",
+      "className": "w-[36px] h-[36px] rounded-full flex items-center justify-center text-[18px] transition-all ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/UserStatusSetter.jsx:49",
+      "className": "flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/UserStatusSetter.jsx:85",
+      "className": "flex items-center gap-[10px] p-[10px] rounded-[12px] hover:bg-canvas transition-all text-left group",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AgileBoard.jsx:252",
+      "className": "text-muted mb-4",
+      "text": "",
+      "childElements": [
+        "ChevronRight"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "column-collapse",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]",
+        "/my"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "location": "src/components/workspace/AgileBoard.jsx:31",
+      "className": "w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all shadow-sm",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Textarea",
+      "routes": [
+        "/[projectId]",
+        "/my"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AgileBoard.jsx:326",
+      "className": "text-muted mb-4",
+      "text": "",
+      "childElements": [
+        "ChevronRight"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "column-collapse",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]",
+        "/my"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AttachmentViewer.jsx:66",
+      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
+      "text": "",
+      "childElements": [
+        "ZoomOut"
+      ],
+      "ariaLabel": "Зменшити",
+      "styled": true,
+      "reviewed": "media-action",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AttachmentViewer.jsx:67",
+      "className": "min-w-12 rounded-[7px] px-2 py-1.5 text-[11px] font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/35 disabled:hover:bg-transparent",
+      "text": "%",
+      "childElements": [],
+      "ariaLabel": "Поточний масштаб  ${…} %. Скинути до 100%",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AttachmentViewer.jsx:77",
+      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
+      "text": "",
+      "childElements": [
+        "ZoomIn"
+      ],
+      "ariaLabel": "Збільшити",
+      "styled": true,
+      "reviewed": "media-action",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/AttachmentViewer.jsx:82",
+      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "Закрити",
+      "styled": true,
+      "reviewed": "media-action",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:278",
+      "className": "flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-bold transition-all disabled:opacity-50 ${…}",
+      "text": "",
+      "childElements": [
+        "Icon"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar",
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:344",
+      "className": "rounded-[7px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити запис часу",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar",
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1012",
+      "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Зупинити таймер Запустити таймер",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1026",
+      "className": "min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Відкрити трекінг часу",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1050",
+      "className": "${…} ${…}",
+      "text": "",
+      "childElements": [
+        "Settings2",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1177",
+      "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1247",
+      "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:287",
+      "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink",
+      "text": "",
+      "childElements": [
+        "Pencil"
+      ],
+      "ariaLabel": "Редагувати запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:299",
+      "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:694",
+      "className": "w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:716",
+      "className": "ui-native-control",
+      "text": "",
+      "childElements": [
+        "span",
+        "UserAvatar"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "identity-meta-trigger",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
+      "text": "",
+      "childElements": [
+        "span",
+        "AttributeValue"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "calendar-attribute-trigger",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:979",
+      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
+      "text": "",
+      "childElements": [
+        "span",
+        "AttributeValue"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "calendar-attribute-trigger",
+      "resembles": "IconAction",
+      "routes": [
+        "/calendar/event/[eventId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/ChatAttachments.jsx:103",
+      "className": "shrink-0 rounded-[6px] p-1 ${…}",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "Прибрати  ${…} ",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/ChatAttachments.jsx:122",
+      "className": "",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Переглянути  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/ChatAttachments.jsx:52",
+      "className": "absolute right-2 top-2 z-10 rounded-[7px] bg-black/55 p-1.5 text-white hover:bg-black/70",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "Прибрати  ${…} ",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/ChatAttachments.jsx:80",
+      "className": "",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Переглянути  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/workspace/IssueDetail.jsx:1040",
+      "className": "text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1057",
+      "className": "ui-native-control",
+      "text": "",
+      "childElements": [
+        "span",
+        "UserAvatar"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "identity-meta-trigger",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1292",
+      "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Зупинити таймер Запустити таймер",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1310",
+      "className": "min-w-0 truncate text-[11px] font-bold text-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Відкрити трекінг часу",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1332",
+      "className": "${…} max-sm:px-0 ${…}",
+      "text": "",
+      "childElements": [
+        "Settings2",
+        "span"
+      ],
+      "ariaLabel": "Деталі завдання",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1533",
+      "className": "rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink",
+      "text": "",
+      "childElements": [
+        "Pencil"
+      ],
+      "ariaLabel": "Редагувати запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1534",
+      "className": "rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1588",
+      "className": "text-[13px] text-faint italic hover:text-muted transition-colors text-left",
+      "text": "Натисни Редагувати щоб додати опис...",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1757",
+      "className": "text-faint hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити зв'язок",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1942",
+      "className": "text-faint hover:text-ink transition-colors p-1 rounded hover:bg-canvas",
+      "text": "",
+      "childElements": [
+        "Pencil"
+      ],
+      "ariaLabel": "Редагувати запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1949",
+      "className": "text-faint hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити запис",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:1962",
+      "className": "mt-2 text-[12px] font-bold text-ink hover:text-ink-hover transition-colors py-2 text-center w-full rounded-[8px] hover:bg-canvas",
+      "text": "Показати ще",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:222",
+      "className": "group w-full bg-white border border-[#f0f0f0] rounded-[12px] overflow-hidden text-left hover:border-[#d0d0d0] hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)] transition-all duration-200",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:295",
+      "className": "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Переглянути  ${…} ",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:310",
+      "className": "min-w-0 flex-1 text-left",
+      "text": "",
+      "childElements": [
+        "p"
+      ],
+      "ariaLabel": "Переглянути  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:325",
+      "className": "p-2 text-faint hover:text-ink",
+      "text": "",
+      "childElements": [
+        "Download"
+      ],
+      "ariaLabel": "Завантажити  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:336",
+      "className": "p-2 text-faint hover:text-red-500",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueDetail.jsx:556",
+      "className": "text-[13px] font-semibold text-ink hover:underline",
+      "text": "Спробувати ще раз",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:97",
+      "className": "w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Пауза Відтворити",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:65",
+      "className": "absolute inset-0 cursor-pointer",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Відкрити  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/cards/NoteCard.jsx:6",
+      "className": "rounded-[12px] border border-line bg-surface text-left flex flex-col overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow",
+      "text": "",
+      "childElements": [
+        "div"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:59",
+      "className": "text-[10px] text-red-500 hover:underline",
+      "text": "Видалити?",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:67",
+      "className": "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-faint hover:text-red-500",
+      "text": "",
+      "childElements": [
+        "Trash2"
+      ],
+      "ariaLabel": "Видалити повідомлення",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/qtplus/StageStepper.jsx:29",
+      "className": "flex min-w-[140px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-3 pb-2 pt-1 text-[13px] border-b-2 transition-colors ${…} ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "Етап ще не розпочато",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/TimesheetTab.jsx:300",
+      "className": "rounded-[14px] border p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "Відкрити тиждень",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:451",
+      "className": "block shrink-0 transition-opacity hover:opacity-80",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Інформація про зовнішнього автора:  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:473",
+      "className": "${…} row-start-1 self-end transition-opacity hover:opacity-80",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Профіль:  ${…} ",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:563",
+      "className": "flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium ${…}",
+      "text": "",
+      "childElements": [
+        "UserAvatar",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "input",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:586",
+      "className": "hidden",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "Input",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/WorkloadTab.jsx:204",
+      "className": "grid w-full gap-4 px-4 py-4 text-left transition-colors hover:bg-canvas/70 sm:px-5 lg:grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] lg:items-center",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/WorkloadTab.jsx:612",
+      "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:107",
+      "className": "rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "notification-response",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:307",
+      "className": "relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${…} ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Сповіщення",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:458",
+      "className": "text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors",
+      "text": "Очистити прочитані",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:480",
+      "className": "flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden",
+      "text": "",
+      "childElements": [
+        "UserAvatar"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:493",
+      "className": "flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium",
+      "text": "Налаштування",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:498",
+      "className": "flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium",
+      "text": "Вийти",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:546",
+      "className": "mt-2 text-[11px] font-semibold text-ink hover:underline",
+      "text": "Перейти",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceHeader.jsx:554",
+      "className": "text-faint hover:text-ink transition-colors p-1",
+      "text": "",
+      "childElements": [
+        "X"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceSidebar.jsx:226",
+      "className": "mt-1 transition-colors shrink-0 ml-[8px]",
+      "text": "",
+      "childElements": [
+        "PanelLeftClose"
+      ],
+      "ariaLabel": "Сховати панель",
+      "styled": false,
+      "reviewed": "branding-action",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceSidebar.jsx:239",
+      "className": "transition-colors",
+      "text": "",
+      "childElements": [
+        "PanelLeftOpen"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "branding-action",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceSidebar.jsx:289",
+      "className": "transition-colors",
+      "text": "",
+      "childElements": [
+        "Plus"
+      ],
+      "ariaLabel": "Новий проєкт",
+      "styled": false,
+      "reviewed": "branding-action",
+      "resembles": "IconAction",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/WorkspaceSidebar.jsx:354",
+      "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
+      "text": "",
+      "childElements": [
+        "StopIcon"
+      ],
+      "ariaLabel": "Зупинити та зберегти",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "routes": []
+    }
+  ],
   "nativeHotspots": [
     {
       "file": "src/app/(app)/chat/page.js",
