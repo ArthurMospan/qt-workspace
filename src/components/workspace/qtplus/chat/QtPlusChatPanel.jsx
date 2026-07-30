@@ -15,7 +15,7 @@ function Spinner() {
 function DayDivider({ label }) {
   return (
     <div className="flex items-center justify-center py-3">
-      <Pill tone="surface" size="day-wide" uppercase>{label}</Pill>
+      <Pill tone="surface" size="wide-sm" uppercase>{label}</Pill>
     </div>
   );
 }

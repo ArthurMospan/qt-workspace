@@ -68,7 +68,7 @@ export default function MentionText({ text = '', members = [], dark = false, exc
             dark ? 'bg-white/15 text-white' : 'bg-black/[0.08] text-ink'
           }`}
         >
-          <UserAvatar user={member} size={16} />
+          <UserAvatar user={member} size="xs" />
           <span className="truncate">{member.name}</span>
         </span>,
       );

@@ -341,7 +341,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 <div className="flex items-center gap-2">
                   <h3 className="ui-type-card-title text-ink">Сповіщення</h3>
                   {unreadCount > 0 && (
-                    <Pill tone="ink-subtle" size="xs">{unreadCount} нових</Pill>
+                    <Pill tone="ink-subtle" size="sm">{unreadCount} нових</Pill>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
@@ -352,7 +352,6 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                       style="ghost"
                       size="icon-sm"
                       icon={CheckCheck}
-                      iconSize={14}
                       shape="compact"
                       surface="canvas"
                     />
@@ -363,7 +362,6 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                     style="ghost"
                     size="icon-sm"
                     icon={Settings}
-                    iconSize={13}
                     shape="compact"
                     surface="canvas"
                   />
@@ -434,8 +432,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                               action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
                             }}
                             icon={n.read ? Mail : Check}
-                            iconSize={12}
-                            size="notification"
+                            size="xs"
                             appearance="surface"
                           />
                           <IconAction
@@ -445,8 +442,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                               removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
                             }}
                             icon={Trash2}
-                            iconSize={12}
-                            size="notification"
+                            size="xs"
                             appearance="surface-danger"
                           />
                         </div>
@@ -486,7 +482,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
             className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
-            <UserAvatar user={currentUser} size={28} />
+            <UserAvatar user={currentUser} size="sm" />
           </button>
           {userOpen && (
             <div data-ui-surface="local" className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">

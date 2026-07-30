@@ -47,7 +47,6 @@ function ToolbarButton({ icon: Icon, label, onClick, disabled = false, active = 
       label={label}
       icon={Icon}
       size="md"
-      iconSize={15}
       appearance={active ? 'editor-active' : 'editor'}
       aria-pressed={active || undefined}
       disabled={disabled}

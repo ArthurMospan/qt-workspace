@@ -32,7 +32,7 @@ function ProjectMembersMenu({ members, onMemberClick }) {
                 key={member.id || member.uid}
                 className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-2 ring-white"
               >
-                <UserAvatar user={member} size={28} />
+                <UserAvatar user={member} size="sm" />
                 {member.online ? (
                   <span className="absolute -bottom-[1px] -right-[1px] h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
                 ) : null}
@@ -72,7 +72,7 @@ function ProjectMembersMenu({ members, onMemberClick }) {
                 className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-canvas"
               >
                 <span className="relative shrink-0">
-                  <UserAvatar user={member} size={34} />
+                  <UserAvatar user={member} size="md" />
                   <span className={`absolute -bottom-[1px] -right-[1px] h-2.5 w-2.5 rounded-full border-2 border-white ${
                     member.online ? 'bg-emerald-500' : 'bg-[#cfcfcf]'
                   }`} />
@@ -142,7 +142,7 @@ export default function TopHeader({
             className="relative w-8 h-8 flex items-center justify-center shrink-0 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:rounded-full"
             aria-label={`Відкрити чат з ${u.name || u.email || 'учасником'}`}
           >
-            <span className="overflow-hidden rounded-full ring-2 ring-white"><UserAvatar user={u} size={28} /></span>
+            <span className="overflow-hidden rounded-full ring-2 ring-white"><UserAvatar user={u} size="sm" /></span>
             <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
           </button>
         </Tooltip>
@@ -253,7 +253,7 @@ export default function TopHeader({
             className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
             {currentUser ? (
-              <UserAvatar user={currentUser} size={28} />
+              <UserAvatar user={currentUser} size="sm" />
             ) : (
               <div className="w-[28px] h-[28px] rounded-full bg-gray-200 flex items-center justify-center">
                 <span className="text-[12px] text-gray-500 font-bold">U</span>

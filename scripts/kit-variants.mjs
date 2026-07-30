@@ -1,0 +1,221 @@
+// Derives the variant manifest from the implementation, never from a list
+// somebody maintains by hand.
+//
+// The first attempt at this WAS a hand-written list, and it was wrong within
+// minutes: it missed `Pill tone="ink-subtle"`, `size="thin-md"`, four Button
+// compositions and two Dialog sizes. That is the same failure mode as the
+// hand-written previews it was meant to fix, one level up.
+//
+// Variants live in exactly two places in this codebase, so both are read:
+//   • JS lookup maps inside a component (Button SIZES, EmptyState CONTEXTS…)
+//   • data-ui-* attribute selectors in globals.css (Pill tones, compositions…)
+
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse } from '@babel/parser';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const UI_DIR = join(ROOT, 'src', 'components', 'ui');
+const GLOBALS = join(ROOT, 'src', 'app', 'globals.css');
+
+// Where each component's variants are actually defined. `map` reads the keys of
+// a JS object in the component; `css` reads the values an attribute selector is
+// given in globals.css, scoped by the class the component renders (several
+// components share data-ui-composition, so the class prefix disambiguates).
+const SOURCES = {
+  Button: {
+    size: { map: ['Button.jsx', 'SIZES'] },
+    style: { map: ['Button.jsx', 'STYLES'] },
+    shape: { map: ['Button.jsx', 'SHAPES'] },
+    surface: { map: ['Button.jsx', 'SURFACES'] },
+    color: { literal: ['dark', 'red'] },
+    composition: { css: ['.ui-control', 'data-ui-composition'], map: ['Button.jsx', 'COMPOSITION_ICON_SIZES'] },
+  },
+  IconAction: {
+    size: { map: ['IconAction.jsx', 'BUTTON_SIZES'] },
+    appearance: { map: ['IconAction.jsx', 'APPEARANCES'] },
+    shape: { map: ['Button.jsx', 'SHAPES'] },
+    composition: { css: ['.ui-control', 'data-ui-composition'], map: ['Button.jsx', 'COMPOSITION_ICON_SIZES'] },
+  },
+  Input: {
+    size: { literal: ['sm', 'md', 'lg'] },
+    composition: { css: ['.ui-control', 'data-ui-composition'] },
+    preset: { literal: ['money'] },
+  },
+  Textarea: {
+    composition: { css: ['.ui-textarea', 'data-ui-composition'] },
+  },
+  Select: {
+    size: { literal: ['sm', 'md', 'lg'] },
+    variant: { literal: ['default', 'ghost', 'inline'] },
+    filterRole: { map: ['FilterBar.jsx', 'WIDTHS', 'default'] },
+  },
+  MultiSelect: {
+    size: { literal: ['sm', 'md', 'lg'] },
+    variant: { literal: ['default', 'ghost', 'inline'] },
+    filterRole: { map: ['FilterBar.jsx', 'WIDTHS', 'default'] },
+  },
+  Surface: {
+    preset: { map: ['Surface.jsx', 'PRESETS'] },
+    padding: { css: ['.ui-surface', 'data-ui-padding'] },
+    composition: { css: ['.ui-surface', 'data-ui-composition'] },
+  },
+  Pill: {
+    tone: { css: ['', 'data-ui-pill-tone'] },
+    size: { css: ['', 'data-ui-pill-size'] },
+    shape: { css: ['', 'data-ui-pill-shape'] },
+    appearance: { css: ['', 'data-ui-pill-appearance'] },
+    preset: { css: ['', 'data-ui-pill-preset'] },
+    weight: { literal: ['bold', 'medium'] },
+  },
+  UserAvatar: {
+    size: { map: ['DataDisplay/UserAvatar.jsx', 'AVATAR_SIZES'] },
+  },
+  Counter: {
+    size: { literal: ['xs', 'sm', 'md', 'lg'] },
+    variant: { literal: ['count', 'dot'] },
+    status: { literal: ['info', 'danger', 'muted', 'success'] },
+    appearance: { literal: ['solid', 'subtle', 'inverse-outline'] },
+  },
+  Dialog: {
+    size: { map: ['Dialog.jsx', 'sizeClasses'] },
+    bodyPadding: { map: ['Dialog.jsx', 'bodyPaddingClass'] },
+    titleContext: { literal: ['dialog', 'eyebrow'] },
+    presentation: { literal: ['dialog', 'sheet'] },
+  },
+  Alert: {
+    variant: { map: ['Feedback/Alert.jsx', 'variantConfig'] },
+  },
+  EmptyState: {
+    context: { map: ['Feedback/EmptyState.jsx', 'CONTEXTS'] },
+    density: { map: ['Feedback/EmptyState.jsx', 'DENSITIES'] },
+    surface: { map: ['Feedback/EmptyState.jsx', 'SURFACES'] },
+  },
+  LoadingSpinner: {
+    size: { map: ['Feedback/LoadingSpinner.jsx', 'sizes'] },
+  },
+  ToggleSwitch: {
+    size: { literal: ['sm', 'md', 'lg'] },
+  },
+  Segmented: {
+    surface: { literal: ['transparent', 'canvas'] },
+    // `billing-selection` is pinned by tests/issue-fixes.test.mjs (QUI-78) but
+    // has no rule in globals.css, so it currently renders identically to the
+    // default. Declared here so the manifest is honest about it; whether it
+    // should get a rule or be dropped is an open product question.
+    composition: { css: ['.ui-segmented', 'data-ui-composition'], literal: ['billing-selection'] },
+  },
+  Card: {
+    padding: { literal: ['none', 'sm', 'md', 'lg'] },
+    preset: { literal: ['bordered', 'borderless', 'elevated'] },
+  },
+  FormGroup: { gap: { literal: ['sm', 'md'] } },
+  Label: { context: { literal: ['field', 'inline'] } },
+  PageHeader: { variant: { literal: ['main', 'alt'] } },
+  Tag: { size: { literal: ['small', 'default'] } },
+  ChatComposerCore: { variant: { literal: ['qtplus', 'timeline', 'workspace'] } },
+  ChatComposerDock: { composition: { css: ['.chat-composer-dock', 'data-ui-composition'] } },
+  TaskAttributesPanel: { context: { literal: ['calendar', 'task'] } },
+  FilterBar: { context: { literal: ['default', 'detail'] } },
+  Popover: { align: { literal: ['start', 'center', 'end'] } },
+};
+
+function parseSource(source) {
+  return parse(source, {
+    sourceType: 'unambiguous',
+    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait'],
+  });
+}
+
+// Object keys of a top-level `const NAME = {…}`, exported or not.
+function mapKeys(relativeFile, name, nestedKey) {
+  let ast;
+  try {
+    ast = parseSource(readFileSync(join(UI_DIR, relativeFile), 'utf8'));
+  } catch {
+    return [];
+  }
+  // Walked rather than scanned at top level: Dialog and Select declare their
+  // lookup maps inside the component function.
+  let found = [];
+  const visit = node => {
+    if (!node || typeof node !== 'object' || found.length) return;
+    if (node.type === 'VariableDeclarator' && node.id?.name === name) {
+      // `const x = {…}` but also `const x = {…}[key] || fallback`, which is how
+      // Dialog declares bodyPaddingClass — the object is nested in the init.
+      let object = node.init;
+      const findObject = candidate => {
+        if (!candidate || typeof candidate !== 'object') return null;
+        if (candidate.type === 'ObjectExpression') return candidate;
+        for (const key of Object.keys(candidate)) {
+          const child = candidate[key];
+          const hit = Array.isArray(child)
+            ? child.map(findObject).find(Boolean)
+            : (child && typeof child === 'object' && child.type ? findObject(child) : null);
+          if (hit) return hit;
+        }
+        return null;
+      };
+      object = findObject(object);
+      if (!object) return;
+      let properties = object.properties;
+      if (nestedKey) {
+        // WIDTHS is keyed by context first, then by role.
+        const branch = properties.find(property =>
+          property.type === 'ObjectProperty'
+          && String(property.key.name ?? property.key.value) === nestedKey);
+        if (branch?.value?.type !== 'ObjectExpression') return;
+        properties = branch.value.properties;
+      }
+      found = properties
+        .filter(property => property.type === 'ObjectProperty')
+        .map(property => String(property.key.name ?? property.key.value));
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      const child = node[key];
+      if (Array.isArray(child)) child.forEach(visit);
+      else if (child && typeof child === 'object' && child.type) visit(child);
+    }
+  };
+  visit(ast.program);
+  return found;
+}
+
+let cssCache = null;
+function cssValues(classPrefix, attribute) {
+  if (cssCache === null) cssCache = readFileSync(GLOBALS, 'utf8');
+  const escaped = classPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`${escaped}\\[${attribute}='([^']+)'\\]`, 'g');
+  return [...new Set([...cssCache.matchAll(pattern)].map(match => match[1]))].sort();
+}
+
+export function extractVariants() {
+  const manifest = {};
+  for (const [component, props] of Object.entries(SOURCES)) {
+    manifest[component] = {};
+    for (const [prop, source] of Object.entries(props)) {
+      // A prop may legitimately draw from more than one source, so these are
+      // unioned rather than treated as alternatives.
+      let values = [];
+      if (source.map) values.push(...mapKeys(source.map[0], source.map[1], source.map[2]));
+      if (source.css) values.push(...cssValues(source.css[0], source.css[1]));
+      if (source.literal) values.push(...source.literal);
+      manifest[component][prop] = [...new Set(values)].sort();
+    }
+  }
+  return manifest;
+}
+
+export function variantTotals(manifest) {
+  let props = 0;
+  let values = 0;
+  for (const componentProps of Object.values(manifest)) {
+    for (const list of Object.values(componentProps)) {
+      props += 1;
+      values += list.length;
+    }
+  }
+  return { components: Object.keys(manifest).length, props, values };
+}

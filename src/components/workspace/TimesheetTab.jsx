@@ -216,7 +216,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               className="bg-white hover:bg-[#fafafa] transition-colors cursor-pointer" title="Відкрити табель учасника">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <UserAvatar user={m} size={26} />
+                  <UserAvatar user={m} size="sm" />
                   <span className="text-[13px] font-semibold text-ink truncate">{m.name || m.email}</span>
                 </div>
               </td>
@@ -558,7 +558,7 @@ export default function TimesheetTab({
           <div className="flex items-center gap-3 min-w-0">
             {selectedMember && (
               <div data-ui-surface="local" className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]">
-                <UserAvatar user={selectedMember} size={24} />
+                <UserAvatar user={selectedMember} size="sm" />
                 <span className="text-[13px] font-bold text-ink truncate">{selectedMember.name || selectedMember.email}</span>
               </div>
             )}

@@ -36,7 +36,9 @@
       "used": 45,
       "unused": 32,
       "covered": 45,
-      "uncovered": 0
+      "uncovered": 0,
+      "routes": 14,
+      "previews": 71
     },
     "unusedComponents": [
       "Avatar",
@@ -223,12 +225,12 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/app/(app)/chat/page.js:1615",
+      "location": "src/app/(app)/chat/page.js:1609",
       "tag": "button",
       "context": "chat-list-action"
     },
     {
-      "location": "src/app/(app)/chat/page.js:1649",
+      "location": "src/app/(app)/chat/page.js:1643",
       "tag": "button",
       "context": "chat-list-action"
     },
@@ -238,7 +240,7 @@
       "context": "column-collapse"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:328",
+      "location": "src/components/workspace/AgileBoard.jsx:326",
       "tag": "button",
       "context": "column-collapse"
     },
@@ -273,7 +275,7 @@
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1058",
+      "location": "src/components/workspace/IssueDetail.jsx:1057",
       "tag": "button",
       "context": "identity-meta-trigger"
     },
@@ -304,7 +306,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/chat/page.js:1017",
+      "location": "src/app/(app)/chat/page.js:1012",
       "tag": "div",
       "className": "rounded-xl border border-line/70 bg-white p-2"
     },
@@ -314,22 +316,22 @@
       "className": "absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20"
     },
     {
-      "location": "src/app/(app)/chat/page.js:480",
+      "location": "src/app/(app)/chat/page.js:479",
       "tag": "div",
       "className": "absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30"
     },
     {
-      "location": "src/app/(app)/chat/page.js:856",
+      "location": "src/app/(app)/chat/page.js:851",
       "tag": "div",
       "className": "mt-2 bg-white rounded-2xl p-4 border border-line/70"
     },
     {
-      "location": "src/app/(app)/chat/page.js:902",
+      "location": "src/app/(app)/chat/page.js:897",
       "tag": "div",
       "className": "mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2"
     },
     {
-      "location": "src/app/(app)/chat/page.js:929",
+      "location": "src/app/(app)/chat/page.js:924",
       "tag": "div",
       "className": "bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2"
     },
@@ -354,37 +356,37 @@
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:2531",
+      "location": "src/app/(app)/settings/page.js:2528",
       "tag": "div",
       "className": "rounded-[10px] border border-line bg-canvas p-3"
     },
     {
-      "location": "src/app/(app)/settings/page.js:2595",
+      "location": "src/app/(app)/settings/page.js:2592",
       "tag": "div",
       "className": "mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2"
     },
     {
-      "location": "src/app/(app)/settings/page.js:2652",
+      "location": "src/app/(app)/settings/page.js:2649",
       "tag": "div",
       "className": "rounded-[10px] border border-line bg-canvas p-3"
     },
     {
-      "location": "src/app/(app)/settings/page.js:280",
+      "location": "src/app/(app)/settings/page.js:278",
       "tag": "div",
       "className": "w-[36px] h-[36px] rounded-[10px] bg-canvas border border-line flex items-center justify-center shrink-0 text-ink"
     },
     {
-      "location": "src/app/(app)/settings/page.js:357",
+      "location": "src/app/(app)/settings/page.js:355",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:375",
+      "location": "src/app/(app)/settings/page.js:373",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:492",
+      "location": "src/app/(app)/settings/page.js:490",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -394,12 +396,12 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:604",
+      "location": "src/app/(app)/sprints/page.js:603",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:612",
+      "location": "src/app/(app)/sprints/page.js:611",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -519,27 +521,27 @@
       "className": "absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1520",
+      "location": "src/components/workspace/IssueDetail.jsx:1519",
       "tag": "div",
       "className": "group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1707",
+      "location": "src/components/workspace/IssueDetail.jsx:1706",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1734",
+      "location": "src/components/workspace/IssueDetail.jsx:1733",
       "tag": "div",
       "className": "flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1915",
+      "location": "src/components/workspace/IssueDetail.jsx:1911",
       "tag": "div",
       "className": "flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1974",
+      "location": "src/components/workspace/IssueDetail.jsx:1970",
       "tag": "div",
       "className": "flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line"
     },
@@ -594,7 +596,7 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:43",
+      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:42",
       "tag": "div",
       "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
     },
@@ -624,7 +626,7 @@
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:492",
+      "location": "src/components/WorkspaceHeader.jsx:488",
       "tag": "div",
       "className": "absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50"
     },

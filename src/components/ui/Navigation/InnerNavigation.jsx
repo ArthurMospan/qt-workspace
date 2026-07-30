@@ -37,7 +37,6 @@ export function InnerNavigation({
                     color={item.danger ? 'red' : 'dark'}
                     size="md"
                     icon={Icon}
-                    iconSize={15}
                     className={`w-full justify-start transition-colors ${
                       active
                         ? '!bg-[#ebebeb] !text-ink !font-bold !border-transparent'

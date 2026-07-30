@@ -82,7 +82,6 @@ export default function FileCard({ view, onOpen }) {
             onClick={handleDownload}
             label={`Завантажити ${view.title}`}
             icon={Download}
-            iconSize={13}
             size="sm"
             shape="circle"
             appearance="overlay"

@@ -310,7 +310,7 @@ export default function AnalyticsTab({
                     <tr key={m.id || m.uid}>
                       <td className="py-3 pr-6">
                         <div className="flex items-center gap-2">
-                          <UserAvatar user={m} size={26} />
+                          <UserAvatar user={m} size="sm" />
                           <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
                         </div>
                       </td>

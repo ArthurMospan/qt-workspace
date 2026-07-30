@@ -114,7 +114,6 @@ export default function AudioCard({ view }) {
             onClick={() => downloadMaterial(view.url, view.title)}
             label={`Завантажити ${view.title}`}
             icon={Download}
-            iconSize={13}
             size="sm"
             shape="circle"
             className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"

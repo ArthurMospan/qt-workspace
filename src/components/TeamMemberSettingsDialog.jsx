@@ -57,7 +57,7 @@ export default function TeamMemberSettingsDialog({
     <Dialog isOpen onClose={onClose} title="Налаштування учасника" size="md">
       <div className="flex flex-col gap-7">
         <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface flex items-center gap-3">
-          <UserAvatar user={member} size={48} />
+          <UserAvatar user={member} size="xl" />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold text-ink">{member.name || member.email}</p>
             <p className="truncate text-[12px] text-muted">{member.email}</p>

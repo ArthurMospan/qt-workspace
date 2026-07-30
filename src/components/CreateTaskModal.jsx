@@ -300,7 +300,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                           : 'bg-white text-ink border-line hover:border-muted'
                       }`}
                     >
-                      <span aria-hidden="true"><UserAvatar user={m} size={18} /></span>
+                      <span aria-hidden="true"><UserAvatar user={m} size="xs" /></span>
                       <span className="max-w-[180px] truncate">{m.name || m.email}</span>
                       {selected && <Check size={12} className="shrink-0" />}
                     </button>

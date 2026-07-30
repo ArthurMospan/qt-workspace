@@ -73,7 +73,6 @@ export default function TeamPage() {
                 style="ghost"
                 size="icon-xs"
                 icon={Plus}
-                iconSize={16}
                 className="hover:!bg-white"
                 title="Запросити"
               />
@@ -109,7 +108,7 @@ export default function TeamPage() {
                   }`}
                 >
                   <div className="relative shrink-0">
-                    <UserAvatar user={member} size={36} />
+                    <UserAvatar user={member} size="md" />
                     {isOnline && (
                       <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-canvas" />
                     )}

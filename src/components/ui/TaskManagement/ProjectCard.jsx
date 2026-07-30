@@ -34,7 +34,7 @@ export default function ProjectCard({
             </div>
           )}
           {members.slice(0, 4).map((m, idx) => (
-            <UserAvatar key={idx} user={m} size={30} className="border-2 border-white shadow-none" />
+            <UserAvatar key={idx} user={m} size="md" className="border-2 border-white shadow-none" />
           ))}
           {teamCount > 4 && (
             <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">

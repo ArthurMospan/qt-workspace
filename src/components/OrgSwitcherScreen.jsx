@@ -44,7 +44,7 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
         {unreadCount > 0 && (
           <Counter
             value={unreadCount}
-            size="lg"
+            size="md"
             appearance="inverse-outline"
             className="absolute -right-1 -top-1 z-20"
           />

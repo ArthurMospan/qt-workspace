@@ -422,7 +422,7 @@ export function MultiSelect({
             <span aria-hidden="true" className="flex shrink-0 items-center -space-x-1.5">
               {avatarOptions.slice(0, 3).map(option => (
                 <span key={option.value} className="rounded-full ring-2 ring-white">
-                  <UserAvatar user={option.user || { name: option.label, avatar: option.avatar }} size={16} />
+                  <UserAvatar user={option.user || { name: option.label, avatar: option.avatar }} size="xs" />
                 </span>
               ))}
             </span>

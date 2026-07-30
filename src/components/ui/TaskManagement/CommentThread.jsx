@@ -30,7 +30,7 @@ function CommentItem({
   return (
     <div className={`flex gap-[12px] ${isReply ? 'ml-[32px] mt-[12px]' : 'mt-[16px]'}`}>
       {/* Avatar */}
-      <UserAvatar user={avatar} size={32} className="shrink-0" />
+      <UserAvatar user={avatar} size="md" className="shrink-0" />
 
       {/* Content */}
       <div className="flex-1">

@@ -2,14 +2,44 @@
 import { useState } from 'react';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 
+// The avatar scale — the single place that decides how big an avatar is.
+//
+// `size` used to take a raw number, and 38 call sites each picked their own:
+// 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40, 42, 48, 100. Fifteen values
+// for one visual role meant there was no scale to change — resizing avatars
+// across the product would have been a 38-file edit.
+export const AVATAR_SIZES = {
+  xs: 16,
+  sm: 24,
+  md: 32,
+  lg: 40,
+  xl: 48,
+  hero: 96,
+};
+
+// A raw number is still accepted, but only for genuinely computed sizes —
+// AvatarGroup derives one from its own scale, and WorkloadTab switches on
+// layout. Those cannot name a token without inventing one per caller. Fixed
+// call sites use a token; the drift report keeps the numeric ones visible.
+function resolveAvatarSize(size) {
+  if (typeof size === 'number') return size;
+  return AVATAR_SIZES[size] ?? AVATAR_SIZES.md;
+}
+
 // src/components/UserAvatar.jsx — Fixed: uses size prop, supports avatar/photoURL
-export default function UserAvatar({ user, size = 32, className = '', tooltip = false }) {
+// `stacked` is the overlapping-avatars ring. It was previously written at the
+// call site as `border-2 border-white` in one place and `ring-2 ring-white` in
+// AvatarGroup — the same visual idea, spelled two different ways, neither of
+// which the kit knew about.
+export default function UserAvatar({ user, size = 'md', stacked = false, className = '', tooltip = false }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState(null);
+  const px = resolveAvatarSize(size);
+  const stackedClass = stacked ? 'ring-2 ring-white' : '';
 
   if (!user) return (
-    <div style={{ width: size, height: size, minWidth: size }} aria-hidden="true"
+    <div style={{ width: px, height: px, minWidth: px }} aria-hidden="true"
       className={`rounded-full bg-line flex items-center justify-center shrink-0 ${className}`}>
-      <span style={{ fontSize: size * 0.38 }} className="font-bold text-muted">?</span>
+      <span style={{ fontSize: px * 0.38 }} className="font-bold text-muted">?</span>
     </div>
   );
 
@@ -37,8 +67,8 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
   }
 
   const avatar = (
-    <div style={{ width: size, height: size, minWidth: size }}
-      className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${className}`}>
+    <div style={{ width: px, height: px, minWidth: px }}
+      className={`rounded-full overflow-hidden flex items-center justify-center shrink-0 ${stackedClass} ${className}`}>
       {showAvatarImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -46,13 +76,13 @@ export default function UserAvatar({ user, size = 32, className = '', tooltip = 
           alt={name}
           referrerPolicy="no-referrer"
           onError={() => setFailedAvatarUrl(avatarUrl)}
-          style={{ width: size, height: size }}
+          style={{ width: px, height: px }}
           className="object-cover"
         />
       ) : (
-        <div style={{ width: size, height: size, background: bg }}
+        <div style={{ width: px, height: px, background: bg }}
           className="flex items-center justify-center" aria-label={name}>
-          <span style={{ fontSize: size * 0.38, lineHeight: 1 }} className="font-bold text-white" aria-hidden="true">
+          <span style={{ fontSize: px * 0.38, lineHeight: 1 }} className="font-bold text-white" aria-hidden="true">
             {initials}
           </span>
         </div>

@@ -10,7 +10,7 @@
 // Border radius rule for surfaces: Panel/Card is 16px (rounded-[16px]), Inset is 12px (rounded-[12px]).
 // If Card is nested inside Panel, apply !rounded-[12px] to satisfy concentric nesting.
 
-const PRESETS = {
+export const PRESETS = {
   // Gray surface — separates logical blocks in a white content area
   panel: 'panel',
   // White card surface — lifts content cleanly
@@ -32,6 +32,7 @@ export default function Surface({
   variant   = 'panel',   // 'panel' | 'card' | 'inset'
   preset,
   padding   = 'md',      // 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl'
+  composition,           // named size contract, resolved in globals.css
   className = '',
   children,
 }) {
@@ -41,6 +42,7 @@ export default function Surface({
     <div
       data-ui-surface={semanticPreset}
       data-ui-padding={padding}
+      data-ui-composition={composition}
       className={`ui-surface ${className}`}
     >
       {children}

@@ -33,7 +33,7 @@ export default function Pill({
       className={`ui-pill ${weight === 'medium' ? '!font-medium' : ''} ${uppercase ? 'uppercase tracking-wider' : ''} ${className}`}
       style={customStyle}
     >
-      {Icon ? <Icon size={size === 'xs' || size === 'micro' ? 9 : size === 'lg' || size === 'xl' || size === 'wide-md' ? 12 : 10} strokeWidth={2} aria-hidden /> : null}
+      {Icon ? <Icon size={size === 'lg' ? 12 : 10} strokeWidth={2} aria-hidden /> : null}
       {label ?? children}
     </span>
   );

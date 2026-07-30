@@ -125,7 +125,7 @@ export default function ProjectTeamTab({
                   className="bg-white rounded-[12px] p-5 flex flex-col gap-4 text-left hover:ring-4 hover:ring-[#ECECEC] transition-all"
                 >
                   <div className="flex items-start gap-4 w-full">
-                    <UserAvatar user={member} size={48} />
+                    <UserAvatar user={member} size="xl" />
                     <div className="flex-1 min-w-0 flex flex-col pt-1">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="ui-type-card-title text-ink truncate">{member.name || 'Анонім'}</h3>
@@ -196,7 +196,7 @@ export default function ProjectTeamTab({
               return (
                 <button key={uid} type="button" onClick={() => toggleMember(uid)} disabled={locked}
                   className={`flex items-center gap-3 p-3 rounded-[8px] text-left transition-colors ${active ? 'bg-canvas' : 'hover:bg-canvas'} disabled:cursor-default`}>
-                  <UserAvatar user={member} size={36} />
+                  <UserAvatar user={member} size="md" />
                   <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-ink truncate">{member.name || member.email}</p><p className="text-[11px] text-muted truncate">{locked ? 'Власник проєкту' : member.email}</p></div>
                   <span className={`w-5 h-5 rounded-full border flex items-center justify-center ${active ? 'bg-ink border-ink' : 'border-line'}`}>{active && <Check size={12} className="text-white" />}</span>
                 </button>

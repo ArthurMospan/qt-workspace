@@ -31,7 +31,6 @@ export default function MediaLightbox({ view, onClose }) {
         onClick={(e) => { e.stopPropagation(); onClose(); }}
         label="Закрити"
         icon={X}
-        iconSize={18}
         size="lg"
         shape="circle"
         appearance="inverse"

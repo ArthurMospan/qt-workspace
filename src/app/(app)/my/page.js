@@ -275,7 +275,7 @@ export default function MyTasksPage() {
           onClose={() => setShowSettingsModal(false)}
           title="Налаштування видимості статусів"
           titleContext="dialog"
-          size="workspace"
+          size="sm"
           presentation="sheet"
           bodyPadding="spacious"
           footer={(

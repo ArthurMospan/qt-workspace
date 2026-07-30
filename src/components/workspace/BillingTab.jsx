@@ -84,7 +84,7 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
   return (
     <div className="grid gap-3 border-b border-[#f0f0f0] py-3 last:border-0 sm:grid-cols-[minmax(180px,1fr)_minmax(170px,0.9fr)_150px] sm:items-end">
       <div className="flex min-w-0 items-center gap-3 sm:pb-1">
-        <UserAvatar user={member} size={36} />
+        <UserAvatar user={member} size="md" />
         <div className="min-w-0">
           <p className="truncate text-[13px] font-bold text-ink">{memberName}</p>
           {member?.email && member.email !== memberName ? (
@@ -93,8 +93,8 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
         </div>
       </div>
 
-      <div className="min-w-0">
-        <Label className="mb-1.5 block">Посада</Label>
+      <div className="flex min-w-0 flex-col gap-[6px]">
+        <Label>Посада</Label>
         <Select
           value={preset || member?.positionId || ''}
           onChange={val => {
@@ -114,8 +114,8 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
         />
       </div>
 
-      <div className="min-w-0">
-        <Label htmlFor={rateInputId} className="mb-1.5 block">Ставка</Label>
+      <div className="flex min-w-0 flex-col gap-[6px]">
+        <Label htmlFor={rateInputId}>Ставка</Label>
         <div className="relative">
           <Input
             id={rateInputId}
@@ -246,7 +246,7 @@ function IssueRow({
                 <UserAvatar
                   key={member.id || member.uid}
                   user={member}
-                  size={20}
+                  size="xs"
                   className="ring-2 ring-white"
                 />
               ))}

@@ -175,8 +175,8 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
       />
       {dirty && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10">
-          <IconAction onClick={commit} disabled={saving} label="Зберегти" icon={Check} iconSize={15} size="xs" appearance="primary" />
-          <IconAction onClick={() => onChange(saved ?? '')} label="Скасувати" icon={X} iconSize={15} size="xs" appearance="soft" />
+          <IconAction onClick={commit} disabled={saving} label="Зберегти" icon={Check} size="xs" appearance="primary" />
+          <IconAction onClick={() => onChange(saved ?? '')} label="Скасувати" icon={X} size="xs" appearance="soft" />
         </div>
       )}
     </div>
@@ -207,7 +207,6 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
             disabled={saving}
             label="Зберегти"
             icon={Check}
-            iconSize={15}
             size="compact"
             appearance="primary"
           />
@@ -215,7 +214,6 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
             onClick={() => onChange(saved ?? '')}
             label="Скасувати"
             icon={X}
-            iconSize={15}
             size="compact"
             appearance="soft"
           />
@@ -444,23 +442,23 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" size="icon" icon={Check} iconSize={12} />
+            <Button onClick={save} style="ghost" size="icon" icon={Check} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setColor(item.color); }
               }}
-              style="ghost" size="icon" icon={X} iconSize={12}
+              style="ghost" size="icon" icon={X}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
-              style="ghost" size="icon" icon={Edit2} iconSize={11}
+              style="ghost" size="icon" icon={Edit2}
             />
             {canDelete ? (
               <Button onClick={() => onDelete(item.id)}
-                style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
+                style="ghost" color="red" size="icon" icon={Trash2}
               />
             ) : (
               <div className="w-[28px]" />
@@ -524,22 +522,22 @@ function PositionItem({ item, onSave, onDelete }) {
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" size="icon" icon={Check} iconSize={12} />
+            <Button onClick={save} style="ghost" size="icon" icon={Check} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setHourlyRate(item.hourlyRate); }
               }}
-              style="ghost" size="icon" icon={X} iconSize={12}
+              style="ghost" size="icon" icon={X}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
-              style="ghost" size="icon" icon={Edit2} iconSize={11}
+              style="ghost" size="icon" icon={Edit2}
             />
             <Button onClick={() => onDelete(item.id)}
-              style="ghost" color="red" size="icon" icon={Trash2} iconSize={11}
+              style="ghost" color="red" size="icon" icon={Trash2}
             />
           </>
         )}
@@ -1950,7 +1948,7 @@ export default function SettingsPage() {
               {bio !== (currentUser?.bio || '') && (
                 <div className="flex items-center justify-end gap-2">
                   <Button onClick={() => setBio(currentUser?.bio || '')} style="secondary" size="sm">Скасувати</Button>
-                  <Button onClick={() => saveProfileField('bio', bio)} style="primary" color="dark" size="sm" icon={Check} iconSize={14}>Зберегти</Button>
+                  <Button onClick={() => saveProfileField('bio', bio)} style="primary" color="dark" size="sm" icon={Check}>Зберегти</Button>
                 </div>
               )}
             </div>
@@ -2305,7 +2303,6 @@ export default function SettingsPage() {
                   onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
                   style="ghost" size="icon-sm"
                   icon={Copy}
-                  iconSize={12}
                 />
               </div>
             </Row>
@@ -2402,8 +2399,8 @@ export default function SettingsPage() {
                                         handleColorChange(v);
                                       }
                                     }}
+                                    composition="color-hex"
                                     size="md"
-                                    className="font-mono"
                                     placeholder="#1a365d"
                                   />
                                 </div>
@@ -2658,13 +2655,13 @@ export default function SettingsPage() {
                         {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
                       </code>
                       {buggyBagKey.token && (
-                        <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} aria-label="Копіювати API Token" />
+                        <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати API Token" />
                       )}
                     </div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Org ID</span>
                     <div className="flex min-w-0 items-center gap-2">
                       <code className="min-w-0 flex-1 select-all truncate rounded border border-line bg-white px-3 py-1.5 font-mono text-[12px]">{activeOrgId}</code>
-                      <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} iconSize={14} aria-label="Копіювати ID організації" />
+                      <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати ID організації" />
                     </div>
                   </div>
                 </div>
@@ -2695,7 +2692,7 @@ export default function SettingsPage() {
 
         return (
           <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
-            <Card preset="elevated" padding="none" className="overflow-hidden transition-all">
+            <Card preset="bordered" padding="none" className="overflow-hidden transition-all">
               <div className={`bg-white px-6 py-6 border-b border-line`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2767,7 +2764,7 @@ export default function SettingsPage() {
                 return (
                   <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === members.length - 1 ? 'rounded-b-[16px]' : ''}`}>
                     <div className="flex min-w-0 items-center gap-3">
-                      <UserAvatar user={member} size={40} />
+                      <UserAvatar user={member} size="lg" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-[14px] font-bold text-ink">{member.name || member.email}</p>
@@ -2777,8 +2774,8 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <Pill size="xl" className="hidden sm:inline-flex">{positionLabel}</Pill>
-                      <Pill tone="ink-subtle" size="xl">{ROLE_LABELS[member.role] || member.role}</Pill>
+                      <Pill size="lg" className="hidden sm:inline-flex">{positionLabel}</Pill>
+                      <Pill tone="ink-subtle" size="lg">{ROLE_LABELS[member.role] || member.role}</Pill>
                       <Button
                         onClick={() => setMemberSettingsId(member.id || member.uid)}
                         style="secondary"
@@ -2838,7 +2835,7 @@ export default function SettingsPage() {
                   });
                 }}
                 style="ghost" size="lg"
-                icon={Plus} iconSize={13}
+                icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
               >
@@ -2865,7 +2862,7 @@ export default function SettingsPage() {
               <Button
                 onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
                 style="ghost" size="lg"
-                icon={Plus} iconSize={13}
+                icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
               >
@@ -2891,7 +2888,7 @@ export default function SettingsPage() {
               <Button
                 onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', isNew: true }])}
                 style="ghost" size="lg"
-                icon={Plus} iconSize={13}
+                icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
               >
@@ -2917,7 +2914,7 @@ export default function SettingsPage() {
               <Button
                 onClick={() => setLabels(p => [...p, { id: `l-${Date.now()}`, label: 'Нова мітка', color: '#db2777', isNew: true }])}
                 style="ghost" size="lg"
-                icon={Plus} iconSize={13}
+                icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
               >
@@ -2943,7 +2940,7 @@ export default function SettingsPage() {
               <Button
                 onClick={() => setPositions(p => [...p, { id: `pos-${Date.now()}`, label: 'Нова посада', hourlyRate: 0, isNew: true }])}
                 style="ghost" size="lg"
-                icon={Plus} iconSize={13}
+                icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
               >
@@ -2965,7 +2962,7 @@ export default function SettingsPage() {
                   if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();
                 }}
                 style="ghost" color="red" size="lg"
-                icon={LogOut} iconSize={13}
+                icon={LogOut}
               >
                 Вийти
               </Button>
@@ -2991,7 +2988,7 @@ export default function SettingsPage() {
                   // Auto-save persists these changes; no manual save needed.
                 }}
                 style="ghost" color="red" size="lg"
-                icon={RefreshCw} iconSize={13}
+                icon={RefreshCw}
               >
                 Скинути
               </Button>

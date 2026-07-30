@@ -42,7 +42,9 @@ test('QUI-76 uses the shared deterministic avatar in project activity', async ()
   const source = await read('../src/app/(app)/page.js');
 
   assert.match(source, /actorUser:\s*actorUser\s*\|\|\s*\{/);
-  assert.match(source, /<UserAvatar user=\{stats\.lastAction\.actorUser\} size=\{28\} \/>/);
+  // Size is a scale token, not a literal: raw pixel sizes moved into
+  // AVATAR_SIZES so the avatar scale has one place to change.
+  assert.match(source, /<UserAvatar user=\{stats\.lastAction\.actorUser\} size="sm" \/>/);
   assert.doesNotMatch(source, /stats\.lastAction\.actor\.slice\(0,\s*2\)/);
 });
 

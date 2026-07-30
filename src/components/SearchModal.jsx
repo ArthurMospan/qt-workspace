@@ -110,7 +110,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         </div>
                       )}
                       {project && (
-                        <Pill tone="neutral-hover" size="sm" weight="medium">
+                        <Pill tone="neutral" size="sm" weight="medium">
                           {project.name}
                         </Pill>
                       )}

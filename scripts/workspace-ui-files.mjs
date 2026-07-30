@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
+import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from '@babel/parser';
 
@@ -95,6 +95,80 @@ export function collectWorkspaceUiFiles({ includeSharedUi = false } = {}) {
   }
 
   return [...seen].sort();
+}
+
+// ── Route provenance ────────────────────────────────────────────────────────
+// collectWorkspaceUiFiles answers "is this file part of the workspace?" but not
+// "which screen does the user see it on?", so a drift finding could only ever
+// name a file path. Walking the same graph once per route root records who
+// reaches what, which is what lets the kit report a screen instead.
+
+function routeNameFor(pageFile) {
+  const relativeDir = relative(WORKSPACE_APP_ROOT, dirname(pageFile));
+  const segments = relativeDir
+    .split(sep)
+    .filter(segment => segment && !segment.startsWith('(')); // (app), (marketing) are grouping-only
+  return segments.length === 0 ? '/' : `/${segments.join('/')}`;
+}
+
+function reachableFrom(entryFile, { includeSharedUi }) {
+  const queued = [entryFile];
+  const seen = new Set();
+  while (queued.length > 0) {
+    const file = queued.pop();
+    if (!file || seen.has(file)) continue;
+    seen.add(file);
+    const source = readFileSync(file, 'utf8');
+    for (const specifier of localSpecifiers(source)) {
+      const imported = resolveLocalImport(file, specifier);
+      if (!imported) continue;
+      if (!includeSharedUi && isInside(imported, SHARED_UI_ROOT)) continue;
+      if (!seen.has(imported)) queued.push(imported);
+    }
+  }
+  return seen;
+}
+
+/**
+ * Maps every authenticated workspace route to the files it reaches, and every
+ * file back to the routes that reach it. A file shared by several screens
+ * legitimately lists all of them — that breadth is the point, since it is what
+ * makes a drift finding's blast radius visible.
+ */
+export function collectWorkspaceRouteMap({ includeSharedUi = true } = {}) {
+  const pageFiles = walk(WORKSPACE_APP_ROOT).filter(file =>
+    /^page\.(js|jsx|ts|tsx)$/.test(file.split(sep).at(-1)),
+  );
+
+  const routeToFiles = new Map();
+  const fileToRoutes = new Map();
+
+  for (const pageFile of pageFiles) {
+    const route = routeNameFor(pageFile);
+    const reached = reachableFrom(pageFile, { includeSharedUi });
+    const bucket = routeToFiles.get(route) || new Set();
+    for (const file of reached) {
+      bucket.add(file);
+      const routes = fileToRoutes.get(file) || new Set();
+      routes.add(route);
+      fileToRoutes.set(file, routes);
+    }
+    routeToFiles.set(route, bucket);
+  }
+
+  const toSortedPosix = files =>
+    [...files].map(file => relative(ROOT, file).split(sep).join('/')).sort();
+
+  return {
+    routes: Object.fromEntries(
+      [...routeToFiles.keys()].sort().map(route => [route, toSortedPosix(routeToFiles.get(route))]),
+    ),
+    fileRoutes: Object.fromEntries(
+      [...fileToRoutes.keys()]
+        .map(file => [relative(ROOT, file).split(sep).join('/'), [...fileToRoutes.get(file)].sort()])
+        .sort((a, b) => a[0].localeCompare(b[0])),
+    ),
+  };
 }
 
 export const workspacePaths = {

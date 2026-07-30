@@ -96,7 +96,7 @@ export default function MemberAnalyticsPage() {
   return (
     <div className="custom-scrollbar h-full flex-1 overflow-y-auto overflow-x-hidden bg-transparent">
       <div className="workspace-page-layout min-h-full pb-[120px]">
-        <Surface preset="panel" padding="lg" className="min-h-[520px] flex-1">
+        <Surface preset="panel" padding="lg" composition="member-chart-panel" className="flex-1">
           <WorkloadTab
             members={members}
             issues={memberIssues}

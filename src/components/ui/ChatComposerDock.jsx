@@ -5,6 +5,7 @@ import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react'
 const ChatComposerDock = forwardRef(function ChatComposerDock({
   as: Component = 'div',
   scrollRef = null,
+  composition,
   className = '',
   children,
   ...props
@@ -37,7 +38,7 @@ const ChatComposerDock = forwardRef(function ChatComposerDock({
   }, [scrollRef]);
 
   return (
-    <Component ref={dockRef} className={`chat-composer-dock ${className}`} {...props}>
+    <Component ref={dockRef} data-ui-composition={composition} className={`chat-composer-dock ${className}`} {...props}>
       {children}
     </Component>
   );

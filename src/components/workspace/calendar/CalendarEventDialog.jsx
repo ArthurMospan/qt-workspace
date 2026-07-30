@@ -256,7 +256,7 @@ export function CalendarEventDetails({
             const state = event.participantResponses?.[uid] || 'pending';
             return (
               <div key={uid} data-ui-surface="local" className="flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5">
-                <span className="h-8 w-8 overflow-hidden rounded-full"><UserAvatar user={member || { name: memberLabel(member || {}) }} size={32} /></span>
+                <span className="h-8 w-8 overflow-hidden rounded-full"><UserAvatar user={member || { name: memberLabel(member || {}) }} size="md" /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12px] font-bold text-ink">{memberLabel(member || {})}</p>
                   <p className={`text-[10px] font-semibold ${state === 'accepted' ? 'text-emerald-600' : state === 'declined' ? 'text-red-500' : state === 'tentative' ? 'text-amber-600' : 'text-muted'}`}>{responseLabel(state)}</p>
@@ -596,7 +596,7 @@ export default function CalendarEventDialog({
 
         <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2">
           <div className="flex flex-col gap-[6px]">
-            <Label className="flex items-center gap-1.5"><Repeat2 size={13} /> Повторення</Label>
+            <Label icon={Repeat2}>Повторення</Label>
             <Select value={form.recurrenceFrequency} onChange={value => update('recurrenceFrequency', value)} options={CALENDAR_EVENT_RECURRENCE_OPTIONS} />
             {form.recurrenceFrequency !== 'none' && (
               <div className="grid grid-cols-[110px_1fr] gap-2">
@@ -611,7 +611,7 @@ export default function CalendarEventDialog({
             )}
           </div>
           <div className="flex flex-col gap-[6px]">
-            <Label className="flex items-center gap-1.5"><BellRing size={13} /> Нагадування</Label>
+            <Label icon={BellRing}>Нагадування</Label>
             <MultiSelect
               value={form.reminderMinutes}
               onChange={value => update('reminderMinutes', value)}
@@ -640,9 +640,7 @@ export default function CalendarEventDialog({
           </div>
           <div className="grid grid-cols-1 gap-[12px] p-[14px] sm:grid-cols-2">
             <div className="flex flex-col gap-[6px]">
-              <Label className="flex items-center gap-1.5">
-                <CalendarDays size={13} /> Початок
-              </Label>
+              <Label icon={CalendarDays}>Початок</Label>
               <div className="flex gap-[8px]">
                 <DatePicker
                   value={form.startDate}
@@ -661,9 +659,7 @@ export default function CalendarEventDialog({
               </div>
             </div>
             <div className="flex flex-col gap-[6px]">
-              <Label className="flex items-center gap-1.5">
-                <Clock3 size={13} /> Завершення
-              </Label>
+              <Label icon={Clock3}>Завершення</Label>
               <div className="flex gap-[8px]">
                 <DatePicker
                   value={form.endDate}
@@ -685,8 +681,7 @@ export default function CalendarEventDialog({
         </div>
 
         <div className="flex flex-col gap-[6px]">
-          <Label className="flex items-center gap-1.5">
-            {form.visibility === 'private' ? <LockKeyhole size={14} /> : <Users size={14} />}
+          <Label icon={form.visibility === 'private' ? LockKeyhole : Users}>
             {form.visibility === 'private'
               ? (form.type === 'note' ? 'Приватна нотатка' : 'Приватна подія')
               : 'Учасники'}
@@ -713,7 +708,7 @@ export default function CalendarEventDialog({
                 const member = members.find(item => (item.id || item.uid) === uid);
                 const state = event.participantResponses?.[uid] || 'pending';
                 return (
-                  <Pill key={uid} tone="neutral" size="wide-md" weight="medium">
+                  <Pill key={uid} tone="neutral" size="wide-sm" weight="medium">
                     {memberLabel(member || {})}
                     <span className={state === 'accepted' ? 'text-emerald-600' : state === 'declined' ? 'text-red-500' : 'text-muted'}>
                       · {state === 'accepted' ? 'буде' : state === 'tentative' ? 'можливо' : state === 'declined' ? 'не буде' : 'очікуємо'}
@@ -727,15 +722,11 @@ export default function CalendarEventDialog({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
           <div className="flex flex-col gap-[6px]">
-            <Label className="flex items-center gap-1.5">
-              <MapPin size={14} /> Місце
-            </Label>
+            <Label icon={MapPin}>Місце</Label>
             <Input value={form.location} onChange={e => update('location', e.target.value)} placeholder="Офіс або кімната" disabled={!canManage} />
           </div>
           <div className="flex flex-col gap-[6px]">
-            <Label className="flex items-center gap-1.5">
-              <Link2 size={14} /> Посилання
-            </Label>
+            <Label icon={Link2}>Посилання</Label>
             <Input type="url" value={form.meetingUrl} onChange={e => update('meetingUrl', e.target.value)} placeholder="https://meet..." disabled={!canManage} />
           </div>
         </div>

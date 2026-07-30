@@ -71,7 +71,7 @@ export default function TimeLogDisplay({
 
       {/* Right: User Avatar & Actions */}
       <div className="flex items-center gap-[12px] ml-[16px] shrink-0">
-        {user && <UserAvatar user={user} size={28} />}
+        {user && <UserAvatar user={user} size="sm" />}
 
         {/* Actions */}
         <div className="flex items-center gap-[6px]">

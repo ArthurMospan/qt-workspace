@@ -38,12 +38,12 @@ export default function ProfileModal() {
         ) : loading ? (
           <div className="flex-1 flex items-center justify-center bg-white">
              <div className="animate-spin w-8 h-8 border-4 border-ink border-t-transparent rounded-full"></div>
-             <IconAction label="Закрити" icon={X} iconSize={20} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
+             <IconAction label="Закрити" icon={X} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 bg-white">
             <p className="text-muted">Користувача не знайдено</p>
-             <IconAction label="Закрити" icon={X} iconSize={20} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
+             <IconAction label="Закрити" icon={X} size="lg" appearance="surface-plain" shape="circle" onClick={handleClose} className="absolute top-4 right-4 z-10" />
           </div>
         )}
       </div>

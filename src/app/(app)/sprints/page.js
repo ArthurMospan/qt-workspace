@@ -525,7 +525,6 @@ export default function GlobalSprintsPage() {
                             style="ghost"
                             size="icon"
                             icon={isExpanded ? ChevronDown : ChevronRight}
-                            iconSize={16}
                             className="shrink-0 hover:!bg-white"
                             aria-expanded={isExpanded}
                             title={isExpanded ? 'Згорнути спринт' : 'Розгорнути спринт'}
@@ -618,7 +617,6 @@ export default function GlobalSprintsPage() {
                     style="ghost"
                     size="icon-xs"
                     icon={ChevronRight}
-                    iconSize={16}
                     className="mb-4 hover:!bg-white"
                     title="Розгорнути колонку завдань"
                   />
@@ -635,7 +633,8 @@ export default function GlobalSprintsPage() {
                 <Surface
                   preset="panel"
                   padding="none"
-                  className="flex max-h-[60vh] min-h-0 w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none lg:max-h-none"
+                  composition="scroll-pane"
+                  className="flex w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none"
                 >
                   <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4">
                     <div className="flex items-center gap-[6px]">
@@ -644,7 +643,6 @@ export default function GlobalSprintsPage() {
                         style="ghost"
                         size="icon-xs"
                         icon={ChevronLeft}
-                        iconSize={16}
                         className="-ml-2 hover:!bg-white"
                         title="Згорнути колонку завдань"
                       />
@@ -657,7 +655,6 @@ export default function GlobalSprintsPage() {
                       style="ghost"
                       size="icon-xs"
                       icon={Plus}
-                      iconSize={16}
                       className="hover:!bg-white"
                       title="Додати завдання без спринту"
                     />

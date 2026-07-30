@@ -242,7 +242,7 @@ export default function AudioTaskPanel({
                         ]}
                         compact
                       />
-                      {assignee && <UserAvatar user={assignee} size={24} />}
+                      {assignee && <UserAvatar user={assignee} size="sm" />}
                     </div>
                   </div>
                 </div>

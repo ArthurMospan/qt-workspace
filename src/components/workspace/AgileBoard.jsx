@@ -266,7 +266,6 @@ export default function AgileBoard({
                       style="ghost"
                       size="icon-xs"
                       icon={ChevronLeft}
-                      iconSize={16}
                       className="-ml-2 hover:!bg-white"
                       title="Згорнути колонку"
                     />
@@ -283,7 +282,6 @@ export default function AgileBoard({
                         style="ghost"
                         size="icon-xs"
                         icon={Plus}
-                        iconSize={16}
                         className="hover:!bg-white"
                         title="Додати завдання"
                       />
@@ -352,7 +350,6 @@ export default function AgileBoard({
                               style="ghost"
                               size="icon-xs"
                               icon={ChevronLeft}
-                              iconSize={16}
                               className="-ml-2 hover:!bg-white"
                               title="Згорнути колонку"
                             />
@@ -371,7 +368,6 @@ export default function AgileBoard({
                                 style="ghost"
                                 size="icon-xs"
                                 icon={Plus}
-                                iconSize={16}
                                 className="hover:!bg-white"
                                 title="Додати завдання"
                               />

@@ -57,7 +57,7 @@ export default function ChatComposer({ onSend, onTyping, disabled, scrollRef }) 
   };
 
   return (
-    <ChatComposerDock scrollRef={scrollRef} className="px-4 pb-5 pt-3">
+    <ChatComposerDock scrollRef={scrollRef} composition="timeline-composer">
       <ChatComposerCore
         variant="qtplus"
         value={text}

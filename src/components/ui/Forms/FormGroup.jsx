@@ -6,6 +6,7 @@ export default function FormGroup({
   children,
   label,
   error,
+  icon = null,
   required = false,
   gap = 'sm',
   className = '',
@@ -15,7 +16,7 @@ export default function FormGroup({
   return (
     <div className={`flex flex-col ${gapClass} ${className}`}>
       {label && (
-        <Label required={required}>
+        <Label required={required} icon={icon}>
           {label}
         </Label>
       )}

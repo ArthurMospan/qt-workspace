@@ -174,7 +174,7 @@ export default function AiCallPage() {
                 <div data-ui-surface="compact-bordered-panel" data-ui-padding="row" className="ui-surface flex items-center gap-3">
                   <FileAudio size={16} className="text-muted shrink-0" />
                   <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{audioFile.name}</span>
-                  <IconAction label="Прибрати файл" icon={X} iconSize={14} size="xs" appearance="quiet" shape="micro" onClick={() => setAudioFile(null)} />
+                  <IconAction label="Прибрати файл" icon={X} size="xs" appearance="quiet" shape="micro" onClick={() => setAudioFile(null)} />
                 </div>
               ) : (
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#cfcfcf] bg-canvas px-4 py-6 text-[13px] font-medium text-muted transition-colors hover:border-muted hover:text-ink">
@@ -285,7 +285,7 @@ export default function AiCallPage() {
                             className="w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink"
                           />
                           <div className="flex flex-wrap items-center gap-2">
-                            {assignee && <UserAvatar user={assignee} size={22} />}
+                            {assignee && <UserAvatar user={assignee} size="sm" />}
                             <div className="w-[180px]">
                               <Select
                                 value={task.assigneeId}

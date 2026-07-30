@@ -111,7 +111,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             {(project.team || []).slice(0, 4).map(uid => {
               const m = members.find(mbr => (mbr.id || mbr.uid) === uid);
               return m ? (
-                <UserAvatar key={uid} user={m} size={30} className="border-2 border-white shadow-none" />
+                <UserAvatar key={uid} user={m} size="md" stacked className="shadow-none" />
               ) : (
                 <div key={uid} data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                   <User size={13} className="text-muted" />
@@ -321,7 +321,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     <div className="z-10 mt-auto flex flex-col gap-[14px] w-full">
       {isLarge && stats.lastAction && (
         <div className="bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
-          <UserAvatar user={stats.lastAction.actorUser} size={28} />
+          <UserAvatar user={stats.lastAction.actorUser} size="sm" />
 
           {/* Activity Text details */}
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
@@ -775,7 +775,7 @@ export default function WorkspacePage() {
         <div className="w-full flex-1 flex flex-col">
           {projectsLoading ? (
             // Skeleton cards — shown while projects load to prevent empty state flash
-            <Surface preset="panel" padding="lg" className="w-full min-h-[420px] flex-1 flex flex-col">
+            <Surface preset="panel" padding="lg" composition="chart-panel" className="w-full flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} data-ui-surface="bordered-panel" data-ui-padding="lg" className="ui-surface flex flex-col gap-[12px] animate-pulse">

@@ -144,11 +144,11 @@ function MessageBubble({
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
               title="Переглянути профіль"
             >
-              <UserAvatar user={{ name: msg.user, avatar: senderMember.avatar || msg.avatar }} size={36} />
+              <UserAvatar user={{ name: msg.user, avatar: senderMember.avatar || msg.avatar }} size="md" />
             </button>
           ) : (
             <div className="w-9 h-9 rounded-xl overflow-hidden">
-              <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size={36} />
+              <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size="md" />
             </div>
           )
         ) : (
@@ -255,7 +255,6 @@ function MessageBubble({
               buttonRef={emojiButtonRef}
               onClick={() => setShowEmoji(v => !v)}
               icon={Smile}
-              iconSize={15}
               label="Реакція"
               size="sm"
               appearance="soft"
@@ -287,7 +286,7 @@ function MessageBubble({
           {!isThread && (
             <Button
               onClick={() => onThread(msg.id)}
-              style="ghost" size="icon-sm" icon={MessageSquare} iconSize={15}
+              style="ghost" size="icon-sm" icon={MessageSquare}
               title="Відповісти в гілку"
             />
           )}
@@ -296,7 +295,7 @@ function MessageBubble({
           {!isThread && (
             <Button
               onClick={() => onPin(msg.id, !msg.isPinned)}
-              style="ghost" size="icon-sm" icon={Pin} iconSize={15}
+              style="ghost" size="icon-sm" icon={Pin}
               surface={msg.isPinned ? 'canvas' : 'default'}
               title={msg.isPinned ? 'Відкріпити' : 'Закріпити'}
             />
@@ -308,14 +307,14 @@ function MessageBubble({
               <div className="w-px h-4 bg-line mx-0.5" />
               <Button
                 onClick={() => { setEditing(true); setEditText(msg.text); }}
-                style="ghost" size="icon-sm" icon={Edit2} iconSize={14}
+                style="ghost" size="icon-sm" icon={Edit2}
                 title="Редагувати"
               />
               <Button
                 onClick={async () => {
                   if (await confirmDialog({ title: 'Видалити повідомлення?', confirmText: 'Видалити', danger: true })) onDelete(msg.id);
                 }}
-                style="ghost" color="red" size="icon-sm" icon={Trash2} iconSize={14}
+                style="ghost" color="red" size="icon-sm" icon={Trash2}
                 title="Видалити"
               />
             </>
@@ -484,7 +483,7 @@ function MessageInput({
               onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-canvas transition-colors text-left"
             >
-              <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={28} />
+              <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="sm" />
               <div>
                 <p className="text-[13px] font-semibold text-ink">{m.name || m.email}</p>
                 {m.email && m.name && <p className="text-[11px] text-muted">{m.email}</p>}
@@ -538,7 +537,6 @@ function MessageInput({
               buttonRef={emojiBtnRef}
               onClick={() => setShowEmoji(v => !v)}
               icon={Smile}
-              iconSize={17}
               label="Emoji"
               appearance={showEmoji ? 'soft' : 'quiet'}
             />
@@ -547,7 +545,6 @@ function MessageInput({
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               icon={Paperclip}
-              iconSize={17}
               label="Прикріпити файл"
             />
           </>
@@ -598,9 +595,8 @@ function ThreadSidebar({
         <IconAction
           onClick={onClose}
           icon={X}
-          iconSize={16}
           label="Закрити гілку"
-          appearance="pane"
+          appearance="quiet"
         />
       </div>
 
@@ -608,7 +604,7 @@ function ThreadSidebar({
       <div className="px-5 py-4 border-b border-line/70 bg-white/40">
         <div className="flex gap-3">
           <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0">
-            <UserAvatar user={{ name: parentMsg.user, avatar: parentMsg.avatar }} size={32} />
+            <UserAvatar user={{ name: parentMsg.user, avatar: parentMsg.avatar }} size="md" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-1">
@@ -639,7 +635,7 @@ function ThreadSidebar({
               <div className="w-8 shrink-0 flex justify-end items-start pt-0.5">
                 {showHead ? (
                   <div className="w-8 h-8 rounded-xl overflow-hidden">
-                    <UserAvatar user={{ name: reply.user, avatar: members?.find(m => (m.id || m.uid) === reply.senderId)?.avatar || reply.avatar }} size={32} />
+                    <UserAvatar user={{ name: reply.user, avatar: members?.find(m => (m.id || m.uid) === reply.senderId)?.avatar || reply.avatar }} size="md" />
                   </div>
                 ) : (
                   <span className="text-[10px] text-muted opacity-0 group-hover:opacity-100 pt-1 transition-opacity">{reply.time}</span>
@@ -815,9 +811,8 @@ function ChannelInfoSidebar({
         <IconAction
           onClick={onClose}
           icon={X}
-          iconSize={16}
           label="Закрити інформацію про канал"
-          appearance="pane"
+          appearance="quiet"
         />
       </div>
 
@@ -915,7 +910,7 @@ function ChannelInfoSidebar({
                       className="w-full flex items-center justify-between text-left px-2 py-1.5 hover:bg-canvas rounded-lg transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={20} />
+                        <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="xs" />
                         <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
                       </div>
                       <Plus size={14} className="text-muted" />
@@ -930,7 +925,7 @@ function ChannelInfoSidebar({
             {membersInChannel.map(m => (
               <div key={m.id || m.uid} className="flex items-center justify-between py-0.5 group/m">
                 <div className="flex items-center gap-2">
-                  <UserAvatar user={{ name: m.name, avatar: m.avatar }} size={24} />
+                  <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="sm" />
                   <span className="text-[13px] font-medium text-ink truncate max-w-[180px]">{m.name || m.email}</span>
                 </div>
                 {isAdminOrOwner && channelMembers.length > 0 && (
@@ -1590,7 +1585,6 @@ export default function ChatPage() {
                     style="ghost"
                     size="icon-xs"
                     icon={Plus}
-                    iconSize={16}
                     className="hover:!bg-white"
                     title="Новий канал"
                   />
@@ -1658,7 +1652,7 @@ export default function ChatPage() {
                       >
                         <div className="relative shrink-0">
                           <div className="w-[18px] h-[18px] rounded-full overflow-hidden">
-                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size={18} />
+                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size="xs" />
                           </div>
                           {u.online && (
                             <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-canvas" />
@@ -1762,7 +1756,6 @@ export default function ChatPage() {
                     }
                   }}
                   icon={Info}
-                  iconSize={16}
                   label={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
                   appearance={showChannelInfo ? 'soft' : 'quiet'}
                 />

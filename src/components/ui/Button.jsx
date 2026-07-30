@@ -19,7 +19,7 @@ import React from 'react';
 //   color="red"   → red tones (delete/danger actions only)
 //   color="dark"  → default (same as no color specified)
 
-const SIZES = {
+export const SIZES = {
   sm:   'px-[12px] text-[12px]',
   md:   'px-[16px] text-[13px]',
   lg:   'px-[18px] text-[13px]',
@@ -28,8 +28,42 @@ const SIZES = {
   'icon-sm': 'w-[28px] p-0',
   'icon-xs': 'w-[20px] p-0',
   'icon-24': 'w-[24px] p-0',
-  'icon-26': 'w-[26px] p-0',
   'icon-30': 'w-[30px] p-0',
+};
+
+// Icon size per button size — the single place that decides it.
+//
+// This replaced `size === 'lg' ? 16 : size === 'sm' ? 12 : 14`, which predated
+// the icon-* scale and handed the same 14px icon to a 20px box and a 36px box
+// alike. Call sites patched around it with an `iconSize` prop, which meant 39
+// places each held their own copy of a decision that belongs here — changing
+// the icon scale could not propagate while that prop existed.
+//
+// The values below deliberately reproduce what each size renders today rather
+// than imposing a consistent icon-to-box ratio. Normalising the ratio is a real
+// design decision, but a separate one; now that it lives here, making it is a
+// one-line change instead of a 175-call-site migration.
+const ICON_SIZES = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+  icon: 14,        // 32px box
+  'icon-lg': 14,   // 36px box
+  'icon-sm': 14,   // 28px box
+  'icon-xs': 16,   // 20px box
+  'icon-24': 15,
+  'icon-30': 15,
+};
+
+// A composition may legitimately want a different icon than its size implies.
+// Naming it keeps the intent in the kit; `settings-row-action` is the ghost
+// "add row" button, which reads better with an icon smaller than its lg box.
+export const COMPOSITION_ICON_SIZES = {
+  'settings-row-action': 13,
+  // The auth shell's close button. Named rather than migrated: login and
+  // onboarding are out of scope for kit changes, so this keeps that screen
+  // pixel-identical while still holding the number here instead of there.
+  'auth-close': 16,
 };
 
 const UI_SIZES = {
@@ -41,11 +75,10 @@ const UI_SIZES = {
   'icon-sm': 'sm',
   'icon-xs': 'icon-xs',
   'icon-24': 'icon-24',
-  'icon-26': 'icon-26',
   'icon-30': 'icon-30',
 };
 
-const SHAPES = {
+export const SHAPES = {
   default: '',
   compact: '!rounded-[8px]',
   micro: '!rounded-[6px]',
@@ -53,7 +86,7 @@ const SHAPES = {
   circle: '!rounded-full',
 };
 
-const SURFACES = {
+export const SURFACES = {
   default: '',
   canvas: '!bg-canvas !text-ink hover:!bg-[#ebebeb]',
   'danger-subtle': '!border !border-[#ef4444] !bg-red-50 hover:!bg-red-100',
@@ -78,7 +111,7 @@ const COLLAPSE_BTN = {
 };
 const COLLAPSE_LABEL = { sm: 'max-sm:hidden', md: 'max-md:hidden' };
 
-const STYLES = {
+export const STYLES = {
   primary: {
     dark: 'bg-ink text-white hover:bg-ink-hover',
     red:  'bg-[#ef4444] text-white hover:bg-[#dc2626]',
@@ -103,7 +136,6 @@ export function Button({
   color    = 'dark',     // 'dark' | 'red'
   size     = 'lg',       // 'sm' | 'md' | 'lg' | 'icon'
   icon: Icon,
-  iconSize,
   buttonRef,
   disabled  = false,
   loading   = false,
@@ -131,8 +163,7 @@ export function Button({
   const collapseClass = collapseAt ? (COLLAPSE_BTN[collapseAt]?.[size] ?? '') : '';
   const labelCollapseClass = collapseAt ? (COLLAPSE_LABEL[collapseAt] ?? '') : '';
   const styleClass = STYLES[effectiveStyle]?.[effectiveColor] ?? STYLES.primary.dark;
-  const defaultIconSize = size === 'lg' ? 16 : size === 'sm' ? 12 : 14;
-  const finalIconSize = iconSize ?? defaultIconSize;
+  const finalIconSize = COMPOSITION_ICON_SIZES[composition] ?? ICON_SIZES[size] ?? ICON_SIZES.lg;
 
   return (
     <button

@@ -82,10 +82,6 @@
     height: 24px;
     border-radius: 7px;
   }
-  .ui-control[data-ui-size='icon-26'] {
-    height: 26px;
-    border-radius: 8px;
-  }
   .ui-control[data-ui-size='icon-30'] {
     height: 30px;
     border-radius: 8px;
@@ -93,6 +89,37 @@
   .ui-control[data-ui-composition='workspace-guard'] {
     height: var(--ui-composition-guard);
     font-weight: 600;
+  }
+  /* Hex colour entry: a monospace field so the value does not shift width as
+     the user types. Previously `font-mono` at the call site. */
+  .ui-control[data-ui-composition='color-hex'] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* Surface size contracts.
+     These replace `min-h-[420px]` / `min-h-[520px]` / `max-h-[60vh]` written
+     directly onto Surface at four call sites. The heights live here so the kit
+     owns them; how the surface shares its row stays composition at the call
+     site. */
+  .ui-surface[data-ui-composition='chart-panel'] {
+    min-height: 420px;
+  }
+  .ui-surface[data-ui-composition='member-chart-panel'] {
+    min-height: 520px;
+  }
+  .ui-surface[data-ui-composition='scroll-pane'] {
+    max-height: 60vh;
+    min-height: 0;
+  }
+  @media (min-width: 1024px) {
+    .ui-surface[data-ui-composition='scroll-pane'] {
+      max-height: none;
+    }
+  }
+
+  /* Timeline/QuickTeam+ chat composer padding. */
+  .chat-composer-dock[data-ui-composition='timeline-composer'] {
+    padding: 12px 16px 20px;
   }
   .ui-control[data-ui-composition='metric-editor'],
   .ui-control[data-ui-composition='duration-hours'],
@@ -370,11 +397,6 @@
     line-height: 1;
     white-space: nowrap;
   }
-  .ui-pill[data-ui-pill-size='xs'] {
-    min-height: 16px;
-    padding: 1px 5px;
-    font-size: 9px;
-  }
   .ui-pill[data-ui-pill-size='sm'] {
     min-height: 18px;
     padding: 2px 6px;
@@ -390,50 +412,10 @@
     padding: 4px 8px;
     font-size: 11px;
   }
-  .ui-pill[data-ui-pill-size='xl'] {
-    min-height: 30px;
-    padding: 6px 12px;
-    font-size: 11px;
-  }
-  .ui-pill[data-ui-pill-size='micro'] {
-    min-height: 14px;
-    padding: 2px 5px;
-    font-size: 8px;
-  }
   .ui-pill[data-ui-pill-size='wide-sm'] {
     min-height: 24px;
     padding: 4px 10px;
     font-size: 10px;
-  }
-  .ui-pill[data-ui-pill-size='wide-md'] {
-    min-height: 24px;
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-  .ui-pill[data-ui-pill-size='participant'] {
-    min-height: 28px;
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-  .ui-pill[data-ui-pill-size='day'] {
-    min-height: 18px;
-    padding: 3px 10px;
-    font-size: 9px;
-  }
-  .ui-pill[data-ui-pill-size='day-wide'] {
-    min-height: 24px;
-    padding: 4px 12px;
-    font-size: 10px;
-  }
-  .ui-pill[data-ui-pill-size='thin-md'] {
-    min-height: 18px;
-    padding: 1px 8px;
-    font-size: 11px;
-  }
-  .ui-pill[data-ui-pill-size='compact-md'] {
-    min-height: 18px;
-    padding: 2px 6px;
-    font-size: 11px;
   }
   .ui-pill[data-ui-pill-preset='avatar-counter'] {
     position: relative;
@@ -482,10 +464,6 @@
     background: var(--color-surface);
     color: var(--color-ink);
   }
-  .ui-pill[data-ui-pill-tone='line'] {
-    background: var(--color-line);
-    color: var(--color-ink);
-  }
   .ui-pill[data-ui-pill-tone='accent'] {
     background: #fdf4ff;
     color: #c026d3;
@@ -494,13 +472,6 @@
     background: rgb(0 0 0 / 40%);
     color: var(--color-surface);
     backdrop-filter: blur(4px);
-  }
-  .ui-pill[data-ui-pill-tone='neutral-hover'] {
-    background: #f5f5f5;
-    color: var(--color-muted);
-  }
-  .group:hover .ui-pill[data-ui-pill-tone='neutral-hover'] {
-    background: #ebebeb;
   }
   .ui-pill[data-ui-pill-appearance='outline'] {
     border: 1px solid var(--color-line);

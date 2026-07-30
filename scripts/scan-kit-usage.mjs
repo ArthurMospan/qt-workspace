@@ -17,7 +17,132 @@
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { collectWorkspaceUiFiles } from './workspace-ui-files.mjs';
+import { parse } from '@babel/parser';
+import traverseModule from '@babel/traverse';
+import { collectWorkspaceUiFiles, collectWorkspaceRouteMap } from './workspace-ui-files.mjs';
+import { extractVariants } from './kit-variants.mjs';
+
+const traverse = traverseModule.default || traverseModule;
+
+function parseSource(source) {
+  return parse(source, {
+    sourceType: 'unambiguous',
+    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait'],
+  });
+}
+
+// ── Per-variant usage ───────────────────────────────────────────────────────
+// The component-level count says Pill is used 51 times; it does not say that
+// `size="sm"` accounts for 16 of those and `size="day-wide"` for exactly one.
+// Only the second number tells you whether a variant is a real design decision
+// or a one-off that should be folded into its neighbour — which is the question
+// the catalogue has to answer to stay small.
+function literalValue(node) {
+  if (!node) return null;
+  if (node.type === 'JSXExpressionContainer') return literalValue(node.expression);
+  if (node.type === 'StringLiteral') return node.value;
+  if (node.type === 'NumericLiteral') return String(node.value);
+  if (node.type === 'BooleanLiteral') return String(node.value);
+  return null;
+}
+
+function scanVariantUsage(files, manifest, routeMap) {
+  const usage = {};
+  for (const [component, props] of Object.entries(manifest)) {
+    usage[component] = {};
+    for (const prop of Object.keys(props)) usage[component][prop] = {};
+  }
+
+  for (const file of files) {
+    let ast;
+    try {
+      ast = parseSource(readFileSync(file, 'utf8'));
+    } catch {
+      continue;
+    }
+    const posix = toPosix(file);
+    const routes = routeMap.fileRoutes[posix] || [];
+    traverse(ast, {
+      JSXOpeningElement(path) {
+        if (path.node.name.type !== 'JSXIdentifier') return;
+        const component = path.node.name.name;
+        const tracked = usage[component];
+        if (!tracked) return;
+
+        const given = {};
+        for (const attribute of path.node.attributes) {
+          if (attribute.type !== 'JSXAttribute') continue;
+          if (!(attribute.name.name in tracked)) continue;
+          const value = literalValue(attribute.value);
+          if (value !== null) given[attribute.name.name] = value;
+        }
+
+        for (const prop of Object.keys(tracked)) {
+          // An omitted prop still renders something: the component default.
+          // Counting it keeps the default honest about how dominant it is.
+          const value = given[prop] ?? '(default)';
+          const bucket = tracked[prop][value] || { count: 0, routes: [], files: [] };
+          bucket.count += 1;
+          for (const route of routes) if (!bucket.routes.includes(route)) bucket.routes.push(route);
+          const line = path.node.loc?.start.line ?? 0;
+          bucket.files.push(`${posix}:${line}`);
+          tracked[prop][value] = bucket;
+        }
+      },
+    });
+  }
+
+  for (const props of Object.values(usage)) {
+    for (const values of Object.values(props)) {
+      for (const bucket of Object.values(values)) {
+        bucket.routes.sort();
+        bucket.files.sort();
+      }
+    }
+  }
+  return usage;
+}
+
+// ── Preview source ──────────────────────────────────────────────────────────
+// Extracted from page.js rather than written next to each preview: a hand-copied
+// snippet is a second copy of the same JSX, free to fall out of step with the
+// preview it claims to describe.
+function extractPreviewCode(showcaseSource) {
+  const previews = {};
+  let ast;
+  try {
+    ast = parseSource(showcaseSource);
+  } catch {
+    return previews;
+  }
+  traverse(ast, {
+    JSXElement(path) {
+      const opening = path.node.openingElement;
+      if (opening.name.type !== 'JSXIdentifier' || opening.name.name !== 'PreviewBlock') return;
+      const titleAttribute = opening.attributes.find(
+        attribute => attribute.type === 'JSXAttribute' && attribute.name.name === 'title',
+      );
+      const title = literalValue(titleAttribute?.value);
+      if (!title) return;
+      const children = path.node.children.filter(
+        child => !(child.type === 'JSXText' && child.value.trim() === ''),
+      );
+      if (children.length === 0) return;
+      const from = children[0].start;
+      const to = children[children.length - 1].end;
+      const raw = showcaseSource.slice(from, to).replace(/\r\n/g, '\n');
+      // Strip the common indent so the snippet reads as standalone code.
+      const lines = raw.split('\n');
+      const indents = lines.slice(1).filter(line => line.trim()).map(line => line.match(/^ */)[0].length);
+      const shift = indents.length ? Math.min(...indents) : 0;
+      previews[title] = lines
+        .map((line, index) => (index === 0 ? line : line.slice(shift)))
+        .join('\n')
+        .trimEnd();
+    },
+  });
+  return previews;
+}
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
@@ -54,7 +179,12 @@ function buildInventory() {
     const source = readFileSync(file, 'utf8');
     const names = new Set([name]);
     for (const match of source.matchAll(/export\s+(?:default\s+)?(?:function|const|class)\s+([A-Z]\w*)/g)) {
-      names.add(match[1]);
+      // PascalCase only. Components now export their variant lookup maps
+      // (SIZES, AVATAR_SIZES…) so the manifest can be derived from them, and a
+      // SCREAMING_SNAKE_CASE constant is not a component to be showcased.
+      const name = match[1];
+      if (name === name.toUpperCase() && name.length > 1) continue;
+      names.add(name);
     }
     for (const exported of names) {
       if (!inventory.has(exported)) inventory.set(exported, { file: toPosix(file), usedIn: [] });
@@ -141,16 +271,35 @@ export function scanKitUsage() {
     for (const name of seen) inventory.get(name).usedIn.push(toPosix(file));
   }
 
+  // A file path answers "where is this imported"; a route answers "which screen
+  // shows it". Only the second one is a question anybody actually asks about a
+  // component, so both are recorded and the reverse index is built from them.
+  const routeMap = collectWorkspaceRouteMap();
+
   const components = {};
   for (const name of [...inventory.keys()].sort()) {
     const entry = inventory.get(name);
+    const routes = [...new Set(entry.usedIn.flatMap(file => routeMap.fileRoutes[file] || []))].sort();
     components[name] = {
       file: entry.file,
       count: entry.usedIn.length,
       showcased: showcased.has(name),
+      routes,
       usedIn: entry.usedIn.sort(),
     };
   }
+
+  const routes = {};
+  for (const route of Object.keys(routeMap.routes).sort()) {
+    routes[route] = Object.entries(components)
+      .filter(([, entry]) => entry.routes.includes(route))
+      .map(([name]) => name)
+      .sort();
+  }
+
+  const manifest = extractVariants();
+  const variants = scanVariantUsage(workspaceFiles, manifest, routeMap);
+  const previews = extractPreviewCode(showcaseSource);
 
   const used = Object.values(components).filter(entry => entry.count > 0).length;
   const covered = Object.values(components).filter(entry => entry.count > 0 && entry.showcased).length;
@@ -164,8 +313,13 @@ export function scanKitUsage() {
       unused: Object.keys(components).length - used,
       covered,
       uncovered: used - covered,
+      routes: Object.keys(routes).length,
+      previews: Object.keys(previews).length,
     },
+    routes,
     components,
+    variants,
+    previews,
   };
 }
 

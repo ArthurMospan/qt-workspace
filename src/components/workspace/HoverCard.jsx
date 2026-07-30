@@ -86,7 +86,7 @@ export default function HoverCard({ type, value, children, members }) {
             data && !data.notFound ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
-                  <UserAvatar user={data} size={40} />
+                  <UserAvatar user={data} size="lg" />
                   <div>
                     <p className="text-[14px] font-bold text-ink leading-tight">{data.name || data.email}</p>
                     <p className="text-[11px] text-muted">{data.role || 'Учасник'}</p>

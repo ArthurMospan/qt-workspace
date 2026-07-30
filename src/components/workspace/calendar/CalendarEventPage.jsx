@@ -267,7 +267,7 @@ function CalendarEventTimeSheet({
                   const canChange = canManage || log.userId === currentUserId;
                   return (
                     <div key={log.id} data-ui-surface="local" className="flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3">
-                      <UserAvatar user={member || { name: memberLabel(member) }} size={30} />
+                      <UserAvatar user={member || { name: memberLabel(member) }} size="md" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className="text-[12px] font-bold text-ink">{memberLabel(member)}</span>
@@ -719,7 +719,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         className="ui-native-control"
                       >
                         <span>Організатор:</span>
-                        <UserAvatar user={organizer || { name: 'Учасник' }} size={16} />
+                        <UserAvatar user={organizer || { name: 'Учасник' }} size="xs" />
                         <span className="font-semibold text-ink">{memberLabel(organizer)}</span>
                       </button>
                     )}
@@ -1228,8 +1228,8 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       const member = members.find(item => (item.id || item.uid) === uid);
                       const state = event.participantResponses?.[uid] || 'pending';
                       return (
-                        <Pill key={uid} tone="surface-ink" size="participant" weight="medium">
-                          <UserAvatar user={member || { name: memberLabel(member) }} size={20} />
+                        <Pill key={uid} tone="surface-ink" size="lg" weight="medium">
+                          <UserAvatar user={member || { name: memberLabel(member) }} size="xs" />
                           <span className="font-semibold">{memberLabel(member)}</span>
                           <span className={responseClass(state)}>· {responseLabel(state)}</span>
                         </Pill>

@@ -54,7 +54,6 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
         <IconAction
           label="Зупинити та зберегти"
           icon={StopIcon}
-          iconSize={12}
           size="compact"
           appearance="danger"
           shape="compact"

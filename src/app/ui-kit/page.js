@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
@@ -24,12 +24,10 @@ import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
-import KitStatus from './KitStatus';
-import DecisionLab from './DecisionLab';
-import FidelitySurvey from './FidelitySurvey';
-import FidelityFollowUpSurvey from './FidelityFollowUpSurvey';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import UsagePanel from './UsagePanel';
+import kitUsage from './kit-usage.generated.json';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
 import {
@@ -43,7 +41,7 @@ import {
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
   ChevronLeft, ChevronsUpDown, GripVertical, Move,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
-  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch
+  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch, MapPin, Code2
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,17 +49,6 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GROUPS = [
-  {
-    // First, because it is the only screen here that reports what the product
-    // actually uses — everything below it is a catalogue, not evidence.
-    title: 'Реальність',
-    items: [
-      { id: 'kit-status',   label: 'Стан кіту',          icon: Activity },
-      { id: 'fidelity-survey', label: 'Опитування розбіжностей', icon: Settings2 },
-      { id: 'fidelity-follow-up', label: 'Follow-up рішення', icon: ScanSearch },
-      { id: 'decision-lab', label: 'Затверджені рішення', icon: CheckSquare },
-    ]
-  },
   {
     title: 'Атоми (Atoms)',
     items: [
@@ -113,8 +100,20 @@ const SECTIONS = GROUPS.flatMap(g => g.items);
 // PREVIEW WRAPPER
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PreviewBlock({ title, description, children, filePath, fullWidth = false, dark = false }) {
+// Opening the usage drawer is available to every preview without threading a
+// callback through each section function.
+const KitContext = createContext({ openUsage: () => {} });
+
+function PreviewBlock({ title, description, children, filePath, component, fullWidth = false, dark = false }) {
   const [copied, setCopied] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  const { openUsage } = useContext(KitContext);
+
+  // Both of these are generated: the snippet is the preview's own JSX, and the
+  // count is the product's real usage. Neither is written next to the preview,
+  // so neither can quietly stop being true.
+  const code = kitUsage.previews?.[title];
+  const usageEntry = component ? kitUsage.components?.[component] : null;
 
   const copyPath = () => {
     if (!filePath) return;
@@ -125,11 +124,39 @@ function PreviewBlock({ title, description, children, filePath, fullWidth = fals
 
   return (
     <div className="flex flex-col gap-[12px]">
-      <div className="flex items-start justify-between w-full">
-        <div>
+      <div className="flex items-start justify-between w-full gap-3">
+        <div className="min-w-0">
           <h3 className="text-[16px] font-bold text-[#1f1f1f]">{title}</h3>
           {description && <p className="text-[12px] text-[#9a9a9a] mt-[2px]">{description}</p>}
         </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {usageEntry && (
+            <button
+              onClick={() => openUsage(component)}
+              title={`${component}: ${usageEntry.count} використань на ${usageEntry.routes.length} екранах`}
+              className="flex cursor-pointer items-center gap-1.5 rounded-[6px] border border-[#e2e2e4] bg-[#f4f4f5] px-2.5 py-1 text-[11px] font-semibold text-[#71717a] transition-all hover:bg-[#e9e9e9] hover:text-[#18181b] active:scale-95"
+            >
+              <MapPin size={11} />
+              <span className="font-mono">×{usageEntry.count}</span>
+              <span className="text-[#cfcfcf]">·</span>
+              <span>{usageEntry.routes.length} екранів</span>
+            </button>
+          )}
+          {code && (
+            <button
+              onClick={() => setShowCode(value => !value)}
+              aria-pressed={showCode}
+              title="Показати код цього preview"
+              className={`flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[11px] font-mono font-semibold transition-all active:scale-95 ${
+                showCode
+                  ? 'border-[#1f1f1f] bg-[#1f1f1f] text-white'
+                  : 'border-[#e2e2e4] bg-[#f4f4f5] text-[#71717a] hover:bg-[#e9e9e9] hover:text-[#18181b]'
+              }`}
+            >
+              <Code2 size={11} />
+              Код
+            </button>
+          )}
         {filePath && (
           <button
             onClick={copyPath}
@@ -144,10 +171,16 @@ function PreviewBlock({ title, description, children, filePath, fullWidth = fals
             <span>{copied ? 'Скопійовано!' : filePath.split('/').pop()}</span>
           </button>
         )}
+        </div>
       </div>
       <div className={`rounded-[16px] p-[24px] ${dark ? 'bg-[#1f1f1f]' : 'bg-white border border-[#f0f0f0]'} ${fullWidth ? '' : 'flex flex-wrap items-center gap-[12px]'}`}>
         {children}
       </div>
+      {showCode && code && (
+        <pre className="overflow-x-auto rounded-[12px] bg-[#1f1f1f] p-[16px] text-[11px] leading-relaxed text-[#e4e4e7]">
+          <code>{code}</code>
+        </pre>
+      )}
     </div>
   );
 }
@@ -179,7 +212,7 @@ function ButtonsSection() {
   return (
     <div className="flex flex-col gap-[40px]">
       {/* ─── Primary Buttons ─── */}
-      <PreviewBlock title="Primary Buttons" description="Головні дії. Кольори: фон #1f1f1f (hover #303030), текст #ffffff. Небезпечна дія (danger, color=red): фон #ef4444. Скруглення (border-radius): 10px для всіх розмірів. Висота: Large 36px, Medium 32px, Small 28px." fullWidth>
+      <PreviewBlock title="Primary Buttons" component="Button" description="Головні дії. Кольори: фон #1f1f1f (hover #303030), текст #ffffff. Небезпечна дія (danger, color=red): фон #ef4444. Скруглення (border-radius): 10px для всіх розмірів. Висота: Large 36px, Medium 32px, Small 28px." fullWidth>
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -323,6 +356,25 @@ function ButtonsSection() {
       </PreviewBlock>
 
       {/* ─── Icon-Only Buttons ─── */}
+      <PreviewBlock
+        title="Адаптивний подвійний підпис"
+        description="IssueDetail тримає в children два span-и: короткий на мобільному, повний на десктопі. Це не те саме, що collapseAt — той ховає підпис цілком, а тут підпис саме змінюється. Затверджено як канон. Звузь вікно, щоб побачити перемикання."
+        filePath="src/components/workspace/IssueDetail.jsx"
+        fullWidth
+      >
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <Button aria-label="Додати підзадачу" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+            <span className="sm:hidden">Підзадача</span><span className="hidden sm:inline">Додати підзадачу</span>
+          </Button>
+          <Button aria-label="Додати зв’язок" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+            <span className="sm:hidden">Зв’язок</span><span className="hidden sm:inline">Додати зв’язок</span>
+          </Button>
+          <Button aria-label="Додати мітку" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+            <span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
+          </Button>
+        </div>
+      </PreviewBlock>
+
       <PreviewBlock title="Icon-Only Buttons" description="Кнопки без тексту. Текст всередині приховано через sr-only для доступності. Скруглення: 10px для всіх розмірів. Розміри: Large 36×36px (icon-lg), Medium 32×32px (icon), Small 28×28px (icon-sm).">
         <div className="flex flex-col gap-[20px] w-full">
           <div>
@@ -370,7 +422,7 @@ function InputsSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Named Input sizes — sm / md / lg" description="Три живі висоти для Input та суміжних controls: sm 28px, md 32px, lg 36px. lg є стандартом за замовчуванням." fullWidth>
+      <PreviewBlock title="Named Input sizes — sm / md / lg" component="Input" description="Три живі висоти для Input та суміжних controls: sm 28px, md 32px, lg 36px. lg є стандартом за замовчуванням." fullWidth>
         <div className="max-w-[400px] flex flex-col gap-[12px]">
           <Input size="sm" placeholder="Small — 28px" />
           <Input size="md" placeholder="Medium — 32px" />
@@ -380,7 +432,7 @@ function InputsSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Checkbox & Toggle" description="Ті самі Checkbox і ToggleSwitch, які зараз використовує продукт.">
+      <PreviewBlock title="Checkbox & Toggle" component="ToggleSwitch" description="Ті самі Checkbox і ToggleSwitch, які зараз використовує продукт.">
         <div className="flex items-center gap-[24px] flex-wrap">
           <Checkbox checked={chk} onChange={setChk} label="Я погоджуюся з умовами" id="chk-demo" />
           <ToggleSwitch checked={tgl} onChange={setTgl} label="Активний спринт" />
@@ -452,14 +504,14 @@ function InputsSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Textarea" description="Багаторядкові текстові області. Кольори: фон #f4f4f5, фокус-рамка #1f1f1f. Скруглення: 10px. Зміна розміру (resize) вимкнена за замовчуванням." fullWidth>
+      <PreviewBlock title="Textarea" component="Textarea" description="Багаторядкові текстові області. Кольори: фон #f4f4f5, фокус-рамка #1f1f1f. Скруглення: 10px. Зміна розміру (resize) вимкнена за замовчуванням." fullWidth>
         <div className="max-w-[500px] flex flex-col gap-[10px]">
           <Textarea placeholder="Опис завдання або проєкту..." rows={3} />
           <Textarea placeholder="Великий опис..." rows={6} />
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Form label pattern" description="Always 11px, bold, uppercase, tracking-wider, color #9a9a9a." fullWidth>
+      <PreviewBlock title="Form label pattern" component="Label" description="Always 11px, bold, uppercase, tracking-wider, color #9a9a9a." fullWidth>
         <div className="max-w-[400px] flex flex-col gap-[16px]">
           <div>
             <Label htmlFor="kit-project-name" required className="mb-[6px] block">Назва проєкту</Label>
@@ -497,7 +549,7 @@ function SelectsSection() {
   return (
     <div className="flex flex-col gap-[40px]">
       {/* ─── Standard Selects ─── */}
-      <PreviewBlock title="Standard Selects — sm / md / lg" description="Named sizes збігаються з Input і Button: 28 / 32 / 36px. Ghost-фільтри мають окремий compact preset." fullWidth>
+      <PreviewBlock title="Standard Selects — sm / md / lg" component="Select" description="Named sizes збігаються з Input і Button: 28 / 32 / 36px. Ghost-фільтри мають окремий compact preset." fullWidth>
         <div className="flex flex-wrap items-center gap-[8px]">
           <Select size="sm" options={statusOpts} value={v1} onChange={setV1} placeholder="Small — 28px" className="w-[160px]" />
           <Select size="md" options={priorityOpts} value={v2} onChange={setV2} placeholder="Medium — 32px" className="w-[160px]" />
@@ -575,7 +627,7 @@ function TabsSection() {
         />
       </PreviewBlock>
 
-      <PreviewBlock title="Segmented Switcher" description="Компактний взаємовиключний перемикач, який продукт використовує всередині FilterBar для періодів і режимів.">
+      <PreviewBlock title="Segmented Switcher" component="Segmented" description="Компактний взаємовиключний перемикач, який продукт використовує всередині FilterBar для періодів і режимів.">
         <div className="rounded-[10px] bg-canvas p-[2px]">
           <Segmented
             value={period}
@@ -591,7 +643,7 @@ function TabsSection() {
 function SurfacesSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Панельна ієрархія (Layout Surfaces)" description="Головні будівельні блоки для контент-зони. Дотримуються правил вкладеності: сіра підкладка (Level 1) -> вкладені білі картки або сірі інсети (Level 2)." fullWidth>
+      <PreviewBlock title="Панельна ієрархія (Layout Surfaces)" component="Surface" description="Головні будівельні блоки для контент-зони. Дотримуються правил вкладеності: сіра підкладка (Level 1) -> вкладені білі картки або сірі інсети (Level 2)." fullWidth>
         
         {/* Level 1: Gray Main Panel */}
         <Surface preset="panel" padding="lg" className="w-full">
@@ -624,7 +676,7 @@ function SurfacesSection() {
         </Surface>
       </PreviewBlock>
 
-      <PreviewBlock title="Card variants" description="Живий Card, який використовується на сторінках аналітики, налаштувань, інтеграцій та порталу." fullWidth>
+      <PreviewBlock title="Card variants" component="Card" description="Живий Card, який використовується на сторінках аналітики, налаштувань, інтеграцій та порталу." fullWidth>
         <div className="grid w-full grid-cols-1 gap-[16px] md:grid-cols-2">
           <Card preset="bordered" padding="lg">
             <p className="text-[13px] font-bold text-ink">White card</p>
@@ -650,7 +702,7 @@ function SurfacesSection() {
       </PreviewBlock>
 
       <PreviewBlock
-        title="IconAction — neutral compact actions"
+        title="IconAction — neutral compact actions" component="IconAction"
         description="Живе semantic family для close/edit/more/download та інших нейтральних icon-actions. Geometry і appearance названі, тому product та /ui-kit використовують один контракт."
         filePath="src/components/ui/IconAction.jsx"
         fullWidth
@@ -659,7 +711,7 @@ function SurfacesSection() {
           <IconAction label="Редагувати" icon={Edit2} size="xs" appearance="quiet" />
           <IconAction label="Налаштування" icon={Settings} size="sm" appearance="soft" />
           <IconAction label="Більше" icon={MoreVertical} size="md" appearance="surface" />
-          <IconAction label="Закрити" icon={X} size="md" appearance="floating" />
+          <IconAction label="Закрити" icon={X} size="md" appearance="surface-plain" />
           <IconAction label="Видалити" icon={Trash2} size="sm" appearance="surface-danger" />
         </div>
       </PreviewBlock>
@@ -671,7 +723,7 @@ function BadgesSection() {
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
-        title="Pill — semantic metadata family"
+        title="Pill — semantic metadata family" component="Pill"
         description="Спільна geometry для neutral metadata, status-like tones і compact badges. Counter, StatusPill та TypeBadge зберігають окрему семантику поверх тієї самої системи."
         filePath="src/components/ui/DataDisplay/Pill.jsx"
         fullWidth
@@ -682,9 +734,47 @@ function BadgesSection() {
           <Pill tone="success" size="md">Готово</Pill>
           <Pill tone="warning" size="md">Очікує</Pill>
           <Pill tone="danger" size="md">Прострочено</Pill>
-          <Pill tone="info" size="compact-md" shape="badge">1г 25хв</Pill>
+          <Pill tone="info" size="sm" shape="badge">1г 25хв</Pill>
           <Pill tone="surface" size="wide-sm" appearance="soft-outline">Проєкт</Pill>
           <Pill tone="neutral" size="md" preset="avatar-counter">+3</Pill>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Композитні Pill — вкладені елементи"
+        description="Pill приймає не лише текст. Ці три композиції — з IssueCard та календаря: іконка стану, текст із забарвленим суфіксом, і аватар учасника з його відповіддю. Затверджено як канон: продукт лишається, каталог їх описує."
+        filePath="src/components/ui/DataDisplay/Pill.jsx"
+        fullWidth
+      >
+        <div className="flex flex-col gap-[18px] w-full">
+          <div>
+            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Іконка стану — IssueCard</h4>
+            <Pill tone="danger" size="sm" shape="badge" weight="medium" title="Заблоковано іншою задачею">
+              <Lock size={10} />
+              Заблоковано
+            </Pill>
+          </div>
+          <div>
+            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Текст із забарвленим суфіксом — форма події</h4>
+            <div className="flex flex-wrap gap-[6px]">
+              <Pill tone="neutral" size="wide-sm" weight="medium">
+                Артур Моспан
+                <span className="text-emerald-600">· буде</span>
+              </Pill>
+              <Pill tone="neutral" size="wide-sm" weight="medium">
+                Олена Коваль
+                <span className="text-muted">· очікуємо</span>
+              </Pill>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]">Аватар + імʼя + стан — сторінка події</h4>
+            <Pill tone="surface-ink" size="lg" weight="medium">
+              <UserAvatar user={{ id: 'kit-arthur', name: 'Артур Моспан' }} size="xs" />
+              <span className="font-semibold">Артур Моспан</span>
+              <span className="text-emerald-600">· буде</span>
+            </Pill>
+          </div>
         </div>
       </PreviewBlock>
 
@@ -726,7 +816,7 @@ function BadgesSection() {
       </PreviewBlock>
 
       <PreviewBlock
-        title="Counter — chat and branded navigation"
+        title="Counter — chat and branded navigation" component="Counter"
         description="Живі sm-лічильники: subtle для колонок дошки, світлий для чату, темний для навігації та dot-індикатор організації."
         filePath="src/components/WorkspaceSidebar.jsx"
         fullWidth
@@ -768,24 +858,30 @@ function BadgesSection() {
 }
 
 function AvatarsSection() {
-  const sizes = [20, 24, 28, 32, 36, 40, 48];
+  const sizes = [['xs', 16], ['sm', 24], ['md', 32], ['lg', 40], ['xl', 48], ['hero', 96]];
   const demoUser = { id: 'ui-kit-arthur', name: 'Артур Моспан' };
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="UserAvatar sizes" description="Канонічний живий аватар із продукту: фото, fallback-ініціали, детермінований колір і tooltip.">
-        <div className="flex items-end gap-[16px]">
-          {sizes.map(s => (
-            <div key={s} className="flex flex-col items-center gap-[6px]">
-              <UserAvatar user={demoUser} size={s} tooltip />
-              <span className="text-[9px] font-mono text-[#9a9a9a]">{s}px</span>
+      <PreviewBlock
+        title="UserAvatar sizes"
+        component="UserAvatar"
+        description="Канонічний живий аватар із продукту: фото, fallback-ініціали, детермінований колір і tooltip. Розмір задається токеном шкали, а не числом — джерело значень одне, у AVATAR_SIZES."
+        filePath="src/components/ui/DataDisplay/UserAvatar.jsx"
+      >
+        <div className="flex flex-wrap items-end gap-[16px]">
+          {sizes.map(([token, px]) => (
+            <div key={token} className="flex flex-col items-center gap-[6px]">
+              <UserAvatar user={demoUser} size={token} tooltip />
+              <span className="text-[9px] font-mono text-[#1f1f1f]">{token}</span>
+              <span className="text-[9px] font-mono text-[#cfcfcf]">{px}px</span>
             </div>
           ))}
         </div>
       </PreviewBlock>
 
       <PreviewBlock title="UserAvatar states" description="Ті самі стани, які реально бачить користувач: брендований колір і відсутні дані.">
-        <UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size={40} tooltip />
-        <UserAvatar user={null} size={40} />
+        <UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size="lg" tooltip />
+        <UserAvatar user={null} size="lg" />
       </PreviewBlock>
     </div>
   );
@@ -837,7 +933,7 @@ function NavigationOverlaysSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Popover & Tooltip" description="Живі Popover і Tooltip, які використовує продукт." fullWidth>
+      <PreviewBlock title="Popover & Tooltip" component="Popover" description="Живі Popover і Tooltip, які використовує продукт." fullWidth>
         <div className="flex items-center gap-[24px] flex-wrap">
           <Popover
             trigger={<Button style="secondary">Показати Popover</Button>}
@@ -865,7 +961,7 @@ function NavigationOverlaysSection() {
                 className="ui-native-control text-[12px] font-medium text-muted"
               >
                 <span>Автор:</span>
-                <UserAvatar user={{ id: 'u1', name: 'Артур Моспан' }} size={16} />
+                <UserAvatar user={{ id: 'u1', name: 'Артур Моспан' }} size="xs" />
                 <span className="font-semibold text-ink">Артур Моспан</span>
               </button>
             )}
@@ -899,7 +995,7 @@ function NavigationOverlaysSection() {
             <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Меню-перемикач (мітки задачі)</span>
             <ContextMenu
               trigger={(
-                <Button style="ghost" size="sm" composition="inline-add-action" icon={Plus} iconSize={11}>
+                <Button style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
                   Додати мітку
                 </Button>
               )}
@@ -948,7 +1044,7 @@ function DialogsSection() {
   return (
     <ConfirmProvider>
       <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Standard Dialog" description="Спільний chrome: sm 440px, md 560px, lg 760px, xl 960px. Приклад нижче — sm dialog.">
+      <PreviewBlock title="Standard Dialog" component="Dialog" description="Спільний chrome: sm 440px, md 560px, lg 760px, xl 960px. Приклад нижче — sm dialog.">
         <Button style="primary" size="lg" onClick={() => setOpen1(true)}>Відкрити форму</Button>
         <Dialog isOpen={open1} onClose={() => setOpen1(false)} title="Редагувати проєкт" size="sm">
           <div className="flex flex-col gap-[16px]">
@@ -1232,7 +1328,7 @@ function FeedbackSection() {
   const [qtPlusProject, setQtPlusProject] = useState('');
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Alerts" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
+      <PreviewBlock title="Alerts" component="Alert" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
         <div className="flex flex-col gap-[12px] max-w-[600px]">
           <Alert variant="success" title="Операція успішна">Проєкт успішно створено та додано до бази даних.</Alert>
           <Alert variant="info" title="Потребує уваги">Будь ласка, перевірте правильність введених даних.</Alert>
@@ -1658,7 +1754,7 @@ function SidebarSection() {
 function TooltipsSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Tooltip Component" description="Компонент підказки, який з'являється при наведенні. Підтримує 4 позиції: top (default), bottom, left, right." fullWidth>
+      <PreviewBlock title="Tooltip Component" component="Tooltip" description="Компонент підказки, який з'являється при наведенні. Підтримує 4 позиції: top (default), bottom, left, right." fullWidth>
         <div className="flex items-center gap-[24px] justify-center w-full py-[40px]">
           <Tooltip content="Підказка зверху" position="top">
             <Button style="secondary">Наведи (Top)</Button>
@@ -1883,7 +1979,7 @@ function TaskAttributesSection() {
 function FormGroupsSection() {
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Form Group Layouts" description="Контейнери для полів форми. Зв'язують заголовок Label (атом) та поле вводу (Input). Обов'язкове поле позначається текстом «обов'язково» праворуч у заголовку (не червоною зірочкою), помилка — червоною рамкою поля й текстом під ним." fullWidth>
+      <PreviewBlock title="Form Group Layouts" component="FormGroup" description="Контейнери для полів форми. Зв'язують заголовок Label (атом) та поле вводу (Input). Обов'язкове поле позначається текстом «обов'язково» праворуч у заголовку (не червоною зірочкою), помилка — червоною рамкою поля й текстом під ним." fullWidth>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]">
           <FormGroup label="Назва проєкту">
             <Input placeholder="Введіть назву..." />
@@ -1896,6 +1992,28 @@ function FormGroupsSection() {
           <FormGroup label="Пароль" required error="Пароль має містити щонайменше 8 символів">
             <Input type="password" placeholder="••••••••" error={true} />
           </FormGroup>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Label з іконкою"
+        description="Іконка задається пропом icon, а не вкладається в children. Preflight робить svg display:block, тож іконка всередині текстового span займає власний рядок і стає над написом — саме тому вона тут іменований проп із фіксованим розміром 13. Працює і на Label, і на FormGroup."
+        filePath="src/components/ui/Forms/Label.jsx"
+        fullWidth
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]">
+          <FormGroup label="Учасники" icon={Users}>
+            <Input placeholder="Додати учасників" />
+          </FormGroup>
+
+          <FormGroup label="Нагадування" icon={Bell} required>
+            <Input placeholder="За 15 хвилин" />
+          </FormGroup>
+
+          <div className="flex flex-col gap-[6px]">
+            <Label icon={MapPin}>Місце</Label>
+            <Input placeholder="Офіс або кімната" />
+          </div>
         </div>
       </PreviewBlock>
     </div>
@@ -2117,10 +2235,6 @@ function TokensSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
-  'fidelity-survey': <FidelitySurvey />,
-  'fidelity-follow-up': <FidelityFollowUpSurvey />,
-  'decision-lab': <DecisionLab />,
-  'kit-status': <KitStatus />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
   selects:    <SelectsSection />,
@@ -2151,10 +2265,12 @@ const SECTION_MAP = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function UIKitPage() {
-  const [activeSection, setActiveSection] = useState('kit-status');
+  const [activeSection, setActiveSection] = useState('tokens');
+  const [usageFor, setUsageFor] = useState(null);
   const current = SECTIONS.find(s => s.id === activeSection);
 
   return (
+    <KitContext.Provider value={{ openUsage: setUsageFor }}>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
 
       {/* ── Left Nav ──────────────────────────────────────────────────────── */}
@@ -2178,7 +2294,10 @@ export default function UIKitPage() {
                     <button
                       key={s.id}
                       onClick={() => setActiveSection(s.id)}
-                      className={`w-full flex items-center gap-[9px] px-[12px] h-[30px] rounded-[8px] text-[12px] font-semibold transition-all text-left ${active ? 'bg-white text-[#1f1f1f] shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/8'}`}
+                      // min-h rather than a fixed height: a two-line label
+                      // (there are several now) overflowed its row and printed
+                      // on top of the next item.
+                      className={`w-full flex items-center gap-[9px] px-[12px] min-h-[30px] py-[6px] rounded-[8px] text-[12px] font-semibold transition-all text-left ${active ? 'bg-white text-[#1f1f1f] shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/8'}`}
                     >
                       <Icon size={13} className="shrink-0" />
                       {s.label}
@@ -2223,6 +2342,8 @@ export default function UIKitPage() {
           </div>
         </div>
       </div>
+      <UsagePanel component={usageFor} onClose={() => setUsageFor(null)} />
     </div>
+    </KitContext.Provider>
   );
 }

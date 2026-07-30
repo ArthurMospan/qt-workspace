@@ -313,7 +313,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                       title={`${member.name || member.email?.split('@')[0]} · ${roleLabels.join(', ')}`}
                       className="relative group/avatar"
                     >
-                      <UserAvatar user={member} size={22} className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
+                      <UserAvatar user={member} size="sm" className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
                     </div>
                   );
                 })
@@ -347,7 +347,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
-                  {isMentioned && <Pill tone="dark" size="micro">@</Pill>}
+                  {isMentioned && <Pill tone="dark" size="sm">@</Pill>}
                   {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                   <span className="font-mono">{msgCount}</span>
                 </div>

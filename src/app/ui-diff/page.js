@@ -339,7 +339,7 @@ function AvatarsSection() {
         decision="UserAvatar лишився єдиним стандартом аватарів."
       />
       <div className="flex items-center gap-3">
-        <UserAvatar user={{ name: 'Ivan Petrenko' }} size={32} />
+        <UserAvatar user={{ name: 'Ivan Petrenko' }} size="md" />
         <span className="text-[12px] text-[#6b6b6b]">без фото — колір з ініціалів, детермінований за id</span>
       </div>
       <p className="text-[11px] text-[#9a9a9a]">
@@ -360,7 +360,7 @@ function CopyButtonSection() {
         swatchLabel="Button style=ghost size=icon-sm"
         decision="settings/page.js: обидві кнопки (токен BuggyBag, Org ID у секції інтеграцій) тепер <Button style='ghost' size='icon-sm' icon={Copy} />."
       />
-      <Button style="ghost" size="icon-sm" icon={Copy} iconSize={12} />
+      <Button style="ghost" size="icon-sm" icon={Copy} />
     </div>
   );
 }
@@ -376,7 +376,7 @@ function ChatIconsSection() {
         swatchLabel="Button style=ghost size=icon-sm"
         decision="chat/page.js MessageBubble: усі 4 кнопки (Thread, Pin, Edit, Delete) тепер Button; Pin зберіг активний indigo-стан через className, Delete — color='red'."
       />
-      <Button style="ghost" size="icon-sm" icon={MessageSquare} iconSize={15} />
+      <Button style="ghost" size="icon-sm" icon={MessageSquare} />
     </div>
   );
 }

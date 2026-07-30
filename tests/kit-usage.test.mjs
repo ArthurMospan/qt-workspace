@@ -35,6 +35,9 @@ test('the committed UI fidelity audit matches every product UI file', () => {
   assert.deepEqual(committedFidelityAudit.parseErrors, []);
 });
 
+// The kit is the source of truth only while the product stays inside what the
+// kit declares. These two numbers being zero is the whole invariant: a new
+// undeclared variant or a new className override fails the build here.
 test('new UI work cannot silently grow the audited drift baseline', () => {
   const maximums = {
     manualLabels: 0,
@@ -117,35 +120,9 @@ test('the durable repository instructions keep product and UI Kit changes atomic
   assert.equal(packageJson.scripts['kit:audit'], 'node scripts/audit-ui-fidelity.mjs');
 });
 
-test('the fidelity decision record contains every approved audit decision', () => {
-  const page = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
-  const survey = readFileSync(new URL('../src/app/ui-kit/FidelitySurvey.jsx', import.meta.url), 'utf8');
-  const questionIds = [...survey.matchAll(/^    id: '([^']+)',/gm)].map(match => match[1]);
-
-  assert.deepEqual(questionIds, [
-    'token-source',
-    'form-labels',
-    'side-sheets',
-    'pill-taxonomy',
-    'icon-actions',
-    'control-compositions',
-    'component-twins',
-    'surface-boundary',
-    'typography-contexts',
-    'catalog-scope',
-  ]);
-  assert.match(page, /import FidelitySurvey from '\.\/FidelitySurvey';/);
-  assert.match(page, /\{ id: 'fidelity-survey', label: 'Опитування розбіжностей'/);
-  assert.match(page, /'fidelity-survey': <FidelitySurvey \/>/);
-  assert.match(survey, /fidelity-audit\.generated\.json/);
-  assert.match(survey, /navigator\.clipboard\.writeText/);
-  assert.match(survey, /'catalog-scope': 'authenticated-workspace'/);
-  assert.match(survey, /disabled/);
-});
-
-test('the approved follow-up decisions are read-only and encoded in the product', () => {
-  const page = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
-  const record = readFileSync(new URL('../src/app/ui-kit/FidelityFollowUpSurvey.jsx', import.meta.url), 'utf8');
+// The screen that recorded these decisions is gone; the decisions themselves are
+// product behaviour and still have to hold.
+test('the approved follow-up decisions stay encoded in the product', () => {
   const taskList = readFileSync(new URL('../src/components/ui/TaskManagement/TaskListView.jsx', import.meta.url), 'utf8');
   const taskRow = readFileSync(new URL('../src/components/ui/TaskManagement/TaskRow.jsx', import.meta.url), 'utf8');
   const createTask = readFileSync(new URL('../src/components/CreateTaskModal.jsx', import.meta.url), 'utf8');
@@ -153,32 +130,6 @@ test('the approved follow-up decisions are read-only and encoded in the product'
   const agileBoard = readFileSync(new URL('../src/components/workspace/AgileBoard.jsx', import.meta.url), 'utf8');
   const myTasks = readFileSync(new URL('../src/app/(app)/my/page.js', import.meta.url), 'utf8');
   const project = readFileSync(new URL('../src/app/(app)/[projectId]/page.js', import.meta.url), 'utf8');
-  const questionIds = [...record.matchAll(/^    id: '([^']+)',/gm)].map(match => match[1]);
-
-  assert.deepEqual(questionIds, [
-    'hidden-kanban-columns',
-    'hidden-list-items',
-    'task-create-entry',
-    'project-identity',
-    'legacy-epic-policy',
-    'task-hierarchy',
-  ]);
-  assert.match(page, /import FidelityFollowUpSurvey from '\.\/FidelityFollowUpSurvey';/);
-  assert.match(page, /'fidelity-follow-up': <FidelityFollowUpSurvey \/>/);
-  for (const approvedChoice of [
-    "'hidden-kanban-columns': 'context-hidden-lane'",
-    "'hidden-list-items': 'group-both-lists'",
-    "'task-create-entry': 'context-create'",
-    "'project-identity': 'cross-project-only'",
-    "'legacy-epic-policy': 'legacy-read-only'",
-    "'task-hierarchy': 'real-child-issues'",
-  ]) {
-    assert.ok(record.includes(approvedChoice), `missing approved follow-up decision: ${approvedChoice}`);
-  }
-  assert.match(record, /const selectedChoice = question\.choices\.find/);
-  assert.doesNotMatch(record, /question\.choices\.map/);
-  assert.doesNotMatch(record, /setAnswers|localStorage/);
-
   assert.match(taskList, /hiddenStatusIds = \[\]/);
   assert.match(taskList, /visibleStatuses = statuses\.filter/);
   assert.match(taskList, /label: 'Приховані'/);
@@ -372,50 +323,6 @@ test('the atomic hierarchy and section renderer stay in sync', () => {
     [],
     'Dead section functions duplicate previews without being reachable from the hierarchy',
   );
-});
-
-test('the approved decision record keeps every audited divergence canonical and read-only', () => {
-  const page = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
-  const lab = readFileSync(new URL('../src/app/ui-kit/DecisionLab.jsx', import.meta.url), 'utf8');
-  const decisionIds = [...lab.matchAll(/^    id: '([^']+)',/gm)].map(match => match[1]);
-
-  assert.deepEqual(decisionIds, [
-    'button-colors',
-    'typography',
-    'control-heights',
-    'chat-composers',
-    'task-attributes',
-    'cards-surfaces',
-    'filter-bars',
-    'sprint-badge',
-    'empty-states',
-    'manual-controls',
-  ]);
-  assert.match(page, /import DecisionLab from '\.\/DecisionLab';/);
-  assert.match(page, /\{ id: 'decision-lab', label: 'Затверджені рішення'/);
-  assert.match(page, /'decision-lab': <DecisionLab \/>/);
-  assert.match(page, /useState\('kit-status'\)/);
-  assert.match(lab, /const APPROVED_ANSWERS =/);
-  assert.match(lab, /const selectedChoice = decision\.choices\.find/);
-  assert.doesNotMatch(lab, /decision\.choices\.map/);
-  assert.doesNotMatch(lab, /const choose =/);
-  assert.match(lab, /navigator\.clipboard\.writeText/);
-  assert.match(lab, /Брендинг не входить в опитування/);
-  assert.match(lab, /тільки sidebar/);
-  for (const approvedChoice of [
-    "'button-colors': 'dark-red-only'",
-    "typography: 'live-24-18'",
-    "'control-heights': 'named-sizes'",
-    "'chat-composers': 'shared-core-context-shells'",
-    "'task-attributes': 'same-chrome-different-fields'",
-    "'cards-surfaces': 'named-context-presets'",
-    "'filter-bars': 'content-presets'",
-    "'sprint-badge': 'shared-status-pill'",
-    "'empty-states': 'context-props'",
-    "'manual-controls': 'extract-repeated-only'",
-  ]) {
-    assert.ok(lab.includes(approvedChoice), `missing approved decision: ${approvedChoice}`);
-  }
 });
 
 test('approved UI decisions stay encoded in shared components', () => {

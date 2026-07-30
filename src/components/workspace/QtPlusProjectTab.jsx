@@ -41,7 +41,6 @@ function LinkedRow({ name, stale, menuItems, href }) {
                 <IconAction
                   label="Дії з привʼязкою"
                   icon={MoreVertical}
-                  iconSize={15}
                   size="sm"
                   shape="circle"
                 />

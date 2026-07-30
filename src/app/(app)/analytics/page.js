@@ -737,7 +737,7 @@ export default function WorkspaceAnalyticsPage() {
 
         {/* Content — сіра панель з відступами і скругленнями, як на сторінці
             проєктів; на ній білі картки без обводок */}
-        <Surface preset="panel" padding="lg" className="flex-1 flex flex-col min-h-[420px]">
+        <Surface preset="panel" padding="lg" composition="chart-panel" className="flex-1 flex flex-col">
         {activeTab === 'overview' && (
           <AnalyticsContent
             projects={visibleProjects}

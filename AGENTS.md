@@ -30,7 +30,11 @@ This is a single Next.js 16.2.6 App Router application with React 19 and Firebas
 - Treat the authenticated workspace and `/ui-kit` as one UI contract. A change to a shared component must update its live workspace usage and its `/ui-kit` preview in the same change.
 - A new reusable visual component must be created under `src/components/ui`, exported from `src/components/ui/index.js`, used by the product, and rendered in `/ui-kit` in the same change. Do not add unused showcase-only components.
 - Do not introduce a local component or visual pattern that is merely similar to an existing UI Kit component. Reuse the shared component, add an explicit named context/size/preset, or mark and document the intentional local exception in `docs/UI_KIT_CONTRACT.md`.
-- After changing product UI, shared UI, or UI Kit previews, run both `npm run kit:scan` and `npm run kit:audit`, and commit both generated reports when they change.
+- After changing product UI, shared UI, or UI Kit previews, run `npm run kit:scan`, then `npm run kit:drift`, then `npm run kit:audit` (that order — the later two read the earlier output), and commit all three generated reports when they change.
+- A variant is declared by the implementation, never by a list. `scripts/kit-variants.mjs` derives the manifest from component lookup maps and `data-ui-*` rules in `globals.css`; `/ui-kit` → «Матриця варіантів» renders every declared value. Adding a variant therefore means adding a map entry or a CSS rule — never a hand-written preview.
+- `kit:drift` enforces three zeros: no variant value the manifest does not declare, no component prop outside the manifest, and no `className` on a kit component that redefines its geometry or typography. `npm run test:unit` fails if any becomes non-zero.
+- Geometry, spacing and type scales belong in `globals.css` behind a named `composition`; do not reintroduce a free-value prop (`iconSize`, a raw avatar pixel size) that lets a call site hold its own copy of a kit decision.
+- Positioning a component in its parent (`flex-1`, `h-full`, margins) is legitimate composition and is reported as benign. Redefining the component itself is not.
 - QuickTeam+ uses a secondary Firebase app and a sealed server-side grant. Follow [docs/integrations/QUICKTEAM_PLUS.md](docs/integrations/QUICKTEAM_PLUS.md).
 
 ## Repository hygiene

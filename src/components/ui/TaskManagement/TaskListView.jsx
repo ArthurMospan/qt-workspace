@@ -83,7 +83,6 @@ export default function TaskListView({
                 style="ghost"
                 size="icon-xs"
                 icon={isCollapsed ? ChevronRight : ChevronDown}
-                iconSize={16}
                 className="ml-auto hover:!bg-white"
                 aria-expanded={!isCollapsed}
                 title={isCollapsed ? 'Розгорнути' : 'Згорнути'}

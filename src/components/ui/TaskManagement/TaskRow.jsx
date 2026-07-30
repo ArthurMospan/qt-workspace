@@ -268,7 +268,7 @@ export default function TaskRow({
             {assignees.length > 0 ? (
               assignees.map((m, idx) => (
                 <div key={idx} title={m.name || m.email?.split('@')[0]} className="relative">
-                  <UserAvatar user={m} size={20} className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all" />
+                  <UserAvatar user={m} size="xs" className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all" />
                 </div>
               ))
             ) : (

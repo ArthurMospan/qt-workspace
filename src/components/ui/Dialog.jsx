@@ -50,10 +50,8 @@ export default function Dialog({
   const sizeClasses = {
     sm: 'sm:w-[440px]',
     status: 'sm:w-[340px]',
-    workspace: 'sm:w-[480px]',
     md: 'sm:w-[560px]',
     lg: 'sm:w-[min(760px,92vw)]',
-    xl: 'sm:w-[960px]',
   };
   const isSheet = presentation === 'sheet';
   const titleClass = titleContext === 'dialog'
@@ -107,7 +105,7 @@ export default function Dialog({
             <div className="flex shrink-0 items-center gap-2">
               {headerAction}
               {showCloseButton && (
-                <Button style="secondary" size="icon-sm" icon={X} iconSize={16} onClick={onClose} aria-label="Закрити" />
+                <Button style="secondary" size="icon-sm" icon={X} onClick={onClose} aria-label="Закрити" />
               )}
             </div>
           </div>
