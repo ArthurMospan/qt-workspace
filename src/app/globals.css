@@ -67,27 +67,41 @@
 @layer components {
   /* Named geometry: the same contract is used by Button/Input/Select and by
      exceptional compositions. Avoid anonymous h-[Npx] control overrides. */
+  /* One variable drives the box and the line box. A control states its height
+     once, as `--ui-control-height`; `height` and `line-height` both read it.
+
+     The line box matters as much as the box. `leading-none` at the call site
+     made the line box exactly one font-size tall, and Inter's ascent and
+     descent are not symmetric about that, so the glyphs landed ~2px above the
+     middle of every control. At 100% zoom that reads as "tight"; at 90% the
+     border box also snaps to a whole device pixel and the same 2px reads as a
+     crooked button with its label riding the top edge. A line box as tall as
+     the control lets the browser centre the text, which stays exact at any
+     zoom. `--ui-control-line` is the escape hatch for the two compositions
+     that add vertical padding, where the content box is shorter than the box. */
   .ui-control {
-    height: var(--ui-control-lg);
+    --ui-control-height: var(--ui-control-lg);
+    height: var(--ui-control-height);
+    line-height: var(--ui-control-line, var(--ui-control-height));
     border-radius: var(--ui-radius-field);
   }
-  .ui-control[data-ui-size='sm'] { height: var(--ui-control-sm); }
-  .ui-control[data-ui-size='md'] { height: var(--ui-control-md); }
-  .ui-control[data-ui-size='lg'] { height: var(--ui-control-lg); }
+  .ui-control[data-ui-size='sm'] { --ui-control-height: var(--ui-control-sm); }
+  .ui-control[data-ui-size='md'] { --ui-control-height: var(--ui-control-md); }
+  .ui-control[data-ui-size='lg'] { --ui-control-height: var(--ui-control-lg); }
   .ui-control[data-ui-size='icon-xs'] {
-    height: 20px;
+    --ui-control-height: 20px;
     border-radius: 6px;
   }
   .ui-control[data-ui-size='icon-24'] {
-    height: 24px;
+    --ui-control-height: 24px;
     border-radius: 7px;
   }
   .ui-control[data-ui-size='icon-30'] {
-    height: 30px;
+    --ui-control-height: 30px;
     border-radius: 8px;
   }
   .ui-control[data-ui-composition='workspace-guard'] {
-    height: var(--ui-composition-guard);
+    --ui-control-height: var(--ui-composition-guard);
     font-weight: 600;
   }
   /* Hex colour entry: a monospace field so the value does not shift width as
@@ -124,7 +138,7 @@
   .ui-control[data-ui-composition='metric-editor'],
   .ui-control[data-ui-composition='duration-hours'],
   .ui-control[data-ui-composition='duration-minutes'] {
-    height: var(--ui-composition-metric);
+    --ui-control-height: var(--ui-composition-metric);
     border-color: var(--color-line);
     background: var(--color-surface);
     padding-right: 28px;
@@ -137,7 +151,7 @@
   .ui-control[data-ui-composition='duration-compact-hours'] { padding-right: 32px; }
   .ui-control[data-ui-composition='duration-compact-minutes'] { padding-right: 28px; }
   .ui-control[data-ui-composition='metric-text'] {
-    height: var(--ui-composition-metric);
+    --ui-control-height: var(--ui-composition-metric);
     border-color: var(--color-line);
     background: var(--color-surface);
     padding-right: 16px;
@@ -145,25 +159,28 @@
     font-size: 14px;
   }
   .ui-control[data-ui-composition='invite-field'] {
-    height: var(--ui-composition-invite);
+    --ui-control-height: var(--ui-composition-invite);
     border-radius: 14px;
     padding-right: 150px;
   }
   .ui-control[data-ui-composition='project-name'] {
-    height: var(--ui-composition-metric);
+    --ui-control-height: var(--ui-composition-metric);
     padding-right: 14px;
     padding-left: 14px;
     font-size: 15px;
     font-weight: 600;
   }
+  /* Vertical padding shortens the content box, so the line box has to follow it
+     down rather than stay as tall as the control. */
   .ui-control[data-ui-composition='settings-row-action'] {
+    --ui-control-line: calc(var(--ui-control-height) - 24px);
     width: 100%;
     justify-content: flex-start;
     padding-top: 12px;
     padding-bottom: 12px;
   }
   .ui-control[data-ui-composition='status-entry'] {
-    height: 44px;
+    --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
     padding-right: 16px;
     padding-left: 16px;
@@ -171,7 +188,7 @@
     font-weight: 500;
   }
   .ui-control[data-ui-composition='status-submit'] {
-    height: 44px;
+    --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
     padding-right: 20px;
     padding-left: 20px;
@@ -180,7 +197,7 @@
     padding-right: 54px;
   }
   .ui-control[data-ui-composition='menu-item'] {
-    height: 32px;
+    --ui-control-height: 32px;
     width: 100%;
     justify-content: flex-start;
     border-radius: 0;
@@ -194,7 +211,8 @@
     background: var(--color-canvas);
   }
   .ui-control[data-ui-composition='inline-add-action'] {
-    height: 26px;
+    --ui-control-height: 26px;
+    --ui-control-line: 14px;
     border-radius: 8px;
     background: var(--color-surface);
     padding: 6px 10px;

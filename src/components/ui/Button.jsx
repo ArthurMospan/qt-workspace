@@ -164,8 +164,13 @@ export function Button({
   // Validate color — only 'dark' and 'red' are supported
   const effectiveColor = color === 'red' ? 'red' : 'dark';
 
+  // The line box is control geometry and belongs to `.ui-control` in
+  // globals.css, next to the height it has to match. A line-height utility here
+  // beats the components layer, and the one that used to sit in `baseClasses`
+  // made the line box exactly one font-size tall — which left every label about
+  // two pixels above the middle of its button.
   const baseClasses =
-    'inline-flex items-center justify-center gap-[6px] font-bold leading-none transition-colors ' +
+    'inline-flex items-center justify-center gap-[6px] font-bold transition-colors ' +
     'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0';
 
   const sizeClass  = SIZES[size] ?? SIZES.lg;

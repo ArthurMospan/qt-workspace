@@ -19,6 +19,29 @@ const STATUS_DOTS = {
   off: 'bg-faint',
 };
 
+// The grey panel every integration explains itself in. It was written out four
+// times with four different radii, paddings, title sizes and body colours, so
+// the same kind of instruction looked like a different kind of thing depending
+// on which service you were reading. The contents stay per-service; the chrome
+// does not.
+export function IntegrationNote({ title, children, className = '' }) {
+  return (
+    <div data-ui-surface="local" className={`rounded-[10px] border border-line bg-canvas p-3 ${className}`}>
+      {title && <p className="mb-2 text-[12px] font-semibold text-ink">{title}</p>}
+      <div className="space-y-1.5 text-[11px] leading-relaxed text-muted">{children}</div>
+    </div>
+  );
+}
+
+// A literal inside an IntegrationNote: a bot command, an API token, an org id.
+export function IntegrationCode({ children, className = '' }) {
+  return (
+    <code className={`rounded border border-line bg-white px-1.5 py-0.5 font-mono text-[11px] text-ink ${className}`}>
+      {children}
+    </code>
+  );
+}
+
 export function IntegrationSteps({ steps }) {
   return (
     <ol className="space-y-2.5">

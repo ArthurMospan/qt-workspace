@@ -57,7 +57,7 @@ import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { Colorful } from '@uiw/react-color';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
-import IntegrationCard, { IntegrationSteps } from '@/components/integrations/IntegrationCard';
+import IntegrationCard, { IntegrationCode, IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import DataMigrationSettings from '@/components/migrations/DataMigrationSettings';
 import {
   getDoneStatusIds,
@@ -246,19 +246,9 @@ function OneBMark() {
   return <Image src="/oneb-logo.png" alt="OneB" width={18} height={18} className="object-contain rounded-[4px]" />;
 }
 
-function ProviderStatus({ primary, connected, soon }) {
-  if (soon) {
-    return <Pill tone="warning" size="lg">Soon</Pill>;
-  }
-  if (primary) {
-    return <Pill tone="ink-subtle" size="lg" icon={Check}>Основний</Pill>;
-  }
-  if (connected) {
-    return <Pill tone="success" size="lg" icon={Check}>Активно</Pill>;
-  }
-  return <Pill size="lg">Не підключено</Pill>;
-}
-
+// One switch per method, like every other settings row. Connect/disconnect was
+// a pair of buttons next to a status pill that repeated what the switch
+// position and the detail line already say.
 function LoginMethodItem({
   icon,
   title,
@@ -272,6 +262,10 @@ function LoginMethodItem({
   onConnect,
   onDisconnect,
 }) {
+  // The primary method cannot be switched off — losing it would leave the
+  // account with no way back in. Same rule the disconnect button carried.
+  const locked = staticMethod || soon || primary || Boolean(loading) || Boolean(disabled);
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-[14px]">
       <div className="flex items-center gap-3 min-w-0">
@@ -283,33 +277,12 @@ function LoginMethodItem({
           <p className="text-[12px] text-muted mt-[2px] leading-snug truncate">{detail}</p>
         </div>
       </div>
-      <div className="flex items-center justify-between sm:justify-end gap-3 min-w-[190px]">
-        <ProviderStatus primary={primary} connected={connected} soon={soon} />
-        {staticMethod ? null : connected ? (
-          <Button
-            onClick={onDisconnect}
-            disabled={disabled || primary}
-            loading={loading}
-            style="ghost"
-            color="red"
-            size="sm"
-            className="min-w-[96px]"
-          >
-            Відключити
-          </Button>
-        ) : (
-          <Button
-            onClick={onConnect}
-            disabled={disabled}
-            loading={loading}
-            style="secondary"
-            size="sm"
-            className="min-w-[96px]"
-          >
-            Підключити
-          </Button>
-        )}
-      </div>
+      <ToggleSwitch
+        checked={connected || primary}
+        disabled={locked}
+        onChange={next => (next ? onConnect?.() : onDisconnect?.())}
+        ariaLabel={`${connected ? 'Відключити' : 'Підключити'} ${title}`}
+      />
     </div>
   );
 }
@@ -2525,19 +2498,16 @@ export default function SettingsPage() {
             >
               {telegramGroupStatus.connected ? (
                 <div className="space-y-3">
-                  <div data-ui-surface="local" className="rounded-[10px] border border-line bg-canvas p-3">
-                    <p className="text-[12px] font-semibold text-ink">Як створити задачу в групі</p>
-                    <div className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-muted">
-                      <p><code className="rounded bg-white px-1.5 py-0.5 text-ink">/task Назва задачі</code> — швидка команда.</p>
-                      <p>
-                        <code className="rounded bg-white px-1.5 py-0.5 text-ink">
-                          @{telegramGroupStatus.username || 'quick_team_bot'} Назва задачі
-                        </code>
-                        {' '}— звичайне звернення до бота.
-                      </p>
-                      <p>Наступні рядки повідомлення стануть описом задачі.</p>
-                    </div>
-                  </div>
+                  <IntegrationNote title="Як створити задачу в групі">
+                    <p><IntegrationCode>/task Назва задачі</IntegrationCode> — швидка команда.</p>
+                    <p>
+                      <IntegrationCode>
+                        @{telegramGroupStatus.username || 'quick_team_bot'} Назва задачі
+                      </IntegrationCode>
+                      {' '}— звичайне звернення до бота.
+                    </p>
+                    <p>Наступні рядки повідомлення стануть описом задачі.</p>
+                  </IntegrationNote>
                   <Button
                     style="ghost"
                     size="sm"
@@ -2589,8 +2559,9 @@ export default function SettingsPage() {
                         ? 'Скопіюйте одноразову команду та надішліть її в доданій групі протягом 30 хвилин.'
                         : 'Після додавання бота тут з’явиться одноразова команда.',
                       content: telegramGroupConnect?.command ? (
-                        <div data-ui-surface="local" className="mt-2 flex max-w-[620px] items-center gap-2 rounded-[8px] border border-line bg-canvas p-2">
-                          <code className="min-w-0 flex-1 select-all break-all text-[11px] text-ink">{telegramGroupConnect.command}</code>
+                        <IntegrationNote className="mt-2 max-w-[620px]">
+                          <div className="flex items-center gap-2">
+                          <IntegrationCode className="min-w-0 flex-1 select-all break-all">{telegramGroupConnect.command}</IntegrationCode>
                           <Button
                             style="ghost"
                             size="icon-sm"
@@ -2601,7 +2572,8 @@ export default function SettingsPage() {
                             }}
                             aria-label="Копіювати команду"
                           />
-                        </div>
+                          </div>
+                        </IntegrationNote>
                       ) : null,
                     },
                     {
@@ -2646,39 +2618,25 @@ export default function SettingsPage() {
               )}
             >
               {buggyBagEnabled && (
-                <div data-ui-surface="local" className="rounded-[10px] border border-line bg-canvas p-3">
-                  <p className="mb-3 text-[12px] font-semibold text-ink">Вставте ці дані в налаштуваннях BuggyBag</p>
+                <IntegrationNote title="Вставте ці дані в налаштуваннях BuggyBag">
                   <div className="grid items-center gap-3 sm:grid-cols-[100px_1fr]">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted">API Token</span>
+                    <span>API Token</span>
                     <div className="flex min-w-0 items-center gap-2">
-                      <code className="min-w-0 flex-1 select-all truncate rounded border border-line bg-white px-3 py-1.5 font-mono text-[12px]">
+                      <IntegrationCode className="min-w-0 flex-1 select-all truncate">
                         {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
-                      </code>
+                      </IntegrationCode>
                       {buggyBagKey.token && (
                         <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати API Token" />
                       )}
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Org ID</span>
+                    <span>Org ID</span>
                     <div className="flex min-w-0 items-center gap-2">
-                      <code className="min-w-0 flex-1 select-all truncate rounded border border-line bg-white px-3 py-1.5 font-mono text-[12px]">{activeOrgId}</code>
+                      <IntegrationCode className="min-w-0 flex-1 select-all truncate">{activeOrgId}</IntegrationCode>
                       <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати ID організації" />
                     </div>
                   </div>
-                </div>
+                </IntegrationNote>
               )}
-              <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-                {[
-                  'Баг-репорти',
-                  'Скріншоти та консоль',
-                  'Коментарі клієнтів',
-                  'Статуси завдань',
-                ].map(item => (
-                  <div key={item} className="flex items-center gap-2 text-[12px] text-faint">
-                    <span className="h-[4px] w-[4px] shrink-0 rounded-full bg-[#e0e0e0]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
             </IntegrationCard>
           </Section>
         );

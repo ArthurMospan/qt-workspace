@@ -380,6 +380,7 @@ test('approved UI decisions stay encoded in shared components', () => {
   const card = readFileSync(new URL('../src/components/ui/Layout/Card.jsx', import.meta.url), 'utf8');
   const surface = readFileSync(new URL('../src/components/ui/Surface.jsx', import.meta.url), 'utf8');
   const sprints = readFileSync(new URL('../src/app/(app)/sprints/page.js', import.meta.url), 'utf8');
+  const button = readFileSync(new URL('../src/components/ui/Button.jsx', import.meta.url), 'utf8');
 
   assert.match(tokens, /h1: \{ size: '24px'/);
   assert.match(tokens, /h2: \{ size: '18px'/);
@@ -408,6 +409,59 @@ test('approved UI decisions stay encoded in shared components', () => {
   assert.match(sprints, /<StatusPill label="Активний"/);
   assert.doesNotMatch(sprints, /function Badge\(/);
   assert.doesNotMatch(sprints, /<select\b/);
+  assert.doesNotMatch(sprints, /<Input type="date"/);
+
+  // QUI-126. A control declares its height once, and the line box reads the
+  // same value, so text is centred by the browser instead of by a `leading-*`
+  // utility that happens to win the cascade. `leading-none` in Button beat the
+  // components layer and left every label ~2px above centre — invisible at
+  // 100% zoom, plainly crooked at 90%.
+  assert.match(globals, /--ui-control-height: var\(--ui-control-lg\)/);
+  assert.match(globals, /line-height: var\(--ui-control-line, var\(--ui-control-height\)\)/);
+  // A variant that sets a bare `height` keeps its own box but inherits the base
+  // line box — reintroducing the miscentring one size at a time.
+  for (const [rule, body] of globals.matchAll(/(\.ui-control\[data-ui-[^{]*)\{([^}]*)\}/g)) {
+    assert.doesNotMatch(
+      body,
+      /(^|[\s;])height:/,
+      `${rule.trim()} sets a bare height; declare --ui-control-height so the line box follows`,
+    );
+  }
+  const baseClasses = button.slice(button.indexOf('const baseClasses'), button.indexOf('const sizeClass'));
+  assert.doesNotMatch(
+    baseClasses,
+    /leading-/,
+    'Button must not set its own line box; .ui-control owns it and a utility would win the cascade',
+  );
+});
+
+// Settings is one screen, so a row that turns something on has to look the same
+// wherever it lives. These two came in as separate reports about the same drift.
+test('every settings row that switches something on is a switch', () => {
+  const settings = readFileSync(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
+  const integrationCard = readFileSync(new URL('../src/components/integrations/IntegrationCard.jsx', import.meta.url), 'utf8');
+  const youtrack = readFileSync(new URL('../src/components/integrations/YouTrackImportCard.jsx', import.meta.url), 'utf8');
+
+  // QUI-120: login methods used a Підключити/Відключити button pair beside a
+  // status pill that only repeated what the switch position already says.
+  const loginMethod = settings.slice(
+    settings.indexOf('function LoginMethodItem'),
+    settings.indexOf('// ── WorkflowItem'),
+  );
+  assert.match(loginMethod, /<ToggleSwitch/);
+  assert.doesNotMatch(loginMethod, /<Button\b|<Pill\b|ProviderStatus/);
+  assert.doesNotMatch(settings, /function ProviderStatus/);
+
+  // QUI-119: one instruction panel shared by every integration. The same kind
+  // of hint used to carry a different radius, padding and body colour per
+  // service, and BuggyBag additionally listed what it syncs for no reason.
+  assert.match(integrationCard, /export function IntegrationNote/);
+  assert.match(integrationCard, /export function IntegrationCode/);
+  for (const source of [settings, youtrack]) {
+    assert.match(source, /<IntegrationNote/);
+    assert.doesNotMatch(source, /rounded-\[(8|10)px\] border border-line bg-canvas/);
+  }
+  assert.doesNotMatch(settings, /'Скріншоти та консоль'/);
 });
 
 test('local reference pages do not depend on a working login flow', () => {

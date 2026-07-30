@@ -5,7 +5,7 @@ import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { Alert, Button, Input, Select, useConfirm } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
-import IntegrationCard, { IntegrationSteps } from '@/components/integrations/IntegrationCard';
+import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import { sourceUserId, suggestUserMappings } from '@/lib/utils/youtrackImport.mjs';
 
 const ACTIVE_JOB_STATUSES = new Set(['prepared', 'running']);
@@ -433,9 +433,11 @@ export default function YouTrackImportCard({
                 },
               ]}
             />
-            <p className="rounded-[8px] border border-line bg-canvas px-3 py-2 text-[11px] leading-relaxed text-muted">
-              Підключення виконується один раз для організації. Токен зберігається у зашифрованому вигляді й після збереження не повертається у браузер.
-            </p>
+            <IntegrationNote>
+              <p>
+                Підключення виконується один раз для організації. Токен зберігається у зашифрованому вигляді й після збереження не повертається у браузер.
+              </p>
+            </IntegrationNote>
           </div>
         ) : null
       ) : (
