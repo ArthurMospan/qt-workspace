@@ -34,6 +34,7 @@ serviceAccountKey.json
 # Logs, editor backups and temporary files
 *.log
 *.tmp
+*.tmp.*
 *.temp
 *.bak
 *.orig
