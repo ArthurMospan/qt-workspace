@@ -144,11 +144,11 @@ function MessageBubble({
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
               title="Переглянути профіль"
             >
-              <UserAvatar user={{ name: msg.user, avatar: senderMember.avatar || msg.avatar }} size="md" />
+              <UserAvatar user={{ name: msg.user, avatar: senderMember.avatar || msg.avatar }} size="chat-message" />
             </button>
           ) : (
             <div className="w-9 h-9 rounded-xl overflow-hidden">
-              <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size="md" />
+              <UserAvatar user={{ name: msg.user, avatar: msg.avatar }} size="chat-message" />
             </div>
           )
         ) : (
@@ -258,6 +258,7 @@ function MessageBubble({
               label="Реакція"
               size="sm"
               appearance="soft"
+              composition="chat-message-action"
             />
             {showEmoji && typeof document !== 'undefined' && createPortal(
               <div
@@ -286,7 +287,7 @@ function MessageBubble({
           {!isThread && (
             <Button
               onClick={() => onThread(msg.id)}
-              style="ghost" size="icon-sm" icon={MessageSquare}
+              style="ghost" size="icon-sm" composition="chat-message-action" icon={MessageSquare}
               title="Відповісти в гілку"
             />
           )}
@@ -295,7 +296,7 @@ function MessageBubble({
           {!isThread && (
             <Button
               onClick={() => onPin(msg.id, !msg.isPinned)}
-              style="ghost" size="icon-sm" icon={Pin}
+              style="ghost" size="icon-sm" composition="chat-message-action" icon={Pin}
               surface={msg.isPinned ? 'canvas' : 'default'}
               title={msg.isPinned ? 'Відкріпити' : 'Закріпити'}
             />
@@ -483,7 +484,7 @@ function MessageInput({
               onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-canvas transition-colors text-left"
             >
-              <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="sm" />
+              <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="chat-member" />
               <div>
                 <p className="text-[13px] font-semibold text-ink">{m.name || m.email}</p>
                 {m.email && m.name && <p className="text-[11px] text-muted">{m.email}</p>}
@@ -539,6 +540,7 @@ function MessageInput({
               icon={Smile}
               label="Emoji"
               appearance={showEmoji ? 'soft' : 'quiet'}
+              composition="chat-composer-action"
             />
             <input type="file" multiple ref={fileRef} onChange={handleFiles} className="hidden" />
             <IconAction
@@ -546,6 +548,7 @@ function MessageInput({
               disabled={uploading}
               icon={Paperclip}
               label="Прикріпити файл"
+              composition="chat-composer-action"
             />
           </>
         )}
@@ -597,7 +600,8 @@ function ThreadSidebar({
           icon={X}
           label="Закрити гілку"
           appearance="quiet"
-        />
+              composition="chat-panel-action"
+            />
       </div>
 
       {/* Parent message */}
@@ -813,7 +817,8 @@ function ChannelInfoSidebar({
           icon={X}
           label="Закрити інформацію про канал"
           appearance="quiet"
-        />
+              composition="chat-panel-action"
+            />
       </div>
 
       <div className="flex shrink-0 gap-1 border-b border-line/70 px-3 py-2">
@@ -910,7 +915,7 @@ function ChannelInfoSidebar({
                       className="w-full flex items-center justify-between text-left px-2 py-1.5 hover:bg-canvas rounded-lg transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="xs" />
+                        <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="chat-inline" />
                         <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
                       </div>
                       <Plus size={14} className="text-muted" />
@@ -1652,7 +1657,7 @@ export default function ChatPage() {
                       >
                         <div className="relative shrink-0">
                           <div className="w-[18px] h-[18px] rounded-full overflow-hidden">
-                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size="xs" />
+                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size="chat-mention" />
                           </div>
                           {u.online && (
                             <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-canvas" />
@@ -1758,7 +1763,8 @@ export default function ChatPage() {
                   icon={Info}
                   label={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
                   appearance={showChannelInfo ? 'soft' : 'quiet'}
-                />
+              composition="chat-panel-action"
+            />
             </div>
 
             {/* Search Results Banner */}

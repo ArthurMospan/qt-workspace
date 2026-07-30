@@ -91,7 +91,7 @@ export default function MessageContent({ text, members, searchTerm }) {
                 return (
                   <HoverCard key={pIdx} type="user" value={memberName} members={members}>
                     <span className="inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink cursor-pointer hover:bg-black/[0.12] transition-colors">
-                      <span className="shrink-0"><UserAvatar user={member || { name: memberName }} size="xs" /></span>
+                      <span className="shrink-0"><UserAvatar user={member || { name: memberName }} size="chat-mention" /></span>
                       <span className="truncate">{memberName}</span>
                     </span>
                   </HoverCard>

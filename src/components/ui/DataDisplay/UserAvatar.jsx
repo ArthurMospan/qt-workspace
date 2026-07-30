@@ -15,6 +15,14 @@ export const AVATAR_SIZES = {
   lg: 40,
   xl: 48,
   hero: 96,
+
+  // Chat is its own structure with its own rhythm: a message row is built
+  // around a 36px avatar, and folding these into the generic scale shifted
+  // every row by 4px. These names exist only for chat surfaces.
+  'chat-message': 36,
+  'chat-member': 28,
+  'chat-inline': 20,
+  'chat-mention': 18,
 };
 
 // A raw number is still accepted, but only for genuinely computed sizes —

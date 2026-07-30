@@ -38,7 +38,7 @@
       "covered": 45,
       "uncovered": 0,
       "routes": 14,
-      "previews": 71
+      "previews": 74
     },
     "unusedComponents": [
       "Avatar",
@@ -239,7 +239,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1019",
+      "location": "src/app/(app)/chat/page.js:1024",
       "className": "mt-1 w-full truncate px-1 text-left text-[10px] text-muted hover:text-ink",
       "text": "· перейти до повідомлення",
       "childElements": [],
@@ -269,7 +269,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1609",
+      "location": "src/app/(app)/chat/page.js:1614",
       "className": "ui-native-control ${…}",
       "text": "",
       "childElements": [
@@ -286,7 +286,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1643",
+      "location": "src/app/(app)/chat/page.js:1648",
       "className": "ui-native-control ${…}",
       "text": "",
       "childElements": [
@@ -303,7 +303,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1684",
+      "location": "src/app/(app)/chat/page.js:1689",
       "className": "md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0",
       "text": "",
       "childElements": [
@@ -319,7 +319,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1735",
+      "location": "src/app/(app)/chat/page.js:1740",
       "className": "flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]",
       "text": "",
       "childElements": [
@@ -336,7 +336,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1770",
+      "location": "src/app/(app)/chat/page.js:1776",
       "className": "text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline",
       "text": "Очистити",
       "childElements": [],
@@ -350,7 +350,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1799",
+      "location": "src/app/(app)/chat/page.js:1805",
       "className": "rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink",
       "text": "Показати давніші повідомлення",
       "childElements": [],
@@ -378,7 +378,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1865",
+      "location": "src/app/(app)/chat/page.js:1871",
       "className": "flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95",
       "text": "нових",
       "childElements": [
@@ -454,7 +454,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:481",
+      "location": "src/app/(app)/chat/page.js:482",
       "className": "w-full flex items-center gap-3 px-4 py-2.5 hover:bg-canvas transition-colors text-left",
       "text": "",
       "childElements": [
@@ -471,7 +471,7 @@
     },
     {
       "tag": "input",
-      "location": "src/app/(app)/chat/page.js:543",
+      "location": "src/app/(app)/chat/page.js:545",
       "className": "hidden",
       "text": "",
       "childElements": [],
@@ -485,7 +485,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:663",
+      "location": "src/app/(app)/chat/page.js:667",
       "className": "opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-lg text-muted hover:text-[#ef4444] hover:bg-red-50 transition-all shrink-0",
       "text": "",
       "childElements": [
@@ -501,7 +501,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:825",
+      "location": "src/app/(app)/chat/page.js:830",
       "className": "flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -515,7 +515,7 @@
     },
     {
       "tag": "textarea",
-      "location": "src/app/(app)/chat/page.js:855",
+      "location": "src/app/(app)/chat/page.js:860",
       "className": "w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-2.5 text-[13px] outline-none resize-none transition-colors",
       "text": "",
       "childElements": [],
@@ -529,7 +529,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:862",
+      "location": "src/app/(app)/chat/page.js:867",
       "className": "text-[12px] font-semibold text-muted hover:text-ink",
       "text": "Скасувати",
       "childElements": [],
@@ -543,7 +543,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:863",
+      "location": "src/app/(app)/chat/page.js:868",
       "className": "text-[12px] font-semibold text-ink hover:underline",
       "text": "Зберегти",
       "childElements": [],
@@ -557,7 +557,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:872",
+      "location": "src/app/(app)/chat/page.js:877",
       "className": "text-muted hover:text-ink text-[12px] font-semibold",
       "text": "Редагувати",
       "childElements": [],
@@ -571,7 +571,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:886",
+      "location": "src/app/(app)/chat/page.js:891",
       "className": "text-[11px] font-semibold text-ink hover:underline flex items-center gap-1",
       "text": "Додати",
       "childElements": [
@@ -587,7 +587,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:898",
+      "location": "src/app/(app)/chat/page.js:903",
       "className": "w-full text-center py-2 bg-ink hover:bg-ink-hover text-white rounded-xl text-[12px] font-semibold transition-colors",
       "text": "Додати всіх учасників",
       "childElements": [],
@@ -601,7 +601,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:907",
+      "location": "src/app/(app)/chat/page.js:912",
       "className": "w-full flex items-center justify-between text-left px-2 py-1.5 hover:bg-canvas rounded-lg transition-colors",
       "text": "",
       "childElements": [
@@ -618,7 +618,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:932",
+      "location": "src/app/(app)/chat/page.js:937",
       "className": "opacity-0 group-hover/m:opacity-100 text-red-500 hover:text-red-700 text-[11px] font-semibold transition-opacity",
       "text": "Видалити",
       "childElements": [],
@@ -632,7 +632,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:954",
+      "location": "src/app/(app)/chat/page.js:959",
       "className": "rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]",
       "text": "",
       "childElements": [
@@ -649,7 +649,7 @@
     },
     {
       "tag": "input",
-      "location": "src/app/(app)/chat/page.js:976",
+      "location": "src/app/(app)/chat/page.js:981",
       "className": "w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-[#cfcfcf] focus:border-[#cfcfcf]",
       "text": "",
       "childElements": [],
@@ -663,7 +663,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:990",
+      "location": "src/app/(app)/chat/page.js:995",
       "className": "rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -2477,12 +2477,12 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/app/(app)/chat/page.js:1609",
+      "location": "src/app/(app)/chat/page.js:1614",
       "tag": "button",
       "context": "chat-list-action"
     },
     {
-      "location": "src/app/(app)/chat/page.js:1643",
+      "location": "src/app/(app)/chat/page.js:1648",
       "tag": "button",
       "context": "chat-list-action"
     },
@@ -2558,7 +2558,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/chat/page.js:1012",
+      "location": "src/app/(app)/chat/page.js:1017",
       "tag": "div",
       "className": "rounded-xl border border-line/70 bg-white p-2"
     },
@@ -2568,22 +2568,22 @@
       "className": "absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20"
     },
     {
-      "location": "src/app/(app)/chat/page.js:479",
+      "location": "src/app/(app)/chat/page.js:480",
       "tag": "div",
       "className": "absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30"
     },
     {
-      "location": "src/app/(app)/chat/page.js:851",
+      "location": "src/app/(app)/chat/page.js:856",
       "tag": "div",
       "className": "mt-2 bg-white rounded-2xl p-4 border border-line/70"
     },
     {
-      "location": "src/app/(app)/chat/page.js:897",
+      "location": "src/app/(app)/chat/page.js:902",
       "tag": "div",
       "className": "mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2"
     },
     {
-      "location": "src/app/(app)/chat/page.js:924",
+      "location": "src/app/(app)/chat/page.js:929",
       "tag": "div",
       "className": "bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2"
     },

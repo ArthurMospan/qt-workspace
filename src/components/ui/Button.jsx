@@ -60,6 +60,15 @@ const ICON_SIZES = {
 // "add row" button, which reads better with an icon smaller than its lg box.
 export const COMPOSITION_ICON_SIZES = {
   'settings-row-action': 13,
+
+  // Chat-only icon sizes. The generic size scale gives a 20px box a 16px icon,
+  // which is right for dense toolbars and wrong for a chat message action —
+  // those were 12px and jumped by four when the free `iconSize` prop went away.
+  'chat-message-action': 15,
+  'chat-composer-action': 17,
+  'chat-panel-action': 16,
+  'chat-micro-action': 12,
+  'chat-composer-cancel': 13,
   // The auth shell's close button. Named rather than migrated: login and
   // onboarding are out of scope for kit changes, so this keeps that screen
   // pixel-identical while still holding the number here instead of there.

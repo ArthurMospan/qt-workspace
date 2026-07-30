@@ -81,6 +81,7 @@ const GROUPS = [
       { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
       { id: 'chat-composer', label: 'Chat Composer Dock', icon: MessageSquare },
+      { id: 'chat-elements', label: 'Чат — власні елементи', icon: MessageSquare },
     ]
   },
   {
@@ -1426,6 +1427,63 @@ function FeedbackSection() {
   );
 }
 
+function ChatElementsSection() {
+  const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
+  return (
+    <div className="flex flex-col gap-[32px]">
+      <PreviewBlock
+        title="Чат — власна шкала аватарів"
+        description="Чат побудований навколо 36px аватара в рядку повідомлення. Ці розміри існують тільки для чат-поверхонь і навмисно не зведені до загальної шкали: злиття в найближчі xs/sm/md зсувало кожен рядок на 4px."
+        filePath="src/components/ui/DataDisplay/UserAvatar.jsx"
+        component="UserAvatar"
+        fullWidth
+      >
+        <div className="flex flex-wrap items-end gap-[20px]">
+          {[['chat-message', 36, 'рядок повідомлення'], ['chat-member', 28, 'список учасників'],
+            ['chat-inline', 20, 'у рядку'], ['chat-mention', 18, 'згадка в тексті']].map(([token, px, role]) => (
+            <div key={token} className="flex flex-col items-center gap-[6px]">
+              <UserAvatar user={demoUser} size={token} />
+              <span className="font-mono text-[9px] font-bold text-[#1f1f1f]">{token}</span>
+              <span className="text-[9px] text-[#cfcfcf]">{px}px · {role}</span>
+            </div>
+          ))}
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Чат — розміри іконок у діях"
+        description="Загальна шкала дає 20px коробці 16px іконку — правильно для щільних тулбарів і завелико для дії над повідомленням, де завжди було 12px. Задається іменованою composition, а не числом на місці виклику."
+        filePath="src/components/ui/Button.jsx"
+        fullWidth
+      >
+        <div className="flex flex-col gap-[16px]">
+          {[['chat-micro-action', 12, 'дії над повідомленням: відповісти, редагувати, видалити'],
+            ['chat-composer-cancel', 13, 'скасування в композері'],
+            ['chat-message-action', 15, 'дії в рядку: гілка, закріпити'],
+            ['chat-panel-action', 16, 'закрити гілку, інфо про канал'],
+            ['chat-composer-action', 17, 'емодзі та вкладення в композері']].map(([token, px, role]) => (
+            <div key={token} className="flex items-center gap-[12px]">
+              <Button style="ghost" size="icon-sm" composition={token} icon={MessageSquare}>{token}</Button>
+              <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">{token}</span>
+              <span className="text-[10px] text-[#cfcfcf]">{px}px · {role}</span>
+            </div>
+          ))}
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Чат — роздільники дат"
+        description="Пілюля дати між групами повідомлень. Має власну геометрію: під час зведення варіантів її склали в sm/wide-sm, від чого вона стала вужчою, а текст — на піксель більшим. Видно на кожному переході дня."
+        filePath="src/app/globals.css"
+        component="Pill"
+      >
+        <Pill tone="surface" size="chat-day" weight="medium" uppercase>Сьогодні</Pill>
+        <Pill tone="surface" size="chat-day-wide" uppercase>12 березня</Pill>
+      </PreviewBlock>
+    </div>
+  );
+}
+
 function ChatComposerSection() {
   const [message, setMessage] = useState('');
   const canSend = Boolean(message.trim());
@@ -2263,6 +2321,7 @@ const SECTION_MAP = {
   'task-crm':  <TaskCRMSection />,
   feedback:   <FeedbackSection />,
   'chat-composer': <ChatComposerSection />,
+  'chat-elements': <ChatElementsSection />,
   tooltips:        <TooltipsSection />,
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,

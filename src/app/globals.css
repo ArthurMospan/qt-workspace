@@ -412,6 +412,20 @@
     padding: 4px 8px;
     font-size: 11px;
   }
+  /* Chat-only pill sizes: the date separators between message groups. These
+     were folded into sm/wide-sm during the variant consolidation, which made
+     them narrower and their text a pixel larger — visible on every chat day
+     break. Chat keeps its own rhythm. */
+  .ui-pill[data-ui-pill-size='chat-day'] {
+    min-height: 18px;
+    padding: 3px 10px;
+    font-size: 9px;
+  }
+  .ui-pill[data-ui-pill-size='chat-day-wide'] {
+    min-height: 24px;
+    padding: 4px 12px;
+    font-size: 10px;
+  }
   .ui-pill[data-ui-pill-size='wide-sm'] {
     min-height: 24px;
     padding: 4px 10px;

@@ -159,7 +159,7 @@ function DaySeparator({ timestamp }) {
     <div className="flex justify-center py-2.5" aria-label={`Дата: ${label}`}>
       {/* A date marker is a landmark, not content: bold + widest tracking made
           it heavier than the messages it separates. */}
-      <Pill tone="surface" size="sm" weight="medium" uppercase>
+      <Pill tone="surface" size="chat-day" weight="medium" uppercase>
         {label}
       </Pill>
     </div>
@@ -435,7 +435,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                 user={authorProfile
                   ? { ...authorProfile, name: authorProfile.name || item.authorName }
                   : { id: item.authorId, name: item.authorName, avatar: item.authorAvatar }}
-                size="sm"
+                size="chat-member"
               />
             );
             return (
@@ -514,9 +514,9 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                     )}
                     {!isArchived && (
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
-                        <IconAction label="Відповісти" icon={Reply} size="micro" appearance="quiet" shape="micro" onClick={() => beginReply(item)} title="Відповісти" />
-                        {isMe && <IconAction label="Редагувати повідомлення" icon={Pencil} size="micro" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
-                        {isMe && <IconAction label="Видалити повідомлення" icon={Trash2} size="micro" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item)} title="Видалити" />}
+                        <IconAction label="Відповісти" icon={Reply} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginReply(item)} title="Відповісти" />
+                        {isMe && <IconAction label="Редагувати повідомлення" icon={Pencil} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
+                        {isMe && <IconAction label="Видалити повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item)} title="Видалити" />}
                       </div>
                     )}
                 </div>
@@ -566,7 +566,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                   onClick={() => selectMention(member)}
                   className={`flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium ${index === mentionState.selectedIndex ? 'bg-canvas text-ink' : 'text-muted hover:bg-[#f7f7f7]'}`}
                 >
-                  <UserAvatar user={member} size="xs" />
+                  <UserAvatar user={member} size="chat-inline" />
                   <span>{member.name}</span>
                 </button>
               ))}
@@ -579,7 +579,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                 <div className="text-[11px] font-bold text-ink">{editingComment ? 'Редагування повідомлення' : `Відповідь для ${replyTo.authorName || 'учасника'}`}</div>
                 <div className="truncate text-[11px] text-muted">{editingComment?.text || replyTo?.text || 'Вкладення'}</div>
               </div>
-              <IconAction label="Скасувати" icon={X} size="micro" appearance="quiet" shape="micro" onClick={resetComposer} />
+              <IconAction label="Скасувати" icon={X} size="micro" composition="chat-composer-cancel" appearance="quiet" shape="micro" onClick={resetComposer} />
             </div>
           )}
 
