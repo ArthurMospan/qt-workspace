@@ -27,6 +27,7 @@ const CHOICES = [
   { id: 'atom', label: 'Новий атом', hint: 'Простий елемент, якого в кіті немає — додати як атом', tone: '#1d4ed8', bg: '#eff6ff' },
   { id: 'molecule', label: 'Молекула', hint: 'Складається з кількох елементів — додати як молекулу', tone: '#7c3aed', bg: '#f5f3ff' },
   { id: 'organism', label: 'Організм', hint: 'Великий блок зі своєю логікою — додати як організм', tone: '#0f766e', bg: '#f0fdfa' },
+  { id: 'chat', label: 'Елемент чату', hint: 'Належить до чат-структури — оформити як чат-only елемент кіту', tone: '#0369a1', bg: '#f0f9ff' },
   { id: 'exception', label: 'Виняток', hint: 'Не входить у кіт: службовий, нативний або одноразовий', tone: '#71717a', bg: '#f4f4f5' },
 ];
 
@@ -53,22 +54,38 @@ function RouteLink({ route }) {
   );
 }
 
+// Classes that take an element out of the document flow. Rendering them here
+// is not a preview, it is a trap: `absolute inset-0` on a file-card overlay
+// escaped its row, covered the page and swallowed every click on this screen.
+// The chrome that identifies the control — colour, radius, padding, type — is
+// kept; only what would let it leave its cell is dropped.
+const ESCAPES_ROW = /^(?:fixed|absolute|sticky|inset-|top-|bottom-|left-|right-|z-|translate-|-translate-|w-full|h-full|min-h-screen|w-screen|h-screen)/;
+
+function containedClassName(className) {
+  return String(className || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter(token => !ESCAPES_ROW.test(token.replace(/^[a-z-]+:/, '')))
+    .join(' ');
+}
+
 // The element as it actually renders, using the className it carries on the
 // site. Icon children cannot be reproduced (the audit only knows their names),
 // so a neutral square stands in for them at the right size.
 function LiveElement({ control }) {
   const label = control.text || control.ariaLabel || '';
+  const className = containedClassName(control.className);
   if (control.tag === 'input') {
-    return <input className={control.className} placeholder={label || 'input'} readOnly />;
+    return <input className={className} placeholder={label || 'input'} readOnly />;
   }
   if (control.tag === 'textarea') {
-    return <textarea className={control.className} placeholder={label || 'textarea'} readOnly rows={2} />;
+    return <textarea className={className} placeholder={label || 'textarea'} readOnly rows={2} />;
   }
   if (control.tag === 'select') {
-    return <select className={control.className}><option>{label || 'select'}</option></select>;
+    return <select className={className}><option>{label || 'select'}</option></select>;
   }
   return (
-    <button type="button" className={control.className} onClick={event => event.preventDefault()}>
+    <button type="button" className={className} onClick={event => event.preventDefault()}>
       {control.childElements.length > 0 && (
         <span className="inline-block h-[13px] w-[13px] rounded-[3px] bg-current opacity-40" aria-hidden />
       )}
@@ -81,6 +98,7 @@ export default function BypassSurvey() {
   const [answers, setAnswers] = useState({});
   const [route, setRoute] = useState('all');
   const [tag, setTag] = useState('all');
+  const [structure, setStructure] = useState('all');
   const [onlyUnanswered, setOnlyUnanswered] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -114,9 +132,11 @@ export default function BypassSurvey() {
     const inRoute = route === 'all'
       || (route === '(спільні)' ? control.routes.length === 0 : control.routes.includes(route));
     const inTag = tag === 'all' || control.tag === tag;
+    const inStructure = structure === 'all'
+      || (structure === 'chat' ? control.structure === 'chat' : !control.structure);
     const unanswered = !onlyUnanswered || !answers[control.location];
-    return inRoute && inTag && unanswered;
-  }), [controls, route, tag, onlyUnanswered, answers]);
+    return inRoute && inTag && inStructure && unanswered;
+  }), [controls, route, tag, structure, onlyUnanswered, answers]);
 
   // Grouped by file: neighbouring controls in one file are usually the same
   // pattern repeated, which makes them far quicker to classify together.
@@ -134,6 +154,15 @@ export default function BypassSurvey() {
 
   const setAnswer = (location, choiceId) =>
     setAnswers(current => ({ ...current, [location]: choiceId }));
+
+  const chatCount = controls.filter(control => control.structure === 'chat').length;
+  const answerStructure = choiceId => setAnswers(current => {
+    const next = { ...current };
+    for (const control of controls) {
+      if (control.structure === 'chat') next[control.location] = choiceId;
+    }
+    return next;
+  });
 
   const answerFile = (file, choiceId) => setAnswers(current => {
     const next = { ...current };
@@ -227,6 +256,25 @@ export default function BypassSurvey() {
           {Object.entries(audit.nativeByTag).filter(([, n]) => n > 0)
             .map(([item, count]) => <option key={item} value={item}>{item} ({count})</option>)}
         </select>
+        <select
+          value={structure}
+          onChange={event => setStructure(event.target.value)}
+          aria-label="Структура"
+          className="ui-control h-[32px] rounded-[8px] border border-line bg-white px-2 text-[12px] font-semibold text-ink"
+        >
+          <option value="all">Усі структури</option>
+          <option value="chat">Чат ({chatCount})</option>
+          <option value="other">Поза чатом ({controls.length - chatCount})</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => answerStructure('chat')}
+          title={`Позначити всі ${chatCount} чатових контролів як елементи чату`}
+          className="cursor-pointer rounded-[8px] px-3 py-1.5 text-[11px] font-bold"
+          style={{ color: '#0369a1', backgroundColor: '#f0f9ff' }}
+        >
+          Уся чат-структура → елемент чату
+        </button>
         <button
           type="button"
           onClick={() => setOnlyUnanswered(value => !value)}
@@ -280,6 +328,11 @@ export default function BypassSurvey() {
                           схоже на {control.resembles}
                         </span>
                       )}
+                      {control.structure === 'chat' && (
+                        <span className="rounded-[4px] bg-[#f0f9ff] px-1.5 py-0.5 text-[9px] font-bold text-[#0369a1]">
+                          чат
+                        </span>
+                      )}
                       {control.reviewed && (
                         <span className="rounded-[4px] bg-[#ecfdf5] px-1.5 py-0.5 text-[9px] font-semibold text-[#047857]">
                           reviewed: {control.reviewed}
@@ -293,7 +346,7 @@ export default function BypassSurvey() {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 rounded-[10px] bg-canvas p-3">
+                    <div className="relative isolate flex flex-wrap items-center gap-3 overflow-hidden rounded-[10px] bg-canvas p-3">
                       <LiveElement control={control} />
                       {!control.text && !control.ariaLabel && (
                         <span className="text-[10px] text-faint">без підпису</span>

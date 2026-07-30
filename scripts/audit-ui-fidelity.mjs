@@ -163,6 +163,15 @@ function sortLocations(entries) {
 
 // Which kit component this native control is probably a hand-rolled copy of.
 // A hint only — the classification is a judgement call, so the survey asks.
+// Files that make up the chat surface. Chat has its own scale in the kit
+// (chat-message avatars, chat-*-action icon sizes, chat-day separators), so its
+// native controls are one family to decide about, not scattered one-offs.
+const CHAT_FILE = /(?:\/chat\/|Chat[A-Z]|ChatAttachments|MessageContent|UnifiedTimeline|HoverCard)/;
+
+function structureOf(file) {
+  return CHAT_FILE.test(file) ? 'chat' : '';
+}
+
 function resemblesKitComponent(tag, className, text, childElements) {
   if (tag === 'input') return 'Input';
   if (tag === 'textarea') return 'Textarea';
@@ -262,7 +271,10 @@ function auditFile(file, inventoryNames) {
           className,
           text,
           childElements,
-          ariaLabel: attributes.get('aria-label') || attributes.get('title') || '',
+          ariaLabel: (attributes.get('aria-label') || attributes.get('title') || '')
+            .replace(/\$\{[^}]*\}/g, '…')
+            .replace(/\s+/g, ' ')
+            .trim(),
           styled: hasControlChrome(className),
           reviewed: attributes.get('data-ui-control') || '',
           resembles: resemblesKitComponent(name, className, text, childElements),
@@ -497,6 +509,7 @@ export function auditUiFidelity() {
     parseErrors: sortLocations(parseErrors),
     nativeControls: sortLocations(nativeControls).map(control => ({
       ...control,
+      structure: structureOf(control.location),
       routes: routeMap.fileRoutes[control.location.split(':')[0]] || [],
     })),
     nativeHotspots: [...nativeHotspots.entries()]

@@ -87,6 +87,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/ai-call"
       ]
@@ -101,6 +102,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/ai-call"
       ]
@@ -115,6 +117,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/ai-call"
       ]
@@ -129,6 +132,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "",
       "routes": [
         "/ai-call"
       ]
@@ -143,6 +147,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/ai-call"
       ]
@@ -159,6 +164,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -175,6 +181,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -185,10 +192,11 @@
       "className": "absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Створити подію о  ${…} :00",
+      "ariaLabel": "Створити подію о … :00",
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -203,6 +211,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -219,6 +228,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -233,6 +243,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar"
       ]
@@ -247,6 +258,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -263,6 +275,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -280,6 +293,7 @@
       "styled": false,
       "reviewed": "chat-list-action",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -297,6 +311,7 @@
       "styled": false,
       "reviewed": "chat-list-action",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -313,6 +328,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -330,6 +346,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -344,6 +361,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -358,6 +376,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -372,6 +391,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -388,6 +408,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -402,6 +423,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -416,6 +438,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -432,6 +455,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -448,6 +472,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -465,6 +490,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -479,6 +505,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -495,6 +522,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -509,6 +537,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -523,6 +552,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -537,6 +567,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -551,6 +582,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -565,6 +597,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -581,6 +614,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -595,6 +629,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -612,6 +647,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -626,6 +662,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -643,6 +680,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -657,6 +695,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -671,6 +710,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/chat"
       ]
@@ -687,6 +727,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/"
       ]
@@ -703,6 +744,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/"
       ]
@@ -720,6 +762,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -736,6 +779,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -750,6 +794,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -764,6 +809,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -780,6 +826,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -796,6 +843,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/team"
       ]
@@ -812,6 +860,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/team"
       ]
@@ -828,6 +877,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -845,6 +895,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -862,6 +913,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -879,6 +931,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -896,6 +949,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -915,6 +969,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -927,6 +982,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -941,6 +997,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -955,6 +1012,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -974,6 +1032,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -991,6 +1050,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -1007,6 +1067,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1024,6 +1085,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1043,6 +1105,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1060,6 +1123,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1078,6 +1142,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1096,6 +1161,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1114,6 +1180,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/",
         "/[projectId]",
@@ -1135,6 +1202,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1150,6 +1218,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1164,6 +1233,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1178,6 +1248,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1192,6 +1263,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1206,6 +1278,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/team"
       ]
@@ -1222,6 +1295,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1236,6 +1310,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/settings"
       ]
@@ -1250,6 +1325,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -1262,6 +1338,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -1276,6 +1353,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -1290,6 +1368,7 @@
       "styled": false,
       "reviewed": "column-collapse",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]",
         "/my"
@@ -1305,6 +1384,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
+      "structure": "",
       "routes": [
         "/[projectId]",
         "/my"
@@ -1322,6 +1402,7 @@
       "styled": false,
       "reviewed": "column-collapse",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]",
         "/my"
@@ -1339,6 +1420,7 @@
       "styled": true,
       "reviewed": "media-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1351,10 +1433,11 @@
       "className": "min-w-12 rounded-[7px] px-2 py-1.5 text-[11px] font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/35 disabled:hover:bg-transparent",
       "text": "%",
       "childElements": [],
-      "ariaLabel": "Поточний масштаб  ${…} %. Скинути до 100%",
+      "ariaLabel": "Поточний масштаб … %. Скинути до 100%",
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1373,6 +1456,7 @@
       "styled": true,
       "reviewed": "media-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1391,6 +1475,7 @@
       "styled": true,
       "reviewed": "media-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1409,6 +1494,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar",
         "/calendar/event/[eventId]"
@@ -1426,6 +1512,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar",
         "/calendar/event/[eventId]"
@@ -1441,6 +1528,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1455,6 +1543,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1472,6 +1561,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1486,6 +1576,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1500,6 +1591,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1516,6 +1608,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1532,6 +1625,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1546,6 +1640,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1563,6 +1658,7 @@
       "styled": false,
       "reviewed": "identity-meta-trigger",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1580,6 +1676,7 @@
       "styled": false,
       "reviewed": "calendar-attribute-trigger",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1597,6 +1694,7 @@
       "styled": false,
       "reviewed": "calendar-attribute-trigger",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/calendar/event/[eventId]"
       ]
@@ -1609,10 +1707,11 @@
       "childElements": [
         "X"
       ],
-      "ariaLabel": "Прибрати  ${…} ",
+      "ariaLabel": "Прибрати …",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1625,10 +1724,11 @@
       "className": "",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Переглянути  ${…} ",
+      "ariaLabel": "Переглянути …",
       "styled": false,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1643,10 +1743,11 @@
       "childElements": [
         "X"
       ],
-      "ariaLabel": "Прибрати  ${…} ",
+      "ariaLabel": "Прибрати …",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1659,10 +1760,11 @@
       "className": "",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Переглянути  ${…} ",
+      "ariaLabel": "Переглянути …",
       "styled": false,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/chat",
@@ -1679,6 +1781,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1697,6 +1800,7 @@
       "styled": false,
       "reviewed": "identity-meta-trigger",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1712,6 +1816,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1727,6 +1832,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1745,6 +1851,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1762,6 +1869,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1779,6 +1887,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1794,6 +1903,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1811,6 +1921,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1828,6 +1939,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1845,6 +1957,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1860,6 +1973,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1877,6 +1991,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1888,10 +2003,11 @@
       "className": "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Переглянути  ${…} ",
+      "ariaLabel": "Переглянути …",
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1905,10 +2021,11 @@
       "childElements": [
         "p"
       ],
-      "ariaLabel": "Переглянути  ${…} ",
+      "ariaLabel": "Переглянути …",
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1922,10 +2039,11 @@
       "childElements": [
         "Download"
       ],
-      "ariaLabel": "Завантажити  ${…} ",
+      "ariaLabel": "Завантажити …",
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1939,10 +2057,11 @@
       "childElements": [
         "Trash2"
       ],
-      "ariaLabel": "Видалити  ${…} ",
+      "ariaLabel": "Видалити …",
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1958,6 +2077,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -1973,6 +2093,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]"
       ]
@@ -1983,10 +2104,11 @@
       "className": "absolute inset-0 cursor-pointer",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Відкрити  ${…} ",
+      "ariaLabel": "Відкрити …",
       "styled": false,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": [
         "/[projectId]"
       ]
@@ -2003,6 +2125,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]"
       ]
@@ -2017,6 +2140,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/[projectId]",
         "/[projectId]/issue/[issueId]",
@@ -2035,6 +2159,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/[projectId]",
         "/[projectId]/issue/[issueId]",
@@ -2053,6 +2178,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/[projectId]"
       ]
@@ -2069,6 +2195,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/analytics",
         "/analytics/team/[memberId]"
@@ -2080,10 +2207,11 @@
       "className": "block shrink-0 transition-opacity hover:opacity-80",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Інформація про зовнішнього автора:  ${…} ",
+      "ariaLabel": "Інформація про зовнішнього автора: …",
       "styled": false,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -2095,10 +2223,11 @@
       "className": "${…} row-start-1 self-end transition-opacity hover:opacity-80",
       "text": "",
       "childElements": [],
-      "ariaLabel": "Профіль:  ${…} ",
+      "ariaLabel": "Профіль: …",
       "styled": false,
       "reviewed": "",
       "resembles": "",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -2117,6 +2246,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -2132,6 +2262,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "Input",
+      "structure": "chat",
       "routes": [
         "/[projectId]/issue/[issueId]",
         "/sprints"
@@ -2149,6 +2280,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/analytics",
         "/analytics/team/[memberId]"
@@ -2166,6 +2298,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": [
         "/analytics",
         "/analytics/team/[memberId]"
@@ -2181,6 +2314,7 @@
       "styled": true,
       "reviewed": "notification-response",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2193,6 +2327,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2205,6 +2340,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2219,6 +2355,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -2231,6 +2368,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2243,6 +2381,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2255,6 +2394,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
+      "structure": "",
       "routes": []
     },
     {
@@ -2269,6 +2409,7 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -2283,6 +2424,7 @@
       "styled": false,
       "reviewed": "branding-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -2297,6 +2439,7 @@
       "styled": false,
       "reviewed": "branding-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -2311,6 +2454,7 @@
       "styled": false,
       "reviewed": "branding-action",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     },
     {
@@ -2325,6 +2469,7 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
+      "structure": "",
       "routes": []
     }
   ],
