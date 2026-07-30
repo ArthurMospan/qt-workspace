@@ -174,6 +174,18 @@ test('external task creators resolve the fresh workflow in their create transact
   }
 });
 
+test('status API error details can never replace the HTTP status code', async () => {
+  const route = await read('../src/app/api/issues/[issueId]/status/route.js');
+
+  // A detail named `status` used to overwrite the numeric 409 with a status id.
+  // `NextResponse.json` then threw inside the catch block, so the browser only
+  // ever saw the generic client fallback instead of the real reason.
+  assert.match(route, /error\.api = \{ \.\.\.details, code, status, message \}/);
+  assert.match(route, /NextResponse\.json\(\{\s*\.\.\.details,\s*error,/);
+  assert.doesNotMatch(route, /\{ status: requestedStatus \}/);
+  assert.match(route, /\{ statusId: requestedStatus \}/);
+});
+
 test('issue creation validates the canonical organization-wide sprint model', async () => {
   const route = await read('../src/app/api/issues/route.js');
 

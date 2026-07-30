@@ -16,22 +16,26 @@ import {
 import {
   DEFAULT_STATUS_IDS,
   resolveDoneStatusIds,
+  statusLabel,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 
 const TRANSACTIONAL_READ_CHUNK = 400;
 
+// `details` is caller-supplied payload, so it is spread first: a detail named
+// `status` must never replace the HTTP status code, otherwise the error
+// response itself throws and the client only ever sees a generic failure.
 function apiTransactionError(code, status, message, details = {}) {
   const error = new Error(code);
-  error.api = { code, status, message, ...details };
+  error.api = { ...details, code, status, message };
   return error;
 }
 
 function jsonError(error, status, code, details = {}) {
   return NextResponse.json({
+    ...details,
     error,
     ...(code ? { code } : {}),
-    ...details,
   }, { status });
 }
 
@@ -209,8 +213,12 @@ export async function PATCH(request, context) {
         throw apiTransactionError(
           'STATUS_COLUMN_HIDDEN',
           409,
-          'Ця колонка прихована в проєкті. Виберіть видимий статус',
-          { status: requestedStatus },
+          `Колонка «${statusLabel(
+            requestedStatus,
+            Array.isArray(workflow.statuses) ? workflow.statuses : [],
+          )}» прихована `
+            + 'у налаштуваннях цього проєкту. Увімкніть її або виберіть інший статус',
+          { statusId: requestedStatus },
         );
       }
       const doneStatusIds = resolveDoneStatusIds(workflow.statuses)
