@@ -28,6 +28,8 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
 import BypassSurvey from './BypassSurvey';
+import LiveControl from './LiveControl';
+import fidelityAudit from './fidelity-audit.generated.json';
 import kitUsage from './kit-usage.generated.json';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
@@ -1466,6 +1468,42 @@ function ChatElementsSection() {
               <Button style="ghost" size="icon-sm" composition={token} icon={MessageSquare}>{token}</Button>
               <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">{token}</span>
               <span className="text-[10px] text-[#cfcfcf]">{px}px · {role}</span>
+            </div>
+          ))}
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Чат — власні контроли"
+        description={`${fidelityAudit.chatControls.length} інтерактивних елементів чату написані власною розміткою, а не компонентом кіту. Вони належать чату й не входять до списку «Обходять кіт»: їх треба оформити як чат-компоненти, а не зводити до загальних. Кожен відрендерений своїми ж класами.`}
+        fullWidth
+      >
+        <div className="flex w-full flex-col gap-[10px]">
+          {Object.entries(fidelityAudit.chatControls.reduce((groups, control) => {
+            const file = control.location.split(':')[0];
+            (groups[file] = groups[file] || []).push(control);
+            return groups;
+          }, {})).sort((a, b) => b[1].length - a[1].length).map(([file, items]) => (
+            <div key={file} className="rounded-[10px] border border-[#f0f0f0]">
+              <div className="flex items-center gap-2 border-b border-[#f0f0f0] px-[12px] py-[7px]">
+                <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">
+                  {file.replace('src/', '')}
+                </span>
+                <span className="rounded-full bg-[#f4f4f5] px-[7px] py-[1px] text-[9px] font-bold text-[#71717a]">
+                  {items.length}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-[10px] p-[12px]">
+                {items.map(control => (
+                  <span
+                    key={control.location}
+                    title={`${control.tag} · ${control.location}`}
+                    className="relative isolate inline-flex items-center overflow-hidden rounded-[8px] bg-[#fafafa] p-[6px]"
+                  >
+                    <LiveControl control={control} />
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>

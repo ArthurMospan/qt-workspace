@@ -424,6 +424,11 @@ function repeatedNativeFingerprints(nativeControls) {
 export function auditUiFidelity() {
   const kitUsage = scanKitUsage();
   const routeMap = collectWorkspaceRouteMap();
+  const withContext = control => ({
+    ...control,
+    structure: structureOf(control.location),
+    routes: routeMap.fileRoutes[control.location.split(':')[0]] || [],
+  });
   const inventoryNames = new Set(Object.keys(kitUsage.components));
   const workspaceFiles = collectWorkspaceUiFiles();
   const results = workspaceFiles.map(file => ({
@@ -486,6 +491,8 @@ export function auditUiFidelity() {
       parsedFiles: results.length - parseErrors.length,
       parseErrors: parseErrors.length,
       nativeControls: nativeControls.length,
+      chatControls: nativeControls.filter(control => structureOf(control.location) === 'chat').length,
+      bypassControls: nativeControls.filter(control => structureOf(control.location) !== 'chat').length,
       styledNativeControls: nativeControls.filter(control => control.styled).length,
       reviewedNativeControls: nativeControls.filter(control => control.reviewed).length,
       manualLabels: manualLabels.length,
@@ -507,11 +514,16 @@ export function auditUiFidelity() {
         .sort(),
     },
     parseErrors: sortLocations(parseErrors),
-    nativeControls: sortLocations(nativeControls).map(control => ({
-      ...control,
-      structure: structureOf(control.location),
-      routes: routeMap.fileRoutes[control.location.split(':')[0]] || [],
-    })),
+    // Chat is a separate structure with its own section in /ui-kit, so its
+    // controls are reported separately too. Mixing them into the bypass list
+    // framed the chat's own elements as strays to be folded into generic
+    // components, which is the opposite of the intent.
+    nativeControls: sortLocations(nativeControls)
+      .map(withContext)
+      .filter(control => control.structure !== 'chat'),
+    chatControls: sortLocations(nativeControls)
+      .map(withContext)
+      .filter(control => control.structure === 'chat'),
     nativeHotspots: [...nativeHotspots.entries()]
       .map(([file, count]) => ({ file, count }))
       .sort((a, b) => b.count - a.count || a.file.localeCompare(b.file)),
