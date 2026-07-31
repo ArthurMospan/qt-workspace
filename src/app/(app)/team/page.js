@@ -15,6 +15,7 @@ import {
   Button,
   Pill,
   SidebarLayout,
+  MemberRail,
 } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
@@ -61,74 +62,28 @@ export default function TeamPage() {
       context="team"
       mobilePane={mobilePane === 'detail' ? 'content' : 'sidebar'}
       sidebar={
-        <>
-        {/* Header */}
-        <div className="p-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <h2 className="ui-type-dialog-title text-ink">Команда</h2>
-            <Pill appearance="outline" size="md">{members.length}</Pill>
-          </div>
-            {isAdmin && (
-              <Button
-                onClick={() => setShowInviteModal(true)} 
-                style="ghost"
-                size="icon-xs"
-                icon={Plus}
-                className="hover:!bg-white"
-                title="Запросити"
-              />
-            )}
-        </div>
-
-        {/* List */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-4 flex flex-col gap-1">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="sm" />
-            </div>
-          ) : filteredMembers.length === 0 ? (
-            <EmptyState
-              icon={User}
-              title="Нікого не знайдено"
-              description="Спробуйте змінити пошуковий запит."
-              density="compact"
+        <MemberRail
+          members={filteredMembers.map(member => ({
+            ...member,
+            online: Boolean(member.lastActive && now - new Date(member.lastActive).getTime() < 120000),
+            positionName: positions.find(p => p.id === member.positionId)?.label
+              || member.title
+              || 'Посада не вказана',
+          }))}
+          activeId={selectedUid}
+          onSelect={member => { setSelectedUid(member.id || member.uid); setMobilePane('detail'); }}
+          loading={loading}
+          action={isAdmin ? (
+            <Button
+              onClick={() => setShowInviteModal(true)}
+              style="ghost"
+              size="icon-xs"
+              icon={Plus}
+              className="hover:!bg-white"
+              title="Запросити"
             />
-          ) : (
-            filteredMembers.map(member => {
-              const uid = member.id || member.uid;
-              const isSelected = selectedUid === uid;
-              const isOnline = member.lastActive && (now - new Date(member.lastActive).getTime() < 120000);
-              const positionName = positions.find(p => p.id === member.positionId)?.label || member.title || 'Посада не вказана';
-
-              return (
-                <button
-                  key={uid}
-                  onClick={() => { setSelectedUid(uid); setMobilePane('detail'); }}
-                  className={`w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${
-                    isSelected ? 'bg-[#ebebeb]' : 'hover:bg-[#ebebeb]/50'
-                  }`}
-                >
-                  <div className="relative shrink-0">
-                    <UserAvatar user={member} size="md" />
-                    {isOnline && (
-                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-canvas" />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${isSelected ? 'text-ink' : 'text-[#4a4a4a] group-hover:text-ink'}`}>
-                      {member.name || member.email}
-                      {member.statusEmoji && <span>{member.statusEmoji}</span>}
-                    </span>
-                    <span className="text-[11px] font-normal text-muted truncate">
-                      {positionName}
-                    </span>
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </div>
-        </>
+          ) : null}
+        />
       }
     >
       {/* RIGHT PANEL — mobile: shown only when a member is selected */}

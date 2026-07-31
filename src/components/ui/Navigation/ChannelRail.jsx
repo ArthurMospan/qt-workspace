@@ -1,0 +1,80 @@
+'use client';
+
+import React from 'react';
+import { Hash } from 'lucide-react';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import Counter from '@/components/ui/DataDisplay/Counter';
+
+// The chat rail: grouped channels and direct messages.
+//
+// This markup used to live inline in /chat, and /ui-kit showed a hand-copied
+// approximation of it beside the real thing. The copy drifted immediately —
+// wrong radius, wrong active colour, missing unread counters — which is the
+// exact failure the catalogue exists to prevent. There is no copy now: the page
+// and the preview render this component, so they cannot disagree.
+export default function ChannelRail({ groups = [], activeId, onSelect = () => {} }) {
+  return (
+    <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
+      {groups.map((group, index) => (
+        <div key={group.id} className={index < groups.length - 1 ? 'mb-[24px]' : undefined}>
+          <div className="flex items-center justify-between px-3 pb-[8px] group">
+            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">
+              {group.label}
+            </span>
+            {group.action}
+          </div>
+
+          <div className="flex flex-col gap-[2px]">
+            {group.items.map(item => {
+              const active = item.id === activeId;
+              const hasUnread = item.unreadCount > 0 && !active;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onSelect(item)}
+                  data-ui-control="chat-list-action"
+                  className={`ui-native-control ${
+                    active
+                      ? 'bg-[#ebebeb] text-ink font-semibold'
+                      : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
+                  }`}
+                >
+                  {item.kind === 'dm' ? (
+                    <div className="relative shrink-0">
+                      <div className="w-[18px] h-[18px] rounded-full overflow-hidden">
+                        <UserAvatar user={item.user || item} size="chat-mention" />
+                      </div>
+                      {item.online && (
+                        <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-canvas" />
+                      )}
+                    </div>
+                  ) : (
+                    <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />
+                  )}
+
+                  <span
+                    className={`text-[13px] flex-1 truncate flex items-center gap-1 ${
+                      hasUnread ? 'font-bold text-ink' : ''
+                    }`}
+                  >
+                    {item.name}
+                    {item.statusEmoji && (
+                      <span className="cursor-help" title={item.status || 'Статус користувача'}>
+                        {item.statusEmoji}
+                      </span>
+                    )}
+                  </span>
+
+                  {hasUnread && (
+                    <Counter value={item.unreadCount} size="sm" status="muted" className="shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </aside>
+  );
+}

@@ -14,7 +14,7 @@ import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, EmptyState, Counter, IconAction, Label, Pill, SidebarLayout, Textarea } from '@/components/ui';
+import { useConfirm, EmptyState, ChannelRail, Counter, IconAction, Label, Pill, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -1575,107 +1575,55 @@ export default function ChatPage() {
         context="chat"
         mobilePane={mobilePane === 'chat' ? 'content' : 'sidebar'}
         sidebar={
-          <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
-            
-            {/* Channels group */}
-            <div className="mb-[24px]">
-              <div className="flex items-center justify-between px-3 pb-[8px] group">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Канали</span>
-                {isAdminOrOwner && (
+          <ChannelRail
+            activeId={activeChannel.id}
+            onSelect={item => openChannel({ id: item.id, type: item.kind })}
+            groups={[
+              {
+                id: 'channels',
+                label: 'Канали',
+                action: isAdminOrOwner ? (
                   <Button
-                    onClick={() => {
-                      resetChannelDraft();
-                      setIsCreatingChannel(true);
-                    }}
+                    onClick={() => { resetChannelDraft(); setIsCreatingChannel(true); }}
                     style="ghost"
                     size="icon-xs"
                     icon={Plus}
                     className="hover:!bg-white"
                     title="Новий канал"
                   />
-                )}
-              </div>
-
-              <div className="flex flex-col gap-[2px]">
-                {channels
+                ) : null,
+                items: channels
                   .filter(c => {
                     if (c.status === 'archived') return false;
                     if (!c.name?.toLowerCase().includes(chatSearch.toLowerCase())) return false;
-                    if (c.members && c.members.length > 0) {
-                      return c.members.includes(myUid);
-                    }
+                    if (c.members && c.members.length > 0) return c.members.includes(myUid);
                     return true;
                   })
-                  .map(c => {
-                    const unreadCount = channelUnreadCount(c, readState[c.id], myUid);
-                    const hasUnread = unreadCount > 0;
-                    const active = isActive(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => openChannel({ id: c.id, type: 'channel' })}
-                        data-ui-control="chat-list-action"
-                        className={`ui-native-control ${
-                          active
-                            ? 'bg-[#ebebeb] text-ink font-semibold'
-                            : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
-                        }`}
-                      >
-                        <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />
-                        <span className={`text-[13px] flex-1 truncate ${hasUnread && !active ? 'font-bold text-ink' : ''}`}>
-                          {c.name}
-                        </span>
-                        {hasUnread && !active && (
-                          <Counter value={unreadCount} size="sm" status="muted" className="shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* DMs group */}
-            <div>
-              <div className="flex items-center justify-between px-3 pb-[8px]">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Особисті</span>
-              </div>
-              <div className="flex flex-col gap-[2px]">
-                {dms
+                  .map(c => ({
+                    id: c.id,
+                    kind: 'channel',
+                    name: c.name,
+                    unreadCount: channelUnreadCount(c, readState[c.id], myUid),
+                  })),
+              },
+              {
+                id: 'dms',
+                label: 'Особисті',
+                items: dms
                   .filter(u => u.name?.toLowerCase().includes(chatSearch.toLowerCase()))
-                  .map(u => {
-                    const active = isActive(u.id);
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => openChannel({ id: u.id, type: 'dm' })}
-                        data-ui-control="chat-list-action"
-                        className={`ui-native-control ${
-                          active
-                            ? 'bg-[#ebebeb] text-ink font-semibold'
-                            : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
-                        }`}
-                      >
-                        <div className="relative shrink-0">
-                          <div className="w-[18px] h-[18px] rounded-full overflow-hidden">
-                            <UserAvatar user={{ name: u.name, avatar: u.avatar }} size="chat-mention" />
-                          </div>
-                          {u.online && (
-                            <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-canvas" />
-                          )}
-                        </div>
-                        <span className="text-[13px] flex-1 truncate flex items-center gap-1">
-                          {u.name}
-                          {u.statusEmoji && <span className="cursor-help" title={u.status || 'Статус користувача'}>{u.statusEmoji}</span>}
-                        </span>
-                        {u.unreadCount > 0 && !active && (
-                          <Counter value={u.unreadCount} size="sm" status="muted" className="shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-          </aside>
+                  .map(u => ({
+                    id: u.id,
+                    kind: 'dm',
+                    name: u.name,
+                    user: { name: u.name, avatar: u.avatar },
+                    online: u.online,
+                    statusEmoji: u.statusEmoji,
+                    status: u.status,
+                    unreadCount: u.unreadCount,
+                  })),
+              },
+            ]}
+          />
         }
       >
 

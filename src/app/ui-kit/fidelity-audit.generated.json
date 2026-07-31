@@ -11,9 +11,9 @@
     "productFiles": 163,
     "parsedFiles": 163,
     "parseErrors": 0,
-    "nativeControls": 145,
+    "nativeControls": 142,
     "structures": {
-      "chat": 39,
+      "chat": 37,
       "calendar": 19,
       "analytics": 3,
       "qtplus": 4,
@@ -22,10 +22,10 @@
       "board": 5,
       "settings": 11,
       "shell": 24,
-      "other": 2
+      "other": 1
     },
-    "styledNativeControls": 113,
-    "reviewedNativeControls": 15,
+    "styledNativeControls": 112,
+    "reviewedNativeControls": 13,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -37,17 +37,17 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 124,
+    "button": 121,
     "input": 15,
     "textarea": 6,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 48,
-      "used": 48,
+      "components": 50,
+      "used": 50,
       "unused": 0,
-      "covered": 46,
+      "covered": 48,
       "uncovered": 0,
       "routes": 13,
       "previews": 78,
@@ -263,43 +263,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1614",
-      "className": "ui-native-control ${…}",
-      "text": "",
-      "childElements": [
-        "Hash",
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "chat-list-action",
-      "resembles": "IconAction",
-      "structure": "chat",
-      "routes": [
-        "/chat"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1648",
-      "className": "ui-native-control ${…}",
-      "text": "",
-      "childElements": [
-        "div",
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "chat-list-action",
-      "resembles": "IconAction",
-      "structure": "chat",
-      "routes": [
-        "/chat"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1690",
+      "location": "src/app/(app)/chat/page.js:1638",
       "className": "md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0",
       "text": "",
       "childElements": [
@@ -316,7 +280,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1741",
+      "location": "src/app/(app)/chat/page.js:1689",
       "className": "flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]",
       "text": "",
       "childElements": [
@@ -334,7 +298,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1777",
+      "location": "src/app/(app)/chat/page.js:1725",
       "className": "text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline",
       "text": "Очистити",
       "childElements": [],
@@ -349,7 +313,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1806",
+      "location": "src/app/(app)/chat/page.js:1754",
       "className": "rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink",
       "text": "Показати давніші повідомлення",
       "childElements": [],
@@ -379,7 +343,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1872",
+      "location": "src/app/(app)/chat/page.js:1820",
       "className": "flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95",
       "text": "нових",
       "childElements": [
@@ -814,24 +778,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/team/page.js:104",
-      "className": "w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${…}",
-      "text": "",
-      "childElements": [
-        "div"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "other",
-      "routes": [
-        "/team"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/team/page.js:140",
+      "location": "src/app/(app)/team/page.js:95",
       "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors",
       "text": "До списку команди",
       "childElements": [
@@ -2469,7 +2416,7 @@
   "nativeHotspots": [
     {
       "file": "src/app/(app)/chat/page.js",
-      "count": 29
+      "count": 27
     },
     {
       "file": "src/components/workspace/IssueDetail.jsx",
@@ -2536,10 +2483,6 @@
       "count": 2
     },
     {
-      "file": "src/app/(app)/team/page.js",
-      "count": 2
-    },
-    {
       "file": "src/components/CreateTaskModal.jsx",
       "count": 2
     },
@@ -2566,6 +2509,10 @@
     {
       "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 2
+    },
+    {
+      "file": "src/app/(app)/team/page.js",
+      "count": 1
     },
     {
       "file": "src/components/integrations/YouTrackImportCard.jsx",
@@ -2614,16 +2561,6 @@
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
-    {
-      "location": "src/app/(app)/chat/page.js:1614",
-      "tag": "button",
-      "context": "chat-list-action"
-    },
-    {
-      "location": "src/app/(app)/chat/page.js:1648",
-      "tag": "button",
-      "context": "chat-list-action"
-    },
     {
       "location": "src/components/workspace/AgileBoard.jsx:243",
       "tag": "button",

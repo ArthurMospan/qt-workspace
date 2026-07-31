@@ -167,17 +167,39 @@ test('QUI-140 removes the unreachable portal route and the variant it kept alive
   assert.doesNotMatch(variants, /PageHeader: \{ variant/);
 });
 
-test('QUI-141 and QUI-142 preview the layouts with the product own rows', async () => {
-  const [kit, chat] = await Promise.all([
-    read('../src/app/ui-kit/page.js'),
+// QUI-141 / QUI-142. The previews were hand-copies of the two rails, and the
+// copies were wrong in five ways at once — 8px radius drawn as 10px, the
+// `#ebebeb` selected row drawn as white-with-a-shadow, a 32px avatar drawn at
+// 24px, a muted name drawn as bold ink, no presence dot. A copy will always
+// drift; the fix is that there is no copy. One component, three call sites.
+test('the chat and team rails exist once, and the pages and catalogue all render it', async () => {
+  const [rail, memberRail, chat, team, kit] = await Promise.all([
+    read('../src/components/ui/Navigation/ChannelRail.jsx'),
+    read('../src/components/ui/Navigation/MemberRail.jsx'),
     read('../src/app/(app)/chat/page.js'),
+    read('../src/app/(app)/team/page.js'),
+    read('../src/app/ui-kit/page.js'),
   ]);
-  // The rail rows invented their own markup and looked nothing like the site.
-  assert.match(kit, /data-ui-control="chat-list-action"/);
-  assert.match(chat, /data-ui-control="chat-list-action"/);
-  assert.doesNotMatch(kit, /'# загальний', '# дизайн', '# релізи'/);
-  // The team rail shows each member's position, as /team does.
-  assert.match(kit, /truncate text-\[11px\] font-normal text-muted/);
+
+  // The markup lives in the components and nowhere else.
+  assert.match(rail, /data-ui-control="chat-list-action"/);
+  assert.match(rail, /bg-\[#ebebeb\] text-ink font-semibold/);
+  assert.match(memberRail, /rounded-\[8px\][\s\S]{0,80}isSelected \? 'bg-\[#ebebeb\]'/);
+  assert.match(memberRail, /<UserAvatar user=\{member\} size="md" \/>/);
+  assert.match(memberRail, /text-\[13px\] font-medium truncate/);
+  assert.match(memberRail, /w-2\.5 h-2\.5 bg-\[#10b981\] rounded-full ring-2 ring-canvas/);
+
+  for (const [name, source] of [['chat', chat], ['team', team], ['kit', kit]]) {
+    assert.doesNotMatch(
+      source,
+      /data-ui-control="chat-list-action"|isSelected \? 'bg-\[#ebebeb\]'/,
+      `${name} must render the shared rail, not its own copy of the markup`,
+    );
+  }
+  assert.match(chat, /<ChannelRail/);
+  assert.match(team, /<MemberRail/);
+  assert.match(kit, /<ChannelRail/);
+  assert.match(kit, /<MemberRail/);
 });
 
 test('both entry points to project settings offer the same capabilities', async () => {

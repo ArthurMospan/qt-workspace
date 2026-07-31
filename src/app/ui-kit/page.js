@@ -14,6 +14,7 @@ import {
   Alert, LoadingSpinner, EmptyState,
   Popover, Tooltip, TaskAttributesPanel, getTaskAttributeChrome, KpiCard,
   SidebarLayout, InnerNavigation, PageHeader, Card, Segmented, ImageUpload, UserAvatar,
+  ChannelRail, MemberRail,
   ConfirmProvider, useConfirm, ChatComposerCore, ProjectSettingsForm, StatusPill, StatusVisibilityPicker, TaskListView
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
@@ -2253,51 +2254,12 @@ function NavMenuSection() {
   ];
   const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
 
-  // The rail rows below are the product's own markup, not an approximation.
-  // The first version of these previews invented its own list ("# загальний",
-  // a plain member list) and the result did not look like the site at all —
-  // which is exactly the failure a catalogue is supposed to prevent. These use
-  // the same `ui-native-control[data-ui-control='chat-list-action']` rule and
-  // the same active/unread states that /chat and /team render.
-  const chatRow = ({ id, name, kind, active = false, unread = 0, online = false }) => (
-    <button
-      key={id}
-      type="button"
-      data-ui-control="chat-list-action"
-      className={`ui-native-control ${
-        active ? 'bg-[#ebebeb] text-ink font-semibold' : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
-      }`}
-    >
-      {kind === 'channel' ? (
-        <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />
-      ) : (
-        <div className="relative shrink-0">
-          <div className="h-[18px] w-[18px] overflow-hidden rounded-full">
-            <UserAvatar user={{ id, name }} size="chat-mention" />
-          </div>
-          {online && <span className="absolute -bottom-[1px] -right-[1px] h-2 w-2 rounded-full border border-canvas bg-[#10b981]" />}
-        </div>
-      )}
-      <span className={`flex-1 truncate text-[13px] ${unread && !active ? 'font-bold text-ink' : ''}`}>{name}</span>
-      {unread > 0 && !active && <Counter value={unread} size="sm" status="muted" className="shrink-0" />}
-    </button>
-  );
-
-  const teamRow = ({ id, name, position, active = false }) => (
-    <button
-      key={id}
-      type="button"
-      className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left transition-colors ${
-        active ? 'bg-white shadow-sm' : 'hover:bg-white/60'
-      }`}
-    >
-      <UserAvatar user={{ id, name }} size="sm" />
-      <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[13px] font-semibold text-ink">{name}</span>
-        <span className="truncate text-[11px] font-normal text-muted">{position}</span>
-      </div>
-    </button>
-  );
+  // No local row helpers here on purpose. This preview used to hand-copy the
+  // two rails, and the copy was wrong in five ways at once: 8px radius drawn as
+  // 10px, the #ebebeb selected row drawn as white-with-a-shadow, a 32px avatar
+  // drawn at 24px, a muted name drawn as bold ink, and no presence dot at all.
+  // ChannelRail and MemberRail are the components /chat and /team render, so
+  // the catalogue shows the thing itself instead of a drawing of it.
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -2341,23 +2303,16 @@ function NavMenuSection() {
             mobilePane={teamPane}
             className="!pt-[12px]"
             sidebar={(
-              <>
-                <div className="flex shrink-0 items-center justify-between p-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className="ui-type-dialog-title text-ink">Команда</h2>
-                    <Pill appearance="outline" size="md">4</Pill>
-                  </div>
-                  <Button style="ghost" size="icon-sm" icon={Plus} aria-label="Запросити" />
-                </div>
-                <div className="flex flex-1 flex-col gap-[2px] overflow-y-auto custom-scrollbar px-2 pb-2">
-                  {[
-                    { id: 'arthur', name: 'Артур Моспан', position: 'Власник організації', active: true },
-                    { id: 'olena', name: 'Олена Коваль', position: 'Frontend Developer' },
-                    { id: 'petro', name: 'Петро Іванчук', position: 'Designer' },
-                    { id: 'anna', name: 'Анна Мельник', position: 'QA Engineer' },
-                  ].map(teamRow)}
-                </div>
-              </>
+              <MemberRail
+                members={[
+                  { id: 'arthur', name: 'Артур Моспан', positionName: 'Власник організації', online: true },
+                  { id: 'olena', name: 'Олена Коваль', positionName: 'Frontend Developer', online: true },
+                  { id: 'petro', name: 'Петро Іванчук', positionName: 'Designer' },
+                  { id: 'anna', name: 'Анна Мельник', positionName: 'QA Engineer' },
+                ]}
+                activeId="arthur"
+                action={<Button style="ghost" size="icon-xs" icon={Plus} className="hover:!bg-white" title="Запросити" />}
+              />
             )}
           >
             <Surface preset="panel" padding="sm" className="flex flex-1 flex-col overflow-hidden">
@@ -2386,32 +2341,29 @@ function NavMenuSection() {
             context="chat"
             className="!pt-[12px]"
             sidebar={(
-              <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
-                <div className="mb-[24px]">
-                  <div className="flex items-center justify-between px-3 pb-[8px]">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Канали</span>
-                    <Button style="ghost" size="icon-xs" icon={Plus} className="hover:!bg-white" aria-label="Новий канал" />
-                  </div>
-                  <div className="flex flex-col gap-[2px]">
-                    {[
-                      { id: 'general', name: 'general', kind: 'channel', active: true },
-                      { id: 'design', name: 'design', kind: 'channel', unread: 3 },
-                      { id: 'releases', name: 'releases', kind: 'channel' },
-                    ].map(chatRow)}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between px-3 pb-[8px]">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Особисті</span>
-                  </div>
-                  <div className="flex flex-col gap-[2px]">
-                    {[
-                      { id: 'olena', name: 'Олена Коваль', kind: 'dm', online: true, unread: 1 },
-                      { id: 'petro', name: 'Петро Іванчук', kind: 'dm' },
-                    ].map(chatRow)}
-                  </div>
-                </div>
-              </aside>
+              <ChannelRail
+                activeId="general"
+                groups={[
+                  {
+                    id: 'channels',
+                    label: 'Канали',
+                    action: <Button style="ghost" size="icon-xs" icon={Plus} className="hover:!bg-white" title="Новий канал" />,
+                    items: [
+                      { id: 'general', kind: 'channel', name: 'general' },
+                      { id: 'design', kind: 'channel', name: 'design', unreadCount: 3 },
+                      { id: 'releases', kind: 'channel', name: 'releases' },
+                    ],
+                  },
+                  {
+                    id: 'dms',
+                    label: 'Особисті',
+                    items: [
+                      { id: 'olena', kind: 'dm', name: 'Олена Коваль', user: { name: 'Олена Коваль' }, online: true, unreadCount: 1 },
+                      { id: 'petro', kind: 'dm', name: 'Петро Іванчук', user: { name: 'Петро Іванчук' } },
+                    ],
+                  },
+                ]}
+              />
             )}
           >
             <div className="flex flex-1 gap-3 min-w-0 overflow-hidden">
