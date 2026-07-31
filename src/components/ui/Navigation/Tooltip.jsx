@@ -58,26 +58,32 @@ export function Tooltip({ content, children, position = 'top', className = '' })
     let transform = '';
     let arrowClasses = '';
 
+    // QUI-136. The arrow used to be a CSS border triangle butted against the
+    // bubble's edge. Geometrically all four sides matched, but `top` looked
+    // shaved off: it is the one position where the arrow lands inside the
+    // bubble's own downward-offset shadow, so the seam between the two dark
+    // shapes showed. A rotated square that straddles the edge has no seam to
+    // show — it is one continuous silhouette with the bubble on every side.
     if (position === 'top') {
       top = coords.top + coords.windowScrollY - gap;
       left = coords.left + coords.windowScrollX + coords.width / 2;
       transform = 'translate(-50%, -100%)';
-      arrowClasses = 'bottom-[-4px] left-1/2 -translate-x-1/2 border-t-[4px] border-t-[#1f1f1f] border-x-[4px] border-x-transparent';
+      arrowClasses = 'bottom-[-3px] left-1/2 -translate-x-1/2';
     } else if (position === 'bottom') {
       top = coords.top + coords.windowScrollY + coords.height + gap;
       left = coords.left + coords.windowScrollX + coords.width / 2;
       transform = 'translate(-50%, 0)';
-      arrowClasses = 'top-[-4px] left-1/2 -translate-x-1/2 border-b-[4px] border-b-[#1f1f1f] border-x-[4px] border-x-transparent';
+      arrowClasses = 'top-[-3px] left-1/2 -translate-x-1/2';
     } else if (position === 'left') {
       top = coords.top + coords.windowScrollY + coords.height / 2;
       left = coords.left + coords.windowScrollX - gap;
       transform = 'translate(-100%, -50%)';
-      arrowClasses = 'right-[-4px] top-1/2 -translate-y-1/2 border-l-[4px] border-l-[#1f1f1f] border-y-[4px] border-y-transparent';
+      arrowClasses = 'right-[-3px] top-1/2 -translate-y-1/2';
     } else if (position === 'right') {
       top = coords.top + coords.windowScrollY + coords.height / 2;
       left = coords.left + coords.windowScrollX + coords.width + gap;
       transform = 'translate(0, -50%)';
-      arrowClasses = 'left-[-4px] top-1/2 -translate-y-1/2 border-r-[4px] border-r-[#1f1f1f] border-y-[4px] border-y-transparent';
+      arrowClasses = 'left-[-3px] top-1/2 -translate-y-1/2';
     }
 
     tooltipNode = createPortal(
@@ -85,7 +91,7 @@ export function Tooltip({ content, children, position = 'top', className = '' })
         style={{ top, left, transform }}
         className="absolute z-[9999] bg-ink text-white px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold leading-normal w-max max-w-[240px] whitespace-normal break-words pointer-events-none shadow-[0_4px_12px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-100 ease-out"
       >
-        <div className={`absolute w-0 h-0 ${arrowClasses}`} />
+        <div className={`absolute h-[6px] w-[6px] rotate-45 bg-ink ${arrowClasses}`} />
         {content}
       </div>,
       document.body

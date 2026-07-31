@@ -47,7 +47,11 @@ function ToolbarButton({ icon: Icon, label, onClick, disabled = false, active = 
       label={label}
       icon={Icon}
       size="md"
-      appearance={active ? 'editor-active' : 'editor'}
+      // `editor`/`editor-active` were merged away as byte-identical duplicates
+      // and this call site was never updated, so every toolbar button — pressed
+      // or not — silently fell back to the default appearance and the active
+      // state was invisible. `soft`/`quiet` are the kit's existing toggle pair.
+      appearance={active ? 'soft' : 'quiet'}
       aria-pressed={active || undefined}
       disabled={disabled}
       onMouseDown={event => event.preventDefault()}

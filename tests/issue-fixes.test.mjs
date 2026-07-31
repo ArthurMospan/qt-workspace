@@ -5,10 +5,12 @@ import { readFile } from 'node:fs/promises';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('QUI-77 keeps task detail additions compact and floating menus stationary', async () => {
-  const [issueDetail, popover, dropdown, select] = await Promise.all([
+  // `Dropdown` was checked here too; it was one of 31 kit components nothing
+  // rendered and has been deleted. `ContextMenu` is what the product actually
+  // opens, and it is covered by the floating-overlay tests.
+  const [issueDetail, popover, select] = await Promise.all([
     read('../src/components/workspace/IssueDetail.jsx'),
     read('../src/components/ui/Navigation/Popover.jsx'),
-    read('../src/components/ui/Navigation/Dropdown.jsx'),
     read('../src/components/ui/Select.jsx'),
   ]);
   const mainSections = issueDetail.slice(
@@ -17,11 +19,12 @@ test('QUI-77 keeps task detail additions compact and floating menus stationary',
   );
 
   assert.match(issueDetail, /<Popover[\s\S]{0,180}align="start"[\s\S]{0,180}hideArrow/);
-  assert.match(issueDetail, /padding=\{isExternalReporter \? '16px' : '6px'\}/);
+  // The two densities are unchanged; they are named now instead of being two
+  // raw CSS lengths written at the call site (see tests/kit-drift.test.mjs).
+  assert.match(issueDetail, /padding=\{isExternalReporter \? 'default' : 'tight'\}/);
   assert.match(issueDetail, /triggerClassName="inline-flex"/);
   assert.match(issueDetail, /Написати в чат[\s\S]{0,80}<\/Button>/);
   assert.doesNotMatch(popover, /animate-in|zoom-in|slide-in/);
-  assert.doesNotMatch(dropdown, /animate-in|zoom-in|slide-in/);
   assert.doesNotMatch(mainSections, /border-t border-line/);
   assert.doesNotMatch(mainSections, /<FormGroup label="(?:Зв’язок|Завдання)"/);
   assert.match(mainSections, /ariaLabel="Тип зв’язку"/);

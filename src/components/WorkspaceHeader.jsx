@@ -588,55 +588,12 @@ export default function WorkspaceHeader() {
   const router   = useRouter();
   const pathname = usePathname();
   const { mode, project, placeholder, label } = useHeaderMode(pathname, projects, breadcrumbs);
-  const [projectPresenceMap, setProjectPresenceMap] = useState({});
-  const [presenceNow, setPresenceNow] = useState(() => Date.now());
 
   const [projectSearch,   setProjectSearch]   = useState(false); // inline search toggle for project mode
   const [globalQuery,     setGlobalQuery]     = useState('');
   const [showSearch,      setShowSearch]      = useState(false);
 
   const { results: searchResults, loading: searchLoading, search } = useSearch();
-
-  useEffect(() => {
-    if (mode !== 'project' || !activeOrgId) return undefined;
-    const presenceQuery = query(collection(db, 'organizations', activeOrgId, 'presence'));
-    return onSnapshot(presenceQuery, snapshot => {
-      const nextPresence = {};
-      snapshot.forEach(document => {
-        nextPresence[document.id] = document.data().lastSeen?.toMillis?.() ?? 0;
-      });
-      setProjectPresenceMap(nextPresence);
-    }, error => {
-      reportLoadError('[WorkspaceHeader] project presence', error);
-    });
-  }, [activeOrgId, mode]);
-
-  useEffect(() => {
-    if (mode !== 'project') return undefined;
-    const timer = setInterval(() => setPresenceNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
-  }, [mode]);
-
-  const projectMembers = useMemo(() => {
-    if (mode !== 'project' || !project) return [];
-    const teamIds = new Set(Array.isArray(project.team) ? project.team : []);
-    return organizationMembers
-      .filter(member => teamIds.has(member.id || member.uid))
-      .map(member => {
-        const userId = member.id || member.uid;
-        const lastActive = Object.prototype.hasOwnProperty.call(projectPresenceMap, userId)
-          ? projectPresenceMap[userId]
-          : member.lastActive;
-        return {
-          ...member,
-          online: Boolean(lastActive && presenceNow - new Date(lastActive).getTime() < 15 * 60 * 1000),
-        };
-      })
-      .sort((a, b) => {
-        if (a.online !== b.online) return a.online ? -1 : 1;
-        return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'uk');
-      });
-  }, [mode, organizationMembers, presenceNow, project, projectPresenceMap]);
 
   // A search belongs to the page where it was entered. Clear every contextual
   // query on navigation so text from Chat/Team/Analytics never leaks into the
@@ -747,7 +704,6 @@ export default function WorkspaceHeader() {
         onProjectSearchToggle={() => setProjectSearch(true)}
         breadcrumbs={breadcrumbs}
         onlineUsers={chatOnlineUsers}
-        projectMembers={projectMembers}
         onOnlineUserClick={user => router.push(`/chat?dm=${encodeURIComponent(user.id || user.uid)}`)}
         rightContent={<WorkspaceHeaderRight currentUser={currentUser} signOut={signOut} mode={mode} />}
       />

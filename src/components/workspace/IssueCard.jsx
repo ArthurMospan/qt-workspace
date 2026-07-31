@@ -313,7 +313,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                       title={`${member.name || member.email?.split('@')[0]} · ${roleLabels.join(', ')}`}
                       className="relative group/avatar"
                     >
-                      <UserAvatar user={member} size="sm" className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all cursor-pointer" />
+                      <UserAvatar user={member} size="sm" stacked className="hover:scale-110 hover:z-20 transition-all cursor-pointer" />
                     </div>
                   );
                 })

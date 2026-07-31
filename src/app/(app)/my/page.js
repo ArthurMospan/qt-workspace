@@ -105,7 +105,6 @@ export default function MyTasksPage() {
     <div className={`flex-1 h-full bg-transparent ${viewMode === 'kanban' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden hide-scrollbar'}`}>
       <div className={`workspace-page-layout ${viewMode === 'kanban' ? 'h-full pb-0' : 'min-h-full pb-[120px]'}`}>
         <PageHeader
-          variant="main"
           title="Мої завдання"
           actions={
             <div className="flex gap-2">

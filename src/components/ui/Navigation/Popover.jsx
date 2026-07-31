@@ -27,6 +27,14 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
  *   <div>Popover content goes here</div>
  * </Popover>
  */
+// Two call sites each passed a raw CSS length here ('6px', '16px'), which is
+// the free-value prop the kit does not allow: the decision then lives at the
+// call site and nothing can propagate to it. `tight` is the hovercard density.
+export const PADDINGS = {
+  default: spacing.lg,
+  tight: spacing.componentGap.tight,
+};
+
 export function Popover({
   trigger,
   children,
@@ -37,7 +45,7 @@ export function Popover({
   hideCloseIcon = false,
   hideArrow = false,
   minWidth = '240px',
-  padding = spacing.lg,
+  padding = 'default',
   triggerClassName = '',
   onOpenChange,
 }) {
@@ -111,7 +119,7 @@ export function Popover({
             maxWidth: 'calc(100vw - 16px)',
             maxHeight: 'calc(100dvh - 16px)',
             overflowY: 'auto',
-            padding,
+            padding: PADDINGS[padding] ?? PADDINGS.default,
           }}
         >
           {/* Arrow pointing to trigger */}

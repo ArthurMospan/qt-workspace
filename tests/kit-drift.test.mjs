@@ -1,0 +1,190 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { checkKitDrift } from '../scripts/check-kit-drift.mjs';
+import { extractVariants, variantNamespaces } from '../scripts/kit-variants.mjs';
+
+const committed = JSON.parse(
+  readFileSync(new URL('../src/app/ui-kit/kit-drift.generated.json', import.meta.url), 'utf8'),
+);
+
+test('the committed drift report matches the code', () => {
+  assert.deepEqual(
+    checkKitDrift(),
+    committed,
+    'kit-drift.generated.json is stale — run `npm run kit:drift` and commit the result',
+  );
+});
+
+// The whole point of the report. `kit:audit` asks whether the product takes a
+// component from the kit; these three ask whether it then renders it the way
+// the kit declares. A component can be imported everywhere, score green
+// coverage, and still put something on screen the kit never sanctioned.
+test('the product never renders a kit component outside what the kit declares', () => {
+  assert.deepEqual(
+    committed.undeclaredValues,
+    [],
+    'A variant value the implementation does not declare reached the product. '
+    + 'Either declare it (a lookup-map entry or a globals.css rule) or use a declared one.',
+  );
+  assert.deepEqual(
+    committed.unknownProps,
+    [],
+    'A variant-shaped prop the manifest does not know reached the product. '
+    + 'Declare it in scripts/kit-variants.mjs SOURCES, or stop passing it.',
+  );
+  assert.deepEqual(
+    committed.chromeOverrides,
+    [],
+    'A kit component was handed a className that redefines its own geometry or '
+    + 'typography. Positioning (flex-1, h-full, margins) is fine; owning height, '
+    + 'radius, padding or type is not — add a named variant instead.',
+  );
+});
+
+// A variant the site ships but the catalogue never shows is the exact failure
+// the kit exists to prevent: /ui-kit stops describing the product one value at
+// a time, silently. This started at 53 and is now a fourth zero — «Матриця
+// варіантів» renders every declared value of every component it can render
+// standalone, and the handful that cannot (Dialog needs an open state,
+// PageHeader a whole page) have real previews in their own sections.
+test('every variant the product ships is visible somewhere in the catalogue', () => {
+  assert.deepEqual(
+    committed.usedWithoutPreview,
+    [],
+    'A variant ships on the site with no preview in /ui-kit. Either add the '
+    + 'component to VARIANT_BASE in src/app/ui-kit/page.js so the matrix renders '
+    + 'it, or show the value in its own section.',
+  );
+  assert.equal(committed.totals.usedWithoutPreview, 0);
+});
+
+// The matrix is what makes the zero above hold without anybody maintaining it.
+// If a component drops out of VARIANT_BASE, its values silently stop being
+// previewed — the count would still read zero until someone added a variant.
+test('the variant matrix renders every component that can stand alone', () => {
+  const page = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
+  const base = page.slice(page.indexOf('const VARIANT_BASE = {'), page.indexOf('const VARIANT_ELSEWHERE'));
+  const elsewhere = page.slice(page.indexOf('const VARIANT_ELSEWHERE'), page.indexOf('const NEEDS_DARK'));
+
+  const rendered = new Set([...base.matchAll(/^ {2}(\w+):\s*\(props\)/gm)].map(match => match[1]));
+  const excused = new Set([...elsewhere.matchAll(/^ {2}(\w+):\s*'/gm)].map(match => match[1]));
+
+  for (const component of Object.keys(committed.manifest)) {
+    assert.ok(
+      rendered.has(component) || excused.has(component),
+      `${component} declares variants but the matrix neither renders it nor says why not`,
+    );
+  }
+  // An excuse is only an excuse while the component really cannot stand alone.
+  for (const component of excused) {
+    assert.ok(!rendered.has(component), `${component} is both rendered and excused`);
+  }
+});
+
+// A shared CSS namespace has no per-component owner: `.ui-control[data-ui-composition]`
+// is one selector serving Button, IconAction and Input at once. Before this was
+// modelled, the report called `Button.composition="duration-hours"` a dead
+// Button variant when it is an Input composition Button also happens to accept.
+test('a shared CSS namespace is never reported as one component\'s dead variant', () => {
+  const namespaces = variantNamespaces();
+  assert.equal(namespaces['Button.composition'], namespaces['Input.composition']);
+  assert.equal(namespaces['Button.composition'], namespaces['IconAction.composition']);
+  assert.notEqual(namespaces['Surface.composition'], namespaces['Button.composition']);
+
+  const dead = new Set(committed.declaredUnused.map(entry => `${entry.component}.${entry.prop}.${entry.value}`));
+  for (const [key, count] of Object.entries(committed.usage)) {
+    if (count > 0) assert.ok(!dead.has(key), `${key} is used ${count}× but reported as unused`);
+  }
+  for (const entry of committed.declaredUnused) {
+    if (!entry.namespace) continue;
+    const sharing = Object.entries(variantNamespaces())
+      .filter(([, namespace]) => namespace === entry.namespace)
+      .map(([pair]) => pair.split('.')[0]);
+    for (const component of sharing) {
+      const used = committed.usage[`${component}.${entry.prop}.${entry.value}`] || 0;
+      assert.equal(
+        used,
+        0,
+        `${entry.component}.${entry.prop}="${entry.value}" is called dead while ${component} uses it`,
+      );
+    }
+  }
+});
+
+// The manifest is derived, never written down. A hand-kept list was tried first
+// and was wrong within minutes; this asserts the derivation still reaches both
+// of its sources — a component lookup map and a globals.css rule.
+test('the variant manifest is still derived from the implementation', () => {
+  const manifest = extractVariants();
+  assert.ok(manifest.Button.size.includes('lg'), 'Button sizes should come from its SIZES map');
+  assert.ok(manifest.Pill.tone.includes('ink-subtle'), 'Pill tones should come from globals.css');
+  assert.ok(manifest.Popover.padding.includes('tight'), 'Popover paddings should come from its PADDINGS map');
+  for (const context of ['settings', 'team', 'chat']) {
+    assert.ok(
+      manifest.SidebarLayout.context.includes(context),
+      `the ${context} layout should be declared by SidebarLayout.CONTEXTS`,
+    );
+  }
+  assert.deepEqual(manifest, committed.manifest, 'the committed manifest is stale — run `npm run kit:drift`');
+});
+
+// QUI: the free-value prop is the thing that makes propagation impossible —
+// every call site keeps its own copy of a decision the kit is supposed to own.
+test('Popover padding is a named scale, not a raw CSS length', () => {
+  const popover = readFileSync(new URL('../src/components/ui/Navigation/Popover.jsx', import.meta.url), 'utf8');
+  const issueDetail = readFileSync(new URL('../src/components/workspace/IssueDetail.jsx', import.meta.url), 'utf8');
+  const calendarEvent = readFileSync(new URL('../src/components/workspace/calendar/CalendarEventPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(popover, /export const PADDINGS = \{/);
+  assert.match(popover, /padding: PADDINGS\[padding\]/);
+  for (const source of [issueDetail, calendarEvent]) {
+    assert.doesNotMatch(source, /padding=(?:"|\{')\d+px/, 'a raw CSS length is back on Popover');
+  }
+});
+
+// Settings, Team and Chat are three different layouts — that was never the
+// problem. The problem was that only Settings said so: Chat and Team each
+// hand-wrote the same canvas-rail-beside-white-pane shell, so the same 12px
+// gutter was spelled `gap-3` in one and `gap: '12px'` in the other, and the two
+// screens under the fixed 56px header each remembered the offset separately.
+test('every screen with the two-pane shell declares it instead of retyping it', () => {
+  const read = name => readFileSync(new URL(name, import.meta.url), 'utf8');
+  const shell = read('../src/components/ui/Layout/SidebarLayout.jsx');
+  const screens = {
+    settings: read('../src/app/(app)/settings/page.js'),
+    team: read('../src/app/(app)/team/page.js'),
+    chat: read('../src/app/(app)/chat/page.js'),
+  };
+
+  for (const [context, source] of Object.entries(screens)) {
+    assert.match(source, /<SidebarLayout/, `${context} should render the shared shell`);
+    assert.match(
+      source,
+      new RegExp(`<SidebarLayout[\\s\\S]{0,200}context="${context}"`),
+      `${context} should name its layout context`,
+    );
+    assert.match(shell, new RegExp(`^ {2}${context}: \\{`, 'm'), `SidebarLayout should declare the ${context} context`);
+  }
+
+  // The shell owns the gutter and the header offset now, so no screen may keep
+  // a second copy of either.
+  assert.doesNotMatch(screens.chat, /flex-1 flex overflow-hidden gap-3 p-\[12px\] pt-\[56px\]/);
+  assert.doesNotMatch(screens.team, /flex w-full h-full p-\[12px\] pt-\[56px\] gap-\[12px\] bg-white/);
+  assert.match(shell, /pt-\[56px\]/, 'the header offset belongs to the shell');
+});
+
+// QUI: `editor`/`editor-active` were merged away as byte-identical duplicates
+// and MarkdownEditor was never updated, so every toolbar button fell back to
+// the default appearance and the pressed state rendered as not-pressed. The
+// drift check is what finally surfaced it; this keeps it surfaced.
+test('every IconAction appearance a call site asks for actually exists', () => {
+  const iconAction = readFileSync(new URL('../src/components/ui/IconAction.jsx', import.meta.url), 'utf8');
+  const markdown = readFileSync(new URL('../src/components/MarkdownEditor.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(markdown, /appearance=\{active \? 'editor-active' : 'editor'\}/);
+  assert.match(markdown, /appearance=\{active \? 'soft' : 'quiet'\}/);
+  for (const appearance of ['soft', 'quiet']) {
+    assert.match(iconAction, new RegExp(`^\\s+${appearance}: '`, 'm'), `IconAction lost the ${appearance} appearance`);
+  }
+});

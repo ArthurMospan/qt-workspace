@@ -589,7 +589,6 @@ export default function WorkspaceAnalyticsPage() {
       <div className="workspace-page-layout min-h-full pb-[120px]">
 
         <PageHeader
-          variant="main"
           title="Аналітика"
           tabs={TABS}
           activeTab={activeTab}

@@ -31,7 +31,6 @@ import Card from '@/components/ui/Layout/Card';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
-import TaskCard from '@/components/ui/TaskManagement/TaskCard';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
@@ -114,7 +113,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             {(project.team || []).slice(0, 4).map(uid => {
               const m = members.find(mbr => (mbr.id || mbr.uid) === uid);
               return m ? (
-                <UserAvatar key={uid} user={m} size="md" stacked className="shadow-none" />
+                <UserAvatar key={uid} user={m} size="md" stacked />
               ) : (
                 <div key={uid} data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                   <User size={13} className="text-muted" />
@@ -786,7 +785,6 @@ export default function WorkspacePage() {
       <div className="workspace-page-layout min-h-full">
         
         <PageHeader
-          variant="main"
           title="Проєкти"
           actions={
             can(orgRole, 'create:project') && (

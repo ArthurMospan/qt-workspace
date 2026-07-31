@@ -230,14 +230,23 @@ export default function AnalyticsTab({
             {stats.byStatus.length === 0 ? (
               <p className="text-[12px] text-faint py-4">Задач немає</p>
             ) : (
-              <div className="flex flex-col gap-[10px]">
+              // QUI-129. The same chart as /analytics → «По статусах», which
+              // squeezed its label into a 100px column here and truncated every
+              // status name. Label above the bar, dot for the status colour,
+              // count on the same baseline — one chart, one look.
+              <div className="flex flex-col gap-[14px]">
                 {stats.byStatus.map(({ col, count, label, color }) => (
-                  <div key={col} className="flex items-center gap-3">
-                    <span className="w-[100px] text-[11px] font-medium text-muted shrink-0 truncate">{label}</span>
-                    <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(count / maxStatus) * 100}%`, background: color }} />
+                  <div key={col} className="flex flex-col gap-[6px]">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                        <span className="truncate text-[13px] font-semibold text-ink">{label}</span>
+                      </span>
+                      <span className="shrink-0 text-[14px] font-bold text-ink tabular-nums">{count}</span>
                     </div>
-                    <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
+                    <div className="h-[6px] overflow-hidden rounded-full bg-[#f0f0f0]">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${(count / maxStatus) * 100}%`, background: color }} />
+                    </div>
                   </div>
                 ))}
               </div>

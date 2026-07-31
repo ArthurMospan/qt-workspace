@@ -529,8 +529,11 @@ export function auditUiFidelity() {
     nativeByTag,
     kit: {
       totals: kitUsage.totals,
+      // Reached by nothing at all. A component the product only touches through
+      // another kit component (TopHeader renders Breadcrumb on every screen) is
+      // used; counting it here once deleted two live components.
       unusedComponents: Object.entries(kitUsage.components)
-        .filter(([, entry]) => entry.count === 0)
+        .filter(([, entry]) => entry.count === 0 && entry.usedByKit.length === 0)
         .map(([name]) => name)
         .sort(),
     },

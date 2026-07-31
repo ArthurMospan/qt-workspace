@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 165,
-    "parsedFiles": 165,
+    "productFiles": 163,
+    "parsedFiles": 163,
     "parseErrors": 0,
     "nativeControls": 145,
     "structures": {
@@ -44,48 +44,17 @@
   },
   "kit": {
     "totals": {
-      "components": 77,
-      "used": 45,
-      "unused": 32,
-      "covered": 45,
+      "components": 48,
+      "used": 48,
+      "unused": 0,
+      "covered": 46,
       "uncovered": 0,
-      "routes": 14,
-      "previews": 75
+      "routes": 13,
+      "previews": 78,
+      "internal": 2,
+      "unlisted": 0
     },
-    "unusedComponents": [
-      "Avatar",
-      "AvatarGroup",
-      "Badge",
-      "Breadcrumb",
-      "ButtonGroup",
-      "Chip",
-      "CommentThread",
-      "Container",
-      "Dropdown",
-      "FileInput",
-      "Grid",
-      "HeaderSearch",
-      "ListItem",
-      "PageContentWrapper",
-      "PageLayout",
-      "Pagination",
-      "Progress",
-      "ProgressRing",
-      "ProjectCard",
-      "RadioButton",
-      "SearchInput",
-      "Spacer",
-      "SplitButton",
-      "Stack",
-      "Stat",
-      "StatusBadge",
-      "Stepper",
-      "Table",
-      "TaskCard",
-      "TeamMemberCard",
-      "TimeLogDisplay",
-      "Toast"
-    ]
+    "unusedComponents": []
   },
   "parseErrors": [],
   "nativeControls": [
@@ -330,7 +299,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1689",
+      "location": "src/app/(app)/chat/page.js:1690",
       "className": "md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0",
       "text": "",
       "childElements": [
@@ -347,7 +316,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1740",
+      "location": "src/app/(app)/chat/page.js:1741",
       "className": "flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]",
       "text": "",
       "childElements": [
@@ -365,7 +334,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1776",
+      "location": "src/app/(app)/chat/page.js:1777",
       "className": "text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline",
       "text": "Очистити",
       "childElements": [],
@@ -380,7 +349,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1805",
+      "location": "src/app/(app)/chat/page.js:1806",
       "className": "rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink",
       "text": "Показати давніші повідомлення",
       "childElements": [],
@@ -410,7 +379,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/chat/page.js:1871",
+      "location": "src/app/(app)/chat/page.js:1872",
       "className": "flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95",
       "text": "нових",
       "childElements": [
@@ -729,7 +698,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:134",
+      "location": "src/app/(app)/page.js:133",
       "className": "px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav",
       "text": "Розархівувати",
       "childElements": [
@@ -746,7 +715,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:148",
+      "location": "src/app/(app)/page.js:147",
       "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
       "text": "",
       "childElements": [
@@ -763,7 +732,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2321",
+      "location": "src/app/(app)/settings/page.js:2347",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -781,7 +750,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:3038",
+      "location": "src/app/(app)/settings/page.js:3070",
       "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors",
       "text": "Всі налаштування",
       "childElements": [
@@ -828,7 +797,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:402",
+      "location": "src/app/(app)/settings/page.js:416",
       "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
       "text": "Завершальний",
       "childElements": [
@@ -845,7 +814,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/team/page.js:103",
+      "location": "src/app/(app)/team/page.js:104",
       "className": "w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${…}",
       "text": "",
       "childElements": [
@@ -862,7 +831,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/team/page.js:138",
+      "location": "src/app/(app)/team/page.js:140",
       "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors",
       "text": "До списку команди",
       "childElements": [
@@ -1127,7 +1096,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/MarkdownEditor.jsx:323",
+      "location": "src/components/MarkdownEditor.jsx:327",
       "className": "hidden",
       "text": "",
       "childElements": [],
@@ -1146,7 +1115,7 @@
     },
     {
       "tag": "textarea",
-      "location": "src/components/MarkdownEditor.jsx:353",
+      "location": "src/components/MarkdownEditor.jsx:357",
       "className": "custom-scrollbar w-full resize-none bg-white p-4 text-[14px] leading-6 text-ink outline-none placeholder:text-faint ${…}",
       "text": "",
       "childElements": [],
@@ -2767,12 +2736,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:110",
+      "location": "src/app/(app)/page.js:109",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:119",
+      "location": "src/app/(app)/page.js:118",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -2787,22 +2756,22 @@
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:463",
+      "location": "src/app/(app)/settings/page.js:478",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:514",
+      "location": "src/app/(app)/sprints/page.js:513",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:603",
+      "location": "src/app/(app)/sprints/page.js:606",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:611",
+      "location": "src/app/(app)/sprints/page.js:614",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -2882,7 +2851,7 @@
       "className": "flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:487",
+      "location": "src/components/workspace/BillingTab.jsx:483",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },

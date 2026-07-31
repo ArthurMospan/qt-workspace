@@ -1051,7 +1051,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 hideCloseIcon
                 hideArrow
                 minWidth="200px"
-                padding={isExternalReporter ? '16px' : '6px'}
+                padding={isExternalReporter ? 'default' : 'tight'}
                 triggerClassName="inline-flex"
                 trigger={(
                   <button

@@ -73,14 +73,17 @@ export function getCompletedAtMillis(issue) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+// QUI-130. «Задача» leads because it is the default: most issues are tasks, and
+// the list should open on the one you reach for. («Завдання» is the entity —
+// what the whole product calls an issue; «Задача» is one of its three types.)
 export const DEFAULT_TYPES = [{
-  id: 'feature',
-  label: 'Фіча',
-  color: '#f59e0b'
-}, {
   id: 'task',
   label: 'Задача',
   color: '#059669'
+}, {
+  id: 'feature',
+  label: 'Фіча',
+  color: '#f59e0b'
 }, {
   id: 'bug',
   label: 'Баг',

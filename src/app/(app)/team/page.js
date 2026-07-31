@@ -9,11 +9,12 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Plus, User, ArrowLeft } from 'lucide-react';
 import { 
-  Surface, 
-  LoadingSpinner, 
+  Surface,
+  LoadingSpinner,
   EmptyState,
   Button,
   Pill,
+  SidebarLayout,
 } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
@@ -56,11 +57,11 @@ export default function TeamPage() {
   const selectedMember = members.find(m => (m.id || m.uid) === selectedUid);
 
   return (
-    <div className="flex w-full h-full p-[12px] pt-[56px] gap-[12px] bg-white">
-      {/* LEFT PANEL — mobile: full width, hidden when a member profile is open */}
-      <div
-        className={`${mobilePane === 'detail' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] shrink-0 flex-col h-full bg-canvas rounded-[16px] overflow-hidden`}
-      >
+    <SidebarLayout
+      context="team"
+      mobilePane={mobilePane === 'detail' ? 'content' : 'sidebar'}
+      sidebar={
+        <>
         {/* Header */}
         <div className="p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -127,8 +128,9 @@ export default function TeamPage() {
             })
           )}
         </div>
-      </div>
-
+        </>
+      }
+    >
       {/* RIGHT PANEL — mobile: shown only when a member is selected */}
       <div
         data-ui-surface="panel"
@@ -162,6 +164,6 @@ export default function TeamPage() {
         onClose={() => setShowInviteModal(false)}
         inviteMember={inviteMember}
       />
-    </div>
+    </SidebarLayout>
   );
 }

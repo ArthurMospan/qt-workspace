@@ -14,12 +14,9 @@ import { countActiveFilters } from '../FilterBar';
 // Typography rule: main title is ALWAYS 24px (text-2xl), font-bold.
 // Spacing rule: pt-0 from top (from the workspace header below), mb-[24px]
 //
-// Variants:
-//   "main" — standalone page title row + optional tabs row below (Projects, Team, etc.)
-//   "alt"  — compact inline header inside a white panel (Kanban board, etc.)
+// One layout: a standalone page title row with an optional tabs row below.
 
 export function PageHeader({
-  variant    = 'main',
   title,
   tabs       = [],
   activeTab,
@@ -51,34 +48,14 @@ export function PageHeader({
   });
   const stackedFilters = stackFilters(filters);
 
-  // ── Alt variant: compact bar inside a white panel ──────────────────────────
-  if (variant === 'alt') {
-    return (
-      <div className={`bg-white flex items-center gap-[8px] px-[20px] py-[10px] shrink-0 border-b border-canvas w-full ${className}`}>
-        {title && (
-          <h2 className="text-[24px] font-bold text-ink tracking-tight shrink-0 mr-2">
-            {title}
-          </h2>
-        )}
+  // There used to be an `alt` variant here — a compact bar with the title on
+  // the same line as the tabs. It had exactly one caller, the project portal at
+  // `/[projectId]/portal`, and that route was unreachable: nothing in the
+  // product linked to it, and its own tabs pointed back at the project. So the
+  // second look this component offered had never been seen on a screen. Both
+  // are gone; PageHeader has one variant, and it is the one people use.
 
-        {tabs?.length > 0 && (
-          <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
-        )}
-
-        <div className="flex-1 min-w-[20px]" />
-
-        {filters && (
-          <div className="flex items-center gap-2 mr-2 shrink-0">{filters}</div>
-        )}
-
-        <div className="flex items-center gap-[8px] shrink-0">
-          {actions}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Main variant: full page header with top spacing, sticky with premium blur + dynamic gradient layers ────────────────────────
+  // ── Full page header with top spacing, sticky with premium blur + dynamic gradient layers ────────────────────────
   return (
     <div className={`sticky top-[56px] z-20 shrink-0 flex flex-col pt-[12px] pb-[12px] gap-[10px] full-bleed ${className}`}>
 

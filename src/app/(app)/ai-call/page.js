@@ -154,7 +154,7 @@ export default function AiCallPage() {
   return (
     <div className="flex-1 h-full overflow-y-auto custom-scrollbar bg-canvas">
       <div className="w-full page-gutter pt-[56px] pb-[120px] flex flex-col gap-4 max-w-[960px]">
-        <PageHeader variant="main" title="Дзвінок → задачі" />
+        <PageHeader title="Дзвінок → задачі" />
         <p className="text-[13px] text-muted -mt-2">
           Завантажте запис дзвінка або вставте транскрипт — ШІ підведе підсумок і запропонує задачі.
         </p>

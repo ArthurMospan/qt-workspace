@@ -112,13 +112,18 @@ const SOURCES = {
   },
   FormGroup: { gap: { literal: ['sm', 'md'] } },
   Label: { context: { literal: ['field', 'inline'] } },
-  PageHeader: { variant: { literal: ['main', 'alt'] } },
+  // PageHeader declares no variants: `alt` was removed with the unreachable
+  // portal route that was its only caller, leaving one layout and no choice.
   Tag: { size: { literal: ['small', 'default'] } },
   ChatComposerCore: { variant: { literal: ['qtplus', 'timeline', 'workspace'] } },
   ChatComposerDock: { composition: { css: ['.chat-composer-dock', 'data-ui-composition'] } },
   TaskAttributesPanel: { context: { literal: ['calendar', 'task'] } },
+  SidebarLayout: { context: { map: ['Layout/SidebarLayout.jsx', 'CONTEXTS'] } },
   FilterBar: { context: { literal: ['default', 'detail'] } },
-  Popover: { align: { literal: ['start', 'center', 'end'] } },
+  Popover: {
+    align: { literal: ['start', 'center', 'end'] },
+    padding: { map: ['Navigation/Popover.jsx', 'PADDINGS'] },
+  },
 };
 
 function parseSource(source) {
@@ -206,6 +211,26 @@ export function extractVariants() {
     }
   }
   return manifest;
+}
+
+// Which component/prop pairs read the *same* CSS attribute namespace.
+//
+// `.ui-control[data-ui-composition]` is one selector shared by Button,
+// IconAction and Input, and CSS cannot tell them apart — so the manifest
+// honestly declares every value on all three. Without this map the drift report
+// then claimed `Button.composition="duration-hours"` was an unused Button
+// variant, when it is an Input composition that Button is merely also allowed
+// to take. Ownership is a namespace question, so it is answered per namespace.
+export function variantNamespaces() {
+  const namespaces = {};
+  for (const [component, props] of Object.entries(SOURCES)) {
+    for (const [prop, source] of Object.entries(props)) {
+      if (!source.css) continue;
+      const [classPrefix, attribute] = source.css;
+      namespaces[`${component}.${prop}`] = `${classPrefix || '*'}[${attribute}]`;
+    }
+  }
+  return namespaces;
 }
 
 export function variantTotals(manifest) {

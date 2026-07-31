@@ -17,6 +17,7 @@ import {
   ConfirmProvider, useConfirm, ChatComposerCore, ProjectSettingsForm, StatusPill, StatusVisibilityPicker, TaskListView
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
+import { Toast } from '@/components/ui/Feedback/Toast';
 import TopHeader from '@/components/ui/Layout/TopHeader';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
 import WorkspaceSidebar from '@/components/WorkspaceSidebar';
@@ -27,10 +28,8 @@ import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
-import SurfaceElements from './SurfaceElements';
-import LiveControl from './LiveControl';
-import fidelityAudit from './fidelity-audit.generated.json';
 import kitUsage from './kit-usage.generated.json';
+import kitDrift from './kit-drift.generated.json';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { colors as designColors, sizing, spacing } from '@/lib/design/tokens';
 import {
@@ -44,40 +43,19 @@ import {
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
   ChevronLeft, ChevronsUpDown, GripVertical, Move,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
-  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch, MapPin, Code2
+  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch, MapPin, Code2,
+  Box, Grid3x3, CircleSlash
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV SECTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const STRUCTURE_NAV = Object.fromEntries(
-  Object.entries(fidelityAudit.structureLabels || {})
-    .map(([id, label]) => [id, `${label} (${fidelityAudit.totals.structures?.[id] || 0})`]),
-);
-STRUCTURE_NAV.other = fidelityAudit.totals.structures?.other
-  ? `Інше (${fidelityAudit.totals.structures.other})`
-  : '';
-
+// Only components belong in this navigation. The ten "Поверхні" entries that
+// used to sit above Atoms were the fidelity audit — 145 hand-written controls
+// photographed out of the product — and they now live on /ui-audit, where a
+// report can be a report instead of impersonating a layer of the kit.
 const GROUPS = [
-  {
-    // Each product surface and the elements it is built from. Not a defect
-    // list: these are the working parts of Calendar, Tasks and the rest, shown
-    // together so each can grow its own components the way chat did.
-    title: 'Поверхні (Surfaces)',
-    items: [
-      { id: 'surface-chat', label: STRUCTURE_NAV['chat'], icon: Layers },
-      { id: 'surface-tasks', label: STRUCTURE_NAV['tasks'], icon: Layers },
-      { id: 'surface-shell', label: STRUCTURE_NAV['shell'], icon: Layers },
-      { id: 'surface-calendar', label: STRUCTURE_NAV['calendar'], icon: Layers },
-      { id: 'surface-settings', label: STRUCTURE_NAV['settings'], icon: Layers },
-      { id: 'surface-ai-call', label: STRUCTURE_NAV['ai-call'], icon: Layers },
-      { id: 'surface-board', label: STRUCTURE_NAV['board'], icon: Layers },
-      { id: 'surface-qtplus', label: STRUCTURE_NAV['qtplus'], icon: Layers },
-      { id: 'surface-analytics', label: STRUCTURE_NAV['analytics'], icon: Layers },
-      { id: 'surface-other', label: STRUCTURE_NAV['other'], icon: Layers },
-    ].filter(item => item.label)
-  },
   {
     title: 'Атоми (Atoms)',
     items: [
@@ -118,8 +96,16 @@ const GROUPS = [
     items: [
       { id: 'headers',           label: 'Header (Хедер)',                 icon: LayoutGrid },
       { id: 'page-headers',      label: 'Page Header (Шапка)',            icon: Type },
-      { id: 'sidebar-layout',    label: 'Sidebar + Main Content',         icon: PanelLeftOpen },
-      { id: 'inner-nav-layout',  label: 'Inner Navigation + Main Content', icon: List },
+      { id: 'sidebar-layout',    label: 'Workspace Shell',                icon: PanelLeftOpen },
+      { id: 'inner-nav-layout',  label: 'SidebarLayout — 3 контексти',    icon: List },
+    ]
+  },
+  {
+    // Every value the kit declares, in one grid. This is what makes "I change
+    // it here, it changes on the site" checkable rather than hoped for.
+    title: 'Контроль (Control)',
+    items: [
+      { id: 'variant-matrix', label: 'Матриця варіантів', icon: Grid3x3 },
     ]
   }
 ];
@@ -457,7 +443,7 @@ function InputsSection() {
           <Input size="sm" placeholder="Small — 28px" />
           <Input size="md" placeholder="Medium — 32px" />
           <Input size="lg" placeholder="Large — 36px" value={val} onChange={e => setVal(e.target.value)} />
-          <Input size="md" preset="money" type="number" defaultValue="125" aria-label="Грошове значення" />
+          <Input size="md" preset="money" suffix="₴/г" type="number" defaultValue="125" aria-label="Грошове значення" />
           <Input size="lg" placeholder="Заблоковане поле" disabled />
         </div>
       </PreviewBlock>
@@ -879,7 +865,7 @@ function BadgesSection() {
         <div className="flex flex-wrap items-center gap-[8px]">
           <StatusPill label="Активний" color="#10b981" />
           <StatusPill label="Запланований" color="#9a9a9a" />
-          <StatusPill label="Завершено" color="#cbd5e1" />
+          <StatusPill label="Завершено" color="#1f1f1f" />
         </div>
       </PreviewBlock>
 
@@ -1063,8 +1049,64 @@ function ConfirmDialogPreview() {
   );
 }
 
+// Each of these ships on the site, and the first version of this preview gave
+// no way to tell — six bare buttons labelled with prop syntax read as invented
+// options. `where` is the screen you have already seen it on; `open` is what
+// you do there to get it. Counts come from `npm run kit:scan`.
+const DIALOG_VARIANTS = [
+  {
+    id: 'flush',
+    label: 'bodyPadding="flush"',
+    props: { bodyPadding: 'flush', size: 'lg' },
+    note: 'Тіло без відступу — вміст сам керує своїми полями й може йти на всю ширину.',
+    where: 'Створення завдання · Профіль користувача',
+    open: 'Мої завдання → «Створити завдання»',
+  },
+  {
+    id: 'responsive',
+    label: 'bodyPadding="responsive"',
+    props: { bodyPadding: 'responsive', size: 'md' },
+    note: 'Вужчий відступ на мобільному, звичайний на десктопі.',
+    where: 'Деталі задачі · Подія календаря',
+    open: 'Проєкт → задача → «Списати час»',
+  },
+  {
+    id: 'spacious',
+    label: 'bodyPadding="spacious"',
+    props: { bodyPadding: 'spacious', size: 'sm' },
+    note: 'Просторі форми, де поля не мають тиснутись до країв.',
+    where: 'Мої завдання · Зміна статусу користувача',
+    open: 'Клац на свій аватар → «Змінити статус»',
+  },
+  {
+    id: 'invite',
+    label: 'bodyPadding="invite"',
+    props: { bodyPadding: 'invite', size: 'lg' },
+    note: 'Форма запрошення: поле пошти й роль на всю ширину, кнопки внизу.',
+    where: 'Запрошення учасника',
+    open: 'Команда → «+» у шапці списку',
+  },
+  {
+    id: 'sheet',
+    label: 'presentation="sheet"',
+    props: { presentation: 'sheet', size: 'sm', bodyPadding: 'spacious' },
+    note: 'Висувна панель збоку замість центрованої модалки — не окремий компонент, а той самий Dialog.',
+    where: 'Мої завдання → налаштування вигляду',
+    open: 'Мої завдання → іконка фільтрів праворуч',
+  },
+  {
+    id: 'status',
+    label: 'size="status"',
+    props: { size: 'status' },
+    note: 'Найвужчий діалог у продукті — рівно під поле статусу й емодзі.',
+    where: 'Зміна статусу користувача',
+    open: 'Клац на свій аватар у сайдбарі',
+  },
+];
+
 function DialogsSection() {
   const [open1, setOpen1] = useState(false);
+  const [dialogVariant, setDialogVariant] = useState(null);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [projectSettingsName, setProjectSettingsName] = useState('QuickTeam Website');
@@ -1097,6 +1139,58 @@ function DialogsSection() {
 
       <PreviewBlock title="Danger / Confirm Dialog" description="Живий ConfirmProvider, який продукт використовує замість native confirm()/prompt().">
         <ConfirmDialogPreview />
+      </PreviewBlock>
+
+      {/* Dialog cannot render standalone in the variant matrix — it needs an
+          open state — so its declared values are shown here, where they can be
+          opened. Every one of these ships on the site, hence the «Де на сайті»
+          line on each: the previous version was six bare buttons labelled with
+          prop syntax, which read as options somebody invented for the kit. */}
+      <PreviewBlock
+        title="Dialog — решта оголошених значень"
+        description="Це не окремі компоненти й не вигадані опції: усі шість стоять на реальних екранах, просто рідко (по 1–2 місця кожен). Під кожним написано, де саме він живе і як його відкрити в продукті."
+        fullWidth
+      >
+        <div className="grid w-full gap-[10px] sm:grid-cols-2 lg:grid-cols-3">
+          {DIALOG_VARIANTS.map(variant => (
+            <div key={variant.id} className="flex flex-col gap-[8px] rounded-[12px] border border-line p-[12px]">
+              <span className="font-mono text-[11px] font-bold text-ink">{variant.label}</span>
+              <p className="text-[11px] leading-relaxed text-muted">{variant.note}</p>
+              <div className="mt-auto flex flex-col gap-[6px] pt-[4px]">
+                <span className="text-[10px] leading-relaxed text-faint">
+                  <span className="font-semibold text-muted">Де на сайті:</span> {variant.where}
+                  <br />
+                  <span className="font-semibold text-muted">Як відкрити:</span> {variant.open}
+                </span>
+                <Button style="secondary" size="sm" onClick={() => setDialogVariant(variant.id)}>
+                  Показати
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {DIALOG_VARIANTS.map(variant => (
+          <Dialog
+            key={variant.id}
+            isOpen={dialogVariant === variant.id}
+            onClose={() => setDialogVariant(null)}
+            title={variant.label}
+            {...variant.props}
+          >
+            <div className="flex flex-col gap-3">
+              <p className="text-[12px] leading-relaxed text-muted">{variant.note}</p>
+              <Surface preset="inset" padding="md">
+                <p className="text-[11px] text-muted">
+                  Живе тут: <span className="font-semibold text-ink">{variant.where}</span>
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-ink">
+                  {Object.entries(variant.props).map(([key, value]) => `${key}="${value}"`).join(' ')}
+                </p>
+              </Surface>
+              <Button style="primary" size="md" onClick={() => setDialogVariant(null)}>Закрити</Button>
+            </div>
+          </Dialog>
+        ))}
       </PreviewBlock>
 
       <PreviewBlock
@@ -1189,17 +1283,12 @@ function HeadersSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="3) Хлібні крихти з пошуком (Project Mode)" description="Навігація проєкту з розсувним пошуком. Аватарки команди проєкту стоять праворуч — у тій самій позиції, що й онлайн-учасники в Chat Mode." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
+      <PreviewBlock title="3) Хлібні крихти з пошуком (Project Mode)" description="Навігація проєкту з розсувним пошуком. Аватарок команди тут навмисно немає — склад проєкту видно на вкладці «Команда», а хедер лишається місцем для навігації." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
-          <TopHeader 
-            mode="project" 
+          <TopHeader
+            mode="project"
             projectName="Mobile App Redesign"
-            projectMembers={[
-              { id: 'owner-demo', name: 'Олена Коваль', online: true },
-              { id: 'designer-demo', name: 'Іван Петренко', online: true },
-              { id: 'developer-demo', name: 'Марія Бондар', online: false },
-            ]}
-            unreadCount={5} 
+            unreadCount={5}
           />
         </div>
       </PreviewBlock>
@@ -1223,10 +1312,15 @@ function HeadersSection() {
           <TopHeader 
             mode="chat" 
             showNotifications={false}
+            // No third-party avatar host here: the three placeholder URLs this
+            // used to fetch failed on every load of the page, and the product
+            // deliberately stores no such URL either — a user without a photo
+            // gets initials in their own deterministic colour, which is the
+            // thing worth previewing.
             onlineUsers={[
-              { name: 'Oksana', avatar: 'https://i.pravatar.cc/150?u=oksana' },
-              { name: 'Ivan', avatar: 'https://i.pravatar.cc/150?u=ivan' },
-              { name: 'Taras', avatar: 'https://i.pravatar.cc/150?u=taras' }
+              { id: 'oksana', name: 'Оксана Литвин' },
+              { id: 'ivan', name: 'Іван Петренко' },
+              { id: 'taras', name: 'Тарас Шевчук' },
             ]}
           />
         </div>
@@ -1247,7 +1341,6 @@ function PageHeadersSection() {
       <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання). На екранах вужче 768px рядок фільтрів ховається: замість нього — іконка з лічильником активних фільтрів, яка відкриває їх у модалці (звузьте вікно, щоб перевірити)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
-            variant="main"
             title="Мої завдання"
             actions={
               <div className="flex gap-2">
@@ -1302,7 +1395,6 @@ function PageHeadersSection() {
       <PreviewBlock title="2) Тільки заголовок та дії" description="Простий заголовок з кнопкою дії. Використовується на сторінках налаштувань або деталей." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
-            variant="main"
             title="Профіль учасника"
             actions={
               <Button onClick={() => alert('Зберегти')} style="primary" color="dark" size="lg">Зберегти профіль</Button>
@@ -1315,7 +1407,6 @@ function PageHeadersSection() {
       <PreviewBlock title="3) Заголовок + Фільтри" description="Шапка з фільтрами, але без дій чи перемикачів вкладок." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
-            variant="main"
             title="Аналітика завантаження"
             filters={
               <FilterBar>
@@ -1339,7 +1430,6 @@ function PageHeadersSection() {
         <PreviewBlock title="4) Заголовок + Вкладки + Дії" description="Використовується на сторінках зі списками без розгорнутої фільтрації (наприклад, список Проєктів)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
           <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
             <PageHeader
-              variant="main"
               title="Проєкти"
               tabs={[
                 { id: 'active', label: 'Активні' },
@@ -1353,12 +1443,14 @@ function PageHeadersSection() {
             />
           </div>
         </PreviewBlock>
+
       </div>
   );
 }
 
 function FeedbackSection() {
   const [qtPlusProject, setQtPlusProject] = useState('');
+  const [toast, setToast] = useState(null);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Alerts" component="Alert" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
@@ -1375,6 +1467,36 @@ function FeedbackSection() {
           <LoadingSpinner size="sm" />
           <LoadingSpinner size="md" />
         </div>
+      </PreviewBlock>
+
+      {/* Toast reported zero usages for months because WorkspaceToastHost
+          imports it under a different name (`UiToast`), and the scan matched on
+          the exported one. It is on every screen in the product. */}
+      <PreviewBlock
+        title="Toast"
+        component="Toast"
+        description="Спливне сповіщення, яке продукт показує через WorkspaceToastHost — той самий компонент, лише під локальним іменем UiToast. Рендериться в портал поверх усього; тут показані всі варіанти без автозакриття."
+        filePath="src/components/WorkspaceToastHost.jsx"
+        fullWidth
+      >
+        <div className="flex flex-wrap gap-2">
+          {['success', 'error', 'warning', 'info', 'loading'].map(variant => (
+            <Button key={variant} style="secondary" size="md" onClick={() => setToast(variant)}>
+              {variant}
+            </Button>
+          ))}
+        </div>
+        {toast && (
+          <Toast
+            key={toast}
+            variant={toast}
+            message={`Toast variant="${toast}"`}
+            action="Скасувати"
+            onAction={() => setToast(null)}
+            autoClose={false}
+            onClose={() => setToast(null)}
+          />
+        )}
       </PreviewBlock>
 
       <PreviewBlock
@@ -1452,13 +1574,10 @@ function FeedbackSection() {
   );
 }
 
-// Chat's own native controls. The audit used to hand these over as a separate
-// `chatControls` list, from back when chat was the only surface split out of
-// the flat bypass list. Every control now carries the surface it belongs to,
-// so chat is filtered the same way as every other structure.
-const CHAT_CONTROLS = (fidelityAudit.nativeControls || [])
-  .filter(control => control.structure === 'chat');
-
+// Chat's own kit components. The native controls that chat still hand-rolls
+// were listed here too, which duplicated /ui-audit → Чат byte for byte; what
+// stays is what chat contributes *to the kit* — its avatar scale, its icon
+// sizes and its day divider, all of them real components.
 function ChatElementsSection() {
   const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
   return (
@@ -1498,42 +1617,6 @@ function ChatElementsSection() {
               <Button style="ghost" size="icon-sm" composition={token} icon={MessageSquare}>{token}</Button>
               <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">{token}</span>
               <span className="text-[10px] text-[#cfcfcf]">{px}px · {role}</span>
-            </div>
-          ))}
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock
-        title="Чат — власні контроли"
-        description={`${CHAT_CONTROLS.length} інтерактивних елементів чату написані власною розміткою, а не компонентом кіту. Вони належать чату: їх треба оформити як чат-компоненти, а не зводити до загальних. Кожен відрендерений своїми ж класами.`}
-        fullWidth
-      >
-        <div className="flex w-full flex-col gap-[10px]">
-          {Object.entries(CHAT_CONTROLS.reduce((groups, control) => {
-            const file = control.location.split(':')[0];
-            (groups[file] = groups[file] || []).push(control);
-            return groups;
-          }, {})).sort((a, b) => b[1].length - a[1].length).map(([file, items]) => (
-            <div key={file} className="rounded-[10px] border border-[#f0f0f0]">
-              <div className="flex items-center gap-2 border-b border-[#f0f0f0] px-[12px] py-[7px]">
-                <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">
-                  {file.replace('src/', '')}
-                </span>
-                <span className="rounded-full bg-[#f4f4f5] px-[7px] py-[1px] text-[9px] font-bold text-[#71717a]">
-                  {items.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-[10px] p-[12px]">
-                {items.map(control => (
-                  <span
-                    key={control.location}
-                    title={`${control.tag} · ${control.location}`}
-                    className="relative isolate inline-flex items-center overflow-hidden rounded-[8px] bg-[#fafafa] p-[6px]"
-                  >
-                    <LiveControl control={control} />
-                  </span>
-                ))}
-              </div>
             </div>
           ))}
         </div>
@@ -1628,7 +1711,7 @@ function ChatComposerSection() {
         <div className="grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2">
           <div className="flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas">
             <div className="flex-1 p-4 text-[12px] text-muted">Task timeline</div>
-            <ChatComposerDock className="px-4 pb-5 pt-3">
+            <ChatComposerDock composition="timeline-composer">
               <ChatComposerCore
                 variant="timeline"
                 value=""
@@ -1643,7 +1726,7 @@ function ChatComposerSection() {
 
           <div className="flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas">
             <div className="flex-1 p-4 text-[12px] text-muted">QuickTeam+ chat</div>
-            <ChatComposerDock className="px-4 pb-5 pt-3">
+            <ChatComposerDock composition="timeline-composer">
               <ChatComposerCore
                 variant="qtplus"
                 value=""
@@ -2152,26 +2235,83 @@ function FormGroupsSection() {
   );
 }
 
+// The three screens that "look different" — and the one shell they share.
+//
+// Settings, Team and Chat each render a canvas rail beside a white pane. Only
+// Settings used to say so; Chat and Team hand-wrote the same shell, which is
+// exactly how they drifted apart. They are still three different layouts —
+// that part was never the problem — they are just three *named* ones now, so
+// changing the shell changes all three and nothing else.
 function NavMenuSection() {
   const [active, setActive] = useState('profile');
+  const [teamPane, setTeamPane] = useState('sidebar');
   const NAV = [
     { id: 'profile',       label: 'Особистий профіль', icon: User,     group: 'Особисте' },
     { id: 'notifications', label: 'Сповіщення',        icon: Bell,     group: 'Особисте' },
     { id: 'workspace',     label: 'Загальні',          icon: Building, group: 'Організація' },
     { id: 'team',          label: 'Учасники команди',  icon: Users,    group: 'Організація' },
   ];
+  const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
+
+  // The rail rows below are the product's own markup, not an approximation.
+  // The first version of these previews invented its own list ("# загальний",
+  // a plain member list) and the result did not look like the site at all —
+  // which is exactly the failure a catalogue is supposed to prevent. These use
+  // the same `ui-native-control[data-ui-control='chat-list-action']` rule and
+  // the same active/unread states that /chat and /team render.
+  const chatRow = ({ id, name, kind, active = false, unread = 0, online = false }) => (
+    <button
+      key={id}
+      type="button"
+      data-ui-control="chat-list-action"
+      className={`ui-native-control ${
+        active ? 'bg-[#ebebeb] text-ink font-semibold' : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
+      }`}
+    >
+      {kind === 'channel' ? (
+        <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />
+      ) : (
+        <div className="relative shrink-0">
+          <div className="h-[18px] w-[18px] overflow-hidden rounded-full">
+            <UserAvatar user={{ id, name }} size="chat-mention" />
+          </div>
+          {online && <span className="absolute -bottom-[1px] -right-[1px] h-2 w-2 rounded-full border border-canvas bg-[#10b981]" />}
+        </div>
+      )}
+      <span className={`flex-1 truncate text-[13px] ${unread && !active ? 'font-bold text-ink' : ''}`}>{name}</span>
+      {unread > 0 && !active && <Counter value={unread} size="sm" status="muted" className="shrink-0" />}
+    </button>
+  );
+
+  const teamRow = ({ id, name, position, active = false }) => (
+    <button
+      key={id}
+      type="button"
+      className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left transition-colors ${
+        active ? 'bg-white shadow-sm' : 'hover:bg-white/60'
+      }`}
+    >
+      <UserAvatar user={{ id, name }} size="sm" />
+      <div className="flex min-w-0 flex-col">
+        <span className="truncate text-[13px] font-semibold text-ink">{name}</span>
+        <span className="truncate text-[11px] font-normal text-muted">{position}</span>
+      </div>
+    </button>
+  );
+
   return (
     <div className="flex flex-col gap-[32px]">
-      <PreviewBlock title="Settings Sidebar Layout" description="Точний layout сторінки налаштувань: InnerNavigation у SidebarLayout і реальна content-area справа." filePath="src/app/(app)/settings/page.js" fullWidth>
-        <div className="h-[500px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
+      <PreviewBlock
+        title="SidebarLayout context=&quot;settings&quot;"
+        component="SidebarLayout"
+        description="Повна висота вікна, нічого не зафіксовано зверху. InnerNavigation у рейці, біла панель контенту малюється самим лейаутом (hasBorder={false})."
+        filePath="src/app/(app)/settings/page.js"
+        fullWidth
+      >
+        <div className="h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
           <SidebarLayout
-            sidebar={(
-              <InnerNavigation
-              items={NAV}
-              activeId={active}
-              onChange={setActive}
-              />
-            )}
+            context="settings"
+            sidebar={<InnerNavigation items={NAV} activeId={active} onChange={setActive} />}
             hasBorder={false}
           >
             <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
@@ -2185,6 +2325,126 @@ function NavMenuSection() {
                 </div>
               </div>
             </main>
+          </SidebarLayout>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="SidebarLayout context=&quot;team&quot;"
+        description="Під фіксованим 56px хедером, тому каркас сам резервує цю висоту. Права панель — Surface preset=&quot;panel&quot;, а не проста біла зона, тому сторінка малює її сама (wrapsContent: false)."
+        filePath="src/app/(app)/team/page.js"
+        fullWidth
+      >
+        <div className="h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-white">
+          <SidebarLayout
+            context="team"
+            mobilePane={teamPane}
+            className="!pt-[12px]"
+            sidebar={(
+              <>
+                <div className="flex shrink-0 items-center justify-between p-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className="ui-type-dialog-title text-ink">Команда</h2>
+                    <Pill appearance="outline" size="md">4</Pill>
+                  </div>
+                  <Button style="ghost" size="icon-sm" icon={Plus} aria-label="Запросити" />
+                </div>
+                <div className="flex flex-1 flex-col gap-[2px] overflow-y-auto custom-scrollbar px-2 pb-2">
+                  {[
+                    { id: 'arthur', name: 'Артур Моспан', position: 'Власник організації', active: true },
+                    { id: 'olena', name: 'Олена Коваль', position: 'Frontend Developer' },
+                    { id: 'petro', name: 'Петро Іванчук', position: 'Designer' },
+                    { id: 'anna', name: 'Анна Мельник', position: 'QA Engineer' },
+                  ].map(teamRow)}
+                </div>
+              </>
+            )}
+          >
+            <Surface preset="panel" padding="sm" className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex flex-col items-center gap-2 py-8">
+                <UserAvatar user={demoUser} size="hero" />
+                <h3 className="text-[18px] font-bold text-ink">Артур Моспан</h3>
+                <StatusPill label="Онлайн" tone="success" />
+              </div>
+              <button type="button" onClick={() => setTeamPane(teamPane === 'sidebar' ? 'content' : 'sidebar')}
+                className="mx-auto rounded-[8px] bg-canvas px-3 py-1.5 text-[11px] font-bold text-muted">
+                mobilePane: {teamPane} (клац, щоб перемкнути)
+              </button>
+            </Surface>
+          </SidebarLayout>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="SidebarLayout context=&quot;chat&quot;"
+        description="Той самий каркас, але чат подає дві панелі поруч — розмову й гілку — тому лейаут не загортає контент у власну білу зону. Це єдина справжня відмінність чату; жолоб, ширина рейки та відступ під хедером тепер спільні."
+        filePath="src/app/(app)/chat/page.js"
+        fullWidth
+      >
+        <div className="h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-canvas">
+          <SidebarLayout
+            context="chat"
+            className="!pt-[12px]"
+            sidebar={(
+              <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
+                <div className="mb-[24px]">
+                  <div className="flex items-center justify-between px-3 pb-[8px]">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Канали</span>
+                    <Button style="ghost" size="icon-xs" icon={Plus} className="hover:!bg-white" aria-label="Новий канал" />
+                  </div>
+                  <div className="flex flex-col gap-[2px]">
+                    {[
+                      { id: 'general', name: 'general', kind: 'channel', active: true },
+                      { id: 'design', name: 'design', kind: 'channel', unread: 3 },
+                      { id: 'releases', name: 'releases', kind: 'channel' },
+                    ].map(chatRow)}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between px-3 pb-[8px]">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Особисті</span>
+                  </div>
+                  <div className="flex flex-col gap-[2px]">
+                    {[
+                      { id: 'olena', name: 'Олена Коваль', kind: 'dm', online: true, unread: 1 },
+                      { id: 'petro', name: 'Петро Іванчук', kind: 'dm' },
+                    ].map(chatRow)}
+                  </div>
+                </div>
+              </aside>
+            )}
+          >
+            <div className="flex flex-1 gap-3 min-w-0 overflow-hidden">
+              {/* Conversation pane — the product's own chrome: canvas surface,
+                  64px translucent header, composer docked at the bottom. */}
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas">
+                <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
+                  <Hash size={17} className="shrink-0 text-ink" />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="ui-type-compact-title truncate text-ink">general</h2>
+                    <p className="truncate text-[11px] text-muted">Загальний канал для всієї команди</p>
+                  </div>
+                  <IconAction label="Інформація про канал" icon={Info} size="md" appearance="quiet" composition="chat-panel-action" />
+                </div>
+                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2" />
+                <ChatComposerDock>
+                  <div className="relative px-4 pb-4">
+                    <ChatComposerCore variant="workspace" value="" onChange={() => {}} onSubmit={() => {}} placeholder="Написати в #general..." canSubmit={false} />
+                  </div>
+                </ChatComposerDock>
+              </div>
+              {/* Thread rail — the second pane, and the only reason chat opts
+                  out of the shell drawing a single content pane. */}
+              <div data-ui-overlay="responsive-pane" className="hidden shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas md:flex md:w-[280px]">
+                <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare size={16} className="text-muted" />
+                    <h3 className="ui-type-card-title text-ink">Гілка</h3>
+                  </div>
+                  <IconAction label="Закрити гілку" icon={X} size="md" appearance="quiet" composition="chat-panel-action" />
+                </div>
+              </div>
+            </div>
           </SidebarLayout>
         </div>
       </PreviewBlock>
@@ -2221,7 +2481,6 @@ function FiltersSection() {
         fullWidth
       >
         <PageHeader
-          variant="main"
           title="Проєкти"
           actions={<Button style="primary" color="dark" size="lg" icon={Plus}>Новий проєкт</Button>}
           filters={(
@@ -2363,20 +2622,179 @@ function TokensSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// VARIANT MATRIX
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Every value the implementation declares — rendered, not listed.
+//
+// The list version of this screen still let a variant hide: 53 values shipped
+// on the site while no preview anywhere showed them, so "the kit is the source"
+// was true for the component and false for half its variants. Rendering each
+// declared value from the manifest closes that structurally — a variant cannot
+// exist without a preview, because the preview is generated from the same
+// declaration the variant is. Adding a lookup-map entry or a `data-ui-*` rule
+// makes it appear here on the next `npm run kit:drift`; nothing is hand-written.
+//
+// One base example per component, with the variant prop spread over it. Where a
+// component cannot stand alone — Dialog needs an open state, PageHeader a whole
+// page — the value is shown with the reason and a pointer to its real preview,
+// rather than a fabricated example that would be a second source of truth.
+const VARIANT_BASE = {
+  Button: (props) => <Button style="secondary" size="md" icon={Plus} {...props}>Кнопка</Button>,
+  IconAction: (props) => <IconAction label="Дія" icon={Settings2} size="md" {...props} />,
+  Input: (props) => <Input placeholder="Текст" {...props} />,
+  Textarea: (props) => <Textarea placeholder="Текст" rows={2} {...props} />,
+  Select: (props) => (
+    <Select value="a" onChange={() => {}} options={[{ value: 'a', label: 'Обрано' }]} {...props} />
+  ),
+  MultiSelect: (props) => (
+    <MultiSelect value={['a']} onChange={() => {}} options={[{ value: 'a', label: 'Обрано' }]} {...props} />
+  ),
+  Surface: (props) => <Surface padding="md" {...props}><span className="text-[11px] text-muted">Поверхня</span></Surface>,
+  Pill: (props) => <Pill {...props}>Мітка</Pill>,
+  UserAvatar: (props) => <UserAvatar user={{ id: 'kit', name: 'Артур Моспан' }} {...props} />,
+  Counter: (props) => <Counter value={3} {...props} />,
+  Alert: (props) => <Alert {...props}>Повідомлення</Alert>,
+  LoadingSpinner: (props) => <LoadingSpinner {...props} />,
+  ToggleSwitch: (props) => <ToggleSwitch checked onChange={() => {}} {...props} />,
+  Segmented: (props) => (
+    <Segmented value="a" onChange={() => {}} options={[{ value: 'a', label: 'Один' }, { value: 'b', label: 'Два' }]} {...props} />
+  ),
+  Card: (props) => <Card {...props}><span className="text-[11px] text-muted">Картка</span></Card>,
+  FormGroup: (props) => <FormGroup label="Поле" {...props}><Input placeholder="Текст" /></FormGroup>,
+  Label: (props) => <Label {...props}>Підпис</Label>,
+  Tag: (props) => <Tag {...props}>Тег</Tag>,
+  EmptyState: (props) => <EmptyState icon={Folder} title="Порожньо" description="Немає записів." {...props} />,
+  Popover: (props) => (
+    <Popover trigger={<span className="text-[11px] font-semibold text-ink underline">Відкрити</span>} {...props}>
+      <span className="text-[11px] text-muted">Вміст</span>
+    </Popover>
+  ),
+  ChatComposerCore: (props) => (
+    <div className="w-full max-w-[420px]">
+      <ChatComposerCore value="" onChange={() => {}} onSubmit={() => {}} placeholder="Повідомлення" {...props} />
+    </div>
+  ),
+};
+
+// Why a component has no standalone example, and where to look instead.
+const VARIANT_ELSEWHERE = {
+  Dialog: 'Потребує відкритого стану — див. «Dialogs & Modals»',
+  FilterBar: 'Живе всередині PageHeader — див. «Filter Bar»',
+  TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',
+  ChatComposerDock: 'Прикріплений до низу екрана — див. «Chat Composer Dock»',
+  SidebarLayout: 'Каркас цілого екрана — див. «SidebarLayout — 3 контексти»',
+};
+
+// A dark value needs a dark backdrop to be visible at all.
+const NEEDS_DARK = /inverse|overlay|auth-close/;
+
+function VariantCell({ component, prop, value, count, previewed }) {
+  const render = VARIANT_BASE[component];
+  const tone = count === 0
+    ? 'border-line bg-canvas'
+    : previewed
+      ? 'border-[#a7f3d0] bg-white'
+      : 'border-[#fde68a] bg-white';
+
+  return (
+    <div className={`flex flex-col gap-[6px] rounded-[10px] border p-[10px] ${tone}`}>
+      <div
+        className={`relative isolate flex min-h-[52px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
+          NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
+        }`}
+      >
+        {render
+          ? render({ [prop]: value })
+          : <span className="px-2 text-center text-[10px] leading-relaxed text-faint">{VARIANT_ELSEWHERE[component]}</span>}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-mono text-[10px] font-bold text-ink">{value}</span>
+        <span className={`ml-auto shrink-0 rounded-full px-[6px] text-[9px] font-bold ${
+          count === 0 ? 'bg-canvas text-faint' : 'bg-[#ecfdf5] text-[#047857]'
+        }`}>
+          ×{count}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function VariantMatrixSection() {
+  const { openUsage } = useContext(KitContext);
+  const manifest = kitDrift.manifest;
+  const usedCounts = kitDrift.usage;
+  const previewed = new Set(kitDrift.previewedValues);
+
+  return (
+    <div className="flex flex-col gap-[24px]">
+      <Surface preset="bordered-panel" padding="lg">
+        <h2 className="text-[18px] font-bold text-ink">
+          {kitDrift.totals.declaredValues} оголошених значень у {Object.keys(manifest).length} компонентах
+        </h2>
+        <p className="mt-2 max-w-[820px] text-[12px] leading-relaxed text-muted">
+          Варіант оголошує реалізація, а не список: lookup-мапи компонентів і
+          <span className="font-mono"> data-ui-*</span> правила в globals.css. Кожне значення тут
+          відрендерене живим компонентом — тому варіант не може існувати без preview.
+          Щоб додати варіант, додай запис у мапу або правило в CSS, і він з&apos;явиться сам.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-[8px] text-[11px] font-semibold">
+          <span className="rounded-[6px] bg-[#ecfdf5] px-[8px] py-[3px] text-[#047857]">
+            вживається на сайті — {kitDrift.totals.declaredValues - kitDrift.totals.declaredUnused}
+          </span>
+          <span className="rounded-[6px] bg-canvas px-[8px] py-[3px] text-muted">
+            оголошене, не вживається — {kitDrift.totals.declaredUnused}
+          </span>
+        </div>
+      </Surface>
+
+      {Object.entries(manifest).map(([component, props]) => (
+        <section key={component} className="rounded-[14px] border border-line bg-white">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+            <button
+              type="button"
+              onClick={() => openUsage(component)}
+              className="cursor-pointer font-mono text-[12px] font-bold text-ink hover:underline"
+            >
+              {component}
+            </button>
+            <span className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-bold text-muted">
+              {kitUsage.components[component]?.count ?? 0} використань
+            </span>
+            {VARIANT_ELSEWHERE[component] && (
+              <span className="text-[10px] text-faint">{VARIANT_ELSEWHERE[component]}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-[14px] p-[14px]">
+            {Object.entries(props).map(([prop, values]) => (
+              <div key={prop}>
+                <div className="mb-[6px] font-mono text-[11px] font-bold text-ink">{prop}</div>
+                <div className="grid gap-[8px] [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
+                  {values.map(value => (
+                    <VariantCell
+                      key={value}
+                      component={component}
+                      prop={prop}
+                      value={value}
+                      count={usedCounts[`${component}.${prop}.${value}`] || 0}
+                      previewed={previewed.has(`${component}.${prop}.${value}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION MAP
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTION_MAP = {
-  'surface-chat': <SurfaceElements structure="chat" />,
-  'surface-tasks': <SurfaceElements structure="tasks" />,
-  'surface-shell': <SurfaceElements structure="shell" />,
-  'surface-calendar': <SurfaceElements structure="calendar" />,
-  'surface-settings': <SurfaceElements structure="settings" />,
-  'surface-ai-call': <SurfaceElements structure="ai-call" />,
-  'surface-board': <SurfaceElements structure="board" />,
-  'surface-qtplus': <SurfaceElements structure="qtplus" />,
-  'surface-analytics': <SurfaceElements structure="analytics" />,
-  'surface-other': <SurfaceElements structure="other" />,
   buttons:    <ButtonsSection />,
   inputs:     <InputsSection />,
   selects:    <SelectsSection />,
@@ -2401,6 +2819,7 @@ const SECTION_MAP = {
   tooltips:        <TooltipsSection />,
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,
+  'variant-matrix': <VariantMatrixSection />,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

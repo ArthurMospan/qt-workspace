@@ -10,11 +10,16 @@ import { getAdminAuth } from '@/lib/server/firebaseAdmin';
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const isDevelopmentReferencePage =
-    process.env.NODE_ENV === 'development' &&
-    (pathname === '/ui-kit' || pathname === '/ui-diff');
+    process.env.NODE_ENV === 'development' && pathname === '/ui-kit';
 
-  // These internal reference pages must remain usable while the product auth
-  // flow is being developed or repaired. Production still requires a session.
+  // The internal reference page must remain usable while the product auth flow
+  // is being developed or repaired. Production still requires a session.
+  //
+  // There used to be three of these. `/ui-diff` catalogued duplicate patterns
+  // and `/ui-audit` listed the markup that bypasses the kit — both were reports
+  // wearing a catalogue's clothes, and having three pages meant no single one
+  // answered "what can I build with?". The audit still runs (`npm run kit:audit`)
+  // and still fails the build; it just no longer has a screen nobody could read.
   if (isDevelopmentReferencePage) return NextResponse.next();
 
   const sessionCookie = request.cookies.get('qt_session')?.value;
@@ -39,5 +44,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/ui-kit', '/ui-diff'],
+  matcher: ['/ui-kit'],
 };

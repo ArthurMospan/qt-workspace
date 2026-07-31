@@ -149,8 +149,8 @@ const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'kit-usage.generated.json');
 const SHOWCASE_FILE = join(ROOT, 'src', 'app', 'ui-kit', 'page.js');
 
-// The kit itself and the two showcase pages are excluded: a component being
-// demoed on /ui-kit is not the same as the product using it.
+// The kit itself and the showcase page are excluded: a component being demoed
+// on /ui-kit is not the same as the product using it.
 function walk(dir, out = []) {
   let entries;
   try {
@@ -171,12 +171,31 @@ const toPosix = path => relative(ROOT, path).split(sep).join('/');
 // ── Inventory: what the kit actually exports ────────────────────────────────
 // The filename is the canonical component name; named exports (MultiSelect in
 // Select.jsx, HeaderSearch in Forms/HeaderSearch.jsx) are picked up too.
+// A file whose whole body is `import X from '…'; export default X` declares no
+// component — it renames one. Counting the filename as an inventory entry
+// invented `TaskCard`, a second name for the live `IssueCard`, which then sat
+// in the unused list forever: it could never be "used", because every call site
+// legitimately imports the real component instead.
+function reexportedName(source) {
+  const body = source
+    .replace(/^['"]use client['"];?\s*$/gm, '')
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .trim();
+  const match = body.match(
+    /^import\s+([A-Z]\w*)\s+from\s+'([^']+)';?\s*export\s+default\s+\1;?$/,
+  );
+  if (!match) return null;
+  return match[2].startsWith('@/components/ui') ? null : match[1];
+}
+
 function buildInventory() {
   const inventory = new Map();
   for (const file of walk(KIT_DIR)) {
     const name = file.split(sep).at(-1).replace(/\.jsx?$/, '');
     if (name === 'index') continue;
     const source = readFileSync(file, 'utf8');
+    if (reexportedName(source)) continue;
     const names = new Set([name]);
     for (const match of source.matchAll(/export\s+(?:default\s+)?(?:function|const|class)\s+([A-Z]\w*)/g)) {
       // PascalCase only. Components now export their variant lookup maps
@@ -201,7 +220,13 @@ function buildInventory() {
 // lost. `[^;]` still spans newlines, so multi-line named imports keep working.
 const IMPORT_RE = /^import\s+([^;]*?)\s+from\s+['"](@\/components\/ui[^'"]*)['"]/gm;
 
-function importedBindings(clause) {
+// `specifier` is the module path, which is what makes a renamed default import
+// resolvable. `import UiToast from '@/components/ui/Feedback/Toast'` binds the
+// local name `UiToast`, and matching on that alone found no `Toast` in the
+// inventory — so WorkspaceToastHost, which renders it on every screen, reported
+// `Toast` as an unused component. A default export has no name of its own to
+// compare; the file it comes from is the name.
+function importedBindings(clause, specifier = '') {
   const bindings = [];
   const braced = clause.match(/\{([\s\S]*)\}/);
   if (braced) {
@@ -213,13 +238,18 @@ function importedBindings(clause) {
     }
   }
   const leading = clause.replace(/\{[\s\S]*\}/, '').replace(/,/g, ' ').trim();
-  if (/^[A-Z]\w*$/.test(leading)) bindings.push({ exported: leading, local: leading });
+  if (/^[A-Z]\w*$/.test(leading)) {
+    const fromFile = specifier.split('/').at(-1).replace(/\.jsx?$/, '');
+    const exported = /^[A-Z]\w*$/.test(fromFile) ? fromFile : leading;
+    bindings.push({ exported, local: leading });
+  }
   return bindings;
 }
 
 export function scanKitUsage() {
   const inventory = buildInventory();
   const showcased = new Set();
+
   const workspaceFiles = collectWorkspaceUiFiles();
 
   const showcaseSource = readFileSync(SHOWCASE_FILE, 'utf8');
@@ -234,29 +264,29 @@ export function scanKitUsage() {
   const visibleSectionIds = new Set(
     [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]),
   );
-  const visibleSectionFunctions = [...mapSource.matchAll(
+  const sectionBody = name => {
+    const start = showcaseSource.indexOf(`function ${name}(`);
+    if (start < 0) return '';
+    const nextFunction = showcaseSource.indexOf('\nfunction ', start + 1);
+    const sectionMap = showcaseSource.indexOf('\nconst SECTION_MAP', start + 1);
+    const end = nextFunction < 0 ? sectionMap : nextFunction;
+    return showcaseSource.slice(start, end);
+  };
+
+  const renderedSections = [...mapSource.matchAll(
     /^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*<([A-Z]\w+Section)\s*\/>/gm,
-  )]
-    .filter(match => visibleSectionIds.has(match[1] || match[2]))
-    .map(match => match[3]);
-  const visibleShowcaseSource = visibleSectionFunctions
-    .map((name) => {
-      const start = showcaseSource.indexOf(`function ${name}(`);
-      if (start < 0) return '';
-      const nextFunction = showcaseSource.indexOf('\nfunction ', start + 1);
-      const sectionMap = showcaseSource.indexOf('\nconst SECTION_MAP', start + 1);
-      const end = nextFunction < 0 ? sectionMap : nextFunction;
-      return showcaseSource.slice(start, end);
-    })
+  )].filter(match => visibleSectionIds.has(match[1] || match[2]));
+
+  const visibleShowcaseSource = renderedSections
+    .map(match => sectionBody(match[3]))
     .join('\n');
 
   for (const match of showcaseSource.matchAll(IMPORT_RE)) {
-    for (const { exported: name, local } of importedBindings(match[1])) {
+    for (const { exported: name, local } of importedBindings(match[1], match[2])) {
+      if (!inventory.has(name)) continue;
       // An import alone is not a showcase. Requiring a JSX render prevents a
       // stale/unused import or a hidden legacy section from making coverage green.
-      if (inventory.has(name) && new RegExp(`<${local}\\b`).test(visibleShowcaseSource)) {
-        showcased.add(name);
-      }
+      if (new RegExp(`<${local}\\b`).test(visibleShowcaseSource)) showcased.add(name);
     }
   }
 
@@ -264,11 +294,32 @@ export function scanKitUsage() {
     const source = readFileSync(file, 'utf8');
     const seen = new Set();
     for (const match of source.matchAll(IMPORT_RE)) {
-      for (const { exported: name, local } of importedBindings(match[1])) {
+      for (const { exported: name, local } of importedBindings(match[1], match[2])) {
         if (inventory.has(name) && new RegExp(`<${local}\\b`).test(source)) seen.add(name);
       }
     }
     for (const name of seen) inventory.get(name).usedIn.push(toPosix(file));
+  }
+
+  // A component the product reaches *through* another component is used, and
+  // the workspace scan cannot see it: it deliberately stops at the kit boundary
+  // (`includeSharedUi: false`), so `TopHeader` renders `Breadcrumb` and
+  // `HeaderSearch` on every screen while both reported zero usages. Relative
+  // imports are followed too — inside the kit that is how components refer to
+  // each other (`'../Forms/HeaderSearch'`, never the `@/` alias).
+  const INTERNAL_IMPORT_RE = /^import\s+([^;]*?)\s+from\s+['"]((?:@\/components\/ui|\.{1,2}\/)[^'"]*)['"]/gm;
+  const usedByKit = new Map();
+  for (const file of walk(KIT_DIR)) {
+    const source = readFileSync(file, 'utf8');
+    const host = file.split(sep).at(-1).replace(/\.jsx?$/, '');
+    for (const match of source.matchAll(INTERNAL_IMPORT_RE)) {
+      for (const { exported: name, local } of importedBindings(match[1], match[2])) {
+        if (!inventory.has(name) || name === host) continue;
+        if (!new RegExp(`<${local}\\b`).test(source)) continue;
+        if (!usedByKit.has(name)) usedByKit.set(name, new Set());
+        usedByKit.get(name).add(host);
+      }
+    }
   }
 
   // A file path answers "where is this imported"; a route answers "which screen
@@ -284,6 +335,10 @@ export function scanKitUsage() {
       file: entry.file,
       count: entry.usedIn.length,
       showcased: showcased.has(name),
+
+      // Which other kit components render this one. A non-empty list means the
+      // product reaches it indirectly, so a zero `count` is not dead code.
+      usedByKit: [...(usedByKit.get(name) || [])].sort(),
       routes,
       usedIn: entry.usedIn.sort(),
     };
@@ -301,8 +356,16 @@ export function scanKitUsage() {
   const variants = scanVariantUsage(workspaceFiles, manifest, routeMap);
   const previews = extractPreviewCode(showcaseSource);
 
-  const used = Object.values(components).filter(entry => entry.count > 0).length;
-  const covered = Object.values(components).filter(entry => entry.count > 0 && entry.showcased).length;
+  // "Used" means the product reaches it — directly from a workspace file, or
+  // through another kit component that a workspace file reaches.
+  const isLive = entry => entry.count > 0 || entry.usedByKit.length > 0;
+  // Coverage is owed by what the product calls directly. A component reached
+  // only through another kit component is previewed by its host: Breadcrumb and
+  // HeaderSearch appear in every TopHeader preview, and giving each a preview
+  // of its own would show a part in isolation the product never uses that way.
+  const owesPreview = entry => entry.count > 0;
+  const used = Object.values(components).filter(isLive).length;
+  const covered = Object.values(components).filter(entry => owesPreview(entry) && entry.showcased).length;
   return {
     // Regenerate with `npm run kit:scan`; tests/kit-usage.test.mjs enforces it.
     generatedBy: 'scripts/scan-kit-usage.mjs',
@@ -312,9 +375,15 @@ export function scanKitUsage() {
       used,
       unused: Object.keys(components).length - used,
       covered,
-      uncovered: used - covered,
+      uncovered: Object.values(components).filter(entry => owesPreview(entry) && !entry.showcased).length,
       routes: Object.keys(routes).length,
       previews: Object.keys(previews).length,
+      // Reached only through another kit component — live, but with no preview
+      // obligation of its own beyond the host that renders it.
+      internal: Object.values(components).filter(entry => entry.count === 0 && entry.usedByKit.length > 0).length,
+      // Nothing reaches it at all. The contract is that this stays zero: an
+      // unused component is deleted, not left in the barrel for later.
+      unlisted: Object.values(components).filter(entry => !isLive(entry)).length,
     },
     routes,
     components,

@@ -419,7 +419,6 @@ export default function GlobalSprintsPage() {
       <div className="workspace-page-layout h-full pb-[24px]">
       
       <PageHeader
-        variant="main"
         title="Спринти"
         actions={
           <>
@@ -533,7 +532,11 @@ export default function GlobalSprintsPage() {
                           <h3 className="ui-type-card-title text-ink truncate">{sprint.name}</h3>
                           {sprint.status === 'active' && <StatusPill label="Активний" color="#10b981" />}
                           {sprint.status === 'planned' && <StatusPill label="Запланований" color="#9a9a9a" />}
-                          {sprint.status === 'completed' && <StatusPill label="Завершено" color="#cbd5e1" />}
+                          {/* QUI-135. `#cbd5e1` on its own 9% tint scored ~1.5:1 —
+                              the label was there but unreadable. A finished sprint
+                              is closed, so it takes the ink tone: definitive, and
+                              distinct from active green and planned grey. */}
+                          {sprint.status === 'completed' && <StatusPill label="Завершено" color="#1f1f1f" />}
                           <span className="text-[11px] text-muted shrink-0">{sprintIssues.length} завдань</span>
                           {sprint.startDate && (
                             <span className="text-[11px] text-muted hidden sm:inline ml-2">

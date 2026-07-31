@@ -210,13 +210,31 @@
   .ui-control[data-ui-composition='menu-item']:hover {
     background: var(--color-canvas);
   }
+  /* QUI-132. `<input type="time">` draws its own clock button on the right,
+     next to the Clock icon the component already draws on the left — two
+     clocks on one field, and the browser's one opens a dropdown nobody asked
+     for. On a mouse the segments are typed directly, so the native control is
+     hidden; on touch it is the better way to pick a time, so it stays. */
+  @media (pointer: fine) {
+    .ui-time-input::-webkit-calendar-picker-indicator {
+      display: none;
+    }
+    .ui-time-input::-webkit-inner-spin-button,
+    .ui-time-input::-webkit-clear-button {
+      display: none;
+    }
+  }
+
+  /* QUI-137. This read as a bare link: white on white, grey text. An "add"
+     control is a button, so it takes the standard element grey and the primary
+     ink, the same pair every secondary button uses. */
   .ui-control[data-ui-composition='inline-add-action'] {
     --ui-control-height: 26px;
     --ui-control-line: 14px;
     border-radius: 8px;
-    background: var(--color-surface);
+    background: var(--color-canvas);
     padding: 6px 10px;
-    color: var(--color-muted);
+    color: var(--color-ink);
     font-size: 11px;
     font-weight: 700;
   }

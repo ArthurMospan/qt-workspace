@@ -130,7 +130,7 @@ export default function ProfileView({ user, onClose }) {
       <div className="shrink-0 pt-8 pb-4 flex flex-col items-center">
         <div className="flex flex-col items-center text-center px-8">
           <div className="relative mb-2">
-            <UserAvatar user={user} size="hero" className="shadow-sm" />
+            <UserAvatar user={user} size="hero" />
             {isOnline && (
               <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#10b981] rounded-full ring-4 ring-white" />
             )}

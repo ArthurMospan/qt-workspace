@@ -20,7 +20,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup
+  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -306,7 +306,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, isDone = false, onToggleDone }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, isDone = false, onToggleDone, doneLocked = false, doneLockReason = '' }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -397,18 +397,33 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
         </span>
       )}
 
-      {/* Terminal (done) toggle — statuses only */}
+      {/* Terminal (done) toggle — statuses only.
+          QUI-131. Several terminal statuses is a legitimate setup: «Готово»,
+          «Скасовано» and «Дубль» all close a task. The first status is not one
+          of them — it is where new tasks land and where a deleted column's
+          tasks fall back to, so a board whose entry column also counted as
+          finished would report every new task as already done. It is shown
+          locked rather than hidden, so the rule is visible instead of surprising. */}
       {variant === 'status' && !editing && onToggleDone && (
-        <button
-          type="button"
-          onClick={onToggleDone}
-          title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати)' : 'Позначити завершальним'}
-          className={`shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${
-            isDone ? 'bg-[#10b981]/12 text-[#10b981]' : 'text-faint hover:text-muted hover:bg-canvas'
-          }`}
-        >
-          <Check size={11} /> Завершальний
-        </button>
+        doneLocked ? (
+          <span
+            title={doneLockReason}
+            className="flex shrink-0 items-center gap-[4px] rounded-full px-[8px] py-[3px] text-[10px] font-bold text-faint opacity-60"
+          >
+            <Lock size={10} /> Завершальний
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onToggleDone}
+            title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати)' : 'Позначити завершальним'}
+            className={`shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${
+              isDone ? 'bg-[#10b981]/12 text-[#10b981]' : 'text-faint hover:text-muted hover:bg-canvas'
+            }`}
+          >
+            <Check size={11} /> Завершальний
+          </button>
+        )
       )}
 
       {/* Actions */}
@@ -1742,8 +1757,19 @@ export default function SettingsPage() {
   // clearing the last one just falls back to the default via getDoneStatusIds.
   const handleToggleStatusDone = (id) => {
     setStatuses(prev => {
+      // The entry column can never be terminal: new tasks land there, and so do
+      // the tasks of any column that gets deleted. Marking it done would report
+      // every freshly created task as already finished.
+      if (prev[0]?.id === id) return prev;
       const done = new Set(getDoneStatusIds(prev));
-      if (done.has(id)) done.delete(id); else done.add(id);
+      if (done.has(id)) {
+        // Something has to close a task. Without a terminal status, progress,
+        // velocity, overdue and billing all lose their definition of "finished".
+        if (done.size <= 1) return prev;
+        done.delete(id);
+      } else {
+        done.add(id);
+      }
       return prev.map(s => ({ ...s, isDone: done.has(s.id) }));
     });
   };
@@ -2754,7 +2780,7 @@ export default function SettingsPage() {
       case 'statuses': {
         const doneIds = getDoneStatusIds(statuses);
         return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахуються прогрес, швидкість, прострочені та рахунок.">
+        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахуються прогрес, швидкість, прострочені та рахунок. Завершальних може бути кілька («Готово», «Скасовано», «Дубль» — усі закривають задачу), але щонайменше один. Перша колонка завершальною бути не може: у неї потрапляють нові задачі.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2774,6 +2800,10 @@ export default function SettingsPage() {
                               variant="status"
                               isDone={doneIds.includes(s.id)}
                               onToggleDone={() => handleToggleStatusDone(s.id)}
+                              doneLocked={i === 0 || (doneIds.length === 1 && doneIds.includes(s.id))}
+                              doneLockReason={i === 0
+                                ? 'Перша колонка — сюди потрапляють нові задачі й задачі видалених колонок, тому завершальною вона бути не може'
+                                : 'Єдиний завершальний статус — без нього не рахуються прогрес, швидкість і рахунок'}
                               provided={provided}
                             />
                           )}
@@ -2806,8 +2836,10 @@ export default function SettingsPage() {
         );
       }
 
+      // QUI-130. The epic sentence outlived the epics: the type was removed and
+      // migrated away, so the only thing it still explained was itself.
       case 'types': return (
-        <Section title="Типи завдань" desc="Фіча, Задача й Баг — стандартний набір. Старі Епіки лишаються видимими як legacy-дані, але нові не створюються.">
+        <Section title="Типи завдань" desc="Задача, Фіча й Баг — стандартний набір. Тип показується на картці й у списках і не впливає на статус чи прогрес.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -3032,7 +3064,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <SidebarLayout sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
+    <SidebarLayout context="settings" sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
           <button

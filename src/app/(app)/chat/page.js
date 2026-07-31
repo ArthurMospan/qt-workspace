@@ -14,7 +14,7 @@ import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, EmptyState, Counter, IconAction, Label, Pill, Textarea } from '@/components/ui';
+import { useConfirm, EmptyState, Counter, IconAction, Label, Pill, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -1570,11 +1570,11 @@ export default function ChatPage() {
           </div>
         </form>
       </Dialog>
-      {/* Two-zone layout */}
-      <div className="flex-1 flex overflow-hidden gap-3 p-[12px] pt-[56px]">
-
-        {/* LEFT: Sidebar (Settings layout styled) — mobile: full width, hidden when a chat is open */}
-        <div className={`${mobilePane === 'chat' ? 'hidden' : 'flex'} md:flex w-full md:w-[280px] bg-canvas rounded-[16px] flex-col overflow-hidden shrink-0`}>
+      {/* Two-zone layout — the shared workspace shell, in its chat context. */}
+      <SidebarLayout
+        context="chat"
+        mobilePane={mobilePane === 'chat' ? 'content' : 'sidebar'}
+        sidebar={
           <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
             
             {/* Channels group */}
@@ -1676,7 +1676,8 @@ export default function ChatPage() {
               </div>
             </div>
           </aside>
-        </div>
+        }
+      >
 
         {/* RIGHT: Chat + optional sidebar — mobile: shown only when a chat is open */}
         <div className={`${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 gap-3 min-w-0 overflow-hidden`}>
@@ -1932,7 +1933,7 @@ export default function ChatPage() {
             />
           )}
         </div>
-      </div>
+      </SidebarLayout>
     </div>
   );
 }

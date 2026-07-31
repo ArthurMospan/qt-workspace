@@ -714,7 +714,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                     hideCloseIcon
                     hideArrow
                     minWidth="200px"
-                    padding="6px"
+                    padding="tight"
                     triggerClassName="inline-flex"
                     trigger={(
                       <button

@@ -7,96 +7,6 @@ import Tooltip from '../Navigation/Tooltip';
 import Popover from '../Navigation/Popover';
 import Pill from '../DataDisplay/Pill';
 
-function ProjectMembersMenu({ members, onMemberClick }) {
-  const onlineCount = members.filter(member => member.online).length;
-
-  return (
-    <Popover
-      position="bottom"
-      align="end"
-      gap={6}
-      hideArrow
-      hideCloseIcon
-      minWidth="300px"
-      padding="8px"
-      triggerClassName="flex"
-      trigger={(
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-[10px] px-2 py-1 transition-colors hover:bg-canvas"
-          aria-label="Переглянути команду проєкту"
-        >
-          <span className="flex items-center -space-x-2.5">
-            {members.slice(0, 5).map((member, index) => (
-              <span
-                key={member.id || member.uid}
-                // Earlier avatars stack on top, so a neighbour's white ring can
-                // no longer cover the online dot sitting under it.
-                style={{ zIndex: members.length - index }}
-                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-2 ring-white"
-              >
-                <UserAvatar user={member} size="sm" />
-                {member.online ? (
-                  <span className="absolute -bottom-[1px] -right-[1px] h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
-                ) : null}
-              </span>
-            ))}
-            {members.length > 5 ? (
-              <span className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white text-[10px] font-bold text-muted shadow-sm">
-                +{members.length - 5}
-              </span>
-            ) : null}
-          </span>
-          <ChevronDown size={14} className="text-muted" />
-        </button>
-      )}
-    >
-      {({ close }) => (
-        <div className="w-[284px]">
-          <div className="flex items-center justify-between border-b border-line px-2 pb-2 pt-1">
-            <div>
-              <p className="text-[12px] font-bold text-ink">Команда проєкту</p>
-              <p className="mt-0.5 text-[10px] text-muted">
-                {onlineCount > 0 ? `${onlineCount} зараз онлайн` : 'Ніхто зараз не онлайн'}
-              </p>
-            </div>
-            <Pill tone="neutral" size="md">{members.length}</Pill>
-          </div>
-
-          <div className="mt-1 flex max-h-[320px] flex-col overflow-y-auto">
-            {members.map(member => (
-              <button
-                key={member.id || member.uid}
-                type="button"
-                onClick={() => {
-                  close();
-                  onMemberClick?.(member);
-                }}
-                className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-canvas"
-              >
-                <span className="relative shrink-0">
-                  <UserAvatar user={member} size="md" />
-                  <span className={`absolute -bottom-[1px] -right-[1px] h-2.5 w-2.5 rounded-full border-2 border-white ${
-                    member.online ? 'bg-emerald-500' : 'bg-[#cfcfcf]'
-                  }`} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-bold text-ink">
-                    {member.name || member.displayName || member.email || 'Учасник'}
-                  </span>
-                  <span className="mt-0.5 block truncate text-[10px] text-muted">
-                    {member.online ? 'В мережі' : member.email || 'Не в мережі'}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </Popover>
-  );
-}
-
 export default function TopHeader({
   mode = 'search', // 'search', 'project', 'breadcrumbs', 'chat'
   
@@ -119,7 +29,6 @@ export default function TopHeader({
   onOnlineUserClick = () => {},
 
   // Project team props
-  projectMembers = [],
 
   // Right Side Props
   showNotifications = true,
@@ -214,15 +123,6 @@ export default function TopHeader({
       <div className="flex-1 min-w-0 flex items-center">
         {renderLeft()}
       </div>
-
-      {/* Team avatars sit on the right in every mode. In project mode they used
-          to hang off the breadcrumb on the left, which is not where the chat
-          header — the reference for this pattern — puts them. */}
-      {mode === 'project' && projectMembers.length > 0 ? (
-        <div className="ml-3 mr-2 shrink-0">
-          <ProjectMembersMenu members={projectMembers} onMemberClick={onOnlineUserClick} />
-        </div>
-      ) : null}
 
       {mode === 'chat' && onlineUsers.length > 0 && (
         <div className="ml-3 mr-2 shrink-0">{renderOnlineUsers()}</div>

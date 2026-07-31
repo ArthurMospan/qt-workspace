@@ -125,10 +125,8 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
             value={rate}
             onChange={e => onRateChange(Number(e.target.value))}
             preset="money"
+            suffix={`${currency}/г`}
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted">
-            {currency}/г
-          </span>
         </div>
       </div>
     </div>
@@ -247,7 +245,7 @@ function IssueRow({
                   key={member.id || member.uid}
                   user={member}
                   size="xs"
-                  className="ring-2 ring-white"
+                  stacked
                 />
               ))}
               {contributors.length > 3 ? (
@@ -299,11 +297,9 @@ function IssueRow({
                 onChange={event => onManualPrice(event.target.value === '' ? null : Number(event.target.value))}
                 placeholder="0.00"
                 preset="money"
+                suffix={currency}
                 aria-label={`Ручна вартість: ${issue.title}`}
               />
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted">
-                {currency}
-              </span>
             </>
           ) : (
             <span className={`flex h-full items-center justify-end text-right text-[13px] font-bold tabular-nums ${price > 0 ? 'text-ink' : 'text-faint'}`}>

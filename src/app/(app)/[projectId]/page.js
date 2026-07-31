@@ -3,6 +3,7 @@
 // Project page: Board | Backlog | Аналітика
 // Portal tab — shown only when project.visibility === 'shared' (synced to QT)
 import { use, useState, useCallback, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
 import { useIssues }     from '@/lib/hooks/useIssues';
 import { useSprints }    from '@/lib/hooks/useSprints';
@@ -23,6 +24,7 @@ import Link from 'next/link';
 import { can } from '@/lib/utils/can';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
+import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -36,6 +38,7 @@ export default function BoardPage({ params }) {
   const { issues, issueLinks, loading: issuesLoading, createIssue, updateIssue, moveIssue } = useIssues(projectId);
   const { sprints, loading: sprintsLoading, startSprint, completeSprint } = useSprints(projectId);
   const loading = issuesLoading || sprintsLoading;
+  const router      = useRouter();
   const showToast   = useWorkspaceStore(s => s.showToast);
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const projectSearch = useWorkspaceStore(s => s.projectSearch);
@@ -145,6 +148,25 @@ export default function BoardPage({ params }) {
     }
   }, [createIssue, showToast]); // eslint-disable-line
 
+  // Archiving or deleting the project you are standing in has to leave it —
+  // the projects list does not, because it stays on the list either way.
+  const handleArchiveProject = useCallback(async (id) => {
+    await archiveProject(id);
+    showToast('Проєкт архівовано', 'success');
+    router.push('/');
+  }, [router, showToast]);
+
+  const handleRestoreProject = useCallback(async (id) => {
+    await restoreProject(id);
+    showToast('Проєкт розархівовано');
+  }, [showToast]);
+
+  const handleDeleteProject = useCallback(async (id) => {
+    await deleteProject(id);
+    showToast('Проєкт видалено');
+    router.push('/');
+  }, [router, showToast]);
+
   const handleCreateFullIssue = useCallback(async (formData) => {
     try {
       await createIssue({
@@ -204,7 +226,6 @@ export default function BoardPage({ params }) {
 
       {/* ── PageHeader ── */}
       <PageHeader
-        variant="main"
         title={
           <div className="flex items-center gap-2">
             {project?.name}
@@ -399,11 +420,19 @@ export default function BoardPage({ params }) {
 
 
       {showConfigModal && project && (
+        // The kebab on the projects list opened this same dialog with archive,
+        // delete and invites; opening it from inside the project left all three
+        // out, so the same "Налаштування проєкту" showed two different things
+        // depending on where you clicked. One dialog, one set of capabilities.
         <BoardConfigModal
           project={project}
           issues={issues}
           organizationMembers={organizationMembers}
           canManageTeam={can(orgRole, 'manage:team')}
+          canInvite={can(orgRole, 'manage:team')}
+          onArchive={handleArchiveProject}
+          onUnarchive={handleRestoreProject}
+          onDelete={handleDeleteProject}
           onClose={() => setShowConfigModal(false)}
         />
       )}

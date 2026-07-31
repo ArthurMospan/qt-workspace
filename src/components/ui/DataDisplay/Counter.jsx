@@ -17,13 +17,18 @@ export default function Counter({
       lg: 'w-[10px] h-[10px]',
     };
 
+    // QUI-134. `info` is the neutral "there is something here" dot — it carries
+    // no semantic colour of its own, so it takes the surface's opposite: white
+    // on a dark sidebar, ink on a light one. It used to be indigo with an indigo
+    // glow, a brand colour the product uses nowhere else. `danger`, `success`
+    // and `muted` do mean something, so they keep their hues.
     const dotColors = dark ? {
-      info: 'bg-[#818cf8] shadow-[0_0_8px_rgba(129,140,248,0.5)]',
+      info: 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.45)]',
       danger: 'bg-[#f87171] shadow-[0_0_8px_rgba(248,113,113,0.5)]',
       success: 'bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]',
       muted: 'bg-[#a3a3a3]',
     } : {
-      info: 'bg-[#6366f1]',
+      info: 'bg-ink',
       danger: 'bg-[#ef4444]',
       success: 'bg-[#10b981]',
       muted: 'bg-muted',

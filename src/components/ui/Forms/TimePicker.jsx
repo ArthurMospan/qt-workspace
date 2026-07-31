@@ -25,6 +25,7 @@ export const TimePicker = forwardRef(({
         disabled={disabled}
         data-ui-size={size}
         className={`
+          ui-time-input
           ui-control w-full bg-canvas border border-transparent rounded-[10px]
           text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] flex items-center

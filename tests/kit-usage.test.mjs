@@ -35,34 +35,20 @@ test('the committed UI fidelity audit matches every product UI file', () => {
   assert.deepEqual(committedFidelityAudit.parseErrors, []);
 });
 
-// Regenerating the audit into a different shape is a silent break: /ui-kit
-// reads the JSON directly, so a renamed or dropped top-level field only shows
-// up as a runtime crash on whichever tab happens to read it. That is exactly
-// how `chatControls` died — the audit stopped emitting it when chat became one
-// structure among many, and the chat tab kept reading `.chatControls.length`.
-test('every audit field /ui-kit reads is really generated', () => {
-  const uiKit = new URL('../src/app/ui-kit/', import.meta.url);
-  const missing = new Set();
+// One reference page, and it is a catalogue of components. There used to be
+// three: /ui-diff listed duplicate patterns and /ui-audit listed the 145
+// hand-written controls that bypass the kit — both reports wearing a
+// catalogue's clothes, which meant no single page answered "what can I build
+// with?". The audit still runs and still fails the build; it no longer has a
+// screen, because a screen full of raw markup taught nobody anything.
+test('the catalogue is the only reference page, and it lists components', () => {
+  const kit = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
+  const app = new URL('../src/app/', import.meta.url);
+  const pages = readdirSync(app).filter(name => name.startsWith('ui-'));
 
-  for (const name of readdirSync(uiKit, { recursive: true })) {
-    if (!/\.jsx?$/.test(name)) continue;
-    const source = readFileSync(new URL(name.replaceAll('\\', '/'), uiKit), 'utf8');
-    const binding = source.match(/^import\s+(\w+)\s+from\s+'\.\/fidelity-audit\.generated\.json'/m);
-    if (!binding) continue;
-
-    // The lookbehind keeps the file's own name out of the results: inside
-    // `fidelity-audit.generated.json` — written in the import and again in the
-    // copyable prompt — the tail reads as `audit.generated`.
-    for (const [, field] of source.matchAll(new RegExp(`(?<![\\w$.-])${binding[1]}\\.(\\w+)`, 'g'))) {
-      if (!(field in committedFidelityAudit)) missing.add(`${name}: ${binding[1]}.${field}`);
-    }
-  }
-
-  assert.deepEqual(
-    [...missing],
-    [],
-    `/ui-kit reads audit fields that scripts/audit-ui-fidelity.mjs no longer emits: ${[...missing].join(', ')}`,
-  );
+  assert.deepEqual(pages, ['ui-kit'], `stray reference pages: ${pages.join(', ')}`);
+  assert.doesNotMatch(kit, /SurfaceElements|surface-chat|CHAT_CONTROLS|fidelity-audit\.generated/);
+  assert.match(kit, /Чат — власна шкала аватарів/, '/ui-kit keeps the chat components it really owns');
 });
 
 // The kit is the source of truth only while the product stays inside what the
@@ -80,6 +66,11 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     localSharedNameCollisions: 0,
     localSurfaceExceptions: 68,
     reviewedNativeControls: 18,
+    // The one number that had no ceiling, which is why it reached 145: every
+    // other category was pinned at zero, so new hand-written markup simply
+    // landed here and the report grew without anything objecting. It may fall
+    // freely; raising it has to be a decision somebody makes on purpose.
+    nativeControls: 145,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(
@@ -93,47 +84,13 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     'Repeated native-control fingerprints must become a shared component/preset or receive an explicit reviewed context',
   );
 
-  const legacyUnused = new Set([
-    'Avatar',
-    'AvatarGroup',
-    'Badge',
-    'Breadcrumb',
-    'ButtonGroup',
-    'Chip',
-    'CommentThread',
-    'Container',
-    'Dropdown',
-    'FileInput',
-    'Grid',
-    'HeaderSearch',
-    'ListItem',
-    'PageContentWrapper',
-    'PageLayout',
-    'Pagination',
-    'Progress',
-    'ProgressRing',
-    'ProjectCard',
-    'RadioButton',
-    'SearchInput',
-    'Spacer',
-    'SplitButton',
-    'Stack',
-    'Stat',
-    'StatusBadge',
-    'Stepper',
-    'Table',
-    'TaskCard',
-    'TeamMemberCard',
-    'TimeLogDisplay',
-    'TimePicker',
-    'Toast',
-  ]);
-  const unexpectedUnused = committedFidelityAudit.kit.unusedComponents
-    .filter(name => !legacyUnused.has(name));
+  // This used to carry a 32-name allowlist of components nothing rendered.
+  // They are gone — deleted, not excused — so the exception list is gone too.
   assert.deepEqual(
-    unexpectedUnused,
+    committedFidelityAudit.kit.unusedComponents,
     [],
-    `New shared components must be used by the product and shown in /ui-kit in the same change: ${unexpectedUnused.join(', ')}`,
+    'A shared component must be used by the product and shown in /ui-kit in the '
+    + `same change, or deleted: ${committedFidelityAudit.kit.unusedComponents.join(', ')}`,
   );
 });
 
@@ -148,6 +105,24 @@ test('the durable repository instructions keep product and UI Kit changes atomic
   assert.match(agents, /npm run kit:audit/);
   assert.match(contract, /A new shared component is exported[\s\S]*used by[\s\S]*rendered in `\/ui-kit` in the same change/);
   assert.equal(packageJson.scripts['kit:audit'], 'node scripts/audit-ui-fidelity.mjs');
+
+  // AGENTS.md and docs/UI_KIT_CONTRACT.md described `kit:drift`, a variant
+  // matrix and a kit-drift.generated.json for months while none of the three
+  // existed — the canonical rules file told every next session to run a command
+  // that was not there. Documentation may only name commands that resolve.
+  for (const command of [...agents.matchAll(/`npm run ([\w:]+)`/g)].map(match => match[1])) {
+    assert.ok(
+      command in packageJson.scripts,
+      `AGENTS.md tells the reader to run \`npm run ${command}\`, which package.json does not define`,
+    );
+  }
+  for (const command of [...contract.matchAll(/`npm run ([\w:]+)`/g)].map(match => match[1])) {
+    assert.ok(
+      command in packageJson.scripts,
+      `docs/UI_KIT_CONTRACT.md names \`npm run ${command}\`, which package.json does not define`,
+    );
+  }
+  assert.equal(packageJson.scripts['kit:drift'], 'node scripts/check-kit-drift.mjs');
 });
 
 // The screen that recorded these decisions is gone; the decisions themselves are
@@ -193,10 +168,11 @@ test('the approved follow-up decisions stay encoded in the product', () => {
 
 test('usage requires an imported component to be rendered as JSX', () => {
   const { components } = committed;
-  // `Stat` appears inside every `useState`/`Status`, and `Grid` inside every
-  // `grid` class. A substring-based scan reported both as heavily used; only an
-  // import-based one can tell that nothing actually imports them.
-  for (const name of ['Stat', 'Grid']) {
+  // `Stat` matched every `useState`/`Status` and `Grid` every `grid` class, so
+  // a substring scan called both heavily used while nothing imported them. Both
+  // components are gone now; `Tag` and `Card` carry the same hazard (`TagIcon`,
+  // `KpiCard`, `ProjectCard`) and are live, so the guard moves to them.
+  for (const name of ['Tag', 'Card']) {
     assert.ok(name in components, `${name} should be in the inventory`);
     for (const file of components[name].usedIn) {
       const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
@@ -208,10 +184,10 @@ test('usage requires an imported component to be rendered as JSX', () => {
     }
   }
 
-  // Stale imports must not make a component look like live product UI.
-  for (const name of ['Badge', 'StatusBadge', 'TaskCard']) {
-    assert.equal(components[name].count, 0, `${name} is imported but not rendered`);
-  }
+  // A file that only renames another component is not a component. `TaskCard`
+  // was `export default IssueCard`, so it could never be "used" — every call
+  // site imports the real one — and it sat in the unused list permanently.
+  assert.ok(!('TaskCard' in components), 'a pure re-export must not enter the inventory');
 });
 
 test('every recorded usage really imports the component it is credited with', () => {
@@ -220,9 +196,16 @@ test('every recorded usage really imports the component it is credited with', ()
     for (const file of entry.usedIn) {
       const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
       assert.match(source, /@\/components\/ui/, `${file} credited to ${name} imports nothing from the kit`);
+      // A call site may rename what it imports — WorkspaceToastHost renders
+      // `<UiToast>` — so the local binding is what has to appear in the JSX,
+      // not the exported name.
+      const aliased = source.match(
+        new RegExp(`^import\\s+(\\w+)\\s+from\\s+['"][^'"]*/${name}['"]`, 'm'),
+      );
+      const rendered = aliased?.[1] || name;
       assert.match(
         source,
-        new RegExp(`<${name}\\b`),
+        new RegExp(`<${rendered}\\b`),
         `${file} is credited to ${name} but never renders it`,
       );
     }
@@ -233,10 +216,8 @@ test('the showcase pages are never counted as product usage', () => {
   for (const [name, entry] of Object.entries(committed.components)) {
     for (const file of entry.usedIn) {
       assert.ok(
-        !file.startsWith('src/app/ui-kit/') &&
-        !file.startsWith('src/app/ui-diff/') &&
-        !file.startsWith('src/components/ui/'),
-        `${name} is credited to ${file}, which is the kit or a showcase page`,
+        !file.startsWith('src/app/ui-kit/') && !file.startsWith('src/components/ui/'),
+        `${name} is credited to ${file}, which is the kit or the showcase page`,
       );
     }
   }
@@ -257,8 +238,8 @@ test('every UI component used by the product is showcased in /ui-kit', () => {
   const uncovered = Object.entries(committed.components)
     .filter(([, entry]) => entry.count > 0 && !entry.showcased)
     .map(([name]) => name);
-  const showcasedButUnused = Object.entries(committed.components)
-    .filter(([, entry]) => entry.count === 0 && entry.showcased)
+  const showcasedButDead = Object.entries(committed.components)
+    .filter(([, entry]) => entry.count === 0 && entry.usedByKit.length === 0 && entry.showcased)
     .map(([name]) => name);
 
   assert.deepEqual(
@@ -267,12 +248,66 @@ test('every UI component used by the product is showcased in /ui-kit', () => {
     `Live product components missing from /ui-kit: ${uncovered.join(', ')}`,
   );
   assert.equal(committed.totals.uncovered, 0);
-  assert.equal(committed.totals.covered, committed.totals.used);
+
+  // Coverage is owed by what the product calls directly. Breadcrumb and
+  // HeaderSearch are reached only through TopHeader, so every TopHeader preview
+  // already shows them; a preview of either alone would demonstrate a shape the
+  // product never renders on its own.
+  assert.equal(committed.totals.covered + committed.totals.internal, committed.totals.used);
+
+  // The original invariant, unchanged: nothing dead may pass itself off as UI.
   assert.deepEqual(
-    showcasedButUnused,
+    showcasedButDead,
     [],
-    `Unused components must not be visible in /ui-kit: ${showcasedButUnused.join(', ')}`,
+    `Unreachable components must not be counted as coverage: ${showcasedButDead.join(', ')}`,
   );
+});
+
+// The other half of that rule used to have no owner: hiding an unused component
+// kept coverage honest but also made it invisible, so the only way to learn one
+// existed was to read the directory, and every few months one got rebuilt by
+// hand. Thirty-one had accumulated that way — over a third of the kit — and
+// half of them duplicated something already live (Avatar beside UserAvatar,
+// Badge beside Pill, Chip beside Tag). They are deleted. Unused now means gone.
+test('nothing in the kit is unused', () => {
+  const unlisted = Object.entries(committed.components)
+    .filter(([, entry]) => entry.count === 0 && entry.usedByKit.length === 0)
+    .map(([name]) => name);
+
+  assert.deepEqual(
+    unlisted,
+    [],
+    `A component nothing reaches must be deleted, not left in the barrel: ${unlisted.join(', ')}`,
+  );
+  assert.equal(committed.totals.unlisted, 0);
+  assert.equal(committed.totals.unused, 0);
+});
+
+// A component the product reaches only *through* another component is used, and
+// the workspace scan cannot see it: it stops at the kit boundary on purpose. So
+// TopHeader rendered Breadcrumb and HeaderSearch on every screen while both
+// reported zero usages — and a cleanup pass believed the zero and deleted them.
+test('a component used only by another kit component still counts as used', () => {
+  for (const name of ['Breadcrumb', 'HeaderSearch']) {
+    const entry = committed.components[name];
+    assert.ok(entry, `${name} should be in the inventory`);
+    assert.equal(entry.count, 0, `${name} is expected to have no direct product usage`);
+    assert.ok(
+      entry.usedByKit.includes('TopHeader'),
+      `${name} is rendered by TopHeader and must be recorded as such`,
+    );
+  }
+  assert.ok(committed.totals.internal > 0);
+});
+
+// `import UiToast from '@/components/ui/Feedback/Toast'` binds a local name the
+// inventory has never heard of. Matching on that alone reported `Toast` unused
+// while WorkspaceToastHost rendered it on every screen — a default export has
+// no name of its own, so the file it comes from has to be the name.
+test('a renamed default import is credited to the component it imports', () => {
+  const toast = committed.components.Toast;
+  assert.ok(toast.count > 0, 'Toast is rendered by WorkspaceToastHost');
+  assert.ok(toast.usedIn.some(file => file.endsWith('WorkspaceToastHost.jsx')));
 });
 
 test('high-risk composed previews keep the product markup signatures', () => {
@@ -464,18 +499,19 @@ test('every settings row that switches something on is a switch', () => {
   assert.doesNotMatch(settings, /'Скріншоти та консоль'/);
 });
 
-test('local reference pages do not depend on a working login flow', () => {
+test('the local reference page does not depend on a working login flow', () => {
   const source = readFileSync(new URL('../src/proxy.js', import.meta.url), 'utf8');
   const developmentBypass = source.indexOf("process.env.NODE_ENV === 'development'");
   const sessionLookup = source.indexOf("request.cookies.get('qt_session')");
 
-  assert.ok(developmentBypass >= 0, 'the local UI reference pages need a development-only auth bypass');
+  assert.ok(developmentBypass >= 0, 'the local UI reference page needs a development-only auth bypass');
   assert.ok(
     developmentBypass < sessionLookup,
     'the development bypass must run before Firebase session verification',
   );
   assert.match(source, /pathname === '\/ui-kit'/);
-  assert.match(source, /pathname === '\/ui-diff'/);
+  assert.match(source, /matcher: \['\/ui-kit'\]/);
+  assert.doesNotMatch(source, /'\/ui-diff'|'\/ui-audit'/, 'the deleted pages must not linger in the matcher');
   assert.match(source, /if \(isDevelopmentReferencePage\) return NextResponse\.next\(\)/);
   assert.match(
     source,
