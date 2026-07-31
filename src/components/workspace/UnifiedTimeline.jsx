@@ -3,9 +3,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
+import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import FileInput from '@/components/ui/Forms/FileInput';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
-import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
+import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import ChatComposerCore from '@/components/ui/ChatComposerCore';
@@ -430,14 +432,9 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             // change their photo. Only genuinely external authors — who have no
             // profile to read — fall back to what the document carries.
             const authorProfile = (isMe ? currentUser : authorMember) || null;
-            const authorAvatar = (
-              <UserAvatar
-                user={authorProfile
-                  ? { ...authorProfile, name: authorProfile.name || item.authorName }
-                  : { id: item.authorId, name: item.authorName, avatar: item.authorAvatar }}
-                size="chat-member"
-              />
-            );
+            const authorUser = authorProfile
+              ? { ...authorProfile, name: authorProfile.name || item.authorName }
+              : { id: item.authorId, name: item.authorName, avatar: item.authorAvatar };
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
@@ -448,13 +445,11 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                     hideCloseIcon
                     className="col-start-1 row-start-1 self-end"
                     trigger={(
-                      <button
-                        type="button"
-                        className="block shrink-0 transition-opacity hover:opacity-80"
-                        aria-label={`Інформація про зовнішнього автора: ${item.authorName || 'користувач'}`}
-                      >
-                        {authorAvatar}
-                      </button>
+                      <AvatarButton
+                        user={authorUser}
+                        size="chat-member"
+                        label={`Інформація про зовнішнього автора: ${item.authorName || 'користувач'}`}
+                      />
                     )}
                   >
                     <div className="w-[240px]">
@@ -470,14 +465,13 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
                     </div>
                   </Popover>
                 ) : (
-                  <button
-                    type="button"
-                    className={`${isMe ? 'col-start-2' : 'col-start-1'} row-start-1 self-end transition-opacity hover:opacity-80`}
+                  <AvatarButton
+                    user={authorUser}
+                    size="chat-member"
+                    className={`${isMe ? 'col-start-2' : 'col-start-1'} row-start-1 self-end`}
                     onClick={() => router.push(`?member=${item.authorId}`)}
-                    aria-label={`Профіль: ${item.authorName || 'учасник'}`}
-                  >
-                    {authorAvatar}
-                  </button>
+                    label={`Профіль: ${item.authorName || 'учасник'}`}
+                  />
                 )}
                 <div className={`row-start-1 flex max-w-[84%] min-w-0 flex-col ${isMe ? 'col-start-1 items-end justify-self-end' : 'col-start-2 items-start'}`}>
                   {!isMe && (
@@ -558,19 +552,13 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
       {!isArchived && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} composition="timeline-composer">
           {mentionState.active && filteredMembers.length > 0 && (
-            <div data-ui-surface="local" className="absolute bottom-full left-3 right-3 z-[60] mb-2 max-h-[160px] overflow-y-auto rounded-[10px] border border-[#d7d7d7] bg-white p-1">
-              {filteredMembers.map((member, index) => (
-                <button
-                  key={member.id || member.uid}
-                  type="button"
-                  onClick={() => selectMention(member)}
-                  className={`flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium ${index === mentionState.selectedIndex ? 'bg-canvas text-ink' : 'text-muted hover:bg-[#f7f7f7]'}`}
-                >
-                  <UserAvatar user={member} size="chat-inline" />
-                  <span>{member.name}</span>
-                </button>
-              ))}
-            </div>
+            <MentionMenu
+              density="timeline"
+              members={filteredMembers}
+              selectedIndex={mentionState.selectedIndex}
+              onSelect={selectMention}
+              className="absolute bottom-full left-3 right-3 z-[60] mb-2"
+            />
           )}
 
           {(replyTo || editingComment) && (
@@ -583,7 +571,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             </div>
           )}
 
-          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
+          <FileInput ref={fileInputRef} multiple onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
           <ChatComposerCore
             variant="timeline"
             textareaRef={inputRef}

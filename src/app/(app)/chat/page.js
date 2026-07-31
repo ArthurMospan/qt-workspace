@@ -2,10 +2,7 @@
 // src/app/workspace/chat/page.js — Rebuilt from scratch
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  Hash, MessageSquare, Smile, Paperclip, Plus, Edit2,
-  Trash2, X, Pin, ChevronDown, Info, UserPlus, ArrowLeft, Search
-} from 'lucide-react';
+import { MessageSquare, Smile, Paperclip, Plus, Trash2, X, UserPlus, Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Button from '@/components/ui/Button';
@@ -14,17 +11,19 @@ import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, EmptyState, ChannelRail, Counter, IconAction, Label, Pill, SidebarLayout, Textarea } from '@/components/ui';
+import { useConfirm, ChannelRail, Counter, FileInput, IconAction, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import MessageContent from '@/components/workspace/MessageContent';
-import MessageBubble from '@/components/ui/Chat/MessageBubble';
+import ChannelInfoPanel from '@/components/ui/Chat/ChannelInfoPanel';
+import ChatConversationHeader from '@/components/ui/Chat/ChatConversationHeader';
+import ChatMessageList from '@/components/ui/Chat/ChatMessageList';
+import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
 import AttachmentViewer from '@/components/workspace/AttachmentViewer';
-import { ChatAttachmentList, PendingChatAttachments } from '@/components/workspace/ChatAttachments';
+import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import { db } from '@/lib/firebase';
 import {
   collection, query, where, onSnapshot, updateDoc, doc, setDoc
@@ -35,43 +34,7 @@ import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
-import {
-  collectChatAttachments,
-  isChatMediaAttachment,
-  messageMatchesChatSearch,
-} from '@/lib/utils/chatAttachments.mjs';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-function timeAgo(ts) {
-  if (!ts) return '';
-  const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000) return 'щойно';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} хв`;
-  if (diff < 86400000) return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDateSep(ts) {
-  if (!ts) return '';
-  const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = today - msgDay;
-  if (diff === 0) return 'Сьогодні';
-  if (diff === 86400000) return 'Вчора';
-  return d.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
-}
-
-function isSameDay(a, b) {
-  if (!a || !b) return false;
-  const da = a?.toDate ? a.toDate() : new Date(a);
-  const db2 = b?.toDate ? b.toDate() : new Date(b);
-  return da.toDateString() === db2.toDateString();
-}
-
+import { messageMatchesChatSearch } from '@/lib/utils/chatAttachments.mjs';
 
 // ─── Message Input ───────────────────────────────────────────────────────────
 function MessageInput({
@@ -223,22 +186,13 @@ function MessageInput({
   return (
     <div className="relative px-4 pb-4">
       {/* Mention dropdown */}
-      {mentionType === 'user' && filteredMembers.length > 0 && (
-        <div data-ui-surface="local" className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden max-h-[200px] overflow-y-auto z-30">
-          {filteredMembers.map(m => (
-            <button
-              key={m.id || m.uid}
-              onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-canvas transition-colors text-left"
-            >
-              <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="chat-member" />
-              <div>
-                <p className="text-[13px] font-semibold text-ink">{m.name || m.email}</p>
-                {m.email && m.name && <p className="text-[11px] text-muted">{m.email}</p>}
-              </div>
-            </button>
-          ))}
-        </div>
+      {mentionType === 'user' && (
+        <MentionMenu
+          density="composer"
+          members={filteredMembers}
+          onSelect={insertMention}
+          className="absolute bottom-full left-4 right-4 mb-2 z-30"
+        />
       )}
 
       {/* Emoji picker */}
@@ -289,7 +243,7 @@ function MessageInput({
               appearance={showEmoji ? 'soft' : 'quiet'}
               composition="chat-composer-action"
             />
-            <input type="file" multiple ref={fileRef} onChange={handleFiles} className="hidden" />
+            <FileInput multiple ref={fileRef} onChange={handleFiles} />
             <IconAction
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
@@ -411,17 +365,19 @@ function ThreadSidebar({
                 />
               </div>
               {reply.senderId === myUid && (
-                <button
-                  type="button"
+                <IconAction
                   onClick={async () => {
                     if (await confirmDialog({ title: 'Видалити відповідь?', confirmText: 'Видалити', danger: true })) onDeleteReply(reply.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-lg text-muted hover:text-[#ef4444] hover:bg-red-50 transition-all shrink-0"
-                  aria-label="Видалити відповідь"
+                  icon={Trash2}
+                  label="Видалити відповідь"
                   title="Видалити"
-                >
-                  <Trash2 size={12} />
-                </button>
+                  size="xs"
+                  shape="compact"
+                  appearance="quiet-danger"
+                  composition="chat-micro-action"
+                  className="opacity-0 group-hover:opacity-100 shrink-0"
+                />
               )}
             </div>
           );
@@ -437,351 +393,6 @@ function ThreadSidebar({
           members={members}
         />
       </ChatComposerDock>
-    </div>
-  );
-}
-
-// ─── Channel Info Sidebar ───────────────────────────────────────────────────
-function ChannelInfoSidebar({
-  channel,
-  members,
-  messages,
-  activeTab,
-  onTabChange,
-  onOpenAttachment,
-  onJumpToMessage,
-  onError,
-  onClose,
-  activeOrgId,
-  isAdminOrOwner
-}) {
-  const [description, setDescription] = useState(channel?.description || '');
-  const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [showAddMembers, setShowAddMembers] = useState(false);
-  const [materialSearch, setMaterialSearch] = useState('');
-  const [materialFilter, setMaterialFilter] = useState('all');
-
-  const channelMembers = channel?.members || [];
-  const pinnedMessages = messages.filter(message => message.isPinned);
-  const attachments = collectChatAttachments(messages);
-  const visibleAttachments = attachments.filter(attachment => {
-    if (materialFilter === 'media' && !isChatMediaAttachment(attachment)) return false;
-    if (materialFilter === 'files' && isChatMediaAttachment(attachment)) return false;
-    const queryValue = materialSearch.trim().toLocaleLowerCase('uk-UA');
-    if (!queryValue) return true;
-    return `${attachment.name || ''} ${attachment.senderName || ''}`
-      .toLocaleLowerCase('uk-UA')
-      .includes(queryValue);
-  });
-  
-  // Calculate who is in and who is out
-  const membersInChannel = members.filter(m => {
-    const id = m.id || m.uid;
-    // If channel.members array is empty/doesn't exist, treat everyone as a member
-    if (!channelMembers || channelMembers.length === 0) return true;
-    return channelMembers.includes(id);
-  });
-  
-  const membersOutChannel = members.filter(m => {
-    const id = m.id || m.uid;
-    if (!channelMembers || channelMembers.length === 0) return false;
-    return !channelMembers.includes(id);
-  });
-
-  const handleSaveDescription = async () => {
-    try {
-      await setDoc(doc(db, 'organizations', activeOrgId, 'channels', channel.id), {
-        description: description.trim()
-      }, { merge: true });
-      setIsEditingDesc(false);
-    } catch (e) {
-      console.error(e);
-      onError?.('Не вдалося оновити опис каналу');
-    }
-  };
-
-  const handleAddMember = async (uid) => {
-    try {
-      let currentList = [...channelMembers];
-      if (currentList.length === 0) {
-        currentList = members.map(m => m.id || m.uid);
-      }
-      if (!currentList.includes(uid)) {
-        currentList.push(uid);
-      }
-      await setDoc(doc(db, 'organizations', activeOrgId, 'channels', channel.id), {
-        members: currentList
-      }, { merge: true });
-    } catch (e) {
-      console.error(e);
-      onError?.('Не вдалося додати учасника');
-    }
-  };
-
-  const handleAddAllMembers = async () => {
-    try {
-      const allUids = members.map(m => m.id || m.uid);
-      await setDoc(doc(db, 'organizations', activeOrgId, 'channels', channel.id), {
-        members: allUids
-      }, { merge: true });
-      setShowAddMembers(false);
-    } catch (e) {
-      console.error(e);
-      onError?.('Не вдалося додати учасників');
-    }
-  };
-
-  const handleRemoveMember = async (uid) => {
-    try {
-      let currentList = [...channelMembers];
-      if (currentList.length === 0) {
-        currentList = members.map(m => m.id || m.uid);
-      }
-      const updatedList = currentList.filter(id => id !== uid);
-      if (updatedList.length === 0) {
-        onError?.('У каналі має залишитися хоча б один учасник');
-        return;
-      }
-      await setDoc(doc(db, 'organizations', activeOrgId, 'channels', channel.id), {
-        members: updatedList
-      }, { merge: true });
-    } catch (e) {
-      console.error(e);
-      onError?.('Не вдалося видалити учасника');
-    }
-  };
-
-  return (
-    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
-        <div className="flex items-center gap-2">
-          <Info size={16} className="text-muted" />
-          <h3 className="ui-type-card-title text-ink">Про канал</h3>
-        </div>
-        <IconAction
-          onClick={onClose}
-          icon={X}
-          label="Закрити інформацію про канал"
-          appearance="quiet"
-              composition="chat-panel-action"
-            />
-      </div>
-
-      <div className="flex shrink-0 gap-1 border-b border-line/70 px-3 py-2">
-        {[
-          ['info', 'Про канал'],
-          ['pinned', `Закріплені${pinnedMessages.length ? ` · ${pinnedMessages.length}` : ''}`],
-          ['materials', `Матеріали${attachments.length ? ` · ${attachments.length}` : ''}`],
-        ].map(([tabId, label]) => (
-          <button
-            key={tabId}
-            type="button"
-            onClick={() => onTabChange(tabId)}
-            className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
-              activeTab === tabId ? 'bg-white text-ink' : 'text-muted hover:bg-white/60 hover:text-ink'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-6">
-        {activeTab === 'info' && (
-          <>
-        {/* Basic Info */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <Hash size={18} className="text-ink shrink-0" />
-            <h4 className="ui-type-dialog-title text-ink truncate">
-              {channel.name}
-            </h4>
-          </div>
-          
-          <div data-ui-surface="local" className="mt-2 bg-white rounded-2xl p-4 border border-line/70">
-            <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Опис</p>
-            {isEditingDesc ? (
-              <div className="flex flex-col gap-2 mt-1">
-                <textarea
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className="w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-2.5 text-[13px] outline-none resize-none transition-colors"
-                  rows={2}
-                />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setIsEditingDesc(false)} className="text-[12px] font-semibold text-muted hover:text-ink">Скасувати</button>
-                  <button onClick={handleSaveDescription} className="text-[12px] font-semibold text-ink hover:underline">Зберегти</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex justify-between items-start gap-4">
-                <p className="text-[13px] text-ink leading-relaxed">
-                  {channel.description || <span className="italic text-[#b0b0b0]">Опис відсутній</span>}
-                </p>
-                {isAdminOrOwner && (
-                  <button onClick={() => setIsEditingDesc(true)} className="text-muted hover:text-ink text-[12px] font-semibold">Редагувати</button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Members List */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">
-              Учасники ({membersInChannel.length})
-            </span>
-            {isAdminOrOwner && (
-              <button
-                onClick={() => setShowAddMembers(v => !v)}
-                className="text-[11px] font-semibold text-ink hover:underline flex items-center gap-1"
-              >
-                <UserPlus size={13} />
-                Додати
-              </button>
-            )}
-          </div>
-
-          {showAddMembers && (
-            <div data-ui-surface="local" className="mb-4 bg-white rounded-2xl p-3 border border-line/70 flex flex-col gap-2">
-              <button
-                onClick={handleAddAllMembers}
-                className="w-full text-center py-2 bg-ink hover:bg-ink-hover text-white rounded-xl text-[12px] font-semibold transition-colors"
-              >
-                Додати всіх учасників
-              </button>
-              {membersOutChannel.length > 0 && (
-                <div className="border-t border-[#f0f0f0] pt-2 max-h-[140px] overflow-y-auto custom-scrollbar flex flex-col gap-1">
-                  {membersOutChannel.map(m => (
-                    <button
-                      key={m.id || m.uid}
-                      onClick={() => handleAddMember(m.id || m.uid)}
-                      className="w-full flex items-center justify-between text-left px-2 py-1.5 hover:bg-canvas rounded-lg transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="chat-inline" />
-                        <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
-                      </div>
-                      <Plus size={14} className="text-muted" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div data-ui-surface="local" className="bg-white rounded-2xl border border-line/70 p-3 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2">
-            {membersInChannel.map(m => (
-              <div key={m.id || m.uid} className="flex items-center justify-between py-0.5 group/m">
-                <div className="flex items-center gap-2">
-                  <UserAvatar user={{ name: m.name, avatar: m.avatar }} size="sm" />
-                  <span className="text-[13px] font-medium text-ink truncate max-w-[180px]">{m.name || m.email}</span>
-                </div>
-                {isAdminOrOwner && channelMembers.length > 0 && (
-                  <button
-                    onClick={() => handleRemoveMember(m.id || m.uid)}
-                    className="opacity-0 group-hover/m:opacity-100 text-red-500 hover:text-red-700 text-[11px] font-semibold transition-opacity"
-                  >
-                    Видалити
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-          </>
-        )}
-
-        {activeTab === 'pinned' && (
-          <div className="flex flex-col gap-2">
-            {pinnedMessages.length === 0 ? (
-              <div className="flex flex-col items-center py-10 text-center">
-                <Pin size={28} className="mb-3 text-faint" />
-                <p className="text-[13px] font-semibold text-muted">Немає закріплених повідомлень</p>
-              </div>
-            ) : pinnedMessages.map(message => (
-              <button
-                key={message.id}
-                type="button"
-                onClick={() => onJumpToMessage(message.id)}
-                className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]"
-              >
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="truncate text-[11px] font-semibold text-muted">{message.user}</span>
-                  <span className="shrink-0 text-[10px] text-faint">{message.time}</span>
-                </div>
-                <p className="line-clamp-3 text-[12px] leading-5 text-ink">
-                  {message.text || (message.attachments?.length ? 'Вкладення' : 'Повідомлення')}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'materials' && (
-          <div className="flex flex-col gap-3">
-            <label className="relative block">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                value={materialSearch}
-                onChange={event => setMaterialSearch(event.target.value)}
-                placeholder="Пошук матеріалів..."
-                className="w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-[#cfcfcf] focus:border-[#cfcfcf]"
-              />
-            </label>
-            <div className="flex gap-1">
-              {[
-                ['all', 'Усі'],
-                ['media', 'Медіа'],
-                ['files', 'Файли'],
-              ].map(([filterId, label]) => (
-                <button
-                  key={filterId}
-                  type="button"
-                  onClick={() => setMaterialFilter(filterId)}
-                  className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${
-                    materialFilter === filterId ? 'bg-ink text-white' : 'bg-white text-muted hover:text-ink'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {visibleAttachments.length === 0 ? (
-              <div className="flex flex-col items-center py-10 text-center">
-                <Paperclip size={28} className="mb-3 text-faint" />
-                <p className="text-[13px] font-semibold text-muted">
-                  {materialSearch ? 'Матеріали не знайдено' : 'У чаті ще немає матеріалів'}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {visibleAttachments.map(attachment => (
-                  <div key={attachment.chatAttachmentKey} data-ui-surface="local" className="rounded-xl border border-line/70 bg-white p-2">
-                    <ChatAttachmentList
-                      attachments={[attachment]}
-                      compact
-                      className="mt-0 min-w-0 max-w-none sm:grid-cols-1"
-                      onOpen={onOpenAttachment}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onJumpToMessage(attachment.messageId)}
-                      className="mt-1 w-full truncate px-1 text-left text-[10px] text-muted hover:text-ink"
-                    >
-                      {attachment.senderName || 'Учасник'} · перейти до повідомлення
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -1224,6 +835,51 @@ export default function ChatPage() {
     closeThread();
   };
 
+  // The channel document is written from here, not from the panel: the panel is
+  // a kit component and knows what a channel looks like, not where it is kept.
+  // Each of these resolves to `true` when the write went through, which is what
+  // the panel uses to decide whether to leave edit mode.
+  const writeChannel = async (patch, failureMessage) => {
+    try {
+      await setDoc(
+        doc(db, 'organizations', activeOrgId, 'channels', activeChannel.id),
+        patch,
+        { merge: true },
+      );
+      return true;
+    } catch (error) {
+      console.error(error);
+      showToast(failureMessage, 'error');
+      return false;
+    }
+  };
+
+  const channelMemberIds = () => {
+    const current = activeChannelData?.members || channels.find(c => c.id === activeChannel.id)?.members || [];
+    return current.length > 0 ? [...current] : members.map(m => m.id || m.uid);
+  };
+
+  const handleSaveChannelDescription = description =>
+    writeChannel({ description }, 'Не вдалося оновити опис каналу');
+
+  const handleAddChannelMember = (uid) => {
+    const list = channelMemberIds();
+    if (!list.includes(uid)) list.push(uid);
+    return writeChannel({ members: list }, 'Не вдалося додати учасника');
+  };
+
+  const handleAddAllChannelMembers = () =>
+    writeChannel({ members: members.map(m => m.id || m.uid) }, 'Не вдалося додати учасників');
+
+  const handleRemoveChannelMember = (uid) => {
+    const updated = channelMemberIds().filter(id => id !== uid);
+    if (updated.length === 0) {
+      showToast('У каналі має залишитися хоча б один учасник', 'error');
+      return Promise.resolve(false);
+    }
+    return writeChannel({ members: updated }, 'Не вдалося видалити учасника');
+  };
+
   const handleJumpToMessage = (messageId) => {
     setChatSearch('');
     setShowChannelInfo(false);
@@ -1381,201 +1037,73 @@ export default function ChatPage() {
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas">
             
             {/* Chat header */}
-            <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
-              <button
-                onClick={requestPaneClose}
-                className="md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0"
-                title="До списку чатів"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              {activeChannel.type === 'channel' ? (
-                <Hash size={17} className="text-ink shrink-0" />
-              ) : (
-                <div className="relative shrink-0">
-                  <div className="w-8 h-8 rounded-full overflow-hidden">
-                    <UserAvatar user={dms.find(d => d.id === activeChannel.id)} size={32} />
-                  </div>
-                  {dms.find(d => d.id === activeChannel.id)?.online && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#10b981] border-2 border-canvas" />
-                  )}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h2 className="ui-type-compact-title text-ink truncate flex items-center gap-1.5">
-                  {activeChannel.type === 'channel'
-                    ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
-                    : (
-                      <>
-                        {dms.find(d => d.id === activeChannel.id)?.name || 'Особисті'}
-                        {dms.find(d => d.id === activeChannel.id)?.statusEmoji && (
-                          <span
-                            className="cursor-help"
-                            title={dms.find(d => d.id === activeChannel.id)?.status || 'Статус користувача'}
-                          >
-                            {dms.find(d => d.id === activeChannel.id).statusEmoji}
-                          </span>
-                        )}
-                      </>
-                    )}
-                </h2>
-                {activeChannel.type === 'dm' && (
-                  <p className="text-[11px] text-muted">
-                    {dms.find(d => d.id === activeChannel.id)?.online ? 'в мережі' : 'не в мережі'}
-                  </p>
-                )}
-                {activeChannel.type === 'channel' && (activeChannelData?.description || currentChannel?.description) && (
-                  <p className="text-[11px] text-muted truncate">
-                    {activeChannelData?.description || currentChannel?.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Pinned message count */}
-              {activeChannel.type === 'channel' && messages.filter(m => m.isPinned).length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenChannelInfo('pinned')}
-                  className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]"
-                >
-                  <Pin size={12} />
-                  <span>{messages.filter(m => m.isPinned).length} закріплено</span>
-                </button>
-              )}
-
-              {/* Conversation info */}
-              <IconAction
-                  onClick={() => {
-                    if (activeChannel.type === 'dm') {
-                      router.push(`/chat?dm=${encodeURIComponent(activeChannel.id)}&member=${encodeURIComponent(activeChannel.id)}`);
-                      return;
-                    }
-                    if (showChannelInfo) {
-                      setShowChannelInfo(false);
-                    } else {
-                      handleOpenChannelInfo('info');
-                    }
-                  }}
-                  icon={Info}
-                  label={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
-                  appearance={showChannelInfo ? 'soft' : 'quiet'}
-              composition="chat-panel-action"
+            <ChatConversationHeader
+              type={activeChannel.type}
+              title={activeChannel.type === 'channel'
+                ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
+                : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті')}
+              subtitle={activeChannel.type === 'dm'
+                ? (dms.find(d => d.id === activeChannel.id)?.online ? 'в мережі' : 'не в мережі')
+                : (activeChannelData?.description || currentChannel?.description || '')}
+              statusEmoji={activeChannel.type === 'dm' ? dms.find(d => d.id === activeChannel.id)?.statusEmoji : null}
+              statusTitle={dms.find(d => d.id === activeChannel.id)?.status}
+              user={dms.find(d => d.id === activeChannel.id)}
+              online={Boolean(dms.find(d => d.id === activeChannel.id)?.online)}
+              pinnedCount={activeChannel.type === 'channel' ? messages.filter(m => m.isPinned).length : 0}
+              onOpenPinned={() => handleOpenChannelInfo('pinned')}
+              infoLabel={activeChannel.type === 'dm' ? 'Про користувача' : 'Про канал'}
+              infoActive={showChannelInfo}
+              onToggleInfo={() => {
+                if (activeChannel.type === 'dm') {
+                  router.push(`/chat?dm=${encodeURIComponent(activeChannel.id)}&member=${encodeURIComponent(activeChannel.id)}`);
+                  return;
+                }
+                if (showChannelInfo) {
+                  setShowChannelInfo(false);
+                } else {
+                  handleOpenChannelInfo('info');
+                }
+              }}
+              onBack={requestPaneClose}
             />
-            </div>
 
             {/* Search Results Banner */}
             {chatSearch.trim() && (
-              <div className="bg-[#fffbe6] border-b border-[#ffe58f] px-6 py-2 flex items-center justify-between shrink-0">
-                <p className="text-[13px] text-[#876800]">
-                  Знайдено <strong>{displayMessages.length}</strong> {displayMessages.length === 1 ? 'повідомлення' : displayMessages.length < 5 ? 'повідомлення' : 'повідомлень'} за запитом <strong>«{chatSearch}»</strong>
-                </p>
-                <button onClick={() => setChatSearch('')} className="text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline">
-                  Очистити
-                </button>
-              </div>
+              <ChatSearchBanner
+                query={chatSearch}
+                count={displayMessages.length}
+                onClear={() => setChatSearch('')}
+              />
             )}
 
             {/* Messages list */}
-            <div
-              ref={chatScrollRef}
-              className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-4 pb-12 pt-2 scroll-pb-12"
-            >
-              {loading && messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center h-full">
-                  <div className="w-8 h-8 border-3 border-line border-t-ink rounded-full animate-spin" />
-                </div>
-              ) : displayMessages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center h-full">
-                  <EmptyState
-                    icon={MessageSquare}
-                    title={chatSearch ? 'Нічого не знайдено' : 'Ще немає повідомлень'}
-                    description={chatSearch ? `За запитом «${chatSearch}»` : 'Почніть розмову! 👋'}
-                  />
-                </div>
-              ) : (
-                <>
-                {/* Only the latest window is subscribed; older history loads on
-                    demand so opening a busy channel is not an unbounded read. */}
-                {hasMoreMessages && !chatSearch.trim() && (
-                  <div className="flex justify-center pb-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleLoadOlderMessages}
-                      className="rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink"
-                    >
-                      Показати давніші повідомлення
-                    </button>
-                  </div>
-                )}
-                {displayMessages.map((msg, i) => {
-                  const prev = i > 0 ? displayMessages[i - 1] : null;
-                  const showDateSep = !isSameDay(prev?.createdAt, msg.createdAt);
-                  return (
-                    <div
-                      key={msg.id}
-                      ref={element => {
-                        if (element) messageRefs.current.set(msg.id, element);
-                        else messageRefs.current.delete(msg.id);
-                      }}
-                    >
-                      {showDateSep && msg.createdAt && (
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-line" />
-                          <Pill size="md" className="shrink-0">{formatDateSep(msg.createdAt)}</Pill>
-                          <div className="flex-1 h-px bg-line" />
-                        </div>
-                      )}
-                      <MessageBubble
-                        msg={msg}
-                        prevMsg={prev}
-                        myUid={myUid}
-                        members={members}
-                        onReact={handleReaction}
-                        onEdit={handleEditMessage}
-                        onDelete={handleDeleteMessage}
-                        onThread={handleOpenThread}
-                        onPin={handlePin}
-                        onOpenAttachment={setViewerAttachment}
-                        searchTerm={chatSearch}
-                      />
-                    </div>
-                  );
-                })}
-                </>
-              )}
-
-              {/* Typing indicator */}
-              {typingUsers.length > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 mt-1">
-                  <div className="flex gap-0.5">
-                    {[0, 1, 2].map(i => (
-                      <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
-                  </div>
-                  <span className="text-[12px] text-muted italic">
-                    {typingUsers.join(', ')} {typingUsers.length === 1 ? 'друкує' : 'друкують'}...
-                  </span>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* New messages badge */}
-            {unreadBadge > 0 && isScrolledUp && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
-                <button
-                  onClick={() => {
-                    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
-                    setUnreadBadge(0);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95"
-                >
-                  <ChevronDown size={14} />
-                  {unreadBadge} нових
-                </button>
-              </div>
-            )}
+            <ChatMessageList
+              scrollRef={chatScrollRef}
+              endRef={messagesEndRef}
+              registerMessageRef={(id, element) => {
+                if (element) messageRefs.current.set(id, element);
+                else messageRefs.current.delete(id);
+              }}
+              messages={displayMessages}
+              loading={loading}
+              searchTerm={chatSearch}
+              hasMore={hasMoreMessages}
+              onLoadMore={handleLoadOlderMessages}
+              typingUsers={typingUsers}
+              unreadCount={isScrolledUp ? unreadBadge : 0}
+              onJumpToLatest={() => {
+                chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+                setUnreadBadge(0);
+              }}
+              myUid={myUid}
+              members={members}
+              onReact={handleReaction}
+              onEdit={handleEditMessage}
+              onDelete={handleDeleteMessage}
+              onThread={handleOpenThread}
+              onPin={handlePin}
+              onOpenAttachment={setViewerAttachment}
+            />
 
             {/* Input */}
             <ChatComposerDock ref={composerRef} scrollRef={chatScrollRef}>
@@ -1609,7 +1137,7 @@ export default function ChatPage() {
 
           {/* Channel Info sidebar */}
           {showChannelInfo && activeChannel.type === 'channel' && (
-            <ChannelInfoSidebar
+            <ChannelInfoPanel
               key={activeChannel.id}
               channel={{
                 id: activeChannel.id,
@@ -1621,10 +1149,12 @@ export default function ChatPage() {
               onTabChange={setChannelInfoTab}
               onOpenAttachment={setViewerAttachment}
               onJumpToMessage={handleJumpToMessage}
-              onError={message => showToast(message, 'error')}
               onClose={() => setShowChannelInfo(false)}
-              activeOrgId={activeOrgId}
               isAdminOrOwner={isAdminOrOwner}
+              onSaveDescription={handleSaveChannelDescription}
+              onAddMember={handleAddChannelMember}
+              onAddAllMembers={handleAddAllChannelMembers}
+              onRemoveMember={handleRemoveChannelMember}
             />
           )}
         </div>

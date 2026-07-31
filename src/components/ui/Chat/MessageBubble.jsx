@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { MessageSquare } from 'lucide-react';
+import { Edit2, MessageSquare, Pin, Smile, Trash2 } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
@@ -17,7 +17,7 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import MessageContent from '@/components/workspace/MessageContent';
-import { ChatAttachmentList } from '@/components/workspace/ChatAttachments';
+import { ChatAttachmentList } from './ChatAttachmentList';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 // ─── Message Bubble ─────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
@@ -27,6 +27,15 @@ import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import MessageBubble from '@/components/ui/Chat/MessageBubble';
+import ChannelInfoPanel from '@/components/ui/Chat/ChannelInfoPanel';
+import ChatConversationHeader from '@/components/ui/Chat/ChatConversationHeader';
+import ChatMessageList from '@/components/ui/Chat/ChatMessageList';
+import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
+import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
+import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
+import FileInput from '@/components/ui/Forms/FileInput';
+import TextAction from '@/components/ui/TextAction';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
@@ -45,7 +54,7 @@ import {
   Globe, Eye, EyeOff, Upload, Download, Link, Paperclip,
   ChevronLeft, ChevronsUpDown, GripVertical, Move,
   List, Table as TableIcon, Kanban, Activity, Target, Award,
-  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch, MapPin, Code2,
+  PanelLeftOpen, Building, Folder, Smile, Plug, ScanSearch, MapPin, Code2, UserPlus,
   Box, Grid3x3, CircleSlash
 } from 'lucide-react';
 
@@ -1058,7 +1067,13 @@ function ConfirmDialogPreview() {
 // Shaped exactly as the chat page feeds MessageBubble: `user`/`time` are
 // pre-formatted by the page, `createdAt` is a Firestore-style stamp whose
 // toMillis() decides whether consecutive messages share one avatar header.
-const stamp = minutesAgo => ({ toMillis: () => Date.now() - minutesAgo * 60_000 });
+// `toDate` as well as `toMillis`: a Firestore Timestamp carries both, and the
+// day separator reads the first while avatar grouping reads the second. A stub
+// with only `toMillis` printed «Invalid Date» in the separator.
+const stamp = (minutesAgo) => {
+  const ms = Date.now() - minutesAgo * 60_000;
+  return { toMillis: () => ms, toDate: () => new Date(ms) };
+};
 const CHAT_DEMO_MEMBERS = [
   { id: 'kit-arthur', name: 'Артур Моспан' },
   { id: 'kit-olena', name: 'Олена Коваль', statusEmoji: '🎧', status: 'У фокусі' },
@@ -1617,8 +1632,45 @@ function FeedbackSection() {
 // were listed here too, which duplicated /ui-audit → Чат byte for byte; what
 // stays is what chat contributes *to the kit* — its avatar scale, its icon
 // sizes and its day divider, all of them real components.
+const KIT_MENTION_MEMBERS = [
+  { id: 'kit-arthur', name: 'Артур Моспан', email: 'arthur@quickteam.app' },
+  { id: 'kit-olena', name: 'Олена Коваль', email: 'olena@quickteam.app' },
+  { id: 'kit-petro', name: 'Петро Іванчук', email: 'petro@quickteam.app' },
+];
+
+// An inline data: URI rather than a hosted file, so the image tile draws its
+// real thumbnail without the catalogue depending on anything it has to fetch.
+const KIT_IMAGE_DATA_URI = 'data:image/svg+xml;utf8,'
+  + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200">'
+    + '<rect width="320" height="200" fill="#e9e9ec"/>'
+    + '<rect x="24" y="120" width="272" height="10" rx="5" fill="#cfcfd4"/>'
+    + '<rect x="24" y="142" width="180" height="10" rx="5" fill="#dcdce0"/>'
+    + '<circle cx="72" cy="70" r="26" fill="#cfcfd4"/></svg>',
+  );
+
+const KIT_CHAT_ATTACHMENTS = [
+  { chatAttachmentKey: 'a1', name: 'onboarding-v2.png', size: 218_000, type: 'image/png', url: KIT_IMAGE_DATA_URI },
+  { chatAttachmentKey: 'a2', name: 'brief.docx', size: 61_400, type: 'application/msword' },
+];
+
+// Plain objects, not File instances: the pending tile calls createObjectURL for
+// an image, and there is no Blob to hand it here (nor one on the server, where
+// the API does not exist at all). Non-image drafts show the same row with the
+// same remove control; the thumbnail look is covered by the list above.
+const KIT_PENDING_FILES = [
+  { name: 'onboarding-v2.pdf', size: 482_000, type: 'application/pdf', lastModified: 1 },
+  { name: 'нотатки.txt', size: 3_100, type: 'text/plain', lastModified: 2 },
+];
+
 function ChatElementsSection() {
   const demoUser = { id: 'kit-arthur', name: 'Артур Моспан' };
+  // The state sits in the section, not in helper components: coverage is
+  // measured by finding `<Component` inside the section's own body, so a
+  // wrapper function would move the render out of what the scan reads.
+  const [panelTab, setPanelTab] = useState('info');
+  const [pickedFiles, setPickedFiles] = useState([]);
+  const fileInputRef = useRef(null);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
@@ -1669,6 +1721,151 @@ function ChatElementsSection() {
       >
         <Pill tone="surface" size="chat-day" weight="medium" uppercase>Сьогодні</Pill>
         <Pill tone="surface" size="chat-day-wide" uppercase>12 березня</Pill>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="TextAction — кнопка без коробки"
+        description="Написана 15 разів вручну на пʼяти поверхнях. Вага йде за розміром, а не окремим пропом: обидва живі 10px-екземпляри були звичайної ваги, всі 11/12px — semibold. Розмір іконки й проміжок теж виводяться з size."
+        filePath="src/components/ui/TextAction.jsx"
+        component="TextAction"
+        fullWidth
+      >
+        <div className="flex flex-col gap-[14px]">
+          {[['ink', 'Зберегти', 'ствердна дія в парі'], ['muted', 'Скасувати', 'тиха половина пари'],
+            ['danger', 'Видалити', 'деструктивна й видима'], ['danger-quiet', 'Прибрати', 'червоніє лише під курсором']].map(([tone, label, role]) => (
+            <div key={tone} className="flex items-center gap-[12px]">
+              <span className="w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink">{tone}</span>
+              {['xs', 'sm', 'md'].map(size => (
+                <TextAction key={size} tone={tone} size={size}>{label}</TextAction>
+              ))}
+              <span className="text-[10px] text-[#cfcfcf]">{role}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-[12px]">
+            <span className="w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink">з іконкою</span>
+            <TextAction size="sm" icon={UserPlus}>Додати</TextAction>
+            <TextAction size="md" icon={MessageSquare}>3 відповіді</TextAction>
+            <TextAction size="xs" tone="danger-quiet" icon={Trash2} label="Видалити повідомлення" />
+          </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="AvatarButton — аватар як контрол"
+        description="UserAvatar навмисно лишається картинкою: він рендериться в списках і хедерах, де клікати нічого. Три екрани, яким таки треба клікабельний, обгортали його самі — і розійшлись у ховері."
+        filePath="src/components/ui/DataDisplay/AvatarButton.jsx"
+        component="AvatarButton"
+      >
+        <AvatarButton user={demoUser} size="chat-message" label="Переглянути профіль" />
+        <AvatarButton user={{ name: 'Олена Коваль' }} size="chat-member" label="Переглянути профіль" />
+        <AvatarButton user={{ name: 'Петро Іванчук' }} size="chat-inline" label="Переглянути профіль" />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="MentionMenu — дві щільності"
+        description="@-меню було написане двічі, по разу на композер, і копії вже розійшлись: у чаті — 16px радіус із тінню й 28px аватари, у таймлайні задачі — 10px рамка й 20px, і лише в другому був курсор із клавіатури."
+        filePath="src/components/ui/Chat/MentionMenu.jsx"
+        component="MentionMenu"
+        fullWidth
+      >
+        <div className="grid w-full grid-cols-1 gap-[16px] md:grid-cols-2">
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[10px] font-bold text-ink">density=&quot;composer&quot;</span>
+            <MentionMenu density="composer" members={KIT_MENTION_MEMBERS} onSelect={() => {}} />
+          </div>
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[10px] font-bold text-ink">density=&quot;timeline&quot;</span>
+            <MentionMenu density="timeline" members={KIT_MENTION_MEMBERS} selectedIndex={1} onSelect={() => {}} />
+          </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Вкладення в чаті"
+        description="Однакові плитки у трьох місцях: під повідомленням, у вкладці «Матеріали» і як ще ненадісланий чернетковий список у композері. Останній — єдиний, у якого є «прибрати»."
+        filePath="src/components/ui/Chat/ChatAttachmentList.jsx"
+        component="ChatAttachmentList"
+        fullWidth
+      >
+        <div className="grid w-full grid-cols-1 gap-[16px] md:grid-cols-2">
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[10px] font-bold text-ink">ChatAttachmentList</span>
+            <ChatAttachmentList attachments={KIT_CHAT_ATTACHMENTS} onOpen={() => {}} />
+          </div>
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[10px] font-bold text-ink">PendingChatAttachments</span>
+            <PendingChatAttachments files={KIT_PENDING_FILES} onRemove={() => {}} />
+          </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="FileInput — невидима половина «прикріпити»"
+        description="Прихований нативний input, який відкриває справжня кнопка кіту через ref. Вигляду не має — і саме тому його чотири рази переписували поруч із власним тригером."
+        filePath="src/components/ui/Forms/FileInput.jsx"
+        component="FileInput"
+      >
+        <div className="flex items-center gap-[12px]">
+          <FileInput
+            ref={fileInputRef}
+            multiple
+            onChange={event => setPickedFiles(Array.from(event.target.files || []).map(file => file.name))}
+          />
+          <Button style="secondary" size="md" icon={Paperclip} onClick={() => fileInputRef.current?.click()}>
+            Прикріпити файл
+          </Button>
+          <span className="text-[11px] text-muted">
+            {pickedFiles.length > 0 ? pickedFiles.join(', ') : 'Нічого не вибрано'}
+          </span>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="ChatSearchBanner"
+        description="Бурштинова смуга над розмовою під час пошуку. Її «Очистити» — єдина бурштинова текст-кнопка в продукті, тому колір лишається тут, а не стає тоном TextAction, якого більше ніхто не попросить."
+        filePath="src/components/ui/Chat/ChatSearchBanner.jsx"
+        component="ChatSearchBanner"
+        fullWidth
+      >
+        <div className="w-full overflow-hidden rounded-[12px] border border-line">
+          <ChatSearchBanner query="онбординг" count={3} onClear={() => {}} />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="ChannelInfoPanel"
+        description="Третя панель чату: опис, учасники, закріплені й усі файли каналу. Тринадцять рукописних контролів — третина всієї поверхні чату — жили тут і не показувались ніде, крім справжнього каналу зі справжніми учасниками."
+        filePath="src/components/ui/Chat/ChannelInfoPanel.jsx"
+        component="ChannelInfoPanel"
+        fullWidth
+      >
+        {/* md+ only: нижче панель — `fixed inset-0`, бо на телефоні вона
+            повноекранна, а не рейка збоку. */}
+        <div className="hidden h-[520px] w-full justify-center md:flex">
+          <ChannelInfoPanel
+            channel={{
+              id: 'general',
+              name: 'general',
+              description: 'Загальний канал для всієї команди',
+              members: ['kit-arthur', 'kit-olena'],
+            }}
+            members={KIT_MENTION_MEMBERS}
+            messages={CHAT_DEMO_MESSAGES}
+            activeTab={panelTab}
+            onTabChange={setPanelTab}
+            isAdminOrOwner
+            onOpenAttachment={() => {}}
+            onJumpToMessage={() => {}}
+            onClose={() => {}}
+            onSaveDescription={async () => true}
+            onAddMember={async () => true}
+            onAddAllMembers={async () => true}
+            onRemoveMember={async () => true}
+          />
+        </div>
+        <p className="text-[11px] text-muted md:hidden">
+          На вузькому екрані панель займає весь екран — превʼю показане від 768px.
+        </p>
       </PreviewBlock>
     </div>
   );
@@ -2411,38 +2608,32 @@ function NavMenuSection() {
               {/* Conversation pane — the product's own chrome: canvas surface,
                   64px translucent header, composer docked at the bottom. */}
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas">
-                <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
-                  <Hash size={17} className="shrink-0 text-ink" />
-                  <div className="min-w-0 flex-1">
-                    <h2 className="ui-type-compact-title truncate text-ink">general</h2>
-                    <p className="truncate text-[11px] text-muted">Загальний канал для всієї команди</p>
-                  </div>
-                  <IconAction label="Інформація про канал" icon={Info} size="md" appearance="quiet" composition="chat-panel-action" />
-                </div>
-                {/* Real MessageBubble rows, not an empty box. The scroller uses
-                    the page's own padding so the last message clears the dock. */}
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2 scroll-pb-12">
-                  <div className="my-4 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-line" />
-                    <Pill size="md" className="shrink-0">Сьогодні</Pill>
-                    <div className="h-px flex-1 bg-line" />
-                  </div>
-                  {CHAT_DEMO_MESSAGES.map((msg, index) => (
-                    <MessageBubble
-                      key={msg.id}
-                      msg={msg}
-                      prevMsg={index > 0 ? CHAT_DEMO_MESSAGES[index - 1] : null}
-                      myUid="kit-arthur"
-                      members={CHAT_DEMO_MEMBERS}
-                      onReact={() => {}}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      onThread={() => {}}
-                      onPin={() => {}}
-                      onOpenAttachment={() => {}}
-                    />
-                  ))}
-                </div>
+                {/* The header and the list are the product's own components.
+                    This preview used to retype both, and the copy was already
+                    wrong twice over: a bare <Info> glyph where /chat has a
+                    toggle, and no pinned counter at all. */}
+                <ChatConversationHeader
+                  type="channel"
+                  title="general"
+                  subtitle="Загальний канал для всієї команди"
+                  pinnedCount={1}
+                  infoLabel="Про канал"
+                />
+                <ChatMessageList
+                  messages={CHAT_DEMO_MESSAGES}
+                  myUid="kit-arthur"
+                  members={CHAT_DEMO_MEMBERS}
+                  typingUsers={['Олена Коваль']}
+                  unreadCount={2}
+                  hasMore
+                  onLoadMore={() => {}}
+                  onReact={() => {}}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  onThread={() => {}}
+                  onPin={() => {}}
+                  onOpenAttachment={() => {}}
+                />
                 <ChatComposerDock>
                   <div className="relative px-4 pb-4">
                     <ChatComposerCore variant="workspace" value="" onChange={() => {}} onSubmit={() => {}} placeholder="Написати в #general..." canSubmit={false} />
@@ -2690,6 +2881,15 @@ const VARIANT_BASE = {
   ChatComposerCore: (props) => (
     <div className="w-full max-w-[420px]">
       <ChatComposerCore value="" onChange={() => {}} onSubmit={() => {}} placeholder="Повідомлення" {...props} />
+    </div>
+  ),
+  TextAction: (props) => <TextAction {...props}>Дія</TextAction>,
+  AvatarButton: (props) => (
+    <AvatarButton user={{ id: 'kit', name: 'Артур Моспан' }} label="Переглянути профіль" {...props} />
+  ),
+  MentionMenu: (props) => (
+    <div className="w-full max-w-[240px]">
+      <MentionMenu members={KIT_MENTION_MEMBERS.slice(0, 2)} onSelect={() => {}} {...props} />
     </div>
   ),
 };

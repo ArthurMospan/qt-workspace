@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Trash2, Check, CheckCheck } from 'lucide-react';
+import TextAction from '@/components/ui/TextAction';
 import { formatMsgTime } from '@/lib/portal/qtplusChatView.mjs';
 
 function ChatAuthorAvatar({ name, url }) {
@@ -56,23 +57,19 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
               : <Check size={12} className="text-faint" />}
             {onDelete && (
               confirming ? (
-                <button
-                  type="button"
-                  onClick={() => onDelete(view.id)}
-                  className="text-[10px] text-red-500 hover:underline"
-                >
+                <TextAction tone="danger" size="xs" onClick={() => onDelete(view.id)}>
                   Видалити?
-                </button>
+                </TextAction>
               ) : (
-                <button
-                  type="button"
+                <TextAction
+                  tone="danger-quiet"
+                  size="xs"
+                  icon={Trash2}
+                  label="Видалити повідомлення"
                   onClick={() => setConfirming(true)}
                   onBlur={() => setConfirming(false)}
-                  aria-label="Видалити повідомлення"
-                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-faint hover:text-red-500"
-                >
-                  <Trash2 size={12} />
-                </button>
+                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                />
               )
             )}
           </div>

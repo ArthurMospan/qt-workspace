@@ -68,4 +68,18 @@ export { default as FilterBar } from './FilterBar'
 export { default as Segmented } from './Segmented'
 export { default as ChannelRail } from './Navigation/ChannelRail'
 export { default as MemberRail } from './Navigation/MemberRail'
+
+// ===== CHAT =====
+// Chat is a structure, not a screen: the message row, the list around it, the
+// header above it and the info panel beside it are all components the catalogue
+// renders, so /ui-kit shows a conversation instead of a grey box where one goes.
 export { default as MessageBubble } from './Chat/MessageBubble'
+export { default as ChatMessageList } from './Chat/ChatMessageList'
+export { default as ChatConversationHeader } from './Chat/ChatConversationHeader'
+export { default as ChatSearchBanner } from './Chat/ChatSearchBanner'
+export { default as ChannelInfoPanel } from './Chat/ChannelInfoPanel'
+export { default as MentionMenu } from './Chat/MentionMenu'
+export { ChatAttachmentList, PendingChatAttachments } from './Chat/ChatAttachmentList'
+export { default as TextAction } from './TextAction'
+export { default as AvatarButton } from './DataDisplay/AvatarButton'
+export { default as FileInput } from './Forms/FileInput'

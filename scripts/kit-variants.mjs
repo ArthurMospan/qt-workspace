@@ -72,6 +72,18 @@ const SOURCES = {
   UserAvatar: {
     size: { map: ['DataDisplay/UserAvatar.jsx', 'AVATAR_SIZES'] },
   },
+  // AvatarButton is UserAvatar with a control around it, so it reads the same
+  // scale rather than declaring a second one that could drift from it.
+  AvatarButton: {
+    size: { map: ['DataDisplay/UserAvatar.jsx', 'AVATAR_SIZES'] },
+  },
+  TextAction: {
+    tone: { map: ['TextAction.jsx', 'TONES'] },
+    size: { map: ['TextAction.jsx', 'SIZES'] },
+  },
+  MentionMenu: {
+    density: { map: ['Chat/MentionMenu.jsx', 'DENSITIES'] },
+  },
   Counter: {
     size: { literal: ['xs', 'sm', 'md', 'lg'] },
     variant: { literal: ['count', 'dot'] },
