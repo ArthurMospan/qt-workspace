@@ -26,6 +26,7 @@ import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
+import MessageBubble from '@/components/ui/Chat/MessageBubble';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import UsagePanel from './UsagePanel';
@@ -1054,6 +1055,43 @@ function ConfirmDialogPreview() {
 // no way to tell — six bare buttons labelled with prop syntax read as invented
 // options. `where` is the screen you have already seen it on; `open` is what
 // you do there to get it. Counts come from `npm run kit:scan`.
+// Shaped exactly as the chat page feeds MessageBubble: `user`/`time` are
+// pre-formatted by the page, `createdAt` is a Firestore-style stamp whose
+// toMillis() decides whether consecutive messages share one avatar header.
+const stamp = minutesAgo => ({ toMillis: () => Date.now() - minutesAgo * 60_000 });
+const CHAT_DEMO_MEMBERS = [
+  { id: 'kit-arthur', name: 'Артур Моспан' },
+  { id: 'kit-olena', name: 'Олена Коваль', statusEmoji: '🎧', status: 'У фокусі' },
+];
+const CHAT_DEMO_MESSAGES = [
+  {
+    id: 'm1',
+    senderId: 'kit-olena',
+    user: 'Олена Коваль',
+    time: '10:42',
+    text: 'Закинула макети нового онбордингу — гляньте другий екран, там питання по копірайту.',
+    createdAt: stamp(34),
+    reactions: { '👍': ['kit-arthur'] },
+  },
+  {
+    id: 'm2',
+    senderId: 'kit-arthur',
+    user: 'Артур Моспан',
+    time: '10:51',
+    text: 'Подивився. Другий екран ок, тільки заголовок довший за колонку — зріжеться на мобілці.',
+    createdAt: stamp(25),
+  },
+  {
+    id: 'm3',
+    senderId: 'kit-arthur',
+    user: 'Артур Моспан',
+    time: '10:52',
+    text: 'І ще: кнопку «Далі» варто зробити на всю ширину.',
+    createdAt: stamp(24),
+    isPinned: true,
+  },
+];
+
 const DIALOG_VARIANTS = [
   {
     id: 'flush',
@@ -2261,7 +2299,10 @@ function NavMenuSection() {
   // ChannelRail and MemberRail are the components /chat and /team render, so
   // the catalogue shows the thing itself instead of a drawing of it.
 
+  // MessageBubble in the chat preview can open a confirm ("delete message"),
+  // so the section supplies the provider the app supplies at layout level.
   return (
+    <ConfirmProvider>
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
         title="SidebarLayout context=&quot;settings&quot;"
@@ -2378,7 +2419,30 @@ function NavMenuSection() {
                   </div>
                   <IconAction label="Інформація про канал" icon={Info} size="md" appearance="quiet" composition="chat-panel-action" />
                 </div>
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2" />
+                {/* Real MessageBubble rows, not an empty box. The scroller uses
+                    the page's own padding so the last message clears the dock. */}
+                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2 scroll-pb-12">
+                  <div className="my-4 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-line" />
+                    <Pill size="md" className="shrink-0">Сьогодні</Pill>
+                    <div className="h-px flex-1 bg-line" />
+                  </div>
+                  {CHAT_DEMO_MESSAGES.map((msg, index) => (
+                    <MessageBubble
+                      key={msg.id}
+                      msg={msg}
+                      prevMsg={index > 0 ? CHAT_DEMO_MESSAGES[index - 1] : null}
+                      myUid="kit-arthur"
+                      members={CHAT_DEMO_MEMBERS}
+                      onReact={() => {}}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onThread={() => {}}
+                      onPin={() => {}}
+                      onOpenAttachment={() => {}}
+                    />
+                  ))}
+                </div>
                 <ChatComposerDock>
                   <div className="relative px-4 pb-4">
                     <ChatComposerCore variant="workspace" value="" onChange={() => {}} onSubmit={() => {}} placeholder="Написати в #general..." canSubmit={false} />
@@ -2401,6 +2465,7 @@ function NavMenuSection() {
         </div>
       </PreviewBlock>
     </div>
+    </ConfirmProvider>
   );
 }
 

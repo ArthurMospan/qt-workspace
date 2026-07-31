@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 178,
+    "usedAndPreviewed": 174,
     "usedWithoutPreview": 0,
-    "declaredUnused": 71
+    "declaredUnused": 75
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -39,6 +39,12 @@
       "prop": "color",
       "value": "red",
       "namespace": null
+    },
+    {
+      "component": "Button",
+      "prop": "composition",
+      "value": "chat-message-action",
+      "namespace": ".ui-control[data-ui-composition]"
     },
     {
       "component": "Button",
@@ -80,6 +86,12 @@
       "component": "Button",
       "prop": "size",
       "value": "icon-30",
+      "namespace": null
+    },
+    {
+      "component": "Button",
+      "prop": "surface",
+      "value": "default",
       "namespace": null
     },
     {
@@ -171,6 +183,12 @@
       "prop": "gap",
       "value": "sm",
       "namespace": null
+    },
+    {
+      "component": "IconAction",
+      "prop": "composition",
+      "value": "chat-message-action",
+      "namespace": ".ui-control[data-ui-composition]"
     },
     {
       "component": "IconAction",
@@ -446,6 +464,12 @@
       "component": "ToggleSwitch",
       "prop": "size",
       "value": "md",
+      "namespace": null
+    },
+    {
+      "component": "UserAvatar",
+      "prop": "size",
+      "value": "chat-message",
       "namespace": null
     }
   ],
@@ -946,8 +970,8 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 66,
-    "Button.size.icon-sm": 20,
+    "Button.style.ghost": 62,
+    "Button.size.icon-sm": 16,
     "Button.size.sm": 38,
     "Surface.preset.panel": 7,
     "Surface.padding.lg": 4,
@@ -955,16 +979,9 @@
     "Surface.composition.member-chart-panel": 1,
     "FilterBar.context.detail": 1,
     "Surface.padding.sm": 1,
-    "UserAvatar.size.chat-message": 2,
-    "Pill.size.sm": 22,
-    "IconAction.size.sm": 4,
-    "IconAction.appearance.soft": 6,
-    "IconAction.composition.chat-message-action": 1,
-    "Button.composition.chat-message-action": 2,
-    "Button.surface.canvas": 3,
-    "Button.surface.default": 1,
     "UserAvatar.size.chat-member": 2,
     "ChatComposerCore.variant.workspace": 1,
+    "IconAction.appearance.soft": 5,
     "IconAction.composition.chat-composer-action": 2,
     "Counter.size.sm": 11,
     "Counter.appearance.subtle": 6,
@@ -1000,6 +1017,7 @@
     "Surface.preset.card": 1,
     "Surface.padding.none": 3,
     "UserAvatar.size.lg": 3,
+    "Pill.size.sm": 21,
     "Pill.tone.ink-subtle": 4,
     "Button.composition.settings-row-action": 5,
     "SidebarLayout.context.settings": 1,
@@ -1033,6 +1051,7 @@
     "Button.composition.status-submit": 1,
     "Counter.size.xs": 1,
     "Button.shape.compact": 2,
+    "Button.surface.canvas": 2,
     "Segmented.surface.canvas": 4,
     "IconAction.appearance.surface": 1,
     "IconAction.appearance.surface-danger": 1,
@@ -1073,6 +1092,7 @@
     "Button.composition.inline-add-action": 3,
     "Pill.tone.info": 1,
     "UserAvatar.size.chat-mention": 1,
+    "IconAction.size.sm": 3,
     "EmptyState.context.inset": 3,
     "EmptyState.context.flexible": 2,
     "Input.composition.duration-compact-hours": 1,
