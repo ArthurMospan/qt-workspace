@@ -81,6 +81,12 @@ const SOURCES = {
     tone: { map: ['TextAction.jsx', 'TONES'] },
     size: { map: ['TextAction.jsx', 'SIZES'] },
   },
+  SelectableChip: {
+    shape: { map: ['Forms/SelectableChip.jsx', 'SHAPES'] },
+  },
+  MarkdownViewer: {
+    size: { map: ['DataDisplay/MarkdownViewer.jsx', 'SIZES'] },
+  },
   MentionMenu: {
     density: { map: ['Chat/MentionMenu.jsx', 'DENSITIES'] },
   },

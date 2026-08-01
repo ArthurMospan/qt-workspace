@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 29,
-    "declaredValues": 301,
+    "componentsWithVariants": 31,
+    "declaredValues": 306,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 176,
+    "usedAndPreviewed": 178,
     "usedWithoutPreview": 0,
-    "declaredUnused": 92
+    "declaredUnused": 95
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -293,6 +293,12 @@
       "namespace": null
     },
     {
+      "component": "MarkdownViewer",
+      "prop": "size",
+      "value": "md",
+      "namespace": null
+    },
+    {
       "component": "MultiSelect",
       "prop": "filterRole",
       "value": "date",
@@ -368,6 +374,18 @@
       "component": "Pill",
       "prop": "tone",
       "value": "accent",
+      "namespace": "*[data-ui-pill-tone]"
+    },
+    {
+      "component": "Pill",
+      "prop": "tone",
+      "value": "info",
+      "namespace": "*[data-ui-pill-tone]"
+    },
+    {
+      "component": "Pill",
+      "prop": "tone",
+      "value": "overlay",
       "namespace": "*[data-ui-pill-tone]"
     },
     {
@@ -878,9 +896,22 @@
         "muted"
       ],
       "size": [
+        "lg",
         "md",
         "sm",
         "xs"
+      ]
+    },
+    "SelectableChip": {
+      "shape": [
+        "label",
+        "person"
+      ]
+    },
+    "MarkdownViewer": {
+      "size": [
+        "lg",
+        "md"
       ]
     },
     "MentionMenu": {
@@ -1076,11 +1107,11 @@
     "ChatComposerDock.composition": ".chat-composer-dock[data-ui-composition]"
   },
   "usage": {
-    "Pill.tone.neutral": 12,
+    "Pill.tone.neutral": 11,
     "Pill.size.lg": 7,
-    "Pill.shape.badge": 12,
+    "Pill.shape.badge": 8,
     "Button.size.icon-lg": 8,
-    "Button.style.secondary": 55,
+    "Button.style.secondary": 54,
     "Button.style.primary": 36,
     "Button.size.lg": 25,
     "Select.filterRole.sprint": 2,
@@ -1091,11 +1122,11 @@
     "Card.preset.bordered": 4,
     "Card.padding.lg": 19,
     "IconAction.size.xs": 6,
-    "IconAction.appearance.quiet": 7,
+    "IconAction.appearance.quiet": 6,
     "IconAction.shape.micro": 5,
     "Textarea.composition.transcript": 1,
     "Button.size.md": 54,
-    "UserAvatar.size.sm": 9,
+    "UserAvatar.size.sm": 8,
     "LoadingSpinner.size.md": 12,
     "Card.preset.borderless": 21,
     "Alert.variant.error": 3,
@@ -1105,9 +1136,9 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 62,
+    "Button.style.ghost": 61,
     "Button.size.icon-sm": 16,
-    "Button.size.sm": 38,
+    "Button.size.sm": 36,
     "Surface.preset.panel": 7,
     "Surface.padding.lg": 4,
     "Surface.composition.chart-panel": 2,
@@ -1116,7 +1147,7 @@
     "Surface.padding.sm": 1,
     "MentionMenu.density.composer": 1,
     "ChatComposerCore.variant.workspace": 1,
-    "IconAction.appearance.soft": 4,
+    "IconAction.appearance.soft": 3,
     "IconAction.composition.chat-composer-action": 2,
     "Counter.size.sm": 11,
     "Counter.appearance.subtle": 6,
@@ -1150,12 +1181,12 @@
     "Input.size.md": 5,
     "Card.padding.none": 1,
     "Pill.appearance.outline": 2,
-    "Pill.size.md": 8,
+    "Pill.size.md": 7,
     "Surface.preset.card": 1,
     "Surface.padding.none": 3,
     "UserAvatar.size.lg": 2,
-    "Pill.size.sm": 19,
-    "Pill.tone.ink-subtle": 4,
+    "Pill.size.sm": 14,
+    "Pill.tone.ink-subtle": 3,
     "Button.composition.settings-row-action": 5,
     "SidebarLayout.context.settings": 1,
     "Dialog.presentation.dialog": 2,
@@ -1164,13 +1195,15 @@
     "Surface.preset.nested-card": 1,
     "FormGroup.gap.md": 8,
     "Textarea.composition.audio-transcript": 1,
-    "IconAction.size.md": 2,
+    "IconAction.size.md": 1,
     "IconAction.composition.auth-close": 1,
     "IconAction.appearance.auth-close": 1,
     "IconAction.shape.circle": 7,
     "Dialog.size.lg": 5,
     "Dialog.bodyPadding.flush": 2,
-    "UserAvatar.size.xs": 7,
+    "SelectableChip.shape.person": 1,
+    "UserAvatar.size.xs": 4,
+    "SelectableChip.shape.label": 1,
     "Dialog.bodyPadding.invite": 1,
     "Input.composition.invite-field": 1,
     "IconAction.appearance.danger": 1,
@@ -1201,7 +1234,7 @@
     "EmptyState.surface.card": 5,
     "Select.size.md": 1,
     "Input.preset.money": 2,
-    "Pill.tone.warning": 2,
+    "Pill.tone.warning": 1,
     "Pill.preset.avatar-counter": 2,
     "Surface.preset.bordered-panel": 1,
     "Segmented.composition.billing-selection": 1,
@@ -1210,7 +1243,7 @@
     "Pill.tone.danger": 2,
     "Tag.size.small": 1,
     "Pill.tone.dark": 2,
-    "Pill.tone.overlay": 1,
+    "TextAction.size.lg": 1,
     "Popover.align.start": 2,
     "Popover.padding.default": 1,
     "Popover.padding.tight": 2,
@@ -1222,10 +1255,9 @@
     "Input.composition.duration-hours": 3,
     "Input.composition.duration-minutes": 3,
     "Input.composition.metric-text": 1,
-    "Pill.tone.surface-ink": 3,
+    "MarkdownViewer.size.lg": 1,
     "Surface.preset.compact-bordered-card": 1,
     "Button.composition.inline-add-action": 3,
-    "Pill.tone.info": 1,
     "IconAction.size.sm": 3,
     "EmptyState.context.inset": 3,
     "EmptyState.context.flexible": 2,
@@ -1241,6 +1273,7 @@
     "Button.shape.circle": 1,
     "Pill.size.wide-sm": 5,
     "Pill.appearance.soft-outline": 2,
+    "Pill.tone.surface-ink": 2,
     "TaskAttributesPanel.context.calendar": 1,
     "Textarea.composition.long-form": 1,
     "IconAction.appearance.inverse": 1,
@@ -1431,6 +1464,8 @@
     "LoadingSpinner.size.lg",
     "LoadingSpinner.size.md",
     "LoadingSpinner.size.sm",
+    "MarkdownViewer.size.lg",
+    "MarkdownViewer.size.md",
     "MentionMenu.density.composer",
     "MentionMenu.density.timeline",
     "MultiSelect.filterRole.date",
@@ -1494,6 +1529,8 @@
     "Select.variant.default",
     "Select.variant.ghost",
     "Select.variant.inline",
+    "SelectableChip.shape.label",
+    "SelectableChip.shape.person",
     "SidebarLayout.context.chat",
     "SidebarLayout.context.settings",
     "SidebarLayout.context.team",
@@ -1527,6 +1564,7 @@
     "Tag.size.small",
     "TaskAttributesPanel.context.calendar",
     "TaskAttributesPanel.context.task",
+    "TextAction.size.lg",
     "TextAction.size.md",
     "TextAction.size.sm",
     "TextAction.size.xs",

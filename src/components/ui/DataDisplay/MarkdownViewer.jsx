@@ -21,11 +21,28 @@ function TaskCheckbox({ checked, onTaskToggle, ...props }) {
   );
 }
 
-export default function MarkdownViewer({ content, className = '', onTaskToggle }) {
+// Two reading sizes, because the product has two: `md` is the editor's own
+// preview pane, `lg` is a task description being read.
+//
+// This used to be one base size plus a `className` at the call site, and half
+// of that override never applied. The task passed `text-[15px] leading-7`; the
+// size landed because Tailwind emits `text-[15px]` after `text-[14px]`, but the
+// leading did not, because it emits `leading-7` *before* `leading-relaxed` and
+// the base won. Utilities of equal specificity are resolved by their order in
+// the generated stylesheet, never by the order they appear in the attribute, so
+// an override written at a call site is a coin toss. Both sizes below name
+// their own line-height and only one of each utility is ever emitted — the
+// rendering is unchanged, it is just no longer accidental.
+const SIZES = {
+  md: 'text-[14px] leading-relaxed',
+  lg: 'text-[15px] leading-relaxed',
+};
+
+export default function MarkdownViewer({ content, size = 'md', className = '', onTaskToggle }) {
   if (!content) return null;
 
   return (
-    <div className={`markdown-body text-[14px] text-ink leading-relaxed break-words ${className}`}>
+    <div className={`markdown-body ${SIZES[size] ?? SIZES.md} text-ink break-words ${className}`}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{

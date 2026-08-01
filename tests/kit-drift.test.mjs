@@ -180,7 +180,7 @@ test('every screen with the two-pane shell declares it instead of retyping it', 
 // drift check is what finally surfaced it; this keeps it surfaced.
 test('every IconAction appearance a call site asks for actually exists', () => {
   const iconAction = readFileSync(new URL('../src/components/ui/IconAction.jsx', import.meta.url), 'utf8');
-  const markdown = readFileSync(new URL('../src/components/MarkdownEditor.jsx', import.meta.url), 'utf8');
+  const markdown = readFileSync(new URL('../src/components/ui/Forms/MarkdownEditor.jsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(markdown, /appearance=\{active \? 'editor-active' : 'editor'\}/);
   assert.match(markdown, /appearance=\{active \? 'soft' : 'quiet'\}/);

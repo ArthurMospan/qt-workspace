@@ -8,48 +8,47 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 160,
-    "parsedFiles": 160,
+    "productFiles": 157,
+    "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 105,
+    "nativeControls": 76,
     "structures": {
-      "calendar": 19,
+      "calendar": 18,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 10,
-      "tasks": 28,
       "board": 5,
       "settings": 11,
       "shell": 24,
       "other": 1
     },
-    "styledNativeControls": 83,
-    "reviewedNativeControls": 13,
+    "styledNativeControls": 62,
+    "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 54,
+    "localSurfaceExceptions": 47,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 89,
-    "input": 12,
-    "textarea": 4,
+    "button": 65,
+    "input": 8,
+    "textarea": 3,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 61,
-      "used": 61,
+      "components": 73,
+      "used": 73,
       "unused": 0,
-      "covered": 58,
+      "covered": 70,
       "uncovered": 0,
       "routes": 13,
-      "previews": 85,
+      "previews": 96,
       "internal": 3,
       "unlisted": 0
     },
@@ -497,46 +496,6 @@
       "routes": []
     },
     {
-      "tag": "button",
-      "location": "src/components/CreateTaskModal.jsx:292",
-      "className": "flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${…}",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/CreateTaskModal.jsx:324",
-      "className": "inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium transition-colors ${…}",
-      "text": "",
-      "childElements": [
-        "TagIcon"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
       "tag": "input",
       "location": "src/components/integrations/YouTrackImportCard.jsx:479",
       "className": "h-4 w-4 accent-ink",
@@ -607,82 +566,6 @@
         "/[projectId]",
         "/settings",
         "/team"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/components/MarkdownEditor.jsx:327",
-      "className": "hidden",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/[projectId]/issue/[issueId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "textarea",
-      "location": "src/components/MarkdownEditor.jsx:357",
-      "className": "custom-scrollbar w-full resize-none bg-white p-4 text-[14px] leading-6 text-ink outline-none placeholder:text-faint ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Textarea",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/[projectId]/issue/[issueId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/components/MarkdownViewer.jsx:12",
-      "className": "mr-2 mt-1 h-4 w-4 cursor-pointer rounded-[4px] accent-[#1f1f1f] disabled:cursor-default disabled:opacity-70",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/[projectId]/issue/[issueId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/components/MarkdownViewer.jsx:68",
-      "className": "",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "tasks",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/[projectId]/issue/[issueId]",
-        "/my",
-        "/sprints"
       ]
     },
     {
@@ -906,80 +789,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/AttachmentViewer.jsx:66",
-      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
-      "text": "",
-      "childElements": [
-        "ZoomOut"
-      ],
-      "ariaLabel": "Зменшити",
-      "styled": true,
-      "reviewed": "media-action",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/chat",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/AttachmentViewer.jsx:67",
-      "className": "min-w-12 rounded-[7px] px-2 py-1.5 text-[11px] font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:cursor-default disabled:text-white/35 disabled:hover:bg-transparent",
-      "text": "%",
-      "childElements": [],
-      "ariaLabel": "Поточний масштаб … %. Скинути до 100%",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/chat",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/AttachmentViewer.jsx:77",
-      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
-      "text": "",
-      "childElements": [
-        "ZoomIn"
-      ],
-      "ariaLabel": "Збільшити",
-      "styled": true,
-      "reviewed": "media-action",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/chat",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/AttachmentViewer.jsx:82",
-      "className": "rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white",
-      "text": "",
-      "childElements": [
-        "X"
-      ],
-      "ariaLabel": "Закрити",
-      "styled": true,
-      "reviewed": "media-action",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/chat",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:278",
       "className": "flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-bold transition-all disabled:opacity-50 ${…}",
       "text": "",
@@ -1016,25 +825,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1001",
-      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
-      "text": "",
-      "childElements": [
-        "span",
-        "AttributeValue"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "calendar-attribute-trigger",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1034",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1031",
       "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1049,7 +840,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1048",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1045",
       "className": "min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted",
       "text": "",
       "childElements": [],
@@ -1064,7 +855,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1072",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1069",
       "className": "${…} ${…}",
       "text": "",
       "childElements": [
@@ -1082,7 +873,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1198",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1195",
       "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -1097,7 +888,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1268",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1265",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1112,7 +903,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:287",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:288",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink",
       "text": "",
       "childElements": [
@@ -1129,7 +920,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:299",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:300",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500",
       "text": "",
       "childElements": [
@@ -1146,7 +937,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:698",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:699",
       "className": "w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none",
       "text": "",
       "childElements": [],
@@ -1161,25 +952,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:720",
-      "className": "ui-native-control",
-      "text": "",
-      "childElements": [
-        "span",
-        "UserAvatar"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "identity-meta-trigger",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:917",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:914",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -1196,315 +969,21 @@
       ]
     },
     {
-      "tag": "input",
-      "location": "src/components/workspace/IssueDetail.jsx:1040",
-      "className": "text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
       "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1057",
-      "className": "ui-native-control",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:998",
+      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
         "span",
-        "UserAvatar"
+        "AttributeValue"
       ],
       "ariaLabel": "",
       "styled": false,
-      "reviewed": "identity-meta-trigger",
+      "reviewed": "calendar-attribute-trigger",
       "resembles": "IconAction",
-      "structure": "tasks",
+      "structure": "calendar",
       "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1292",
-      "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Зупинити таймер Запустити таймер",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1310",
-      "className": "min-w-0 truncate text-[11px] font-bold text-ink",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Відкрити трекінг часу",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1332",
-      "className": "${…} max-sm:px-0 ${…}",
-      "text": "",
-      "childElements": [
-        "Settings2",
-        "span"
-      ],
-      "ariaLabel": "Деталі завдання",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1533",
-      "className": "rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink",
-      "text": "",
-      "childElements": [
-        "Pencil"
-      ],
-      "ariaLabel": "Редагувати запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1534",
-      "className": "rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1588",
-      "className": "text-[13px] text-faint italic hover:text-muted transition-colors text-left",
-      "text": "Натисни Редагувати щоб додати опис...",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1757",
-      "className": "text-faint hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити зв'язок",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1942",
-      "className": "text-faint hover:text-ink transition-colors p-1 rounded hover:bg-canvas",
-      "text": "",
-      "childElements": [
-        "Pencil"
-      ],
-      "ariaLabel": "Редагувати запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1949",
-      "className": "text-faint hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:1962",
-      "className": "mt-2 text-[12px] font-bold text-ink hover:text-ink-hover transition-colors py-2 text-center w-full rounded-[8px] hover:bg-canvas",
-      "text": "Показати ще",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:222",
-      "className": "group w-full bg-white border border-[#f0f0f0] rounded-[12px] overflow-hidden text-left hover:border-[#d0d0d0] hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)] transition-all duration-200",
-      "text": "",
-      "childElements": [
-        "div"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:295",
-      "className": "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Переглянути …",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:310",
-      "className": "min-w-0 flex-1 text-left",
-      "text": "",
-      "childElements": [
-        "p"
-      ],
-      "ariaLabel": "Переглянути …",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:325",
-      "className": "p-2 text-faint hover:text-ink",
-      "text": "",
-      "childElements": [
-        "Download"
-      ],
-      "ariaLabel": "Завантажити …",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:336",
-      "className": "p-2 text-faint hover:text-red-500",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити …",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/IssueDetail.jsx:556",
-      "className": "text-[13px] font-semibold text-ink hover:underline",
-      "text": "Спробувати ще раз",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "tasks",
-      "routes": [
-        "/[projectId]/issue/[issueId]",
-        "/sprints"
+        "/calendar/event/[eventId]"
       ]
     },
     {
@@ -1808,12 +1287,8 @@
   },
   "nativeHotspots": [
     {
-      "file": "src/components/workspace/IssueDetail.jsx",
-      "count": 18
-    },
-    {
       "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 11
+      "count": 10
     },
     {
       "file": "src/components/WorkspaceHeader.jsx",
@@ -1840,10 +1315,6 @@
       "count": 4
     },
     {
-      "file": "src/components/workspace/AttachmentViewer.jsx",
-      "count": 4
-    },
-    {
       "file": "src/components/WorkspaceSidebar.jsx",
       "count": 4
     },
@@ -1864,19 +1335,7 @@
       "count": 2
     },
     {
-      "file": "src/components/CreateTaskModal.jsx",
-      "count": 2
-    },
-    {
       "file": "src/components/InviteLinkSection.jsx",
-      "count": 2
-    },
-    {
-      "file": "src/components/MarkdownEditor.jsx",
-      "count": 2
-    },
-    {
-      "file": "src/components/MarkdownViewer.jsx",
       "count": 2
     },
     {
@@ -1949,39 +1408,14 @@
       "context": "column-collapse"
     },
     {
-      "location": "src/components/workspace/AttachmentViewer.jsx:66",
-      "tag": "button",
-      "context": "media-action"
-    },
-    {
-      "location": "src/components/workspace/AttachmentViewer.jsx:77",
-      "tag": "button",
-      "context": "media-action"
-    },
-    {
-      "location": "src/components/workspace/AttachmentViewer.jsx:82",
-      "tag": "button",
-      "context": "media-action"
-    },
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1001",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:914",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:720",
-      "tag": "button",
-      "context": "identity-meta-trigger"
-    },
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:917",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:998",
       "tag": "button",
       "context": "calendar-attribute-trigger"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:1057",
-      "tag": "button",
-      "context": "identity-meta-trigger"
     },
     {
       "location": "src/components/WorkspaceHeader.jsx:107",
@@ -2130,11 +1564,6 @@
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
     {
-      "location": "src/components/workspace/AttachmentViewer.jsx:94",
-      "tag": "div",
-      "className": "flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center"
-    },
-    {
       "location": "src/components/workspace/BillingTab.jsx:483",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
@@ -2165,49 +1594,19 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:258",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:259",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:269",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:270",
       "tag": "div",
       "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1519",
-      "tag": "div",
-      "className": "group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:1706",
+      "location": "src/components/workspace/IssueDetail.jsx:1496",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:1733",
-      "tag": "div",
-      "className": "flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:1911",
-      "tag": "div",
-      "className": "flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:1970",
-      "tag": "div",
-      "className": "flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:229",
-      "tag": "div",
-      "className": "w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform"
-    },
-    {
-      "location": "src/components/workspace/IssueDetail.jsx:236",
-      "tag": "div",
-      "className": "w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
     },
     {
       "location": "src/components/workspace/IssueModal.jsx:9",

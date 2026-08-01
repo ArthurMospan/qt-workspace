@@ -113,7 +113,7 @@ test('QUI-80 gives every FilterBar selector a semantic icon role', async () => {
 test('QUI-79 reuses the chat attachment viewer on issue details', async () => {
   const source = await read('../src/components/workspace/IssueDetail.jsx');
 
-  assert.match(source, /import AttachmentViewer from '@\/components\/workspace\/AttachmentViewer'/);
+  assert.match(source, /import AttachmentViewer from '@\/components\/ui\/AttachmentViewer'/);
   assert.match(source, /function MediaViewer[\s\S]{0,260}<AttachmentViewer/);
   assert.match(source, /previewUrl: getMatFileUrl\(mat\)/);
   assert.doesNotMatch(source, /bg-black\/85 backdrop-blur-sm/);

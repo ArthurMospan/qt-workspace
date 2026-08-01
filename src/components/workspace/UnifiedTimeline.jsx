@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import FileInput from '@/components/ui/Forms/FileInput';
-import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import AttachmentViewer from '@/components/ui/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';

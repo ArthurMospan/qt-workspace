@@ -42,6 +42,7 @@ import {
   getTaskAttributeChrome,
   Input,
   LoadingSpinner,
+  MetaTrigger,
   Pill,
   Popover,
   Select,
@@ -717,15 +718,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                     padding="tight"
                     triggerClassName="inline-flex"
                     trigger={(
-                      <button
-                        type="button"
-                        data-ui-control="identity-meta-trigger"
-                        className="ui-native-control"
-                      >
-                        <span>Організатор:</span>
-                        <UserAvatar user={organizer || { name: 'Учасник' }} size="xs" />
-                        <span className="font-semibold text-ink">{memberLabel(organizer)}</span>
-                      </button>
+                      <MetaTrigger
+                        label="Організатор:"
+                        user={organizer || { name: 'Учасник' }}
+                        name={memberLabel(organizer)}
+                      />
                     )}
                   >
                     {({ close }) => (

@@ -13,30 +13,39 @@ import { usePortalSession }    from '@/lib/portal/usePortalSession';
 import QtPlusChatPanel from '@/components/workspace/qtplus/chat/QtPlusChatPanel';
 import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
 import { ISSUE_LINK_OPTIONS, issueLinkPerspective, useIssueLinks } from '@/lib/hooks/useIssueLinks';
-import MarkdownEditor from '@/components/MarkdownEditor';
-import MarkdownViewer, { setTaskChecked } from '@/components/MarkdownViewer';
-import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
+import MarkdownViewer, { setTaskChecked } from '@/components/ui/DataDisplay/MarkdownViewer';
+import AttachmentViewer from '@/components/ui/AttachmentViewer';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import AttachmentRow from '@/components/ui/TaskManagement/AttachmentRow';
+import TimeLogRow from '@/components/ui/TaskManagement/TimeLogRow';
+import TimeTrackingControl from '@/components/ui/TaskManagement/TimeTrackingControl';
+import MetaTrigger from '@/components/ui/DataDisplay/MetaTrigger';
+import IssueLinkRow from '@/components/ui/TaskManagement/IssueLinkRow';
+import DescriptionPlaceholder from '@/components/ui/TaskManagement/DescriptionPlaceholder';
+import TitleInput from '@/components/ui/Forms/TitleInput';
+import TextAction from '@/components/ui/TextAction';
+import { getMatFileUrl } from '@/lib/utils/issueAttachments.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { fromDateInput, parseDueDate, toLocalDateInput } from '@/lib/utils/date';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { MultiSelect, Select } from '@/components/ui/Select';
-import { ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { AttributeTrigger, ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
-  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, Download, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
-  CheckCircle, XCircle, Play, Square as StopIcon,
-  FileText, Film, Music, Link2, Copy, Sparkles, Tag as TagIcon,
-  ZoomIn, Maximize2, ListTree,
+  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
+  Play, Square as StopIcon,
+  Link2, Copy, Sparkles, Tag as TagIcon,
+  Maximize2, ListTree,
 } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
@@ -99,36 +108,6 @@ function timeAgo(ts) {
   return `${days} днів тому`;
 }
 
-// Detect file type from name or URL
-function detectFileType(mat) {
-  const name = (mat.title || mat.name || '').toLowerCase();
-  const url  = getMatFileUrl(mat).toLowerCase();
-  const declaredType = (mat.resourceType || mat.mimeType || mat.type || '').toLowerCase();
-  const src  = `${name} ${url}`;
-  if (declaredType === 'image' || declaredType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|avif|svg|heic|heif|bmp|tiff?)(?:[?#]|$)/.test(src)) return 'image';
-  if (declaredType === 'video' || declaredType.startsWith('video/')) return 'video';
-  if (declaredType === 'audio' || declaredType.startsWith('audio/')) return 'audio';
-  if (declaredType === 'application/pdf') return 'pdf';
-  if (/\.pdf/.test(src))                                    return 'pdf';
-  if (/\.(mp4|mov|avi|webm|mkv)/.test(src))                return 'video';
-  if (/\.(mp3|wav|m4a|ogg|aac)/.test(src))                 return 'audio';
-  if (/^https?:\/\//.test(mat.url || '') && mat.type === 'link') return 'link';
-  if (mat.type) return mat.type; // note, checklist, poll
-  return 'file';
-}
-
-function getMatFileUrl(mat) {
-  return mat.previewUrl || mat.url || mat.downloadUrl || mat.downloadURL || mat.audioUrl || '';
-}
-
-function fmtBytes(bytes) {
-  if (!bytes || bytes < 0) return '';
-  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
-  let n = bytes, i = 0;
-  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
-  return `${n.toFixed(i > 0 && n < 10 ? 1 : 0)} ${units[i]}`;
-}
-
 // Module-level id factory — keeps the impure Date.now()/Math.random() calls out
 // of component render scope (react-compiler lint), while staying unique enough
 // for an array element key on the issue document.
@@ -150,112 +129,6 @@ function Ring({ pct, color, size = 36, stroke = 3.5 }) {
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
     </svg>
-  );
-}
-
-// ── Material card (matches portal style) ──────────────────────────
-function MaterialCard({ mat, onClick }) {
-  const fileType = detectFileType(mat);
-  const fileUrl  = getMatFileUrl(mat);
-  const name     = mat.title || mat.name || 'Матеріал';
-  const desc     = mat.desc || mat.description || mat.stageName || '';
-
-  const statusIcon = mat.status === 'approved' ? { Icon: CheckCircle, color: '#10b981' }
-    : mat.status === 'rejected'               ? { Icon: XCircle,     color: '#ef4444' }
-    : mat.clientApprovalPending               ? { Icon: Clock,       color: '#f97316' }
-    : null;
-
-  const renderPreview = () => {
-    if (fileType === 'image' && fileUrl) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={fileUrl} alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={e => { e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-faint text-[10px]">Немає превʼю</div>'; }}
-        />
-      );
-    }
-    if (fileType === 'pdf') return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-red-50">
-        <FileText size={28} className="text-red-400" />
-        <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider">PDF</span>
-      </div>
-    );
-    if (fileType === 'video') return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-orange-50">
-        <Film size={28} className="text-orange-400" />
-        <span className="text-[9px] font-bold text-orange-400 uppercase tracking-wider">VIDEO</span>
-      </div>
-    );
-    if (fileType === 'audio') return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#f5f5f5]">
-        <Music size={24} className="text-muted" />
-        <span className="text-[9px] font-bold text-muted uppercase">AUDIO</span>
-      </div>
-    );
-    if (fileType === 'link') return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-blue-50">
-        <Link2 size={24} className="text-blue-400" />
-        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">LINK</span>
-      </div>
-    );
-    if (fileType === 'note') return (
-      <div className="w-full h-full bg-amber-50 p-2 overflow-hidden">
-        <p className="text-[9px] text-amber-800 leading-tight line-clamp-5">{mat.content || '📝 Нотатка'}</p>
-      </div>
-    );
-    if (fileType === 'checklist') return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-green-50">
-        <CheckSquare size={24} className="text-green-500" />
-        <span className="text-[9px] font-bold text-green-500 uppercase">CHECKLIST</span>
-      </div>
-    );
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#f5f5f5]">
-        <FileText size={24} className="text-faint" />
-        <span className="text-[9px] text-faint uppercase">{name.split('.').pop()?.toUpperCase() || 'FILE'}</span>
-      </div>
-    );
-  };
-
-  return (
-    <button onClick={onClick}
-      className="group w-full bg-white border border-[#f0f0f0] rounded-[12px] overflow-hidden text-left hover:border-[#d0d0d0] hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)] transition-all duration-200">
-      {/* Preview area — 140px tall, like portal */}
-      <div className="h-[140px] relative overflow-hidden bg-[#f5f5f5]">
-        {renderPreview()}
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/12 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div data-ui-surface="local" className="w-9 h-9 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
-            {fileType === 'image' ? <ZoomIn size={16} className="text-white" /> : <Maximize2 size={16} className="text-white" />}
-          </div>
-        </div>
-        {/* Status badge */}
-        {statusIcon && (
-          <div className="absolute top-2 right-2 z-10">
-            <div data-ui-surface="local" className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
-              <statusIcon.Icon size={12} style={{ color: statusIcon.color }} />
-            </div>
-          </div>
-        )}
-        {/* File type badge */}
-        {fileType !== 'image' && fileType !== 'note' && fileUrl && (
-          <div className="absolute bottom-2 left-2">
-            <Pill tone="overlay" size="sm" uppercase>
-              {fileType}
-            </Pill>
-          </div>
-        )}
-      </div>
-      {/* Info row */}
-      <div className="px-3 py-[9px] flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-semibold text-ink truncate leading-tight">{name}</p>
-          {desc && <p className="text-[10px] text-faint truncate mt-[1px]">{desc}</p>}
-        </div>
-        <ExternalLink size={11} className="text-faint shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-    </button>
   );
 }
 
@@ -287,64 +160,18 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
     <div>
       <SectionHeading icon={Paperclip} title="Вкладення" count={attachments.length} />
       <div className="flex flex-col gap-1.5">
-        {attachments.map(attachment => {
-          const url = getMatFileUrl(attachment);
-          const fileType = detectFileType(attachment);
-          return (
-            <div key={attachment.id || url} data-ui-surface="nested-card" data-ui-padding="compact-row" className="ui-surface group flex min-w-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onOpen(attachment)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas"
-                aria-label={`Переглянути ${attachment.name}`}
-              >
-                {fileType === 'image' && url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                ) : <FileText size={16} className="text-muted" />}
-              </button>
-              {/* The name opens the preview — the obvious target, and what the
-                  thumbnail beside it already did. The row used to spend a slot
-                  on an "open in a new tab" link instead, which is the one thing
-                  the preview makes unnecessary; downloading is what was missing. */}
-              <button
-                type="button"
-                onClick={() => onOpen(attachment)}
-                className="min-w-0 flex-1 text-left"
-                aria-label={`Переглянути ${attachment.name}`}
-              >
-                <p className="truncate text-[12px] font-semibold text-ink group-hover:underline">{attachment.name}</p>
-                <p className="text-[10px] text-faint">{fmtBytes(attachment.size)}</p>
-              </button>
-              {isEditing && url && (
-                <Button style="ghost" size="sm" onClick={() => onInsert(attachment, fileType, url)}>
-                  Вставити в опис
-                </Button>
-              )}
-              {url && (
-                <button
-                  type="button"
-                  onClick={() => downloadMaterial(url, attachment.name)}
-                  className="p-2 text-faint hover:text-ink"
-                  aria-label={`Завантажити ${attachment.name}`}
-                  title="Завантажити"
-                >
-                  <Download size={14} />
-                </button>
-              )}
-              {!isArchived && (
-                <button
-                  type="button"
-                  onClick={() => onDelete(attachment.id)}
-                  className="p-2 text-faint hover:text-red-500"
-                  aria-label={`Видалити ${attachment.name}`}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-          );
-        })}
+        {attachments.map(attachment => (
+          <AttachmentRow
+            key={attachment.id || getMatFileUrl(attachment)}
+            attachment={attachment}
+            isEditing={isEditing}
+            isArchived={isArchived}
+            onOpen={onOpen}
+            onInsert={onInsert}
+            onDelete={onDelete}
+            onDownload={downloadMaterial}
+          />
+        ))}
       </div>
     </div>
   );
@@ -553,7 +380,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           <div className="max-w-[360px] px-6 text-center">
             <p className="text-[16px] font-bold text-ink mb-2">Не вдалося завантажити задачу</p>
             <p className="text-[13px] text-muted mb-4">Дані не видалені. Сервіс бази тимчасово недоступний.</p>
-            <button onClick={() => window.location.reload()} className="text-[13px] font-semibold text-ink hover:underline">Спробувати ще раз</button>
+            <TextAction size="lg" onClick={() => window.location.reload()}>Спробувати ще раз</TextAction>
           </div>
         ) : (
           <div className="text-center">
@@ -1037,7 +864,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
               </div>
             )}
             {isEditing ? (
-              <input autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} className="text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full" placeholder="Назва завдання..." />
+              <TitleInput autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} placeholder="Назва завдання..." />
             ) : (
               <h1 className="ui-type-page-title text-ink tracking-tight leading-tight">{issue.title}</h1>
             )}
@@ -1054,15 +881,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 padding={isExternalReporter ? 'default' : 'tight'}
                 triggerClassName="inline-flex"
                 trigger={(
-                  <button
-                    type="button"
-                    data-ui-control="identity-meta-trigger"
-                    className="ui-native-control"
-                  >
-                    <span>Автор:</span>
-                    <UserAvatar user={reporter} size="xs" />
-                    <span className="text-ink font-semibold">{reporter.name}</span>
-                  </button>
+                  <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
                 )}
               >
                 {({ close }) => isExternalReporter ? (
@@ -1288,38 +1107,17 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     }}
                   >
                     <span className={attributeLabelClass}><span className="sm:hidden">Час</span><span className="max-sm:hidden">Трекінг часу</span></span>
-                    <div className="flex h-[22px] min-w-0 items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={isArchived}
-                        onClick={handleTimerToggle}
-                        aria-label={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
-                        title={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
-                        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
-                      >
-                        {isTimerMine ? (
-                          <StopIcon size={10} className="block fill-current" />
-                        ) : (
-                          <Play
-                            size={10}
-                            strokeWidth={0}
-                            className="block translate-x-[1px] fill-current"
-                          />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
-                          setLogTab('spend');
-                        }}
-                        className="min-w-0 truncate text-[11px] font-bold text-ink"
-                        aria-label="Відкрити трекінг часу"
-                      >
-                        {isTimerMine ? formatElapsed((spentMin * 60) + timerElapsed) : fmtMin(spentMin)}
-                        {estimMin > 0 && <span className="font-medium text-muted max-sm:hidden"> / {fmtMin(estimMin)}</span>}
-                      </button>
-                    </div>
+                    <TimeTrackingControl
+                      running={isTimerMine}
+                      disabled={isArchived}
+                      onToggle={handleTimerToggle}
+                      onOpen={() => {
+                        setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
+                        setLogTab('spend');
+                      }}
+                      spentLabel={isTimerMine ? formatElapsed((spentMin * 60) + timerElapsed) : fmtMin(spentMin)}
+                      estimateLabel={estimMin > 0 ? fmtMin(estimMin) : null}
+                    />
                   </div>
 
                   {/* Less frequently changed fields */}
@@ -1329,16 +1127,17 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     className="flex h-full items-center"
                     onOpenChange={setShowDetailsDropdown}
                     trigger={(
-                      <button
-                        type="button"
-                        className={`${detailsButtonClass} max-sm:px-0 ${showDetailsDropdown ? 'bg-white text-ink' : 'text-muted'}`}
+                      <AttributeTrigger
+                        condensed={isHeaderScrolled}
+                        active={showDetailsDropdown}
+                        className="max-sm:px-0"
                         aria-expanded={showDetailsDropdown}
                         aria-label="Деталі завдання"
                         title={`Пріоритет: ${PRIORITIES.find(item => item.id === issue.priority)?.label || 'не вказано'} · Тип: ${TYPES.find(item => item.id === issue.type)?.label || 'не вказано'}`}
                       >
                         <Settings2 size={14} />
                         <span className="max-sm:hidden">Деталі</span>
-                      </button>
+                      </AttributeTrigger>
                     )}
                   >
                       <div className="flex w-[248px] max-w-full flex-col gap-4">
@@ -1516,25 +1315,16 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         const logMember = members.find(member => (member.id || member.uid) === log.userId);
                         const isLogAuthor = log.userId === currentUser?.uid || log.userId === currentUser?.id;
                         return (
-                          <div key={log.id} data-ui-surface="local" className="group flex items-start gap-3 rounded-[10px] bg-canvas px-3 py-2.5">
-                            <UserAvatar user={logMember} size="sm" className="mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-[12px] font-bold text-ink">{logMember?.name || 'Невідомий'}</span>
-                                <Pill tone="surface-ink" size="md" shape="badge">{fmtMin(log.spentMinutes)}</Pill>
-                                <span className="text-[10px] text-muted">
-                                  {log.loggedAt?.toDate ? formatDate(log.loggedAt.toDate()) : log.loggedAt ? formatDate(new Date(log.loggedAt)) : ''}
-                                </span>
-                              </div>
-                              {log.description && <p className="mt-1 break-words text-[12px] leading-5 text-muted">{log.description}</p>}
-                            </div>
-                            {isLogAuthor && !isArchived && (
-                              <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100">
-                                <button type="button" onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '' }); setLogTab('spend'); }} className="rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink" aria-label="Редагувати запис"><Pencil size={13} /></button>
-                                <button type="button" onClick={() => handleDeleteTimeLog(log)} className="rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис"><Trash2 size={13} /></button>
-                              </div>
-                            )}
-                          </div>
+                          <TimeLogRow
+                            key={log.id}
+                            member={logMember}
+                            spentLabel={fmtMin(log.spentMinutes)}
+                            dateLabel={log.loggedAt?.toDate ? formatDate(log.loggedAt.toDate()) : log.loggedAt ? formatDate(new Date(log.loggedAt)) : ''}
+                            description={log.description}
+                            canEdit={isLogAuthor && !isArchived}
+                            onEdit={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '' }); setLogTab('spend'); }}
+                            onDelete={() => handleDeleteTimeLog(log)}
+                          />
                         );
                       })}
                       {timeLogs.length === 0 && <p className="rounded-[10px] bg-canvas px-3 py-5 text-center text-[12px] text-muted">Час ще не списували</p>}
@@ -1576,7 +1366,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       {issue.description && (
                         <MarkdownViewer
                           content={issue.description}
-                          className="text-[15px] leading-7"
+                          size="lg"
                           onTaskToggle={isArchived ? undefined : (taskLine, checked) => update({ description: setTaskChecked(issue.description, taskLine, checked) })}
                         />
                       )}
@@ -1585,9 +1375,9 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       )}
                     </>
                   ) : (
-                    <button onClick={enterEdit} className="text-[13px] text-faint italic hover:text-muted transition-colors text-left">
+                    <DescriptionPlaceholder onClick={enterEdit}>
                       Натисни Редагувати щоб додати опис...
-                    </button>
+                    </DescriptionPlaceholder>
                   )}
 
                 {(issue.labelIds || []).length > 0 && (
@@ -1730,46 +1520,28 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     const requiresReview = link.requiresReview || link.legacyRelationType === 'subtask-of';
 
                     return (
-                      <div key={link.id} data-ui-surface="local" className="flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <Pill tone="neutral" size="sm" shape="badge" uppercase>
-                            {perspective.label}
-                          </Pill>
-                          {requiresReview && (
-                            <Pill
-                              tone="warning"
-                              size="sm"
-                              shape="badge"
-                              title="Старий зв’язок «підзавдання»: напрямок не можна відновити автоматично"
-                            >
-                              Потребує перевірки
-                            </Pill>
-                          )}
-                          <Link
-                            href={`/${otherProjectId}/issue/${perspective.otherIssueId}`}
-                            className="text-[13px] font-semibold text-ink hover:underline truncate"
-                          >
-                            <span className="text-muted font-medium mr-1 uppercase">{otherKey}</span>
-                            {otherTitle}
-                          </Link>
-                        </div>
-                        {!isArchived && (
-                        <button
-                          onClick={async () => {
-                            try {
-                              await removeLink(link.id);
-                              showToast('Звʼязок видалено');
-                            } catch (err) {
-                              showToast('Помилка видалення: ' + err.message, 'error');
-                            }
-                          }}
-                          className="text-faint hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50"
-                          title="Видалити зв'язок"
+                      <IssueLinkRow
+                        key={link.id}
+                        label={perspective.label}
+                        requiresReview={requiresReview}
+                        canRemove={!isArchived}
+                        onRemove={async () => {
+                          try {
+                            await removeLink(link.id);
+                            showToast('Звʼязок видалено');
+                          } catch (err) {
+                            showToast('Помилка видалення: ' + err.message, 'error');
+                          }
+                        }}
+                      >
+                        <Link
+                          href={`/${otherProjectId}/issue/${perspective.otherIssueId}`}
+                          className="text-[13px] font-semibold text-ink hover:underline truncate"
                         >
-                          <Trash2 size={13} />
-                        </button>
-                        )}
-                      </div>
+                          <span className="text-muted font-medium mr-1 uppercase">{otherKey}</span>
+                          {otherTitle}
+                        </Link>
+                      </IssueLinkRow>
                     );
                   })}
 
@@ -1887,96 +1659,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 )}
               </div>
 
-              {/* TIME LOGS LIST */}
-              {false && (
-              <div data-ui-surface="nested-card" data-ui-padding="lg" className="ui-surface flex flex-col gap-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="ui-type-eyebrow text-muted uppercase tracking-wider">Журнал часу</h2>
-                  {timeLogs.length > 0 && (
-                    <Pill tone="ink-subtle" size="sm">
-                      {timeLogs.length}
-                    </Pill>
-                  )}
-                </div>
-                {!isArchived && <Button style="secondary" size="sm" icon={Plus} onClick={() => setLogForm({ minutes: 0, desc: '' })}>Списати</Button>}
-              </div>
-
-              <div className="flex flex-col gap-[6px]">
-                {timeLogs.slice(0, timeLogsPage * TIME_LOGS_PER_PAGE).map(log => {
-                  const logMember = members.find(m => (m.id || m.uid) === log.userId);
-                  const isLogAuthor = log.userId === currentUser?.uid || log.userId === currentUser?.id;
-                  
-                  return (
-                    <div key={log.id} data-ui-surface="local" className="flex items-start justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#fafafa] transition-colors group">
-                      <div className="flex items-start gap-2 min-w-0 flex-1">
-                        <UserAvatar user={logMember} size="xs" className="shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[12px] font-semibold text-ink">
-                              {logMember?.name || 'Невідомий'}
-                            </span>
-                            <Pill tone="info" size="sm" shape="badge">
-                              {fmtMin(log.spentMinutes)}
-                            </Pill>
-                          </div>
-                          {log.description && (
-                            <p className="text-[12px] text-[#4b5563] mt-0.5 break-words">
-                              {log.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-muted font-medium">
-                              {log.loggedAt?.toDate
-                                ? formatDate(log.loggedAt.toDate())
-                                : log.loggedAt
-                                  ? formatDate(new Date(log.loggedAt))
-                                  : ''}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {isLogAuthor && !isArchived && (
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center">
-                          <button
-                            onClick={() => { setLogForm({ id: log.id, minutes: log.spentMinutes, desc: log.description || '' }); setLogTab('spend'); }}
-                            className="text-faint hover:text-ink transition-colors p-1 rounded hover:bg-canvas"
-                            title="Редагувати запис"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTimeLog(log)}
-                            className="text-faint hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                            title="Видалити запис"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {timeLogs.length > timeLogsPage * TIME_LOGS_PER_PAGE && (
-                  <button
-                    onClick={() => setTimeLogsPage(p => p + 1)}
-                    className="mt-2 text-[12px] font-bold text-ink hover:text-ink-hover transition-colors py-2 text-center w-full rounded-[8px] hover:bg-canvas"
-                  >
-                    Показати ще
-                  </button>
-                )}
-                {timeLogs.length === 0 && (
-                  <div data-ui-surface="local" className="flex flex-col items-center justify-center py-6 px-4 text-center bg-white rounded-[10px] border border-dashed border-line">
-                    <Clock size={32} className="text-faint mb-3" />
-                    <p className="text-[13px] text-muted font-medium max-w-[200px]">
-                      Час ще не залоговано — запустіть таймер або додайте запис вручну.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-            )}
             </div>
 
             {/* End of MAIN SECTIONS PANEL */}

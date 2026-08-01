@@ -22,7 +22,7 @@ import ChannelInfoPanel from '@/components/ui/Chat/ChannelInfoPanel';
 import ChatConversationHeader from '@/components/ui/Chat/ChatConversationHeader';
 import ChatMessageList from '@/components/ui/Chat/ChatMessageList';
 import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
-import AttachmentViewer from '@/components/workspace/AttachmentViewer';
+import AttachmentViewer from '@/components/ui/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import { db } from '@/lib/firebase';
 import {

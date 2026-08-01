@@ -21,9 +21,13 @@ const SIZES = {
   xs: 'text-[10px] gap-1',
   sm: 'text-[11px] font-semibold gap-1',
   md: 'text-[12px] font-semibold gap-1.5',
+  // 13px is the body size, so this is the one that sits inside running text
+  // rather than in chrome: «Спробувати ще раз» on a failed task, the task title
+  // in a link row, «Перейти до події» in the calendar.
+  lg: 'text-[13px] font-semibold gap-1.5',
 };
 
-const ICON_SIZES = { xs: 12, sm: 13, md: 12 };
+const ICON_SIZES = { xs: 12, sm: 13, md: 12, lg: 13 };
 
 const TONES = {
   // Primary: the affirmative half of an inline pair (Зберегти, Додати, Перейти).

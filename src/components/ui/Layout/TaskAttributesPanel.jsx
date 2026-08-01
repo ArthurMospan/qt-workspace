@@ -17,6 +17,29 @@ export function getTaskAttributeChrome({ condensed = false } = {}) {
   };
 }
 
+// The strip's own overflow control — "Деталі", the button that opens the
+// less-frequently-changed fields. Its chrome was already kit-owned above, but
+// the element carrying it was hand-written at the call site, so the one part
+// anybody could get wrong — the pressed look — lived outside the kit.
+export function AttributeTrigger({
+  condensed = false,
+  active = false,
+  className = '',
+  children,
+  ...props
+}) {
+  const { detailsButtonClass } = getTaskAttributeChrome({ condensed });
+  return (
+    <button
+      type="button"
+      className={`${detailsButtonClass} ${className} ${active ? 'bg-white text-ink' : 'text-muted'}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function TaskAttributesPanel({
   primaryChildren,
   secondaryChildren,

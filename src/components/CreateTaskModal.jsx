@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { Check, ListTodo, Play, Tag as TagIcon } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import MarkdownEditor from './MarkdownEditor';
+import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import Label from '@/components/ui/Forms/Label';
+import SelectableChip from '@/components/ui/Forms/SelectableChip';
 import { Input } from '@/components/ui/Input';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import { fromDateInput } from '@/lib/utils/date';
@@ -289,21 +290,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   const uid = m.uid || m.id;
                   const selected = form.assignees.includes(uid);
                   return (
-                    <button
+                    <SelectableChip
                       key={uid}
-                      type="button"
+                      shape="person"
+                      selected={selected}
                       onClick={() => toggleAssignee(uid)}
-                      aria-pressed={selected}
-                      className={`flex items-center gap-2 px-3 py-[6px] rounded-[8px] text-[12px] font-medium border transition-all ${
-                        selected
-                          ? 'bg-ink text-white border-ink'
-                          : 'bg-white text-ink border-line hover:border-muted'
-                      }`}
                     >
                       <span aria-hidden="true"><UserAvatar user={m} size="xs" /></span>
                       <span className="max-w-[180px] truncate">{m.name || m.email}</span>
                       {selected && <Check size={12} className="shrink-0" />}
-                    </button>
+                    </SelectableChip>
                   );
                 })}
               </div>
@@ -321,21 +317,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 {availableLabels.map(l => {
                   const selected = form.labelIds.includes(l.id);
                   return (
-                    <button
+                    <SelectableChip
                       key={l.id}
-                      type="button"
+                      shape="label"
+                      selected={selected}
+                      tone={l.color}
                       onClick={() => toggleLabel(l.id)}
-                      aria-pressed={selected}
-                      className={`inline-flex items-center gap-1.5 rounded-[8px] px-[10px] py-[3px] text-[11px] font-medium transition-colors ${
-                        selected
-                          ? ''
-                          : 'bg-ink/5 text-[#404040] hover:bg-ink/10'
-                      }`}
-                      style={selected ? { background: `${l.color}14`, color: l.color } : undefined}
                     >
                       <TagIcon size={10} className="shrink-0 opacity-70" />
                       {l.label}
-                    </button>
+                    </SelectableChip>
                   );
                 })}
               </div>

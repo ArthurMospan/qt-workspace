@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import MarkdownViewer from './MarkdownViewer';
-import { IconAction } from '@/components/ui';
+import MarkdownViewer from '@/components/ui/DataDisplay/MarkdownViewer';
+import IconAction from '@/components/ui/IconAction';
 import {
   continueMarkdownList,
   formatHeading,
