@@ -33,6 +33,23 @@ function fmtDate(raw) {
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
+/**
+ * One task as a row: key, title, type, status, assignee, labels, and the timer
+ * dot when it is running.
+ *
+ * @param {object} props.issue The task this row shows.
+ * @param {object[]} props.issues Its siblings, for resolving the parent key.
+ * @param {object[]} props.allIssues Every task in scope, for links that leave the current list.
+ * @param {object[]} props.members Workspace members, for the assignee avatar.
+ * @param {object[]} props.labels Label definitions, for the chips.
+ * @param {object[]} props.sprints Sprint definitions.
+ * @param {object[]} props.issueLinks Relations, for the link count.
+ * @param {boolean} props.isTimerActive A timer is running on this task.
+ * @param {string} props.projectId Current project.
+ * @param {string} props.projectName Its name.
+ * @param {boolean} props.showProjectName Whether the row names its project — true only on cross-project lists.
+ * @param {() => void} props.onClick Opens the task.
+ */
 export default function TaskRow({
   issue,
   issues = [],
@@ -132,6 +149,18 @@ export default function TaskRow({
   return (
     <div
       onClick={handleRowClick}
+      // The row carries controls of its own — the timer, the assignee picker —
+      // so it cannot be a `<button>` without nesting them inside one. It gets
+      // the three things a button would have given it instead: a role, a place
+      // in the tab order, and the two keys that activate a button.
+      role="button"
+      tabIndex={0}
+      onKeyDown={event => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        handleRowClick(event);
+      }}
       className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
       {/* Priority Left Indicator Bar - Rounded Pill */}

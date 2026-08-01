@@ -33,6 +33,17 @@ const STATES = {
   },
 };
 
+/**
+ * A chip you can switch on and off — picking assignees, filtering by label. It
+ * reports its state as `aria-pressed`, so it is a toggle button and not a
+ * checkbox wearing a chip's clothes.
+ *
+ * @param {React.ReactNode} props.children Chip content.
+ * @param {'person'|'label'} props.shape Which of the two chip geometries to draw.
+ * @param {boolean} props.selected Whether it is switched on.
+ * @param {string} props.tone Optional colour role for the `label` shape.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function SelectableChip({
   children,
   shape = 'person',

@@ -68,6 +68,18 @@ function cleanFileName(name = 'file') {
   return name.replace(/[\[\]]/g, '').trim() || 'file';
 }
 
+/**
+ * The description editor: a markdown textarea with a formatting toolbar, its
+ * own undo history, a preview tab and file upload.
+ *
+ * @param {string} props.value Markdown source.
+ * @param {(value: string) => void} props.onChange Fires with the new source.
+ * @param {string} props.placeholder Text shown while empty.
+ * @param {string} props.minHeight CSS height the writing area starts at.
+ * @param {'write'|'preview'} props.defaultTab Which tab opens first.
+ * @param {(files: File[]) => Promise<string[]>} props.onUploadFiles Uploads dropped or picked files and returns their URLs.
+ * @param {boolean} props.uploading Busy: the toolbar's upload action is blocked while a file is in flight.
+ */
 export default function MarkdownEditor({
   value = '',
   onChange,

@@ -68,6 +68,15 @@ export function countActiveFilters(node) {
   return count;
 }
 
+/**
+ * The row of filters under a page header. It owns the widths: a control inside
+ * it declares its `filterRole` and the bar decides how wide that role is, so
+ * the same filter is the same width on every screen.
+ *
+ * @param {React.ReactNode} props.children The filter controls.
+ * @param {'default'|'detail'} props.context Width scale: a list page, or a detail pane.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function FilterBar({ children, context = 'default', className = '' }) {
   const controls = Children.map(children, child => {
     if (!isValidElement(child) || !child.props.filterRole) return child;

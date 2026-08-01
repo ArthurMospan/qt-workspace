@@ -17,6 +17,18 @@ import { Pencil, Trash2 } from 'lucide-react';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
+/**
+ * One entry in a task's time log: who, how long, when, and what they wrote
+ * about it.
+ *
+ * @param {object} props.member Who logged the time.
+ * @param {string} props.spentLabel Duration, already formatted («2 год 15 хв»).
+ * @param {string} props.dateLabel The day, already formatted.
+ * @param {string} props.description What the entry says; omitted rows simply have none.
+ * @param {boolean} props.canEdit Whether the reader owns this entry.
+ * @param {() => void} props.onEdit Opens it for editing.
+ * @param {() => void} props.onDelete Removes it.
+ */
 export default function TimeLogRow({
   member,
   spentLabel,

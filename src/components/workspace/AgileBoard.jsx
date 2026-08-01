@@ -239,8 +239,24 @@ export default function AgileBoard({
 
               if (isCollapsed) {
                 return (
-                  <div key={col.id} data-ui-surface="local" className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors" onClick={() => toggleColumnCollapse(col.id)}>
-                    <button data-ui-control="column-collapse" className="text-muted mb-4">
+                  <div
+                    key={col.id}
+                    data-ui-surface="local"
+                    className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
+                    onClick={() => toggleColumnCollapse(col.id)}
+                    // The strip holds the chevron button, so it is not a
+                    // `<button>` itself; it still answers the same two keys.
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={false}
+                    onKeyDown={event => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      toggleColumnCollapse(col.id);
+                    }}
+                  >
+                    <button data-ui-control="column-collapse" aria-label="Розгорнути колонку" className="text-muted mb-4">
                       <ChevronRight size={16} />
                     </button>
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
@@ -311,10 +327,26 @@ export default function AgileBoard({
 
                   if (isCollapsed) {
                     return (
-                      <div key={col.id} className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }} onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}>
+                      <div
+                        key={col.id}
+                        className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
+                        style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}
+                        onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}
+                        // Only the single-swimlane strip is clickable at all;
+                        // with swimlanes the chevron inside each one is.
+                        role={swimlanes.length === 1 ? 'button' : undefined}
+                        tabIndex={swimlanes.length === 1 ? 0 : undefined}
+                        aria-expanded={swimlanes.length === 1 ? false : undefined}
+                        onKeyDown={swimlanes.length === 1 ? (event => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          toggleColumnCollapse(col.id);
+                        }) : undefined}
+                      >
                         {swimlanes.length === 1 && (
                           <>
-                            <button data-ui-control="column-collapse" className="text-muted mb-4">
+                            <button data-ui-control="column-collapse" aria-label="Розгорнути колонку" className="text-muted mb-4">
                               <ChevronRight size={16} />
                             </button>
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />

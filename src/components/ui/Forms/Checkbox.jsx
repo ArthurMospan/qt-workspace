@@ -2,6 +2,20 @@
 import React, { useId } from 'react';
 import { Check } from 'lucide-react';
 
+/**
+ * A checkbox. The native input stays in the DOM and keeps the focus and checked
+ * state; the visible box is drawn beside it and follows through `peer-*`, which
+ * is why keyboard focus and screen readers still work on a fully custom shape.
+ *
+ * @param {boolean} props.checked Whether it is ticked.
+ * @param {(checked: boolean) => void} props.onChange Fires with the new value.
+ * @param {boolean} props.disabled Unavailable: dimmed and not clickable.
+ * @param {'sm'|'md'|'lg'} props.size Box size.
+ * @param {string} props.label Text beside the box; clicking it toggles.
+ * @param {boolean|string} props.error Draws the error border.
+ * @param {string} props.id Id for the native input; generated when omitted.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Checkbox({
   checked = false,
   onChange,
@@ -33,8 +47,13 @@ export default function Checkbox({
           disabled={disabled}
           className="sr-only peer"
         />
-        <div
-          onClick={() => !disabled && onChange?.(!checked)}
+        {/* A `<label>`, not a div with a click handler: the box is a picture of
+            the native input beside it, and pointing a label at that input is
+            what makes clicking the picture toggle it — natively, with the
+            disabled state already respected and nothing to reach by keyboard
+            that the input does not already own. */}
+        <label
+          htmlFor={checkboxId}
           className={`
             ${box} flex items-center justify-center shrink-0
             bg-white border-2 border-line transition-all cursor-pointer
@@ -46,7 +65,7 @@ export default function Checkbox({
           `}
         >
           {checked && <Check size={icon} className="text-white" />}
-        </div>
+        </label>
       </div>
 
       {label && (

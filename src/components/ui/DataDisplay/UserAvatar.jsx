@@ -39,6 +39,18 @@ function resolveAvatarSize(size) {
 // call site as `border-2 border-white` in one place and `ring-2 ring-white` in
 // AvatarGroup — the same visual idea, spelled two different ways, neither of
 // which the kit knew about.
+/**
+ * A person's face, or their initials on a colour derived from their id.
+ * Deliberately a picture and not a control: it renders in lists, headers and
+ * mention rows where nothing is clickable. Where it must be clickable, that is
+ * `AvatarButton`.
+ *
+ * @param {object} props.user The person; the photo, the name and the fallback colour all come from this.
+ * @param {string|number} props.size Named token from the avatar scale; a raw number only where a measured layout needs one.
+ * @param {boolean} props.stacked Adds the white ring that separates overlapping avatars.
+ * @param {boolean} props.tooltip Shows the person's name on hover.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function UserAvatar({ user, size = 'md', stacked = false, className = '', tooltip = false }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState(null);
   const px = resolveAvatarSize(size);

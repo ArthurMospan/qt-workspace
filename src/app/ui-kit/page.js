@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
-import { Bell, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3 } from 'lucide-react';
+import { Bell, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -29,6 +29,7 @@ import FiltersSection from './sections/filters';
 import TypographySection from './sections/typography';
 import TokensSection from './sections/tokens';
 import VariantMatrixSection from './sections/variant-matrix';
+import StatesSection from './sections/states';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV SECTIONS
@@ -90,6 +91,7 @@ const GROUPS = [
     title: 'Контроль (Control)',
     items: [
       { id: 'variant-matrix', label: 'Матриця варіантів', icon: Grid3x3 },
+      { id: 'states',         label: 'Матриця станів',    icon: MousePointerClick },
     ]
   }
 ];
@@ -127,6 +129,7 @@ const SECTION_MAP = {
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,
   'variant-matrix': <VariantMatrixSection />,
+  states:           <StatesSection />,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

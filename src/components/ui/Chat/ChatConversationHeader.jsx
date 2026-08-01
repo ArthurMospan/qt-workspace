@@ -12,6 +12,24 @@ import UserAvatar from '../DataDisplay/UserAvatar';
 // /ui-kit already showed this header — as a hand-typed copy inside the composer
 // preview, with a plain `<Info>` glyph where the product has a real toggle and
 // no pinned counter at all. That copy is gone; the preview renders this.
+/**
+ * The bar above a conversation: who or what it is, what is pinned, the info
+ * toggle, and the way back out on a phone.
+ *
+ * @param {'channel'|'dm'} props.type A channel gets a hash, a direct message gets a face.
+ * @param {string} props.title Channel name, or the other person's name.
+ * @param {string} props.subtitle Line under it — member count, or the person's role.
+ * @param {string} props.statusEmoji The person's status emoji, for a direct message.
+ * @param {string} props.statusTitle Its text, shown on hover.
+ * @param {object} props.user The other person, for the avatar.
+ * @param {boolean} props.online Whether they are present right now.
+ * @param {number} props.pinnedCount How many messages are pinned; zero hides the control.
+ * @param {() => void} props.onOpenPinned Opens the pinned list.
+ * @param {string} props.infoLabel Accessible name of the info toggle.
+ * @param {boolean} props.infoActive Whether the info panel is open — this is the pressed look.
+ * @param {() => void} props.onToggleInfo Opens and closes it.
+ * @param {() => void} props.onBack Returns to the rail at mobile width.
+ */
 export default function ChatConversationHeader({
   type = 'channel',
   title,

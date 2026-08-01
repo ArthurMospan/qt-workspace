@@ -46,6 +46,15 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
     <div className="px-[16px] pb-[8px]">
       <div
         onClick={() => onNavigate(activeTimer)}
+        // The strip carries the stop button, so it is not a `<button>` itself.
+        role="button"
+        tabIndex={0}
+        onKeyDown={event => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          onNavigate(activeTimer);
+        }}
         className="bg-[#333333] rounded-[12px] flex items-center justify-between pl-[12px] pr-[6px] py-[6px] cursor-pointer">
         <div className="flex items-center gap-[8px]">
           <Clock size={14} className="text-[#3b82f6] animate-pulse" />
@@ -190,6 +199,12 @@ export default function MobileNav() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
             onClick={e => e.stopPropagation()}
+            // A sheet is a dialog: it covers the page, it traps the reader's
+            // attention, and it says so. Without the role it was an anonymous
+            // box, and the layer behind it an anonymous click target.
+            role="dialog"
+            aria-modal="true"
+            aria-label="Більше розділів"
             className="absolute bottom-0 left-0 right-0 bg-[var(--sb-bg)] rounded-t-[24px] max-h-[80vh] overflow-y-auto"
             style={{
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
@@ -214,7 +229,7 @@ export default function MobileNav() {
                   )}
                   <ChevronsUpDown size={14} className="text-muted shrink-0" />
                 </button>
-                <button onClick={() => setMoreOpen(false)} className="text-muted p-[6px] -mr-[6px]">
+                <button onClick={() => setMoreOpen(false)} aria-label="Закрити" className="text-muted p-[6px] -mr-[6px]">
                   <X size={18} />
                 </button>
               </div>

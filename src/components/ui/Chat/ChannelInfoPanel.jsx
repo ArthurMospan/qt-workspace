@@ -36,6 +36,24 @@ const MATERIAL_FILTERS = [
   ['files', 'Файли'],
 ];
 
+/**
+ * The panel beside a conversation: its description, its members, and everything
+ * ever attached to it, on three tabs.
+ *
+ * @param {object} props.channel The conversation.
+ * @param {object[]} props.members Its participants.
+ * @param {object[]} props.messages Its messages, which the attachments tab reads.
+ * @param {string} props.activeTab Which tab is open.
+ * @param {(tab: string) => void} props.onTabChange Switches tabs.
+ * @param {boolean} props.isAdminOrOwner Whether the reader may change membership or the description.
+ * @param {(member) => void} props.onAddMember Adds one person.
+ * @param {() => void} props.onAddAllMembers Adds everybody in the workspace.
+ * @param {(member) => void} props.onRemoveMember Removes one person.
+ * @param {(text: string) => void} props.onSaveDescription Saves the edited description.
+ * @param {(message) => void} props.onJumpToMessage Scrolls the conversation to that message.
+ * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
+ * @param {() => void} props.onClose Closes the panel.
+ */
 export default function ChannelInfoPanel({
   channel,
   members = [],

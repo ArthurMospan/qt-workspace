@@ -15,6 +15,15 @@ import UserAvatar from './UserAvatar';
 //
 // Positioning stays at the call site (`col-start-2`, `self-end`): where the
 // button sits in its parent is composition, not chrome.
+/**
+ * An avatar that is a control: opens a profile, or anchors a popover.
+ *
+ * @param {object} props.user The person to draw.
+ * @param {string} props.size Named token from the avatar scale, shared with `UserAvatar`.
+ * @param {string} props.label Accessible name — a face names nobody to a screen reader.
+ * @param {() => void} props.onClick Click handler.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function AvatarButton({
   user,
   size = 'md',

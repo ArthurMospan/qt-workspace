@@ -15,6 +15,14 @@ function matchWord(count) {
   return count < 5 ? 'повідомлення' : 'повідомлень';
 }
 
+/**
+ * The amber strip above a filtered conversation: how many messages matched, and
+ * the way to drop the filter.
+ *
+ * @param {string} props.query What was searched for.
+ * @param {number} props.count How many messages matched; the wording declines with it.
+ * @param {() => void} props.onClear Drops the filter.
+ */
 export default function ChatSearchBanner({ query, count = 0, onClear }) {
   return (
     <div className="bg-[#fffbe6] border-b border-[#ffe58f] px-6 py-2 flex items-center justify-between shrink-0">

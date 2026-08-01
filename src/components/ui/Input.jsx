@@ -17,6 +17,19 @@ const INPUT_PRESETS = {
   money: 'text-right font-bold tabular-nums',
 };
 
+/**
+ * Single-line text field. Everything it is not given by name — `value`,
+ * `placeholder`, `disabled`, `type` — is forwarded to the native input, so it
+ * supports the full HTML surface without restating it.
+ *
+ * @param {boolean|string} props.error Draws the error border; a string is not printed here, `FormGroup` prints it.
+ * @param {React.ComponentType} props.icon Leading lucide icon inside the field.
+ * @param {'sm'|'md'|'lg'} props.size Control height token, shared with Button and Select.
+ * @param {'money'} props.preset A named field role that changes alignment and figures.
+ * @param {string} props.suffix Short trailing unit (`₴/г`, `%`) drawn inside the control, with room reserved from its length.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.className Placement in the parent only.
+ */
 export const Input = forwardRef(({
   className = '',
   icon: Icon,

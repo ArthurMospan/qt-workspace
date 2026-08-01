@@ -28,6 +28,13 @@ function getKind(attachment) {
   return 'file';
 }
 
+/**
+ * Full-screen viewer for one attachment — image, PDF, or the download card for
+ * anything the browser cannot render.
+ *
+ * @param {object} props.attachment The file to show; `null` closes the viewer.
+ * @param {() => void} props.onClose Closes it.
+ */
 export default function AttachmentViewer({ attachment, onClose }) {
   const [scale, setScale] = useState(1);
   const url = getUrl(attachment);

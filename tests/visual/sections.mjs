@@ -31,4 +31,11 @@ export const SECTIONS = [
   { id: 'sidebar-layout', label: 'Workspace Shell' },
   { id: 'inner-nav-layout', label: 'SidebarLayout — 3 контексти' },
   { id: 'variant-matrix', label: 'Матриця варіантів' },
+  { id: 'states', label: 'Матриця станів' },
 ];
+
+// The one section photographed twice. Its hover and focus cells have no DOM of
+// their own — a pseudo-class cannot be rendered, only provoked — so a second
+// pass forces `:hover` and `:focus-visible` through CDP and takes another shot.
+// Kept out of SECTIONS so the navigation guard still compares like with like.
+export const FORCED_STATE_SECTION = 'states';

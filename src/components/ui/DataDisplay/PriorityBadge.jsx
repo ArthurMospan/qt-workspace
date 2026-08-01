@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Issue priority as a dot plus its Ukrainian name. The five levels and their
+ * colours are fixed here, not configurable: priority is a shared vocabulary.
+ *
+ * @param {'blocker'|'high'|'medium'|'low'|'info'} props.priority Which level to draw.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function PriorityBadge({ priority = 'low', className = '' }) {
   const priorityMap = {
     blocker: {

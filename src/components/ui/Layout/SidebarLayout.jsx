@@ -32,6 +32,21 @@ export const CONTEXTS = {
   },
 };
 
+/**
+ * The rail-plus-content frame that Settings, Team and Chat all sit in. The
+ * gutter, the rail width and the 56px allowance under the fixed header live in
+ * `CONTEXTS` and nowhere else — before this component the three screens each
+ * remembered those numbers separately, and had already drifted apart.
+ *
+ * @param {React.ReactNode} props.sidebar The rail.
+ * @param {React.ReactNode} props.children The content beside it.
+ * @param {'settings'|'team'|'chat'} props.context Which frame: who owns the height, and whether a fixed header sits above.
+ * @param {number|string} props.sidebarWidth Rail width, where the context allows it to differ.
+ * @param {number|string} props.gap Gutter between rail and content.
+ * @param {boolean} props.hasBorder Draws the divider between the two panes.
+ * @param {'sidebar'|'content'} props.mobilePane Which pane is on screen at mobile width.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function SidebarLayout({
   sidebar,
   children,

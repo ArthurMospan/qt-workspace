@@ -35,6 +35,31 @@ const monthName = date => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
+/**
+ * A date field with the kit's own calendar in a portal — not the native one,
+ * because a range needs two dates and the platform control cannot express that.
+ * Month names come from `Intl` in `uk-UA`; a hardcoded English list is what the
+ * first version shipped with.
+ *
+ * @param {string|Date} props.value Selected date in `single` mode.
+ * @param {(value: string) => void} props.onChange Fires with the new date in `single` mode.
+ * @param {'single'|'range'} props.mode One date, or a start and an end.
+ * @param {string|Date} props.startDate Range start.
+ * @param {string|Date} props.endDate Range end.
+ * @param {(range: {startDate, endDate}) => void} props.onDateRangeChange Fires with the new range in `range` mode.
+ * @param {string|Date} props.minDate Earliest selectable date.
+ * @param {number[]} props.yearRange Years offered in the year dropdown.
+ * @param {boolean|string} props.error Draws the error border.
+ * @param {boolean} props.disabled Unavailable: dimmed and not openable.
+ * @param {string} props.placeholder Text shown while empty.
+ * @param {boolean} props.compact Denser trigger, for attribute strips.
+ * @param {boolean} props.hideIcon Drops the calendar glyph where the context already says "date".
+ * @param {'sm'|'md'|'lg'} props.size Control height token.
+ * @param {string} props.textTone Colour role for the trigger's text.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.inputClassName Placement of the inner trigger only.
+ * @param {string} props.className Placement in the parent only.
+ */
 export const DatePicker = forwardRef(({
   value = '',
   onChange,

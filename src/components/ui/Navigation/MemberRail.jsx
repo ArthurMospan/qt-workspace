@@ -14,6 +14,18 @@ import EmptyState from '@/components/ui/Feedback/EmptyState';
 // row drawn as white-with-a-shadow, a 32px avatar drawn at 24px, the muted
 // `#4a4a4a` name drawn as bold ink, and no presence dot at all). The page and
 // the catalogue render this file now, so there is nothing left to drift.
+/**
+ * The team rail: a titled, counted list of people, with presence.
+ *
+ * @param {string} props.title Heading above the list.
+ * @param {object[]} props.members The people to list.
+ * @param {string} props.activeId Id of the selected person.
+ * @param {(id: string) => void} props.onSelect Selects one.
+ * @param {React.ReactNode} props.action Control beside the heading — search, or invite.
+ * @param {boolean} props.loading The list is still arriving; a spinner takes its place.
+ * @param {string} props.emptyTitle Headline when nobody matches.
+ * @param {string} props.emptyDescription Sentence under it.
+ */
 export default function MemberRail({
   title = 'Команда',
   members = [],

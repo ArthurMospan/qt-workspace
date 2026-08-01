@@ -9,6 +9,25 @@ import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Surface from '@/components/ui/Surface';
 import TaskRow from './TaskRow';
 
+/**
+ * The list view of a board: tasks grouped by status, hidden statuses folded
+ * into one «Приховані» group at the end.
+ *
+ * @param {object[]} props.issues The tasks to show.
+ * @param {object[]} props.allIssues Every task in scope, for resolving parents and links.
+ * @param {object[]} props.members Workspace members, for avatars.
+ * @param {object[]} props.labels Label definitions, for the chips.
+ * @param {object[]} props.sprints Sprint definitions, for the sprint column.
+ * @param {object[]} props.projects Projects, needed when the list spans more than one.
+ * @param {object[]} props.issueLinks Relations between tasks.
+ * @param {string[]} props.hiddenStatusIds Statuses folded into the «Приховані» group.
+ * @param {string} props.projectId Current project.
+ * @param {string} props.projectName Its name, for the per-row project chip.
+ * @param {boolean} props.showProjectName Whether each row names its project — true only on cross-project lists.
+ * @param {string} props.activeTimerIssueId The task whose timer is running, if any.
+ * @param {string} props.emptyTitle Headline of the empty state.
+ * @param {string} props.emptyDescription Sentence under it.
+ */
 export default function TaskListView({
   issues = [],
   allIssues = issues,
@@ -75,6 +94,17 @@ export default function TaskListView({
             <div
               className={`flex cursor-pointer select-none items-center gap-2 ${isCollapsed ? '' : 'mb-4'}`}
               onClick={() => toggleSection(section.id)}
+              // A collapse control, so it says so and answers the keys a button
+              // answers. Not a `<button>`: the section heading lives inside it,
+              // and a heading is not something to bury in a control's label.
+              role="button"
+              tabIndex={0}
+              aria-expanded={!isCollapsed}
+              onKeyDown={event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                toggleSection(section.id);
+              }}
             >
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: section.color }} />
               <h3 className="ui-type-column-title uppercase tracking-wide text-ink">{section.label}</h3>

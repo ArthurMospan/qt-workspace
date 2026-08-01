@@ -339,6 +339,8 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
       <div className="relative shrink-0">
         <button
           onClick={() => setShowPalette(v => !v)}
+          aria-label="Обрати колір"
+          aria-expanded={showPalette}
           className="w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all"
           style={{ background: color }}
         />
@@ -355,6 +357,8 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
                     onSave({ ...rest, label: label.trim(), color: c });
                   }
                 }}
+                aria-label={`Колір ${c}`}
+                aria-pressed={c === color}
                 className="w-[18px] h-[18px] rounded-full transition-transform hover:scale-110"
                 style={{ background: c, outline: c === color ? '2px solid #1f1f1f' : 'none', outlineOffset: 2 }}
               />
@@ -430,22 +434,25 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" size="icon" icon={Check} />
+            <Button onClick={save} aria-label="Зберегти" style="ghost" size="icon" icon={Check} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setColor(item.color); }
               }}
+              aria-label="Скасувати"
               style="ghost" size="icon" icon={X}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
+              aria-label="Редагувати"
               style="ghost" size="icon" icon={Edit2}
             />
             {canDelete ? (
               <Button onClick={() => onDelete(item.id)}
+                aria-label="Видалити"
                 style="ghost" color="red" size="icon" icon={Trash2}
               />
             ) : (
@@ -510,21 +517,24 @@ function PositionItem({ item, onSave, onDelete }) {
       <div className="flex items-center justify-end gap-1 shrink-0 w-[64px]">
         {editing ? (
           <>
-            <Button onClick={save} style="ghost" size="icon" icon={Check} />
+            <Button onClick={save} aria-label="Зберегти" style="ghost" size="icon" icon={Check} />
             <Button
               onClick={() => {
                 if (item.isNew) { onDelete(item.id); }
                 else { setEditing(false); setLabel(item.label); setHourlyRate(item.hourlyRate); }
               }}
+              aria-label="Скасувати"
               style="ghost" size="icon" icon={X}
             />
           </>
         ) : (
           <>
             <Button onClick={() => setEditing(true)}
+              aria-label="Редагувати"
               style="ghost" size="icon" icon={Edit2}
             />
             <Button onClick={() => onDelete(item.id)}
+              aria-label="Видалити"
               style="ghost" color="red" size="icon" icon={Trash2}
             />
           </>
@@ -2300,6 +2310,7 @@ export default function SettingsPage() {
                 </code>
                 <Button
                   onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
+                  aria-label="Скопіювати ідентифікатор організації"
                   style="ghost" size="icon-sm"
                   icon={Copy}
                 />

@@ -1025,6 +1025,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         setTimerMinutes(0);
                         setTimePanelOpen(true);
                       }}
+                      // It opens the time panel and holds the timer buttons, so
+                      // it is a control that cannot be a `<button>`.
+                      role={canTrackTime ? 'button' : undefined}
+                      tabIndex={canTrackTime ? 0 : undefined}
+                      onKeyDown={canTrackTime ? (keyEvent => {
+                        if (keyEvent.target !== keyEvent.currentTarget) return;
+                        if (keyEvent.key !== 'Enter' && keyEvent.key !== ' ') return;
+                        keyEvent.preventDefault();
+                        setTimerMinutes(0);
+                        setTimePanelOpen(true);
+                      }) : undefined}
                     >
                       <span className={attributeLabelClass}>Трекінг часу</span>
                       <div className="flex h-[22px] min-w-0 items-center gap-1">

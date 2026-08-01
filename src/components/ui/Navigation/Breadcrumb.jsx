@@ -3,6 +3,21 @@ import Link from 'next/link';
 import { ChevronRight, Copy, Search } from 'lucide-react';
 import { HeaderSearch } from '../Forms/HeaderSearch';
 
+/**
+ * The trail on the left of the workspace header, optionally with the search
+ * that expands over it. Rendered by `TopHeader` on every screen — the product
+ * never calls it directly, which is why it has no preview of its own.
+ *
+ * @param {{label: string, href?: string}[]} props.items The trail, root first; the last entry is the current page.
+ * @param {boolean} props.showSearchButton Whether the trail offers a search toggle at all.
+ * @param {boolean} props.isSearchActive Whether the search has replaced the trail.
+ * @param {() => void} props.onSearchToggle Opens and closes the search.
+ * @param {string} props.searchValue Current query.
+ * @param {(value: string) => void} props.onSearchChange Fires with the new query.
+ * @param {() => void} props.onSearchClear Clears the query.
+ * @param {string} props.searchPlaceholder Placeholder for the search field.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function Breadcrumb({
   items = [],
   className = '',

@@ -2,6 +2,17 @@
 import React, { forwardRef } from 'react';
 import { Clock } from 'lucide-react';
 
+/**
+ * A time field. The native `type="time"` control with the kit's geometry over
+ * it, so the platform keeps the keyboard, the locale and the clock popup.
+ *
+ * @param {string} props.value `HH:MM`.
+ * @param {(value: string) => void} props.onChange Fires with the new `HH:MM`.
+ * @param {boolean|string} props.error Draws the error border and tints the field.
+ * @param {boolean} props.disabled Unavailable: dimmed and not editable.
+ * @param {'sm'|'md'|'lg'} props.size Control height token.
+ * @param {string} props.className Placement in the parent only.
+ */
 export const TimePicker = forwardRef(({
   value = '',
   onChange,

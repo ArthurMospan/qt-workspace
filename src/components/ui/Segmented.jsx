@@ -14,6 +14,18 @@ const SURFACES = {
   canvas: 'bg-canvas',
 };
 
+/**
+ * Compact pill switch for mutually exclusive view options (period, week/month).
+ * Drawn to sit inside a `FilterBar`, so a per-tab view control lives in the
+ * same container as the filters instead of floating beside it.
+ *
+ * @param {string|number} props.value Selected option value.
+ * @param {(value) => void} props.onChange Fires with the newly selected value.
+ * @param {{value: string|number, label: string}[]} props.options The choices, in the order they are drawn.
+ * @param {'transparent'|'canvas'} props.surface Background: transparent inside a filter bar, canvas when standing alone.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Segmented({
   value,
   onChange,

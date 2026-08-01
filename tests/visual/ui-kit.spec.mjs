@@ -6,11 +6,13 @@
 // every section and fails on the difference, with expected/actual/diff PNGs in
 // the CI artifact.
 //
-// Only the resting state is captured. Hover, focus and disabled belong to the
-// state matrix, which is a separate job — mixing them in here would mean every
-// baseline encodes an arbitrary pointer position.
+// Every section is captured at rest, and exactly one — «Матриця станів» — is
+// captured a second time with its hover and focus cells forced. Mixing the
+// pointer into the other 26 baselines would mean each of them encoded an
+// arbitrary cursor position; keeping it to the section built for it means the
+// two pseudo-classes are photographed without any baseline having to guess.
 import { test, expect } from '@playwright/test';
-import { SECTIONS } from './sections.mjs';
+import { SECTIONS, FORCED_STATE_SECTION } from './sections.mjs';
 
 // A fixed instant, so relative timestamps in the chat and task demos render the
 // same string forever. The demos read the clock while their module evaluates,
@@ -155,3 +157,40 @@ for (const section of SECTIONS) {
     await expect(scroller).toHaveScreenshot(`${section.id}.png`);
   });
 }
+
+// A pseudo-class has no DOM. Only one element can really be hovered and only
+// one can hold focus, so a single frame showing thirty hovered controls is not
+// something the page can be asked to produce — it has to be forced.
+//
+// `CSS.forcePseudoState` is the honest way to force it: it makes the browser
+// match the component's own `:hover` and `:focus-visible` rules, so nothing in
+// the catalogue has to carry a second, static copy of its hover styling. The
+// force is applied to the whole subtree of a state cell, because `group-hover:`
+// reads the pointer on an ancestor and `peer-focus-visible:` on a sibling.
+test('states — hover and focus, forced', async ({ page }) => {
+  const scroller = await showSection(page, FORCED_STATE_SECTION);
+
+  const client = await page.context().newCDPSession(page);
+  await client.send('DOM.enable');
+  await client.send('CSS.enable');
+  const { root } = await client.send('DOM.getDocument', { depth: -1, pierce: false });
+
+  const forced = { hover: ['hover'], focus: ['focus', 'focus-visible'] };
+  let cells = 0;
+  for (const [state, pseudoClasses] of Object.entries(forced)) {
+    const { nodeIds } = await client.send('DOM.querySelectorAll', {
+      nodeId: root.nodeId,
+      selector: `[data-kit-state="${state}"], [data-kit-state="${state}"] *`,
+    });
+    cells += nodeIds.length;
+    for (const nodeId of nodeIds) {
+      await client.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: pseudoClasses });
+    }
+  }
+  // A selector that silently matches nothing would photograph the resting state
+  // under a name that promises otherwise, and the baseline would lock it in.
+  expect(cells, 'the state matrix must expose hover and focus cells to force').toBeGreaterThan(20);
+
+  await settle(page);
+  await expect(scroller).toHaveScreenshot('states-forced.png');
+});

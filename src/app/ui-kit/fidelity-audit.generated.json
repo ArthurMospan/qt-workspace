@@ -229,7 +229,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:133",
+      "location": "src/app/(app)/page.js:144",
       "className": "px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav",
       "text": "Розархівувати",
       "childElements": [
@@ -246,13 +246,13 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:147",
+      "location": "src/app/(app)/page.js:158",
       "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
       "text": "",
       "childElements": [
         "MoreVertical"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Дії з проєктом",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
@@ -263,7 +263,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2347",
+      "location": "src/app/(app)/settings/page.js:2358",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -281,7 +281,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:3070",
+      "location": "src/app/(app)/settings/page.js:3081",
       "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors",
       "text": "Всі налаштування",
       "childElements": [
@@ -302,7 +302,7 @@
       "className": "w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all",
       "text": "",
       "childElements": [],
-      "ariaLabel": "",
+      "ariaLabel": "Обрати колір",
       "styled": true,
       "reviewed": "",
       "resembles": "",
@@ -313,11 +313,11 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:348",
+      "location": "src/app/(app)/settings/page.js:350",
       "className": "w-[18px] h-[18px] rounded-full transition-transform hover:scale-110",
       "text": "",
       "childElements": [],
-      "ariaLabel": "",
+      "ariaLabel": "Колір …",
       "styled": true,
       "reviewed": "",
       "resembles": "",
@@ -328,7 +328,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:416",
+      "location": "src/app/(app)/settings/page.js:420",
       "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
       "text": "Завершальний",
       "childElements": [
@@ -570,7 +570,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:169",
+      "location": "src/components/MobileNav.jsx:178",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${…}",
       "text": "",
       "childElements": [
@@ -586,7 +586,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:208",
+      "location": "src/components/MobileNav.jsx:223",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -602,13 +602,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:217",
+      "location": "src/components/MobileNav.jsx:232",
       "className": "text-muted p-[6px] -mr-[6px]",
       "text": "",
       "childElements": [
         "X"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Закрити",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
@@ -617,7 +617,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:248",
+      "location": "src/components/MobileNav.jsx:263",
       "className": "text-[#666666] p-[4px] -mr-[4px]",
       "text": "",
       "childElements": [
@@ -737,13 +737,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/AgileBoard.jsx:243",
+      "location": "src/components/workspace/AgileBoard.jsx:259",
       "className": "text-muted mb-4",
       "text": "",
       "childElements": [
         "ChevronRight"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Розгорнути колонку",
       "styled": false,
       "reviewed": "column-collapse",
       "resembles": "IconAction",
@@ -771,13 +771,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/AgileBoard.jsx:317",
+      "location": "src/components/workspace/AgileBoard.jsx:349",
       "className": "text-muted mb-4",
       "text": "",
       "childElements": [
         "ChevronRight"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Розгорнути колонку",
       "styled": false,
       "reviewed": "column-collapse",
       "resembles": "IconAction",
@@ -825,7 +825,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1031",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1042",
       "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -840,7 +840,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1045",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
       "className": "min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted",
       "text": "",
       "childElements": [],
@@ -855,7 +855,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1069",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1080",
       "className": "${…} ${…}",
       "text": "",
       "childElements": [
@@ -873,7 +873,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1195",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1206",
       "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -888,7 +888,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1265",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1132,7 +1132,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:458",
+      "location": "src/components/WorkspaceHeader.jsx:468",
       "className": "text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors",
       "text": "Очистити прочитані",
       "childElements": [],
@@ -1145,13 +1145,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:480",
+      "location": "src/components/WorkspaceHeader.jsx:490",
       "className": "flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden",
       "text": "",
       "childElements": [
         "UserAvatar"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Меню користувача",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
@@ -1160,7 +1160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:493",
+      "location": "src/components/WorkspaceHeader.jsx:505",
       "className": "flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium",
       "text": "Налаштування",
       "childElements": [],
@@ -1173,7 +1173,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:498",
+      "location": "src/components/WorkspaceHeader.jsx:510",
       "className": "flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium",
       "text": "Вийти",
       "childElements": [],
@@ -1186,7 +1186,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:546",
+      "location": "src/components/WorkspaceHeader.jsx:558",
       "className": "mt-2 text-[11px] font-semibold text-ink hover:underline",
       "text": "Перейти",
       "childElements": [],
@@ -1199,13 +1199,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:554",
+      "location": "src/components/WorkspaceHeader.jsx:566",
       "className": "text-faint hover:text-ink transition-colors p-1",
       "text": "",
       "childElements": [
         "X"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Приховати сповіщення",
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
@@ -1214,7 +1214,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:226",
+      "location": "src/components/WorkspaceSidebar.jsx:234",
       "className": "mt-1 transition-colors shrink-0 ml-[8px]",
       "text": "",
       "childElements": [
@@ -1229,13 +1229,13 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:239",
+      "location": "src/components/WorkspaceSidebar.jsx:247",
       "className": "transition-colors",
       "text": "",
       "childElements": [
         "PanelLeftOpen"
       ],
-      "ariaLabel": "",
+      "ariaLabel": "Розгорнути бічну панель",
       "styled": false,
       "reviewed": "branding-action",
       "resembles": "IconAction",
@@ -1244,7 +1244,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:289",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -1259,7 +1259,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:354",
+      "location": "src/components/WorkspaceSidebar.jsx:374",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -1398,12 +1398,12 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/workspace/AgileBoard.jsx:243",
+      "location": "src/components/workspace/AgileBoard.jsx:259",
       "tag": "button",
       "context": "column-collapse"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:317",
+      "location": "src/components/workspace/AgileBoard.jsx:349",
       "tag": "button",
       "context": "column-collapse"
     },
@@ -1423,17 +1423,17 @@
       "context": "notification-response"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:226",
+      "location": "src/components/WorkspaceSidebar.jsx:234",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:239",
+      "location": "src/components/WorkspaceSidebar.jsx:247",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:289",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "tag": "button",
       "context": "branding-action"
     }
@@ -1454,12 +1454,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:109",
+      "location": "src/app/(app)/page.js:120",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:118",
+      "location": "src/app/(app)/page.js:129",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -1469,12 +1469,12 @@
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:346",
+      "location": "src/app/(app)/settings/page.js:348",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:478",
+      "location": "src/app/(app)/settings/page.js:485",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -1484,12 +1484,12 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:606",
+      "location": "src/app/(app)/sprints/page.js:615",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:614",
+      "location": "src/app/(app)/sprints/page.js:623",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -1564,7 +1564,7 @@
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:483",
+      "location": "src/components/workspace/BillingTab.jsx:495",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
@@ -1604,7 +1604,7 @@
       "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1496",
+      "location": "src/components/workspace/IssueDetail.jsx:1507",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
@@ -1669,7 +1669,7 @@
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:488",
+      "location": "src/components/WorkspaceHeader.jsx:500",
       "tag": "div",
       "className": "absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50"
     },

@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * A switch: it turns something on, immediately, with no save step. Where the
+ * change only takes effect on submit, that is a `Checkbox`.
+ *
+ * @param {boolean} props.checked Whether it is on.
+ * @param {(checked: boolean) => void} props.onChange Fires with the new value.
+ * @param {boolean} props.disabled Unavailable: dimmed and not clickable.
+ * @param {'sm'|'md'|'lg'} props.size Track and knob size.
+ * @param {string} props.label Text beside the switch.
+ * @param {string} props.ariaLabel Accessible name when there is no visible label.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function ToggleSwitch({
   checked = false,
   onChange,

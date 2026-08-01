@@ -19,6 +19,19 @@ import { Download, FileText, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { detectFileType, fmtBytes, getMatFileUrl } from '@/lib/utils/issueAttachments.mjs';
 
+/**
+ * One file on a task: its type glyph, name, size, and the actions available for
+ * it. What the actions are depends on where the row is — editing a description
+ * offers "insert", an archived task offers only download.
+ *
+ * @param {object} props.attachment The stored file record.
+ * @param {boolean} props.isEditing The description is open for editing, so inserting a link is possible.
+ * @param {boolean} props.isArchived Read-only history: nothing may be deleted.
+ * @param {() => void} props.onOpen Opens the file in the viewer.
+ * @param {() => void} props.onInsert Inserts a markdown link to it into the description.
+ * @param {() => void} props.onDelete Removes it from the task.
+ * @param {() => void} props.onDownload Downloads it.
+ */
 export default function AttachmentRow({
   attachment,
   isEditing = false,

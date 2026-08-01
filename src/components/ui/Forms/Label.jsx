@@ -10,6 +10,18 @@ import React from 'react';
 // Callers worked around that with `className="flex items-center"`, which
 // applies to the outer label — already a flex row — and never reaches the span.
 // The icon size is fixed by the kit for the same reason the typography is.
+/**
+ * The caption above a field. Usually reached through `FormGroup`; used directly
+ * where a control needs a caption without a field wrapper.
+ *
+ * @param {React.ReactNode} props.children Caption text.
+ * @param {boolean} props.required Prints the required hint on the right.
+ * @param {string} props.requiredHint The words that hint uses.
+ * @param {string} props.htmlFor Id of the control this labels.
+ * @param {React.ComponentType} props.icon Leading glyph, sized by the kit — passing one through `children` breaks the line box.
+ * @param {'field'|'inline'} props.context Type scale: above a field, or beside one.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Label({
   children,
   required = false,

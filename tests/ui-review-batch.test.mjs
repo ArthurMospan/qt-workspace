@@ -135,15 +135,35 @@ test('QUI-136 gives every tooltip the same seamless arrow', async () => {
   }
 });
 
+// The decision is unchanged; where it is written had to move. The rule below
+// declared the grey and the ink and delivered neither: `Button` writes both as
+// utilities for whichever `style` it is given, and Tailwind emits the utility
+// layer after the components layer, so layer order beat the more specific
+// selector. The control went on reading as a bare link with the fix sitting in
+// the stylesheet. `style="secondary"` is the same pair, in the place the kit
+// already keeps colour — and it is the only one of the two that reaches the
+// screen.
 test('QUI-137 makes the inline add control look like a button', async () => {
   const globals = await read('../src/app/globals.css');
+  const issueDetail = await read('../src/components/workspace/IssueDetail.jsx');
+  const kit = await readKitShowcase();
   const rule = globals.slice(
     globals.indexOf(".ui-control[data-ui-composition='inline-add-action'] {"),
-    globals.indexOf(".ui-control[data-ui-composition='inline-add-action']:hover"),
+    globals.indexOf(".ui-control[data-ui-composition='inline-add-action'] {") + 220,
   );
-  assert.match(rule, /background: var\(--color-canvas\)/);
-  assert.match(rule, /color: var\(--color-ink\)/);
-  assert.doesNotMatch(rule, /var\(--color-surface\)/, 'white on white read as a bare link');
+
+  // Size only: it is what a custom property can carry past the utility layer.
+  assert.match(rule, /--ui-control-height: 26px/);
+  assert.doesNotMatch(rule, /background:/, 'a background here cannot beat the utility that Button writes');
+  assert.doesNotMatch(rule, /color: var\(--color-ink\)/);
+
+  for (const source of [issueDetail, kit]) {
+    for (const match of source.matchAll(/composition="inline-add-action"/g)) {
+      const call = source.slice(Math.max(0, match.index - 260), match.index);
+      assert.match(call, /style="secondary"/, 'the add control carries the grey the decision asked for');
+      assert.doesNotMatch(call.slice(call.lastIndexOf('<Button')), /style="ghost"/);
+    }
+  }
 });
 
 test('QUI-138 says where each rare Dialog variant actually lives', async () => {

@@ -2,6 +2,17 @@
 
 import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 
+/**
+ * Which workflow statuses a board shows and which it folds away. The backlog
+ * status is always visible and cannot be switched off — a board with no
+ * incoming column has nowhere to put new work.
+ *
+ * @param {{id: string, label: string, color: string}[]} props.statuses Every status in the workflow.
+ * @param {string[]} props.hiddenStatusIds Ids currently folded away.
+ * @param {(ids: string[]) => void} props.onChange Fires with the new hidden list.
+ * @param {string} props.backlogStatusId The status that may never be hidden.
+ * @param {boolean} props.disabled Unavailable: rows are dimmed and do not respond.
+ */
 export default function StatusVisibilityPicker({
   statuses = [],
   hiddenStatusIds = [],

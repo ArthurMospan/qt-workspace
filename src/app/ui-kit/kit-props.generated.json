@@ -1,0 +1,4581 @@
+{
+  "generatedBy": "scripts/kit-props.mjs",
+  "contract": {
+    "derivation": "Props are the component's own destructured parameters; defaults are its source text; declared values come from the variant manifest.",
+    "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
+  },
+  "totals": {
+    "components": 73,
+    "props": 540,
+    "documentedProps": 540,
+    "undocumentedProps": 0,
+    "componentsWithoutSummary": 0
+  },
+  "componentsWithoutSummary": [],
+  "components": {
+    "Alert": {
+      "file": "src/components/ui/Feedback/Alert.jsx",
+      "summary": "Inline notice inside a page or a form — a banner that stays until the reader deals with it. Transient feedback is `Toast`, not this.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "description",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Body text under the title."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Renders the dismiss button. Without it the notice cannot be closed."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Headline; omit for a one-line notice."
+        },
+        {
+          "name": "variant",
+          "default": "'info'",
+          "type": "'info'|'success'|'warning'|'error'",
+          "values": [
+            "danger",
+            "error",
+            "info",
+            "success",
+            "warning"
+          ],
+          "description": "Colour and icon; carries the meaning, so it is never decorative."
+        }
+      ]
+    },
+    "AttachmentRow": {
+      "file": "src/components/ui/TaskManagement/AttachmentRow.jsx",
+      "summary": "One file on a task: its type glyph, name, size, and the actions available for it.",
+      "props": [
+        {
+          "name": "attachment",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The stored file record."
+        },
+        {
+          "name": "isArchived",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Read-only history: nothing may be deleted."
+        },
+        {
+          "name": "isEditing",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The description is open for editing, so inserting a link is possible."
+        },
+        {
+          "name": "onDelete",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Removes it from the task."
+        },
+        {
+          "name": "onDownload",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Downloads it."
+        },
+        {
+          "name": "onInsert",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Inserts a markdown link to it into the description."
+        },
+        {
+          "name": "onOpen",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the file in the viewer."
+        }
+      ]
+    },
+    "AttachmentViewer": {
+      "file": "src/components/ui/AttachmentViewer.jsx",
+      "summary": "Full-screen viewer for one attachment — image, PDF, or the download card for anything the browser cannot render.",
+      "props": [
+        {
+          "name": "attachment",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The file to show; `null` closes the viewer."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes it."
+        }
+      ]
+    },
+    "AttributeTrigger": {
+      "file": "src/components/ui/Layout/TaskAttributesPanel.jsx",
+      "summary": "The strip's own overflow control — «Деталі», the button that opens the less-frequently-changed fields.",
+      "props": [
+        {
+          "name": "active",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the drawer is open; this is the pressed look."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "condensed",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Scrolled state, matching the strip above it."
+        }
+      ]
+    },
+    "AvatarButton": {
+      "file": "src/components/ui/DataDisplay/AvatarButton.jsx",
+      "summary": "An avatar that is a control: opens a profile, or anchors a popover.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name — a face names nobody to a screen reader."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Click handler."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "string",
+          "values": [
+            "chat-inline",
+            "chat-member",
+            "chat-mention",
+            "chat-message",
+            "hero",
+            "lg",
+            "md",
+            "sm",
+            "xl",
+            "xs"
+          ],
+          "description": "Named token from the avatar scale, shared with `UserAvatar`."
+        },
+        {
+          "name": "user",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The person to draw."
+        }
+      ]
+    },
+    "Breadcrumb": {
+      "file": "src/components/ui/Navigation/Breadcrumb.jsx",
+      "summary": "The trail on the left of the workspace header, optionally with the search that expands over it.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "isSearchActive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the search has replaced the trail."
+        },
+        {
+          "name": "items",
+          "default": "[]",
+          "type": "{label: string, href?: string}[]",
+          "values": [],
+          "description": "The trail, root first; the last entry is the current page."
+        },
+        {
+          "name": "onSearchChange",
+          "default": "() => {}",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new query."
+        },
+        {
+          "name": "onSearchClear",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Clears the query."
+        },
+        {
+          "name": "onSearchToggle",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens and closes the search."
+        },
+        {
+          "name": "searchPlaceholder",
+          "default": "'Пошук...'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder for the search field."
+        },
+        {
+          "name": "searchValue",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Current query."
+        },
+        {
+          "name": "showSearchButton",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the trail offers a search toggle at all."
+        }
+      ]
+    },
+    "Button": {
+      "file": "src/components/ui/Button.jsx",
+      "summary": "The kit's button. Its height, line box and radius come from `.ui-control` in `globals.",
+      "props": [
+        {
+          "name": "buttonRef",
+          "default": "",
+          "type": "React.Ref",
+          "values": [],
+          "description": "Ref to the underlying button, for popovers anchored to it."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only — never its own height, padding or type."
+        },
+        {
+          "name": "collapseAt",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Viewport width below which the label is hidden and only the icon remains."
+        },
+        {
+          "name": "color",
+          "default": "'dark'",
+          "type": "'dark'|'red'",
+          "values": [
+            "dark",
+            "red"
+          ],
+          "description": "Semantic colour; `red` means destructive."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "auth-close",
+            "chat-composer-action",
+            "chat-composer-cancel",
+            "chat-message-action",
+            "chat-micro-action",
+            "chat-panel-action",
+            "color-hex",
+            "duration-compact-hours",
+            "duration-compact-minutes",
+            "duration-hours",
+            "duration-minutes",
+            "inline-add-action",
+            "inline-edit",
+            "invite-field",
+            "menu-item",
+            "metric-editor",
+            "metric-text",
+            "project-name",
+            "settings-row-action",
+            "status-entry",
+            "status-submit",
+            "workspace-guard"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: dimmed, not clickable, still readable."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading lucide icon. Its pixel size is derived from `size`."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Busy: swaps the icon for a spinner and blocks the click."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Click handler."
+        },
+        {
+          "name": "shape",
+          "default": "'default'",
+          "type": "string",
+          "values": [
+            "circle",
+            "compact",
+            "default",
+            "micro",
+            "tight"
+          ],
+          "description": "Corner radius token."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'|'icon'|string",
+          "values": [
+            "icon",
+            "icon-24",
+            "icon-30",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Control height token; the icon sizes are square boxes."
+        },
+        {
+          "name": "style",
+          "default": "'primary'",
+          "type": "'primary'|'secondary'|'outline'|'ghost'",
+          "values": [
+            "ghost",
+            "outline",
+            "primary",
+            "secondary"
+          ],
+          "description": "Weight of the button in its context."
+        },
+        {
+          "name": "surface",
+          "default": "'default'",
+          "type": "string",
+          "values": [
+            "canvas",
+            "danger-subtle",
+            "default"
+          ],
+          "description": "Which background the button sits on, where that changes its contrast."
+        },
+        {
+          "name": "type",
+          "default": "'button'",
+          "type": "'button'|'submit'|'reset'",
+          "values": [],
+          "description": "Native button type."
+        },
+        {
+          "name": "variant",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Legacy alias for `style`, kept for existing call sites."
+        }
+      ]
+    },
+    "Card": {
+      "file": "src/components/ui/Layout/Card.jsx",
+      "summary": "A bounded block of content. `Card` is `Surface` with the four presets a card can take; reach for `Surface` when the block is a region of a page rather than an object in a list.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "interactive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Adds the pointer, hover tint and focus ring. Set it whenever `onClick` is set."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Click handler."
+        },
+        {
+          "name": "padding",
+          "default": "'md'",
+          "type": "'none'|'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "none",
+            "sm"
+          ],
+          "description": "Inner spacing token."
+        },
+        {
+          "name": "preset",
+          "default": "",
+          "type": "'bordered'|'borderless'|'canvas'|'elevated'",
+          "values": [
+            "bordered",
+            "borderless",
+            "elevated"
+          ],
+          "description": "Which surface it draws. Wins over `variant`."
+        },
+        {
+          "name": "variant",
+          "default": "'white'",
+          "type": "'white'|'gray'",
+          "values": [],
+          "description": "Legacy shorthand kept for existing call sites; `gray` means `preset=\"canvas\"`."
+        }
+      ]
+    },
+    "ChannelInfoPanel": {
+      "file": "src/components/ui/Chat/ChannelInfoPanel.jsx",
+      "summary": "The panel beside a conversation: its description, its members, and everything ever attached to it, on three tabs.",
+      "props": [
+        {
+          "name": "activeTab",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Which tab is open."
+        },
+        {
+          "name": "channel",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The conversation."
+        },
+        {
+          "name": "isAdminOrOwner",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the reader may change membership or the description."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Its participants."
+        },
+        {
+          "name": "messages",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Its messages, which the attachments tab reads."
+        },
+        {
+          "name": "onAddAllMembers",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Adds everybody in the workspace."
+        },
+        {
+          "name": "onAddMember",
+          "default": "",
+          "type": "(member) => void",
+          "values": [],
+          "description": "Adds one person."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes the panel."
+        },
+        {
+          "name": "onJumpToMessage",
+          "default": "",
+          "type": "(message) => void",
+          "values": [],
+          "description": "Scrolls the conversation to that message."
+        },
+        {
+          "name": "onOpenAttachment",
+          "default": "",
+          "type": "(attachment) => void",
+          "values": [],
+          "description": "Opens an attachment in the viewer."
+        },
+        {
+          "name": "onRemoveMember",
+          "default": "",
+          "type": "(member) => void",
+          "values": [],
+          "description": "Removes one person."
+        },
+        {
+          "name": "onSaveDescription",
+          "default": "",
+          "type": "(text: string) => void",
+          "values": [],
+          "description": "Saves the edited description."
+        },
+        {
+          "name": "onTabChange",
+          "default": "",
+          "type": "(tab: string) => void",
+          "values": [],
+          "description": "Switches tabs."
+        }
+      ]
+    },
+    "ChannelRail": {
+      "file": "src/components/ui/Navigation/ChannelRail.jsx",
+      "summary": "The chat rail: grouped channels and direct messages, with unread counters.",
+      "props": [
+        {
+          "name": "activeId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the open conversation."
+        },
+        {
+          "name": "groups",
+          "default": "[]",
+          "type": "{id: string, title: string, items: object[]}[]",
+          "values": [],
+          "description": "The sections and their conversations."
+        },
+        {
+          "name": "onSelect",
+          "default": "() => {}",
+          "type": "(id: string) => void",
+          "values": [],
+          "description": "Opens one."
+        }
+      ]
+    },
+    "ChatAttachmentList": {
+      "file": "src/components/ui/Chat/ChatAttachmentList.jsx",
+      "summary": "The files attached to a sent message, as a grid of tiles.",
+      "props": [
+        {
+          "name": "attachments",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The stored files."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser tiles, for threads and narrow panes."
+        },
+        {
+          "name": "dark",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Inverted tiles, for a message bubble on a dark surface."
+        },
+        {
+          "name": "onOpen",
+          "default": "",
+          "type": "(attachment) => void",
+          "values": [],
+          "description": "Opens one in the viewer."
+        }
+      ]
+    },
+    "ChatComposerCore": {
+      "file": "src/components/ui/ChatComposerCore.jsx",
+      "summary": "The message input itself, shared by all three chats — workspace, timeline and QuickTeam+.",
+      "props": [
+        {
+          "name": "attachments",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Pending attachments, drawn above the field."
+        },
+        {
+          "name": "canSubmit",
+          "default": "Boolean(value?.trim())",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether sending is currently allowed at all."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: the field and the send button are both blocked."
+        },
+        {
+          "name": "leading",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Controls before the field — the attach button."
+        },
+        {
+          "name": "onBlur",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Blur handler."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new draft."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Click handler on the field."
+        },
+        {
+          "name": "onKeyDown",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Key handler; this is where mention navigation hooks in."
+        },
+        {
+          "name": "onSubmit",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Sends it."
+        },
+        {
+          "name": "placeholder",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Text shown while empty."
+        },
+        {
+          "name": "rows",
+          "default": "1",
+          "type": "number",
+          "values": [],
+          "description": "Initial visible rows before it grows."
+        },
+        {
+          "name": "sendAriaLabel",
+          "default": "sendLabel",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name for the icon-only send button."
+        },
+        {
+          "name": "sending",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "In flight: the send button shows the wait."
+        },
+        {
+          "name": "sendLabel",
+          "default": "'Надіслати'",
+          "type": "string",
+          "values": [],
+          "description": "Visible label on the send button, where it has one."
+        },
+        {
+          "name": "textareaClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the textarea only."
+        },
+        {
+          "name": "textareaRef",
+          "default": "",
+          "type": "React.Ref",
+          "values": [],
+          "description": "Ref to the textarea, for mention menus and focus handling."
+        },
+        {
+          "name": "textareaStyle",
+          "default": "",
+          "type": "React.CSSProperties",
+          "values": [],
+          "description": "Inline style for the textarea, for measured heights."
+        },
+        {
+          "name": "toolbar",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Controls under the field."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Draft text."
+        },
+        {
+          "name": "variant",
+          "default": "'workspace'",
+          "type": "'workspace'|'timeline'|'qtplus'",
+          "values": [
+            "qtplus",
+            "timeline",
+            "workspace"
+          ],
+          "description": "Which chat this is; changes the frame, not the behaviour."
+        }
+      ]
+    },
+    "ChatComposerDock": {
+      "file": "src/components/ui/ChatComposerDock.jsx",
+      "summary": "The floating shelf the chat composer sits on.",
+      "props": [
+        {
+          "name": "as",
+          "default": "'div'",
+          "type": "React.ElementType",
+          "values": [],
+          "description": "Element or component to render as; `form` where the composer submits."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "timeline-composer"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "scrollRef",
+          "default": "null",
+          "type": "React.RefObject",
+          "values": [],
+          "description": "The scroller to pad. Without it only the CSS variable is published."
+        }
+      ]
+    },
+    "ChatConversationHeader": {
+      "file": "src/components/ui/Chat/ChatConversationHeader.jsx",
+      "summary": "The bar above a conversation: who or what it is, what is pinned, the info toggle, and the way back out on a phone.",
+      "props": [
+        {
+          "name": "infoActive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the info panel is open — this is the pressed look."
+        },
+        {
+          "name": "infoLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name of the info toggle."
+        },
+        {
+          "name": "onBack",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Returns to the rail at mobile width."
+        },
+        {
+          "name": "online",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether they are present right now."
+        },
+        {
+          "name": "onOpenPinned",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the pinned list."
+        },
+        {
+          "name": "onToggleInfo",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens and closes it."
+        },
+        {
+          "name": "pinnedCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many messages are pinned; zero hides the control."
+        },
+        {
+          "name": "statusEmoji",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The person's status emoji, for a direct message."
+        },
+        {
+          "name": "statusTitle",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Its text, shown on hover."
+        },
+        {
+          "name": "subtitle",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Line under it — member count, or the person's role."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Channel name, or the other person's name."
+        },
+        {
+          "name": "type",
+          "default": "'channel'",
+          "type": "'channel'|'dm'",
+          "values": [],
+          "description": "A channel gets a hash, a direct message gets a face."
+        },
+        {
+          "name": "user",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The other person, for the avatar."
+        }
+      ]
+    },
+    "ChatMessageList": {
+      "file": "src/components/ui/Chat/ChatMessageList.jsx",
+      "summary": "The scrolling conversation: day separators, avatar grouping, the unread divider, the jump-to-latest button and paging into history.",
+      "props": [
+        {
+          "name": "endRef",
+          "default": "",
+          "type": "React.RefObject",
+          "values": [],
+          "description": "Anchor at the bottom, for scroll-to-latest."
+        },
+        {
+          "name": "hasMore",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "There is older history to page into."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The first page is still arriving."
+        },
+        {
+          "name": "members",
+          "default": "",
+          "type": "object[]",
+          "values": [],
+          "description": "Participants, for names and avatars."
+        },
+        {
+          "name": "messages",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The conversation, oldest first."
+        },
+        {
+          "name": "myUid",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The signed-in user, which decides which side a bubble sits on."
+        },
+        {
+          "name": "onDelete",
+          "default": "",
+          "type": "(message) => void",
+          "values": [],
+          "description": "Deletes it."
+        },
+        {
+          "name": "onEdit",
+          "default": "",
+          "type": "(message) => void",
+          "values": [],
+          "description": "Opens a message for editing."
+        },
+        {
+          "name": "onJumpToLatest",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Scrolls to the newest message."
+        },
+        {
+          "name": "onLoadMore",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Fetches that older page."
+        },
+        {
+          "name": "onOpenAttachment",
+          "default": "",
+          "type": "(attachment) => void",
+          "values": [],
+          "description": "Opens an attachment in the viewer."
+        },
+        {
+          "name": "onPin",
+          "default": "",
+          "type": "(message) => void",
+          "values": [],
+          "description": "Pins or unpins it."
+        },
+        {
+          "name": "onReact",
+          "default": "",
+          "type": "(message, emoji) => void",
+          "values": [],
+          "description": "Adds or removes a reaction."
+        },
+        {
+          "name": "onThread",
+          "default": "",
+          "type": "(message) => void",
+          "values": [],
+          "description": "Opens its thread."
+        },
+        {
+          "name": "registerMessageRef",
+          "default": "",
+          "type": "(id: string, node) => void",
+          "values": [],
+          "description": "Records each message's node, for jumping to a search hit."
+        },
+        {
+          "name": "scrollRef",
+          "default": "",
+          "type": "React.RefObject",
+          "values": [],
+          "description": "The scroller, shared with the composer dock."
+        },
+        {
+          "name": "searchTerm",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Current query; matches are highlighted in place."
+        },
+        {
+          "name": "typingUsers",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Who is typing right now."
+        },
+        {
+          "name": "unreadCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many unread messages sit below the fold."
+        }
+      ]
+    },
+    "ChatSearchBanner": {
+      "file": "src/components/ui/Chat/ChatSearchBanner.jsx",
+      "summary": "The amber strip above a filtered conversation: how many messages matched, and the way to drop the filter.",
+      "props": [
+        {
+          "name": "count",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many messages matched; the wording declines with it."
+        },
+        {
+          "name": "onClear",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Drops the filter."
+        },
+        {
+          "name": "query",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What was searched for."
+        }
+      ]
+    },
+    "Checkbox": {
+      "file": "src/components/ui/Forms/Checkbox.jsx",
+      "summary": "A checkbox.",
+      "props": [
+        {
+          "name": "checked",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is ticked."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: dimmed and not clickable."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "boolean|string",
+          "values": [],
+          "description": "Draws the error border."
+        },
+        {
+          "name": "id",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id for the native input; generated when omitted."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Text beside the box; clicking it toggles."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(checked: boolean) => void",
+          "values": [],
+          "description": "Fires with the new value."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [],
+          "description": "Box size."
+        }
+      ]
+    },
+    "ConfirmProvider": {
+      "file": "src/components/ui/ConfirmProvider.jsx",
+      "summary": "Hosts the one confirm dialog the app uses, and hands `useConfirm()` to everything under it — a promise-returning replacement for native `confirm()`/`prompt()`.",
+      "props": []
+    },
+    "ContextMenu": {
+      "file": "src/components/ui/ContextMenu.jsx",
+      "summary": "The dropdown menu behind a ⋮ or any other trigger. Rendered in a portal, so a row with `overflow: hidden` cannot cut it off.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the trigger wrapper only."
+        },
+        {
+          "name": "closeOnSelect",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether a click closes it; toggle menus keep it open while ticking."
+        },
+        {
+          "name": "dropdownClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the panel only."
+        },
+        {
+          "name": "items",
+          "default": "[]",
+          "type": "{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean}[]",
+          "values": [],
+          "description": "The rows; `selected` gives one a trailing tick instead of a \"✓ \" in its label."
+        },
+        {
+          "name": "onOpenChange",
+          "default": "",
+          "type": "(open: boolean) => void",
+          "values": [],
+          "description": "Fires when the menu opens or closes."
+        },
+        {
+          "name": "trigger",
+          "default": "",
+          "type": "React.ReactElement",
+          "values": [],
+          "description": "The element that opens the menu."
+        }
+      ]
+    },
+    "Counter": {
+      "file": "src/components/ui/DataDisplay/Counter.jsx",
+      "summary": "The number on a bell, a tab or a rail item — and, as `variant=\"dot\"`, the same signal with the number left out.",
+      "props": [
+        {
+          "name": "appearance",
+          "default": "'solid'",
+          "type": "'solid'|'subtle'|'inverse-outline'",
+          "values": [
+            "inverse-outline",
+            "solid",
+            "subtle"
+          ],
+          "description": "Fill weight."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "dark",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "High-contrast variant for the dark sidebar."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'xs'|'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm",
+            "xs"
+          ],
+          "description": "`xs` (12px) is the one that fits on a bell icon; `sm` overflows there."
+        },
+        {
+          "name": "status",
+          "default": "'info'",
+          "type": "'info'|'danger'|'muted'|'success'",
+          "values": [
+            "danger",
+            "info",
+            "muted",
+            "success"
+          ],
+          "description": "Meaning, not decoration: `info` is neutral and takes the surface's opposite."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "number|string",
+          "values": [],
+          "description": "Printed for `variant=\"count\"`; ignored by the dot."
+        },
+        {
+          "name": "variant",
+          "default": "'count'",
+          "type": "'count'|'dot'",
+          "values": [
+            "count",
+            "dot"
+          ],
+          "description": "Whether the badge carries a number or only says \"there is something here\"."
+        }
+      ]
+    },
+    "DatePicker": {
+      "file": "src/components/ui/Forms/DatePicker.jsx",
+      "summary": "A date field with the kit's own calendar in a portal — not the native one, because a range needs two dates and the platform control cannot express that.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser trigger, for attribute strips."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: dimmed and not openable."
+        },
+        {
+          "name": "endDate",
+          "default": "''",
+          "type": "string|Date",
+          "values": [],
+          "description": "Range end."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "boolean|string",
+          "values": [],
+          "description": "Draws the error border."
+        },
+        {
+          "name": "hideIcon",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Drops the calendar glyph where the context already says \"date\"."
+        },
+        {
+          "name": "inputClassName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the inner trigger only."
+        },
+        {
+          "name": "minDate",
+          "default": "''",
+          "type": "string|Date",
+          "values": [],
+          "description": "Earliest selectable date."
+        },
+        {
+          "name": "mode",
+          "default": "'single'",
+          "type": "'single'|'range'",
+          "values": [],
+          "description": "One date, or a start and an end."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new date in `single` mode."
+        },
+        {
+          "name": "onDateRangeChange",
+          "default": "",
+          "type": "(range: {startDate, endDate}) => void",
+          "values": [],
+          "description": "Fires with the new range in `range` mode."
+        },
+        {
+          "name": "placeholder",
+          "default": "'Оберіть дату'",
+          "type": "string",
+          "values": [],
+          "description": "Text shown while empty."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [],
+          "description": "Control height token."
+        },
+        {
+          "name": "startDate",
+          "default": "''",
+          "type": "string|Date",
+          "values": [],
+          "description": "Range start."
+        },
+        {
+          "name": "textTone",
+          "default": "'default'",
+          "type": "string",
+          "values": [],
+          "description": "Colour role for the trigger's text."
+        },
+        {
+          "name": "value",
+          "default": "''",
+          "type": "string|Date",
+          "values": [],
+          "description": "Selected date in `single` mode."
+        },
+        {
+          "name": "yearRange",
+          "default": "null",
+          "type": "number[]",
+          "values": [],
+          "description": "Years offered in the year dropdown."
+        }
+      ]
+    },
+    "DescriptionPlaceholder": {
+      "file": "src/components/ui/TaskManagement/DescriptionPlaceholder.jsx",
+      "summary": "What a task shows where its description would be: a line of italic hint text that is also the button which starts editing.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        }
+      ]
+    },
+    "Dialog": {
+      "file": "src/components/ui/Dialog.jsx",
+      "summary": "The kit's modal. Every dialog in the product is this component — the shell, the overlay, the focus trap and the escape key all live here, so no screen builds its own.",
+      "props": [
+        {
+          "name": "bodyClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the body only."
+        },
+        {
+          "name": "bodyPadding",
+          "default": "'default'",
+          "type": "string",
+          "values": [
+            "default",
+            "flush",
+            "horizontal",
+            "invite",
+            "responsive",
+            "spacious"
+          ],
+          "description": "Inner spacing of the body."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the shell only."
+        },
+        {
+          "name": "description",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Sentence under the headline."
+        },
+        {
+          "name": "footer",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Actions along the bottom."
+        },
+        {
+          "name": "headerAction",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A control in the top-right, beside the close button."
+        },
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on screen. The dialog renders nothing when false."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes it: the ×, the overlay and Escape all call this."
+        },
+        {
+          "name": "presentation",
+          "default": "'sheet'",
+          "type": "'dialog'|'sheet'",
+          "values": [
+            "dialog",
+            "sheet"
+          ],
+          "description": "Centred dialog, or a sheet from the edge."
+        },
+        {
+          "name": "showCloseButton",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the × is drawn."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "string",
+          "values": [
+            "lg",
+            "md",
+            "sm",
+            "status"
+          ],
+          "description": "Width token."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Headline."
+        },
+        {
+          "name": "titleContext",
+          "default": "'section'",
+          "type": "'dialog'|'eyebrow'",
+          "values": [
+            "dialog",
+            "eyebrow"
+          ],
+          "description": "Type scale of the headline."
+        }
+      ]
+    },
+    "EmptyState": {
+      "file": "src/components/ui/Feedback/EmptyState.jsx",
+      "summary": "What a list shows when it has nothing in it: a glyph, a sentence, and the action that would fill it.",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Label of the primary button; without it no button is drawn."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'default'",
+          "type": "'default'|'page'|'inset'|'flexible'|'centered'",
+          "values": [
+            "centered",
+            "default",
+            "flexible",
+            "inset",
+            "page"
+          ],
+          "description": "How much of the screen the empty area owns."
+        },
+        {
+          "name": "density",
+          "default": "'comfortable'",
+          "type": "'comfortable'|'compact'",
+          "values": [
+            "comfortable",
+            "compact"
+          ],
+          "description": "Vertical breathing room."
+        },
+        {
+          "name": "description",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "One sentence saying why, or what to do."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "lucide glyph in the round chip."
+        },
+        {
+          "name": "onAction",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Handler for that button."
+        },
+        {
+          "name": "surface",
+          "default": "'transparent'",
+          "type": "'transparent'|'card'",
+          "values": [
+            "card",
+            "transparent"
+          ],
+          "description": "Whether it draws its own card behind the text."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "One line saying what is missing."
+        }
+      ]
+    },
+    "FileInput": {
+      "file": "src/components/ui/Forms/FileInput.jsx",
+      "summary": "The invisible half of \"attach a file\": a hidden native input that a real button clicks through a ref. Everything else — `accept`, `multiple`, `onChange` — reaches the native input.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Extra classes on the hidden input; it stays hidden regardless."
+        }
+      ]
+    },
+    "FilterBar": {
+      "file": "src/components/ui/FilterBar.jsx",
+      "summary": "The row of filters under a page header.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'default'",
+          "type": "'default'|'detail'",
+          "values": [
+            "default",
+            "detail"
+          ],
+          "description": "Width scale: a list page, or a detail pane."
+        }
+      ]
+    },
+    "FormGroup": {
+      "file": "src/components/ui/Forms/FormGroup.jsx",
+      "summary": "One field: caption above, control inside, error message below.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Message under the control. Falsy prints nothing."
+        },
+        {
+          "name": "gap",
+          "default": "'sm'",
+          "type": "'sm'|'md'",
+          "values": [
+            "md",
+            "sm"
+          ],
+          "description": "Distance between caption, control and message."
+        },
+        {
+          "name": "icon",
+          "default": "null",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading glyph on the caption."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Caption text."
+        },
+        {
+          "name": "required",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Prints the required hint on the caption."
+        }
+      ]
+    },
+    "HeaderSearch": {
+      "file": "src/components/ui/Forms/HeaderSearch.jsx",
+      "summary": "The search field inside the workspace header. Reached through `TopHeader`, which is the only thing that renders it — it is not a general search input.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new query."
+        },
+        {
+          "name": "onClear",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Clears the field; renders the × while there is text."
+        },
+        {
+          "name": "placeholder",
+          "default": "'Пошук...'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder text."
+        },
+        {
+          "name": "value",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Current query."
+        }
+      ]
+    },
+    "IconAction": {
+      "file": "src/components/ui/IconAction.jsx",
+      "summary": "A square icon-only button.",
+      "props": [
+        {
+          "name": "appearance",
+          "default": "'quiet'",
+          "type": "string",
+          "values": [
+            "auth-close",
+            "danger",
+            "inverse",
+            "overlay",
+            "primary",
+            "quiet",
+            "quiet-danger",
+            "soft",
+            "surface",
+            "surface-danger",
+            "surface-plain"
+          ],
+          "description": "Fill and hover treatment; the dark ones exist for overlays and dark surfaces."
+        },
+        {
+          "name": "buttonRef",
+          "default": "",
+          "type": "React.Ref",
+          "values": [],
+          "description": "Ref to the underlying button, for popovers anchored to it."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "lucide icon; its pixel size comes from `size`, never from the call site."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name and tooltip. Required — an icon alone names nothing."
+        },
+        {
+          "name": "shape",
+          "default": "'default'",
+          "type": "string",
+          "values": [
+            "circle",
+            "compact",
+            "default",
+            "micro",
+            "tight"
+          ],
+          "description": "Corner radius token."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'micro'|'xs'|'sm'|'compact'|'md'|'lg'",
+          "values": [
+            "compact",
+            "lg",
+            "md",
+            "micro",
+            "sm",
+            "xs"
+          ],
+          "description": "Box size, mapped onto Button's icon sizes."
+        }
+      ]
+    },
+    "ImageUpload": {
+      "file": "src/components/ui/ImageUpload.jsx",
+      "summary": "Picks an image, uploads it, and shows what is currently set — the workspace logo and the project avatar both go through here.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "'Завантажити логотип'",
+          "type": "string",
+          "values": [],
+          "description": "Caption above the control."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(url: string) => void",
+          "values": [],
+          "description": "Fires with the uploaded image's URL."
+        },
+        {
+          "name": "onError",
+          "default": "",
+          "type": "(message: string) => void",
+          "values": [],
+          "description": "Fires when the upload fails, with a message to show."
+        },
+        {
+          "name": "showHint",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the size and format hint is drawn."
+        },
+        {
+          "name": "showLabel",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether that caption is drawn."
+        },
+        {
+          "name": "theme",
+          "default": "'dark'",
+          "type": "'dark'|'light'",
+          "values": [],
+          "description": "Which surface it sits on; onboarding is dark, settings is light."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "URL of the image already stored."
+        }
+      ]
+    },
+    "InnerNavigation": {
+      "file": "src/components/ui/Navigation/InnerNavigation.jsx",
+      "summary": "The vertical menu inside a `SidebarLayout` rail — settings sections, team views. Page-level navigation is the workspace sidebar; this is navigation within one page.",
+      "props": [
+        {
+          "name": "activeId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the current entry."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "items",
+          "default": "[]",
+          "type": "{id: string, label: string, icon?: React.ComponentType, count?: number}[]",
+          "values": [],
+          "description": "The entries, in order."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(id: string) => void",
+          "values": [],
+          "description": "Fires with the newly selected id."
+        }
+      ]
+    },
+    "Input": {
+      "file": "src/components/ui/Input.jsx",
+      "summary": "Single-line text field.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "color-hex",
+            "duration-compact-hours",
+            "duration-compact-minutes",
+            "duration-hours",
+            "duration-minutes",
+            "inline-add-action",
+            "inline-edit",
+            "invite-field",
+            "menu-item",
+            "metric-editor",
+            "metric-text",
+            "project-name",
+            "settings-row-action",
+            "status-entry",
+            "status-submit",
+            "workspace-guard"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "boolean|string",
+          "values": [],
+          "description": "Draws the error border; a string is not printed here, `FormGroup` prints it."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading lucide icon inside the field."
+        },
+        {
+          "name": "preset",
+          "default": "",
+          "type": "'money'",
+          "values": [
+            "money"
+          ],
+          "description": "A named field role that changes alignment and figures."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Control height token, shared with Button and Select."
+        },
+        {
+          "name": "suffix",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Short trailing unit (`₴/г`, `%`) drawn inside the control, with room reserved from its length."
+        }
+      ]
+    },
+    "IssueLinkRow": {
+      "file": "src/components/ui/TaskManagement/IssueLinkRow.jsx",
+      "summary": "One relation between two tasks — «блокує», «дублює» — with the linked task beside it. The row owns its geometry because the hit area of the remove button is part of it.",
+      "props": [
+        {
+          "name": "canRemove",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the reader may break this link."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The relation type, printed as the leading badge."
+        },
+        {
+          "name": "onRemove",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Breaks it."
+        },
+        {
+          "name": "requiresReview",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The link came from an import and nobody has confirmed it yet."
+        }
+      ]
+    },
+    "KpiCard": {
+      "file": "src/components/ui/DataDisplay/KpiCard.jsx",
+      "summary": "One number on an analytics screen: the figure, what it counts, and how it moved.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Glyph in the grey chip. The chip is never themable — see below."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What it counts."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Makes the card a control, with the hover ring that goes with it."
+        },
+        {
+          "name": "sub",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Smaller line under the label — the period, usually."
+        },
+        {
+          "name": "trend",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Percent change; sign decides the arrow and the colour."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "string|number",
+          "values": [],
+          "description": "The figure itself."
+        }
+      ]
+    },
+    "Label": {
+      "file": "src/components/ui/Forms/Label.jsx",
+      "summary": "The caption above a field. Usually reached through `FormGroup`; used directly where a control needs a caption without a field wrapper.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'field'",
+          "type": "'field'|'inline'",
+          "values": [
+            "field",
+            "inline"
+          ],
+          "description": "Type scale: above a field, or beside one."
+        },
+        {
+          "name": "htmlFor",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the control this labels."
+        },
+        {
+          "name": "icon",
+          "default": "null",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading glyph, sized by the kit — passing one through `children` breaks the line box."
+        },
+        {
+          "name": "required",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Prints the required hint on the right."
+        },
+        {
+          "name": "requiredHint",
+          "default": "'обов’язково'",
+          "type": "string",
+          "values": [],
+          "description": "The words that hint uses."
+        }
+      ]
+    },
+    "LoadingSpinner": {
+      "file": "src/components/ui/Feedback/LoadingSpinner.jsx",
+      "summary": "The kit's only spinner. Use it where the wait has no shape yet; where the shape is known, an `EmptyState` or skeleton row says more.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Text under the ring; also what a screen reader announces."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Diameter and stroke, from one scale."
+        }
+      ]
+    },
+    "MarkdownEditor": {
+      "file": "src/components/ui/Forms/MarkdownEditor.jsx",
+      "summary": "The description editor: a markdown textarea with a formatting toolbar, its own undo history, a preview tab and file upload.",
+      "props": [
+        {
+          "name": "defaultTab",
+          "default": "'write'",
+          "type": "'write'|'preview'",
+          "values": [],
+          "description": "Which tab opens first."
+        },
+        {
+          "name": "minHeight",
+          "default": "'150px'",
+          "type": "string",
+          "values": [],
+          "description": "CSS height the writing area starts at."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new source."
+        },
+        {
+          "name": "onUploadFiles",
+          "default": "",
+          "type": "(files: File[]) => Promise<string[]>",
+          "values": [],
+          "description": "Uploads dropped or picked files and returns their URLs."
+        },
+        {
+          "name": "placeholder",
+          "default": "'Напишіть опис завдання...'",
+          "type": "string",
+          "values": [],
+          "description": "Text shown while empty."
+        },
+        {
+          "name": "uploading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Busy: the toolbar's upload action is blocked while a file is in flight."
+        },
+        {
+          "name": "value",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Markdown source."
+        }
+      ]
+    },
+    "MarkdownViewer": {
+      "file": "src/components/ui/DataDisplay/MarkdownViewer.jsx",
+      "summary": "Renders the markdown a `MarkdownEditor` produced, with the kit's type scale applied to every element.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "content",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Markdown source."
+        },
+        {
+          "name": "onTaskToggle",
+          "default": "",
+          "type": "(content: string) => void",
+          "values": [],
+          "description": "Fires with the rewritten source when a task checkbox is ticked."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md"
+          ],
+          "description": "Type scale for the rendered body."
+        }
+      ]
+    },
+    "MemberRail": {
+      "file": "src/components/ui/Navigation/MemberRail.jsx",
+      "summary": "The team rail: a titled, counted list of people, with presence.",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Control beside the heading — search, or invite."
+        },
+        {
+          "name": "activeId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the selected person."
+        },
+        {
+          "name": "emptyDescription",
+          "default": "'Спробуйте змінити пошуковий запит.'",
+          "type": "string",
+          "values": [],
+          "description": "Sentence under it."
+        },
+        {
+          "name": "emptyTitle",
+          "default": "'Нікого не знайдено'",
+          "type": "string",
+          "values": [],
+          "description": "Headline when nobody matches."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The list is still arriving; a spinner takes its place."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The people to list."
+        },
+        {
+          "name": "onSelect",
+          "default": "() => {}",
+          "type": "(id: string) => void",
+          "values": [],
+          "description": "Selects one."
+        },
+        {
+          "name": "title",
+          "default": "'Команда'",
+          "type": "string",
+          "values": [],
+          "description": "Heading above the list."
+        }
+      ]
+    },
+    "MentionMenu": {
+      "file": "src/components/ui/Chat/MentionMenu.jsx",
+      "summary": "The list that opens over a composer when you type `@`. It draws and highlights; the keyboard belongs to the composer, which owns `selectedIndex`.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "density",
+          "default": "'composer'",
+          "type": "'composer'|string",
+          "values": [
+            "composer",
+            "timeline"
+          ],
+          "description": "Row height and whether the email is shown."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Candidates, already filtered by what was typed."
+        },
+        {
+          "name": "onSelect",
+          "default": "",
+          "type": "(member) => void",
+          "values": [],
+          "description": "Fires with the chosen member."
+        },
+        {
+          "name": "selectedIndex",
+          "default": "-1",
+          "type": "number",
+          "values": [],
+          "description": "Which row the arrow keys have landed on; -1 for none."
+        }
+      ]
+    },
+    "MessageBubble": {
+      "file": "src/components/ui/Chat/MessageBubble.jsx",
+      "summary": "One message: the author header when it starts a run, the text, its attachments, its reactions, and the actions that appear on hover.",
+      "props": [
+        {
+          "name": "isThread",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Inside a thread pane: no thread action, tighter layout."
+        },
+        {
+          "name": "members",
+          "default": "",
+          "type": "object[]",
+          "values": [],
+          "description": "Participants, for names and avatars."
+        },
+        {
+          "name": "msg",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The message."
+        },
+        {
+          "name": "myUid",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The signed-in user, which decides which side the bubble sits on and what may be edited."
+        },
+        {
+          "name": "onDelete",
+          "default": "",
+          "type": "(msg) => void",
+          "values": [],
+          "description": "Deletes it."
+        },
+        {
+          "name": "onEdit",
+          "default": "",
+          "type": "(msg) => void",
+          "values": [],
+          "description": "Opens it for editing."
+        },
+        {
+          "name": "onOpenAttachment",
+          "default": "",
+          "type": "(attachment) => void",
+          "values": [],
+          "description": "Opens an attachment in the viewer."
+        },
+        {
+          "name": "onPin",
+          "default": "",
+          "type": "(msg) => void",
+          "values": [],
+          "description": "Pins or unpins it."
+        },
+        {
+          "name": "onReact",
+          "default": "",
+          "type": "(msg, emoji) => void",
+          "values": [],
+          "description": "Adds or removes a reaction."
+        },
+        {
+          "name": "onThread",
+          "default": "",
+          "type": "(msg) => void",
+          "values": [],
+          "description": "Opens its thread."
+        },
+        {
+          "name": "prevMsg",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The one above it; consecutive messages from the same author share one avatar header."
+        },
+        {
+          "name": "searchTerm",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Current query; matches are highlighted in the text."
+        }
+      ]
+    },
+    "MetaTrigger": {
+      "file": "src/components/ui/DataDisplay/MetaTrigger.jsx",
+      "summary": "A label, a face and a name in one row that opens a popover — «Автор: ⬤ Артур». It sits in the metadata strip under a title.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The role this person plays («Автор», «Організатор»)."
+        },
+        {
+          "name": "name",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Displayed name; falls back to the user's own."
+        },
+        {
+          "name": "user",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The person, for the avatar."
+        }
+      ]
+    },
+    "MultiSelect": {
+      "file": "src/components/ui/Select.jsx",
+      "summary": "`Select` that keeps several values at once, with a search box and a select-all row once the list is long enough to need them.",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name when no visible label sits above."
+        },
+        {
+          "name": "buttonClassName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the trigger only."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser trigger, for attribute strips."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: the trigger is dimmed and will not open."
+        },
+        {
+          "name": "dropdownClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the panel only."
+        },
+        {
+          "name": "filterContext",
+          "default": "'default'",
+          "type": "'default'|'detail'",
+          "values": [],
+          "description": "Which width scale that lookup uses."
+        },
+        {
+          "name": "filterRole",
+          "default": "",
+          "type": "string",
+          "values": [
+            "date",
+            "member",
+            "priority",
+            "project",
+            "sort",
+            "sprint",
+            "status",
+            "type"
+          ],
+          "description": "Which filter this is; `FilterBar` decides the width from it."
+        },
+        {
+          "name": "footer",
+          "default": "null",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Content pinned under the list — a hint, or a create action."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(values: string[]) => void",
+          "values": [],
+          "description": "Fires with the new selection."
+        },
+        {
+          "name": "options",
+          "default": "[]",
+          "type": "{value: string, label: string, icon?, color?, user?}[]",
+          "values": [],
+          "description": "The choices."
+        },
+        {
+          "name": "placeholder",
+          "default": "'Оберіть...'",
+          "type": "string",
+          "values": [],
+          "description": "Trigger text while nothing is selected."
+        },
+        {
+          "name": "searchPlaceholder",
+          "default": "'Пошук...'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder inside the search box."
+        },
+        {
+          "name": "selectAllLabel",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Label of the select-all row."
+        },
+        {
+          "name": "showSelectedAvatars",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Draws the chosen people as a stack of faces on the trigger."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Control height token."
+        },
+        {
+          "name": "triggerIcon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading glyph on the trigger."
+        },
+        {
+          "name": "value",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Selected option values."
+        },
+        {
+          "name": "variant",
+          "default": "'default'",
+          "type": "'default'|'ghost'|'inline'",
+          "values": [
+            "default",
+            "ghost",
+            "inline"
+          ],
+          "description": "How much chrome the trigger draws."
+        }
+      ]
+    },
+    "PageHeader": {
+      "file": "src/components/ui/Layout/PageHeader.jsx",
+      "summary": "The block at the top of a screen: title, tabs, filters and actions, in the one arrangement every page uses.",
+      "props": [
+        {
+          "name": "actions",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Controls on the right."
+        },
+        {
+          "name": "activeTab",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the current tab."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "filters",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The `FilterBar` row."
+        },
+        {
+          "name": "mobileActions",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "What replaces them at mobile width."
+        },
+        {
+          "name": "onTabChange",
+          "default": "",
+          "type": "(id: string) => void",
+          "values": [],
+          "description": "Switches tabs."
+        },
+        {
+          "name": "tabs",
+          "default": "[]",
+          "type": "{id: string, label: string}[]",
+          "values": [],
+          "description": "Tabs under the title."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Page title."
+        }
+      ]
+    },
+    "PendingChatAttachments": {
+      "file": "src/components/ui/Chat/ChatAttachmentList.jsx",
+      "summary": "The same grid, before the message is sent: local files that can still be removed.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser tiles."
+        },
+        {
+          "name": "files",
+          "default": "[]",
+          "type": "File[]",
+          "values": [],
+          "description": "Files picked but not yet uploaded."
+        },
+        {
+          "name": "onRemove",
+          "default": "",
+          "type": "(index: number) => void",
+          "values": [],
+          "description": "Drops one from the selection."
+        }
+      ]
+    },
+    "Pill": {
+      "file": "src/components/ui/DataDisplay/Pill.jsx",
+      "summary": "The kit's one label chip.",
+      "props": [
+        {
+          "name": "appearance",
+          "default": "'subtle'",
+          "type": "'subtle'|'solid'|'outline'|'soft-outline'",
+          "values": [
+            "outline",
+            "soft-outline"
+          ],
+          "description": "Fill weight."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "color",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Arbitrary hex, for user-chosen colours (labels, statuses) that no token can name."
+        },
+        {
+          "name": "colorAlpha",
+          "default": "'18'",
+          "type": "string",
+          "values": [],
+          "description": "Hex alpha suffix for the background when `color` is set."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading lucide icon, sized from `size`."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Label as a prop, for call sites that pass data rather than markup."
+        },
+        {
+          "name": "preset",
+          "default": "",
+          "type": "string",
+          "values": [
+            "avatar-counter"
+          ],
+          "description": "A named pairing of tone, size and shape used in more than one place."
+        },
+        {
+          "name": "shape",
+          "default": "'capsule'",
+          "type": "'capsule'|'badge'|string",
+          "values": [
+            "badge",
+            "capsule"
+          ],
+          "description": "Corner radius token."
+        },
+        {
+          "name": "size",
+          "default": "'sm'",
+          "type": "string",
+          "values": [
+            "chat-day",
+            "chat-day-wide",
+            "lg",
+            "md",
+            "sm",
+            "wide-sm"
+          ],
+          "description": "Height and type scale token."
+        },
+        {
+          "name": "tone",
+          "default": "'neutral'",
+          "type": "string",
+          "values": [
+            "accent",
+            "danger",
+            "dark",
+            "info",
+            "ink-subtle",
+            "neutral",
+            "overlay",
+            "success",
+            "surface",
+            "surface-ink",
+            "warning"
+          ],
+          "description": "Named colour role. Ignored when `color` is set."
+        },
+        {
+          "name": "uppercase",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Upper-cases the label."
+        },
+        {
+          "name": "weight",
+          "default": "'bold'",
+          "type": "'bold'|'medium'",
+          "values": [
+            "bold",
+            "medium"
+          ],
+          "description": "Font weight."
+        }
+      ]
+    },
+    "Popover": {
+      "file": "src/components/ui/Navigation/Popover.jsx",
+      "summary": "A panel anchored to whatever opened it, rendered in a portal so no parent's `overflow` can clip it. It owns its open state — pass a `trigger`, not an `open` flag.",
+      "props": [
+        {
+          "name": "align",
+          "default": "'center'",
+          "type": "'start'|'center'|'end'",
+          "values": [
+            "center",
+            "end",
+            "start"
+          ],
+          "description": "Which edge of the trigger the panel lines up with."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the panel only."
+        },
+        {
+          "name": "gap",
+          "default": "8",
+          "type": "number",
+          "values": [],
+          "description": "Distance in pixels between trigger and panel."
+        },
+        {
+          "name": "hideArrow",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Drops the pointer arrow."
+        },
+        {
+          "name": "hideCloseIcon",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Drops the × in the corner."
+        },
+        {
+          "name": "minWidth",
+          "default": "'240px'",
+          "type": "number",
+          "values": [],
+          "description": "Minimum panel width in pixels."
+        },
+        {
+          "name": "onOpenChange",
+          "default": "",
+          "type": "(open: boolean) => void",
+          "values": [],
+          "description": "Fires when it opens or closes."
+        },
+        {
+          "name": "padding",
+          "default": "'default'",
+          "type": "string",
+          "values": [
+            "default",
+            "tight"
+          ],
+          "description": "Inner spacing token."
+        },
+        {
+          "name": "position",
+          "default": "'bottom'",
+          "type": "string",
+          "values": [],
+          "description": "Which side of the trigger it opens on."
+        },
+        {
+          "name": "trigger",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The element that opens it; cloned, so it keeps its own styling."
+        },
+        {
+          "name": "triggerClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the trigger wrapper only."
+        }
+      ]
+    },
+    "PriorityBadge": {
+      "file": "src/components/ui/DataDisplay/PriorityBadge.jsx",
+      "summary": "Issue priority as a dot plus its Ukrainian name. The five levels and their colours are fixed here, not configurable: priority is a shared vocabulary.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "priority",
+          "default": "'low'",
+          "type": "'blocker'|'high'|'medium'|'low'|'info'",
+          "values": [],
+          "description": "Which level to draw."
+        }
+      ]
+    },
+    "ProjectSettingsForm": {
+      "file": "src/components/ui/TaskManagement/ProjectSettingsForm.jsx",
+      "summary": "Shared body for «Новий проєкт» and «Налаштування проєкту».",
+      "props": [
+        {
+          "name": "backlogStatusId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The status that may never be hidden."
+        },
+        {
+          "name": "dangerZone",
+          "default": "null",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Delete-project block; only the settings dialog passes one."
+        },
+        {
+          "name": "description",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Project description."
+        },
+        {
+          "name": "hiddenStatusIds",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Statuses folded away on the board."
+        },
+        {
+          "name": "inviteEmails",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Inline invitations, one email per line, sent with the form."
+        },
+        {
+          "name": "inviteEmailsError",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Validation message for that list."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Busy: the form is saving and its controls are blocked."
+        },
+        {
+          "name": "name",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Project name."
+        },
+        {
+          "name": "nameError",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Validation message under the name field."
+        },
+        {
+          "name": "onDescriptionChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new description."
+        },
+        {
+          "name": "onHiddenStatusIdsChange",
+          "default": "",
+          "type": "(ids: string[]) => void",
+          "values": [],
+          "description": "Fires with the new hidden list."
+        },
+        {
+          "name": "onInvite",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the full invite dialog. Not used while creating a project."
+        },
+        {
+          "name": "onInviteEmailsChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the edited list; its presence is what enables inline invites."
+        },
+        {
+          "name": "onNameChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new name."
+        },
+        {
+          "name": "onTeamMemberIdsChange",
+          "default": "",
+          "type": "(ids: string[]) => void",
+          "values": [],
+          "description": "Fires with the new team; the owner is put back if dropped."
+        },
+        {
+          "name": "ownerId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The project's author, who cannot be removed from it."
+        },
+        {
+          "name": "statuses",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The workflow's statuses."
+        },
+        {
+          "name": "teamHint",
+          "default": "'Ви як автор проєкту будете додані автоматично.'",
+          "type": "string",
+          "values": [],
+          "description": "Sentence under the team picker."
+        },
+        {
+          "name": "teamMemberIds",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Who is on it now."
+        },
+        {
+          "name": "teamMembers",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Everybody who could be added to the project."
+        },
+        {
+          "name": "teamPlaceholder",
+          "default": "'Оберіть учасників проєкту'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder for that picker."
+        }
+      ]
+    },
+    "Segmented": {
+      "file": "src/components/ui/Segmented.jsx",
+      "summary": "Compact pill switch for mutually exclusive view options (period, week/month).",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "billing-selection",
+            "dialog-tabs"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value) => void",
+          "values": [],
+          "description": "Fires with the newly selected value."
+        },
+        {
+          "name": "options",
+          "default": "[]",
+          "type": "{value: string|number, label: string}[]",
+          "values": [],
+          "description": "The choices, in the order they are drawn."
+        },
+        {
+          "name": "surface",
+          "default": "'transparent'",
+          "type": "'transparent'|'canvas'",
+          "values": [
+            "canvas",
+            "transparent"
+          ],
+          "description": "Background: transparent inside a filter bar, canvas when standing alone."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "string|number",
+          "values": [],
+          "description": "Selected option value."
+        }
+      ]
+    },
+    "Select": {
+      "file": "src/components/ui/Select.jsx",
+      "summary": "A dropdown. Not a native `<select>`: options carry avatars, colours and glyphs, and the list is rendered in a portal so no pane can clip it.",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name when no visible label sits above."
+        },
+        {
+          "name": "buttonClassName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the trigger only."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser trigger, for attribute strips."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: the trigger is dimmed and will not open."
+        },
+        {
+          "name": "dropdownClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the panel only."
+        },
+        {
+          "name": "filterContext",
+          "default": "'default'",
+          "type": "'default'|'detail'",
+          "values": [],
+          "description": "Which width scale that lookup uses."
+        },
+        {
+          "name": "filterRole",
+          "default": "",
+          "type": "string",
+          "values": [
+            "date",
+            "member",
+            "priority",
+            "project",
+            "sort",
+            "sprint",
+            "status",
+            "type"
+          ],
+          "description": "Which filter this is; `FilterBar` decides the width from it."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value) => void",
+          "values": [],
+          "description": "Fires with the newly selected value."
+        },
+        {
+          "name": "options",
+          "default": "[]",
+          "type": "{value: string, label: string, icon?, color?, user?}[]",
+          "values": [],
+          "description": "The choices."
+        },
+        {
+          "name": "placeholder",
+          "default": "'Оберіть...'",
+          "type": "string",
+          "values": [],
+          "description": "Trigger text while nothing is selected."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Control height token, shared with Button and Input."
+        },
+        {
+          "name": "triggerIcon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading glyph on the trigger."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Selected option value."
+        },
+        {
+          "name": "variant",
+          "default": "'default'",
+          "type": "'default'|'ghost'|'inline'",
+          "values": [
+            "default",
+            "ghost",
+            "inline"
+          ],
+          "description": "How much chrome the trigger draws."
+        }
+      ]
+    },
+    "SelectableChip": {
+      "file": "src/components/ui/Forms/SelectableChip.jsx",
+      "summary": "A chip you can switch on and off — picking assignees, filtering by label.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "selected",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is switched on."
+        },
+        {
+          "name": "shape",
+          "default": "'person'",
+          "type": "'person'|'label'",
+          "values": [
+            "label",
+            "person"
+          ],
+          "description": "Which of the two chip geometries to draw."
+        },
+        {
+          "name": "tone",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Optional colour role for the `label` shape."
+        }
+      ]
+    },
+    "SidebarLayout": {
+      "file": "src/components/ui/Layout/SidebarLayout.jsx",
+      "summary": "The rail-plus-content frame that Settings, Team and Chat all sit in.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'settings'",
+          "type": "'settings'|'team'|'chat'",
+          "values": [
+            "chat",
+            "settings",
+            "team"
+          ],
+          "description": "Which frame: who owns the height, and whether a fixed header sits above."
+        },
+        {
+          "name": "gap",
+          "default": "'12px'",
+          "type": "number|string",
+          "values": [],
+          "description": "Gutter between rail and content."
+        },
+        {
+          "name": "hasBorder",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Draws the divider between the two panes."
+        },
+        {
+          "name": "mobilePane",
+          "default": "'sidebar'",
+          "type": "'sidebar'|'content'",
+          "values": [],
+          "description": "Which pane is on screen at mobile width."
+        },
+        {
+          "name": "sidebar",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The rail."
+        },
+        {
+          "name": "sidebarWidth",
+          "default": "'280px'",
+          "type": "number|string",
+          "values": [],
+          "description": "Rail width, where the context allows it to differ."
+        }
+      ]
+    },
+    "StatusPill": {
+      "file": "src/components/ui/DataDisplay/StatusPill.jsx",
+      "summary": "A workflow status, drawn as the badge-shaped `Pill` in the status's own colour. It exists so no screen has to remember that pairing.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "color",
+          "default": "'#9a9a9a'",
+          "type": "string",
+          "values": [],
+          "description": "The status's configured hex colour."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Status name as the workspace spells it."
+        }
+      ]
+    },
+    "StatusVisibilityPicker": {
+      "file": "src/components/ui/TaskManagement/StatusVisibilityPicker.jsx",
+      "summary": "Which workflow statuses a board shows and which it folds away.",
+      "props": [
+        {
+          "name": "backlogStatusId",
+          "default": "'backlog'",
+          "type": "string",
+          "values": [],
+          "description": "The status that may never be hidden."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: rows are dimmed and do not respond."
+        },
+        {
+          "name": "hiddenStatusIds",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Ids currently folded away."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(ids: string[]) => void",
+          "values": [],
+          "description": "Fires with the new hidden list."
+        },
+        {
+          "name": "statuses",
+          "default": "[]",
+          "type": "{id: string, label: string, color: string}[]",
+          "values": [],
+          "description": "Every status in the workflow."
+        }
+      ]
+    },
+    "Surface": {
+      "file": "src/components/ui/Surface.jsx",
+      "summary": "The kit's background block: every grey panel, white card and inset in the product is this component.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only — never its own radius, padding or background."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "chart-panel",
+            "member-chart-panel",
+            "scroll-pane"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "padding",
+          "default": "'md'",
+          "type": "'none'|'xs'|'sm'|'md'|'lg'|'xl'|'xxl'",
+          "values": [
+            "compact",
+            "compact-md",
+            "compact-row",
+            "lg",
+            "md",
+            "none",
+            "row",
+            "sm",
+            "wide",
+            "xl",
+            "xs",
+            "xxl",
+            "xxs"
+          ],
+          "description": "Inner spacing token."
+        },
+        {
+          "name": "preset",
+          "default": "",
+          "type": "string",
+          "values": [
+            "bordered-card",
+            "bordered-panel",
+            "card",
+            "compact-bordered-card",
+            "compact-bordered-panel",
+            "inset",
+            "nested-card",
+            "nested-panel",
+            "panel",
+            "popover"
+          ],
+          "description": "Which named surface to draw. Wins over `variant`."
+        },
+        {
+          "name": "variant",
+          "default": "'panel'",
+          "type": "'panel'|'card'|'inset'",
+          "values": [],
+          "description": "Legacy shorthand kept for existing call sites."
+        }
+      ]
+    },
+    "Tabs": {
+      "file": "src/components/ui/Tabs.jsx",
+      "summary": "Horizontal tab strip, 36px tall so it lines up with inputs and buttons in the same row. Arrow keys move between tabs, as the ARIA tab pattern requires.",
+      "props": [
+        {
+          "name": "activeTab",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Id of the selected tab."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "onTabChange",
+          "default": "",
+          "type": "(id: string) => void",
+          "values": [],
+          "description": "Fires with the newly selected tab id."
+        },
+        {
+          "name": "tabs",
+          "default": "[]",
+          "type": "{id: string, label: string, href?: string, count?: number}[]",
+          "values": [],
+          "description": "The tabs; `href` turns one into a link."
+        }
+      ]
+    },
+    "Tag": {
+      "file": "src/components/ui/DataDisplay/Tag.jsx",
+      "summary": "A user-created label on a task, with the colour the user picked for it and an optional remove button. `Pill` is the general chip; this is the one that carries a label entity.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "color",
+          "default": "null",
+          "type": "string",
+          "values": [],
+          "description": "The label's own hex colour; tints background and text."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Label text."
+        },
+        {
+          "name": "onRemove",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Renders the × button. Omit for read-only contexts."
+        },
+        {
+          "name": "showIcon",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Shows the tag glyph before the text."
+        },
+        {
+          "name": "size",
+          "default": "'default'",
+          "type": "'small'|'default'",
+          "values": [
+            "default",
+            "small"
+          ],
+          "description": "Type scale and height."
+        },
+        {
+          "name": "variant",
+          "default": "'default'",
+          "type": "'default'|string",
+          "values": [],
+          "description": "Fallback palette used when `color` is not given."
+        }
+      ]
+    },
+    "TaskAttributesPanel": {
+      "file": "src/components/ui/Layout/TaskAttributesPanel.jsx",
+      "summary": "The attribute strip at the top of a task or a calendar event: status, dates, assignee, and the \"Деталі\" drawer for the fields that change less often.",
+      "props": [
+        {
+          "name": "cardClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the inner card only."
+        },
+        {
+          "name": "cardStyle",
+          "default": "",
+          "type": "React.CSSProperties",
+          "values": [],
+          "description": "Inline style for the inner card, for measured widths."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "compact",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Denser variant for narrow panes."
+        },
+        {
+          "name": "condensed",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Scrolled state: labels collapse and the rows tighten."
+        },
+        {
+          "name": "context",
+          "default": "",
+          "type": "'task'|'calendar'",
+          "values": [
+            "calendar",
+            "task"
+          ],
+          "description": "Which grid the strip uses; the two records carry different fields."
+        },
+        {
+          "name": "primaryChildren",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The always-visible attributes."
+        },
+        {
+          "name": "primaryClassName",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement of the primary row only."
+        },
+        {
+          "name": "secondaryChildren",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The attributes behind \"Деталі\"."
+        },
+        {
+          "name": "singleRow",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Keeps everything on one row instead of wrapping."
+        }
+      ]
+    },
+    "TaskListView": {
+      "file": "src/components/ui/TaskManagement/TaskListView.jsx",
+      "summary": "The list view of a board: tasks grouped by status, hidden statuses folded into one «Приховані» group at the end.",
+      "props": [
+        {
+          "name": "activeTimerIssueId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The task whose timer is running, if any."
+        },
+        {
+          "name": "allIssues",
+          "default": "issues",
+          "type": "object[]",
+          "values": [],
+          "description": "Every task in scope, for resolving parents and links."
+        },
+        {
+          "name": "emptyDescription",
+          "default": "'Змініть фільтри або створіть нове завдання.'",
+          "type": "string",
+          "values": [],
+          "description": "Sentence under it."
+        },
+        {
+          "name": "emptyTitle",
+          "default": "'Завдань не знайдено'",
+          "type": "string",
+          "values": [],
+          "description": "Headline of the empty state."
+        },
+        {
+          "name": "hiddenStatusIds",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Statuses folded into the «Приховані» group."
+        },
+        {
+          "name": "issueLinks",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Relations between tasks."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The tasks to show."
+        },
+        {
+          "name": "labels",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Label definitions, for the chips."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Workspace members, for avatars."
+        },
+        {
+          "name": "projectId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Current project."
+        },
+        {
+          "name": "projectName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Its name, for the per-row project chip."
+        },
+        {
+          "name": "projects",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Projects, needed when the list spans more than one."
+        },
+        {
+          "name": "showProjectName",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether each row names its project — true only on cross-project lists."
+        },
+        {
+          "name": "sprints",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Sprint definitions, for the sprint column."
+        }
+      ]
+    },
+    "TaskRow": {
+      "file": "src/components/ui/TaskManagement/TaskRow.jsx",
+      "summary": "One task as a row: key, title, type, status, assignee, labels, and the timer dot when it is running.",
+      "props": [
+        {
+          "name": "allIssues",
+          "default": "",
+          "type": "object[]",
+          "values": [],
+          "description": "Every task in scope, for links that leave the current list."
+        },
+        {
+          "name": "issue",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The task this row shows."
+        },
+        {
+          "name": "issueLinks",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Relations, for the link count."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Its siblings, for resolving the parent key."
+        },
+        {
+          "name": "isTimerActive",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "A timer is running on this task."
+        },
+        {
+          "name": "labels",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Label definitions, for the chips."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Workspace members, for the assignee avatar."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the task."
+        },
+        {
+          "name": "projectId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Current project."
+        },
+        {
+          "name": "projectName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Its name."
+        },
+        {
+          "name": "showProjectName",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the row names its project — true only on cross-project lists."
+        },
+        {
+          "name": "sprints",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Sprint definitions."
+        }
+      ]
+    },
+    "TextAction": {
+      "file": "src/components/ui/TextAction.jsx",
+      "summary": "A borderless text button — the inline Зберегти/Скасувати pair, and quiet links inside rows. A `Button` here would out-weigh the content it sits in.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading lucide icon, sized from `size`."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name; needed when the action is icon-only."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'xs'|'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm",
+            "xs"
+          ],
+          "description": "Type scale."
+        },
+        {
+          "name": "tone",
+          "default": "'ink'",
+          "type": "'ink'|'muted'|'danger'|'danger-quiet'",
+          "values": [
+            "danger",
+            "danger-quiet",
+            "ink",
+            "muted"
+          ],
+          "description": "Which half of the pair this is: affirmative, quiet, or destructive."
+        },
+        {
+          "name": "type",
+          "default": "'button'",
+          "type": "'button'|'submit'",
+          "values": [],
+          "description": "Native button type."
+        }
+      ]
+    },
+    "Textarea": {
+      "file": "src/components/ui/Forms/Textarea.jsx",
+      "summary": "Multi-line text field. Like `Input`, anything not named here — `value`, `disabled`, `onChange` — reaches the native textarea through the rest spread.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "audio-transcript",
+            "long-form",
+            "project-description",
+            "settings-note",
+            "transcript"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "boolean|string",
+          "values": [],
+          "description": "Draws the error border; the message itself belongs to `FormGroup`."
+        },
+        {
+          "name": "maxRows",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Ceiling for auto-growth, where the caller grows it."
+        },
+        {
+          "name": "placeholder",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder text."
+        },
+        {
+          "name": "rows",
+          "default": "4",
+          "type": "number",
+          "values": [],
+          "description": "Initial visible rows."
+        }
+      ]
+    },
+    "TimeLogRow": {
+      "file": "src/components/ui/TaskManagement/TimeLogRow.jsx",
+      "summary": "One entry in a task's time log: who, how long, when, and what they wrote about it.",
+      "props": [
+        {
+          "name": "canEdit",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the reader owns this entry."
+        },
+        {
+          "name": "dateLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The day, already formatted."
+        },
+        {
+          "name": "description",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What the entry says; omitted rows simply have none."
+        },
+        {
+          "name": "member",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "Who logged the time."
+        },
+        {
+          "name": "onDelete",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Removes it."
+        },
+        {
+          "name": "onEdit",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens it for editing."
+        },
+        {
+          "name": "spentLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Duration, already formatted («2 год 15 хв»)."
+        }
+      ]
+    },
+    "TimePicker": {
+      "file": "src/components/ui/Forms/TimePicker.jsx",
+      "summary": "A time field. The native `type=\"time\"` control with the kit's geometry over it, so the platform keeps the keyboard, the locale and the clock popup.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: dimmed and not editable."
+        },
+        {
+          "name": "error",
+          "default": "",
+          "type": "boolean|string",
+          "values": [],
+          "description": "Draws the error border and tints the field."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new `HH:MM`."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [],
+          "description": "Control height token."
+        },
+        {
+          "name": "value",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "`HH:MM`."
+        }
+      ]
+    },
+    "TimeTrackingControl": {
+      "file": "src/components/ui/TaskManagement/TimeTrackingControl.jsx",
+      "summary": "The timer half of the task attribute strip: a 22px start/stop square and the running total beside it, which doubles as the button that opens the log.",
+      "props": [
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: neither half responds."
+        },
+        {
+          "name": "estimateLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The estimate, already formatted, printed after the total."
+        },
+        {
+          "name": "onOpen",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the time log."
+        },
+        {
+          "name": "onToggle",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Starts or stops the timer."
+        },
+        {
+          "name": "running",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether a timer is counting on this task right now."
+        },
+        {
+          "name": "spentLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Total logged, already formatted."
+        }
+      ]
+    },
+    "TitleInput": {
+      "file": "src/components/ui/Forms/TitleInput.jsx",
+      "summary": "The page title while it is being edited: heading type, no box, a rule underneath. What an `h1` turns into when you press Редагувати.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        }
+      ]
+    },
+    "Toast": {
+      "file": "src/components/ui/Feedback/Toast.jsx",
+      "summary": "Transient feedback that something happened, floating above the page and closing itself. Anything the reader has to act on is an `Alert`, which stays.",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Label of the single inline action (usually \"Скасувати\")."
+        },
+        {
+          "name": "autoClose",
+          "default": "3000",
+          "type": "number",
+          "values": [],
+          "description": "Milliseconds before it closes itself; 0 keeps it until dismissed."
+        },
+        {
+          "name": "message",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What happened."
+        },
+        {
+          "name": "onAction",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Handler for that action."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Fires when it closes, by timer or by the ×."
+        },
+        {
+          "name": "variant",
+          "default": "'info'",
+          "type": "'info'|'success'|'error'|'warning'|'loading'",
+          "values": [],
+          "description": "Colour, icon and meaning."
+        }
+      ]
+    },
+    "ToggleSwitch": {
+      "file": "src/components/ui/Forms/ToggleSwitch.jsx",
+      "summary": "A switch: it turns something on, immediately, with no save step. Where the change only takes effect on submit, that is a `Checkbox`.",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "checked",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Unavailable: dimmed and not clickable."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Text beside the switch."
+        },
+        {
+          "name": "onChange",
+          "default": "",
+          "type": "(checked: boolean) => void",
+          "values": [],
+          "description": "Fires with the new value."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "Track and knob size."
+        }
+      ]
+    },
+    "Tooltip": {
+      "file": "src/components/ui/Navigation/Tooltip.jsx",
+      "summary": "Tooltip Component A hover tooltip that appears near the trigger element. Displays a small dark tooltip with white text and an arrow pointing to the trigger.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "content",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Text to display in the tooltip"
+        },
+        {
+          "name": "position",
+          "default": "'top'",
+          "type": "string",
+          "values": [],
+          "description": "Position relative to trigger: 'top', 'bottom', 'left', 'right' (default: 'top')"
+        }
+      ]
+    },
+    "TopHeader": {
+      "file": "src/components/ui/Layout/TopHeader.jsx",
+      "summary": "The workspace header: breadcrumbs on the left, presence and notifications on the right.",
+      "props": [
+        {
+          "name": "breadcrumbs",
+          "default": "[]",
+          "type": "{label: string, href?: string}[]",
+          "values": [],
+          "description": "The trail for the current screen."
+        },
+        {
+          "name": "currentUser",
+          "default": "null",
+          "type": "object",
+          "values": [],
+          "description": "The signed-in user, for the avatar."
+        },
+        {
+          "name": "hideBorder",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Drops the bottom divider where the page draws its own."
+        },
+        {
+          "name": "mode",
+          "default": "'search'",
+          "type": "string",
+          "values": [],
+          "description": "Which header this is; screens differ in what the right side carries."
+        },
+        {
+          "name": "onBellClick",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens notifications."
+        },
+        {
+          "name": "onlineUsers",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Present members, drawn as a stack of avatars."
+        },
+        {
+          "name": "onOnlineUserClick",
+          "default": "() => {}",
+          "type": "(user) => void",
+          "values": [],
+          "description": "Fires with the member whose avatar was clicked."
+        },
+        {
+          "name": "onProjectSearchToggle",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens and closes that search."
+        },
+        {
+          "name": "onSearchChange",
+          "default": "() => {}",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with the new query."
+        },
+        {
+          "name": "onSearchClear",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Clears the query."
+        },
+        {
+          "name": "onUserClick",
+          "default": "() => {}",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the user menu."
+        },
+        {
+          "name": "projectName",
+          "default": "'Назва проєкту'",
+          "type": "string",
+          "values": [],
+          "description": "Current project, where the header names one."
+        },
+        {
+          "name": "projectSearchActive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the project search has replaced the trail."
+        },
+        {
+          "name": "rightContent",
+          "default": "null",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Extra controls for the right side."
+        },
+        {
+          "name": "searchPlaceholder",
+          "default": "'Пошук...'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder for the search field."
+        },
+        {
+          "name": "searchValue",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Current query in the header search."
+        },
+        {
+          "name": "showNotifications",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the bell is drawn."
+        },
+        {
+          "name": "unreadCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Number on the bell."
+        }
+      ]
+    },
+    "TypeBadge": {
+      "file": "src/components/ui/DataDisplay/TypeBadge.jsx",
+      "summary": "An issue type (task, bug, story…) with its glyph, drawn as a lighter-tinted `Pill` than `StatusPill` so type never competes with status for attention.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "color",
+          "default": "'#9a9a9a'",
+          "type": "string",
+          "values": [],
+          "description": "The type's configured hex colour."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "The type's lucide glyph."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Type name."
+        }
+      ]
+    },
+    "UserAvatar": {
+      "file": "src/components/ui/DataDisplay/UserAvatar.jsx",
+      "summary": "A person's face, or their initials on a colour derived from their id.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "string|number",
+          "values": [
+            "chat-inline",
+            "chat-member",
+            "chat-mention",
+            "chat-message",
+            "hero",
+            "lg",
+            "md",
+            "sm",
+            "xl",
+            "xs"
+          ],
+          "description": "Named token from the avatar scale; a raw number only where a measured layout needs one."
+        },
+        {
+          "name": "stacked",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Adds the white ring that separates overlapping avatars."
+        },
+        {
+          "name": "tooltip",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Shows the person's name on hover."
+        },
+        {
+          "name": "user",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The person; the photo, the name and the fallback colour all come from this."
+        }
+      ]
+    }
+  }
+}

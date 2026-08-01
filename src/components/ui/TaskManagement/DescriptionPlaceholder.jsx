@@ -13,6 +13,13 @@
 
 import React from 'react';
 
+/**
+ * What a task shows where its description would be: a line of italic hint text
+ * that is also the button which starts editing.
+ *
+ * @param {React.ReactNode} props.children The hint.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function DescriptionPlaceholder({ children, className = '', ...props }) {
   return (
     <button

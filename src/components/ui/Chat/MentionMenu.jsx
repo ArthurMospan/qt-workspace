@@ -42,6 +42,16 @@ const DENSITIES = {
   },
 };
 
+/**
+ * The list that opens over a composer when you type `@`. It draws and
+ * highlights; the keyboard belongs to the composer, which owns `selectedIndex`.
+ *
+ * @param {object[]} props.members Candidates, already filtered by what was typed.
+ * @param {'composer'|string} props.density Row height and whether the email is shown.
+ * @param {number} props.selectedIndex Which row the arrow keys have landed on; -1 for none.
+ * @param {(member) => void} props.onSelect Fires with the chosen member.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function MentionMenu({
   members = [],
   density = 'composer',

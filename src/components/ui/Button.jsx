@@ -139,6 +139,28 @@ export const STYLES = {
   },
 };
 
+/**
+ * The kit's button. Its height, line box and radius come from `.ui-control` in
+ * `globals.css`, not from here and never from a call site — that is what keeps
+ * one height change reaching every screen.
+ *
+ * @param {React.ReactNode} props.children Label.
+ * @param {'primary'|'secondary'|'outline'|'ghost'} props.style Weight of the button in its context.
+ * @param {'dark'|'red'} props.color Semantic colour; `red` means destructive.
+ * @param {'sm'|'md'|'lg'|'icon'|string} props.size Control height token; the icon sizes are square boxes.
+ * @param {React.ComponentType} props.icon Leading lucide icon. Its pixel size is derived from `size`.
+ * @param {boolean} props.disabled Unavailable: dimmed, not clickable, still readable.
+ * @param {boolean} props.loading Busy: swaps the icon for a spinner and blocks the click.
+ * @param {(event) => void} props.onClick Click handler.
+ * @param {'button'|'submit'|'reset'} props.type Native button type.
+ * @param {string} props.shape Corner radius token.
+ * @param {string} props.surface Which background the button sits on, where that changes its contrast.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {number} props.collapseAt Viewport width below which the label is hidden and only the icon remains.
+ * @param {React.Ref} props.buttonRef Ref to the underlying button, for popovers anchored to it.
+ * @param {string} props.variant Legacy alias for `style`, kept for existing call sites.
+ * @param {string} props.className Placement in the parent only — never its own height, padding or type.
+ */
 export function Button({
   children,
   style    = 'primary',  // 'primary' | 'secondary' | 'outline' | 'ghost'

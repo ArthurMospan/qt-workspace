@@ -201,6 +201,18 @@ function IssueRow({
       data-ui-padding="compact-row"
       data-ui-muted={!checked}
       onClick={onCheck}
+      // The whole row toggles the line item, so it answers the keyboard too.
+      // Not a `<button>`: the checkbox it drives is inside it, and a control
+      // cannot contain another control.
+      role="button"
+      tabIndex={0}
+      aria-pressed={checked}
+      onKeyDown={event => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onCheck();
+      }}
       className="ui-surface grid cursor-pointer select-none gap-3 transition-all md:grid-cols-[auto_minmax(240px,1fr)_minmax(210px,0.85fr)_190px] md:items-center"
     >
       <div className="shrink-0 md:self-center" onClick={event => event.stopPropagation()}>

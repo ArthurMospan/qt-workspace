@@ -7,6 +7,17 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 // UI Kit: ContextMenu Component (Atom)
 // Features standard rounded-[12px] corners, soft shadow, and unified font-medium labels
 
+/**
+ * The dropdown menu behind a ⋮ or any other trigger. Rendered in a portal, so a
+ * row with `overflow: hidden` cannot cut it off.
+ *
+ * @param {React.ReactElement} props.trigger The element that opens the menu.
+ * @param {{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label.
+ * @param {(open: boolean) => void} props.onOpenChange Fires when the menu opens or closes.
+ * @param {boolean} props.closeOnSelect Whether a click closes it; toggle menus keep it open while ticking.
+ * @param {string} props.dropdownClassName Placement of the panel only.
+ * @param {string} props.className Placement of the trigger wrapper only.
+ */
 export default function ContextMenu({
   trigger, // React element that triggers the menu (e.g. Button)
   // Array of items: { label, icon, onClick, isDivider, isDanger, color, selected }

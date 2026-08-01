@@ -13,6 +13,15 @@
 import React from 'react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
+/**
+ * A label, a face and a name in one row that opens a popover — «Автор: ⬤
+ * Артур». It sits in the metadata strip under a title.
+ *
+ * @param {string} props.label The role this person plays («Автор», «Організатор»).
+ * @param {object} props.user The person, for the avatar.
+ * @param {string} props.name Displayed name; falls back to the user's own.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function MetaTrigger({ label, user, name, className = '', ...props }) {
   return (
     <button

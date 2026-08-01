@@ -12,6 +12,13 @@ import Counter from '@/components/ui/DataDisplay/Counter';
 // wrong radius, wrong active colour, missing unread counters — which is the
 // exact failure the catalogue exists to prevent. There is no copy now: the page
 // and the preview render this component, so they cannot disagree.
+/**
+ * The chat rail: grouped channels and direct messages, with unread counters.
+ *
+ * @param {{id: string, title: string, items: object[]}[]} props.groups The sections and their conversations.
+ * @param {string} props.activeId Id of the open conversation.
+ * @param {(id: string) => void} props.onSelect Opens one.
+ */
 export default function ChannelRail({ groups = [], activeId, onSelect = () => {} }) {
   return (
     <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">

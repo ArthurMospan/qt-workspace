@@ -15,6 +15,12 @@ function TaskCheckbox({ checked, onTaskToggle, ...props }) {
       checked={Boolean(checked)}
       disabled={!canToggle}
       readOnly={!canToggle}
+      // The item's text sits beside the box as a sibling in the rendered
+      // markdown, not in a `<label>` — there is no markup for markdown to hang
+      // one on. So the box announced itself as an unnamed checkbox, and a
+      // description full of them was a list of identical "checkbox, not
+      // checked". The line it toggles is the name it should have had.
+      aria-label={taskLine ? `Пункт: ${taskLine}` : 'Пункт списку'}
       onChange={event => onTaskToggle?.(taskLine, event.target.checked)}
       className="mr-2 mt-1 h-4 w-4 cursor-pointer rounded-[4px] accent-[#1f1f1f] disabled:cursor-default disabled:opacity-70"
     />
@@ -38,6 +44,16 @@ const SIZES = {
   lg: 'text-[15px] leading-relaxed',
 };
 
+/**
+ * Renders the markdown a `MarkdownEditor` produced, with the kit's type scale
+ * applied to every element. Checkbox lists stay interactive: ticking one calls
+ * back with the new source rather than editing the DOM.
+ *
+ * @param {string} props.content Markdown source.
+ * @param {'sm'|'md'|'lg'} props.size Type scale for the rendered body.
+ * @param {(content: string) => void} props.onTaskToggle Fires with the rewritten source when a task checkbox is ticked.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function MarkdownViewer({ content, size = 'md', className = '', onTaskToggle }) {
   if (!content) return null;
 

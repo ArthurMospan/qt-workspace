@@ -21,6 +21,17 @@ export function getTaskAttributeChrome({ condensed = false } = {}) {
 // less-frequently-changed fields. Its chrome was already kit-owned above, but
 // the element carrying it was hand-written at the call site, so the one part
 // anybody could get wrong — the pressed look — lived outside the kit.
+/**
+ * The strip's own overflow control — «Деталі», the button that opens the
+ * less-frequently-changed fields. Its chrome was already kit-owned; the element
+ * carrying it was not, so the one part anybody could get wrong — the pressed
+ * look — lived outside the kit.
+ *
+ * @param {boolean} props.condensed Scrolled state, matching the strip above it.
+ * @param {boolean} props.active Whether the drawer is open; this is the pressed look.
+ * @param {React.ReactNode} props.children Label.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function AttributeTrigger({
   condensed = false,
   active = false,
@@ -40,6 +51,23 @@ export function AttributeTrigger({
   );
 }
 
+/**
+ * The attribute strip at the top of a task or a calendar event: status, dates,
+ * assignee, and the "Деталі" drawer for the fields that change less often. Both
+ * screens condense the same way on scroll, which is why the condensed geometry
+ * is a prop of one component rather than two copies of a decision.
+ *
+ * @param {React.ReactNode} props.primaryChildren The always-visible attributes.
+ * @param {React.ReactNode} props.secondaryChildren The attributes behind "Деталі".
+ * @param {'task'|'calendar'} props.context Which grid the strip uses; the two records carry different fields.
+ * @param {boolean} props.condensed Scrolled state: labels collapse and the rows tighten.
+ * @param {boolean} props.compact Denser variant for narrow panes.
+ * @param {boolean} props.singleRow Keeps everything on one row instead of wrapping.
+ * @param {string} props.cardClassName Placement of the inner card only.
+ * @param {React.CSSProperties} props.cardStyle Inline style for the inner card, for measured widths.
+ * @param {string} props.primaryClassName Placement of the primary row only.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function TaskAttributesPanel({
   primaryChildren,
   secondaryChildren,

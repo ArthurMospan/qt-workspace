@@ -1,0 +1,22 @@
+{
+  "generatedBy": "scripts/kit-a11y.mjs",
+  "scope": "authenticated-workspace + src/components/ui",
+  "contract": {
+    "namelessControls": "An icon-only control must carry an accessible name: aria-label, or the kit prop that becomes one.",
+    "imagesWithoutAlt": "Every <img> declares alt, empty when the image is decoration.",
+    "positiveTabIndex": "Tab order is the document order. A positive tabIndex overrides it and strands whatever it forgot.",
+    "fakeButtons": "A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button."
+  },
+  "totals": {
+    "files": 228,
+    "elements": 3897,
+    "namelessControls": 0,
+    "imagesWithoutAlt": 0,
+    "positiveTabIndex": 0,
+    "fakeButtons": 0
+  },
+  "namelessControls": [],
+  "imagesWithoutAlt": [],
+  "positiveTabIndex": [],
+  "fakeButtons": []
+}

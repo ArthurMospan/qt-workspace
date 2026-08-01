@@ -40,6 +40,18 @@ const TONES = {
   'danger-quiet': 'text-faint hover:text-red-500',
 };
 
+/**
+ * A borderless text button — the inline Зберегти/Скасувати pair, and quiet
+ * links inside rows. A `Button` here would out-weigh the content it sits in.
+ *
+ * @param {React.ReactNode} props.children Label as content.
+ * @param {string} props.label Accessible name; needed when the action is icon-only.
+ * @param {React.ComponentType} props.icon Leading lucide icon, sized from `size`.
+ * @param {'ink'|'muted'|'danger'|'danger-quiet'} props.tone Which half of the pair this is: affirmative, quiet, or destructive.
+ * @param {'xs'|'sm'|'md'|'lg'} props.size Type scale.
+ * @param {'button'|'submit'} props.type Native button type.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function TextAction({
   children,
   label,

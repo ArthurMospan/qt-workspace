@@ -26,6 +26,19 @@ export const BUTTON_SIZES = {
   lg: 'icon-lg',
 };
 
+/**
+ * A square icon-only button. It is `Button` underneath, so it inherits the same
+ * control height scale; what it adds is the accessible name, which an icon
+ * button has no other way to carry.
+ *
+ * @param {string} props.label Accessible name and tooltip. Required — an icon alone names nothing.
+ * @param {React.ComponentType} props.icon lucide icon; its pixel size comes from `size`, never from the call site.
+ * @param {'micro'|'xs'|'sm'|'compact'|'md'|'lg'} props.size Box size, mapped onto Button's icon sizes.
+ * @param {string} props.appearance Fill and hover treatment; the dark ones exist for overlays and dark surfaces.
+ * @param {string} props.shape Corner radius token.
+ * @param {React.Ref} props.buttonRef Ref to the underlying button, for popovers anchored to it.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function IconAction({
   label,
   icon,

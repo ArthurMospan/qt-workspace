@@ -1,6 +1,18 @@
 'use client';
 import React from 'react';
 
+/**
+ * The number on a bell, a tab or a rail item — and, as `variant="dot"`, the
+ * same signal with the number left out.
+ *
+ * @param {number|string} props.value Printed for `variant="count"`; ignored by the dot.
+ * @param {'count'|'dot'} props.variant Whether the badge carries a number or only says "there is something here".
+ * @param {'info'|'danger'|'muted'|'success'} props.status Meaning, not decoration: `info` is neutral and takes the surface's opposite.
+ * @param {'xs'|'sm'|'md'|'lg'} props.size `xs` (12px) is the one that fits on a bell icon; `sm` overflows there.
+ * @param {'solid'|'subtle'|'inverse-outline'} props.appearance Fill weight.
+ * @param {boolean} props.dark High-contrast variant for the dark sidebar.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Counter({
   value,
   variant = 'count', // count, dot

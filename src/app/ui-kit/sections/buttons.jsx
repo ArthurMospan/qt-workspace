@@ -158,13 +158,13 @@ export default function ButtonsSection() {
         fullWidth
       >
         <div className="flex flex-wrap items-center gap-[8px]">
-          <Button aria-label="Додати підзадачу" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+          <Button aria-label="Додати підзадачу" style="secondary" size="sm" composition="inline-add-action" icon={Plus}>
             <span className="sm:hidden">Підзадача</span><span className="hidden sm:inline">Додати підзадачу</span>
           </Button>
-          <Button aria-label="Додати зв’язок" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+          <Button aria-label="Додати зв’язок" style="secondary" size="sm" composition="inline-add-action" icon={Plus}>
             <span className="sm:hidden">Зв’язок</span><span className="hidden sm:inline">Додати зв’язок</span>
           </Button>
-          <Button aria-label="Додати мітку" style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+          <Button aria-label="Додати мітку" style="secondary" size="sm" composition="inline-add-action" icon={Plus}>
             <span className="sm:hidden">Мітка</span><span className="hidden sm:inline">Додати мітку</span>
           </Button>
         </div>

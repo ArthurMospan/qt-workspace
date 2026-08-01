@@ -38,6 +38,31 @@ function isSameDay(a, b) {
   return da.toDateString() === db.toDateString();
 }
 
+/**
+ * The scrolling conversation: day separators, avatar grouping, the unread
+ * divider, the jump-to-latest button and paging into history. It draws the
+ * list; the screen above it owns the data and every action.
+ *
+ * @param {object[]} props.messages The conversation, oldest first.
+ * @param {object[]} props.members Participants, for names and avatars.
+ * @param {string} props.myUid The signed-in user, which decides which side a bubble sits on.
+ * @param {boolean} props.loading The first page is still arriving.
+ * @param {boolean} props.hasMore There is older history to page into.
+ * @param {() => void} props.onLoadMore Fetches that older page.
+ * @param {React.RefObject} props.scrollRef The scroller, shared with the composer dock.
+ * @param {React.RefObject} props.endRef Anchor at the bottom, for scroll-to-latest.
+ * @param {(id: string, node) => void} props.registerMessageRef Records each message's node, for jumping to a search hit.
+ * @param {() => void} props.onJumpToLatest Scrolls to the newest message.
+ * @param {number} props.unreadCount How many unread messages sit below the fold.
+ * @param {object[]} props.typingUsers Who is typing right now.
+ * @param {string} props.searchTerm Current query; matches are highlighted in place.
+ * @param {(message) => void} props.onEdit Opens a message for editing.
+ * @param {(message) => void} props.onDelete Deletes it.
+ * @param {(message) => void} props.onPin Pins or unpins it.
+ * @param {(message, emoji) => void} props.onReact Adds or removes a reaction.
+ * @param {(message) => void} props.onThread Opens its thread.
+ * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
+ */
 export default function ChatMessageList({
   scrollRef,
   endRef,

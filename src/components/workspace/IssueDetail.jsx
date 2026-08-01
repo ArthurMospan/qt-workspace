@@ -1105,6 +1105,17 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
                       setLogTab('spend');
                     }}
+                    // It opens the time log and holds the timer buttons, so it
+                    // is a control that cannot be a `<button>`.
+                    role={isArchived ? undefined : 'button'}
+                    tabIndex={isArchived ? undefined : 0}
+                    onKeyDown={isArchived ? undefined : (keyEvent => {
+                      if (keyEvent.target !== keyEvent.currentTarget) return;
+                      if (keyEvent.key !== 'Enter' && keyEvent.key !== ' ') return;
+                      keyEvent.preventDefault();
+                      setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
+                      setLogTab('spend');
+                    })}
                   >
                     <span className={attributeLabelClass}><span className="sm:hidden">Час</span><span className="max-sm:hidden">Трекінг часу</span></span>
                     <TimeTrackingControl
@@ -1606,7 +1617,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       trigger={(
                         <Button
                           aria-label="Додати мітку"
-                          style="ghost"
+                          style="secondary"
                           size="sm"
                           composition="inline-add-action"
                           icon={Plus}
@@ -1634,7 +1645,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     />
                     {!parentIssueId && <Button
                       aria-label="Додати підзадачу"
-                      style="ghost"
+                      style="secondary"
                       size="sm"
                       composition="inline-add-action"
                       icon={Plus}
@@ -1644,7 +1655,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     </Button>}
                     <Button
                       aria-label="Додати зв’язок"
-                      style="ghost"
+                      style="secondary"
                       size="sm"
                       composition="inline-add-action"
                       icon={Plus}

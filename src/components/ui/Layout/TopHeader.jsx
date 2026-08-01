@@ -7,6 +7,30 @@ import Tooltip from '../Navigation/Tooltip';
 import Popover from '../Navigation/Popover';
 import Pill from '../DataDisplay/Pill';
 
+/**
+ * The workspace header: breadcrumbs on the left, presence and notifications on
+ * the right. It renders `Breadcrumb` and `HeaderSearch`, which is why neither
+ * appears anywhere else — the product reaches both only through here.
+ *
+ * @param {{label: string, href?: string}[]} props.breadcrumbs The trail for the current screen.
+ * @param {string} props.mode Which header this is; screens differ in what the right side carries.
+ * @param {string} props.projectName Current project, where the header names one.
+ * @param {object} props.currentUser The signed-in user, for the avatar.
+ * @param {() => void} props.onUserClick Opens the user menu.
+ * @param {object[]} props.onlineUsers Present members, drawn as a stack of avatars.
+ * @param {(user) => void} props.onOnlineUserClick Fires with the member whose avatar was clicked.
+ * @param {boolean} props.showNotifications Whether the bell is drawn.
+ * @param {number} props.unreadCount Number on the bell.
+ * @param {() => void} props.onBellClick Opens notifications.
+ * @param {string} props.searchValue Current query in the header search.
+ * @param {(value: string) => void} props.onSearchChange Fires with the new query.
+ * @param {() => void} props.onSearchClear Clears the query.
+ * @param {string} props.searchPlaceholder Placeholder for the search field.
+ * @param {boolean} props.projectSearchActive Whether the project search has replaced the trail.
+ * @param {() => void} props.onProjectSearchToggle Opens and closes that search.
+ * @param {React.ReactNode} props.rightContent Extra controls for the right side.
+ * @param {boolean} props.hideBorder Drops the bottom divider where the page draws its own.
+ */
 export default function TopHeader({
   mode = 'search', // 'search', 'project', 'breadcrumbs', 'chat'
   

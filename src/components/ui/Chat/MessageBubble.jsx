@@ -21,6 +21,23 @@ import { ChatAttachmentList } from './ChatAttachmentList';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 
 // ─── Message Bubble ─────────────────────────────────────────────────────────
+/**
+ * One message: the author header when it starts a run, the text, its
+ * attachments, its reactions, and the actions that appear on hover.
+ *
+ * @param {object} props.msg The message.
+ * @param {object} props.prevMsg The one above it; consecutive messages from the same author share one avatar header.
+ * @param {string} props.myUid The signed-in user, which decides which side the bubble sits on and what may be edited.
+ * @param {object[]} props.members Participants, for names and avatars.
+ * @param {(msg, emoji) => void} props.onReact Adds or removes a reaction.
+ * @param {(msg) => void} props.onEdit Opens it for editing.
+ * @param {(msg) => void} props.onDelete Deletes it.
+ * @param {(msg) => void} props.onThread Opens its thread.
+ * @param {(msg) => void} props.onPin Pins or unpins it.
+ * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
+ * @param {boolean} props.isThread Inside a thread pane: no thread action, tighter layout.
+ * @param {string} props.searchTerm Current query; matches are highlighted in the text.
+ */
 export default function MessageBubble({
   msg, prevMsg, myUid, members, onReact, onEdit, onDelete, onThread,
   onPin, onOpenAttachment, isThread = false, searchTerm = ''

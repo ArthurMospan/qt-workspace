@@ -1,0 +1,14 @@
+{
+  "generatedBy": "scripts/kit-composition.mjs",
+  "contract": {
+    "shadowed": "A data-ui-* declaration inside @layer components must not set a property the owning component also writes as a utility: the utility layer is emitted last and wins regardless of specificity.",
+    "customProperties": "Custom properties are exempt and are the supported way to hand a value to a component — no utility can set one."
+  },
+  "totals": {
+    "rules": 76,
+    "declarations": 143,
+    "shadowed": 0,
+    "rulesWithShadowedDeclarations": 0
+  },
+  "shadowed": []
+}

@@ -46,6 +46,16 @@ const variantConfig = {
   },
 };
 
+/**
+ * Inline notice inside a page or a form — a banner that stays until the reader
+ * deals with it. Transient feedback is `Toast`, not this.
+ *
+ * @param {'info'|'success'|'warning'|'error'} props.variant Colour and icon; carries the meaning, so it is never decorative.
+ * @param {string} props.title Headline; omit for a one-line notice.
+ * @param {React.ReactNode} props.description Body text under the title.
+ * @param {() => void} props.onClose Renders the dismiss button. Without it the notice cannot be closed.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function Alert({
   variant = 'info',
   title,

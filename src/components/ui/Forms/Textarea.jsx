@@ -1,6 +1,17 @@
 'use client';
 import React, { forwardRef } from 'react';
 
+/**
+ * Multi-line text field. Like `Input`, anything not named here — `value`,
+ * `disabled`, `onChange` — reaches the native textarea through the rest spread.
+ *
+ * @param {boolean|string} props.error Draws the error border; the message itself belongs to `FormGroup`.
+ * @param {string} props.placeholder Placeholder text.
+ * @param {number} props.rows Initial visible rows.
+ * @param {number} props.maxRows Ceiling for auto-growth, where the caller grows it.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.className Placement in the parent only.
+ */
 export const Textarea = forwardRef(({
   className = '',
   placeholder,

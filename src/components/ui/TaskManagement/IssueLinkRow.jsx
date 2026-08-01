@@ -19,6 +19,17 @@ import React from 'react';
 import { Trash2 } from 'lucide-react';
 import Pill from '@/components/ui/DataDisplay/Pill';
 
+/**
+ * One relation between two tasks — «блокує», «дублює» — with the linked task
+ * beside it. The row owns its geometry because the hit area of the remove
+ * button is part of it.
+ *
+ * @param {string} props.label The relation type, printed as the leading badge.
+ * @param {boolean} props.requiresReview The link came from an import and nobody has confirmed it yet.
+ * @param {boolean} props.canRemove Whether the reader may break this link.
+ * @param {() => void} props.onRemove Breaks it.
+ * @param {React.ReactNode} props.children The linked task.
+ */
 export default function IssueLinkRow({
   label,
   requiresReview = false,

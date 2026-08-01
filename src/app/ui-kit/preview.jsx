@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useContext, useState } from 'react';
 import kitUsage from './kit-usage.generated.json';
+import kitProps from './kit-props.generated.json';
 import { MapPin, Code2 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,11 +17,16 @@ export function PreviewBlock({ title, description, children, filePath, component
   const [showCode, setShowCode] = useState(false);
   const { openUsage } = useContext(KitContext);
 
-  // Both of these are generated: the snippet is the preview's own JSX, and the
-  // count is the product's real usage. Neither is written next to the preview,
-  // so neither can quietly stop being true.
+  // All three are generated: the snippet is the preview's own JSX, the count is
+  // the product's real usage, and the API is the component's own signature.
+  // None of them is written next to the preview, so none can quietly stop being
+  // true.
   const code = kitUsage.previews?.[title];
   const usageEntry = component ? kitUsage.components?.[component] : null;
+  // A component the product reaches only through a host has no usage row, and
+  // its drawer used to be unreachable — including the props table, which is the
+  // part that does not depend on the product using it at all.
+  const apiEntry = component ? kitProps.components?.[component] : null;
 
   const copyPath = () => {
     if (!filePath) return;
@@ -37,16 +43,26 @@ export function PreviewBlock({ title, description, children, filePath, component
           {description && <p className="text-[12px] text-[#9a9a9a] mt-[2px]">{description}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {usageEntry && (
+          {(usageEntry || apiEntry) && (
             <button
               onClick={() => openUsage(component)}
-              title={`${component}: ${usageEntry.count} використань на ${usageEntry.routes.length} екранах`}
+              title={
+                usageEntry
+                  ? `${component}: ${usageEntry.count} використань на ${usageEntry.routes.length} екранах`
+                  : `${component}: пропси і призначення`
+              }
               className="flex cursor-pointer items-center gap-1.5 rounded-[6px] border border-[#e2e2e4] bg-[#f4f4f5] px-2.5 py-1 text-[11px] font-semibold text-[#71717a] transition-all hover:bg-[#e9e9e9] hover:text-[#18181b] active:scale-95"
             >
               <MapPin size={11} />
-              <span className="font-mono">×{usageEntry.count}</span>
-              <span className="text-[#cfcfcf]">·</span>
-              <span>{usageEntry.routes.length} екранів</span>
+              {usageEntry ? (
+                <>
+                  <span className="font-mono">×{usageEntry.count}</span>
+                  <span className="text-[#cfcfcf]">·</span>
+                  <span>{usageEntry.routes.length} екранів</span>
+                </>
+              ) : (
+                <span>{apiEntry.props.length} пропсів</span>
+              )}
             </button>
           )}
           {code && (

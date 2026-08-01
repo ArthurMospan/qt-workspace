@@ -35,6 +35,24 @@ export const PADDINGS = {
   tight: spacing.componentGap.tight,
 };
 
+/**
+ * A panel anchored to whatever opened it, rendered in a portal so no parent's
+ * `overflow` can clip it. It owns its open state — pass a `trigger`, not an
+ * `open` flag.
+ *
+ * @param {React.ReactNode} props.trigger The element that opens it; cloned, so it keeps its own styling.
+ * @param {React.ReactNode} props.children Panel content.
+ * @param {'start'|'center'|'end'} props.align Which edge of the trigger the panel lines up with.
+ * @param {string} props.position Which side of the trigger it opens on.
+ * @param {number} props.gap Distance in pixels between trigger and panel.
+ * @param {number} props.minWidth Minimum panel width in pixels.
+ * @param {string} props.padding Inner spacing token.
+ * @param {boolean} props.hideArrow Drops the pointer arrow.
+ * @param {boolean} props.hideCloseIcon Drops the × in the corner.
+ * @param {(open: boolean) => void} props.onOpenChange Fires when it opens or closes.
+ * @param {string} props.triggerClassName Placement of the trigger wrapper only.
+ * @param {string} props.className Placement of the panel only.
+ */
 export function Popover({
   trigger,
   children,
@@ -93,9 +111,22 @@ export function Popover({
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
+      {/* The trigger the caller passes is already a control — a Button, an
+          IconAction, a link. This wrapper only catches its click and measures
+          it, so it says `presentation` and takes the keyboard handler too:
+          activating the inner control by keyboard fires a click that bubbles
+          here, and a caller who passes a bare span still gets one that opens. */}
       <div
         ref={triggerRef}
+        role="presentation"
+        tabIndex={-1}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={event => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          setIsOpen(!isOpen);
+        }}
         className={triggerClassName}
       >
         {trigger}
@@ -138,6 +169,7 @@ export function Popover({
               own cancel/apply controls via function-children instead */}
           {!hideCloseIcon && <button
             type="button"
+            aria-label="Закрити"
             onClick={() => setIsOpen(false)}
             style={{
               position: 'absolute',

@@ -96,6 +96,17 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         data-ui-surface="project-card"
         data-ui-density={isLarge ? 'large' : 'default'}
         onClick={handleCardClick}
+        // The card holds its own menu button, so it cannot be a `<button>`
+        // without nesting one. It takes the role, the tab stop and the two
+        // activation keys instead.
+        role="button"
+        tabIndex={0}
+        onKeyDown={event => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          handleCardClick(event);
+        }}
         className={`ui-surface group relative flex flex-col justify-between cursor-pointer overflow-visible transition-all duration-300 ${menuOpen ? 'z-30' : 'hover:z-10'} ${
           isLarge 
             ? 'md:col-span-2 md:row-span-2'
@@ -144,7 +155,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             <ContextMenu
               onOpenChange={setMenuOpen}
               trigger={
-                <button className="p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all">
+                <button aria-label="Дії з проєктом" className="p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all">
                   <MoreVertical size={16} />
                 </button>
               }

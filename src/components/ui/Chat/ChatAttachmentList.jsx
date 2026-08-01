@@ -148,6 +148,15 @@ function PendingAttachment({ file, onRemove, compact }) {
   );
 }
 
+/**
+ * The files attached to a sent message, as a grid of tiles.
+ *
+ * @param {object[]} props.attachments The stored files.
+ * @param {(attachment) => void} props.onOpen Opens one in the viewer.
+ * @param {boolean} props.compact Denser tiles, for threads and narrow panes.
+ * @param {boolean} props.dark Inverted tiles, for a message bubble on a dark surface.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function ChatAttachmentList({
   attachments = [],
   onOpen,
@@ -171,6 +180,16 @@ export function ChatAttachmentList({
   );
 }
 
+/**
+ * The same grid, before the message is sent: local files that can still be
+ * removed. Separate from `ChatAttachmentList` because a picked `File` and a
+ * stored attachment are different things, and only one of them can be dropped.
+ *
+ * @param {File[]} props.files Files picked but not yet uploaded.
+ * @param {(index: number) => void} props.onRemove Drops one from the selection.
+ * @param {boolean} props.compact Denser tiles.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function PendingChatAttachments({ files = [], onRemove, compact = true, className = '' }) {
   if (files.length === 0) return null;
   return (

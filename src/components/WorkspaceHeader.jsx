@@ -398,6 +398,16 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                     </p>
                     {group.items.map(n => (
                       <div key={n.id} onClick={() => handleNotifClick(n)}
+                        // The row carries its own dismiss button, so it is not
+                        // a `<button>` itself.
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={event => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          handleNotifClick(n);
+                        }}
                         className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
                           n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
                         }`}>
@@ -479,6 +489,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         <div className="relative" ref={userRef}>
           <button
             data-ui-action="avatar-menu"
+            aria-label="Меню користувача"
+            aria-expanded={userOpen}
             onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
             className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
@@ -551,7 +563,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                   </button>
                 )}
               </div>
-              <button onClick={clearLiveNotif} className="text-faint hover:text-ink transition-colors p-1">
+              <button onClick={clearLiveNotif} aria-label="Приховати сповіщення" className="text-faint hover:text-ink transition-colors p-1">
                 <X size={14} />
               </button>
             </div>

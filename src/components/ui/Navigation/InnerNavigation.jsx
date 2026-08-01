@@ -2,6 +2,16 @@
 import React from 'react';
 import Button from '../Button';
 
+/**
+ * The vertical menu inside a `SidebarLayout` rail — settings sections, team
+ * views. Page-level navigation is the workspace sidebar; this is navigation
+ * within one page.
+ *
+ * @param {{id: string, label: string, icon?: React.ComponentType, count?: number}[]} props.items The entries, in order.
+ * @param {string} props.activeId Id of the current entry.
+ * @param {(id: string) => void} props.onChange Fires with the newly selected id.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function InnerNavigation({
   items = [],
   activeId,

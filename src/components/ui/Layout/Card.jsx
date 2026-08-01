@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * A bounded block of content. `Card` is `Surface` with the four presets a card
+ * can take; reach for `Surface` when the block is a region of a page rather
+ * than an object in a list.
+ *
+ * @param {'bordered'|'borderless'|'canvas'|'elevated'} props.preset Which surface it draws. Wins over `variant`.
+ * @param {'white'|'gray'} props.variant Legacy shorthand kept for existing call sites; `gray` means `preset="canvas"`.
+ * @param {'none'|'sm'|'md'|'lg'} props.padding Inner spacing token.
+ * @param {boolean} props.interactive Adds the pointer, hover tint and focus ring. Set it whenever `onClick` is set.
+ * @param {() => void} props.onClick Click handler.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Card({
   children,
   variant = 'white',
@@ -17,18 +29,26 @@ export default function Card({
   };
   const resolvedPreset = preset || (variant === 'gray' ? 'canvas' : 'bordered');
 
+  // A card that does something when clicked is a control, and a `div` with an
+  // onClick is not one: no focus, no Enter, invisible to a screen reader. When
+  // there is a handler the element is a real button, stripped of the chrome a
+  // button brings so the surface still draws itself.
+  const Element = onClick ? 'button' : 'div';
+
   return (
-    <div
+    <Element
       data-ui-surface={presetMap[resolvedPreset] ?? 'bordered-card'}
       data-ui-padding={padding}
+      type={onClick ? 'button' : undefined}
       className={`
         ui-surface
+        ${onClick ? 'block w-full text-left' : ''}
         ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:border-faint hover:ring-4 hover:ring-ink/5 transition-all duration-200' : ''}
         ${className}
       `}
       onClick={onClick}
     >
       {children}
-    </div>
+    </Element>
   );
 }

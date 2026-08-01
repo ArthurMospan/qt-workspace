@@ -16,6 +16,18 @@
 import React from 'react';
 import { Play, Square as StopIcon } from 'lucide-react';
 
+/**
+ * The timer half of the task attribute strip: a 22px start/stop square and the
+ * running total beside it, which doubles as the button that opens the log. The
+ * only place in the product where a control turns red to mean "running".
+ *
+ * @param {boolean} props.running Whether a timer is counting on this task right now.
+ * @param {boolean} props.disabled Unavailable: neither half responds.
+ * @param {() => void} props.onToggle Starts or stops the timer.
+ * @param {() => void} props.onOpen Opens the time log.
+ * @param {string} props.spentLabel Total logged, already formatted.
+ * @param {string} props.estimateLabel The estimate, already formatted, printed after the total.
+ */
 export default function TimeTrackingControl({
   running = false,
   disabled = false,

@@ -17,6 +17,19 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+/**
+ * A user-created label on a task, with the colour the user picked for it and an
+ * optional remove button. `Pill` is the general chip; this is the one that
+ * carries a label entity.
+ *
+ * @param {string} props.label Label text.
+ * @param {() => void} props.onRemove Renders the × button. Omit for read-only contexts.
+ * @param {'default'|string} props.variant Fallback palette used when `color` is not given.
+ * @param {boolean} props.showIcon Shows the tag glyph before the text.
+ * @param {string} props.color The label's own hex colour; tints background and text.
+ * @param {'small'|'default'} props.size Type scale and height.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Tag({
   label,
   onRemove,
@@ -56,6 +69,7 @@ export default function Tag({
       {onRemove && (
         <button
           onClick={onRemove}
+          aria-label={`Прибрати мітку ${label}`}
           className="hover:opacity-70 transition-opacity p-0.5 ml-0.5 shrink-0"
         >
           <X size={size === 'small' ? 8 : 10} className="stroke-[2.5]" />

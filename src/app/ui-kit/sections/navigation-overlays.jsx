@@ -94,7 +94,7 @@ export default function NavigationOverlaysSection() {
             <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Меню-перемикач (мітки задачі)</span>
             <ContextMenu
               trigger={(
-                <Button style="ghost" size="sm" composition="inline-add-action" icon={Plus}>
+                <Button style="secondary" size="sm" composition="inline-add-action" icon={Plus}>
                   Додати мітку
                 </Button>
               )}

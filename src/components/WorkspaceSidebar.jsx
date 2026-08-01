@@ -206,6 +206,14 @@ export default function WorkspaceSidebar() {
                     </Link>
                     <div
                       onClick={() => setShowOrgSwitcher(true)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Змінити організацію"
+                      onKeyDown={event => {
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        setShowOrgSwitcher(true);
+                      }}
                       className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit h-[20px]"
                       style={{ color: isBranded ? theme.text : theme.muted }}
                     >
@@ -238,6 +246,7 @@ export default function WorkspaceSidebar() {
               <Tooltip content="Розгорнути панель" position="right" className="flex items-center justify-center w-full h-full">
                 <button
                   onClick={() => setCollapsed(false)}
+                  aria-label="Розгорнути бічну панель"
                   data-ui-control="branding-action"
                   className="transition-colors"
                   style={{ color: 'var(--sb-muted)' }}
@@ -332,8 +341,19 @@ export default function WorkspaceSidebar() {
       {/* Global Timer Capsule */}
       {activeTimer && (
         <div className={`shrink-0 ${collapsed ? 'p-[12px]' : 'p-[16px]'}`} style={{ borderTop: '1px solid var(--sb-border)', backgroundColor: theme.bg }}>
-          <div 
+          <div
             onClick={() => {
+              const targetHref = timerTargetHref(activeTimer);
+              if (targetHref) router.push(targetHref);
+            }}
+            // The capsule carries the stop button, so it is not a `<button>`.
+            role="button"
+            tabIndex={0}
+            aria-label="Відкрити задачу з активним таймером"
+            onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
               const targetHref = timerTargetHref(activeTimer);
               if (targetHref) router.push(targetHref);
             }}

@@ -117,6 +117,27 @@ function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
 }
 
 // Single Select Component
+/**
+ * A dropdown. Not a native `<select>`: options carry avatars, colours and
+ * glyphs, and the list is rendered in a portal so no pane can clip it.
+ *
+ * @param {string} props.value Selected option value.
+ * @param {(value) => void} props.onChange Fires with the newly selected value.
+ * @param {{value: string, label: string, icon?, color?, user?}[]} props.options The choices.
+ * @param {'sm'|'md'|'lg'} props.size Control height token, shared with Button and Input.
+ * @param {'default'|'ghost'|'inline'} props.variant How much chrome the trigger draws.
+ * @param {boolean} props.disabled Unavailable: the trigger is dimmed and will not open.
+ * @param {string} props.placeholder Trigger text while nothing is selected.
+ * @param {boolean} props.compact Denser trigger, for attribute strips.
+ * @param {React.ComponentType} props.triggerIcon Leading glyph on the trigger.
+ * @param {string} props.filterRole Which filter this is; `FilterBar` decides the width from it.
+ * @param {'default'|'detail'} props.filterContext Which width scale that lookup uses.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.ariaLabel Accessible name when no visible label sits above.
+ * @param {string} props.buttonClassName Placement of the trigger only.
+ * @param {string} props.dropdownClassName Placement of the panel only.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function Select({
   value,
   onChange,
@@ -318,6 +339,31 @@ export function Select({
 }
 
 // Multi Select Component with Search
+/**
+ * `Select` that keeps several values at once, with a search box and a
+ * select-all row once the list is long enough to need them.
+ *
+ * @param {string[]} props.value Selected option values.
+ * @param {(values: string[]) => void} props.onChange Fires with the new selection.
+ * @param {{value: string, label: string, icon?, color?, user?}[]} props.options The choices.
+ * @param {'sm'|'md'|'lg'} props.size Control height token.
+ * @param {'default'|'ghost'|'inline'} props.variant How much chrome the trigger draws.
+ * @param {boolean} props.disabled Unavailable: the trigger is dimmed and will not open.
+ * @param {string} props.placeholder Trigger text while nothing is selected.
+ * @param {string} props.searchPlaceholder Placeholder inside the search box.
+ * @param {string} props.selectAllLabel Label of the select-all row.
+ * @param {boolean} props.showSelectedAvatars Draws the chosen people as a stack of faces on the trigger.
+ * @param {React.ReactNode} props.footer Content pinned under the list — a hint, or a create action.
+ * @param {boolean} props.compact Denser trigger, for attribute strips.
+ * @param {React.ComponentType} props.triggerIcon Leading glyph on the trigger.
+ * @param {string} props.filterRole Which filter this is; `FilterBar` decides the width from it.
+ * @param {'default'|'detail'} props.filterContext Which width scale that lookup uses.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.ariaLabel Accessible name when no visible label sits above.
+ * @param {string} props.buttonClassName Placement of the trigger only.
+ * @param {string} props.dropdownClassName Placement of the panel only.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function MultiSelect({
   value = [], // array of selected values
   onChange,

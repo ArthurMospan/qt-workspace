@@ -182,7 +182,7 @@ export default function ProfileView({ user, onClose }) {
               {isAdminOrOwner && (
                 <ContextMenu
                   trigger={
-                    <Button style="secondary" color="dark" size="icon-lg" icon={MoreVertical} />
+                    <Button style="secondary" color="dark" size="icon-lg" icon={MoreVertical} aria-label="Дії з учасником" />
                   }
                   items={adminMenu}
                 />

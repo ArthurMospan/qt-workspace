@@ -100,9 +100,18 @@
     --ui-control-height: 30px;
     border-radius: 8px;
   }
+  /* Cascade layers, not specificity, decide these rules.
+     A class plus an attribute selector is 0,2,0 and outranks `.px-4` at
+     0,1,0 — and loses anyway, because Tailwind emits
+     `@layer theme, base, components, utilities;` and layer order beats
+     specificity outright. So any property the owning component also writes as a
+     utility is dead here, however specific this selector looks.
+     A custom property is the exception: no utility sets one, which is why
+     `--ui-control-height` is the part of these presets that has always worked.
+     `npm run kit:composition` keeps the count of shadowed declarations at zero;
+     50 of them had accumulated before anything was measuring. */
   .ui-control[data-ui-composition='workspace-guard'] {
     --ui-control-height: var(--ui-composition-guard);
-    font-weight: 600;
   }
   /* Hex colour entry: a monospace field so the value does not shift width as
      the user types. Previously `font-mono` at the call site. */
@@ -135,77 +144,57 @@
   .chat-composer-dock[data-ui-composition='timeline-composer'] {
     padding: 12px 16px 20px;
   }
+  /* The four duration presets and the metric fields declared their own right
+     padding to keep the value clear of the unit label. `Input` has carried the
+     `suffix` prop since — it measures the label and writes the room as an
+     inline style, which beats every layer there is. The declarations here were
+     the older mechanism and had stopped applying long before this was noticed;
+     the height is what still travels. */
   .ui-control[data-ui-composition='metric-editor'],
   .ui-control[data-ui-composition='duration-hours'],
   .ui-control[data-ui-composition='duration-minutes'] {
     --ui-control-height: var(--ui-composition-metric);
-    border-color: var(--color-line);
-    background: var(--color-surface);
-    padding-right: 28px;
-    padding-left: 16px;
-    font-size: 15px;
-    font-weight: 700;
   }
-  .ui-control[data-ui-composition='duration-hours'] { padding-right: 40px; }
-  .ui-control[data-ui-composition='duration-minutes'] { padding-right: 36px; }
-  .ui-control[data-ui-composition='duration-compact-hours'] { padding-right: 32px; }
-  .ui-control[data-ui-composition='duration-compact-minutes'] { padding-right: 28px; }
+  /* Declared with no geometry of their own — deliberately empty, not forgotten.
+     `Input` decides the room from its `suffix`, and the manifest reads these
+     selectors to know the two compositions exist. Giving them a height here
+     would be inventing one they never had. */
+  .ui-control[data-ui-composition='duration-compact-hours'],
+  .ui-control[data-ui-composition='duration-compact-minutes'] {}
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
-    border-color: var(--color-line);
-    background: var(--color-surface);
-    padding-right: 16px;
-    padding-left: 16px;
-    font-size: 14px;
   }
   .ui-control[data-ui-composition='invite-field'] {
     --ui-control-height: var(--ui-composition-invite);
     border-radius: 14px;
-    padding-right: 150px;
   }
   .ui-control[data-ui-composition='project-name'] {
     --ui-control-height: var(--ui-composition-metric);
-    padding-right: 14px;
-    padding-left: 14px;
-    font-size: 15px;
-    font-weight: 600;
   }
   /* Vertical padding shortens the content box, so the line box has to follow it
      down rather than stay as tall as the control. */
   .ui-control[data-ui-composition='settings-row-action'] {
     --ui-control-line: calc(var(--ui-control-height) - 24px);
     width: 100%;
-    justify-content: flex-start;
-    padding-top: 12px;
-    padding-bottom: 12px;
   }
   .ui-control[data-ui-composition='status-entry'] {
     --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
-    padding-right: 16px;
-    padding-left: 16px;
-    font-size: 13px;
-    font-weight: 500;
   }
   .ui-control[data-ui-composition='status-submit'] {
     --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
-    padding-right: 20px;
-    padding-left: 20px;
   }
-  .ui-control[data-ui-composition='inline-edit'] {
-    padding-right: 54px;
-  }
+  /* Its 54px of room for the trailing edit affordance never applied: `Input`
+     writes `pr-[12px]` as a utility and the utility layer is emitted last. The
+     field ships without that room today; giving it back is a change to how the
+     control looks, not a cleanup, so it is not made here. */
+  .ui-control[data-ui-composition='inline-edit'] {}
   .ui-control[data-ui-composition='menu-item'] {
     --ui-control-height: 32px;
     width: 100%;
-    justify-content: flex-start;
     border-radius: 0;
-    background: transparent;
-    padding: 0 10px;
     color: var(--color-ink);
-    font-size: 13px;
-    font-weight: 500;
   }
   .ui-control[data-ui-composition='menu-item']:hover {
     background: var(--color-canvas);
@@ -228,31 +217,24 @@
   /* QUI-137. This read as a bare link: white on white, grey text. An "add"
      control is a button, so it takes the standard element grey and the primary
      ink, the same pair every secondary button uses. */
+  /* QUI-137 asked for the standard element grey and the primary ink, and this
+     rule declared both — into the void: `Button` writes its own background and
+     text colour as utilities for whichever `style` it is given, and the utility
+     layer is emitted last. The control kept reading as a bare link for months
+     with the fix sitting right here.
+     The colour now comes from `style="secondary"`, which is the same pair in
+     the place the kit already keeps it. What stays here is the size, which no
+     utility on this element sets. */
   .ui-control[data-ui-composition='inline-add-action'] {
     --ui-control-height: 26px;
     --ui-control-line: 14px;
     border-radius: 8px;
-    background: var(--color-canvas);
-    padding: 6px 10px;
-    color: var(--color-ink);
-    font-size: 11px;
-    font-weight: 700;
   }
-  .ui-control[data-ui-composition='inline-add-action']:hover {
-    background: var(--color-line);
-    color: var(--color-ink);
-  }
-  .ui-segmented[data-ui-composition='dialog-tabs'] {
-    gap: 4px;
-    border-radius: 10px;
-    padding: 4px;
-  }
+  /* All this preset ever delivered was `flex: 1` on the tabs — Segmented writes
+     its own gap, padding, radius and height as utilities, and the utility layer
+     is emitted last. The rest is removed rather than left looking authoritative. */
   .ui-segmented[data-ui-composition='dialog-tabs'] > button {
-    height: auto;
     flex: 1;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-weight: 700;
   }
   .ui-native-control[data-ui-control='identity-meta-trigger'] {
     display: flex;
@@ -292,22 +274,16 @@
   .ui-textarea[data-ui-composition='long-form'] {
     min-height: 180px;
   }
+  /* `Textarea` writes its own padding, radius and `resize-none` as utilities,
+     so of these three presets only the line height was ever reaching the
+     screen. The rest is removed rather than left reading as the source. */
   .ui-textarea[data-ui-composition='transcript'] {
-    padding: 10px 14px;
-    border-radius: var(--ui-radius-inset);
     line-height: 20px;
-    resize: vertical;
   }
   .ui-textarea[data-ui-composition='audio-transcript'] {
-    padding: 12px 16px;
-    border-radius: 14px;
     line-height: 20px;
-    resize: vertical;
   }
-  .ui-textarea[data-ui-composition='project-description'] {
-    padding: 10px 14px;
-    font-size: 14px;
-  }
+  .ui-textarea[data-ui-composition='project-description'] {}
 
   /* A surface name describes product meaning, not a one-off collection of
      radius/background utilities. Layout-only classes remain local. */

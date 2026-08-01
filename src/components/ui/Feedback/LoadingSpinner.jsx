@@ -19,6 +19,14 @@ const sizes = {
   },
 };
 
+/**
+ * The kit's only spinner. Use it where the wait has no shape yet; where the
+ * shape is known, an `EmptyState` or skeleton row says more.
+ *
+ * @param {'sm'|'md'|'lg'} props.size Diameter and stroke, from one scale.
+ * @param {string} props.label Text under the ring; also what a screen reader announces.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function LoadingSpinner({
   size = 'md',
   label,

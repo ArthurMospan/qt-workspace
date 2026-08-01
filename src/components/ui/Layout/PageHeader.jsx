@@ -16,6 +16,20 @@ import { countActiveFilters } from '../FilterBar';
 //
 // One layout: a standalone page title row with an optional tabs row below.
 
+/**
+ * The block at the top of a screen: title, tabs, filters and actions, in the
+ * one arrangement every page uses. It declares no variants — the second layout
+ * it once had went out with the route that was its only caller.
+ *
+ * @param {string} props.title Page title.
+ * @param {{id: string, label: string}[]} props.tabs Tabs under the title.
+ * @param {string} props.activeTab Id of the current tab.
+ * @param {(id: string) => void} props.onTabChange Switches tabs.
+ * @param {React.ReactNode} props.filters The `FilterBar` row.
+ * @param {React.ReactNode} props.actions Controls on the right.
+ * @param {React.ReactNode} props.mobileActions What replaces them at mobile width.
+ * @param {string} props.className Placement in the parent only.
+ */
 export function PageHeader({
   title,
   tabs       = [],

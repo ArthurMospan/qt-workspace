@@ -2,6 +2,17 @@
 
 import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 
+/**
+ * The floating shelf the chat composer sits on. It measures itself and hands
+ * the message list exactly the bottom padding needed to clear it, so the last
+ * message is never hidden behind the input at any composer height.
+ *
+ * @param {React.ElementType} props.as Element or component to render as; `form` where the composer submits.
+ * @param {React.RefObject} props.scrollRef The scroller to pad. Without it only the CSS variable is published.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {React.ReactNode} props.children The composer.
+ * @param {string} props.className Placement in the parent only.
+ */
 const ChatComposerDock = forwardRef(function ChatComposerDock({
   as: Component = 'div',
   scrollRef = null,

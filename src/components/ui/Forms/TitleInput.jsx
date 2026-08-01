@@ -14,6 +14,13 @@
 
 import React, { forwardRef } from 'react';
 
+/**
+ * The page title while it is being edited: heading type, no box, a rule
+ * underneath. What an `h1` turns into when you press Редагувати. Everything
+ * else — `value`, `onChange`, `placeholder` — reaches the native input.
+ *
+ * @param {string} props.className Placement in the parent only.
+ */
 const TitleInput = forwardRef(function TitleInput({ className = '', ...props }, ref) {
   return (
     <input

@@ -18,6 +18,26 @@ import Button from './Button';
 //   ...form fields...
 // </Dialog>
 
+/**
+ * The kit's modal. Every dialog in the product is this component — the shell,
+ * the overlay, the focus trap and the escape key all live here, so no screen
+ * builds its own.
+ *
+ * @param {boolean} props.isOpen Whether it is on screen. The dialog renders nothing when false.
+ * @param {() => void} props.onClose Closes it: the ×, the overlay and Escape all call this.
+ * @param {string} props.title Headline.
+ * @param {string} props.description Sentence under the headline.
+ * @param {React.ReactNode} props.children Body.
+ * @param {React.ReactNode} props.footer Actions along the bottom.
+ * @param {React.ReactNode} props.headerAction A control in the top-right, beside the close button.
+ * @param {string} props.size Width token.
+ * @param {string} props.bodyPadding Inner spacing of the body.
+ * @param {'dialog'|'eyebrow'} props.titleContext Type scale of the headline.
+ * @param {'dialog'|'sheet'} props.presentation Centred dialog, or a sheet from the edge.
+ * @param {boolean} props.showCloseButton Whether the × is drawn.
+ * @param {string} props.bodyClassName Placement of the body only.
+ * @param {string} props.className Placement of the shell only.
+ */
 export default function Dialog({
   isOpen,
   onClose,
@@ -70,6 +90,12 @@ export default function Dialog({
 
   return (
     <div
+      // The click-away. It is the same element that centres the dialog, so it
+      // cannot be hidden from the accessibility tree — that would hide the
+      // dialog with it. It stays a plain container with a shortcut on it:
+      // everything it does is also done by the close button and by Escape, and
+      // making it focusable would put a nameless stop in front of every dialog
+      // in the product.
       className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${
         isSheet
           ? 'items-end justify-end sm:items-stretch'

@@ -519,6 +519,15 @@ export default function GlobalSprintsPage() {
                         <div
                           className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-[#ebebeb]"
                           onClick={() => toggleSection(sprint.id)}
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          onKeyDown={event => {
+                            if (event.target !== event.currentTarget) return;
+                            if (event.key !== 'Enter' && event.key !== ' ') return;
+                            event.preventDefault();
+                            toggleSection(sprint.id);
+                          }}
                         >
                           <Button
                             style="ghost"
@@ -615,6 +624,15 @@ export default function GlobalSprintsPage() {
                   data-ui-surface="local"
                   className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
                   onClick={() => setBacklogCollapsed(false)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={false}
+                  onKeyDown={event => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    setBacklogCollapsed(false);
+                  }}
                 >
                   <Button
                     style="ghost"

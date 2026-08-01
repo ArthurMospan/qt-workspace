@@ -5,6 +5,15 @@ import Link from 'next/link';
 // Height rule: h-[36px] — matches inputs and buttons for perfect alignment.
 // Wrapper: bg-canvas rounded-[10px] p-[4px] h-[36px]
 
+/**
+ * Horizontal tab strip, 36px tall so it lines up with inputs and buttons in the
+ * same row. Arrow keys move between tabs, as the ARIA tab pattern requires.
+ *
+ * @param {{id: string, label: string, href?: string, count?: number}[]} props.tabs The tabs; `href` turns one into a link.
+ * @param {string} props.activeTab Id of the selected tab.
+ * @param {(id: string) => void} props.onTabChange Fires with the newly selected tab id.
+ * @param {string} props.className Placement in the parent only.
+ */
 export default function Tabs({
   tabs      = [],
   activeTab,

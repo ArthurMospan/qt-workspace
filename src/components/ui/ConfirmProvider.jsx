@@ -19,6 +19,13 @@ import { Input } from './Input';
 
 const ConfirmContext = createContext(null);
 
+/**
+ * Hosts the one confirm dialog the app uses, and hands `useConfirm()` to
+ * everything under it — a promise-returning replacement for native
+ * `confirm()`/`prompt()`. Mounted once, near the root.
+ *
+ * @param {React.ReactNode} props.children The tree that may call `useConfirm()`.
+ */
 export function ConfirmProvider({ children }) {
   const [request, setRequest] = useState(null);
   const [inputValue, setInputValue] = useState('');

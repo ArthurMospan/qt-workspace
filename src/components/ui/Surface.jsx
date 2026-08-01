@@ -28,6 +28,18 @@ export const PRESETS = {
   popover: 'popover',
 };
 
+/**
+ * The kit's background block: every grey panel, white card and inset in the
+ * product is this component. It renders no geometry of its own — the preset and
+ * the padding token resolve in `globals.css` under `data-ui-surface` and
+ * `data-ui-padding`, which is what makes one change there reach every screen.
+ *
+ * @param {string} props.preset Which named surface to draw. Wins over `variant`.
+ * @param {'panel'|'card'|'inset'} props.variant Legacy shorthand kept for existing call sites.
+ * @param {'none'|'xs'|'sm'|'md'|'lg'|'xl'|'xxl'} props.padding Inner spacing token.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
+ * @param {string} props.className Placement in the parent only — never its own radius, padding or background.
+ */
 export default function Surface({
   variant   = 'panel',   // 'panel' | 'card' | 'inset'
   preset,
