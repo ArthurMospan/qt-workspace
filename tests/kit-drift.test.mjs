@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { checkKitDrift } from '../scripts/check-kit-drift.mjs';
 import { extractVariants, variantNamespaces } from '../scripts/kit-variants.mjs';
+import { readShowcase } from '../scripts/ui-kit-showcase.mjs';
 
 const committed = JSON.parse(
   readFileSync(new URL('../src/app/ui-kit/kit-drift.generated.json', import.meta.url), 'utf8'),
@@ -53,7 +54,7 @@ test('every variant the product ships is visible somewhere in the catalogue', ()
     committed.usedWithoutPreview,
     [],
     'A variant ships on the site with no preview in /ui-kit. Either add the '
-    + 'component to VARIANT_BASE in src/app/ui-kit/page.js so the matrix renders '
+    + 'component to VARIANT_BASE in src/app/ui-kit/sections/variant-matrix.jsx so the matrix renders '
     + 'it, or show the value in its own section.',
   );
   assert.equal(committed.totals.usedWithoutPreview, 0);
@@ -63,9 +64,9 @@ test('every variant the product ships is visible somewhere in the catalogue', ()
 // If a component drops out of VARIANT_BASE, its values silently stop being
 // previewed — the count would still read zero until someone added a variant.
 test('the variant matrix renders every component that can stand alone', () => {
-  const page = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
-  const base = page.slice(page.indexOf('const VARIANT_BASE = {'), page.indexOf('const VARIANT_ELSEWHERE'));
-  const elsewhere = page.slice(page.indexOf('const VARIANT_ELSEWHERE'), page.indexOf('const NEEDS_DARK'));
+  const matrix = readShowcase().stories.find(story => story.id === 'variant-matrix').source;
+  const base = matrix.slice(matrix.indexOf('const VARIANT_BASE = {'), matrix.indexOf('const VARIANT_ELSEWHERE'));
+  const elsewhere = matrix.slice(matrix.indexOf('const VARIANT_ELSEWHERE'), matrix.indexOf('const NEEDS_DARK'));
 
   const rendered = new Set([...base.matchAll(/^ {2}(\w+):\s*\(props\)/gm)].map(match => match[1]));
   const excused = new Set([...elsewhere.matchAll(/^ {2}(\w+):\s*'/gm)].map(match => match[1]));

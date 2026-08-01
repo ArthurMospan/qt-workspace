@@ -21,6 +21,7 @@ import { parse } from '@babel/parser';
 import traverseModule from '@babel/traverse';
 import { collectWorkspaceUiFiles, collectWorkspaceRouteMap } from './workspace-ui-files.mjs';
 import { extractVariants } from './kit-variants.mjs';
+import { readShowcase } from './ui-kit-showcase.mjs';
 
 const traverse = traverseModule.default || traverseModule;
 
@@ -147,7 +148,6 @@ function extractPreviewCode(showcaseSource) {
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'kit-usage.generated.json');
-const SHOWCASE_FILE = join(ROOT, 'src', 'app', 'ui-kit', 'page.js');
 
 // The kit itself and the showcase page are excluded: a component being demoed
 // on /ui-kit is not the same as the product using it.
@@ -252,41 +252,20 @@ export function scanKitUsage() {
 
   const workspaceFiles = collectWorkspaceUiFiles();
 
-  const showcaseSource = readFileSync(SHOWCASE_FILE, 'utf8');
-  const groupsSource = showcaseSource.slice(
-    showcaseSource.indexOf('const GROUPS'),
-    showcaseSource.indexOf('const SECTIONS'),
-  );
-  const mapSource = showcaseSource.slice(
-    showcaseSource.indexOf('const SECTION_MAP'),
-    showcaseSource.indexOf('// MAIN PAGE'),
-  );
-  const visibleSectionIds = new Set(
-    [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]),
-  );
-  const sectionBody = name => {
-    const start = showcaseSource.indexOf(`function ${name}(`);
-    if (start < 0) return '';
-    const nextFunction = showcaseSource.indexOf('\nfunction ', start + 1);
-    const sectionMap = showcaseSource.indexOf('\nconst SECTION_MAP', start + 1);
-    const end = nextFunction < 0 ? sectionMap : nextFunction;
-    return showcaseSource.slice(start, end);
-  };
+  // One story file per navigable section, each with its own imports. Coverage
+  // is decided inside a single file now: imported here and rendered here. The
+  // old whole-page scan could pair an import at the top of a 3300-line file
+  // with a `<Name` anywhere below it, in a different section entirely.
+  const showcase = readShowcase();
 
-  const renderedSections = [...mapSource.matchAll(
-    /^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*<([A-Z]\w+Section)\s*\/>/gm,
-  )].filter(match => visibleSectionIds.has(match[1] || match[2]));
-
-  const visibleShowcaseSource = renderedSections
-    .map(match => sectionBody(match[3]))
-    .join('\n');
-
-  for (const match of showcaseSource.matchAll(IMPORT_RE)) {
-    for (const { exported: name, local } of importedBindings(match[1], match[2])) {
-      if (!inventory.has(name)) continue;
-      // An import alone is not a showcase. Requiring a JSX render prevents a
-      // stale/unused import or a hidden legacy section from making coverage green.
-      if (new RegExp(`<${local}\\b`).test(visibleShowcaseSource)) showcased.add(name);
+  for (const story of showcase.visibleStories) {
+    for (const match of story.source.matchAll(IMPORT_RE)) {
+      for (const { exported: name, local } of importedBindings(match[1], match[2])) {
+        if (!inventory.has(name)) continue;
+        // An import alone is not a showcase. Requiring a JSX render prevents a
+        // stale import or a story nobody navigates to from making coverage green.
+        if (new RegExp(`<${local}\\b`).test(story.source)) showcased.add(name);
+      }
     }
   }
 
@@ -354,7 +333,8 @@ export function scanKitUsage() {
 
   const manifest = extractVariants();
   const variants = scanVariantUsage(workspaceFiles, manifest, routeMap);
-  const previews = extractPreviewCode(showcaseSource);
+  const previews = {};
+  for (const story of showcase.visibleStories) Object.assign(previews, extractPreviewCode(story.source));
 
   // "Used" means the product reaches it — directly from a workspace file, or
   // through another kit component that a workspace file reaches.

@@ -25,11 +25,11 @@ import { parse } from '@babel/parser';
 import traverseModule from '@babel/traverse';
 import { extractVariants, variantNamespaces } from './kit-variants.mjs';
 import { collectWorkspaceUiFiles, collectWorkspaceRouteMap } from './workspace-ui-files.mjs';
+import { readShowcase } from './ui-kit-showcase.mjs';
 
 const traverse = traverseModule.default || traverseModule;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'kit-drift.generated.json');
-const SHOWCASE_FILE = join(ROOT, 'src', 'app', 'ui-kit', 'page.js');
 
 // Props that select a look. Anything else a component takes — onClick, icon,
 // children, value — is behaviour, and behaviour is not a variant. Only names in
@@ -118,10 +118,14 @@ function kitImports(ast) {
 // that cannot stand alone (Dialog needs an open state, PageHeader a whole page)
 // are not in that map and still owe their values a real preview.
 function previewedValues(manifest) {
-  const source = readFileSync(SHOWCASE_FILE, 'utf8');
-  const baseMap = source.slice(
-    source.indexOf('const VARIANT_BASE = {'),
-    source.indexOf('const VARIANT_ELSEWHERE'),
+  const showcase = readShowcase();
+  // A value can be shown by any story, so the search is over the whole
+  // catalogue; the auto-rendering map lives with the matrix that reads it.
+  const source = showcase.everything;
+  const matrix = showcase.stories.find(story => story.id === 'variant-matrix')?.source ?? '';
+  const baseMap = matrix.slice(
+    matrix.indexOf('const VARIANT_BASE = {'),
+    matrix.indexOf('const VARIANT_ELSEWHERE'),
   );
   const autoRendered = new Set(
     [...baseMap.matchAll(/^ {2}(\w+):\s*\(props\)/gm)].map(match => match[1]),

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { scanKitUsage } from '../scripts/scan-kit-usage.mjs';
 import { auditUiFidelity } from '../scripts/audit-ui-fidelity.mjs';
+import { readShowcase } from '../scripts/ui-kit-showcase.mjs';
 
 const committed = JSON.parse(
   readFileSync(new URL('../src/app/ui-kit/kit-usage.generated.json', import.meta.url), 'utf8'),
@@ -42,7 +43,7 @@ test('the committed UI fidelity audit matches every product UI file', () => {
 // with?". The audit still runs and still fails the build; it no longer has a
 // screen, because a screen full of raw markup taught nobody anything.
 test('the catalogue is the only reference page, and it lists components', () => {
-  const kit = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
+  const kit = readShowcase().everything;
   const app = new URL('../src/app/', import.meta.url);
   const pages = readdirSync(app).filter(name => name.startsWith('ui-'));
 
@@ -311,7 +312,7 @@ test('a renamed default import is credited to the component it imports', () => {
 });
 
 test('high-risk composed previews keep the product markup signatures', () => {
-  const kit = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
+  const kit = readShowcase().everything;
   const chat = readFileSync(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8');
   const projects = readFileSync(new URL('../src/app/(app)/page.js', import.meta.url), 'utf8');
   const settings = readFileSync(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
@@ -376,33 +377,51 @@ test('high-risk composed previews keep the product markup signatures', () => {
   }
 });
 
+// Each section is a story file named after its navigation id, so the hierarchy,
+// the story directory and the renderer are three lists that must agree. The
+// filename carries the id: that is what lets every tool find a section's source
+// without parsing the page, and what makes an orphan story visible.
 test('the atomic hierarchy and section renderer stay in sync', () => {
-  const source = readFileSync(new URL('../src/app/ui-kit/page.js', import.meta.url), 'utf8');
-  const groupsSource = source.slice(source.indexOf('const GROUPS'), source.indexOf('const SECTIONS'));
-  const mapSource = source.slice(source.indexOf('const SECTION_MAP'), source.indexOf('// MAIN PAGE'));
+  const { page, groupsSource, mapSource, visibleSectionIds, renderedSectionIds, stories } = readShowcase();
 
   for (const layer of ['Атоми (Atoms)', 'Молекули (Molecules)', 'Організми (Organisms)', 'Лейаути (Layouts)']) {
     assert.match(groupsSource, new RegExp(layer.replace(/[()]/g, '\\$&')), `Missing ${layer} layer`);
   }
 
-  const sectionIds = [...groupsSource.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
-  const renderedIds = [...mapSource.matchAll(/^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*</gm)]
-    .map(match => match[1] || match[2]);
   assert.deepEqual(
-    sectionIds.filter(id => !renderedIds.includes(id)),
+    visibleSectionIds.filter(id => !renderedSectionIds.includes(id)),
     [],
     'A visible navigation section is missing its renderer',
   );
 
-  const sectionFunctions = [...source.matchAll(/^function (\w+Section)\(/gm)].map(match => match[1]);
-  const renderedFunctions = new Set(
-    [...mapSource.matchAll(/<([A-Z]\w+Section)\s*\/>/g)].map(match => match[1]),
-  );
+  const storyIds = stories.map(story => story.id).sort();
   assert.deepEqual(
-    sectionFunctions.filter(name => !renderedFunctions.has(name)),
-    [],
-    'Dead section functions duplicate previews without being reachable from the hierarchy',
+    storyIds,
+    [...visibleSectionIds].sort(),
+    'A story file must be a navigable section, and every section must have one',
   );
+
+  // The map is wired by hand, so a section can point at the wrong story: the id
+  // and the imported component both say "buttons" only if somebody checks.
+  const importedFrom = new Map(
+    [...page.matchAll(/^import (\w+) from '\.\/sections\/([\w-]+)';$/gm)].map(match => [match[1], match[2]]),
+  );
+  for (const match of mapSource.matchAll(/^\s*(?:'([^']+)'|([a-z][\w-]*)):\s*<([A-Z]\w+)\s*\/>/gm)) {
+    const id = match[1] || match[2];
+    assert.equal(
+      importedFrom.get(match[3]),
+      id,
+      `Section "${id}" renders ${match[3]}, which comes from a different story file`,
+    );
+  }
+
+  for (const story of stories) {
+    assert.match(
+      story.source,
+      /^export default function \w+Section\(/m,
+      `${story.id}: a story file exports its section as the default`,
+    );
+  }
 });
 
 test('approved UI decisions stay encoded in shared components', () => {

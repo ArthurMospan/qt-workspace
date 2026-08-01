@@ -1,0 +1,196 @@
+'use client';
+import { useContext } from 'react';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Forms/Textarea';
+import { Select, MultiSelect } from '@/components/ui/Select';
+import Surface from '@/components/ui/Surface';
+import { FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip } from '@/components/ui';
+import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
+import TextAction from '@/components/ui/TextAction';
+import kitUsage from '../kit-usage.generated.json';
+import kitDrift from '../kit-drift.generated.json';
+import { Plus, Settings2, Folder } from 'lucide-react';
+import { KitContext } from '../preview';
+import { KIT_MENTION_MEMBERS } from '../demo-data';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VARIANT MATRIX
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Every value the implementation declares — rendered, not listed.
+//
+// The list version of this screen still let a variant hide: 53 values shipped
+// on the site while no preview anywhere showed them, so "the kit is the source"
+// was true for the component and false for half its variants. Rendering each
+// declared value from the manifest closes that structurally — a variant cannot
+// exist without a preview, because the preview is generated from the same
+// declaration the variant is. Adding a lookup-map entry or a `data-ui-*` rule
+// makes it appear here on the next `npm run kit:drift`; nothing is hand-written.
+//
+// One base example per component, with the variant prop spread over it. Where a
+// component cannot stand alone — Dialog needs an open state, PageHeader a whole
+// page — the value is shown with the reason and a pointer to its real preview,
+// rather than a fabricated example that would be a second source of truth.
+const VARIANT_BASE = {
+  Button: (props) => <Button style="secondary" size="md" icon={Plus} {...props}>Кнопка</Button>,
+  IconAction: (props) => <IconAction label="Дія" icon={Settings2} size="md" {...props} />,
+  Input: (props) => <Input placeholder="Текст" {...props} />,
+  Textarea: (props) => <Textarea placeholder="Текст" rows={2} {...props} />,
+  Select: (props) => (
+    <Select value="a" onChange={() => {}} options={[{ value: 'a', label: 'Обрано' }]} {...props} />
+  ),
+  MultiSelect: (props) => (
+    <MultiSelect value={['a']} onChange={() => {}} options={[{ value: 'a', label: 'Обрано' }]} {...props} />
+  ),
+  Surface: (props) => <Surface padding="md" {...props}><span className="text-[11px] text-muted">Поверхня</span></Surface>,
+  Pill: (props) => <Pill {...props}>Мітка</Pill>,
+  UserAvatar: (props) => <UserAvatar user={{ id: 'kit', name: 'Артур Моспан' }} {...props} />,
+  Counter: (props) => <Counter value={3} {...props} />,
+  Alert: (props) => <Alert {...props}>Повідомлення</Alert>,
+  LoadingSpinner: (props) => <LoadingSpinner {...props} />,
+  ToggleSwitch: (props) => <ToggleSwitch checked onChange={() => {}} {...props} />,
+  Segmented: (props) => (
+    <Segmented value="a" onChange={() => {}} options={[{ value: 'a', label: 'Один' }, { value: 'b', label: 'Два' }]} {...props} />
+  ),
+  Card: (props) => <Card {...props}><span className="text-[11px] text-muted">Картка</span></Card>,
+  FormGroup: (props) => <FormGroup label="Поле" {...props}><Input placeholder="Текст" /></FormGroup>,
+  Label: (props) => <Label {...props}>Підпис</Label>,
+  Tag: (props) => <Tag {...props}>Тег</Tag>,
+  SelectableChip: (props) => <SelectableChip selected {...props}>Чіп</SelectableChip>,
+  MarkdownViewer: (props) => <MarkdownViewer content="Опис завдання" {...props} />,
+  EmptyState: (props) => <EmptyState icon={Folder} title="Порожньо" description="Немає записів." {...props} />,
+  Popover: (props) => (
+    <Popover trigger={<span className="text-[11px] font-semibold text-ink underline">Відкрити</span>} {...props}>
+      <span className="text-[11px] text-muted">Вміст</span>
+    </Popover>
+  ),
+  ChatComposerCore: (props) => (
+    <div className="w-full max-w-[420px]">
+      <ChatComposerCore value="" onChange={() => {}} onSubmit={() => {}} placeholder="Повідомлення" {...props} />
+    </div>
+  ),
+  TextAction: (props) => <TextAction {...props}>Дія</TextAction>,
+  AvatarButton: (props) => (
+    <AvatarButton user={{ id: 'kit', name: 'Артур Моспан' }} label="Переглянути профіль" {...props} />
+  ),
+  MentionMenu: (props) => (
+    <div className="w-full max-w-[240px]">
+      <MentionMenu members={KIT_MENTION_MEMBERS.slice(0, 2)} onSelect={() => {}} {...props} />
+    </div>
+  ),
+};
+
+// Why a component has no standalone example, and where to look instead.
+const VARIANT_ELSEWHERE = {
+  Dialog: 'Потребує відкритого стану — див. «Dialogs & Modals»',
+  FilterBar: 'Живе всередині PageHeader — див. «Filter Bar»',
+  TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',
+  ChatComposerDock: 'Прикріплений до низу екрана — див. «Chat Composer Dock»',
+  SidebarLayout: 'Каркас цілого екрана — див. «SidebarLayout — 3 контексти»',
+};
+
+// A dark value needs a dark backdrop to be visible at all.
+const NEEDS_DARK = /inverse|overlay|auth-close/;
+
+function VariantCell({ component, prop, value, count, previewed }) {
+  const render = VARIANT_BASE[component];
+  const tone = count === 0
+    ? 'border-line bg-canvas'
+    : previewed
+      ? 'border-[#a7f3d0] bg-white'
+      : 'border-[#fde68a] bg-white';
+
+  return (
+    <div className={`flex flex-col gap-[6px] rounded-[10px] border p-[10px] ${tone}`}>
+      <div
+        className={`relative isolate flex min-h-[52px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
+          NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
+        }`}
+      >
+        {render
+          ? render({ [prop]: value })
+          : <span className="px-2 text-center text-[10px] leading-relaxed text-faint">{VARIANT_ELSEWHERE[component]}</span>}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-mono text-[10px] font-bold text-ink">{value}</span>
+        <span className={`ml-auto shrink-0 rounded-full px-[6px] text-[9px] font-bold ${
+          count === 0 ? 'bg-canvas text-faint' : 'bg-[#ecfdf5] text-[#047857]'
+        }`}>
+          ×{count}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function VariantMatrixSection() {
+  const { openUsage } = useContext(KitContext);
+  const manifest = kitDrift.manifest;
+  const usedCounts = kitDrift.usage;
+  const previewed = new Set(kitDrift.previewedValues);
+
+  return (
+    <div className="flex flex-col gap-[24px]">
+      <Surface preset="bordered-panel" padding="lg">
+        <h2 className="text-[18px] font-bold text-ink">
+          {kitDrift.totals.declaredValues} оголошених значень у {Object.keys(manifest).length} компонентах
+        </h2>
+        <p className="mt-2 max-w-[820px] text-[12px] leading-relaxed text-muted">
+          Варіант оголошує реалізація, а не список: lookup-мапи компонентів і
+          <span className="font-mono"> data-ui-*</span> правила в globals.css. Кожне значення тут
+          відрендерене живим компонентом — тому варіант не може існувати без preview.
+          Щоб додати варіант, додай запис у мапу або правило в CSS, і він з&apos;явиться сам.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-[8px] text-[11px] font-semibold">
+          <span className="rounded-[6px] bg-[#ecfdf5] px-[8px] py-[3px] text-[#047857]">
+            вживається на сайті — {kitDrift.totals.declaredValues - kitDrift.totals.declaredUnused}
+          </span>
+          <span className="rounded-[6px] bg-canvas px-[8px] py-[3px] text-muted">
+            оголошене, не вживається — {kitDrift.totals.declaredUnused}
+          </span>
+        </div>
+      </Surface>
+
+      {Object.entries(manifest).map(([component, props]) => (
+        <section key={component} className="rounded-[14px] border border-line bg-white">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+            <button
+              type="button"
+              onClick={() => openUsage(component)}
+              className="cursor-pointer font-mono text-[12px] font-bold text-ink hover:underline"
+            >
+              {component}
+            </button>
+            <span className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-bold text-muted">
+              {kitUsage.components[component]?.count ?? 0} використань
+            </span>
+            {VARIANT_ELSEWHERE[component] && (
+              <span className="text-[10px] text-faint">{VARIANT_ELSEWHERE[component]}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-[14px] p-[14px]">
+            {Object.entries(props).map(([prop, values]) => (
+              <div key={prop}>
+                <div className="mb-[6px] font-mono text-[11px] font-bold text-ink">{prop}</div>
+                <div className="grid gap-[8px] [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
+                  {values.map(value => (
+                    <VariantCell
+                      key={value}
+                      component={component}
+                      prop={prop}
+                      value={value}
+                      count={usedCounts[`${component}.${prop}.${value}`] || 0}
+                      previewed={previewed.has(`${component}.${prop}.${value}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}

@@ -8,8 +8,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readShowcase } from '../scripts/ui-kit-showcase.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
+
+// The catalogue is a directory of story files; these assertions ask whether it
+// shows something at all, not which file it lives in.
+const readKitShowcase = () => readShowcase().everything;
 
 test('QUI-129 renders the project status chart the same way as global analytics', async () => {
   const [tab, global] = await Promise.all([
@@ -30,7 +35,7 @@ test('QUI-129 and QUI-139 keep the project header free of team avatars', async (
   const [topHeader, workspaceHeader, kit] = await Promise.all([
     read('../src/components/ui/Layout/TopHeader.jsx'),
     read('../src/components/WorkspaceHeader.jsx'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
   for (const source of [topHeader, workspaceHeader, kit]) {
     assert.doesNotMatch(source, /projectMembers/, 'the project team avatar strip is gone');
@@ -85,7 +90,7 @@ test('QUI-133 gives the money input its currency instead of bare padding', async
   const [input, billing, kit] = await Promise.all([
     read('../src/components/ui/Input.jsx'),
     read('../src/components/workspace/BillingTab.jsx'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
   assert.match(input, /money: 'text-right font-bold tabular-nums'/);
   assert.doesNotMatch(input, /pr-\[54px\]/, 'the hardcoded suffix gutter is gone');
@@ -110,7 +115,7 @@ test('QUI-134 gives the neutral dot the surface opposite, not a brand hue', asyn
 test('QUI-135 keeps every status pill readable against its own tint', async () => {
   const [sprints, kit] = await Promise.all([
     read('../src/app/(app)/sprints/page.js'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
   // `#cbd5e1` text on a 9% tint of itself scored about 1.5:1.
   for (const source of [sprints, kit]) {
@@ -142,7 +147,7 @@ test('QUI-137 makes the inline add control look like a button', async () => {
 });
 
 test('QUI-138 says where each rare Dialog variant actually lives', async () => {
-  const kit = await read('../src/app/ui-kit/page.js');
+  const kit = await readKitShowcase();
   const list = kit.slice(kit.indexOf('const DIALOG_VARIANTS'), kit.indexOf('function DialogsSection'));
   for (const id of ['flush', 'responsive', 'spacious', 'invite', 'sheet', 'status']) {
     assert.match(list, new RegExp(`id: '${id}'`), `${id} must stay listed`);
@@ -178,7 +183,7 @@ test('the chat and team rails exist once, and the pages and catalogue all render
     read('../src/components/ui/Navigation/MemberRail.jsx'),
     read('../src/app/(app)/chat/page.js'),
     read('../src/app/(app)/team/page.js'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
 
   // The markup lives in the components and nowhere else.

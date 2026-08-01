@@ -1,0 +1,194 @@
+'use client';
+import { TaskListView } from '@/components/ui';
+import AgileBoard from '@/components/workspace/AgileBoard';
+import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { PreviewBlock } from '../preview';
+
+export default function TaskCRMSection() {
+  const { statuses } = useWorkflowConfig();
+  const firstStatusId = statuses[0]?.id || DEFAULT_STATUSES[0].id;
+  const secondStatusId = statuses[1]?.id || firstStatusId;
+  const thirdStatusId = statuses[2]?.id || secondStatusId;
+  const lastStatusId = statuses.at(-1)?.id || thirdStatusId;
+  const demoMembers = [
+    { uid: '1', name: 'Артур Моспан', initials: 'АМ', bg: '#6366f1' },
+    { uid: '2', name: 'Іван Петренко', initials: 'ІП', bg: '#10b981' }
+  ];
+
+  const demoLabels = [
+    { id: 'frontend', label: 'Фронтенд', color: '#3b82f6' },
+    { id: 'design', label: 'Дизайн', color: '#db2777' },
+    { id: 'bug', label: 'Баг', color: '#ef4444' }
+  ];
+
+  const demoSprints = [
+    { id: 'sprint-1', name: 'Спринт 12' }
+  ];
+
+  const task1 = {
+    id: 't1',
+    issueKey: 'QUI-41',
+    projectId: 'ui-kit-project',
+    columnId: firstStatusId,
+    title: "Редизайн головної сторінки з новими компонентами",
+    priority: "high",
+    type: "feature",
+    assigneeIds: ['1', '2'],
+    dueDate: new Date('2026-07-13T12:00:00Z'),
+    subtasks: [{ id: '1', title: 'Кнопки', done: true }, { id: '2', title: 'Інпути', done: false }],
+    labelIds: ['frontend', 'design'],
+    sprintId: 'sprint-1'
+  };
+
+  const task2 = {
+    id: 't2',
+    issueKey: 'QUI-42',
+    projectId: 'ui-kit-project',
+    columnId: secondStatusId,
+    title: "Критична помилка при авторизації користувачів через Google",
+    priority: "critical",
+    type: "bug",
+    assigneeIds: ['2'],
+    dueDate: new Date('2026-07-11T12:00:00Z'), // overdue in this static demo
+    subtasks: [],
+    labelIds: ['bug']
+  };
+
+  const task3 = {
+    id: 't3',
+    issueKey: 'QUI-43',
+    projectId: 'ui-kit-project',
+    columnId: thirdStatusId,
+    title: "Написати юніт-тести для нового контролера авторизації",
+    priority: "low",
+    type: "task",
+    parentIssueId: 't1',
+    assigneeIds: [],
+    dueDate: null,
+    subtasks: []
+  };
+
+  const task4 = {
+    id: 't4',
+    issueKey: 'QUI-44',
+    projectId: 'ui-kit-project',
+    columnId: lastStatusId,
+    title: "Інтеграція Stripe для автоматичного прийому платіжних карток",
+    priority: "medium",
+    type: "feature",
+    assigneeIds: ['1'],
+    dueDate: null,
+    subtasks: [{ id: '1', done: true }, { id: '2', done: true }, { id: '3', done: true }],
+    hasUnreadChat: true
+  };
+
+  const task5 = {
+    id: 't5',
+    issueKey: 'QUI-45',
+    projectId: 'ui-kit-project',
+    columnId: firstStatusId,
+    title: "Додати кнопку швидкого експорту звітів аналітики у CSV та PDF",
+    priority: "low",
+    type: "feature",
+    assigneeIds: ['2'],
+    dueDate: new Date('2026-07-14T12:00:00Z'),
+    subtasks: [],
+    labelIds: ['frontend']
+  };
+  const demoIssues = [task1, task2, task3, task4, task5];
+
+  return (
+    <div className="flex flex-col gap-[32px]">
+      <PreviewBlock title="Task Row (List View)" description="Один shared row для project і cross-project контекстів; назву проєкту вмикає лише semantic prop showProjectName." fullWidth>
+        <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
+          <p className="ui-type-eyebrow uppercase tracking-wider text-muted">Project context — назва проєкту прихована</p>
+          <TaskRow
+            issue={task1}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectName="QuickTeam"
+          />
+          <p className="ui-type-eyebrow mt-2 uppercase tracking-wider text-muted">Cross-project context — назва проєкту видима</p>
+          <TaskRow
+            issue={task2}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectName="QuickTeam"
+            showProjectName
+          />
+          <TaskRow
+            issue={task3}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectName="QuickTeam"
+            showProjectName
+          />
+          <TaskRow
+            issue={task4}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectName="QuickTeam"
+            showProjectName
+          />
+          <TaskRow
+            issue={task5}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectName="QuickTeam"
+            showProjectName
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task List View — живий shared organism"
+        description="Саме цей organism рендерить обидва списки: hiddenStatusIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view. Кожну секцію можна згорнути кнопкою праворуч (той самий ghost icon, що згортає колонку канбану); розділювальної лінії під заголовком немає — секції відділяє відступ."
+        filePath="src/components/ui/TaskManagement/TaskListView.jsx"
+        fullWidth
+      >
+        <TaskListView
+          issues={demoIssues}
+          allIssues={demoIssues}
+          members={demoMembers}
+          labels={demoLabels}
+          sprints={demoSprints}
+          projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+          showProjectName
+          hiddenStatusIds={[lastStatusId]}
+        />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Agile Board — живий shared organism"
+        description="Та сама Kanban-дошка використовується в проєкті та в «Мої завдання». Відмінності контексту задаються явними props, а не другою копією верстки."
+        filePath="src/components/workspace/AgileBoard.jsx"
+        fullWidth
+      >
+        <div className="h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4">
+          <AgileBoard
+            issues={demoIssues}
+            allIssues={demoIssues}
+            members={demoMembers}
+            projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+            projectId="ui-kit-project"
+            project={{ id: 'ui-kit-project', name: 'QuickTeam', hiddenColumns: [] }}
+            sprints={demoSprints}
+            onAddIssue={() => {}}
+            onMoveIssue={() => {}}
+          />
+        </div>
+      </PreviewBlock>
+    </div>
+  );
+}

@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readShowcase } from '../scripts/ui-kit-showcase.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
+
+// The catalogue is a directory of story files; these assertions ask whether it
+// shows something at all, not which file it lives in.
+const readKitShowcase = () => readShowcase().everything;
 
 test('QUI-77 keeps task detail additions compact and floating menus stationary', async () => {
   // `Dropdown` was checked here too; it was one of 31 kit components nothing
@@ -152,7 +157,7 @@ test('QUI-72 never submits a completed or stale sprint from Create Task', async 
 test('QUI-71 uses shared date and time controls throughout the calendar event form', async () => {
   const [dialog, kit, timePicker, datePicker] = await Promise.all([
     read('../src/components/workspace/calendar/CalendarEventDialog.jsx'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
     read('../src/components/ui/Forms/TimePicker.jsx'),
     read('../src/components/ui/Forms/DatePicker.jsx'),
   ]);
@@ -192,7 +197,7 @@ test('QUI-69 lays out overlaps and renders people as avatar plus name', async ()
     read('../src/components/workspace/calendar/CalendarEventDialog.jsx'),
     read('../src/components/workspace/calendar/CalendarEventPage.jsx'),
     read('../src/components/ui/Select.jsx'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
 
   assert.match(calendarPage, /const boxes = layoutDayEvents\(timedEvents, day\)/);
@@ -232,7 +237,7 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
     read('../src/app/api/projects/route.js'),
     read('../src/app/api/issues/route.js'),
     read('../src/app/(app)/my/page.js'),
-    read('../src/app/ui-kit/page.js'),
+    readKitShowcase(),
   ]);
 
   assert.doesNotMatch(workspace, /function EditProjectModal/);
