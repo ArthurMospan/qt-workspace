@@ -3289,6 +3289,7 @@ export default function UIKitPage() {
                   return (
                     <button
                       key={s.id}
+                      data-kit-nav={s.id}
                       onClick={() => setActiveSection(s.id)}
                       // min-h rather than a fixed height: a two-line label
                       // (there are several now) overflowed its row and printed
@@ -3333,7 +3334,15 @@ export default function UIKitPage() {
               <span className="text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wide">INTERNAL ONLY · /ui-kit</span>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 py-5 md:px-[32px] md:py-[32px]">
+          {/* The two data attributes are the handles the screenshot suite
+              steers by (tests/visual/ui-kit.spec.mjs): which section is on
+              screen, and which element to photograph. Names, not classes —
+              a test must never be the reason a class exists. */}
+          <div
+            data-kit-scroll
+            data-kit-section={activeSection}
+            className="flex-1 overflow-y-auto px-4 py-5 md:px-[32px] md:py-[32px]"
+          >
             {SECTION_MAP[activeSection]}
           </div>
         </div>
