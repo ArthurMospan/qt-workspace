@@ -85,6 +85,28 @@ test('the variant matrix renders every component that can stand alone', () => {
 
 // A shared CSS namespace has no per-component owner: `.ui-control[data-ui-composition]`
 // is one selector serving Button, IconAction and Input at once. Before this was
+// A ceiling, not a zero: plenty of declared values are legitimately unused
+// today. What this catches is the specific way the surfaces pass can break the
+// report. The usage scan stops at the kit boundary on purpose, so moving a
+// component into `src/components/ui` takes its call site out of view — and with
+// it, the evidence for every variant that call site was the only user of.
+//
+// `UserStatusSetter` is the live example and the reason this number is pinned.
+// It is the sole user of `Input composition="status-entry"`, `Button
+// composition="status-submit"` and `Dialog size="status"`; promoting it to the
+// kit would move three variants into this list while the product went on
+// rendering them every time somebody set a status. A component whose call site
+// is the only evidence for a declared variant stays where it is.
+test('promoting a component to the kit does not orphan the variants it used', () => {
+  assert.ok(
+    committed.totals.declaredUnused <= 96,
+    `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
+  );
+  for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {
+    assert.ok(committed.usage[key] > 0, `${key} lost its only call site`);
+  }
+});
+
 // modelled, the report called `Button.composition="duration-hours"` a dead
 // Button variant when it is an Input composition Button also happens to accept.
 test('a shared CSS namespace is never reported as one component\'s dead variant', () => {
