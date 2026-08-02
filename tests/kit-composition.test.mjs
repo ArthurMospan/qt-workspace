@@ -1,39 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { auditComposition } from '../scripts/kit-composition.mjs';
+import { layeredCompositionRules } from '../scripts/kit-composition.mjs';
 import { extractVariants } from '../scripts/kit-variants.mjs';
 
-const committed = JSON.parse(
-  readFileSync(new URL('../src/app/ui-kit/composition-audit.generated.json', import.meta.url), 'utf8'),
-);
 const globals = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
 
-test('the committed composition audit matches the stylesheet', () => {
-  assert.deepEqual(
-    auditComposition(),
-    committed,
-    'composition-audit.generated.json is stale — run `npm run kit:composition` and commit the result',
-  );
+// Whether a declaration survives the cascade is decided in a browser, by
+// tests/visual/ui-kit.spec.mjs: `@layer components` loses to Tailwind's utility
+// layer regardless of specificity, and no static rule reliably tells an
+// unconditional utility from a variant or an error branch. What is checkable
+// here is what the stylesheet declares, and that the presets keep the one
+// mechanism a utility cannot touch.
+test('the composition rules are readable, and only declare what can travel', () => {
+  const rules = layeredCompositionRules(globals);
+  assert.ok(rules.length > 20, 'the components layer must still be parsed');
+
+  for (const rule of rules) {
+    assert.doesNotMatch(rule.selector, /\/\*/, 'a selector must not swallow its comment');
+    for (const { property } of rule.declarations) {
+      assert.doesNotMatch(property, /^--/, 'custom properties are exempt and must not be listed');
+    }
+  }
 });
 
-// The contract zero. A `data-ui-*` rule inside `@layer components` may not
-// declare a property the owning component also writes as a utility: Tailwind
-// emits the utility layer last, and layer order beats specificity outright, so
-// such a declaration is documentation that cannot come true.
-test('no data-ui-* declaration is shadowed by the component that carries it', () => {
-  assert.deepEqual(
-    committed.shadowed,
-    [],
-    'A shadowed declaration must be removed, or the utility that beats it must go — it cannot stay and mean nothing',
-  );
-  assert.equal(committed.totals.shadowed, 0);
-  assert.ok(committed.totals.declarations > 100, 'the audit still reads the whole components layer');
-});
-
-// Custom properties are the supported way to hand a value to a component,
-// because no utility can set one. This is why `--ui-control-height` works while
-// every `padding` beside it did not.
+// Custom properties are the supported way to hand a value to a component: no
+// utility can set one. This is why `--ui-control-height` works while every
+// `padding` beside it did not.
 test('the presets keep the one mechanism that survives the cascade', () => {
   assert.match(globals, /--ui-control-height: var\(--ui-composition-metric\)/);
   assert.match(globals, /--ui-control-height: var\(--ui-composition-guard\)/);
@@ -61,10 +54,9 @@ test('every composition the product passes is still declared', () => {
   }
 });
 
-// The cleanup was a no-op on screen — the utilities were already winning — and
-// that is the whole reason it was safe. These are the values the browser
-// reported on /ui-kit both before and after, kept here so a later change that
-// does move them has to say so.
+// What each preset actually delivered, measured in the browser before the
+// cleanup and unchanged by it. Kept here so a later edit that does move one has
+// to say so.
 test('the surviving declarations are the ones that reach the screen', () => {
   // `flex: 1` is all the dialog-tabs preset ever delivered.
   assert.match(globals, /data-ui-composition='dialog-tabs'\] > button \{\s*flex: 1;\s*\}/);
@@ -77,9 +69,11 @@ test('the surviving declarations are the ones that reach the screen', () => {
   assert.doesNotMatch(globals, /padding-right: 54px/);
 });
 
-test('the composition audit is documented where the rules live', () => {
+test('the browser is the one that decides, and the rules say so', () => {
+  const spec = readFileSync(new URL('./visual/ui-kit.spec.mjs', import.meta.url), 'utf8');
   const contract = readFileSync(new URL('../docs/UI_KIT_CONTRACT.md', import.meta.url), 'utf8');
-  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(packageJson.scripts['kit:composition'], 'node scripts/kit-composition.mjs');
-  assert.match(contract, /kit:composition/);
+
+  assert.match(spec, /every data-ui-\* declaration survives the cascade/);
+  assert.match(spec, /getComputedStyle/);
+  assert.match(contract, /layeredCompositionRules|getComputedStyle/);
 });

@@ -13,6 +13,8 @@
 // two pseudo-classes are photographed without any baseline having to guess.
 import { test, expect } from '@playwright/test';
 import { SECTIONS, FORCED_STATE_SECTION } from './sections.mjs';
+import { layeredCompositionRules } from '../../scripts/kit-composition.mjs';
+import kitDrift from '../../src/app/ui-kit/kit-drift.generated.json' with { type: 'json' };
 
 // A fixed instant, so relative timestamps in the chat and task demos render the
 // same string forever. The demos read the clock while their module evaluates,
@@ -157,6 +159,125 @@ for (const section of SECTIONS) {
     await expect(scroller).toHaveScreenshot(`${section.id}.png`);
   });
 }
+
+// Does every named size contract actually reach the screen?
+//
+// `@layer components` loses to Tailwind's utility layer regardless of
+// specificity, so a `padding` a composition declares for a control that writes
+// its own `px-*` is dead — still in the file, still reading as the source of
+// truth. Fifty declarations were in that state before anything measured it.
+//
+// Measured rather than inferred. A static version of this check guessed from a
+// table of utility prefixes and was wrong twice: it desynced on an apostrophe
+// inside a comment, and it could not tell `hover:bg-canvas` or an error-branch
+// `bg-red-50` from a utility that always applies. `getComputedStyle` has
+// neither problem — it reports what the browser resolved.
+//
+// «Матриця варіантів» renders every declared composition, which is what makes
+// one page enough to check them all.
+test('every data-ui-* declaration survives the cascade', async ({ page }) => {
+  await showSection(page, 'variant-matrix');
+
+  // `.ui-control[data-ui-composition]` is one selector shared by Button and
+  // Input, and the matrix renders every declared value on both. A composition
+  // the product only ever puts on a field would otherwise be judged on a
+  // 32px icon button that never carries it — so each rule is measured on the
+  // element its owner really renders.
+  const OWNER_TAGS = {
+    Button: 'button', IconAction: 'button', Input: 'input', Textarea: 'textarea',
+    Segmented: 'div', Surface: 'div', Card: 'div', ChatComposerDock: 'div',
+  };
+  const owners = {};
+  for (const key of Object.keys(kitDrift.usage)) {
+    const match = key.match(/^(\w+)\.composition\.(.+)$/);
+    if (!match || !OWNER_TAGS[match[1]]) continue;
+    (owners[match[2]] = owners[match[2]] || new Set()).add(OWNER_TAGS[match[1]]);
+  }
+
+  // Compositions only. `data-ui-surface`, `data-ui-padding` and the pill
+  // attributes are families whose rules deliberately override one another
+  // inside the same layer — a later sibling winning there is the design, not a
+  // utility beating the kit, and this test would read the two as the same.
+  const rules = layeredCompositionRules()
+    .filter(rule => /data-ui-composition/.test(rule.selector))
+    .map(rule => {
+      const values = [...rule.selector.matchAll(/data-ui-composition='([^']+)'/g)].map(m => m[1]);
+      const tags = [...new Set(values.flatMap(value => [...(owners[value] || [])]))];
+      return { selector: rule.selector, declarations: rule.declarations, tags };
+    });
+
+  const { dead, unrendered, checked } = await page.evaluate(rules => {
+    // Longhands of a shorthand the rule sets, and the keyword spellings the
+    // browser normalises to. Comparing `padding: 6px 10px` against a computed
+    // string would fail on formatting alone, so shorthands are expanded.
+    const EXPAND = {
+      padding: ['padding-top', 'padding-right', 'padding-bottom', 'padding-left'],
+      'border-radius': ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius'],
+      gap: ['row-gap', 'column-gap'],
+    };
+
+    const dead = [];
+    const unrendered = [];
+    let checked = 0;
+
+    for (const rule of rules) {
+      const all = [...document.querySelectorAll(rule.selector)];
+      const elements = rule.tags.length ? all.filter(el => rule.tags.includes(el.tagName.toLowerCase())) : all;
+      if (elements.length === 0) {
+        unrendered.push(rule.selector);
+        continue;
+      }
+      for (const element of elements) {
+        const computed = getComputedStyle(element);
+        for (const { property, value } of rule.declarations) {
+          if (!value || value.includes('var(')) continue;      // resolved elsewhere
+          // Only absolute values can be compared as text. A percentage, a
+          // viewport unit or `auto` is resolved against a parent the catalogue
+          // chooses, so a mismatch would say something about the preview, not
+          // about the cascade.
+          if (/%|vh|vw|calc\(|^auto$|^none$/.test(value)) continue;
+          // `background` and `border` resolve to a compound string no textual
+          // comparison survives. A rule that means one of them writes the
+          // longhand — `background-color`, `border-color` — which does compare.
+          if (property === 'background' || property === 'border' || property === 'font') continue;
+          const properties = EXPAND[property] || [property];
+          const wanted = EXPAND[property] ? value.split(/\s+/) : [value];
+          for (let index = 0; index < properties.length; index += 1) {
+            const want = wanted[Math.min(index, wanted.length - 1)];
+            const actual = computed.getPropertyValue(properties[index]).trim();
+            checked += 1;
+            if (actual === want) continue;
+            // `0` and `0px` are the same length spelled two ways.
+            if (parseFloat(actual) === parseFloat(want) && /^-?[\d.]+/.test(want)) continue;
+            if (/px$/.test(want) && Math.abs(parseFloat(actual) - parseFloat(want)) < 0.6) continue;
+            dead.push({
+              selector: rule.selector,
+              property: properties[index],
+              want,
+              got: actual,
+              tag: element.tagName.toLowerCase(),
+            });
+          }
+        }
+      }
+    }
+    return { dead, unrendered, checked };
+  }, rules);
+
+  // Small on purpose: after the cleanup most compositions carry only custom
+  // properties, which no utility can shadow and which are therefore never part
+  // of this question. What is left is the handful that still declare concrete
+  // geometry — and the guard is that the number does not quietly reach zero,
+  // which would mean the check had stopped looking at anything.
+  expect(checked, 'the matrix must render the compositions this reads').toBeGreaterThan(20);
+  expect(
+    dead,
+    'a declaration that cannot reach the screen must be removed, or the utility that beats it must go',
+  ).toEqual([]);
+  // Not a failure: a composition with no standalone example simply cannot be
+  // checked here. Printed so the number stays visible instead of drifting.
+  console.log(`compositions with no element on /ui-kit: ${unrendered.length}`);
+});
 
 // A pseudo-class has no DOM. Only one element can really be hovered and only
 // one can hold focus, so a single frame showing thirty hovered controls is not
