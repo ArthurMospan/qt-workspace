@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
+import { useKeyboardOpen } from '@/lib/hooks/useKeyboardOpen';
 import { Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
@@ -77,16 +77,15 @@ export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
-  const unreadChats = useUnreadChatCount();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
   const notifications = useWorkspaceStore(s => s.notifications);
-  const unreadChatNotifications = notifications.filter(item =>
-    !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
-  const displayedUnreadChats = unreadChatNotifications || unreadChats;
+  // Published by WorkspaceNotificationBridge, which holds the only subscription
+  // to the chat channels and read cursors.
+  const displayedUnreadChats = useWorkspaceStore(s => s.unreadChatCount);
   const otherOrgUnreadCount = notifications.filter(item =>
     !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
 
@@ -124,6 +123,14 @@ export default function MobileNav() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [moreOpen]);
 
+  // The on-screen keyboard is the one piece of browser chrome the layout
+  // viewport does not account for. Without this the bar either hides behind the
+  // keyboard (iOS, Android default) or floats on top of it, and either way it
+  // eats the bottom of a chat while you are typing into it. visualViewport
+  // reports the real visible box; a shrink of more than a third is a keyboard,
+  // not a collapsing URL bar.
+  const keyboardOpen = useKeyboardOpen();
+
   const isActive = (href, exact) => (exact ? pathname === href : pathname.startsWith(href));
   // «Ще» is highlighted when the current page lives in the sheet
   const moreActive = MORE_NAV.some(i => isActive(i.href));
@@ -144,12 +151,24 @@ export default function MobileNav() {
 
   return (
     <>
-      {/* ── Bottom tab bar ─────────────────────────────────────────── */}
+      {/* ── Bottom tab bar ─────────────────────────────────────────────
+          A floating pill rather than a strip welded to the bottom edge: inset
+          from all three sides, so the corner radius is real and the bar never
+          has to share an edge with the browser's own chrome. The geometry lives
+          in globals.css (--qt-nav-*) because the content column has to reserve
+          exactly the same amount of room. */}
       <nav
         data-app-sb
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--sb-bg)] flex items-stretch border-t border-[var(--sb-border)]"
+        aria-label="Основна навігація"
+        aria-hidden={keyboardOpen}
+        className={`fixed z-40 flex items-stretch overflow-hidden rounded-[22px] border border-[var(--sb-border)] bg-[var(--sb-bg)] shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45)] transition-[transform,opacity] duration-200 ${
+          keyboardOpen ? 'pointer-events-none translate-y-[140%] opacity-0' : 'translate-y-0 opacity-100'
+        }`}
         style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          left: 'var(--qt-nav-gap)',
+          right: 'var(--qt-nav-gap)',
+          bottom: 'var(--qt-nav-inset)',
+          height: 'var(--qt-nav-height)',
           '--sb-bg': theme.bg,
           '--sb-text': theme.text,
           '--sb-muted': theme.muted,
@@ -162,33 +181,45 @@ export default function MobileNav() {
           const active = isActive(href, exact);
           return (
             <Link key={href} href={href}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${
                 active ? 'text-[var(--sb-text)]' : 'text-[var(--sb-muted)] hover:text-[var(--sb-hover)]'
               }`}>
               <Icon size={20} />
               <span className="text-[10px] font-semibold leading-none">{label}</span>
               {label === 'Чат' && displayedUnreadChats > 0 && (
-                <span className="absolute top-[6px] left-[calc(50%+4px)]">
+                <span className="absolute top-[7px] left-[calc(50%+4px)]">
                   <Counter value={displayedUnreadChats} size="sm" status="muted" dark />
                 </span>
+              )}
+              {/* The active tab is named, not merely tinted: at 10px a colour
+                  shift alone is not a reliable signal of where you are. */}
+              {active && (
+                <span className="absolute bottom-0 h-[2px] w-[20px] rounded-t-full bg-[var(--sb-text)]" />
               )}
             </Link>
           );
         })}
         <button
+          type="button"
           onClick={() => setMoreOpen(o => !o)}
-          className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${
+          aria-expanded={moreOpen}
+          aria-haspopup="dialog"
+          className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${
             moreOpen || moreActive ? 'text-[var(--sb-text)]' : 'text-[var(--sb-muted)] hover:text-[var(--sb-hover)]'
           }`}>
           <Menu size={20} />
           <span className="text-[10px] font-semibold leading-none">Ще</span>
           {activeTimer && (
-            <span className="absolute top-[7px] left-[calc(50%+6px)] w-[8px] h-[8px] bg-[#ef4444] rounded-full animate-pulse" />
+            <span className="absolute top-[8px] left-[calc(50%+6px)] w-[8px] h-[8px] bg-[#ef4444] rounded-full animate-pulse" />
           )}
           {otherOrgUnreadCount > 0 && !activeTimer && (
-            <span className="absolute top-[5px] left-[calc(50%+4px)]">
+            <span className="absolute top-[6px] left-[calc(50%+4px)]">
               <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
             </span>
+          )}
+          {moreActive && (
+            <span className="absolute bottom-0 h-[2px] w-[20px] rounded-t-full bg-[var(--sb-text)]" />
           )}
         </button>
       </nav>
@@ -205,9 +236,16 @@ export default function MobileNav() {
             role="dialog"
             aria-modal="true"
             aria-label="Більше розділів"
-            className="absolute bottom-0 left-0 right-0 bg-[var(--sb-bg)] rounded-t-[24px] max-h-[80vh] overflow-y-auto"
+            // Inset and rounded on every corner, like the bar it replaces —
+            // a full-bleed sheet under a floating pill read as two different
+            // apps. dvh, not vh, so the cap is the space that actually exists
+            // once the browser's toolbars are counted.
+            className="qt-sheet-in absolute bg-[var(--sb-bg)] rounded-[24px] max-h-[78dvh] overflow-y-auto overscroll-contain"
             style={{
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+              left: 'var(--qt-nav-gap)',
+              right: 'var(--qt-nav-gap)',
+              bottom: 'var(--qt-nav-inset)',
+              paddingBottom: '12px',
               '--sb-bg': theme.bg,
               '--sb-text': theme.text,
               '--sb-muted': theme.muted,

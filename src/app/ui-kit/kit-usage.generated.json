@@ -1901,7 +1901,7 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:264",
             "src/app/(app)/analytics/page.js:647",
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/app/(app)/my/page.js:111",
             "src/app/(app)/page.js:802",
             "src/app/(app)/settings/page.js:2736",
@@ -2359,7 +2359,7 @@
           "files": [
             "src/app/(app)/calendar/page.js:498",
             "src/app/(app)/chat/page.js:922",
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -2420,7 +2420,7 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/app/(app)/my/page.js:111",
             "src/app/(app)/my/page.js:176",
             "src/app/(app)/my/page.js:281",
@@ -2623,7 +2623,7 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/app/(app)/my/page.js:111",
             "src/app/(app)/my/page.js:176",
             "src/app/(app)/my/page.js:281",
@@ -2825,7 +2825,7 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/app/(app)/my/page.js:176",
             "src/app/(app)/my/page.js:281",
             "src/app/(app)/page.js:479",
@@ -3179,7 +3179,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/app/(app)/layout.js:93",
+            "src/app/(app)/layout.js:94",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41"
           ]
         },
@@ -5360,9 +5360,9 @@
             "src/app/(app)/chat/page.js:296",
             "src/app/(app)/sprints/page.js:651",
             "src/app/(app)/sprints/page.js:672",
-            "src/components/MobileNav.jsx:172",
-            "src/components/MobileNav.jsx:190",
-            "src/components/MobileNav.jsx:228",
+            "src/components/MobileNav.jsx:192",
+            "src/components/MobileNav.jsx:218",
+            "src/components/MobileNav.jsx:266",
             "src/components/WorkspaceSidebar.jsx:281",
             "src/components/WorkspaceSidebar.jsx:331",
             "src/components/workspace/AgileBoard.jsx:264",
@@ -5401,9 +5401,9 @@
             "src/app/(app)/page.js:196",
             "src/app/(app)/sprints/page.js:651",
             "src/app/(app)/sprints/page.js:672",
-            "src/components/MobileNav.jsx:172",
-            "src/components/MobileNav.jsx:190",
-            "src/components/MobileNav.jsx:228",
+            "src/components/MobileNav.jsx:192",
+            "src/components/MobileNav.jsx:218",
+            "src/components/MobileNav.jsx:266",
             "src/components/OrgSwitcherScreen.jsx:45",
             "src/components/WorkspaceSidebar.jsx:281",
             "src/components/workspace/AgileBoard.jsx:264",
@@ -5447,7 +5447,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:172",
+            "src/components/MobileNav.jsx:192",
             "src/components/WorkspaceSidebar.jsx:281"
           ]
         },
@@ -5455,8 +5455,8 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:190",
-            "src/components/MobileNav.jsx:228",
+            "src/components/MobileNav.jsx:218",
+            "src/components/MobileNav.jsx:266",
             "src/components/WorkspaceSidebar.jsx:331"
           ]
         }
@@ -5489,9 +5489,9 @@
           ],
           "files": [
             "src/app/(app)/page.js:196",
-            "src/components/MobileNav.jsx:172",
-            "src/components/MobileNav.jsx:190",
-            "src/components/MobileNav.jsx:228",
+            "src/components/MobileNav.jsx:192",
+            "src/components/MobileNav.jsx:218",
+            "src/components/MobileNav.jsx:266",
             "src/components/WorkspaceSidebar.jsx:281",
             "src/components/WorkspaceSidebar.jsx:331",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"

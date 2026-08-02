@@ -153,6 +153,14 @@ const useWorkspaceStore = create((set, get) => ({
     notificationActions: null,
   }),
 
+  // The same reasoning as the stream above, for the chat badge. Every consumer
+  // that wanted the number — the bottom bar, the tab title — called
+  // useUnreadChatCount() and got its own pair of Firestore listeners on
+  // channels and readState. One publisher, many readers.
+  unreadChatCount: 0,
+  setUnreadChatCount: (count) => set(state =>
+    (state.unreadChatCount === count ? state : { unreadChatCount: count })),
+
   // ── Breadcrumbs (set by each page) ────────────────────────────────
   breadcrumbs: [],   // [{ label, href? }]
   setBreadcrumbs: (crumbs) => set({ breadcrumbs: crumbs }),

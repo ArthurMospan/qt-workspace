@@ -13,6 +13,7 @@ import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
+import WorkspaceDocumentTitle from '@/components/WorkspaceDocumentTitle';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
 
@@ -138,6 +139,7 @@ export default function WorkspaceLayout({ children }) {
     return (
       <>
         <WorkspaceNotificationBridge />
+        <WorkspaceDocumentTitle />
         <OrgSwitcherScreen />
       </>
     ); // No onClose provided, meaning they MUST select an org or create one
@@ -146,6 +148,7 @@ export default function WorkspaceLayout({ children }) {
   return (
     <ConfirmProvider>
     <WorkspaceNotificationBridge />
+    <WorkspaceDocumentTitle />
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
@@ -159,7 +162,10 @@ export default function WorkspaceLayout({ children }) {
       )}
 
       {/* Right column: absolute header + content floating panel */}
-      <div className="flex flex-col flex-1 overflow-hidden w-full p-0 pb-[calc(56px+env(safe-area-inset-bottom))] md:p-[12px] md:pl-[6px] md:pb-[12px]">
+      {/* The bottom bar floats over this column, so the column reserves exactly
+          the bar's footprint — one number, declared next to the bar's geometry
+          in globals.css, instead of a hardcoded 56px that drifted from it. */}
+      <div className="flex flex-col flex-1 overflow-hidden w-full p-0 pb-[var(--qt-nav-space)] md:p-[12px] md:pl-[6px] md:pb-[12px]">
         <div className="flex flex-col flex-1 bg-white rounded-none md:rounded-[24px] overflow-hidden relative">
           {!hideHeader && (
             <div className="print:hidden absolute top-0 left-0 right-0 z-30">

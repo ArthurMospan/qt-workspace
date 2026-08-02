@@ -24,6 +24,27 @@
     --sat: env(safe-area-inset-top);
     --sab: env(safe-area-inset-bottom);
 
+    /* Mobile bottom navigation geometry, declared once.
+       The bar floats: it is inset from all three edges rather than welded to
+       the bottom of the viewport, so the rounded corners are real and nothing
+       ever has to sit flush against system UI.
+
+       The page deliberately does *not* opt into `viewport-fit=cover`. With the
+       default fit the browser keeps the home indicator and the gesture bar
+       outside the layout viewport itself, which is why a fixed bar simply
+       cannot end up underneath them — the approach retromagaz.com uses, and the
+       reason its bottom menu never fights the browser chrome. `env()` is still
+       read through `max()` below so the geometry stays correct if the fit ever
+       changes; today those values resolve to 0 and the gap is what shows.
+
+       `--qt-nav-space` is the only number a screen needs: it is what the
+       content column reserves so the last row of a list is never parked under
+       the bar. */
+    --qt-nav-height: 58px;
+    --qt-nav-gap: 10px;
+    --qt-nav-inset: max(var(--qt-nav-gap), env(safe-area-inset-bottom));
+    --qt-nav-space: calc(var(--qt-nav-height) + var(--qt-nav-inset) + var(--qt-nav-gap));
+
     /* UI Kit semantic contract.
        Components, authenticated workspace screens and /ui-kit consume these
        exact values. Context names are stable; their values may evolve. */
@@ -61,6 +82,27 @@
     margin: 0;
     padding: 0;
     overflow: hidden; /* App shell — children scroll individually */
+  }
+
+  /* While the on-screen keyboard is open there is no room for a tab bar and no
+     reason for one: the reader is typing, not navigating. The attribute is set
+     from visualViewport, so this also covers the Android case where a fixed
+     element would otherwise float on top of the keyboard. */
+  body[data-keyboard='open'] {
+    --qt-nav-space: 0px;
+  }
+
+  /* A sheet that appears instantly reads as a rendering glitch; one that rises
+     reads as a drawer. Two hundred milliseconds is the whole effect. */
+  @keyframes qt-sheet-in {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .qt-sheet-in {
+    animation: qt-sheet-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qt-sheet-in { animation: none; }
   }
 }
 

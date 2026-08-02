@@ -43,9 +43,9 @@ export default function WorkspaceNotificationBridge() {
   const { currentUser, activeOrgId } = useAppContext();
   const userId = currentUser?.id || currentUser?.uid;
   const unreadChats = useUnreadChatCount();
-  const baseTitleRef = useRef('');
   const playedEmergencyIds = useRef(new Set());
   const emergencyTimers = useRef(new Map());
+  const setUnreadChatCount = useWorkspaceStore(state => state.setUnreadChatCount);
   const showLiveNotif = useWorkspaceStore(state => state.showLiveNotif);
   const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
@@ -133,36 +133,16 @@ export default function WorkspaceNotificationBridge() {
 
   useEffect(() => () => clearNotificationCenter(), [clearNotificationCenter, userId]);
 
-  // Captured on every run, not once: pinning it to the first page meant the tab
-  // kept showing the title of whatever page happened to load first for as long
-  // as there were unread chats.
+  // Published rather than rendered. This component owns the only subscription
+  // to the chat channels and read cursors; the bottom bar and the tab title
+  // read the number back out of the store instead of opening their own pair of
+  // Firestore listeners each. document.title itself belongs to
+  // WorkspaceDocumentTitle, which is the only writer.
   useEffect(() => {
-    const decorated = /^(\(\d+\)\s*|Нове повідомлення ·\s*)/;
-    if (!decorated.test(document.title)) {
-      baseTitleRef.current = document.title;
-    }
-    const baseTitle = baseTitleRef.current || 'QuickTeam';
-    if (displayedUnreadChats === 0) {
-      document.title = baseTitle;
-      return undefined;
-    }
+    setUnreadChatCount(displayedUnreadChats);
+  }, [displayedUnreadChats, setUnreadChatCount]);
 
-    let alternate = false;
-    const renderTitle = () => {
-      alternate = !alternate;
-      document.title = document.hidden && alternate
-        ? `Нове повідомлення · ${baseTitle}`
-        : `(${displayedUnreadChats}) ${baseTitle}`;
-    };
-    renderTitle();
-    const timer = window.setInterval(renderTitle, 1400);
-    document.addEventListener('visibilitychange', renderTitle);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', renderTitle);
-      document.title = baseTitle;
-    };
-  }, [displayedUnreadChats]);
+  useEffect(() => () => setUnreadChatCount(0), [setUnreadChatCount]);
 
   return null;
 }

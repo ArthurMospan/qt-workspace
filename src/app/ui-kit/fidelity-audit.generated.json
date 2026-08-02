@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 157,
-    "parsedFiles": 157,
+    "productFiles": 160,
+    "parsedFiles": 160,
     "parseErrors": 0,
     "nativeControls": 56,
     "structures": {
@@ -21,7 +21,7 @@
       "settings": 7,
       "shell": 18
     },
-    "styledNativeControls": 45,
+    "styledNativeControls": 44,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -452,15 +452,15 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:178",
-      "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${…}",
+      "location": "src/components/MobileNav.jsx:203",
+      "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
         "Menu",
         "span"
       ],
       "ariaLabel": "",
-      "styled": true,
+      "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
       "structure": "shell",
@@ -468,7 +468,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:223",
+      "location": "src/components/MobileNav.jsx:261",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -484,7 +484,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:232",
+      "location": "src/components/MobileNav.jsx:270",
       "className": "text-muted p-[6px] -mr-[6px]",
       "text": "",
       "childElements": [
@@ -499,7 +499,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:263",
+      "location": "src/components/MobileNav.jsx:301",
       "className": "text-[#666666] p-[4px] -mr-[4px]",
       "text": "",
       "childElements": [
@@ -1119,7 +1119,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:90",
+      "location": "src/app/(app)/layout.js:91",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },

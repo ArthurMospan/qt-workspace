@@ -5,8 +5,51 @@ import AutoFix from '@/components/AutoFix';
 import Script from 'next/script';
 
 export const metadata = {
-  title: 'QuickTeam',
+  // `template` is what makes the tab useful. Every screen sets its own title
+  // through it, so a browser with eight QuickTeam tabs open no longer shows
+  // eight tabs reading "QuickTeam".
+  title: {
+    default: 'QuickTeam',
+    template: '%s · QuickTeam',
+  },
   description: 'Internal task manager for the QuickTeam team',
+  applicationName: 'QuickTeam',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+    ],
+    // The 32px favicon was also serving as the home-screen icon, which is why
+    // "Add to Home Screen" produced a blurry square.
+    apple: { url: '/quickteam.png', sizes: '436x436' },
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'QuickTeam',
+    statusBarStyle: 'default',
+  },
+  formatDetection: { telephone: false },
+  // An internal workspace has nothing to gain from being indexed, and every
+  // authenticated URL leaks structure if it is.
+  robots: { index: false, follow: false },
+};
+
+// Deliberately without `viewportFit: 'cover'`. The default fit keeps the home
+// indicator and the gesture bar outside the layout viewport, so a fixed bottom
+// bar physically cannot slide underneath them; opting into cover would move
+// that responsibility into every `env()` call site and one missed inset is a
+// tab bar behind the system UI. See --qt-nav-* in globals.css.
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Pinch-zoom stays available: disabling it is an accessibility regression,
+  // and the app has real 11px type in places.
+  maximumScale: 5,
+  // Paints the browser's own chrome to match the page, which is what makes the
+  // top of the screen read as one surface rather than a site inside a browser.
+  themeColor: '#f4f4f5',
+  colorScheme: 'light',
 };
 
 // Анти-мигання брендингу: сайдбар рендериться на сервері стандартним темним і
