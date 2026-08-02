@@ -11,9 +11,9 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 70,
+    "nativeControls": 68,
     "structures": {
-      "calendar": 18,
+      "calendar": 16,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 10,
@@ -22,7 +22,7 @@
       "shell": 18,
       "other": 1
     },
-    "styledNativeControls": 57,
+    "styledNativeControls": 55,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -35,7 +35,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 59,
+    "button": 57,
     "input": 8,
     "textarea": 3,
     "select": 0
@@ -825,37 +825,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1042",
-      "className": "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Зупинити таймер Запустити таймер",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
-      "className": "min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Відкрити трекінг часу",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1080",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1066",
       "className": "${…} ${…}",
       "text": "",
       "childElements": [
@@ -873,7 +843,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1206",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1192",
       "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -888,7 +858,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1262",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -903,7 +873,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:288",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:289",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink",
       "text": "",
       "childElements": [
@@ -920,7 +890,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:300",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:301",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500",
       "text": "",
       "childElements": [
@@ -937,7 +907,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:699",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:700",
       "className": "w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none",
       "text": "",
       "childElements": [],
@@ -952,7 +922,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:914",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:915",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -970,7 +940,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:998",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:999",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -1206,7 +1176,7 @@
   "nativeHotspots": [
     {
       "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 10
+      "count": 8
     },
     {
       "file": "src/app/(app)/calendar/page.js",
@@ -1326,12 +1296,12 @@
       "context": "column-collapse"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:914",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:915",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:998",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:999",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
@@ -1512,12 +1482,12 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:259",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:260",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:270",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:271",
       "tag": "div",
       "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
     },

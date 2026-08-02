@@ -44,7 +44,11 @@ export default function TimeTrackingControl({
         onClick={onToggle}
         aria-label={running ? 'Зупинити таймер' : 'Запустити таймер'}
         title={running ? 'Зупинити таймер' : 'Запустити таймер'}
-        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors ${running ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
+        // `disabled` was declared, wired to the button, and invisible: the
+        // square looked exactly the same whether or not it could be pressed.
+        // The state matrix is where that showed up — the disabled cell was a
+        // photograph of the resting one.
+        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${running ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
       >
         {running ? (
           <StopIcon size={10} className="block fill-current" />
@@ -58,8 +62,9 @@ export default function TimeTrackingControl({
       </button>
       <button
         type="button"
+        disabled={disabled}
         onClick={onOpen}
-        className="min-w-0 truncate text-[11px] font-bold text-ink"
+        className="min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted"
         aria-label="Відкрити трекінг часу"
       >
         {spentLabel}

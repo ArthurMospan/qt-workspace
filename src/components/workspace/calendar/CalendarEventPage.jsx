@@ -48,6 +48,7 @@ import {
   Select,
   TaskAttributesPanel,
   Textarea,
+  TimeTrackingControl,
   ToggleSwitch,
   useConfirm,
 } from '@/components/ui';
@@ -1038,34 +1039,19 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       }) : undefined}
                     >
                       <span className={attributeLabelClass}>Трекінг часу</span>
-                      <div className="flex h-[22px] min-w-0 items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={!canTrackTime}
-                          onClick={handleTimerToggle}
-                          aria-label={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
-                          title={isTimerMine ? 'Зупинити таймер' : 'Запустити таймер'}
-                          className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${isTimerMine ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
-                        >
-                          {isTimerMine ? (
-                            <StopIcon size={10} className="block fill-current" />
-                          ) : (
-                            <Play size={10} strokeWidth={0} className="block translate-x-[1px] fill-current" />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!canTrackTime}
-                          onClick={() => {
-                            setTimerMinutes(0);
-                            setTimePanelOpen(true);
-                          }}
-                          className="min-w-0 truncate text-[11px] font-bold text-ink disabled:text-muted"
-                          aria-label="Відкрити трекінг часу"
-                        >
-                          {isTimerMine ? formatElapsed((totalMinutes * 60) + timerElapsed) : formatMinutes(totalMinutes)}
-                        </button>
-                      </div>
+                      {/* The same control the task page renders. This screen
+                          had its own byte-identical copy of it, right down to
+                          the 1px nudge on the play triangle. */}
+                      <TimeTrackingControl
+                        running={isTimerMine}
+                        disabled={!canTrackTime}
+                        onToggle={handleTimerToggle}
+                        onOpen={() => {
+                          setTimerMinutes(0);
+                          setTimePanelOpen(true);
+                        }}
+                        spentLabel={isTimerMine ? formatElapsed((totalMinutes * 60) + timerElapsed) : formatMinutes(totalMinutes)}
+                      />
                     </div>
 
                     <Popover

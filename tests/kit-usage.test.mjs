@@ -71,7 +71,7 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // other category was pinned at zero, so new hand-written markup simply
     // landed here and the report grew without anything objecting. It may fall
     // freely; raising it has to be a decision somebody makes on purpose.
-    nativeControls: 70,
+    nativeControls: 68,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(
@@ -354,6 +354,18 @@ test('high-risk composed previews keep the product markup signatures', () => {
     assert.match(source, /condensed=\{isHeaderScrolled\}/);
     assert.match(source, /scrollTop > 4/);
   }
+  // Both records render the same timer. The calendar used to carry a
+  // byte-identical copy of it, down to the 1px nudge that centres the play
+  // triangle, so the two could drift without anything noticing.
+  for (const source of [issueDetail, calendarEvent]) {
+    assert.match(source, /<TimeTrackingControl/, 'the timer comes from the kit on both records');
+  }
+  assert.doesNotMatch(
+    calendarEvent,
+    /place-items-center rounded-\[6px\] leading-none/,
+    'the calendar must not keep its own copy of the timer square',
+  );
+
   assert.match(issueDetail, /<TaskAttributesPanel[\s\S]{0,120}context="task"/);
   assert.match(calendarEvent, /<TaskAttributesPanel[\s\S]{0,180}context="calendar"/);
   assert.match(taskAttributes, /task: 'grid w-full grid-cols-\[repeat\(3,minmax\(0,1fr\)\)_32px\]/);
