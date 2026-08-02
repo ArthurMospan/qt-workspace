@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { Alert, Button, Input, Select, useConfirm } from '@/components/ui';
+import { Alert, Button, Checkbox, Input, Select, useConfirm } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import { sourceUserId, suggestUserMappings } from '@/lib/utils/youtrackImport.mjs';
@@ -475,17 +475,19 @@ export default function YouTrackImportCard({
                       return (
                         <div key={project.id} data-ui-surface="local" className="rounded-[10px] bg-white p-2">
                           <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                            <label className="flex min-w-0 cursor-pointer items-center gap-2">
-                              <input
-                                type="checkbox"
+                            {/* The kit's checkbox, not a native one with an
+                                accent colour: this screen was the last place
+                                drawing its own. */}
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Checkbox
+                                size="sm"
                                 checked={checked}
                                 onChange={() => toggleProject(project.id)}
-                                className="h-4 w-4 accent-ink"
                               />
                               <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
                                 {project.name} <span className="font-normal text-muted">({project.shortName})</span>
                               </span>
-                            </label>
+                            </div>
                             <Select
                               value={projectMappings[project.id] || 'create'}
                               onChange={value => setProjectMappings(current => ({ ...current, [project.id]: value }))}

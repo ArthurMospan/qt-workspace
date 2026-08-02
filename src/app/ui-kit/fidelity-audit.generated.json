@@ -11,18 +11,18 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 66,
+    "nativeControls": 64,
     "structures": {
-      "calendar": 16,
+      "calendar": 15,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 10,
       "board": 5,
-      "settings": 9,
+      "settings": 8,
       "shell": 18,
       "other": 1
     },
-    "styledNativeControls": 53,
+    "styledNativeControls": 51,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -36,7 +36,7 @@
   },
   "nativeByTag": {
     "button": 55,
-    "input": 8,
+    "input": 6,
     "textarea": 3,
     "select": 0
   },
@@ -496,21 +496,6 @@
       "routes": []
     },
     {
-      "tag": "input",
-      "location": "src/components/integrations/YouTrackImportCard.jsx:479",
-      "className": "h-4 w-4 accent-ink",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
-    {
       "tag": "button",
       "location": "src/components/InviteLinkSection.jsx:120",
       "className": "mt-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink",
@@ -836,7 +821,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:289",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:290",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink",
       "text": "",
       "childElements": [
@@ -853,7 +838,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:301",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:302",
       "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500",
       "text": "",
       "childElements": [
@@ -863,21 +848,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:700",
-      "className": "w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
       "structure": "calendar",
       "routes": [
         "/calendar/event/[eventId]"
@@ -1139,7 +1109,7 @@
   "nativeHotspots": [
     {
       "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 8
+      "count": 7
     },
     {
       "file": "src/app/(app)/calendar/page.js",
@@ -1199,10 +1169,6 @@
     },
     {
       "file": "src/app/(app)/team/page.js",
-      "count": 1
-    },
-    {
-      "file": "src/components/integrations/YouTrackImportCard.jsx",
       "count": 1
     },
     {
@@ -1367,7 +1333,7 @@
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:536",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:538",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },
@@ -1437,12 +1403,12 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:260",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:261",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:271",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:272",
       "tag": "div",
       "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
     },

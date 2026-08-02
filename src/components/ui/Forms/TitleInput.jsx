@@ -25,7 +25,12 @@ const TitleInput = forwardRef(function TitleInput({ className = '', ...props }, 
   return (
     <input
       ref={ref}
-      className={`text-[24px] font-bold text-ink tracking-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full ${className}`.trim()}
+      // `leading-tight` is stated rather than inherited. Without it the line
+      // box came from the page — 36px on a 24px font, body leading applied to a
+      // heading — and the box stood 42px tall where the calendar's own copy of
+      // this input, which did state it, stood 36px. The declared value wins
+      // over the inherited accident.
+      className={`text-[24px] font-bold text-ink tracking-tight leading-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full ${className}`.trim()}
       {...props}
     />
   );

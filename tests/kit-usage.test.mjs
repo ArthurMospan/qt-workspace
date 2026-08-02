@@ -71,7 +71,7 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // other category was pinned at zero, so new hand-written markup simply
     // landed here and the report grew without anything objecting. It may fall
     // freely; raising it has to be a decision somebody makes on purpose.
-    nativeControls: 66,
+    nativeControls: 64,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(

@@ -49,6 +49,7 @@ import {
   TaskAttributesPanel,
   Textarea,
   TimeTrackingControl,
+  TitleInput,
   ToggleSwitch,
   useConfirm,
 } from '@/components/ui';
@@ -697,11 +698,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
               <div className="min-w-0 flex-1">
                 {isEditing ? (
-                  <input
+                  <TitleInput
                     autoFocus
                     value={draft.title}
                     onChange={inputEvent => updateDraft('title', inputEvent.target.value)}
-                    className="w-full border-b-2 border-ink bg-transparent pb-1 text-[24px] font-bold leading-tight tracking-tight text-ink outline-none"
                     placeholder="Назва події…"
                   />
                 ) : (
