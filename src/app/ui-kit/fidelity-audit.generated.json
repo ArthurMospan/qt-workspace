@@ -11,18 +11,18 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 64,
+    "nativeControls": 61,
     "structures": {
       "calendar": 15,
       "analytics": 3,
       "qtplus": 4,
-      "ai-call": 10,
+      "ai-call": 7,
       "board": 5,
       "settings": 8,
       "shell": 18,
       "other": 1
     },
-    "styledNativeControls": 51,
+    "styledNativeControls": 50,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -36,7 +36,7 @@
   },
   "nativeByTag": {
     "button": 55,
-    "input": 6,
+    "input": 3,
     "textarea": 3,
     "select": 0
   },
@@ -58,37 +58,7 @@
   "nativeControls": [
     {
       "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:183",
-      "className": "hidden",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/ai-call"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:268",
-      "className": "mt-[6px] h-4 w-4 shrink-0 accent-[#1f1f1f]",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Створювати цю задачу",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/ai-call"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:276",
+      "location": "src/app/(app)/ai-call/page.js:275",
       "className": "w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-ink outline-none focus:border-ink",
       "text": "",
       "childElements": [],
@@ -103,7 +73,7 @@
     },
     {
       "tag": "textarea",
-      "location": "src/app/(app)/ai-call/page.js:281",
+      "location": "src/app/(app)/ai-call/page.js:280",
       "className": "w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink",
       "text": "",
       "childElements": [],
@@ -118,7 +88,7 @@
     },
     {
       "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:303",
+      "location": "src/app/(app)/ai-call/page.js:302",
       "className": "rounded-[8px] border border-line bg-white px-2 py-[7px] text-[12px] text-ink outline-none focus:border-ink",
       "text": "",
       "childElements": [],
@@ -381,26 +351,8 @@
       ]
     },
     {
-      "tag": "input",
-      "location": "src/components/AudioTaskPanel.jsx:163",
-      "className": "hidden",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
       "tag": "button",
-      "location": "src/components/AudioTaskPanel.jsx:211",
+      "location": "src/components/AudioTaskPanel.jsx:209",
       "className": "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${…}",
       "text": "",
       "childElements": [],
@@ -418,7 +370,7 @@
     },
     {
       "tag": "input",
-      "location": "src/components/AudioTaskPanel.jsx:219",
+      "location": "src/components/AudioTaskPanel.jsx:217",
       "className": "w-full bg-transparent text-[13px] font-bold text-ink outline-none",
       "text": "",
       "childElements": [],
@@ -436,7 +388,7 @@
     },
     {
       "tag": "textarea",
-      "location": "src/components/AudioTaskPanel.jsx:224",
+      "location": "src/components/AudioTaskPanel.jsx:222",
       "className": "w-full resize-none bg-transparent text-[12px] leading-5 text-muted outline-none",
       "text": "",
       "childElements": [],
@@ -1116,16 +1068,12 @@
       "count": 6
     },
     {
-      "file": "src/app/(app)/ai-call/page.js",
-      "count": 5
-    },
-    {
       "file": "src/app/(app)/settings/page.js",
       "count": 5
     },
     {
       "file": "src/components/AudioTaskPanel.jsx",
-      "count": 5
+      "count": 4
     },
     {
       "file": "src/components/MobileNav.jsx",
@@ -1134,6 +1082,10 @@
     {
       "file": "src/components/WorkspaceSidebar.jsx",
       "count": 4
+    },
+    {
+      "file": "src/app/(app)/ai-call/page.js",
+      "count": 3
     },
     {
       "file": "src/components/AuthLayout.jsx",
@@ -1308,12 +1260,12 @@
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:195",
+      "location": "src/components/AudioTaskPanel.jsx:193",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:209",
+      "location": "src/components/AudioTaskPanel.jsx:207",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4 transition-opacity ${…}"
     },
@@ -1333,7 +1285,7 @@
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:538",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:539",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },

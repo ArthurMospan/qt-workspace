@@ -12,7 +12,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { auth } from '@/lib/firebase';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import { createIssueViaApi } from '@/lib/services/issues';
-import { Button, Card, FormGroup, IconAction, LoadingSpinner, PageHeader, Textarea } from '@/components/ui';
+import { Button, Card, Checkbox, FileInput, FormGroup, IconAction, LoadingSpinner, PageHeader, Textarea } from '@/components/ui';
 import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
@@ -180,10 +180,8 @@ export default function AiCallPage() {
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#cfcfcf] bg-canvas px-4 py-6 text-[13px] font-medium text-muted transition-colors hover:border-muted hover:text-ink">
                   <Upload size={15} />
                   Обрати аудіофайл (mp3, m4a, webm, wav — до 14 МБ)
-                  <input
-                    type="file"
+                  <FileInput
                     accept="audio/*,video/webm,video/mp4"
-                    className="hidden"
                     onChange={event => {
                       const file = event.target.files?.[0];
                       if (file && file.size > 14 * 1024 * 1024) {
@@ -265,13 +263,14 @@ export default function AiCallPage() {
                   return (
                     <div key={index} className={`rounded-[12px] border p-4 transition-opacity ${task.include ? 'border-line bg-canvas' : 'border-transparent bg-canvas opacity-45'}`}>
                       <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={task.include}
-                          onChange={event => updateTask(index, { include: event.target.checked })}
-                          className="mt-[6px] h-4 w-4 shrink-0 accent-[#1f1f1f]"
-                          aria-label="Створювати цю задачу"
-                        />
+                        <span className="mt-[6px] shrink-0">
+                          <Checkbox
+                            size="sm"
+                            checked={task.include}
+                            onChange={value => updateTask(index, { include: value })}
+                            ariaLabel="Створювати цю задачу"
+                          />
+                        </span>
                         <div className="min-w-0 flex-1 flex flex-col gap-2">
                           <input
                             value={task.title}

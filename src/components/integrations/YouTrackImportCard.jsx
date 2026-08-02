@@ -483,6 +483,7 @@ export default function YouTrackImportCard({
                                 size="sm"
                                 checked={checked}
                                 onChange={() => toggleProject(project.id)}
+                                ariaLabel={project.name}
                               />
                               <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
                                 {project.name} <span className="font-normal text-muted">({project.shortName})</span>

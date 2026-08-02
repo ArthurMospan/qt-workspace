@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 77,
-    "props": 568,
-    "documentedProps": 568,
+    "props": 569,
+    "documentedProps": 569,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1120,6 +1120,13 @@
       "file": "src/components/ui/Forms/Checkbox.jsx",
       "summary": "A checkbox.",
       "props": [
+        {
+          "name": "ariaLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name when the text beside the box is not this component's to draw — a row that prints its own."
+        },
         {
           "name": "checked",
           "default": "false",

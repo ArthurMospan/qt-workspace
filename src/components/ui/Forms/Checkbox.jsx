@@ -12,6 +12,7 @@ import { Check } from 'lucide-react';
  * @param {boolean} props.disabled Unavailable: dimmed and not clickable.
  * @param {'sm'|'md'|'lg'} props.size Box size.
  * @param {string} props.label Text beside the box; clicking it toggles.
+ * @param {string} props.ariaLabel Accessible name when the text beside the box is not this component's to draw — a row that prints its own.
  * @param {boolean|string} props.error Draws the error border.
  * @param {string} props.id Id for the native input; generated when omitted.
  * @param {string} props.className Placement in the parent only.
@@ -22,6 +23,10 @@ export default function Checkbox({
   disabled = false,
   size = 'md', // sm, md, lg
   label,
+  // `ToggleSwitch` has had this since it was written; the checkbox had not, so
+  // a caller whose text lives outside the component had no way to name it and
+  // fell back to a raw <input> with its own aria-label.
+  ariaLabel,
   error,
   id,
   className = '',
@@ -42,6 +47,7 @@ export default function Checkbox({
         <input
           type="checkbox"
           id={checkboxId}
+          aria-label={label ? undefined : ariaLabel}
           checked={checked}
           onChange={(e) => !disabled && onChange?.(e.target.checked)}
           disabled={disabled}

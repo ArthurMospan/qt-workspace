@@ -9,7 +9,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { FormGroup, Textarea } from '@/components/ui';
+import { FileInput, FormGroup, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [
@@ -160,10 +160,8 @@ export default function AudioTaskPanel({
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink"><Upload size={18} /></span>
             <span className="text-[13px] font-bold text-ink">Оберіть аудіофайл</span>
             <span className="text-[11px] text-muted">MP3, M4A, WAV, WEBM або OGG · до 14 МБ</span>
-            <input
-              type="file"
+            <FileInput
               accept=".mp3,.m4a,.wav,.webm,.ogg,.oga,audio/*,video/webm"
-              className="hidden"
               onChange={event => {
                 const file = event.target.files?.[0];
                 if (file?.size > 14 * 1024 * 1024) showToast('Файл завеликий — ліміт 14 МБ', 'error');
