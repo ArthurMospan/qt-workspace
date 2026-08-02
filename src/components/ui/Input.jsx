@@ -60,13 +60,17 @@ export const Input = forwardRef(({
         ref={ref}
         data-ui-size={size}
         data-ui-composition={composition}
+        // The leading icon changes the left padding, and that decision belongs
+        // with the rest of the field's geometry rather than in a utility here:
+        // a utility is emitted in Tailwind's last layer and would beat any
+        // composition that wants the padding for itself.
+        data-ui-leading={Icon ? 'icon' : undefined}
         style={suffixText ? { paddingRight: `${suffixPadding}px` } : undefined}
         className={`
-          ui-control ${sizeClass} w-full bg-canvas border border-transparent
+          ui-control ui-field ${sizeClass} w-full bg-canvas border border-transparent
           text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] flex items-center
           disabled:opacity-50 disabled:cursor-not-allowed
-          ${Icon ? 'pl-[36px]' : 'pl-[12px]'} pr-[12px]
           ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
           ${INPUT_PRESETS[preset] || ''}
           ${className}

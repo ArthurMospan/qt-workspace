@@ -62,11 +62,34 @@ test('the surviving declarations are the ones that reach the screen', () => {
   assert.match(globals, /data-ui-composition='dialog-tabs'\] > button \{\s*flex: 1;\s*\}/);
   // Line height is all the transcript presets ever delivered.
   assert.match(globals, /data-ui-composition='transcript'\] \{\s*line-height: 20px;\s*\}/);
-  // The invite field keeps its radius, which no utility sets, and loses the
-  // 150px of room it never had.
-  assert.match(globals, /data-ui-composition='invite-field'\] \{[^}]*border-radius: 14px;[^}]*\}/);
-  assert.doesNotMatch(globals, /padding-right: 150px/);
-  assert.doesNotMatch(globals, /padding-right: 54px/);
+});
+
+// Horizontal padding travels as a custom property for the same reason the
+// height does: nothing in the utility layer can set one. Written as `px-*`
+// inside Button or Input it would be emitted last and beat every composition —
+// which is how these two came to declare room they never got.
+test('a composition can claim the control padding, and two of them do', () => {
+  assert.match(globals, /\.ui-control \{[^}]*padding-left: var\(--ui-control-pl, var\(--ui-control-px, 0px\)\)/);
+  assert.match(globals, /\.ui-control \{[^}]*padding-right: var\(--ui-control-pr, var\(--ui-control-px, 0px\)\)/);
+  assert.match(globals, /\.ui-button \{ --ui-control-px: 18px; \}/);
+  assert.match(globals, /\.ui-button\[data-ui-size='md'\] \{ --ui-control-px: 16px; \}/);
+  assert.match(globals, /\.ui-button\[data-ui-size='sm'\] \{ --ui-control-px: 12px; \}/);
+  assert.match(globals, /\.ui-field \{ --ui-control-px: 12px; \}/);
+  assert.match(globals, /\.ui-field\[data-ui-leading='icon'\] \{ --ui-control-pl: 36px; \}/);
+
+  // The two defects the revision recorded, now delivered.
+  assert.match(globals, /data-ui-composition='invite-field'\] \{[^}]*--ui-control-pr: 150px;[^}]*\}/);
+  assert.match(globals, /data-ui-composition='inline-edit'\] \{[^}]*--ui-control-pr: 54px;[^}]*\}/);
+
+  // The utilities that used to hold these values must not come back: one of
+  // them in either component reinstates the whole problem.
+  const button = readFileSync(new URL('../src/components/ui/Button.jsx', import.meta.url), 'utf8');
+  const input = readFileSync(new URL('../src/components/ui/Input.jsx', import.meta.url), 'utf8');
+  const sizes = button.slice(button.indexOf('export const SIZES'), button.indexOf('const ICON_SIZES'));
+  assert.doesNotMatch(sizes, /px-\[/, 'Button size padding belongs to --ui-control-px');
+  assert.doesNotMatch(input, /\bpl-\[|\bpr-\[/, 'Input padding belongs to --ui-control-px');
+  // The icon box keeps `p-0`: a square has no padding to give away.
+  assert.match(sizes, /icon: 'w-\[32px\] p-0'/);
 });
 
 test('the browser is the one that decides, and the rules say so', () => {

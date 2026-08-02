@@ -19,10 +19,15 @@ import React from 'react';
 //   color="red"   → red tones (delete/danger actions only)
 //   color="dark"  → default (same as no color specified)
 
+// Horizontal padding is not here. It is `--ui-control-px` in globals.css, next
+// to the height it has to sit with — a utility written here would be emitted in
+// Tailwind's last layer and beat every composition that tries to set padding,
+// which is exactly how `invite-field` and `inline-edit` came to declare room
+// they never got. The icon sizes keep `p-0`: a square has no padding to give.
 export const SIZES = {
-  sm:   'px-[12px] text-[12px]',
-  md:   'px-[16px] text-[13px]',
-  lg:   'px-[18px] text-[13px]',
+  sm:   'text-[12px]',
+  md:   'text-[13px]',
+  lg:   'text-[13px]',
   icon: 'w-[32px] p-0',
   'icon-lg': 'w-[36px] p-0',
   'icon-sm': 'w-[28px] p-0',
@@ -209,7 +214,7 @@ export function Button({
       disabled={disabled || loading}
       data-ui-size={UI_SIZES[size] ?? 'lg'}
       data-ui-composition={composition}
-      className={`ui-control ${baseClasses} ${sizeClass} ${collapseClass} ${styleClass} ${SHAPES[shape] ?? ''} ${SURFACES[surface] ?? ''} ${className}`}
+      className={`ui-control ui-button ${baseClasses} ${sizeClass} ${collapseClass} ${styleClass} ${SHAPES[shape] ?? ''} ${SURFACES[surface] ?? ''} ${className}`}
       {...props}
     >
       {loading ? (

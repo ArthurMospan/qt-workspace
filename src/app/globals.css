@@ -79,12 +79,29 @@
      the control lets the browser centre the text, which stays exact at any
      zoom. `--ui-control-line` is the escape hatch for the two compositions
      that add vertical padding, where the content box is shorter than the box. */
+  /* Horizontal padding travels the same way the height does, and for the same
+     reason. Written as a utility inside Button or Input it lands in Tailwind's
+     last layer, where it beats every composition rule here however specific —
+     which is how `invite-field` came to declare 150px of room for the invite
+     button and render 12px for months. A custom property has no such fight:
+     nothing in the utility layer can set one, so a composition that wants the
+     padding simply takes it.
+     `--ui-control-px` is both sides; `--ui-control-pl`/`--ui-control-pr` are
+     the one-sided overrides. Icon buttons keep `p-0` as a utility on purpose:
+     a square box has no padding for anybody to claim. */
   .ui-control {
     --ui-control-height: var(--ui-control-lg);
     height: var(--ui-control-height);
     line-height: var(--ui-control-line, var(--ui-control-height));
     border-radius: var(--ui-radius-field);
+    padding-left: var(--ui-control-pl, var(--ui-control-px, 0px));
+    padding-right: var(--ui-control-pr, var(--ui-control-px, 0px));
   }
+  .ui-button { --ui-control-px: 18px; }
+  .ui-button[data-ui-size='sm'] { --ui-control-px: 12px; }
+  .ui-button[data-ui-size='md'] { --ui-control-px: 16px; }
+  .ui-field { --ui-control-px: 12px; }
+  .ui-field[data-ui-leading='icon'] { --ui-control-pl: 36px; }
   .ui-control[data-ui-size='sm'] { --ui-control-height: var(--ui-control-sm); }
   .ui-control[data-ui-size='md'] { --ui-control-height: var(--ui-control-md); }
   .ui-control[data-ui-size='lg'] { --ui-control-height: var(--ui-control-lg); }
@@ -164,8 +181,11 @@
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
   }
+  /* Room for the inline «Запросити» button. Declared since the preset was
+     written, delivered only now that padding travels as a custom property. */
   .ui-control[data-ui-composition='invite-field'] {
     --ui-control-height: var(--ui-composition-invite);
+    --ui-control-pr: 150px;
     border-radius: 14px;
   }
   .ui-control[data-ui-composition='project-name'] {
@@ -185,11 +205,11 @@
     --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
   }
-  /* Its 54px of room for the trailing edit affordance never applied: `Input`
-     writes `pr-[12px]` as a utility and the utility layer is emitted last. The
-     field ships without that room today; giving it back is a change to how the
-     control looks, not a cleanup, so it is not made here. */
-  .ui-control[data-ui-composition='inline-edit'] {}
+  /* Room for the trailing edit affordance — the other declaration that had been
+     written down and never applied. */
+  .ui-control[data-ui-composition='inline-edit'] {
+    --ui-control-pr: 54px;
+  }
   .ui-control[data-ui-composition='menu-item'] {
     --ui-control-height: 32px;
     width: 100%;
