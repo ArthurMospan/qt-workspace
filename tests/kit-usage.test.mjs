@@ -47,7 +47,20 @@ test('the catalogue is the only reference page, and it lists components', () => 
   const app = new URL('../src/app/', import.meta.url);
   const pages = readdirSync(app).filter(name => name.startsWith('ui-'));
 
-  assert.deepEqual(pages, ['ui-kit'], `stray reference pages: ${pages.join(', ')}`);
+  // `/ui-decisions` is a survey, not a second catalogue: it asks which of the
+  // remaining hand-written controls should take the kit look, and it renders
+  // each one where it actually sits. It exists because a question about
+  // appearance cannot be answered from a list of file paths.
+  //
+  // It is temporary and the guard says so: when the answers are in, the route,
+  // its two files and this exception are deleted together. What the guard still
+  // forbids is a *third* page — the failure it was written for was three
+  // reference screens where one was needed.
+  assert.deepEqual(
+    pages,
+    ['ui-decisions', 'ui-kit'],
+    `stray reference pages: ${pages.join(', ')}`,
+  );
   assert.doesNotMatch(kit, /SurfaceElements|surface-chat|CHAT_CONTROLS|fidelity-audit\.generated/);
   assert.match(kit, /Чат — власна шкала аватарів/, '/ui-kit keeps the chat components it really owns');
 });
@@ -541,7 +554,10 @@ test('the local reference page does not depend on a working login flow', () => {
     'the development bypass must run before Firebase session verification',
   );
   assert.match(source, /pathname === '\/ui-kit'/);
-  assert.match(source, /matcher: \['\/ui-kit'\]/);
+  // Both internal pages, and only those two. `/ui-decisions` is the temporary
+  // survey; it goes out of the matcher on the same day the page is deleted.
+  assert.match(source, /matcher: \['\/ui-kit', '\/ui-decisions'\]/);
+  assert.match(source, /pathname === '\/ui-decisions'/);
   assert.doesNotMatch(source, /'\/ui-diff'|'\/ui-audit'/, 'the deleted pages must not linger in the matcher');
   assert.match(source, /if \(isDevelopmentReferencePage\) return NextResponse\.next\(\)/);
   assert.match(

@@ -10,7 +10,8 @@ import { getAdminAuth } from '@/lib/server/firebaseAdmin';
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const isDevelopmentReferencePage =
-    process.env.NODE_ENV === 'development' && pathname === '/ui-kit';
+    process.env.NODE_ENV === 'development'
+    && (pathname === '/ui-kit' || pathname === '/ui-decisions');
 
   // The internal reference page must remain usable while the product auth flow
   // is being developed or repaired. Production still requires a session.
@@ -44,5 +45,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/ui-kit'],
+  matcher: ['/ui-kit', '/ui-decisions'],
 };
