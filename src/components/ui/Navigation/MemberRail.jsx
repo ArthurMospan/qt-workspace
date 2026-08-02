@@ -38,7 +38,12 @@ export default function MemberRail({
 }) {
   return (
     <>
-      <div className="p-4 flex items-center justify-between shrink-0">
+      {/* 32px from the top, like every other rail in the same shell. This was
+          `p-4`, so the team rail started its content 16px down while the chat
+          and settings rails started at 32px — a 16px jump every time somebody
+          switched between two screens the kit says share a frame. Measured on
+          all three: settings 32px, chat 35px, team 16px. */}
+      <div className="px-4 pt-[32px] pb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="ui-type-dialog-title text-ink">{title}</h2>
           <Pill appearance="outline" size="md">{members.length}</Pill>

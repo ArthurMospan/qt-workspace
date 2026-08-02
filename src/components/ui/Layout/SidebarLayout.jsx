@@ -26,11 +26,21 @@ export const CONTEXTS = {
     shell: 'flex w-full h-full overflow-hidden bg-white p-[12px] pt-[56px]',
     wrapsContent: false,
   },
+  // The white behind the panes used to be painted by the chat page's own
+  // wrapper, so two of the three contexts declared their background here and
+  // the third declared it at the call site — the exact split this component was
+  // made to end. The wrapper held nothing but the shell and had the same box,
+  // so the paint simply moved here.
   chat: {
-    shell: 'flex-1 flex overflow-hidden p-[12px] pt-[56px]',
+    shell: 'flex-1 flex overflow-hidden bg-white p-[12px] pt-[56px]',
     wrapsContent: false,
   },
 };
+
+// What every rail inside this shell insets its content by. Two of the three
+// rails already agreed on it and the third did not, which is what made the
+// content jump when you moved between Чат and Команда.
+export const RAIL_INSET = 'px-[16px] py-[32px]';
 
 /**
  * The rail-plus-content frame that Settings, Team and Chat all sit in. The

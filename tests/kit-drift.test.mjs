@@ -173,6 +173,40 @@ test('every screen with the two-pane shell declares it instead of retyping it', 
   assert.doesNotMatch(screens.chat, /flex-1 flex overflow-hidden gap-3 p-\[12px\] pt-\[56px\]/);
   assert.doesNotMatch(screens.team, /flex w-full h-full p-\[12px\] pt-\[56px\] gap-\[12px\] bg-white/);
   assert.match(shell, /pt-\[56px\]/, 'the header offset belongs to the shell');
+
+  // The background behind the panes belongs to the context too. Chat used to
+  // paint it on its own page wrapper, so two contexts declared it here and one
+  // did not — the same split the component exists to end.
+  for (const context of ['settings', 'team', 'chat']) {
+    const block = shell.slice(shell.indexOf(`  ${context}: {`), shell.indexOf('wrapsContent', shell.indexOf(`  ${context}: {`)));
+    assert.match(block, /bg-white/, `the ${context} context declares its own background`);
+  }
+  assert.doesNotMatch(
+    screens.chat,
+    /flex-1 flex flex-col overflow-hidden bg-white/,
+    'the chat page must not repaint the shell background itself',
+  );
+});
+
+// Three rails, one shell, one inset. Team's rail used `p-4` while chat's and
+// settings' used 32px of vertical padding, so the rail content sat 16px higher
+// on one of the three screens and visibly jumped when you moved between them.
+// Measured in the browser before the fix: settings 32px, chat 35px, team 16px
+// from the top of the rail to its first line of text.
+test('every rail in the two-pane shell insets its content the same way', () => {
+  const read = name => readFileSync(new URL(name, import.meta.url), 'utf8');
+  const shell = read('../src/components/ui/Layout/SidebarLayout.jsx');
+  const channelRail = read('../src/components/ui/Navigation/ChannelRail.jsx');
+  const memberRail = read('../src/components/ui/Navigation/MemberRail.jsx');
+  const innerNavigation = read('../src/components/ui/Navigation/InnerNavigation.jsx');
+
+  assert.match(shell, /export const RAIL_INSET = 'px-\[16px\] py-\[32px\]'/);
+  assert.match(channelRail, /px-\[16px\] py-\[32px\]/, 'the chat rail keeps the shared inset');
+  assert.match(innerNavigation, /px-\[16px\] py-\[32px\]/, 'the settings rail keeps the shared inset');
+  // MemberRail splits the inset because its header does not scroll with the
+  // list, so the top is what has to match.
+  assert.match(memberRail, /px-4 pt-\[32px\] pb-4/, 'the team rail starts where the others do');
+  assert.doesNotMatch(memberRail, /"p-4 flex items-center/, 'the 16px header inset must not come back');
 });
 
 // QUI: `editor`/`editor-active` were merged away as byte-identical duplicates
