@@ -6,6 +6,7 @@ import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Label from '@/components/ui/Forms/Label';
+import OptionCard from '@/components/ui/Forms/OptionCard';
 import Tabs from '@/components/ui/Tabs';
 import InviteLinkSection from '@/components/InviteLinkSection';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -77,29 +78,16 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
         <section>
           <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Роль у команді</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {ROLE_OPTIONS.map(option => {
-              const Icon = option.icon;
-              const active = role === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setRole(option.value)}
-                  className={`flex items-start gap-3 rounded-[16px] border-2 p-4 text-left transition-all ${active ? 'border-ink bg-canvas' : 'border-transparent bg-canvas hover:bg-[#efefef]'}`}
-                >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'bg-white text-muted'}`}>
-                    <Icon size={18} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-bold text-ink">{option.label}</span>
-                    <span className="mt-1 block text-[11px] leading-4 text-muted">{option.description}</span>
-                  </span>
-                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'border border-[#cfcfcf]'}`}>
-                    {active && <Check size={12} />}
-                  </span>
-                </button>
-              );
-            })}
+            {ROLE_OPTIONS.map(option => (
+              <OptionCard
+                key={option.value}
+                selected={role === option.value}
+                icon={option.icon}
+                title={option.label}
+                description={option.description}
+                onClick={() => setRole(option.value)}
+              />
+            ))}
           </div>
         </section>
 

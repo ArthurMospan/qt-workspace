@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 76,
-    "stateful": 73,
-    "hover": 52,
-    "focus": 52,
-    "disabled": 25,
+    "components": 77,
+    "stateful": 74,
+    "hover": 53,
+    "focus": 53,
+    "disabled": 26,
     "loading": 5,
     "error": 6,
-    "long-text": 51
+    "long-text": 52
   },
   "components": {
     "Alert": {
@@ -232,6 +232,12 @@
       "hover": "own",
       "focus": "global",
       "long-text": "title"
+    },
+    "OptionCard": {
+      "disabled": "prop",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "description, title"
     },
     "PageHeader": {
       "long-text": "title"
@@ -545,6 +551,9 @@
     ],
     "NotificationCard": [
       "headers"
+    ],
+    "OptionCard": [
+      "form-groups"
     ],
     "PageHeader": [
       "filters",

@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 76,
-    "used": 76,
+    "components": 77,
+    "used": 77,
     "unused": 0,
-    "covered": 73,
+    "covered": 74,
     "uncovered": 0,
     "routes": 13,
-    "previews": 99,
+    "previews": 100,
     "internal": 3,
     "unlisted": 0
   },
@@ -26,6 +26,7 @@
       "Input",
       "Label",
       "MarkdownEditor",
+      "OptionCard",
       "PageHeader",
       "ProjectSettingsForm",
       "Select",
@@ -51,6 +52,7 @@
       "KpiCard",
       "Label",
       "MarkdownEditor",
+      "OptionCard",
       "PageHeader",
       "Pill",
       "ProjectSettingsForm",
@@ -262,6 +264,7 @@
       "Label",
       "LoadingSpinner",
       "MultiSelect",
+      "OptionCard",
       "Pill",
       "Popover",
       "Select",
@@ -330,6 +333,7 @@
       "Label",
       "LoadingSpinner",
       "MemberRail",
+      "OptionCard",
       "SidebarLayout",
       "Surface",
       "Tabs",
@@ -1198,6 +1202,22 @@
         "src/components/WorkspaceHeader.jsx"
       ]
     },
+    "OptionCard": {
+      "file": "src/components/ui/Forms/OptionCard.jsx",
+      "count": 2,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/settings",
+        "/team"
+      ],
+      "usedIn": [
+        "src/components/InviteMemberDialog.jsx",
+        "src/components/TeamMemberSettingsDialog.jsx"
+      ]
+    },
     "PageHeader": {
       "file": "src/components/ui/Layout/PageHeader.jsx",
       "count": 7,
@@ -1903,9 +1923,9 @@
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:139",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/InviteMemberDialog.jsx:117",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/integrations/YouTrackImportCard.jsx:557",
             "src/components/integrations/YouTrackImportCard.jsx:602",
             "src/components/integrations/YouTrackImportCard.jsx:605",
@@ -2118,7 +2138,7 @@
             "src/app/(app)/sprints/page.js:588",
             "src/app/(app)/sprints/page.js:61",
             "src/components/CreateTaskModal.jsx:139",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/integrations/YouTrackImportCard.jsx:421",
             "src/components/integrations/YouTrackImportCard.jsx:446",
             "src/components/integrations/YouTrackImportCard.jsx:557",
@@ -2198,7 +2218,7 @@
             "src/components/AudioTaskPanel.jsx:188",
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
+            "src/components/InviteMemberDialog.jsx:117",
             "src/components/workspace/AgileBoard.jsx:44",
             "src/components/workspace/BillingTab.jsx:1338",
             "src/components/workspace/BillingTab.jsx:440",
@@ -2318,7 +2338,7 @@
             "/team"
           ],
           "files": [
-            "src/components/TeamMemberSettingsDialog.jsx:129",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
             "src/components/profile/ProfileView.jsx:171"
           ]
         }
@@ -2423,9 +2443,9 @@
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:139",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/InviteMemberDialog.jsx:117",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
@@ -2626,9 +2646,9 @@
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:139",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/InviteMemberDialog.jsx:117",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
@@ -2818,8 +2838,8 @@
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:139",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/InviteMemberDialog.jsx:117",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceHeader.jsx:342",
             "src/components/WorkspaceHeader.jsx:352",
@@ -2932,7 +2952,7 @@
             "src/app/(app)/settings/page.js:454",
             "src/app/(app)/settings/page.js:536",
             "src/app/(app)/sprints/page.js:588",
-            "src/components/TeamMemberSettingsDialog.jsx:129",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/integrations/YouTrackImportCard.jsx:605",
             "src/components/profile/ProfileView.jsx:171",
@@ -3036,9 +3056,9 @@
             "src/components/AudioTaskPanel.jsx:202",
             "src/components/CreateTaskModal.jsx:139",
             "src/components/CreateTaskModal.jsx:142",
-            "src/components/InviteMemberDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:129",
-            "src/components/TeamMemberSettingsDialog.jsx:89",
+            "src/components/InviteMemberDialog.jsx:117",
+            "src/components/TeamMemberSettingsDialog.jsx:106",
+            "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:342",
             "src/components/WorkspaceHeader.jsx:352",
@@ -3582,7 +3602,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:2403",
-            "src/components/InviteMemberDialog.jsx:120",
+            "src/components/InviteMemberDialog.jsx:108",
             "src/components/workspace/BillingTab.jsx:120",
             "src/components/workspace/BillingTab.jsx:303",
             "src/components/workspace/IssueDetail.jsx:1444"
@@ -3673,7 +3693,7 @@
             "/team"
           ],
           "files": [
-            "src/components/InviteMemberDialog.jsx:120"
+            "src/components/InviteMemberDialog.jsx:108"
           ]
         },
         "status-entry": {
@@ -3768,7 +3788,7 @@
             "src/app/(app)/sprints/page.js:68",
             "src/components/CreateTaskModal.jsx:176",
             "src/components/CreateTaskModal.jsx:272",
-            "src/components/InviteMemberDialog.jsx:120",
+            "src/components/InviteMemberDialog.jsx:108",
             "src/components/UserStatusSetter.jsx:111",
             "src/components/integrations/YouTrackImportCard.jsx:397",
             "src/components/integrations/YouTrackImportCard.jsx:405",
@@ -4599,7 +4619,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/workspace/AgileBoard.jsx:311",
             "src/components/workspace/AgileBoard.jsx:381",
             "src/components/workspace/UnifiedTimeline.jsx:164",
@@ -4679,7 +4699,7 @@
             "src/app/(app)/[projectId]/page.js:232",
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1246"
@@ -4817,7 +4837,7 @@
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:337",
             "src/components/migrations/DataMigrationSettings.jsx:106",
             "src/components/migrations/DataMigrationSettings.jsx:157",
@@ -4865,7 +4885,7 @@
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:337",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
@@ -4937,7 +4957,7 @@
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:337",
             "src/components/migrations/DataMigrationSettings.jsx:106",
             "src/components/migrations/DataMigrationSettings.jsx:157",
@@ -5001,7 +5021,7 @@
             "src/app/(app)/settings/page.js:2766",
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
-            "src/components/TeamMemberSettingsDialog.jsx:65",
+            "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:337",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
@@ -5129,7 +5149,7 @@
             "/settings"
           ],
           "files": [
-            "src/components/TeamMemberSettingsDialog.jsx:60"
+            "src/components/TeamMemberSettingsDialog.jsx:37"
           ]
         },
         "(default)": {
@@ -5468,7 +5488,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:907",
-            "src/components/TeamMemberSettingsDialog.jsx:57",
+            "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/IssueDetail.jsx:1233",
             "src/components/workspace/calendar/CalendarEventPage.jsx:178"
@@ -5508,7 +5528,7 @@
           ],
           "files": [
             "src/components/CreateTaskModal.jsx:131",
-            "src/components/InviteMemberDialog.jsx:69",
+            "src/components/InviteMemberDialog.jsx:70",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:486",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:556"
@@ -5542,7 +5562,7 @@
             "src/app/(app)/sprints/page.js:103",
             "src/app/(app)/sprints/page.js:146",
             "src/app/(app)/sprints/page.js:54",
-            "src/components/TeamMemberSettingsDialog.jsx:57",
+            "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
             "src/components/workspace/TimesheetTab.jsx:418",
@@ -5582,7 +5602,7 @@
             "/team"
           ],
           "files": [
-            "src/components/InviteMemberDialog.jsx:69"
+            "src/components/InviteMemberDialog.jsx:70"
           ]
         },
         "responsive": {
@@ -5621,8 +5641,8 @@
             "src/app/(app)/sprints/page.js:146",
             "src/app/(app)/sprints/page.js:54",
             "src/components/CreateTaskModal.jsx:131",
-            "src/components/InviteMemberDialog.jsx:69",
-            "src/components/TeamMemberSettingsDialog.jsx:57",
+            "src/components/InviteMemberDialog.jsx:70",
+            "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
@@ -5676,8 +5696,8 @@
             "src/app/(app)/sprints/page.js:103",
             "src/app/(app)/sprints/page.js:54",
             "src/components/CreateTaskModal.jsx:131",
-            "src/components/InviteMemberDialog.jsx:69",
-            "src/components/TeamMemberSettingsDialog.jsx:57",
+            "src/components/InviteMemberDialog.jsx:70",
+            "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
@@ -6256,7 +6276,7 @@
             "src/components/CreateTaskModal.jsx:271",
             "src/components/CreateTaskModal.jsx:285",
             "src/components/CreateTaskModal.jsx:315",
-            "src/components/InviteMemberDialog.jsx:118",
+            "src/components/InviteMemberDialog.jsx:106",
             "src/components/workspace/BillingTab.jsx:118",
             "src/components/workspace/BillingTab.jsx:72",
             "src/components/workspace/BillingTab.jsx:97",
@@ -6569,6 +6589,7 @@
     "Task Attributes Panel — Calendar Event": "<div className=\"relative -mx-2 mt-[12px] px-2\">\n  <TaskAttributesPanel\n    singleRow\n    context=\"calendar\"\n    compact\n    primaryChildren={(\n      <>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Тип</span>\n          <Select\n            compact\n            value={eventType}\n            onChange={setEventType}\n            options={CALENDAR_EVENT_TYPE_OPTIONS}\n            buttonClassName={compactSelectClass}\n          />\n        </div>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Проєкт</span>\n          <Select\n            compact\n            value={eventProject}\n            onChange={setEventProject}\n            options={[{ value: 'quickteam', label: 'QuickTeam' }, { value: '', label: 'Без проєкту' }]}\n            buttonClassName={compactSelectClass}\n          />\n        </div>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Дата</span>\n          <DatePicker\n            compact\n            hideIcon\n            value={dueDate}\n            onChange={setDueDate}\n            inputClassName={compactInputClass}\n          />\n        </div>\n        <button type=\"button\" className={`${attributeItemClass} h-full w-full text-left`}>\n          <span className={attributeLabelClass}>Час події</span>\n          <span className=\"flex h-[22px] items-center truncate text-[13px] font-medium text-ink\">10:00–11:00</span>\n        </button>\n        <button type=\"button\" className={`${attributeItemClass} h-full w-full text-left`}>\n          <span className={attributeLabelClass}>Учасники</span>\n          <span className=\"flex h-[22px] items-center truncate text-[13px] font-medium text-ink\"><Users size={13} className=\"mr-1.5 shrink-0 text-muted\" />3 учасники</span>\n        </button>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Трекінг часу</span>\n          <div className=\"flex h-[22px] min-w-0 items-center gap-1\">\n            <button type=\"button\" className=\"grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors bg-line text-ink hover:bg-[#d9d9d9]\">\n              <Play size={10} strokeWidth={0} className=\"block translate-x-[1px] fill-current\" />\n            </button>\n            <button type=\"button\" className=\"min-w-0 truncate text-[11px] font-bold text-ink\">45 хв</button>\n          </div>\n        </div>\n        <button type=\"button\" className={`${detailsButtonClass} text-muted`}>\n          <Settings2 size={14} />\n          <span>Деталі</span>\n        </button>\n      </>\n    )}\n  />\n</div>",
     "Form Group Layouts": "<div className=\"grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]\">\n  <FormGroup label=\"Назва проєкту\">\n    <Input placeholder=\"Введіть назву...\" />\n  </FormGroup>\n\n  <FormGroup label=\"Електронна пошта\" required>\n    <Input placeholder=\"name@company.com\" />\n  </FormGroup>\n\n  <FormGroup label=\"Пароль\" required error=\"Пароль має містити щонайменше 8 символів\">\n    <Input type=\"password\" placeholder=\"••••••••\" error={true} />\n  </FormGroup>\n</div>",
     "Label з іконкою": "<div className=\"grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]\">\n  <FormGroup label=\"Учасники\" icon={Users}>\n    <Input placeholder=\"Додати учасників\" />\n  </FormGroup>\n\n  <FormGroup label=\"Нагадування\" icon={Bell} required>\n    <Input placeholder=\"За 15 хвилин\" />\n  </FormGroup>\n\n  <div className=\"flex flex-col gap-[6px]\">\n    <Label icon={MapPin}>Місце</Label>\n    <Input placeholder=\"Офіс або кімната\" />\n  </div>\n</div>",
+    "Картка вибору": "<div className=\"grid w-full max-w-[720px] gap-2 sm:grid-cols-2\">\n  <OptionCard\n    selected={role === 'member'}\n    icon={UserRound}\n    title=\"Учасник\"\n    description=\"Працює із завданнями та проєктами.\"\n    onClick={() => setRole('member')}\n  />\n  <OptionCard\n    selected={role === 'admin'}\n    icon={Shield}\n    title=\"Адміністратор\"\n    description=\"Керує командою та налаштуваннями.\"\n    onClick={() => setRole('admin')}\n  />\n  <OptionCard icon={Briefcase} title=\"Без опису\" onClick={() => {}} />\n  <OptionCard\n    selected\n    disabled\n    icon={Shield}\n    title=\"Власник\"\n    description=\"Роль фіксована — її не змінює навіть власник.\"\n  />\n</div>",
     "Filter Bar — Projects Page": "<PageHeader\n  title=\"Проєкти\"\n  actions={<Button style=\"primary\" color=\"dark\" size=\"lg\" icon={Plus}>Новий проєкт</Button>}\n  filters={(\n    <FilterBar>\n      <Select filterRole=\"member\" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant=\"ghost\" />\n      <Select filterRole=\"date\" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant=\"ghost\" />\n      <Select filterRole=\"sort\" options={sortOptions} value={sortOption} onChange={setSortOption} variant=\"ghost\" />\n    </FilterBar>\n  )}\n/>",
     "Popover & Tooltip": "<div className=\"flex items-center gap-[24px] flex-wrap\">\n  <Popover\n    trigger={<Button style=\"secondary\">Показати Popover</Button>}\n    position=\"bottom\"\n  >\n    <div className=\"p-2\">\n      <h4 className=\"text-[14px] font-bold mb-1\">Інформаційне вікно</h4>\n      <p className=\"text-[12px] text-[#9a9a9a]\">Корисна інформація або додаткові налаштування.</p>\n    </div>\n  </Popover>\n\n  <Popover\n    position=\"bottom\"\n    align=\"start\"\n    gap={4}\n    hideCloseIcon\n    hideArrow\n    minWidth=\"200px\"\n    padding=\"6px\"\n    triggerClassName=\"inline-flex\"\n    trigger={(\n      <MetaTrigger\n        label=\"Автор:\"\n        user={{ id: 'u1', name: 'Артур Моспан' }}\n        name=\"Артур Моспан\"\n        className=\"text-[12px] font-medium text-muted\"\n      />\n    )}\n  >\n    <div className=\"w-[188px]\">\n      <Button style=\"ghost\" size=\"md\" composition=\"menu-item\">\n        Переглянути профіль\n      </Button>\n      <Button style=\"ghost\" size=\"md\" composition=\"menu-item\">\n        Написати в чат\n      </Button>\n    </div>\n  </Popover>\n\n  <Tooltip content=\"Це підказка при наведенні\" position=\"top\">\n    <Button style=\"secondary\">Наведіть для підказки</Button>\n  </Tooltip>\n</div>",
     "Context Menu": "<div className=\"flex items-start gap-[40px] flex-wrap\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Інтерактивне меню</span>\n    <ContextMenu\n      trigger={<Button style=\"secondary\" size=\"icon\" icon={MoreVertical}>Меню</Button>}\n      items={menuItems}\n    />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Меню-перемикач (мітки задачі)</span>\n    <ContextMenu\n      trigger={(\n        <Button style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n          Додати мітку\n        </Button>\n      )}\n      dropdownClassName=\"w-[220px]\"\n      closeOnSelect={false}\n      items={toggleMenuItems}\n    />\n  </div>\n</div>",

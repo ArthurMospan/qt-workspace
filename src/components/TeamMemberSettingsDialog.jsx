@@ -1,39 +1,16 @@
 'use client';
 
-import { Briefcase, Check, Crown, Shield, Trash2, UserRound } from 'lucide-react';
+import { Briefcase, Crown, Shield, Trash2, UserRound } from 'lucide-react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Pill from '@/components/ui/DataDisplay/Pill';
+import OptionCard from '@/components/ui/Forms/OptionCard';
 
 const ROLES = [
   { value: 'member', label: 'Учасник', description: 'Працює із завданнями та проєктами.', icon: UserRound },
   { value: 'admin', label: 'Адміністратор', description: 'Керує командою та налаштуваннями.', icon: Shield },
 ];
-
-function OptionCard({ active, icon: Icon, title, description, onClick, disabled }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex w-full items-center gap-3 rounded-[14px] border-2 p-3 text-left transition-all disabled:cursor-default disabled:opacity-55 ${
-        active ? 'border-ink bg-canvas' : 'border-transparent bg-canvas hover:bg-[#efefef]'
-      }`}
-    >
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'bg-white text-muted'}`}>
-        <Icon size={16} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-bold text-ink">{title}</span>
-        {description && <span className="mt-0.5 block text-[11px] leading-4 text-muted">{description}</span>}
-      </span>
-      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${active ? 'bg-ink text-white' : 'border border-[#cfcfcf]'}`}>
-        {active && <Check size={12} />}
-      </span>
-    </button>
-  );
-}
 
 export default function TeamMemberSettingsDialog({
   member,
@@ -72,11 +49,11 @@ export default function TeamMemberSettingsDialog({
           </div>
           <div className="grid gap-2">
             {member.role === 'owner' ? (
-              <OptionCard active icon={Crown} title="Власник" description="Повний контроль над організацією." disabled />
+              <OptionCard selected icon={Crown} title="Власник" description="Повний контроль над організацією." disabled />
             ) : ROLES.map(role => (
               <OptionCard
                 key={role.value}
-                active={member.role === role.value}
+                selected={member.role === role.value}
                 icon={role.icon}
                 title={role.label}
                 description={role.description}
@@ -105,7 +82,7 @@ export default function TeamMemberSettingsDialog({
           </div>
           <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             <OptionCard
-              active={!member.positionId}
+              selected={!member.positionId}
               icon={Briefcase}
               title="Без посади"
               disabled={!canChangePosition}
@@ -114,7 +91,7 @@ export default function TeamMemberSettingsDialog({
             {positions.map(position => (
               <OptionCard
                 key={position.id}
-                active={member.positionId === position.id}
+                selected={member.positionId === position.id}
                 icon={Briefcase}
                 title={position.label}
                 disabled={!canChangePosition}

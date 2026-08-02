@@ -11,18 +11,18 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 68,
+    "nativeControls": 66,
     "structures": {
       "calendar": 16,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 10,
       "board": 5,
-      "settings": 11,
+      "settings": 9,
       "shell": 18,
       "other": 1
     },
-    "styledNativeControls": 55,
+    "styledNativeControls": 53,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -35,20 +35,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 57,
+    "button": 55,
     "input": 8,
     "textarea": 3,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 76,
-      "used": 76,
+      "components": 77,
+      "used": 77,
       "unused": 0,
-      "covered": 73,
+      "covered": 74,
       "uncovered": 0,
       "routes": 13,
-      "previews": 99,
+      "previews": 100,
       "internal": 3,
       "unlisted": 0
     },
@@ -550,26 +550,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/InviteMemberDialog.jsx:84",
-      "className": "flex items-start gap-3 rounded-[16px] border-2 p-4 text-left transition-all ${…}",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "settings",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/settings",
-        "/team"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/MobileNav.jsx:178",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] h-[56px] transition-colors ${…}",
       "text": "",
@@ -676,23 +656,6 @@
       "resembles": "IconAction",
       "structure": "shell",
       "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/TeamMemberSettingsDialog.jsx:16",
-      "className": "flex w-full items-center gap-3 rounded-[14px] border-2 p-3 text-left transition-all disabled:cursor-default disabled:opacity-55 ${…}",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
     },
     {
       "tag": "button",
@@ -1243,10 +1206,6 @@
       "count": 1
     },
     {
-      "file": "src/components/InviteMemberDialog.jsx",
-      "count": 1
-    },
-    {
       "file": "src/components/OrgSwitcherScreen.jsx",
       "count": 1
     },
@@ -1256,10 +1215,6 @@
     },
     {
       "file": "src/components/SearchModal.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/TeamMemberSettingsDialog.jsx",
       "count": 1
     },
     {
