@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 74,
-    "stateful": 71,
-    "hover": 50,
-    "focus": 50,
+    "components": 76,
+    "stateful": 73,
+    "hover": 52,
+    "focus": 52,
     "disabled": 25,
     "loading": 5,
     "error": 6,
-    "long-text": 50
+    "long-text": 51
   },
   "components": {
     "Alert": {
@@ -223,6 +223,15 @@
       "hover": "own",
       "focus": "own",
       "long-text": "placeholder"
+    },
+    "NotificationBell": {
+      "hover": "own",
+      "focus": "global"
+    },
+    "NotificationCard": {
+      "hover": "own",
+      "focus": "global",
+      "long-text": "title"
     },
     "PageHeader": {
       "long-text": "title"
@@ -530,6 +539,12 @@
       "page-headers",
       "variant-matrix",
       "states"
+    ],
+    "NotificationBell": [
+      "headers"
+    ],
+    "NotificationCard": [
+      "headers"
     ],
     "PageHeader": [
       "filters",

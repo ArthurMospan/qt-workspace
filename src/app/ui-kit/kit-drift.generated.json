@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 178,
+    "usedAndPreviewed": 177,
     "usedWithoutPreview": 0,
-    "declaredUnused": 95
+    "declaredUnused": 96
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -176,6 +176,12 @@
       "component": "Counter",
       "prop": "size",
       "value": "lg",
+      "namespace": null
+    },
+    {
+      "component": "Counter",
+      "prop": "size",
+      "value": "xs",
       "namespace": null
     },
     {
@@ -1218,7 +1224,6 @@
     "Dialog.size.status": 1,
     "Input.composition.status-entry": 1,
     "Button.composition.status-submit": 1,
-    "Counter.size.xs": 1,
     "Button.shape.compact": 2,
     "Button.surface.canvas": 2,
     "Segmented.surface.canvas": 4,

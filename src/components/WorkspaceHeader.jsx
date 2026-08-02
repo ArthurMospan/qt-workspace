@@ -12,6 +12,8 @@ import UserStatusSetter     from '@/components/UserStatusSetter';
 import SearchModal          from '@/components/SearchModal';
 import TopHeader            from '@/components/ui/Layout/TopHeader';
 import UserMenu             from '@/components/ui/Layout/UserMenu';
+import NotificationBell     from '@/components/ui/Layout/NotificationBell';
+import NotificationCard     from '@/components/ui/Layout/NotificationCard';
 import Segmented            from '@/components/ui/Segmented';
 import {
   Bell, Search, Check, CheckCheck, MessageSquare, GitPullRequest, Zap,
@@ -305,22 +307,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         {/* ── Bell ──────────────────────── */}
         {mode !== 'chat' && (
           <div className="relative" ref={bellRef}>
-            <button
-              id="notif-bell"
-              type="button"
-              aria-label="Сповіщення"
-              aria-expanded={bellOpen}
-              aria-controls={bellOpen ? 'notification-center-panel' : undefined}
-              onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
-              className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${
-                bellOpen ? 'bg-canvas text-ink' : 'text-muted hover:bg-canvas hover:text-ink'
-              } ${unreadCount > 0 ? 'animate-[bellShake_0.4s_ease]' : ''}`}
-            >
-              {hasEmergency ? <span className="animate-bounce text-[16px]">🔥</span> : <Bell size={18} />}
-              {unreadCount > 0 && !hasEmergency && (
-                <Counter value={unreadCount > 9 ? '9+' : unreadCount} size="xs" className="absolute right-[6px] top-[6px]" />
-              )}
-            </button>
+            <NotificationBell
+              unreadCount={unreadCount}
+              hasEmergency={hasEmergency}
+              open={bellOpen}
+              onToggle={() => { setBellOpen(o => !o); setUserOpen(false); }}
+            />
 
           {bellOpen && typeof document !== 'undefined' && createPortal(
             <div
@@ -502,53 +494,30 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       {liveNotif && typeof document !== 'undefined' && createPortal((() => {
         const cfg = TYPE_CFG[liveNotif.type] || TYPE_CFG.assigned;
         return (
-          <div
-            data-qt-global-notification-layer
-            data-ui-surface="notification"
-            data-ui-tone={liveNotif.type === 'emergency' ? 'emergency' : 'default'}
-            className="ui-surface fixed bottom-[72px] right-[12px] w-[min(320px,calc(100vw-24px))] overflow-hidden md:bottom-5 md:right-[24px]"
+          <NotificationCard
+            icon={<NotifIcon n={liveNotif} size={32} />}
+            categoryLabel={cfg.label}
+            categoryColor={cfg.color}
+            organizationName={liveNotif.organizationId ? orgName(liveNotif.organizationId) : null}
+            title={liveNotif.title}
+            body={liveNotif.body}
+            tone={liveNotif.type === 'emergency' ? 'emergency' : 'default'}
+            actions={liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId ? (
+              <CalendarResponseActions
+                notification={liveNotif}
+                response={calendarResponses[liveNotif.id]}
+                responding={respondingNotificationId === liveNotif.id}
+                onRespond={handleCalendarResponse}
+                surface="canvas"
+              />
+            ) : null}
+            onOpen={liveNotif.link ? () => handleNotifClick(liveNotif) : undefined}
+            onDismiss={clearLiveNotif}
             style={{
               animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)',
               zIndex: GLOBAL_NOTIFICATION_Z_INDEX,
             }}
-          >
-            <div className="flex items-start gap-3 px-4 py-4">
-              <NotifIcon n={liveNotif} size={32} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wide mb-[3px]"
-                  style={{ color: cfg.color }}>{cfg.label}</p>
-                {liveNotif.organizationId && (
-                  <p className="text-[10px] font-semibold text-ink mb-1 truncate">
-                    {orgName(liveNotif.organizationId)}
-                  </p>
-                )}
-                <p className="text-[13px] font-bold text-ink leading-snug">{liveNotif.title}</p>
-                {liveNotif.body && (
-                  <p className="text-[11px] text-muted mt-1 line-clamp-2">{liveNotif.body}</p>
-                )}
-                {liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId && (
-                  <CalendarResponseActions
-                    notification={liveNotif}
-                    response={calendarResponses[liveNotif.id]}
-                    responding={respondingNotificationId === liveNotif.id}
-                    onRespond={handleCalendarResponse}
-                    surface="canvas"
-                  />
-                )}
-                {liveNotif.link && (
-                  <button
-                    onClick={() => handleNotifClick(liveNotif)}
-                    className="mt-2 text-[11px] font-semibold text-ink hover:underline"
-                  >
-                    Перейти
-                  </button>
-                )}
-              </div>
-              <button onClick={clearLiveNotif} aria-label="Приховати сповіщення" className="text-faint hover:text-ink transition-colors p-1">
-                <X size={14} />
-              </button>
-            </div>
-          </div>
+          />
         );
       })(), document.body)}
     </>

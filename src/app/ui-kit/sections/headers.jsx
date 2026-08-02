@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import TopHeader from '@/components/ui/Layout/TopHeader';
 import UserMenu from '@/components/ui/Layout/UserMenu';
+import NotificationBell from '@/components/ui/Layout/NotificationBell';
+import NotificationCard from '@/components/ui/Layout/NotificationCard';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
+import { CalendarClock } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 
 export default function HeadersSection() {
@@ -85,6 +88,44 @@ export default function HeadersSection() {
             onToggle={() => setMenuOpen(value => !value)}
             onSettings={() => {}}
             onSignOut={() => {}}
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="7) Дзвінок сповіщень"
+        description="Скільки непрочитаних, і чи серед них є аварійне — воно замінює сам глиф, бо аварія це не голосніша версія того самого."
+        filePath="src/components/ui/Layout/NotificationBell.jsx"
+        component="NotificationBell"
+      >
+        <div className="flex items-center gap-[16px] rounded-[12px] bg-white p-[12px]">
+          <NotificationBell unreadCount={0} onToggle={() => {}} />
+          <NotificationBell unreadCount={3} onToggle={() => {}} />
+          <NotificationBell unreadCount={42} onToggle={() => {}} />
+          <NotificationBell unreadCount={2} hasEmergency onToggle={() => {}} />
+          <NotificationBell unreadCount={3} open onToggle={() => {}} />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="8) Картка сповіщення"
+        description="Те, що приїжджає над робочою областю, коли сповіщення надходить. Не Toast: тост звітує про твою ж дію і йде сам, а це приходить непроханим, називає відправника й може нести цілу календарну відповідь."
+        filePath="src/components/ui/Layout/NotificationCard.jsx"
+        component="NotificationCard"
+        fullWidth
+      >
+        {/* `fixed` in the component, so the preview gives it a positioned box to
+            sit in rather than letting it fly to the corner of the catalogue. */}
+        <div className="relative h-[190px] w-full overflow-hidden rounded-[16px] bg-canvas [&>*]:!absolute [&>*]:!bottom-[12px] [&>*]:!right-[12px]">
+          <NotificationCard
+            icon={<span className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[10px] bg-white text-ink"><CalendarClock size={16} /></span>}
+            categoryLabel="Запрошення в подію"
+            categoryColor="#6366f1"
+            organizationName="QuickTeam"
+            title="Планерка команди, четвер 10:00"
+            body="Олена Коваль запросила вас на щотижневу зустріч команди дизайну."
+            onOpen={() => {}}
+            onDismiss={() => {}}
           />
         </div>
       </PreviewBlock>

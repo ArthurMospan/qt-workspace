@@ -11,7 +11,7 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 73,
+    "nativeControls": 70,
     "structures": {
       "calendar": 18,
       "analytics": 3,
@@ -19,10 +19,10 @@
       "ai-call": 10,
       "board": 5,
       "settings": 11,
-      "shell": 21,
+      "shell": 18,
       "other": 1
     },
-    "styledNativeControls": 59,
+    "styledNativeControls": 57,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -35,20 +35,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 62,
+    "button": 59,
     "input": 8,
     "textarea": 3,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 74,
-      "used": 74,
+      "components": 76,
+      "used": 76,
       "unused": 0,
-      "covered": 71,
+      "covered": 73,
       "uncovered": 0,
       "routes": 13,
-      "previews": 97,
+      "previews": 99,
       "internal": 3,
       "unlisted": 0
     },
@@ -1106,7 +1106,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:108",
+      "location": "src/components/WorkspaceHeader.jsx:110",
       "className": "rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1119,20 +1119,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:308",
-      "className": "relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${…} ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Сповіщення",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:469",
+      "location": "src/components/WorkspaceHeader.jsx:461",
       "className": "text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors",
       "text": "Очистити прочитані",
       "childElements": [],
@@ -1140,34 +1127,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:539",
-      "className": "mt-2 text-[11px] font-semibold text-ink hover:underline",
-      "text": "Перейти",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:547",
-      "className": "text-faint hover:text-ink transition-colors p-1",
-      "text": "",
-      "childElements": [
-        "X"
-      ],
-      "ariaLabel": "Приховати сповіщення",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
       "structure": "shell",
       "routes": []
     },
@@ -1266,10 +1225,6 @@
       "count": 5
     },
     {
-      "file": "src/components/WorkspaceHeader.jsx",
-      "count": 5
-    },
-    {
       "file": "src/components/MobileNav.jsx",
       "count": 4
     },
@@ -1303,6 +1258,10 @@
     },
     {
       "file": "src/components/workspace/WorkloadTab.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/WorkspaceHeader.jsx",
       "count": 2
     },
     {
@@ -1377,7 +1336,7 @@
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:108",
+      "location": "src/components/WorkspaceHeader.jsx:110",
       "tag": "button",
       "context": "notification-response"
     },
@@ -1623,7 +1582,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:326",
+      "location": "src/components/WorkspaceHeader.jsx:318",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

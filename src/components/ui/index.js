@@ -69,6 +69,8 @@ export { default as TaskAttributesPanel, getTaskAttributeChrome, AttributeTrigge
 export { default as SidebarLayout } from './Layout/SidebarLayout'
 export { default as PageHeader } from './Layout/PageHeader'
 export { default as UserMenu } from './Layout/UserMenu'
+export { default as NotificationBell } from './Layout/NotificationBell'
+export { default as NotificationCard } from './Layout/NotificationCard'
 
 // ===== EXISTING COMPONENTS =====
 export { default as Dialog } from './Dialog'

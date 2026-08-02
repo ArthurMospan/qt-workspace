@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 74,
-    "props": 545,
-    "documentedProps": 545,
+    "components": 76,
+    "props": 561,
+    "documentedProps": 561,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2679,6 +2679,130 @@
             "inline"
           ],
           "description": "How much chrome the trigger draws."
+        }
+      ]
+    },
+    "NotificationBell": {
+      "file": "src/components/ui/Layout/NotificationBell.jsx",
+      "summary": "The bell in the workspace header: how many notifications are unread, and whether one of them is an emergency — which replaces the glyph outright, because an emergency is not a louder version of the same thing.",
+      "props": [
+        {
+          "name": "hasEmergency",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "An emergency is waiting, so the bell becomes 🔥 and the count is not drawn over it."
+        },
+        {
+          "name": "onToggle",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens and closes it."
+        },
+        {
+          "name": "open",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the notification centre is showing — this is the pressed look."
+        },
+        {
+          "name": "panelId",
+          "default": "'notification-center-panel'",
+          "type": "string",
+          "values": [],
+          "description": "Id of the panel it controls, announced while that panel is open."
+        },
+        {
+          "name": "unreadCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many are unread. Over nine reads as `9+`; zero draws no badge."
+        }
+      ]
+    },
+    "NotificationCard": {
+      "file": "src/components/ui/Layout/NotificationCard.jsx",
+      "summary": "One notification, drawn as the card that slides in over the workspace when it arrives: what kind it is, which organisation it came from, what happened, and the two things you can do about it.",
+      "props": [
+        {
+          "name": "actions",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Extra controls inside the card — the calendar reply buttons."
+        },
+        {
+          "name": "body",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The detail under it, clamped to two lines."
+        },
+        {
+          "name": "categoryColor",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The colour that label carries — the type's own, from the product."
+        },
+        {
+          "name": "categoryLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What kind of notification this is, in caps above the title."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The type's glyph, drawn at the leading edge."
+        },
+        {
+          "name": "onDismiss",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Hides the card."
+        },
+        {
+          "name": "onOpen",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Goes to whatever the notification is about. Without it no «Перейти» is drawn."
+        },
+        {
+          "name": "organizationName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Which workspace it came from; omitted when there is only one in play."
+        },
+        {
+          "name": "style",
+          "default": "",
+          "type": "React.CSSProperties",
+          "values": [],
+          "description": "Placement and stacking, which the layer above owns."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What happened."
+        },
+        {
+          "name": "tone",
+          "default": "'default'",
+          "type": "'emergency'|'default'",
+          "values": [],
+          "description": "An emergency draws a different surface."
         }
       ]
     },
