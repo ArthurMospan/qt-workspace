@@ -48,6 +48,7 @@ import {
   Select,
   TaskAttributesPanel,
   Textarea,
+  TimeLogRow,
   TimeTrackingControl,
   TitleInput,
   ToggleSwitch,
@@ -269,47 +270,20 @@ function CalendarEventTimeSheet({
                   const logDate = asDate(log.loggedAt || log.createdAt);
                   const canChange = canManage || log.userId === currentUserId;
                   return (
-                    <div key={log.id} data-ui-surface="local" className="flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3">
-                      <UserAvatar user={member || { name: memberLabel(member) }} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span className="text-[12px] font-bold text-ink">{memberLabel(member)}</span>
-                          <Pill tone="surface-ink" size="md" shape="badge">
-                            {formatMinutes(log.spentMinutes)}
-                          </Pill>
-                          {logDate && (
-                            <span className="text-[10px] font-medium text-muted">
-                              {logDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                        {log.description && <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted">{log.description}</p>}
-                      </div>
-                      {canChange && (
-                        <div className="flex shrink-0 items-center gap-0.5">
-                          <button
-                            type="button"
-                            onClick={() => setForm({
-                              id: log.id,
-                              minutes: Number(log.spentMinutes) || 0,
-                              description: log.description || '',
-                            })}
-                            className="rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink"
-                            aria-label="Редагувати запис"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDelete(log.id)}
-                            className="rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500"
-                            aria-label="Видалити запис"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <TimeLogRow
+                      key={log.id}
+                      member={member || { name: memberLabel(member) }}
+                      spentLabel={formatMinutes(log.spentMinutes)}
+                      dateLabel={logDate ? logDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                      description={log.description}
+                      canEdit={canChange}
+                      onEdit={() => setForm({
+                        id: log.id,
+                        minutes: Number(log.spentMinutes) || 0,
+                        description: log.description || '',
+                      })}
+                      onDelete={() => onDelete(log.id)}
+                    />
                   );
                 })}
               </div>

@@ -49,10 +49,14 @@ export default function TimeLogRow({
         </div>
         {description && <p className="mt-1 break-words text-[12px] leading-5 text-muted">{description}</p>}
       </div>
-      {canEdit && (
+      {/* Each action appears only if it was given one. A calendar event's time
+          log can be deleted but not edited, and before this the row drew an
+          edit button that called nothing — which is why that screen kept its
+          own copy of the row instead. */}
+      {canEdit && (onEdit || onDelete) && (
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100">
-          <button type="button" onClick={onEdit} className="rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink" aria-label="Редагувати запис"><Pencil size={13} /></button>
-          <button type="button" onClick={onDelete} className="rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис"><Trash2 size={13} /></button>
+          {onEdit && <button type="button" onClick={onEdit} className="rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink" aria-label="Редагувати запис"><Pencil size={13} /></button>}
+          {onDelete && <button type="button" onClick={onDelete} className="rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис"><Trash2 size={13} /></button>}
         </div>
       )}
     </div>

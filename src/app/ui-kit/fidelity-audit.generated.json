@@ -11,9 +11,9 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 59,
+    "nativeControls": 56,
     "structures": {
-      "calendar": 15,
+      "calendar": 12,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 7,
@@ -21,20 +21,20 @@
       "settings": 7,
       "shell": 18
     },
-    "styledNativeControls": 48,
+    "styledNativeControls": 45,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 46,
+    "localSurfaceExceptions": 45,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 53,
+    "button": 50,
     "input": 3,
     "textarea": 3,
     "select": 0
@@ -654,7 +654,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:278",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
       "className": "flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-bold transition-all disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [
@@ -672,25 +672,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:344",
-      "className": "rounded-[7px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити запис часу",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar",
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1066",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1040",
       "className": "${…} ${…}",
       "text": "",
       "childElements": [
@@ -708,7 +690,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1192",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1166",
       "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -723,7 +705,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1262",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1236",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -738,41 +720,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:290",
-      "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-white hover:text-ink",
-      "text": "",
-      "childElements": [
-        "Pencil"
-      ],
-      "ariaLabel": "Редагувати запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:302",
-      "className": "rounded-[6px] p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-500",
-      "text": "",
-      "childElements": [
-        "Trash2"
-      ],
-      "ariaLabel": "Видалити запис",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:915",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:889",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -790,7 +738,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:999",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:973",
       "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
       "text": "",
       "childElements": [
@@ -1025,12 +973,12 @@
   },
   "nativeHotspots": [
     {
-      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 7
-    },
-    {
       "file": "src/app/(app)/calendar/page.js",
       "count": 6
+    },
+    {
+      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
+      "count": 5
     },
     {
       "file": "src/app/(app)/settings/page.js",
@@ -1073,10 +1021,6 @@
       "count": 2
     },
     {
-      "file": "src/components/workspace/calendar/CalendarEventDialog.jsx",
-      "count": 2
-    },
-    {
       "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 2
     },
@@ -1094,6 +1038,10 @@
     },
     {
       "file": "src/components/SearchModal.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/calendar/CalendarEventDialog.jsx",
       "count": 1
     },
     {
@@ -1130,12 +1078,12 @@
       "context": "column-collapse"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:915",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:889",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:999",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:973",
       "tag": "button",
       "context": "calendar-attribute-trigger"
     },
@@ -1291,39 +1239,34 @@
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:210",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:211",
       "tag": "div",
       "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:221",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:222",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:226",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:227",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:258",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:259",
       "tag": "div",
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:628",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:625",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:261",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:262",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
-    },
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:272",
-      "tag": "div",
-      "className": "flex items-start gap-3 rounded-[12px] bg-canvas px-3 py-3"
     },
     {
       "location": "src/components/workspace/IssueDetail.jsx:1507",

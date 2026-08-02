@@ -29,6 +29,7 @@ import {
   Pill,
   Select,
   Textarea,
+  TimeLogRow,
   TimePicker,
   ToggleSwitch,
 } from '@/components/ui';
@@ -330,22 +331,18 @@ export function CalendarEventDetails({
             </p>
           )}
           {timeLogs.length > 0 && (
-            <div className="mt-3 divide-y divide-line border-t border-line">
+            <div className="mt-3 flex flex-col gap-1.5">
               {timeLogs.map(log => {
                 const member = members.find(item => (item.id || item.uid) === log.userId);
-                const canDelete = log.userId === currentUserId;
                 return (
-                  <div key={log.id} className="flex items-start gap-2 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold text-ink">{memberLabel(member || {})} · {log.spentMinutes} хв</p>
-                      {log.description && <p className="mt-0.5 break-words text-[11px] text-muted">{log.description}</p>}
-                    </div>
-                    {canDelete && (
-                      <button type="button" onClick={() => onDeleteTime(log.id)} className="rounded-[7px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис часу">
-                        <Trash2 size={13} />
-                      </button>
-                    )}
-                  </div>
+                  <TimeLogRow
+                    key={log.id}
+                    member={member || { name: memberLabel(member || {}) }}
+                    spentLabel={`${log.spentMinutes} хв`}
+                    description={log.description}
+                    canEdit={log.userId === currentUserId}
+                    onDelete={() => onDeleteTime(log.id)}
+                  />
                 );
               })}
             </div>
