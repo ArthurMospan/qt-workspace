@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 77,
-    "props": 569,
-    "documentedProps": 569,
+    "components": 78,
+    "props": 572,
+    "documentedProps": 572,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2523,6 +2523,33 @@
           "type": "object",
           "values": [],
           "description": "The person, for the avatar."
+        }
+      ]
+    },
+    "MobilePaneBack": {
+      "file": "src/components/ui/Navigation/MobilePaneBack.jsx",
+      "summary": "The way back to the list on a phone.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only — the gap under it."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Where it goes back to, in words: «До списку команди»."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Goes there."
         }
       ]
     },

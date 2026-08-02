@@ -17,7 +17,7 @@ import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
-  Copy, ExternalLink, ChevronRight, AlertTriangle, ArrowLeft,
+  Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
@@ -32,8 +32,9 @@ import {
   Alert, 
   Card, 
   LoadingSpinner, 
-  SidebarLayout, 
-  InnerNavigation, 
+  SidebarLayout,
+  MobilePaneBack,
+  InnerNavigation,
   PageHeader,
   Dialog,
   DatePicker,
@@ -3078,12 +3079,7 @@ export default function SettingsPage() {
     <SidebarLayout context="settings" sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
-          <button
-            onClick={requestPaneClose}
-            className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors"
-          >
-            <ArrowLeft size={15} /> Всі налаштування
-          </button>
+          <MobilePaneBack onClick={requestPaneClose} label="Всі налаштування" className="pb-[16px]" />
           <div className="flex-1 pb-[100px]">
             {renderSection()}
           </div>

@@ -11,18 +11,17 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 61,
+    "nativeControls": 59,
     "structures": {
       "calendar": 15,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 7,
       "board": 5,
-      "settings": 8,
-      "shell": 18,
-      "other": 1
+      "settings": 7,
+      "shell": 18
     },
-    "styledNativeControls": 50,
+    "styledNativeControls": 48,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -35,20 +34,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 55,
+    "button": 53,
     "input": 3,
     "textarea": 3,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 77,
-      "used": 77,
+      "components": 78,
+      "used": 78,
       "unused": 0,
-      "covered": 74,
+      "covered": 75,
       "uncovered": 0,
       "routes": 13,
-      "previews": 100,
+      "previews": 101,
       "internal": 3,
       "unlisted": 0
     },
@@ -233,7 +232,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2358",
+      "location": "src/app/(app)/settings/page.js:2359",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -251,24 +250,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:3081",
-      "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[16px] transition-colors",
-      "text": "Всі налаштування",
-      "childElements": [
-        "ArrowLeft"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/settings/page.js:340",
+      "location": "src/app/(app)/settings/page.js:341",
       "className": "w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all",
       "text": "",
       "childElements": [],
@@ -283,7 +265,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:350",
+      "location": "src/app/(app)/settings/page.js:351",
       "className": "w-[18px] h-[18px] rounded-full transition-transform hover:scale-110",
       "text": "",
       "childElements": [],
@@ -298,7 +280,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:420",
+      "location": "src/app/(app)/settings/page.js:421",
       "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
       "text": "Завершальний",
       "childElements": [
@@ -311,23 +293,6 @@
       "structure": "settings",
       "routes": [
         "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/team/page.js:95",
-      "className": "md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors",
-      "text": "До списку команди",
-      "childElements": [
-        "ArrowLeft"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "other",
-      "routes": [
-        "/team"
       ]
     },
     {
@@ -1069,7 +1034,7 @@
     },
     {
       "file": "src/app/(app)/settings/page.js",
-      "count": 5
+      "count": 4
     },
     {
       "file": "src/components/AudioTaskPanel.jsx",
@@ -1118,10 +1083,6 @@
     {
       "file": "src/components/WorkspaceHeader.jsx",
       "count": 2
-    },
-    {
-      "file": "src/app/(app)/team/page.js",
-      "count": 1
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",
@@ -1225,17 +1186,17 @@
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:328",
+      "location": "src/app/(app)/settings/page.js:329",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:348",
+      "location": "src/app/(app)/settings/page.js:349",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:485",
+      "location": "src/app/(app)/settings/page.js:486",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

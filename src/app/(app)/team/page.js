@@ -7,13 +7,14 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { Plus, User, ArrowLeft } from 'lucide-react';
+import { Plus, User } from 'lucide-react';
 import { 
   Surface,
   LoadingSpinner,
   EmptyState,
   Button,
   Pill,
+  MobilePaneBack,
   SidebarLayout,
   MemberRail,
 } from '@/components/ui';
@@ -92,12 +93,7 @@ export default function TeamPage() {
         data-ui-padding="sm"
         className={`ui-surface ${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full overflow-hidden`}
       >
-        <button
-          onClick={requestPaneClose}
-          className="md:hidden flex items-center gap-2 text-[13px] font-semibold text-muted hover:text-ink pb-[10px] px-[2px] transition-colors"
-        >
-          <ArrowLeft size={15} /> До списку команди
-        </button>
+        <MobilePaneBack onClick={requestPaneClose} label="До списку команди" className="pb-[10px]" />
         <Surface preset="nested-card" className="flex-1 w-full overflow-hidden flex flex-col">
           {selectedMember ? (
             <ProfileView user={selectedMember} />

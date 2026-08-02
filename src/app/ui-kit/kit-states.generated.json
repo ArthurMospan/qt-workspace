@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 77,
-    "stateful": 74,
-    "hover": 53,
-    "focus": 53,
+    "components": 78,
+    "stateful": 75,
+    "hover": 54,
+    "focus": 54,
     "disabled": 26,
     "loading": 5,
     "error": 6,
-    "long-text": 52
+    "long-text": 53
   },
   "components": {
     "Alert": {
@@ -215,6 +215,11 @@
     "MetaTrigger": {
       "disabled": "native",
       "hover": "css",
+      "focus": "global",
+      "long-text": "label"
+    },
+    "MobilePaneBack": {
+      "hover": "own",
       "focus": "global",
       "long-text": "label"
     },
@@ -539,6 +544,9 @@
     ],
     "MetaTrigger": [
       "navigation-overlays"
+    ],
+    "MobilePaneBack": [
+      "inner-nav-layout"
     ],
     "MultiSelect": [
       "selects",

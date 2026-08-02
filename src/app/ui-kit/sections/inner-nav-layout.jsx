@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import Surface from '@/components/ui/Surface';
-import { IconAction, SidebarLayout, InnerNavigation, UserAvatar, ChannelRail, MemberRail, ConfirmProvider, ChatComposerCore, StatusPill } from '@/components/ui';
+import { IconAction, SidebarLayout, InnerNavigation, MobilePaneBack, UserAvatar, ChannelRail, MemberRail, ConfirmProvider, ChatComposerCore, StatusPill } from '@/components/ui';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import ChatConversationHeader from '@/components/ui/Chat/ChatConversationHeader';
 import ChatMessageList from '@/components/ui/Chat/ChatMessageList';
@@ -192,6 +192,18 @@ export default function NavMenuSection() {
               </div>
             </div>
           </SidebarLayout>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Вихід із панелі на мобільному"
+        component="MobilePaneBack"
+        description="SidebarLayout показує нижче md лише одну панель, тож та панель мусить пропонувати шлях назад. Тут control видно завжди — у продукті він ховається на md і вище, де обидві панелі й так на екрані. Команда й Налаштування малювали його кожен окремо."
+        filePath="src/components/ui/Navigation/MobilePaneBack.jsx"
+      >
+        <div className="flex flex-col gap-3 rounded-[12px] bg-white p-[16px] [&_button]:!flex">
+          <MobilePaneBack label="До списку команди" onClick={() => {}} />
+          <MobilePaneBack label="Всі налаштування" onClick={() => {}} />
         </div>
       </PreviewBlock>
     </div>

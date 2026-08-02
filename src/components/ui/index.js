@@ -58,6 +58,7 @@ export { default as StatusVisibilityPicker } from './TaskManagement/StatusVisibi
 export { Popover } from './Navigation/Popover'
 export { Tooltip } from './Navigation/Tooltip'
 export { default as InnerNavigation } from './Navigation/InnerNavigation'
+export { default as MobilePaneBack } from './Navigation/MobilePaneBack'
 
 // ===== FEEDBACK COMPONENTS =====
 export { default as Alert } from './Feedback/Alert'
