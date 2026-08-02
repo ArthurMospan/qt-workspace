@@ -44,6 +44,30 @@ function Frame({ label, tone = 'canvas', children }) {
   );
 }
 
+// A photograph of the live screen with the element ringed on it. Taken from
+// production, so this is not a reconstruction of where the thing sits — it is
+// where the thing sits. The frames built out of components below still earn
+// their place: they show the element large enough to judge, which a 1680px
+// screenshot cannot.
+function Shot({ src, alt, note }) {
+  return (
+    <figure className="m-0 overflow-hidden rounded-[12px] border border-line">
+      <div className="border-b border-line bg-canvas px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-faint">
+        {alt}
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- a fixed local
+          screenshot on a dev-only page; next/image would add a loader and a
+          build step for a file that ships and dies with this page. */}
+      <img src={src} alt={alt} className="block w-full" loading="lazy" />
+      {note && (
+        <figcaption className="border-t border-line bg-canvas px-3 py-1.5 text-[11px] text-muted">
+          {note}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 // The element under discussion, ringed inside its context.
 function Spot({ children }) {
   return (
@@ -83,6 +107,7 @@ export function useDecisions() {
       count: 4,
       where: 'ai-call/page.js:275, :280, :302 · workspace/AgileBoard.jsx:30',
       why: 'Білі поля з рамкою і 8px радіусом. Поле кіту — сіре, без видимої рамки: воно втоплене у фон, а не вирізане з нього.',
+      shot: <Shot src="/ui-decisions/aicall.jpeg" alt="екран «Дзвінок → задачі» · продакшн" note="Обведено поле транскрипту й зону завантаження — обидва білі з рамкою." />,
       context: (
         <Frame label="екран «Дзвінок → задачі» · картка чернетки" tone="canvas">
           <div className="rounded-[12px] border border-line bg-white p-4">
@@ -169,6 +194,7 @@ export function useDecisions() {
       count: 8,
       where: 'WorkspaceSidebar.jsx:234, :247, :298, :374 · MobileNav.jsx:178, :223, :232, :263',
       why: 'Беруть колір із теми бренду організації. Кіт таких кольорів не знає — його іконки завжди сірі, тож на брендованій панелі випадуть із теми.',
+      shot: <Shot src="/ui-decisions/chat.jpeg" alt="екран «Чат» · продакшн" note="Обведено кнопку згортання панелі ліворуч угорі та чип статусу праворуч." />,
       context: (
         <SidebarStrip tone="brand">
           <Spot>
@@ -250,6 +276,7 @@ export function useDecisions() {
       count: 4,
       where: 'CalendarEventDialog.jsx:279 · OrgSwitcherScreen.jsx:27 · TimesheetTab.jsx:300 · WorkloadTab.jsx:612',
       why: 'Тип події, організація, тиждень, учасник — «плитка, яку обирають». У кіті вже є OptionCard, але він горизонтальний.',
+      shot: <Shot src="/ui-decisions/invite.jpeg" alt="Команда → Запросити учасника · продакшн" note="Обведено картку вибору ролі — вона вже з кіту, питання про решту плиток." />,
       context: (
         <Frame label="діалог створення події · вибір типу" tone="white">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">Тип події</p>
@@ -306,6 +333,7 @@ export function useDecisions() {
       count: 5,
       where: 'calendar/page.js:119, :142, :238, :301, :310',
       why: 'Чип події, чип дедлайну, порожній слот, кружечок числа дня, плюс під курсором. Власна мова календаря — у кіті таких форм немає взагалі.',
+      shot: <Shot src="/ui-decisions/calendar.jpeg" alt="екран «Календар» · місяць · продакшн" note="Обведено кружечок числа дня і плюс, що зʼявляється під курсором." />,
       context: (
         <Frame label="календар · тиждень" tone="white">
           <div className="grid grid-cols-3 gap-2">
@@ -399,6 +427,7 @@ export function useDecisions() {
       count: 3,
       where: 'calendar/page.js:319 · WorkspaceHeader.jsx:461 · InviteLinkSection.jsx:120',
       why: 'Текст без коробки, що щось робить. У кіті це TextAction — але його найменший розмір не має жирності, а всі три ці кнопки жирні.',
+      shot: <Shot src="/ui-decisions/notifications.jpeg" alt="екран «Мої завдання» · панель сповіщень · продакшн" note="Обведено дзвінок і «Очистити прочитані» в підвалі панелі." />,
       context: (
         <Frame label="панель сповіщень · підвал" tone="white">
           <div className="flex items-center justify-between rounded-[10px] border-t border-canvas bg-[#fafafa] px-4 py-2.5">
@@ -438,6 +467,7 @@ export function useDecisions() {
       count: 3,
       where: 'settings/page.js:341, :351, :2359',
       why: 'Кружечок кольору мітки, палітра під ним і вибір теми панелі. Три розміри й три різні способи показати «обрано».',
+      shot: <Shot src="/ui-decisions/settings.jpeg" alt="Налаштування → Статуси завдань · продакшн" note="Обведено кружечок кольору статусу — 14px із ring-обведенням." />,
       context: (
         <Frame label="налаштування · мітки" tone="white">
           <div className="flex items-center gap-3 rounded-[10px] border border-line px-3 py-2">
@@ -480,6 +510,7 @@ export function useDecisions() {
       count: 5,
       where: 'page.js:158 · AudioTaskPanel.jsx:156 · AgileBoard.jsx:259, :349 · qtplus/cards/AudioCard.jsx:97',
       why: 'У кожної свій відступ, тож у сусідніх рядах іконки стоять на різній висоті. IconAction дав би однакову квадратну коробку.',
+      shot: <Shot src="/ui-decisions/projects.jpeg" alt="екран «Проєкти» · продакшн" note="Обведено кебаб на картці проєкту — одна з пʼяти кнопок із власним відступом." />,
       context: (
         <Frame label="картка проєкту · верхній ряд" tone="canvas">
           <div className="rounded-[16px] bg-white p-4">
@@ -644,6 +675,7 @@ export function useDecisions() {
       count: 3,
       where: 'UserStatusSetter.jsx:49, :85, :101',
       why: 'Технічна пастка, а не смак. Цей файл — єдиний, хто вживає три оголошені варіанти кіту. Обхід продукту не заходить у кіт, тож після переносу звіт заявив би, що варіанти мертві, поки продукт малює їх щодня.',
+      shot: <Shot src="/ui-decisions/chat.jpeg" alt="екран «Чат» · продакшн" note="Обведено чип статусу праворуч у хедері." />,
       context: (
         <Frame label="хедер чату · правий край" tone="white">
           <div className="flex items-center justify-end gap-2">

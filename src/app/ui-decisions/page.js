@@ -155,9 +155,10 @@ export default function UiDecisionsPage() {
           <h1 className="ui-type-page-title text-ink">56 місць, які малюють інтерфейс повз кіт</h1>
           <p className="max-w-[70ch] text-[13px] leading-relaxed text-muted">
             Було 145. Усе, що було дублем, уже зведено — там є об’єктивно правильна відповідь.
-            Те, що лишилось, — питання смаку. Кожне питання показує елемент{' '}
-            <span className="font-semibold text-ink">на своєму місці</span>, а нижче — як він виглядає
-            зараз і яким стане. Обидві половини намальовані справжніми компонентами, не приблизно.
+            Те, що лишилось, — питання смаку. Кожне питання починається{' '}
+            <span className="font-semibold text-ink">скріншотом справжнього екрана</span> з обведеним
+            елементом, далі — той самий елемент зблизька, а під ним «зараз» і «стане».
+            Обидві половини намальовані справжніми компонентами, не приблизно.
           </p>
           <div className="flex flex-wrap gap-2">
             <Pill tone="neutral" size="md">{decisions.length} рішень</Pill>
@@ -193,7 +194,9 @@ export default function UiDecisionsPage() {
 
                   <p className="max-w-[72ch] text-[13px] leading-relaxed text-muted">{decision.why}</p>
 
-                  {/* Where it lives, drawn by the real components. */}
+                  {/* Where it lives: the live screen first, then the same
+                      element large enough to actually judge. */}
+                  {decision.shot}
                   {decision.context}
 
                   {/* Now against after, side by side. */}
