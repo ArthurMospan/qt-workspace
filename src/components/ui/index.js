@@ -68,6 +68,7 @@ export { default as Card } from './Layout/Card'
 export { default as TaskAttributesPanel, getTaskAttributeChrome, AttributeTrigger } from './Layout/TaskAttributesPanel'
 export { default as SidebarLayout } from './Layout/SidebarLayout'
 export { default as PageHeader } from './Layout/PageHeader'
+export { default as UserMenu } from './Layout/UserMenu'
 
 // ===== EXISTING COMPONENTS =====
 export { default as Dialog } from './Dialog'

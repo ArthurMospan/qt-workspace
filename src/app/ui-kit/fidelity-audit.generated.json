@@ -11,7 +11,7 @@
     "productFiles": 157,
     "parsedFiles": 157,
     "parseErrors": 0,
-    "nativeControls": 76,
+    "nativeControls": 73,
     "structures": {
       "calendar": 18,
       "analytics": 3,
@@ -19,36 +19,36 @@
       "ai-call": 10,
       "board": 5,
       "settings": 11,
-      "shell": 24,
+      "shell": 21,
       "other": 1
     },
-    "styledNativeControls": 62,
+    "styledNativeControls": 59,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 47,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 65,
+    "button": 62,
     "input": 8,
     "textarea": 3,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 73,
-      "used": 73,
+      "components": 74,
+      "used": 74,
       "unused": 0,
-      "covered": 70,
+      "covered": 71,
       "uncovered": 0,
       "routes": 13,
-      "previews": 96,
+      "previews": 97,
       "internal": 3,
       "unlisted": 0
     },
@@ -1106,7 +1106,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:107",
+      "location": "src/components/WorkspaceHeader.jsx:108",
       "className": "rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -1119,7 +1119,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:307",
+      "location": "src/components/WorkspaceHeader.jsx:308",
       "className": "relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all ${…} ${…}",
       "text": "",
       "childElements": [],
@@ -1132,7 +1132,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:468",
+      "location": "src/components/WorkspaceHeader.jsx:469",
       "className": "text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors",
       "text": "Очистити прочитані",
       "childElements": [],
@@ -1145,48 +1145,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:490",
-      "className": "flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden",
-      "text": "",
-      "childElements": [
-        "UserAvatar"
-      ],
-      "ariaLabel": "Меню користувача",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:505",
-      "className": "flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium",
-      "text": "Налаштування",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:510",
-      "className": "flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium",
-      "text": "Вийти",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:558",
+      "location": "src/components/WorkspaceHeader.jsx:539",
       "className": "mt-2 text-[11px] font-semibold text-ink hover:underline",
       "text": "Перейти",
       "childElements": [],
@@ -1199,7 +1158,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:566",
+      "location": "src/components/WorkspaceHeader.jsx:547",
       "className": "text-faint hover:text-ink transition-colors p-1",
       "text": "",
       "childElements": [
@@ -1291,10 +1250,6 @@
       "count": 10
     },
     {
-      "file": "src/components/WorkspaceHeader.jsx",
-      "count": 8
-    },
-    {
       "file": "src/app/(app)/calendar/page.js",
       "count": 6
     },
@@ -1308,6 +1263,10 @@
     },
     {
       "file": "src/components/AudioTaskPanel.jsx",
+      "count": 5
+    },
+    {
+      "file": "src/components/WorkspaceHeader.jsx",
       "count": 5
     },
     {
@@ -1418,7 +1377,7 @@
       "context": "calendar-attribute-trigger"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:107",
+      "location": "src/components/WorkspaceHeader.jsx:108",
       "tag": "button",
       "context": "notification-response"
     },
@@ -1664,14 +1623,9 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:325",
+      "location": "src/components/WorkspaceHeader.jsx:326",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
-    },
-    {
-      "location": "src/components/WorkspaceHeader.jsx:500",
-      "tag": "div",
-      "className": "absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50"
     },
     {
       "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:36",

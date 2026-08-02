@@ -11,6 +11,7 @@ import UserAvatar           from '@/components/ui/DataDisplay/UserAvatar';
 import UserStatusSetter     from '@/components/UserStatusSetter';
 import SearchModal          from '@/components/SearchModal';
 import TopHeader            from '@/components/ui/Layout/TopHeader';
+import UserMenu             from '@/components/ui/Layout/UserMenu';
 import Segmented            from '@/components/ui/Segmented';
 import {
   Bell, Search, Check, CheckCheck, MessageSquare, GitPullRequest, Zap,
@@ -486,34 +487,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         )}
 
         {/* ── User avatar ───────────────── */}
-        <div className="relative" ref={userRef}>
-          <button
-            data-ui-action="avatar-menu"
-            aria-label="Меню користувача"
-            aria-expanded={userOpen}
-            onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
-            className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
-          >
-            <UserAvatar user={currentUser} size="sm" />
-          </button>
-          {userOpen && (
-            <div data-ui-surface="local" className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-canvas">
-                <p className="text-[13px] font-bold text-ink truncate">{currentUser?.name}</p>
-                <p className="text-[11px] text-muted truncate">{currentUser?.email}</p>
-              </div>
-              <button onClick={() => { router.push('/settings'); setUserOpen(false); }}
-                className="flex w-full px-4 py-[10px] text-[13px] text-ink hover:bg-canvas transition-colors font-medium">
-                Налаштування
-              </button>
-              <div className="border-t border-canvas">
-                <button onClick={() => signOut()}
-                  className="flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium">
-                  Вийти
-                </button>
-              </div>
-            </div>
-          )}
+        <div ref={userRef}>
+          <UserMenu
+            user={currentUser}
+            open={userOpen}
+            onToggle={() => { setUserOpen(o => !o); setBellOpen(false); }}
+            onSettings={() => { router.push('/settings'); setUserOpen(false); }}
+            onSignOut={() => signOut()}
+          />
         </div>
       </div>
 

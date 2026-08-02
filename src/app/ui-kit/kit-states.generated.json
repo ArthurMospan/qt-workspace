@@ -13,10 +13,10 @@
     "long-text"
   ],
   "totals": {
-    "components": 73,
-    "stateful": 70,
-    "hover": 49,
-    "focus": 49,
+    "components": 74,
+    "stateful": 71,
+    "hover": 50,
+    "focus": 50,
     "disabled": 25,
     "loading": 5,
     "error": 6,
@@ -349,7 +349,11 @@
     "TypeBadge": {
       "long-text": "label"
     },
-    "UserAvatar": {}
+    "UserAvatar": {},
+    "UserMenu": {
+      "hover": "own",
+      "focus": "global"
+    }
   },
   "parseErrors": [],
   "previewSections": {
@@ -659,6 +663,9 @@
       "task-elements",
       "inner-nav-layout",
       "variant-matrix"
+    ],
+    "UserMenu": [
+      "headers"
     ],
     "Breadcrumb": [
       "headers"

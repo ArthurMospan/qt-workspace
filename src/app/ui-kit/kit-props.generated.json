@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 73,
-    "props": 540,
-    "documentedProps": 540,
+    "components": 74,
+    "props": 545,
+    "documentedProps": 545,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4574,6 +4574,47 @@
           "type": "object",
           "values": [],
           "description": "The person; the photo, the name and the fallback colour all come from this."
+        }
+      ]
+    },
+    "UserMenu": {
+      "file": "src/components/ui/Layout/UserMenu.jsx",
+      "summary": "The avatar in the workspace header and the menu it opens: who you are signed in as, and the two things you can do about it. Moved out of `WorkspaceHeader` with its classes intact.",
+      "props": [
+        {
+          "name": "onSettings",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Goes to settings."
+        },
+        {
+          "name": "onSignOut",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Signs out."
+        },
+        {
+          "name": "onToggle",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens and closes the menu."
+        },
+        {
+          "name": "open",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the menu is showing. The header owns the state, because the bell has to close it."
+        },
+        {
+          "name": "user",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The signed-in user: the avatar, the name and the email come from this."
         }
       ]
     }

@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 73,
-    "used": 73,
+    "components": 74,
+    "used": 74,
     "unused": 0,
-    "covered": 70,
+    "covered": 71,
     "uncovered": 0,
     "routes": 13,
-    "previews": 96,
+    "previews": 97,
     "internal": 3,
     "unlisted": 0
   },
@@ -1729,7 +1729,8 @@
         "Select",
         "TaskRow",
         "TimeLogRow",
-        "TopHeader"
+        "TopHeader",
+        "UserMenu"
       ],
       "routes": [
         "/",
@@ -1764,6 +1765,16 @@
         "src/components/workspace/WorkloadTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
+      ]
+    },
+    "UserMenu": {
+      "file": "src/components/ui/Layout/UserMenu.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [],
+      "usedIn": [
+        "src/components/WorkspaceHeader.jsx"
       ]
     }
   },
@@ -1924,8 +1935,8 @@
             "src/app/(app)/settings/page.js:2602",
             "src/app/(app)/settings/page.js:2666",
             "src/app/(app)/settings/page.js:2672",
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359",
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360",
             "src/components/workspace/BillingTab.jsx:1233",
             "src/components/workspace/BillingTab.jsx:1244",
             "src/components/workspace/UnifiedTimeline.jsx:620",
@@ -2228,8 +2239,8 @@
             "src/app/(app)/sprints/page.js:674",
             "src/app/(app)/team/page.js:77",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359",
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360",
             "src/components/integrations/YouTrackImportCard.jsx:449",
             "src/components/integrations/YouTrackImportCard.jsx:605",
             "src/components/workspace/AgileBoard.jsx:271",
@@ -2477,8 +2488,8 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359"
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360"
           ]
         },
         "circle": {
@@ -2680,8 +2691,8 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359"
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360"
           ]
         },
         "danger-subtle": {
@@ -2787,8 +2798,8 @@
             "src/components/InviteMemberDialog.jsx:129",
             "src/components/TeamMemberSettingsDialog.jsx:89",
             "src/components/UserStatusSetter.jsx:120",
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359",
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
             "src/components/integrations/IntegrationCard.jsx:99",
             "src/components/integrations/YouTrackImportCard.jsx:421",
@@ -3006,8 +3017,8 @@
             "src/components/TeamMemberSettingsDialog.jsx:129",
             "src/components/TeamMemberSettingsDialog.jsx:89",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHeader.jsx:349",
-            "src/components/WorkspaceHeader.jsx:359",
+            "src/components/WorkspaceHeader.jsx:350",
+            "src/components/WorkspaceHeader.jsx:360",
             "src/components/integrations/IntegrationCard.jsx:99",
             "src/components/integrations/YouTrackImportCard.jsx:421",
             "src/components/integrations/YouTrackImportCard.jsx:446",
@@ -3150,8 +3161,8 @@
             "src/app/(app)/chat/page.js:368",
             "src/app/(app)/settings/page.js:178",
             "src/app/(app)/settings/page.js:179",
-            "src/components/WorkspaceHeader.jsx:437",
-            "src/components/WorkspaceHeader.jsx:448"
+            "src/components/WorkspaceHeader.jsx:438",
+            "src/components/WorkspaceHeader.jsx:449"
           ]
         },
         "(default)": {
@@ -3299,14 +3310,14 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:437"
+            "src/components/WorkspaceHeader.jsx:438"
           ]
         },
         "surface-danger": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:448"
+            "src/components/WorkspaceHeader.jsx:449"
           ]
         },
         "surface-plain": {
@@ -3366,8 +3377,8 @@
             "src/app/(app)/settings/page.js:179",
             "src/app/(app)/settings/page.js:205",
             "src/app/(app)/settings/page.js:213",
-            "src/components/WorkspaceHeader.jsx:437",
-            "src/components/WorkspaceHeader.jsx:448"
+            "src/components/WorkspaceHeader.jsx:438",
+            "src/components/WorkspaceHeader.jsx:449"
           ]
         },
         "compact": {
@@ -3411,8 +3422,8 @@
             "src/app/(app)/settings/page.js:205",
             "src/app/(app)/settings/page.js:213",
             "src/components/MobileNav.jsx:63",
-            "src/components/WorkspaceHeader.jsx:437",
-            "src/components/WorkspaceHeader.jsx:448",
+            "src/components/WorkspaceHeader.jsx:438",
+            "src/components/WorkspaceHeader.jsx:449",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
@@ -4549,7 +4560,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:2773",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/workspace/IssueDetail.jsx:145"
           ]
         },
@@ -4685,7 +4696,7 @@
           "files": [
             "src/app/(app)/settings/page.js:2766",
             "src/components/SearchModal.jsx:113",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/migrations/DataMigrationSettings.jsx:106",
             "src/components/workspace/AgileBoard.jsx:311",
             "src/components/workspace/BillingTab.jsx:234",
@@ -4784,7 +4795,7 @@
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
             "src/components/TeamMemberSettingsDialog.jsx:65",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/migrations/DataMigrationSettings.jsx:106",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
@@ -4832,7 +4843,7 @@
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
             "src/components/TeamMemberSettingsDialog.jsx:65",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
             "src/components/workspace/AgileBoard.jsx:311",
@@ -4904,7 +4915,7 @@
             "src/app/(app)/settings/page.js:2773",
             "src/components/SearchModal.jsx:113",
             "src/components/TeamMemberSettingsDialog.jsx:65",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/migrations/DataMigrationSettings.jsx:106",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
@@ -4968,7 +4979,7 @@
             "src/app/(app)/settings/page.js:2772",
             "src/app/(app)/settings/page.js:2773",
             "src/components/TeamMemberSettingsDialog.jsx:65",
-            "src/components/WorkspaceHeader.jsx:344",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/migrations/DataMigrationSettings.jsx:157",
             "src/components/migrations/DataMigrationSettings.jsx:94",
             "src/components/workspace/AgileBoard.jsx:311",
@@ -5021,7 +5032,7 @@
     "UserAvatar": {
       "size": {
         "sm": {
-          "count": 8,
+          "count": 7,
           "routes": [
             "/",
             "/[projectId]",
@@ -5035,7 +5046,6 @@
             "src/app/(app)/ai-call/page.js:288",
             "src/app/(app)/page.js:337",
             "src/components/AudioTaskPanel.jsx:245",
-            "src/components/WorkspaceHeader.jsx:497",
             "src/components/workspace/AnalyticsTab.jsx:322",
             "src/components/workspace/IssueCard.jsx:316",
             "src/components/workspace/TimesheetTab.jsx:219",
@@ -5106,7 +5116,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/WorkspaceHeader.jsx:74",
+            "src/components/WorkspaceHeader.jsx:75",
             "src/components/workspace/WorkloadTab.jsx:290"
           ]
         },
@@ -5303,7 +5313,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:320"
+            "src/components/WorkspaceHeader.jsx:321"
           ]
         }
       },
@@ -5327,7 +5337,7 @@
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:228",
             "src/components/OrgSwitcherScreen.jsx:45",
-            "src/components/WorkspaceHeader.jsx:320",
+            "src/components/WorkspaceHeader.jsx:321",
             "src/components/WorkspaceSidebar.jsx:281",
             "src/components/workspace/AgileBoard.jsx:264",
             "src/components/workspace/AgileBoard.jsx:281",
@@ -5360,7 +5370,7 @@
             "src/app/(app)/sprints/page.js:651",
             "src/app/(app)/sprints/page.js:672",
             "src/components/OrgSwitcherScreen.jsx:45",
-            "src/components/WorkspaceHeader.jsx:320",
+            "src/components/WorkspaceHeader.jsx:321",
             "src/components/workspace/AgileBoard.jsx:264",
             "src/components/workspace/AgileBoard.jsx:281",
             "src/components/workspace/AgileBoard.jsx:354",
@@ -5416,7 +5426,7 @@
             "src/components/MobileNav.jsx:172",
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:228",
-            "src/components/WorkspaceHeader.jsx:320",
+            "src/components/WorkspaceHeader.jsx:321",
             "src/components/WorkspaceSidebar.jsx:281",
             "src/components/WorkspaceSidebar.jsx:331",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
@@ -6011,7 +6021,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/WorkspaceHeader.jsx:373",
+            "src/components/WorkspaceHeader.jsx:374",
             "src/components/workspace/BillingTab.jsx:1137",
             "src/components/workspace/BillingTab.jsx:289",
             "src/components/workspace/IssueDetail.jsx:1242"
@@ -6030,7 +6040,7 @@
             "src/app/(app)/analytics/page.js:677",
             "src/app/(app)/analytics/page.js:731",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
-            "src/components/WorkspaceHeader.jsx:373",
+            "src/components/WorkspaceHeader.jsx:374",
             "src/components/workspace/BillingTab.jsx:289",
             "src/components/workspace/WorkloadTab.jsx:513",
             "src/components/workspace/WorkloadTab.jsx:554"
@@ -6590,6 +6600,7 @@
     "3) Хлібні крихти з пошуком (Project Mode)": "<div className=\"border border-[#f0f0f0] rounded-[16px] overflow-hidden\">\n  <TopHeader\n    mode=\"project\"\n    projectName=\"Mobile App Redesign\"\n    unreadCount={5}\n  />\n</div>",
     "4) Хлібні крихти детального перегляду (Breadcrumbs Mode)": "<div className=\"border border-[#f0f0f0] rounded-[16px] overflow-hidden\">\n  <TopHeader \n    mode=\"breadcrumbs\" \n    breadcrumbs={[\n      { label: 'Проєкти', href: '/' },\n      { label: 'Mobile App Redesign', href: '/project-1' },\n      { label: 'QT-104: Зворотній звʼязок', href: null },\n    ]}\n    unreadCount={2}\n  />\n</div>",
     "5) Пошук по чатах + Аватарки + Статус (Chat Mode)": "<div className=\"border border-[#f0f0f0] rounded-[16px] overflow-hidden\">\n  <TopHeader \n    mode=\"chat\" \n    showNotifications={false}\n    // No third-party avatar host here: the three placeholder URLs this\n    // used to fetch failed on every load of the page, and the product\n    // deliberately stores no such URL either — a user without a photo\n    // gets initials in their own deterministic colour, which is the\n    // thing worth previewing.\n    onlineUsers={[\n      { id: 'oksana', name: 'Оксана Литвин' },\n      { id: 'ivan', name: 'Іван Петренко' },\n      { id: 'taras', name: 'Тарас Шевчук' },\n    ]}\n  />\n</div>",
+    "6) Меню користувача": "<div className=\"flex min-h-[220px] justify-end rounded-[16px] border border-[#f0f0f0] bg-white p-[16px]\">\n  <UserMenu\n    user={{ id: 'kit-arthur', name: 'Артур Моспан', email: 'arthur@quickteam.app' }}\n    open={menuOpen}\n    onToggle={() => setMenuOpen(value => !value)}\n    onSettings={() => {}}\n    onSignOut={() => {}}\n  />\n</div>",
     "1) Повний варіант (Full PageHeader)": "<div className=\"border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full\">\n  <PageHeader\n    title=\"Мої завдання\"\n    actions={\n      <div className=\"flex gap-2\">\n        <Button onClick={() => alert('Налаштування')} icon={Settings2} size=\"icon-lg\" style=\"secondary\" title=\"Налаштування\" />\n        <Button onClick={() => alert('Створити')} icon={Plus} size=\"lg\" style=\"primary\" color=\"dark\">Створити завдання</Button>\n      </div>\n    }\n    filters={\n      <div className=\"flex items-center justify-between w-full\">\n        <FilterBar>\n          <MultiSelect\n            filterRole=\"project\"\n            variant=\"ghost\"\n            value={project}\n            onChange={setProject}\n            options={[\n              { value: 'p1', label: 'QuickTeam Website' },\n              { value: 'p2', label: 'Mobile Application' }\n            ]}\n            placeholder=\"Всі проєкти\"\n            searchPlaceholder=\"Пошук проєкту...\"\n          />\n          <Select\n            filterRole=\"type\"\n            variant=\"ghost\"\n            value={priority}\n            onChange={setPriority}\n            options={[\n              { value: 'all', label: 'Всі пріоритети' },\n              { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },\n              { value: 'high', label: 'Високий', dotColor: '#f97316' }\n            ]}\n          />\n        </FilterBar>\n        \n        <Tabs\n          tabs={[\n            { id: 'kanban', icon: Kanban },\n            { id: 'list', icon: List }\n          ]}\n          activeTab={tab1}\n          onTabChange={setTab1}\n          className=\"ml-auto\"\n        />\n      </div>\n    }\n  />\n</div>",
     "2) Тільки заголовок та дії": "<div className=\"border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full\">\n  <PageHeader\n    title=\"Профіль учасника\"\n    actions={\n      <Button onClick={() => alert('Зберегти')} style=\"primary\" color=\"dark\" size=\"lg\">Зберегти профіль</Button>\n    }\n  />\n</div>",
     "3) Заголовок + Фільтри": "<div className=\"border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full\">\n<PageHeader\n  title=\"Аналітика завантаження\"\n  filters={\n    <FilterBar>\n      <Select\n        variant=\"ghost\"\n        value={priority}\n        onChange={setPriority}\n        options={[\n          { value: 'all', label: 'Всі пріоритети' },\n          { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },\n          { value: 'high', label: 'Високий', dotColor: '#f97316' }\n          ]}\n        />\n      </FilterBar>\n    }\n  />\n</div>",

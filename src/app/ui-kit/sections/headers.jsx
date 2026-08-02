@@ -1,9 +1,15 @@
 'use client';
+import { useState } from 'react';
 import TopHeader from '@/components/ui/Layout/TopHeader';
+import UserMenu from '@/components/ui/Layout/UserMenu';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
 import { PreviewBlock } from '../preview';
 
 export default function HeadersSection() {
+  // Open by default: a closed menu previews a 36px avatar and nothing else, and
+  // the part worth showing is what it opens.
+  const [menuOpen, setMenuOpen] = useState(true);
+
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="1) WorkspaceHeader (Живий компонент)" description="Справжній хедер додатку, який реагує на стейт (хлібні крихти, таймер, чат)." filePath="src/components/WorkspaceHeader.jsx" fullWidth>
@@ -61,6 +67,24 @@ export default function HeadersSection() {
               { id: 'ivan', name: 'Іван Петренко' },
               { id: 'taras', name: 'Тарас Шевчук' },
             ]}
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="6) Меню користувача"
+        description="Аватар у хедері й меню, яке він відкриває. Жив усередині WorkspaceHeader — а той розумний (контекст, стор, роутер, Firestore), тож у кіт переїхала тільки розмітка."
+        filePath="src/components/ui/Layout/UserMenu.jsx"
+        component="UserMenu"
+        fullWidth
+      >
+        <div className="flex min-h-[220px] justify-end rounded-[16px] border border-[#f0f0f0] bg-white p-[16px]">
+          <UserMenu
+            user={{ id: 'kit-arthur', name: 'Артур Моспан', email: 'arthur@quickteam.app' }}
+            open={menuOpen}
+            onToggle={() => setMenuOpen(value => !value)}
+            onSettings={() => {}}
+            onSignOut={() => {}}
           />
         </div>
       </PreviewBlock>
