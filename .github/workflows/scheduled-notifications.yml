@@ -1,9 +1,21 @@
 name: Scheduled notifications
 
-# Vercel Hobby caps cron jobs at one run per day, which is useless for calendar
-# reminders that need to fire minutes before an event. The sweep therefore runs
-# from here instead of vercel.json until the app moves to a plan or host that
-# can schedule it natively.
+# Vercel Hobby allows one cron run per day, which is useless for calendar
+# reminders that need to fire minutes before an event, so the sweep is driven
+# from here.
+#
+# GitHub does not honour `*/5 * * * *` either. Measured on this repository, a
+# five-minute schedule actually starts a run roughly once an hour during the day
+# and once every two to three hours overnight. A run that swept once therefore
+# left hours uncovered, and the sweep's fixed ten-minute look-back threw away
+# every reminder whose trigger fell inside those hours instead of delivering it
+# late — which is why "нагадати за 15 хвилин" mostly never arrived.
+#
+# Two changes fix that together: the sweep carries a watermark and asks for
+# everything since its own previous pass, so nothing is dropped whatever the
+# cadence; and one run now stays alive sweeping on a real interval instead of
+# firing once and exiting. `cancel-in-progress: true` makes the next scheduled
+# run replace the loop rather than double it.
 #
 # Requires the CRON_SECRET repository secret to hold exactly the same value as
 # the CRON_SECRET environment variable in the production deployment.
@@ -12,41 +24,70 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      once:
+        description: 'Sweep a single time and exit'
+        type: boolean
+        default: false
 
-# A late run must never pile up behind the previous one: the sweep is
-# idempotent, but two concurrent sweeps only waste Firestore reads.
 concurrency:
   group: scheduled-notifications
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 55
     steps:
-      - name: Trigger the notification sweep
+      - name: Sweep on an interval until the next scheduled run takes over
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
+          SWEEP_INTERVAL_SECONDS: '120'
+          SWEEP_MINUTES: ${{ inputs.once && '0' || '50' }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
           if [ -z "${CRON_SECRET}" ]; then
             echo "CRON_SECRET repository secret is not set — the endpoint would answer 401." >&2
             exit 1
           fi
 
-          status=$(curl --silent --show-error --location \
-            --max-time 60 \
-            --output response.json \
-            --write-out '%{http_code}' \
-            --header "Authorization: Bearer ${CRON_SECRET}" \
-            "${APP_URL}/api/cron/notifications")
+          deadline=$(( $(date +%s) + SWEEP_MINUTES * 60 ))
+          failures=0
+          passes=0
 
-          cat response.json
-          echo
+          while : ; do
+            status=$(curl --silent --show-error --location \
+              --max-time 60 \
+              --output response.json \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer ${CRON_SECRET}" \
+              "${APP_URL}/api/cron/notifications") || status="000"
 
-          if [ "${status}" != "200" ]; then
-            echo "Notification sweep failed with HTTP ${status}." >&2
-            exit 1
-          fi
+            passes=$(( passes + 1 ))
+            echo "[$(date -u +%H:%M:%SZ)] HTTP ${status} $(head -c 400 response.json)"
+
+            if [ "${status}" = "401" ] || [ "${status}" = "403" ]; then
+              echo "The endpoint rejected the bearer token — CRON_SECRET mismatch." >&2
+              exit 1
+            fi
+
+            if [ "${status}" != "200" ]; then
+              failures=$(( failures + 1 ))
+              # One bad pass is a cold start or a blip, and the watermark means
+              # the next pass covers whatever it missed. Five in a row is an
+              # outage worth a red run.
+              if [ "${failures}" -ge 5 ]; then
+                echo "Five consecutive failed sweeps — failing the run." >&2
+                exit 1
+              fi
+            else
+              failures=0
+            fi
+
+            [ "$(date +%s)" -ge "${deadline}" ] && break
+            sleep "${SWEEP_INTERVAL_SECONDS}"
+          done
+
+          echo "Completed ${passes} sweep(s)."

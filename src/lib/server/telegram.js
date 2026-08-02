@@ -3,6 +3,7 @@ import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
+import { formatTelegramNotification } from '@/lib/utils/telegramMessage.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import {
   DEFAULT_PRIORITY_IDS,
@@ -76,14 +77,51 @@ export async function sendTelegramMessage(chatId, text) {
   return telegramRequest('sendMessage', {
     chat_id: chatId,
     text: String(text || '').slice(0, 4096),
-    disable_web_page_preview: true,
+    link_preview_options: { is_disabled: true },
   });
+}
+
+// A formatted message, with the plain-text form as the safety net. Telegram
+// answers 400 for markup it cannot parse and delivers nothing, so a stray "<" in
+// a task title must not be the difference between a notification and silence.
+async function sendFormattedTelegramMessage(chatId, message) {
+  try {
+    return await telegramRequest('sendMessage', {
+      chat_id: chatId,
+      text: message.text,
+      parse_mode: message.parseMode,
+      link_preview_options: { is_disabled: true },
+      ...(message.button
+        ? { reply_markup: { inline_keyboard: [[message.button]] } }
+        : {}),
+    });
+  } catch (error) {
+    console.warn('[telegram] Formatted message rejected, retrying as text:', error.message);
+    return sendTelegramMessage(chatId, message.fallbackText || message.text);
+  }
+}
+
+export function telegramAppLink(link) {
+  if (!link) return '';
+  const base = config().appUrl;
+  if (!base) return '';
+  return `${base}${String(link).startsWith('/') ? link : `/${link}`}`;
 }
 
 // `type` is optional: callers that have a notification type (the notifications
 // route) get the per-event switch applied, and the calendar senders, whose types
 // have no switch in Settings, fall through to the channel master alone.
-export async function deliverTelegramNotification({ userIds, title, body, link = '', type = '' }) {
+//
+// `items` is the batched form: one recipient, several notifications, one
+// message. `title`/`body`/`link` remain the single-notification shorthand.
+export async function deliverTelegramNotification({
+  userIds,
+  title,
+  body,
+  link = '',
+  type = '',
+  itemsByUserId = null,
+}) {
   const status = telegramStatus();
   const recipients = [...new Set((userIds || []).filter(Boolean))];
   if (!status.configured || !recipients.length) return { delivered: 0 };
@@ -93,18 +131,32 @@ export async function deliverTelegramNotification({ userIds, title, body, link =
     db.getAll(...recipients.map(uid => db.collection('users').doc(uid).collection('settings').doc('notifications'))),
     db.getAll(...recipients.map(uid => db.collection('users').doc(uid).collection('private').doc('telegram'))),
   ]);
-  const appLink = link
-    ? `${config().appUrl}${link.startsWith('/') ? link : `/${link}`}`
-    : '';
-  const message = [title, body, appLink].filter(Boolean).join('\n\n');
+  const shared = itemsByUserId
+    ? null
+    : formatTelegramNotification([{ type, title, body, url: telegramAppLink(link) }]);
+
   const deliveries = recipients.flatMap((uid, index) => {
     const preferences = preferenceSnapshots[index].exists ? preferenceSnapshots[index].data() : {};
     const connection = connectionSnapshots[index].exists ? connectionSnapshots[index].data() : {};
-    return shouldDeliver(preferences, 'telegram', type) && connection.chatId
-      ? [sendTelegramMessage(connection.chatId, message)]
+    if (!connection.chatId) return [];
+    if (itemsByUserId) {
+      // Each batched item carries its own type, so the per-event switch is
+      // applied per item rather than once for the whole digest.
+      const allowed = (itemsByUserId.get(uid) || [])
+        .filter(item => shouldDeliver(preferences, 'telegram', item.type));
+      const message = formatTelegramNotification(allowed);
+      return message ? [sendFormattedTelegramMessage(connection.chatId, message)] : [];
+    }
+    return shared && shouldDeliver(preferences, 'telegram', type)
+      ? [sendFormattedTelegramMessage(connection.chatId, shared)]
       : [];
   });
   const results = await Promise.allSettled(deliveries);
+  for (const item of results) {
+    if (item.status === 'rejected') {
+      console.warn('[telegram] Delivery failed:', item.reason?.message || item.reason);
+    }
+  }
   return { delivered: results.filter(item => item.status === 'fulfilled').length };
 }
 

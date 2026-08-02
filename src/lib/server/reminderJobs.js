@@ -7,13 +7,31 @@ import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
+  DEADLINE_FLOOR_MS,
+  DEADLINE_HORIZON_MS,
+  REMINDER_LOOKBACK_MS,
   calendarReminderCandidates,
+  clampReminderLookback,
   dayKeyInTimeZone,
   deadlineReminderCandidates,
 } from '@/lib/utils/reminderCandidates.mjs';
+import { telegramAppLink } from '@/lib/server/telegram';
 import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 
 const DELIVERY_CONCURRENCY = 10;
+// The sweep's own memory of when it last ran. Server-written only; Firestore
+// rules have no `system` match, so the browser cannot read or forge it.
+const SWEEP_STATE_PATH = ['system', 'notificationSweep'];
+// How far ahead a calendar reminder can be configured. Bounds the query that
+// used to read the entire calendarEvents collection on every pass — 288 passes a
+// day against a Spark project with a 50k daily read cap.
+const CALENDAR_LEAD_MS = 8 * 24 * 60 * 60 * 1000;
+const RECURRING_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'];
+
+function sweepStateRef() {
+  const db = getAdminDb();
+  return db.collection(SWEEP_STATE_PATH[0]).doc(SWEEP_STATE_PATH[1]);
+}
 
 async function mapWithConcurrency(values, concurrency, task) {
   const results = new Array(values.length);
@@ -74,7 +92,7 @@ async function claimAndDeliver(candidate, context, { allowEmail = true } = {}) {
     membership.orgId !== candidate.organizationId ||
     membership.userId !== candidate.userId
   ) {
-    return { claimed: 0, email: 0, telegram: 0 };
+    return { claimed: 0, email: 0, telegram: null };
   }
 
   const preferences = context.preferences.get(candidate.userId) || {};
@@ -84,7 +102,7 @@ async function claimAndDeliver(candidate, context, { allowEmail = true } = {}) {
     shouldDeliver(preferences, 'email', candidate.type) &&
     Boolean(profile.email);
   const telegram = shouldDeliver(preferences, 'telegram', candidate.type);
-  if (!inapp && !email && !telegram) return { claimed: 0, email: 0, telegram: 0 };
+  if (!inapp && !email && !telegram) return { claimed: 0, email: 0, telegram: null };
 
   const db = getAdminDb();
   const ref = db.collection('notifications').doc(candidate.id);
@@ -108,78 +126,133 @@ async function claimAndDeliver(candidate, context, { allowEmail = true } = {}) {
     });
   } catch (error) {
     if (error.code === 6 || error.code === 'already-exists') {
-      return { claimed: 0, email: 0, telegram: 0 };
+      return { claimed: 0, email: 0, telegram: null };
     }
     throw error;
   }
 
-  const [emailResult, telegramResult] = await Promise.all([
-    email
-      ? deliverEmail({
-        to: profile.email,
-        subject: candidate.title,
-        html: generateEmailTemplate({
-          type: candidate.type,
-          title: candidate.title,
-          body: candidate.body,
-          link: candidate.link,
-        }),
-      }).then(() => 1).catch(error => {
-        console.warn('[reminder-job] Email delivery failed:', error.message);
-        return 0;
-      })
-      : 0,
-    telegram
-      ? deliverTelegramNotification({
-        userIds: [candidate.userId],
+  const emailResult = email
+    ? await deliverEmail({
+      to: profile.email,
+      subject: candidate.title,
+      html: generateEmailTemplate({
+        type: candidate.type,
         title: candidate.title,
         body: candidate.body,
         link: candidate.link,
-        type: candidate.type,
-      }).then(result => result.delivered || 0).catch(error => {
-        console.warn('[reminder-job] Telegram delivery failed:', error.message);
-        return 0;
-      })
-      : 0,
-  ]);
+      }),
+    }).then(() => 1).catch(error => {
+      console.warn('[reminder-job] Email delivery failed:', error.message);
+      return 0;
+    })
+    : 0;
 
-  return { claimed: 1, email: emailResult, telegram: telegramResult };
+  // Telegram is not sent here. A sweep that has been waiting three hours for the
+  // scheduler routinely claims several reminders for one person at once, and
+  // sending each on its own turned "you have things to look at" into six
+  // near-identical pings. The claimed items are handed back and delivered as one
+  // digest per recipient below.
+  return {
+    claimed: 1,
+    email: emailResult,
+    telegram: telegram
+      ? {
+        userId: candidate.userId,
+        type: candidate.type,
+        title: candidate.title,
+        body: candidate.body,
+        url: telegramAppLink(candidate.link),
+      }
+      : null,
+  };
 }
 
-function summarize(results) {
+async function deliverTelegramDigests(results) {
+  const itemsByUserId = new Map();
+  for (const result of results) {
+    if (!result?.telegram) continue;
+    const list = itemsByUserId.get(result.telegram.userId) || [];
+    list.push(result.telegram);
+    itemsByUserId.set(result.telegram.userId, list);
+  }
+  if (!itemsByUserId.size) return 0;
+  const delivery = await deliverTelegramNotification({
+    userIds: [...itemsByUserId.keys()],
+    itemsByUserId,
+  }).catch(error => {
+    console.warn('[reminder-job] Telegram delivery failed:', error.message);
+    return { delivered: 0 };
+  });
+  return delivery.delivered || 0;
+}
+
+function summarize(results, telegramDelivered = 0) {
   return results.reduce(
     (summary, result) => ({
       claimed: summary.claimed + (result?.claimed || 0),
       email: summary.email + (result?.email || 0),
-      telegram: summary.telegram + (result?.telegram || 0),
+      telegram: summary.telegram,
     }),
-    { claimed: 0, email: 0, telegram: 0 },
+    { claimed: 0, email: 0, telegram: telegramDelivered },
   );
+}
+
+const CALENDAR_FIELDS = [
+  'organizationId',
+  'title',
+  'startAt',
+  'participantIds',
+  'participantResponses',
+  'reminderMinutes',
+  'recurrence',
+  'organizerId',
+];
+
+// Two bounded queries instead of one unbounded scan. A one-off event only
+// matters while its start is inside the reminder window; a recurring one has a
+// start in the past forever, so it is fetched by its recurrence instead. Every
+// event the old full scan returned is still covered, at a fraction of the reads.
+//
+// Only the global sweep takes this path. The authenticated diagnostic route
+// already narrows to one organization and one participant — both covered by an
+// existing composite index — and adding a range on top would need two more.
+async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipientId }) {
+  const db = getAdminDb();
+  if (organizationId || recipientId) {
+    let query = db.collection('calendarEvents');
+    if (organizationId) query = query.where('organizationId', '==', organizationId);
+    if (recipientId) query = query.where('participantIds', 'array-contains', recipientId);
+    const snapshot = await query.select(...CALENDAR_FIELDS).get();
+    return snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+  }
+
+  const [upcoming, recurring] = await Promise.all([
+    db.collection('calendarEvents')
+      .where('startAt', '>=', admin.firestore.Timestamp.fromMillis(nowMs - lookBackMs))
+      .where('startAt', '<=', admin.firestore.Timestamp.fromMillis(nowMs + CALENDAR_LEAD_MS))
+      .select(...CALENDAR_FIELDS)
+      .get(),
+    db.collection('calendarEvents')
+      .where('recurrence.frequency', 'in', RECURRING_FREQUENCIES)
+      .select(...CALENDAR_FIELDS)
+      .get(),
+  ]);
+
+  const events = new Map();
+  for (const document of [...upcoming.docs, ...recurring.docs]) {
+    events.set(document.id, { id: document.id, ...document.data() });
+  }
+  return [...events.values()];
 }
 
 export async function runCalendarReminderSweep({
   nowMs = Date.now(),
   organizationId = '',
   recipientId = '',
+  lookBackMs = REMINDER_LOOKBACK_MS,
 } = {}) {
-  const db = getAdminDb();
-  let query = db.collection('calendarEvents');
-  if (organizationId) query = query.where('organizationId', '==', organizationId);
-  if (recipientId) query = query.where('participantIds', 'array-contains', recipientId);
-  const snapshot = await query
-    .select(
-      'organizationId',
-      'title',
-      'startAt',
-      'participantIds',
-      'participantResponses',
-      'reminderMinutes',
-      'recurrence',
-      'organizerId',
-    )
-    .get();
-  const events = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
-  const candidates = calendarReminderCandidates(events, { nowMs, recipientId }).map(candidate => {
+  const events = await loadReminderEvents({ nowMs, lookBackMs, organizationId, recipientId });
+  const candidates = calendarReminderCandidates(events, { nowMs, lookBackMs, recipientId }).map(candidate => {
     const occurrence = new Date(candidate.occurrenceStart).toISOString();
     return {
       ...candidate,
@@ -197,13 +270,17 @@ export async function runCalendarReminderSweep({
     DELIVERY_CONCURRENCY,
     candidate => claimAndDeliver(candidate, context, { allowEmail: false }),
   );
-  return { candidates: candidates.length, ...summarize(results) };
+  return { candidates: candidates.length, ...summarize(results, await deliverTelegramDigests(results)) };
 }
 
 export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
   const db = getAdminDb();
   const snapshot = await db.collection('issues')
-    .where('dueDate', '<=', admin.firestore.Timestamp.fromMillis(nowMs + 24 * 60 * 60 * 1000))
+    // Bounded on both sides. Without the floor this read every issue that had
+    // ever slipped its deadline, on every pass, and those issues no longer
+    // produce candidates anyway.
+    .where('dueDate', '>=', admin.firestore.Timestamp.fromMillis(nowMs - DEADLINE_FLOOR_MS))
+    .where('dueDate', '<=', admin.firestore.Timestamp.fromMillis(nowMs + DEADLINE_HORIZON_MS))
     .select(
       'organizationId',
       'projectId',
@@ -253,7 +330,7 @@ export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
     DELIVERY_CONCURRENCY,
     candidate => claimAndDeliver(candidate, context),
   );
-  return { candidates: candidates.length, ...summarize(results) };
+  return { candidates: candidates.length, ...summarize(results, await deliverTelegramDigests(results)) };
 }
 
 function birthdayParts(nowMs, timeZone) {
@@ -327,8 +404,22 @@ async function runOrganizationBirthdaySweep(organizationId, timeZone, nowMs) {
   return created;
 }
 
-export async function runBirthdaySweep({ nowMs = Date.now(), organizationId = '' } = {}) {
+// A greeting has to land on the right day, not the right minute. Scanning every
+// organization on all 288 passes of a day bought nothing and cost a full
+// collection read each time; every half hour still puts the greeting in the
+// channel within thirty minutes of local midnight, in any timezone.
+export const BIRTHDAY_SCAN_INTERVAL_MS = 30 * 60 * 1000;
+
+export async function runBirthdaySweep({
+  nowMs = Date.now(),
+  organizationId = '',
+  lastScanAtMs = null,
+} = {}) {
   const db = getAdminDb();
+  if (!organizationId && Number.isFinite(lastScanAtMs) &&
+      nowMs - lastScanAtMs < BIRTHDAY_SCAN_INTERVAL_MS) {
+    return { created: 0, skipped: true };
+  }
   const snapshots = organizationId
     ? [await db.collection('organizations').doc(organizationId).get()]
     : (await db.collection('organizations').select('timezone').get()).docs;
@@ -343,14 +434,64 @@ export async function runBirthdaySweep({ nowMs = Date.now(), organizationId = ''
     DELIVERY_CONCURRENCY,
     organization => runOrganizationBirthdaySweep(organization.id, organization.timeZone, nowMs),
   );
-  return { created: counts.reduce((total, count) => total + (count || 0), 0) };
+  return {
+    created: counts.reduce((total, count) => total + (count || 0), 0),
+    skipped: false,
+    scannedAtMs: nowMs,
+  };
+}
+
+// Reads the sweep's watermark and reports how much time the next pass has to
+// cover. A first run, or one whose state document was lost, gets the floor.
+export async function readSweepState(nowMs) {
+  const snapshot = await sweepStateRef().get().catch(() => null);
+  const data = snapshot?.data() || {};
+  const lastRunAt = Number(data.lastRunAtMs);
+  const lastBirthdayScanAt = Number(data.lastBirthdayScanAtMs);
+  const elapsedMs = Number.isFinite(lastRunAt) && lastRunAt <= nowMs
+    ? nowMs - lastRunAt
+    : REMINDER_LOOKBACK_MS;
+  return {
+    lastRunAtMs: Number.isFinite(lastRunAt) ? lastRunAt : null,
+    lastBirthdayScanAtMs: Number.isFinite(lastBirthdayScanAt) ? lastBirthdayScanAt : null,
+    elapsedMs,
+  };
 }
 
 export async function runScheduledNotificationSweep({ nowMs = Date.now() } = {}) {
+  const state = await readSweepState(nowMs);
+  const lookBackMs = clampReminderLookback(state.elapsedMs);
+
   const [calendar, deadlines, birthdays] = await Promise.all([
-    runCalendarReminderSweep({ nowMs }),
+    runCalendarReminderSweep({ nowMs, lookBackMs }),
     runDeadlineReminderSweep({ nowMs }),
-    runBirthdaySweep({ nowMs }),
+    runBirthdaySweep({ nowMs, lastScanAtMs: state.lastBirthdayScanAtMs }),
   ]);
-  return { calendar, deadlines, birthdays };
+
+  // Written last and unconditionally after a successful pass: a sweep that
+  // throws must not advance the watermark, or the reminders it failed to deliver
+  // would fall into the gap the watermark exists to close.
+  await sweepStateRef().set({
+    lastRunAtMs: nowMs,
+    lastRunAt: admin.firestore.Timestamp.fromMillis(nowMs),
+    lookBackMs,
+    previousRunAtMs: state.lastRunAtMs,
+    ...(birthdays.skipped ? {} : { lastBirthdayScanAtMs: nowMs }),
+    counts: {
+      calendar: calendar.claimed,
+      deadlines: deadlines.claimed,
+      birthdays: birthdays.created,
+      telegram: calendar.telegram + deadlines.telegram,
+    },
+  }, { merge: true }).catch(error => {
+    console.warn('[reminder-job] Could not record sweep state:', error.message);
+  });
+
+  return {
+    lookBackMs,
+    sinceLastRunMs: state.lastRunAtMs === null ? null : nowMs - state.lastRunAtMs,
+    calendar,
+    deadlines,
+    birthdays,
+  };
 }
