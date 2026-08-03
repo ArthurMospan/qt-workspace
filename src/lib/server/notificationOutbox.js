@@ -228,7 +228,22 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
       continue;
     }
 
-    await claimNotification(row, { inapp, body, nowMs });
+    const isFirstAttempt = Number(row.attempts || 0) === 0;
+    const claimedNow = await claimNotification(row, { inapp, body, nowMs });
+    // The notification document doubles as the "already told them" marker. On a
+    // first attempt, finding it already there means something else — the old
+    // polling sweep, a manual run — delivered this exact reminder, and sending
+    // it again is precisely the duplicate everyone complains about. On a retry
+    // the document is expected to exist, because we are the ones who wrote it.
+    if (!claimedNow && isFirstAttempt) {
+      await outboxRef().doc(row.id).update({
+        status: 'sent',
+        sentAtMs: nowMs,
+        attempts: 1,
+        lastError: 'already delivered',
+      });
+      continue;
+    }
     claimed.push({ row, body });
 
     if (wantsEmail) emails.push({ row, body, to: profile.email });

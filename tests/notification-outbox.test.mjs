@@ -218,3 +218,21 @@ test('a dispatch pass is bounded so a backlog drains instead of timing out', asy
   const dispatch = source.slice(source.indexOf('export async function dispatchDueNotifications'));
   assert.ok(dispatch.indexOf('claimNotification(row') < dispatch.indexOf('deliverTelegramNotification'));
 });
+
+test('a reminder something else already delivered is not delivered a second time', async () => {
+  const source = await read('../src/lib/server/notificationOutbox.js');
+  const dispatch = source.slice(source.indexOf('export async function dispatchDueNotifications'));
+  // The notification document is the "already told them" marker. Finding it on
+  // a *first* attempt means another mechanism sent this exact reminder — the
+  // old polling sweep, a manual run — and sending again is the duplicate the
+  // whole change exists to stop.
+  assert.match(dispatch, /const isFirstAttempt = Number\(row\.attempts \|\| 0\) === 0;/);
+  assert.match(dispatch, /if \(!claimedNow && isFirstAttempt\) \{/);
+  assert.match(dispatch, /lastError: 'already delivered'/);
+  // But on a retry the document is expected to exist, because we wrote it — so
+  // the skip must not apply there, or a failed Telegram send could never retry.
+  assert.ok(
+    dispatch.indexOf('isFirstAttempt') < dispatch.indexOf('claimed.push'),
+    'the guard has to run before the row joins the send list',
+  );
+});
