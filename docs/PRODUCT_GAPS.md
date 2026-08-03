@@ -24,8 +24,12 @@ open.
   digest per person per sweep, with a glyph per event type and a real button.
 - **done — chat had no switch.** Connecting Telegram meant a push per message in
   every channel; the only remedy was to disconnect.
+- **done — the sweep polled for due items instead of scheduling them.** Rows
+  now carry their own delivery time; a pass costs one indexed query and nothing
+  when nothing is due. See [NOTIFICATION_DELIVERY.md](NOTIFICATION_DELIVERY.md).
 - **Open: no delivery receipt anywhere.** When a Telegram send fails the warning
-  goes to a server log nobody reads. A person whose bot was blocked, or whose
+  is now recorded on the outbox row and retried with backoff, but nothing shows
+  it. A person whose bot was blocked, or whose
   chat id went stale, is silently unreachable forever. Settings should show the
   last successful delivery per channel, and a failed send should mark the
   connection as needing attention.
@@ -56,13 +60,10 @@ open.
 ## Load, failure and the states between
 
 - **done — no 404 page**, no root error boundary, no `robots.txt`.
-- **Open: no `loading.js` anywhere.** Every route transition holds the previous
-  screen until the new one is ready, with no indication that anything is
-  happening. Even one shared skeleton at the `(app)` level would remove the
-  "did my click register?" pause.
-- **Open: nothing reacts to going offline.** Firestore queues writes silently, so
-  a person on a train keeps typing into what looks like a working app and finds
-  out later. `navigator.onLine` plus a slim persistent bar is an afternoon.
+- **done — no `loading.js` anywhere.** The `(app)` group now has a skeleton
+  shaped like the screen that is arriving.
+- **done — nothing reacted to going offline.** A persistent strip now says so,
+  driven by `navigator.onLine`.
 - **Open: session expiry is handled per call site.** Two files translate an
   expired token into Ukrainian; everywhere else it surfaces as a generic
   failure. One interceptor that recognises an expired session and offers to
@@ -90,14 +91,11 @@ open.
 
 ## Keyboard, focus and reach
 
-- **Open: no skip link.** A keyboard user tabs through the entire sidebar on
-  every navigation before reaching content.
-- **Open: focus-visible is styled in three places in `globals.css` and nowhere
-  else.** Most controls fall back to whatever the browser draws, which on a dark
-  sidebar is often nothing.
-- **Open: no keyboard shortcut help.** The app has shortcuts (Escape closes the
-  issue detail, among others) and no way to discover them. `?` opening a cheat
-  sheet is a day's work and reliably becomes the most-used power feature.
+- **done — no skip link.** Tab now reaches the content first.
+- **done — focus-visible was styled in three places and nowhere else.** There is
+  a default ring, with its own colour on the dark sidebar and bottom bar where
+  the ink ring is invisible.
+- **done — no keyboard shortcut help.** `?` opens the cheat sheet.
 - **Open: no visible focus trap audit on the sheets.** The mobile «Ще» sheet is
   correctly `role="dialog"`, but nothing stops Tab from walking behind it.
 
@@ -115,10 +113,9 @@ open.
 
 ## Ideas worth building, in the order I would build them
 
-1. **Command palette (⌘K).** The app already has a search API, breadcrumbs and a
-   route table. A palette that jumps to a project, a task by key, or a person —
-   and runs actions like "start timer on QT-12" — turns a five-click app into a
-   two-keystroke one. Highest ratio of value to work in this codebase.
+1. **done — Command palette (⌘K).** Navigation, actions, projects and live task
+   search in one list, with the catalogue and its ranking as pure functions.
+   Still worth adding: "start timer on QT-12" and jumping to a person.
 2. **An "unread" concept for tasks, not just chat.** The chat badge is solid.
    Tasks have no equivalent, so "what changed while I was away" is unanswerable
    without opening each one. A per-issue last-seen cursor plus a dot in the board
