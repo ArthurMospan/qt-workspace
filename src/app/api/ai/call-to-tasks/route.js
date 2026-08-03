@@ -4,13 +4,15 @@
 // 4.5МБ на тіло запиту) і віддає ШІ на витяг: саммарі, рішення, чернетки задач.
 // Створення задач лишається за користувачем — цей роут нічого не пише в БД.
 //
-// Провайдери:
-//   GEMINI_API_KEY    → Gemini (основний; безкоштовний tier). Читає аудіо
-//                       НАТИВНО — окремий сервіс транскрипції не потрібен.
-//   ANTHROPIC_API_KEY → Claude (опційний, кращий на тексті; для аудіо без
-//                       Gemini потребує OPENAI_API_KEY на Whisper).
+// Провайдер один: GEMINI_API_KEY. Безкоштовний tier, читає аудіо НАТИВНО —
+// окремий сервіс транскрипції не потрібен.
+//
+// Тут була ще запасна гілка на Claude (+ Whisper для аудіо). Вона не
+// виконувалась жодного разу: ключа ANTHROPIC_API_KEY немає ні локально, ні в
+// проді. Небезпечною її робило те, що на тексті вона мала пріоритет над
+// Gemini — тобто поява ключа тихо перевела б безкоштовний провайдер на
+// платний, без жодного рішення з чийогось боку.
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
@@ -18,31 +20,6 @@ export const maxDuration = 300;
 
 // ~14МБ бінарного аудіо ≈ 19МБ base64 — під ліміт inline-запиту Gemini (20МБ).
 const MAX_AUDIO_BYTES = 14 * 1024 * 1024;
-
-const CLAUDE_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['summary', 'decisions', 'tasks'],
-  properties: {
-    summary: { type: 'string' },
-    decisions: { type: 'array', items: { type: 'string' } },
-    tasks: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['title', 'description', 'assigneeName', 'priority', 'dueDate'],
-        properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
-          assigneeName: { type: ['string', 'null'] },
-          priority: { type: 'string', enum: ['blocker', 'high', 'medium', 'low'] },
-          dueDate: { type: ['string', 'null'] },
-        },
-      },
-    },
-  },
-};
 
 const GEMINI_SCHEMA = {
   type: 'OBJECT',
@@ -154,44 +131,6 @@ async function analyzeWithGemini({ prompt, transcript, audio }) {
   }
 }
 
-async function transcribeWithWhisper(audio) {
-  const form = new FormData();
-  form.append('file', new Blob([audio.buffer], { type: audio.mimeType }), 'call-recording');
-  form.append('model', 'whisper-1');
-  form.append('response_format', 'text');
-  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: form,
-  });
-  if (!response.ok) {
-    console.error('[ai/call-to-tasks] whisper rejected request', await response.text());
-    return { error: 'Помилка транскрипції аудіо' };
-  }
-  return { transcript: await response.text() };
-}
-
-async function analyzeWithClaude({ prompt, transcript }) {
-  const client = new Anthropic();
-  const response = await client.messages.create({
-    model: 'claude-opus-4-8',
-    max_tokens: 16000,
-    thinking: { type: 'adaptive' },
-    output_config: { format: { type: 'json_schema', schema: CLAUDE_SCHEMA } },
-    messages: [{ role: 'user', content: `${prompt}\n\n<transcript>\n${transcript}\n</transcript>` }],
-  });
-  if (response.stop_reason === 'refusal') {
-    return { error: 'ШІ відхилив запит — перевірте вміст транскрипту' };
-  }
-  const textBlock = response.content.find(block => block.type === 'text');
-  if (!textBlock) return { error: 'ШІ не повернув результат' };
-  try {
-    return { extraction: JSON.parse(textBlock.text) };
-  } catch {
-    return { error: 'Не вдалося розібрати відповідь ШІ' };
-  }
-}
-
 export async function POST(request) {
   try {
     const { organizationId, transcript, audioUrl, audioMimeType, memberNames = [], projectName } = await request.json();
@@ -203,9 +142,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Забагато запитів — спробуйте за годину' }, { status: 429 });
     }
 
-    const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-    const hasClaude = Boolean(process.env.ANTHROPIC_API_KEY);
-    if (!hasGemini && !hasClaude) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({ error: 'ШІ-аналіз не налаштовано (немає GEMINI_API_KEY)' }, { status: 503 });
     }
 
@@ -231,23 +168,10 @@ export async function POST(request) {
       : [];
     const prompt = buildPrompt({ members, projectName, hasAudio: Boolean(audio) });
 
-    let result;
-    if (audio) {
-      // Аудіо: Gemini слухає напряму; без Gemini — Whisper → Claude.
-      if (hasGemini) {
-        result = await analyzeWithGemini({ prompt, audio });
-      } else if (hasClaude && process.env.OPENAI_API_KEY) {
-        const transcribed = await transcribeWithWhisper(audio);
-        if (transcribed.error) return NextResponse.json({ error: transcribed.error }, { status: 400 });
-        result = await analyzeWithClaude({ prompt, transcript: transcribed.transcript });
-      } else {
-        return NextResponse.json({ error: 'Аналіз аудіо не налаштовано — вставте текст транскрипту' }, { status: 400 });
-      }
-    } else {
-      result = hasClaude
-        ? await analyzeWithClaude({ prompt, transcript: text.slice(0, 300000) })
-        : await analyzeWithGemini({ prompt, transcript: text.slice(0, 300000) });
-    }
+    // Gemini слухає аудіо напряму, тож обидва шляхи ведуть в один виклик.
+    const result = audio
+      ? await analyzeWithGemini({ prompt, audio })
+      : await analyzeWithGemini({ prompt, transcript: text.slice(0, 300000) });
 
     if (result.error) return NextResponse.json({ error: result.error }, { status: 502 });
     const extraction = result.extraction;
