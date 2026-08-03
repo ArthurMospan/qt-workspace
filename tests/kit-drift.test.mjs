@@ -97,9 +97,18 @@ test('the variant matrix renders every component that can stand alone', () => {
 // kit would move three variants into this list while the product went on
 // rendering them every time somebody set a status. A component whose call site
 // is the only evidence for a declared variant stays where it is.
+//
+// Raised 96 → 100 when the calendar's day cell arrived. That is a different
+// cause and worth naming, because the number no longer means only one thing:
+// the scan can read a literal and nothing else, so a state chosen at runtime —
+// `state={!inMonth ? 'outside' : isToday ? 'today' : …}` — is invisible to it
+// however plainly the product renders it. Four states of `CalendarDayCell` went
+// into this list on the day they started being drawn. Where a literal is
+// available the call site should pass one instead of spending the ceiling;
+// where the value is genuinely computed, this is the honest place for it.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 96,
+    committed.totals.declaredUnused <= 100,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

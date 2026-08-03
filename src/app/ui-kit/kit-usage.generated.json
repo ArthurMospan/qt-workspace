@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 88,
-    "used": 88,
+    "components": 89,
+    "used": 89,
     "unused": 0,
-    "covered": 85,
+    "covered": 86,
     "uncovered": 0,
     "routes": 13,
-    "previews": 111,
+    "previews": 112,
     "internal": 3,
     "unlisted": 0
   },
@@ -134,6 +134,7 @@
     "/analytics": [
       "Alert",
       "Button",
+      "CalendarDayCell",
       "Card",
       "Checkbox",
       "DatePicker",
@@ -161,6 +162,7 @@
     ],
     "/analytics/team/[memberId]": [
       "Button",
+      "CalendarDayCell",
       "DatePicker",
       "Dialog",
       "EmptyState",
@@ -527,6 +529,19 @@
         "src/components/workspace/WorkloadTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
+      ]
+    },
+    "CalendarDayCell": {
+      "file": "src/components/ui/Calendar/CalendarDayCell.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/TimesheetTab.jsx"
       ]
     },
     "CalendarDayNumber": {
@@ -2161,8 +2176,8 @@
             "src/components/workspace/IssueDetail.jsx:920",
             "src/components/workspace/IssueDetail.jsx:967",
             "src/components/workspace/IssueDetail.jsx:968",
-            "src/components/workspace/TimesheetTab.jsx:425",
-            "src/components/workspace/TimesheetTab.jsx:426",
+            "src/components/workspace/TimesheetTab.jsx:423",
+            "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:466",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:467",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:497",
@@ -2385,7 +2400,7 @@
             "src/components/workspace/IssueDetail.jsx:972",
             "src/components/workspace/IssueDetail.jsx:975",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/TimesheetTab.jsx:425",
+            "src/components/workspace/TimesheetTab.jsx:423",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:466",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:467",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:509",
@@ -2447,7 +2462,7 @@
             "src/components/workspace/IssueDetail.jsx:1587",
             "src/components/workspace/IssueDetail.jsx:968",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
-            "src/components/workspace/TimesheetTab.jsx:426"
+            "src/components/workspace/TimesheetTab.jsx:424"
           ]
         },
         "ghost": {
@@ -2722,8 +2737,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
-            "src/components/workspace/TimesheetTab.jsx:425",
-            "src/components/workspace/TimesheetTab.jsx:426",
+            "src/components/workspace/TimesheetTab.jsx:423",
+            "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/WorkloadTab.jsx:289",
             "src/components/workspace/WorkloadTab.jsx:564",
             "src/components/workspace/WorkloadTab.jsx:565",
@@ -2925,8 +2940,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
-            "src/components/workspace/TimesheetTab.jsx:425",
-            "src/components/workspace/TimesheetTab.jsx:426",
+            "src/components/workspace/TimesheetTab.jsx:423",
+            "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/UnifiedTimeline.jsx:620",
             "src/components/workspace/WorkloadTab.jsx:289",
             "src/components/workspace/WorkloadTab.jsx:564",
@@ -3113,8 +3128,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
-            "src/components/workspace/TimesheetTab.jsx:425",
-            "src/components/workspace/TimesheetTab.jsx:426",
+            "src/components/workspace/TimesheetTab.jsx:423",
+            "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/UnifiedTimeline.jsx:620",
             "src/components/workspace/WorkloadTab.jsx:289",
             "src/components/workspace/WorkloadTab.jsx:564",
@@ -3333,8 +3348,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
-            "src/components/workspace/TimesheetTab.jsx:425",
-            "src/components/workspace/TimesheetTab.jsx:426",
+            "src/components/workspace/TimesheetTab.jsx:423",
+            "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/UnifiedTimeline.jsx:620",
             "src/components/workspace/WorkloadTab.jsx:289",
             "src/components/workspace/WorkloadTab.jsx:564",
@@ -3832,9 +3847,9 @@
             "src/components/workspace/BillingTab.jsx:1048",
             "src/components/workspace/BillingTab.jsx:1277",
             "src/components/workspace/BillingTab.jsx:1281",
-            "src/components/workspace/TimesheetTab.jsx:458",
-            "src/components/workspace/TimesheetTab.jsx:462",
-            "src/components/workspace/TimesheetTab.jsx:469",
+            "src/components/workspace/TimesheetTab.jsx:456",
+            "src/components/workspace/TimesheetTab.jsx:460",
+            "src/components/workspace/TimesheetTab.jsx:467",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:298",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:299",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:539",
@@ -3937,7 +3952,7 @@
             "src/components/workspace/BillingTab.jsx:1281",
             "src/components/workspace/BillingTab.jsx:303",
             "src/components/workspace/IssueDetail.jsx:1444",
-            "src/components/workspace/TimesheetTab.jsx:469",
+            "src/components/workspace/TimesheetTab.jsx:467",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:298",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:299",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:539",
@@ -4026,7 +4041,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/workspace/TimesheetTab.jsx:458"
+            "src/components/workspace/TimesheetTab.jsx:456"
           ]
         },
         "duration-compact-minutes": {
@@ -4036,7 +4051,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/workspace/TimesheetTab.jsx:462"
+            "src/components/workspace/TimesheetTab.jsx:460"
           ]
         }
       },
@@ -4085,9 +4100,9 @@
             "src/components/workspace/IssueDetail.jsx:1291",
             "src/components/workspace/IssueDetail.jsx:1306",
             "src/components/workspace/IssueDetail.jsx:1444",
-            "src/components/workspace/TimesheetTab.jsx:458",
-            "src/components/workspace/TimesheetTab.jsx:462",
-            "src/components/workspace/TimesheetTab.jsx:469",
+            "src/components/workspace/TimesheetTab.jsx:456",
+            "src/components/workspace/TimesheetTab.jsx:460",
+            "src/components/workspace/TimesheetTab.jsx:467",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:298",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:299",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:539",
@@ -4262,8 +4277,8 @@
             "src/components/workspace/IssueDetail.jsx:1570",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
-            "src/components/workspace/TimesheetTab.jsx:433",
-            "src/components/workspace/TimesheetTab.jsx:445",
+            "src/components/workspace/TimesheetTab.jsx:431",
+            "src/components/workspace/TimesheetTab.jsx:443",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:552",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:561",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
@@ -4371,8 +4386,8 @@
             "src/components/workspace/IssueDetail.jsx:1570",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
-            "src/components/workspace/TimesheetTab.jsx:433",
-            "src/components/workspace/TimesheetTab.jsx:445",
+            "src/components/workspace/TimesheetTab.jsx:431",
+            "src/components/workspace/TimesheetTab.jsx:443",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:552",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:561",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
@@ -4498,8 +4513,8 @@
             "src/components/workspace/IssueDetail.jsx:1570",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
-            "src/components/workspace/TimesheetTab.jsx:433",
-            "src/components/workspace/TimesheetTab.jsx:445",
+            "src/components/workspace/TimesheetTab.jsx:431",
+            "src/components/workspace/TimesheetTab.jsx:443",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:552",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:561",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
@@ -5373,7 +5388,7 @@
             "src/components/workspace/AnalyticsTab.jsx:322",
             "src/components/workspace/IssueCard.jsx:316",
             "src/components/workspace/TimesheetTab.jsx:219",
-            "src/components/workspace/TimesheetTab.jsx:561"
+            "src/components/workspace/TimesheetTab.jsx:559"
           ]
         },
         "md": {
@@ -5821,7 +5836,7 @@
             "src/app/(app)/sprints/page.js:146",
             "src/app/(app)/sprints/page.js:54",
             "src/components/workspace/BoardConfigModal.jsx:165",
-            "src/components/workspace/TimesheetTab.jsx:418"
+            "src/components/workspace/TimesheetTab.jsx:416"
           ]
         },
         "lg": {
@@ -5875,7 +5890,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
-            "src/components/workspace/TimesheetTab.jsx:418",
+            "src/components/workspace/TimesheetTab.jsx:416",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:459",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:529"
           ]
@@ -5956,7 +5971,7 @@
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
-            "src/components/workspace/TimesheetTab.jsx:418",
+            "src/components/workspace/TimesheetTab.jsx:416",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:459",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:529"
           ]
@@ -6012,7 +6027,7 @@
             "src/components/workspace/BillingTab.jsx:431",
             "src/components/workspace/BoardConfigModal.jsx:165",
             "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/TimesheetTab.jsx:418",
+            "src/components/workspace/TimesheetTab.jsx:416",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:459",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:529",
             "src/components/workspace/calendar/CalendarEventPage.jsx:176"
@@ -6111,7 +6126,7 @@
             "src/app/(app)/calendar/page.js:533",
             "src/app/(app)/team/page.js:102",
             "src/components/profile/ProfileView.jsx:344",
-            "src/components/workspace/TimesheetTab.jsx:577",
+            "src/components/workspace/TimesheetTab.jsx:575",
             "src/components/workspace/VelocityTab.jsx:258",
             "src/components/workspace/WorkloadTab.jsx:753",
             "src/components/workspace/WorkloadTab.jsx:765",
@@ -6191,7 +6206,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:251",
             "src/components/workspace/QtPlusProjectTab.jsx:263",
             "src/components/workspace/QtPlusProjectTab.jsx:271",
-            "src/components/workspace/TimesheetTab.jsx:577",
+            "src/components/workspace/TimesheetTab.jsx:575",
             "src/components/workspace/UnifiedTimeline.jsx:409",
             "src/components/workspace/VelocityTab.jsx:258",
             "src/components/workspace/WorkloadTab.jsx:753",
@@ -6233,7 +6248,7 @@
             "src/app/(app)/page.js:853",
             "src/app/(app)/team/page.js:102",
             "src/components/profile/ProfileView.jsx:344",
-            "src/components/workspace/TimesheetTab.jsx:577",
+            "src/components/workspace/TimesheetTab.jsx:575",
             "src/components/workspace/UnifiedTimeline.jsx:409",
             "src/components/workspace/VelocityTab.jsx:258",
             "src/components/workspace/WorkloadTab.jsx:753",
@@ -6653,6 +6668,20 @@
         }
       }
     },
+    "CalendarDayCell": {
+      "state": {
+        "(default)": {
+          "count": 1,
+          "routes": [
+            "/analytics",
+            "/analytics/team/[memberId]"
+          ],
+          "files": [
+            "src/components/workspace/TimesheetTab.jsx:300"
+          ]
+        }
+      }
+    },
     "ResponseChoice": {
       "size": {
         "sm": {
@@ -6741,11 +6770,11 @@
             "src/components/AudioTaskPanel.jsx:141",
             "src/components/AudioTaskPanel.jsx:150",
             "src/components/AudioTaskPanel.jsx:177",
-            "src/components/workspace/TimesheetTab.jsx:432",
-            "src/components/workspace/TimesheetTab.jsx:439",
-            "src/components/workspace/TimesheetTab.jsx:444",
-            "src/components/workspace/TimesheetTab.jsx:455",
-            "src/components/workspace/TimesheetTab.jsx:468"
+            "src/components/workspace/TimesheetTab.jsx:430",
+            "src/components/workspace/TimesheetTab.jsx:437",
+            "src/components/workspace/TimesheetTab.jsx:442",
+            "src/components/workspace/TimesheetTab.jsx:453",
+            "src/components/workspace/TimesheetTab.jsx:466"
           ]
         }
       }
@@ -7098,6 +7127,7 @@
     "Task Attributes Panel — Calendar Event": "<div className=\"relative -mx-2 mt-[12px] px-2\">\n  <TaskAttributesPanel\n    singleRow\n    context=\"calendar\"\n    compact\n    primaryChildren={(\n      <>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Тип</span>\n          <Select\n            compact\n            value={eventType}\n            onChange={setEventType}\n            options={CALENDAR_EVENT_TYPE_OPTIONS}\n            buttonClassName={compactSelectClass}\n          />\n        </div>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Проєкт</span>\n          <Select\n            compact\n            value={eventProject}\n            onChange={setEventProject}\n            options={[{ value: 'quickteam', label: 'QuickTeam' }, { value: '', label: 'Без проєкту' }]}\n            buttonClassName={compactSelectClass}\n          />\n        </div>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Дата</span>\n          <DatePicker\n            compact\n            hideIcon\n            value={dueDate}\n            onChange={setDueDate}\n            inputClassName={compactInputClass}\n          />\n        </div>\n        <button type=\"button\" className={`${attributeItemClass} h-full w-full text-left`}>\n          <span className={attributeLabelClass}>Час події</span>\n          <span className=\"flex h-[22px] items-center truncate text-[13px] font-medium text-ink\">10:00–11:00</span>\n        </button>\n        <button type=\"button\" className={`${attributeItemClass} h-full w-full text-left`}>\n          <span className={attributeLabelClass}>Учасники</span>\n          <span className=\"flex h-[22px] items-center truncate text-[13px] font-medium text-ink\"><Users size={13} className=\"mr-1.5 shrink-0 text-muted\" />3 учасники</span>\n        </button>\n        <div className={attributeItemClass}>\n          <span className={attributeLabelClass}>Трекінг часу</span>\n          <div className=\"flex h-[22px] min-w-0 items-center gap-1\">\n            <button type=\"button\" className=\"grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors bg-line text-ink hover:bg-[#d9d9d9]\">\n              <Play size={10} strokeWidth={0} className=\"block translate-x-[1px] fill-current\" />\n            </button>\n            <button type=\"button\" className=\"min-w-0 truncate text-[11px] font-bold text-ink\">45 хв</button>\n          </div>\n        </div>\n        <button type=\"button\" className={`${detailsButtonClass} text-muted`}>\n          <Settings2 size={14} />\n          <span>Деталі</span>\n        </button>\n      </>\n    )}\n  />\n</div>",
     "Запис у комірці дня": "<div className=\"flex w-full flex-wrap gap-[24px]\">\n  <div className=\"w-[200px]\">\n    <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">compact — місяць</p>\n    <div className=\"flex flex-col gap-[4px] rounded-[10px] border border-line bg-white p-[7px]\">\n      <CalendarEntry\n        tone=\"event\"\n        compact\n        accent={EVENT_TINTS.meeting.color}\n        background={EVENT_TINTS.meeting.bg}\n        title=\"10:00 Планерка\"\n        leading={<Users size={11} style={{ color: EVENT_TINTS.meeting.color }} className=\"shrink-0\" />}\n      />\n      <CalendarEntry\n        tone=\"event\"\n        compact\n        accent={EVENT_TINTS.reminder.color}\n        background={EVENT_TINTS.reminder.bg}\n        title=\"Приватна подія\"\n        leading={<CalendarClock size={11} style={{ color: EVENT_TINTS.reminder.color }} className=\"shrink-0\" />}\n        trailing={<LockKeyhole size={10} className=\"ml-auto shrink-0 text-muted\" aria-label=\"Приватна подія\" />}\n      />\n      <CalendarEntry\n        tone=\"deadline\"\n        compact\n        leading={<span className=\"h-1.5 w-1.5 shrink-0 rounded-full bg-red-500\" />}\n        title=\"QT-104 · Здати макет\"\n      />\n      <CalendarEntry\n        tone=\"deadline\"\n        compact\n        dimmed\n        leading={<span className=\"h-1.5 w-1.5 shrink-0 rounded-full bg-red-500\" />}\n        title=\"QT-98 · Уже здано\"\n      />\n    </div>\n  </div>\n\n  <div className=\"w-[220px]\">\n    <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">звичайна — тиждень</p>\n    <div className=\"flex flex-col gap-[4px] rounded-[10px] border border-line bg-white p-[7px]\">\n      <CalendarEntry\n        tone=\"event\"\n        accent={EVENT_TINTS.meeting.color}\n        background={EVENT_TINTS.meeting.bg}\n        title=\"Планерка команди\"\n        leading={<Users size={12} style={{ color: EVENT_TINTS.meeting.color }} className=\"shrink-0\" />}\n        meta=\"10:00–10:30\"\n      />\n      <CalendarEntry\n        tone=\"deadline\"\n        leading={<span className=\"h-1.5 w-1.5 shrink-0 rounded-full bg-red-500\" />}\n        title=\"QT-104 · Здати макет\"\n      />\n    </div>\n  </div>\n</div>",
     "Число дня": "<div className=\"flex items-end gap-[20px]\">\n  {[['today', '14', 'сьогодні'], ['default', '15', 'цей місяць'], ['outside', '31', 'сусідній місяць']].map(([state, date, role]) => (\n    <div key={state} className=\"flex flex-col items-center gap-[6px]\">\n      <CalendarDayNumber state={state} aria-label={`Відкрити ${date} число`}>{date}</CalendarDayNumber>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
+    "Комірка дня": "<div className=\"grid w-full max-w-[520px] grid-cols-4 gap-[10px]\">\n  {[['default', '15', 'звичайний'], ['today', '14', 'сьогодні'], ['weekend', '16', 'вихідний'], ['outside', '31', 'сусідній місяць']].map(([state, date, role]) => (\n    <CalendarDayCell key={state} state={state} title={role}>\n      <span className=\"text-[12px] font-bold text-ink\">{date}</span>\n      <span className=\"text-[10px] font-medium text-muted\">{role}</span>\n    </CalendarDayCell>\n  ))}\n</div>",
     "Годинний слот": "<div className=\"flex gap-[8px]\">\n  <div className=\"flex w-[44px] flex-col pt-[1px] text-right\">\n    {[9, 10, 11].map(hour => (\n      <span key={hour} className=\"h-[44px] pr-[6px] text-[10px] text-faint\">{hour}:00</span>\n    ))}\n  </div>\n  <div className=\"relative h-[132px] w-[200px] rounded-[8px] border border-line bg-white\">\n    {[0, 1, 2].map(index => (\n      <CalendarHourSlot\n        key={index}\n        label={`Створити подію о ${9 + index}:00`}\n        style={{ top: index * 44, height: 44 }}\n      />\n    ))}\n  </div>\n</div>",
     "Плюс у комірці": "<div className=\"group flex w-[150px] items-center justify-between rounded-[8px] border border-line bg-white p-[7px]\">\n  <CalendarDayNumber state=\"today\">14</CalendarDayNumber>\n  <IconAction\n    label=\"Додати подію\"\n    icon={Plus}\n    size=\"xs\"\n    appearance=\"quiet\"\n    className=\"opacity-0 transition-opacity group-hover:opacity-100\"\n  />\n</div>",
     "Form Group Layouts": "<div className=\"grid grid-cols-1 md:grid-cols-3 gap-[24px] max-w-[900px]\">\n  <FormGroup label=\"Назва проєкту\">\n    <Input placeholder=\"Введіть назву...\" />\n  </FormGroup>\n\n  <FormGroup label=\"Електронна пошта\" required>\n    <Input placeholder=\"name@company.com\" />\n  </FormGroup>\n\n  <FormGroup label=\"Пароль\" required error=\"Пароль має містити щонайменше 8 символів\">\n    <Input type=\"password\" placeholder=\"••••••••\" error={true} />\n  </FormGroup>\n</div>",

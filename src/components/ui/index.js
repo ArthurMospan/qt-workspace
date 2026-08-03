@@ -38,6 +38,7 @@ export { default as MediaPlayButton } from './MediaPlayButton'
 // the date in its corner, and the hour strip you click to create at a time.
 export { default as CalendarEntry } from './Calendar/CalendarEntry'
 export { default as CalendarDayNumber } from './Calendar/CalendarDayNumber'
+export { default as CalendarDayCell } from './Calendar/CalendarDayCell'
 export { default as CalendarHourSlot } from './Calendar/CalendarHourSlot'
 export { default as TitleInput } from './Forms/TitleInput'
 

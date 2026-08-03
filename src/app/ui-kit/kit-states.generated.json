@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 88,
-    "stateful": 85,
-    "hover": 61,
-    "focus": 62,
-    "disabled": 33,
+    "components": 89,
+    "stateful": 86,
+    "hover": 62,
+    "focus": 63,
+    "disabled": 34,
     "loading": 5,
     "error": 6,
-    "long-text": 60
+    "long-text": 61
   },
   "components": {
     "Alert": {
@@ -57,6 +57,12 @@
       "loading": "prop",
       "hover": "own",
       "focus": "own",
+      "long-text": "children"
+    },
+    "CalendarDayCell": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
       "long-text": "children"
     },
     "CalendarDayNumber": {
@@ -462,6 +468,10 @@
       "inner-nav-layout",
       "variant-matrix",
       "states"
+    ],
+    "CalendarDayCell": [
+      "calendar",
+      "variant-matrix"
     ],
     "CalendarDayNumber": [
       "calendar",

@@ -1,5 +1,5 @@
 'use client';
-import { CalendarEntry, CalendarDayNumber, CalendarHourSlot, IconAction } from '@/components/ui';
+import { CalendarEntry, CalendarDayNumber, CalendarDayCell, CalendarHourSlot, IconAction } from '@/components/ui';
 import { CalendarClock, LockKeyhole, Plus, Users } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 
@@ -92,6 +92,23 @@ export default function CalendarSection() {
         </div>
       </PreviewBlock>
 
+
+      <PreviewBlock
+        title="Комірка дня"
+        component="CalendarDayCell"
+        description="Цілий день як натискна плитка — місячна сітка табеля, де день підсумовує списані на нього години. У самому календарі комірка не кнопка, бо ціль там записи всередині неї; тут ціллю є день. Сьогодні тримає мʼяке зелене кільце, а не чорнильну заливку числа: заповнена чорним плитка перекричала б цифри всередині себе."
+        filePath="src/components/ui/Calendar/CalendarDayCell.jsx"
+        fullWidth
+      >
+        <div className="grid w-full max-w-[520px] grid-cols-4 gap-[10px]">
+          {[['default', '15', 'звичайний'], ['today', '14', 'сьогодні'], ['weekend', '16', 'вихідний'], ['outside', '31', 'сусідній місяць']].map(([state, date, role]) => (
+            <CalendarDayCell key={state} state={state} title={role}>
+              <span className="text-[12px] font-bold text-ink">{date}</span>
+              <span className="text-[10px] font-medium text-muted">{role}</span>
+            </CalendarDayCell>
+          ))}
+        </div>
+      </PreviewBlock>
       <PreviewBlock
         title="Годинний слот"
         component="CalendarHourSlot"

@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 37,
-    "declaredValues": 323,
+    "componentsWithVariants": 38,
+    "declaredValues": 327,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
     "usedAndPreviewed": 194,
     "usedWithoutPreview": 0,
-    "declaredUnused": 96
+    "declaredUnused": 100
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -146,6 +146,30 @@
       "component": "Button",
       "prop": "surface",
       "value": "default",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayCell",
+      "prop": "state",
+      "value": "default",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayCell",
+      "prop": "state",
+      "value": "outside",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayCell",
+      "prop": "state",
+      "value": "today",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayCell",
+      "prop": "state",
+      "value": "weekend",
       "namespace": null
     },
     {
@@ -1068,6 +1092,14 @@
         "today"
       ]
     },
+    "CalendarDayCell": {
+      "state": [
+        "default",
+        "outside",
+        "today",
+        "weekend"
+      ]
+    },
     "ResponseChoice": {
       "size": [
         "md",
@@ -1414,6 +1446,10 @@
     "Button.surface.canvas",
     "Button.surface.danger-subtle",
     "Button.surface.default",
+    "CalendarDayCell.state.default",
+    "CalendarDayCell.state.outside",
+    "CalendarDayCell.state.today",
+    "CalendarDayCell.state.weekend",
     "CalendarDayNumber.state.default",
     "CalendarDayNumber.state.outside",
     "CalendarDayNumber.state.today",

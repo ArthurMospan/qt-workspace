@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, ColorSwatch, ListRow } from '@/components/ui';
+import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow } from '@/components/ui';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import TextAction from '@/components/ui/TextAction';
@@ -66,6 +66,12 @@ const VARIANT_BASE = {
     />
   ),
   CalendarDayNumber: (props) => <CalendarDayNumber aria-label="Відкрити 14 число" {...props}>14</CalendarDayNumber>,
+  CalendarDayCell: (props) => (
+    <CalendarDayCell className="!min-h-[62px] w-[92px]" {...props}>
+      <span className="text-[12px] font-bold text-ink">14</span>
+      <span className="text-[10px] text-muted">3 завд.</span>
+    </CalendarDayCell>
+  ),
   ColorSwatch: (props) => <ColorSwatch color="#ef4444" label="Колір мітки" {...props} />,
   ListRow: (props) => (
     <ListRow className="flex items-center justify-between" {...props}>

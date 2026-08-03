@@ -133,6 +133,7 @@ const SOURCES = {
   ColorSwatch: { size: { literal: ['choice', 'trigger'] } },
   ListRow: { density: { literal: ['compact', 'roomy'] } },
   CalendarDayNumber: { state: { literal: ['default', 'outside', 'today'] } },
+  CalendarDayCell: { state: { literal: ['default', 'outside', 'today', 'weekend'] } },
   ResponseChoice: {
     size: { literal: ['md', 'sm', 'tile'] },
     surface: { literal: ['canvas', 'surface'] },

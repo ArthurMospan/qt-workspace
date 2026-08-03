@@ -10,7 +10,7 @@ import { CalendarDays, Clock } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Dialog, Button, FormGroup, Select, Input, EmptyState } from '@/components/ui';
+import { Dialog, Button, CalendarDayCell, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
@@ -297,14 +297,12 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
             const isToday = key === todayKey;
             const isWeekend = i >= 5;
             return (
-              <button key={key} type="button" onClick={() => onSelectDay?.(d)}
+              <CalendarDayCell
+                key={key}
+                state={!inMonth ? 'outside' : isToday ? 'today' : isWeekend ? 'weekend' : 'default'}
+                onClick={() => onSelectDay?.(d)}
                 title="Відкрити тиждень"
-                className={`rounded-[14px] border p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${
-                  !inMonth ? 'border-black/[0.03] bg-white/60 opacity-45'
-                    : isToday ? 'border-[#dbe9e0] bg-white ring-2 ring-[#eaf2ed] hover:border-[#c6dccd]'
-                    : isWeekend ? 'border-black/[0.05] bg-white hover:border-black/10'
-                    : 'border-black/[0.05] bg-white hover:border-black/10 hover:shadow-sm'
-                }`}>
+              >
                 <span className={`text-[12px] font-bold ${isToday ? 'text-[#2f6b4b]' : inMonth ? 'text-ink' : 'text-muted'}`}>
                   {d.getDate()}
                 </span>
@@ -316,7 +314,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
                     </span>
                   </>
                 )}
-              </button>
+              </CalendarDayCell>
             );
           })}
         </div>

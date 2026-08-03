@@ -11,15 +11,15 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 20,
+    "nativeControls": 19,
     "structures": {
-      "analytics": 2,
+      "analytics": 1,
       "qtplus": 2,
       "board": 1,
       "settings": 3,
       "shell": 12
     },
-    "styledNativeControls": 13,
+    "styledNativeControls": 12,
     "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -32,20 +32,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 19,
+    "button": 18,
     "input": 0,
     "textarea": 1,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 88,
-      "used": 88,
+      "components": 89,
+      "used": 89,
       "unused": 0,
-      "covered": 85,
+      "covered": 86,
       "uncovered": 0,
       "routes": 13,
-      "previews": 111,
+      "previews": 112,
       "internal": 3,
       "unlisted": 0
     },
@@ -269,24 +269,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/TimesheetTab.jsx:300",
-      "className": "rounded-[14px] border p-[10px] min-h-[86px] flex flex-col items-start gap-[6px] text-left transition-colors cursor-pointer ${…}",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "Відкрити тиждень",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "analytics",
-      "routes": [
-        "/analytics",
-        "/analytics/team/[memberId]"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/workspace/WorkloadTab.jsx:613",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
@@ -411,10 +393,6 @@
     },
     {
       "file": "src/components/workspace/qtplus/StageStepper.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/workspace/TimesheetTab.jsx",
       "count": 1
     },
     {
@@ -651,7 +629,7 @@
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:560",
+      "location": "src/components/workspace/TimesheetTab.jsx:558",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

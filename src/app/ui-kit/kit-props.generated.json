@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 88,
-    "props": 622,
-    "documentedProps": 622,
+    "components": 89,
+    "props": 625,
+    "documentedProps": 625,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -452,6 +452,38 @@
           "type": "string",
           "values": [],
           "description": "Legacy alias for `style`, kept for existing call sites."
+        }
+      ]
+    },
+    "CalendarDayCell": {
+      "file": "src/components/ui/Calendar/CalendarDayCell.jsx",
+      "summary": "A day of a month grid, as a pressable tile.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Opens the day, or the week around it."
+        },
+        {
+          "name": "state",
+          "default": "'default'",
+          "type": "'default'|'today'|'weekend'|'outside'",
+          "values": [
+            "default",
+            "outside",
+            "today",
+            "weekend"
+          ],
+          "description": "Which day this is relative to today, the week and the month on screen."
         }
       ]
     },
