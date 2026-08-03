@@ -12,7 +12,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { auth } from '@/lib/firebase';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import { createIssueViaApi } from '@/lib/services/issues';
-import { Button, Card, Checkbox, FileInput, FormGroup, IconAction, LoadingSpinner, PageHeader, Textarea } from '@/components/ui';
+import { Button, Card, Checkbox, DatePicker, FileInput, FormGroup, IconAction, Input, LoadingSpinner, PageHeader, Textarea } from '@/components/ui';
 import { Select } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
@@ -260,8 +260,14 @@ export default function AiCallPage() {
               <div className="flex flex-col gap-3">
                 {result.tasks.map((task, index) => {
                   const assignee = members.find(m => (m.id || m.uid) === task.assigneeId);
+                  // A white card so the kit's grey fields have something to sit
+                  // against. It used to be a grey card with white fields
+                  // hand-written on top — the same look upside down, and it
+                  // cost three controls outside the kit. The card itself is
+                  // the kit's `Card`, not a hand-rolled white box: the drift
+                  // guard rightly counts one of those as a manual surface.
                   return (
-                    <div key={index} className={`rounded-[12px] border p-4 transition-opacity ${task.include ? 'border-line bg-canvas' : 'border-transparent bg-canvas opacity-45'}`}>
+                    <Card key={index} preset="bordered" padding="md" className={`transition-opacity ${task.include ? '' : 'opacity-45'}`}>
                       <div className="flex items-start gap-3">
                         <span className="mt-[6px] shrink-0">
                           <Checkbox
@@ -272,16 +278,16 @@ export default function AiCallPage() {
                           />
                         </span>
                         <div className="min-w-0 flex-1 flex flex-col gap-2">
-                          <input
+                          <Input
                             value={task.title}
                             onChange={event => updateTask(index, { title: event.target.value })}
-                            className="w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-ink outline-none focus:border-ink"
+                            aria-label="Назва задачі"
                           />
-                          <textarea
+                          <Textarea
                             value={task.description}
                             onChange={event => updateTask(index, { description: event.target.value })}
                             rows={2}
-                            className="w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink"
+                            aria-label="Опис задачі"
                           />
                           <div className="flex flex-wrap items-center gap-2">
                             {assignee && <UserAvatar user={assignee} size="sm" />}
@@ -299,16 +305,18 @@ export default function AiCallPage() {
                                 options={PRIORITY_OPTIONS}
                               />
                             </div>
-                            <input
-                              type="date"
-                              value={task.dueDate || ''}
-                              onChange={event => updateTask(index, { dueDate: event.target.value || null })}
-                              className="rounded-[8px] border border-line bg-white px-2 py-[7px] text-[12px] text-ink outline-none focus:border-ink"
-                            />
+                            <div className="w-[150px]">
+                              <DatePicker
+                                value={task.dueDate || ''}
+                                onChange={value => updateTask(index, { dueDate: value || null })}
+                                placeholder="Дедлайн"
+                                aria-label="Дедлайн задачі"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   );
                 })}
               </div>

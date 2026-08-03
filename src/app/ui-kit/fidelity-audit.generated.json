@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 52,
+    "nativeControls": 49,
     "structures": {
       "calendar": 12,
       "analytics": 3,
       "qtplus": 4,
-      "ai-call": 4,
+      "ai-call": 1,
       "board": 4,
       "settings": 7,
       "shell": 18
     },
-    "styledNativeControls": 40,
+    "styledNativeControls": 37,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -35,8 +35,8 @@
   },
   "nativeByTag": {
     "button": 48,
-    "input": 2,
-    "textarea": 2,
+    "input": 0,
+    "textarea": 1,
     "select": 0
   },
   "kit": {
@@ -55,51 +55,6 @@
   },
   "parseErrors": [],
   "nativeControls": [
-    {
-      "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:275",
-      "className": "w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-ink outline-none focus:border-ink",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/ai-call"
-      ]
-    },
-    {
-      "tag": "textarea",
-      "location": "src/app/(app)/ai-call/page.js:280",
-      "className": "w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Textarea",
-      "structure": "ai-call",
-      "routes": [
-        "/ai-call"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/app/(app)/ai-call/page.js:302",
-      "className": "rounded-[8px] border border-line bg-white px-2 py-[7px] text-[12px] text-ink outline-none focus:border-ink",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/ai-call"
-      ]
-    },
     {
       "tag": "button",
       "location": "src/app/(app)/calendar/page.js:119",
@@ -920,10 +875,6 @@
     {
       "file": "src/components/WorkspaceSidebar.jsx",
       "count": 4
-    },
-    {
-      "file": "src/app/(app)/ai-call/page.js",
-      "count": 3
     },
     {
       "file": "src/components/AuthLayout.jsx",
