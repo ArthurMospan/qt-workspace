@@ -11,16 +11,16 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 39,
+    "nativeControls": 37,
     "structures": {
-      "calendar": 11,
+      "calendar": 9,
       "analytics": 3,
       "qtplus": 4,
       "board": 1,
       "settings": 5,
       "shell": 15
     },
-    "styledNativeControls": 29,
+    "styledNativeControls": 28,
     "reviewedNativeControls": 6,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 38,
+    "button": 36,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -399,40 +399,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1040",
-      "className": "${…} ${…}",
-      "text": "",
-      "childElements": [
-        "Settings2",
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1166",
-      "className": "w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1236",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1238",
       "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
       "text": "",
       "childElements": [],
@@ -691,10 +658,6 @@
       "count": 5
     },
     {
-      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 5
-    },
-    {
       "file": "src/app/(app)/settings/page.js",
       "count": 4
     },
@@ -708,6 +671,10 @@
     },
     {
       "file": "src/components/UserStatusSetter.jsx",
+      "count": 3
+    },
+    {
+      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
       "count": 3
     },
     {
@@ -952,7 +919,7 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:262",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:263",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },

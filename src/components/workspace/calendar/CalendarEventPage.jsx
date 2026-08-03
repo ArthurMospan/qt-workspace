@@ -34,6 +34,7 @@ import {
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
+  AttributeTrigger,
   Button,
   ContextMenu,
   DatePicker,
@@ -658,7 +659,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     attributeLabelClass,
     compactInputClass,
     compactSelectClass,
-    detailsButtonClass,
   } = getTaskAttributeChrome({ condensed: isHeaderScrolled });
 
   return (
@@ -1037,14 +1037,14 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         if (open) setDetailsDraft({ ...view });
                       }}
                       trigger={(
-                        <button
-                          type="button"
-                          className={`${detailsButtonClass} ${detailsOpen ? 'bg-white text-ink' : 'text-muted'}`}
+                        <AttributeTrigger
+                          condensed={isHeaderScrolled}
+                          active={detailsOpen}
                           aria-expanded={detailsOpen}
                         >
                           <Settings2 size={14} />
                           <span>Деталі</span>
-                        </button>
+                        </AttributeTrigger>
                       )}
                     >
                       {({ close }) => {
@@ -1163,15 +1163,17 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   placeholder="Офіс, кімната або адреса"
                 />
               ) : (
-                <button
-                  type="button"
+                // Read mode draws the same field edit mode does. It used to be
+                // a 16px grey block, so clicking it swapped one shape for
+                // another 10px shorter — the value appeared to move when all
+                // that happened was that it became editable.
+                <Input
+                  value={event.location || ''}
+                  placeholder="Не вказано"
+                  readOnly
                   onClick={canManage ? enterEdit : undefined}
-                  className={`w-full rounded-[16px] bg-canvas px-4 py-3 text-left text-[13px] font-medium text-ink transition-colors ${
-                    canManage ? 'cursor-pointer hover:bg-[#ebebeb]' : 'cursor-default'
-                  }`}
-                >
-                  {event.location || <span className="text-faint">Не вказано</span>}
-                </button>
+                  aria-label="Місце події"
+                />
               )}
             </section>
 
