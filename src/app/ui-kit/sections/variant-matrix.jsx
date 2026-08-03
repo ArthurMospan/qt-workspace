@@ -141,9 +141,9 @@ function VariantCell({ component, prop, value, count, previewed }) {
       : 'border-[#fde68a] bg-white';
 
   return (
-    <div className={`flex flex-col gap-[6px] rounded-[10px] border p-[10px] ${tone}`}>
+    <div className={`flex flex-col gap-[4px] rounded-[10px] border p-[8px] ${tone}`}>
       <div
-        className={`relative isolate flex min-h-[52px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
+        className={`relative isolate flex min-h-[38px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
           NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
         }`}
       >
@@ -170,7 +170,7 @@ export default function VariantMatrixSection() {
   const previewed = new Set(kitDrift.previewedValues);
 
   return (
-    <div className="flex flex-col gap-[24px]">
+    <div className="flex flex-col gap-[16px]">
       <Surface preset="bordered-panel" padding="lg">
         <h2 className="text-[18px] font-bold text-ink">
           {kitDrift.totals.declaredValues} оголошених значень у {Object.keys(manifest).length} компонентах
@@ -208,11 +208,11 @@ export default function VariantMatrixSection() {
               <span className="text-[10px] text-faint">{VARIANT_ELSEWHERE[component]}</span>
             )}
           </div>
-          <div className="flex flex-col gap-[14px] p-[14px]">
+          <div className="flex flex-col gap-[8px] p-[10px]">
             {Object.entries(props).map(([prop, values]) => (
               <div key={prop}>
                 <div className="mb-[6px] font-mono text-[11px] font-bold text-ink">{prop}</div>
-                <div className="grid gap-[8px] [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
+                <div className="grid gap-[6px] [grid-template-columns:repeat(auto-fill,minmax(88px,1fr))]">
                   {values.map(value => (
                     <VariantCell
                       key={value}
