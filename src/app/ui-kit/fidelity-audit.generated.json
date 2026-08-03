@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 56,
+    "nativeControls": 55,
     "structures": {
       "calendar": 12,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 7,
-      "board": 5,
+      "board": 4,
       "settings": 7,
       "shell": 18
     },
-    "styledNativeControls": 44,
+    "styledNativeControls": 43,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -34,7 +34,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 50,
+    "button": 49,
     "input": 3,
     "textarea": 3,
     "select": 0
@@ -198,24 +198,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:144",
-      "className": "px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav",
-      "text": "Розархівувати",
-      "childElements": [
-        "ArchiveRestore"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "board",
-      "routes": [
-        "/"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/page.js:158",
+      "location": "src/app/(app)/page.js:152",
       "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
       "text": "",
       "childElements": [
@@ -1013,10 +996,6 @@
       "count": 3
     },
     {
-      "file": "src/app/(app)/page.js",
-      "count": 2
-    },
-    {
       "file": "src/components/InviteLinkSection.jsx",
       "count": 2
     },
@@ -1027,6 +1006,10 @@
     {
       "file": "src/components/WorkspaceHeader.jsx",
       "count": 2
+    },
+    {
+      "file": "src/app/(app)/page.js",
+      "count": 1
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",

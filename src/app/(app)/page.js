@@ -139,19 +139,13 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
           </div>
 
           {/* Kebab menu */}
+          {/* No «Розархівувати» chip here: this list filters archived projects
+              out before it renders a card (see filteredProjects below), so the
+              chip could never appear on screen. The one the product actually
+              shows lives in Settings → Архів проєктів and is already a kit
+              Button. The menu item below is dead for the same reason; it costs
+              one line and keeps the menu correct if the filter ever changes. */}
           <div className="relative no-nav flex items-center gap-[8px]">
-            {isArchived && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  unarchive(project.id);
-                }}
-                className="px-[12px] py-[6px] rounded-[8px] bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/20 text-[12px] font-bold transition-all flex items-center gap-[4px] no-nav"
-              >
-                <ArchiveRestore size={13} />
-                Розархівувати
-              </button>
-            )}
             <ContextMenu
               onOpenChange={setMenuOpen}
               trigger={
