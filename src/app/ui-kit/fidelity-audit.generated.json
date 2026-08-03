@@ -11,16 +11,16 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 37,
+    "nativeControls": 36,
     "structures": {
       "calendar": 9,
       "analytics": 3,
       "qtplus": 4,
       "board": 1,
       "settings": 5,
-      "shell": 15
+      "shell": 14
     },
-    "styledNativeControls": 28,
+    "styledNativeControls": 27,
     "reviewedNativeControls": 6,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 36,
+    "button": 35,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -289,23 +289,6 @@
       "resembles": "IconAction",
       "structure": "settings",
       "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/profile/ProfileView.jsx:354",
-      "className": "flex w-full items-center gap-3 rounded-[14px] border border-line bg-white p-3 text-left transition-colors hover:bg-canvas",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "shell",
-      "routes": [
-        "/team"
-      ]
     },
     {
       "tag": "button",
@@ -687,10 +670,6 @@
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/profile/ProfileView.jsx",
       "count": 1
     },
     {

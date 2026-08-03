@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 180,
+    "usedAndPreviewed": 181,
     "usedWithoutPreview": 0,
-    "declaredUnused": 93
+    "declaredUnused": 92
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -146,12 +146,6 @@
       "component": "Button",
       "prop": "surface",
       "value": "default",
-      "namespace": null
-    },
-    {
-      "component": "Card",
-      "prop": "padding",
-      "value": "sm",
       "namespace": null
     },
     {
@@ -1107,7 +1101,7 @@
     "Select.filterRole.member": 7,
     "Select.filterRole.priority": 5,
     "Select.filterRole.type": 7,
-    "Card.preset.bordered": 5,
+    "Card.preset.bordered": 6,
     "Card.padding.lg": 19,
     "IconAction.size.xs": 6,
     "IconAction.appearance.quiet": 11,
@@ -1224,6 +1218,7 @@
     "IconAction.appearance.surface-plain": 2,
     "UserAvatar.size.hero": 1,
     "Button.surface.danger-subtle": 1,
+    "Card.padding.sm": 1,
     "EmptyState.surface.card": 5,
     "Select.size.md": 1,
     "Input.preset.money": 2,

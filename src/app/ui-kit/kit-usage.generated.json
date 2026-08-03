@@ -348,6 +348,7 @@
     ],
     "/team": [
       "Button",
+      "Card",
       "ContextMenu",
       "Dialog",
       "EmptyState",
@@ -519,13 +520,14 @@
     },
     "Card": {
       "file": "src/components/ui/Layout/Card.jsx",
-      "count": 6,
+      "count": 7,
       "showcased": true,
       "usedByKit": [],
       "routes": [
         "/ai-call",
         "/analytics",
-        "/settings"
+        "/settings",
+        "/team"
       ],
       "usedIn": [
         "src/app/(app)/ai-call/page.js",
@@ -533,6 +535,7 @@
         "src/app/(app)/settings/page.js",
         "src/components/integrations/IntegrationCard.jsx",
         "src/components/migrations/DataMigrationSettings.jsx",
+        "src/components/profile/ProfileView.jsx",
         "src/components/workspace/BillingTab.jsx"
       ]
     },
@@ -6356,21 +6359,32 @@
             "src/app/(app)/settings/page.js:2913",
             "src/app/(app)/settings/page.js:2939"
           ]
+        },
+        "sm": {
+          "count": 1,
+          "routes": [
+            "/team"
+          ],
+          "files": [
+            "src/components/profile/ProfileView.jsx:360"
+          ]
         }
       },
       "preset": {
         "bordered": {
-          "count": 5,
+          "count": 6,
           "routes": [
             "/ai-call",
-            "/settings"
+            "/settings",
+            "/team"
           ],
           "files": [
             "src/app/(app)/ai-call/page.js:163",
             "src/app/(app)/ai-call/page.js:224",
             "src/app/(app)/ai-call/page.js:242",
             "src/app/(app)/ai-call/page.js:270",
-            "src/app/(app)/settings/page.js:2692"
+            "src/app/(app)/settings/page.js:2692",
+            "src/components/profile/ProfileView.jsx:360"
           ]
         },
         "borderless": {

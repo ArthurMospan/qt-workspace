@@ -351,15 +351,23 @@ export default function ProfileView({ user, onClose }) {
                 {agendaEvents.map(event => {
                   const start = new Date(event.startAt);
                   return (
-                    <button
+                    // `Card` with an onClick renders a real button, so the row
+                    // keeps its keyboard and screen-reader behaviour while the
+                    // border, radius and hover come from the kit. The flex row
+                    // moves inside: Card sets `block` on the button itself, and
+                    // a `flex` from here would be the same property in the same
+                    // layer, decided by emission order rather than intent.
+                    <Card
                       key={event.id}
-                      type="button"
+                      preset="bordered"
+                      padding="sm"
+                      interactive
                       onClick={() => {
                         if (onClose) onClose();
                         router.push(calendarEventHref(event));
                       }}
-                      className="flex w-full items-center gap-3 rounded-[14px] border border-line bg-white p-3 text-left transition-colors hover:bg-canvas"
                     >
+                      <span className="flex items-center gap-3">
                       <span className="flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center rounded-[12px] bg-canvas">
                         <span className="text-[10px] font-bold uppercase text-muted">
                           {start.toLocaleDateString('uk-UA', { month: 'short' })}
@@ -380,7 +388,8 @@ export default function ProfileView({ user, onClose }) {
                           {EVENT_TYPE_LABELS[event.type] || 'Подія'}
                         </span>
                       </span>
-                    </button>
+                      </span>
+                    </Card>
                   );
                 })}
               </div>
