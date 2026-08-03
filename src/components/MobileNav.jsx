@@ -267,9 +267,7 @@ export default function MobileNav() {
                   )}
                   <ChevronsUpDown size={14} className="text-muted shrink-0" />
                 </button>
-                <button onClick={() => setMoreOpen(false)} aria-label="Закрити" className="text-muted p-[6px] -mr-[6px]">
-                  <X size={18} />
-                </button>
+                <IconAction label="Закрити" icon={X} size="sm" appearance="quiet" onClick={() => setMoreOpen(false)} className="-mr-[6px]" />
               </div>
             </div>
 
@@ -298,11 +296,14 @@ export default function MobileNav() {
             <div className="flex items-center justify-between px-[20px] pb-[8px]">
               <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider">Проєкти</p>
               {can(orgRole, 'create:project') && (
-                <button
+                <IconAction
+                  label="Новий проєкт"
+                  icon={Plus}
+                  size="sm"
+                  appearance="quiet"
                   onClick={() => { setMoreOpen(false); router.push('/?new=1'); }}
-                  className="text-[#666666] p-[4px] -mr-[4px]" title="Новий проєкт">
-                  <Plus size={16} />
-                </button>
+                  className="-mr-[4px]"
+                />
               )}
             </div>
             <div className="flex flex-col gap-[2px] px-[8px]">

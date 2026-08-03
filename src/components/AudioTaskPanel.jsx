@@ -8,7 +8,7 @@ import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { Checkbox, FileInput, FormGroup, Input, Textarea } from '@/components/ui';
+import { Checkbox, FileInput, FormGroup, IconAction, Input, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [
@@ -152,7 +152,9 @@ export default function AudioTaskPanel({
           <div data-ui-surface="local" className="flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-muted"><FileAudio size={16} /></span>
             <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{audioFile.name}</span>
-            <button type="button" onClick={() => setAudioFile(null)} className="rounded-full p-2 text-muted hover:bg-white hover:text-ink" aria-label="Прибрати файл"><X size={14} /></button>
+            {/* `soft`, not `quiet`: this row is bg-canvas, and quiet's #f0f0f0
+                hover is four units off it — invisible. Soft's #ebebeb is not. */}
+            <IconAction label="Прибрати файл" icon={X} size="sm" appearance="soft" onClick={() => setAudioFile(null)} />
           </div>
         ) : (
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-[#d7d7d7] bg-canvas px-5 py-8 text-center transition-colors hover:border-muted">

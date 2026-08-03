@@ -19,6 +19,7 @@ import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import {
   Counter,
   EmptyState,
+  IconAction,
   PageHeader,
   ProjectSettingsForm,
   useConfirm,
@@ -149,9 +150,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             <ContextMenu
               onOpenChange={setMenuOpen}
               trigger={
-                <button aria-label="Дії з проєктом" className="p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all">
-                  <MoreVertical size={16} />
-                </button>
+                <IconAction label="Дії з проєктом" icon={MoreVertical} size="sm" appearance="quiet" />
               }
               items={[
                 // One entry, one dialog — the same one the project page opens.

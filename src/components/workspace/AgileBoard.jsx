@@ -6,6 +6,7 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
+import IconAction from '@/components/ui/IconAction';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import Pill from '@/components/ui/DataDisplay/Pill';
 
@@ -256,9 +257,7 @@ export default function AgileBoard({
                       toggleColumnCollapse(col.id);
                     }}
                   >
-                    <button data-ui-control="column-collapse" aria-label="Розгорнути колонку" className="text-muted mb-4">
-                      <ChevronRight size={16} />
-                    </button>
+                    <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                     <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
                     <Counter value={colTotalIssues.length} size="sm" appearance="subtle" className="mt-4" />
@@ -346,9 +345,7 @@ export default function AgileBoard({
                       >
                         {swimlanes.length === 1 && (
                           <>
-                            <button data-ui-control="column-collapse" aria-label="Розгорнути колонку" className="text-muted mb-4">
-                              <ChevronRight size={16} />
-                            </button>
+                            <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                             <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
                             <Counter value={colIssues.length} size="sm" appearance="subtle" className="mt-4" />

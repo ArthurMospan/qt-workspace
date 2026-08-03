@@ -11,18 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 45,
+    "nativeControls": 39,
     "structures": {
       "calendar": 11,
       "analytics": 3,
       "qtplus": 4,
-      "ai-call": 1,
-      "board": 4,
+      "board": 1,
       "settings": 5,
-      "shell": 17
+      "shell": 15
     },
-    "styledNativeControls": 33,
-    "reviewedNativeControls": 8,
+    "styledNativeControls": 29,
+    "reviewedNativeControls": 6,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -34,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 44,
+    "button": 38,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -138,23 +137,6 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/page.js:152",
-      "className": "p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all",
-      "text": "",
-      "childElements": [
-        "MoreVertical"
-      ],
-      "ariaLabel": "Дії з проєктом",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "board",
-      "routes": [
-        "/"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/app/(app)/settings/page.js:2360",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
@@ -216,26 +198,6 @@
       "structure": "settings",
       "routes": [
         "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/AudioTaskPanel.jsx:155",
-      "className": "rounded-full p-2 text-muted hover:bg-white hover:text-ink",
-      "text": "",
-      "childElements": [
-        "X"
-      ],
-      "ariaLabel": "Прибрати файл",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "ai-call",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
       ]
     },
     {
@@ -307,36 +269,6 @@
         "ChevronsUpDown"
       ],
       "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/MobileNav.jsx:270",
-      "className": "text-muted p-[6px] -mr-[6px]",
-      "text": "",
-      "childElements": [
-        "X"
-      ],
-      "ariaLabel": "Закрити",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/MobileNav.jsx:301",
-      "className": "text-[#666666] p-[4px] -mr-[4px]",
-      "text": "",
-      "childElements": [
-        "Plus"
-      ],
-      "ariaLabel": "Новий проєкт",
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
@@ -432,26 +364,8 @@
       "routes": []
     },
     {
-      "tag": "button",
-      "location": "src/components/workspace/AgileBoard.jsx:259",
-      "className": "text-muted mb-4",
-      "text": "",
-      "childElements": [
-        "ChevronRight"
-      ],
-      "ariaLabel": "Розгорнути колонку",
-      "styled": false,
-      "reviewed": "column-collapse",
-      "resembles": "IconAction",
-      "structure": "board",
-      "routes": [
-        "/[projectId]",
-        "/my"
-      ]
-    },
-    {
       "tag": "textarea",
-      "location": "src/components/workspace/AgileBoard.jsx:30",
+      "location": "src/components/workspace/AgileBoard.jsx:31",
       "className": "w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all",
       "text": "",
       "childElements": [],
@@ -459,24 +373,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "Textarea",
-      "structure": "board",
-      "routes": [
-        "/[projectId]",
-        "/my"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/AgileBoard.jsx:349",
-      "className": "text-muted mb-4",
-      "text": "",
-      "childElements": [
-        "ChevronRight"
-      ],
-      "ariaLabel": "Розгорнути колонку",
-      "styled": false,
-      "reviewed": "column-collapse",
-      "resembles": "IconAction",
       "structure": "board",
       "routes": [
         "/[projectId]",
@@ -803,10 +699,6 @@
       "count": 4
     },
     {
-      "file": "src/components/MobileNav.jsx",
-      "count": 4
-    },
-    {
       "file": "src/components/WorkspaceSidebar.jsx",
       "count": 4
     },
@@ -819,20 +711,12 @@
       "count": 3
     },
     {
-      "file": "src/components/workspace/AgileBoard.jsx",
-      "count": 3
+      "file": "src/components/MobileNav.jsx",
+      "count": 2
     },
     {
       "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 2
-    },
-    {
-      "file": "src/app/(app)/page.js",
-      "count": 1
-    },
-    {
-      "file": "src/components/AudioTaskPanel.jsx",
-      "count": 1
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",
@@ -844,6 +728,10 @@
     },
     {
       "file": "src/components/SearchModal.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/AgileBoard.jsx",
       "count": 1
     },
     {
@@ -877,16 +765,6 @@
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
-    {
-      "location": "src/components/workspace/AgileBoard.jsx:259",
-      "tag": "button",
-      "context": "column-collapse"
-    },
-    {
-      "location": "src/components/workspace/AgileBoard.jsx:349",
-      "tag": "button",
-      "context": "column-collapse"
-    },
     {
       "location": "src/components/workspace/calendar/CalendarEventPage.jsx:889",
       "tag": "button",
@@ -934,12 +812,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:120",
+      "location": "src/app/(app)/page.js:121",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:129",
+      "location": "src/app/(app)/page.js:130",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -979,12 +857,12 @@
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:192",
+      "location": "src/components/AudioTaskPanel.jsx:194",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:211",
+      "location": "src/components/AudioTaskPanel.jsx:213",
       "tag": "div",
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
@@ -1039,7 +917,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:242",
+      "location": "src/components/workspace/AgileBoard.jsx:243",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
