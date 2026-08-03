@@ -11,16 +11,16 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 33,
+    "nativeControls": 32,
     "structures": {
-      "calendar": 7,
+      "calendar": 6,
       "analytics": 3,
       "qtplus": 3,
       "board": 1,
       "settings": 5,
       "shell": 14
     },
-    "styledNativeControls": 26,
+    "styledNativeControls": 25,
     "reviewedNativeControls": 4,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 32,
+    "button": 31,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -56,7 +56,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:120",
+      "location": "src/app/(app)/calendar/page.js:121",
       "className": "w-full text-left rounded-[8px] border-l-[3px] transition-[filter,transform] hover:brightness-[0.98] active:scale-[0.99] ${…}",
       "text": "",
       "childElements": [
@@ -73,7 +73,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:143",
+      "location": "src/app/(app)/calendar/page.js:144",
       "className": "w-full text-left rounded-[8px] bg-white border border-line hover:border-[#d4d4d4] transition-colors ${…} ${…}",
       "text": "",
       "childElements": [
@@ -90,7 +90,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:239",
+      "location": "src/app/(app)/calendar/page.js:240",
       "className": "absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors",
       "text": "",
       "childElements": [],
@@ -105,7 +105,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:302",
+      "location": "src/app/(app)/calendar/page.js:303",
       "className": "w-7 h-7 rounded-full text-[11px] font-bold ${…}",
       "text": "",
       "childElements": [],
@@ -113,23 +113,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "",
-      "structure": "calendar",
-      "routes": [
-        "/calendar"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:311",
-      "className": "w-6 h-6 rounded-[7px] opacity-0 group-hover:opacity-100 hover:bg-canvas flex items-center justify-center text-muted transition-all",
-      "text": "",
-      "childElements": [
-        "Plus"
-      ],
-      "ariaLabel": "Додати подію",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
       "structure": "calendar",
       "routes": [
         "/calendar"
@@ -585,7 +568,7 @@
   "nativeHotspots": [
     {
       "file": "src/app/(app)/calendar/page.js",
-      "count": 5
+      "count": 4
     },
     {
       "file": "src/app/(app)/settings/page.js",

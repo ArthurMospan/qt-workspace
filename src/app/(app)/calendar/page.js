@@ -24,6 +24,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
   EmptyState,
+  IconAction,
   FilterBar,
   LoadingSpinner,
   PageHeader,
@@ -308,9 +309,18 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
                 >
                   {day.getDate()}
                 </button>
-                <button type="button" onClick={() => onCreate(day)} className="w-6 h-6 rounded-[7px] opacity-0 group-hover:opacity-100 hover:bg-canvas flex items-center justify-center text-muted transition-all" aria-label="Додати подію">
-                  <Plus size={13} />
-                </button>
+                {/* The one control in the month grid with a relative in the
+                    kit. `xs` is a 24px box at 7px radius, which is what this
+                    was drawing by hand; the fade-in on cell hover stays here
+                    because it is this grid's behaviour, not the button's. */}
+                <IconAction
+                  label="Додати подію"
+                  icon={Plus}
+                  size="xs"
+                  appearance="quiet"
+                  onClick={() => onCreate(day)}
+                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                />
               </div>
               <div className="space-y-[4px]">
                 {items.slice(0, 3).map(({ kind, item }) => kind === 'event'
