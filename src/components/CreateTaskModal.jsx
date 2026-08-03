@@ -1,6 +1,6 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { Check, ListTodo, Play, Tag as TagIcon } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -50,17 +50,31 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     [types],
   );
 
+  // Reset when the dialog *opens*, not whenever the values the reset reads
+  // happen to change identity. `visibleStatuses` is a useMemo over
+  // `activeHiddenCols`, which comes off `projectContext` — and the project page
+  // builds that as a fresh object literal every render. With those in the
+  // dependency list the reset ran on ordinary re-renders, and `setMode('task')`
+  // pulled the tab back to «Завдання» mid-work: that unmounts AudioTaskPanel,
+  // so a set of AI-generated drafts disappeared with it. The ref makes the
+  // open transition the trigger; the dependencies stay so the reset still reads
+  // current values on the render that opens it.
+  const hasOpened = useRef(false);
   useEffect(() => {
-    if (isOpen) {
-      queueMicrotask(() => {
-        setMode('task');
-        setForm(f => ({
-          ...f,
-          projectId: f.projectId || projects?.[0]?.id || '',
-          status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
-        }));
-      });
+    if (!isOpen) {
+      hasOpened.current = false;
+      return;
     }
+    if (hasOpened.current) return;
+    hasOpened.current = true;
+    queueMicrotask(() => {
+      setMode('task');
+      setForm(f => ({
+        ...f,
+        projectId: f.projectId || projects?.[0]?.id || '',
+        status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
+      }));
+    });
   }, [isOpen, initialStatus, visibleStatuses, projects]);
 
   useEffect(() => {

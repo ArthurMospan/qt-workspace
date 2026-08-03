@@ -1,15 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, FileAudio, ListChecks, Sparkles, Upload, X } from 'lucide-react';
+import { FileAudio, ListChecks, Sparkles, Upload, X } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { FileInput, FormGroup, Textarea } from '@/components/ui';
+import { Checkbox, FileInput, FormGroup, Input, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
 
 const PRIORITIES = [
@@ -201,29 +200,35 @@ export default function AudioTaskPanel({
               Створити вибрані
             </Button>
           </div>
-          {result.tasks.map((task, index) => {
-            const assignee = teamMembers.find(member => (member.id || member.uid) === task.assigneeId);
-            return (
-              <div key={index} data-ui-surface="local" className={`rounded-[14px] bg-canvas p-4 transition-opacity ${task.include ? '' : 'opacity-45'}`}>
+          {/* White card, kit fields. The card used to be grey with fields
+              painted transparent on top of it, which read as text rather than
+              as a form: nothing said the title could be edited, and the kit's
+              own grey Select had no contrast to sit against. Both problems are
+              the same problem — this is a review-and-edit step where every
+              field is meant to be changed, so it should look like the form it
+              is. */}
+          {result.tasks.map((task, index) => (
+              <div key={index} data-ui-surface="local" className={`rounded-[14px] border border-line bg-white p-4 transition-opacity ${task.include ? '' : 'opacity-45'}`}>
                 <div className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() => updateTask(index, { include: !task.include })}
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${task.include ? 'border-ink bg-ink text-white' : 'border-[#cfcfcf] bg-white'}`}
-                  >
-                    {task.include && <Check size={12} />}
-                  </button>
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <input
+                  <span className="mt-[7px] shrink-0">
+                    <Checkbox
+                      size="sm"
+                      checked={task.include}
+                      onChange={value => updateTask(index, { include: value })}
+                      ariaLabel="Створювати цю задачу"
+                    />
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Input
                       value={task.title}
                       onChange={event => updateTask(index, { title: event.target.value })}
-                      className="w-full bg-transparent text-[13px] font-bold text-ink outline-none"
+                      aria-label="Назва задачі"
                     />
-                    <textarea
+                    <Textarea
                       value={task.description || ''}
                       onChange={event => updateTask(index, { description: event.target.value })}
                       rows={2}
-                      className="w-full resize-none bg-transparent text-[12px] leading-5 text-muted outline-none"
+                      aria-label="Опис задачі"
                     />
                     <div className="flex flex-wrap gap-2">
                       <Select value={task.priority || 'medium'} onChange={value => updateTask(index, { priority: value })} options={PRIORITIES} compact />
@@ -240,13 +245,11 @@ export default function AudioTaskPanel({
                         ]}
                         compact
                       />
-                      {assignee && <UserAvatar user={assignee} size="sm" />}
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>

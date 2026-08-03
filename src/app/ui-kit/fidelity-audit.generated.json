@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 55,
+    "nativeControls": 52,
     "structures": {
       "calendar": 12,
       "analytics": 3,
       "qtplus": 4,
-      "ai-call": 7,
+      "ai-call": 4,
       "board": 4,
       "settings": 7,
       "shell": 18
     },
-    "styledNativeControls": 43,
+    "styledNativeControls": 40,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -34,9 +34,9 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 49,
-    "input": 3,
-    "textarea": 3,
+    "button": 48,
+    "input": 2,
+    "textarea": 2,
     "select": 0
   },
   "kit": {
@@ -280,7 +280,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/AudioTaskPanel.jsx:156",
+      "location": "src/components/AudioTaskPanel.jsx:155",
       "className": "rounded-full p-2 text-muted hover:bg-white hover:text-ink",
       "text": "",
       "childElements": [
@@ -290,60 +290,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
-      "structure": "ai-call",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/AudioTaskPanel.jsx:209",
-      "className": "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "ai-call",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "input",
-      "location": "src/components/AudioTaskPanel.jsx:217",
-      "className": "w-full bg-transparent text-[13px] font-bold text-ink outline-none",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Input",
-      "structure": "ai-call",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/my",
-        "/sprints"
-      ]
-    },
-    {
-      "tag": "textarea",
-      "location": "src/components/AudioTaskPanel.jsx:222",
-      "className": "w-full resize-none bg-transparent text-[12px] leading-5 text-muted outline-none",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Textarea",
       "structure": "ai-call",
       "routes": [
         "/",
@@ -968,10 +914,6 @@
       "count": 4
     },
     {
-      "file": "src/components/AudioTaskPanel.jsx",
-      "count": 4
-    },
-    {
       "file": "src/components/MobileNav.jsx",
       "count": 4
     },
@@ -1009,6 +951,10 @@
     },
     {
       "file": "src/app/(app)/page.js",
+      "count": 1
+    },
+    {
+      "file": "src/components/AudioTaskPanel.jsx",
       "count": 1
     },
     {
@@ -1147,19 +1093,19 @@
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:153",
+      "location": "src/components/AudioTaskPanel.jsx:152",
       "tag": "div",
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:193",
+      "location": "src/components/AudioTaskPanel.jsx:192",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:207",
+      "location": "src/components/AudioTaskPanel.jsx:211",
       "tag": "div",
-      "className": "rounded-[14px] bg-canvas p-4 transition-opacity ${…}"
+      "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
     {
       "location": "src/components/integrations/IntegrationCard.jsx:29",
