@@ -158,7 +158,12 @@ export default function UiDecisionsPage() {
             Те, що лишилось, — питання смаку. Кожне питання починається{' '}
             <span className="font-semibold text-ink">скріншотом справжнього екрана</span> з обведеним
             елементом, далі — той самий елемент зблизька, а під ним «зараз» і «стане».
-            Обидві половини намальовані справжніми компонентами, не приблизно.
+          </p>
+          <p className="max-w-[70ch] rounded-[10px] border border-line bg-white p-3 text-[12px] leading-relaxed text-muted">
+            <span className="font-semibold text-ink">Під кожним прикладом надруковано його рядок класів.</span>{' '}
+            Це не підпис до малюнка: приклад намальовано тим самим рядком, що надруковано під ним —
+            одна константа, використана двічі, тож розійтися вони не можуть. Скопіюйте будь-який
+            підпис у названий файл — він збігається символ у символ.
           </p>
           <div className="flex flex-wrap gap-2">
             <Pill tone="neutral" size="md">{decisions.length} рішень</Pill>
@@ -187,7 +192,8 @@ export default function UiDecisionsPage() {
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <h2 className="ui-type-feature-title text-ink">{decision.title}</h2>
-                    <span className="ml-auto shrink-0">
+                    <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                      {decision.family && <Pill tone="neutral" size="sm">{decision.family}</Pill>}
                       <Pill tone="neutral" size="sm">{decision.count} шт</Pill>
                     </span>
                   </div>
