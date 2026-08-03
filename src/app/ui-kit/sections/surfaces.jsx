@@ -1,7 +1,7 @@
 'use client';
 import Button from '@/components/ui/Button';
 import Surface from '@/components/ui/Surface';
-import { IconAction, Card } from '@/components/ui';
+import { IconAction, Card, ListRow } from '@/components/ui';
 import { Edit2, Trash2, Settings, X, Zap, MoreVertical } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 
@@ -59,6 +59,31 @@ export default function SurfacesSection() {
             <p className="text-[13px] font-bold text-ink">Interactive card</p>
             <p className="mt-[4px] text-[12px] text-muted">З onClick картка стає справжньою кнопкою — фокус, Enter, доступне ім’я — і додає ховер.</p>
           </Card>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Рядок списку"
+        component="ListRow"
+        description="Рядок у списку з роздільниками: без рамки, без радіуса, без заливки в спокої. Роздільники малює список, рядок малює лише те, що стається під курсором. Розкладка лишається на місці виклику — один із двох це flex зі стрілкою в кінці, другий сітка на шість колонок; кіт володіє тим, що рядок списку це справжня кнопка з однією шкалою висоти й одним наведенням."
+        filePath="src/components/ui/Layout/ListRow.jsx"
+        fullWidth
+      >
+        <div className="w-full max-w-[420px] overflow-hidden rounded-[12px] border border-line bg-white">
+          <div className="divide-y divide-[#f0f0f0]">
+            <ListRow density="compact" className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-ink">QT-104 · Зворотний звʼязок</span>
+              <span className="font-mono text-[10px] text-faint">compact</span>
+            </ListRow>
+            <ListRow density="compact" className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-ink">QT-118 · Експорт у CSV</span>
+              <span className="font-mono text-[10px] text-faint">compact</span>
+            </ListRow>
+            <ListRow density="roomy" className="flex items-center justify-between">
+              <span className="text-[13px] font-bold text-ink">Артур Моспан</span>
+              <span className="font-mono text-[10px] text-faint">roomy</span>
+            </ListRow>
+          </div>
         </div>
       </PreviewBlock>
 

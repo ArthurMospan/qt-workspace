@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
+import { ListRow } from '@/components/ui';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
 
 const PRIORITY_CFG = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
@@ -73,10 +74,11 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                 const project = projects?.find(p => p.id === issue.projectId);
 
                 return (
-                  <button
+                  <ListRow
                     key={issue.id}
+                    density="compact"
                     onClick={() => handleResultClick(issue.id, issue.projectId)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-canvas transition-colors text-left group"
+                    className="flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                       {/* Left: Type Icon */}
@@ -115,7 +117,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         </Pill>
                       )}
                     </div>
-                  </button>
+                  </ListRow>
                 );
               })}
             </div>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
-import { Label, Checkbox, ToggleSwitch, DatePicker, TimePicker, ImageUpload, StatusVisibilityPicker, ResponseChoice } from '@/components/ui';
+import { Label, Checkbox, ToggleSwitch, DatePicker, TimePicker, ImageUpload, StatusVisibilityPicker, ResponseChoice, ColorSwatch } from '@/components/ui';
 import { DEFAULT_STATUSES } from '@/lib/hooks/useWorkflowConfig';
 import { Search, User, Calendar, Lock, Eye, EyeOff } from 'lucide-react';
 import { PreviewBlock } from '../preview';
@@ -18,6 +18,7 @@ export default function InputsSection() {
   const [timeSingle, setTimeSingle] = useState('09:00');
   const [hiddenStatusIds, setHiddenStatusIds] = useState(['done']);
   const [rsvp, setRsvp] = useState('accepted');
+  const [swatch, setSwatch] = useState('#10b981');
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -67,6 +68,35 @@ export default function InputsSection() {
           <div>
             <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">disabled — поки відповідь зберігається</p>
             <ResponseChoice size="md" value={rsvp} onChange={setRsvp} disabled />
+          </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Зразок кольору"
+        component="ColorSwatch"
+        description="Дві ролі, і це справді різні контроли, а не два розміри одного. trigger показує, якого кольору щось зараз, і відкриває палітру — власного «обрано» він не має, обведення зʼявляється лише під курсором. choice — один варіант усередині цієї палітри, він трохи росте під курсором і несе чорне обведення, коли саме він вибраний. Вигляд не змінювався: це те саме, що налаштування малювали руками."
+        filePath="src/components/ui/Forms/ColorSwatch.jsx"
+      >
+        <div className="flex items-center gap-[24px]">
+          <div className="flex flex-col items-center gap-[8px]">
+            <ColorSwatch size="trigger" color={swatch} label="Обрати колір" />
+            <span className="text-[9px] text-[#cfcfcf]">trigger</span>
+          </div>
+          <div className="flex flex-col items-center gap-[8px]">
+            <span className="flex gap-[6px]">
+              {['#ef4444', '#f97316', '#10b981', '#3b82f6', '#8b5cf6'].map(colour => (
+                <ColorSwatch
+                  key={colour}
+                  size="choice"
+                  color={colour}
+                  selected={colour === swatch}
+                  label={`Колір ${colour}`}
+                  onClick={() => setSwatch(colour)}
+                />
+              ))}
+            </span>
+            <span className="text-[9px] text-[#cfcfcf]">choice</span>
           </div>
         </div>
       </PreviewBlock>

@@ -130,6 +130,8 @@ const SOURCES = {
   },
   AttributeTrigger: { variant: { literal: ['cell', 'details'] } },
   CalendarEntry: { tone: { literal: ['deadline', 'event'] } },
+  ColorSwatch: { size: { literal: ['choice', 'trigger'] } },
+  ListRow: { density: { literal: ['compact', 'roomy'] } },
   CalendarDayNumber: { state: { literal: ['default', 'outside', 'today'] } },
   ResponseChoice: {
     size: { literal: ['md', 'sm', 'tile'] },

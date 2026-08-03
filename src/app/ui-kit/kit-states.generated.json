@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 85,
-    "stateful": 82,
-    "hover": 58,
-    "focus": 59,
-    "disabled": 30,
+    "components": 87,
+    "stateful": 84,
+    "hover": 60,
+    "focus": 61,
+    "disabled": 32,
     "loading": 5,
     "error": 6,
-    "long-text": 58
+    "long-text": 60
   },
   "components": {
     "Alert": {
@@ -123,6 +123,12 @@
       "focus": "own",
       "long-text": "label"
     },
+    "ColorSwatch": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "label"
+    },
     "CommandPalette": {
       "focus": "global"
     },
@@ -207,6 +213,12 @@
       "long-text": "label"
     },
     "Label": {
+      "long-text": "children"
+    },
+    "ListRow": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
       "long-text": "children"
     },
     "LoadingSpinner": {
@@ -494,6 +506,10 @@
       "inputs",
       "states"
     ],
+    "ColorSwatch": [
+      "inputs",
+      "variant-matrix"
+    ],
     "CommandPalette": [
       "navigation-overlays"
     ],
@@ -576,6 +592,10 @@
       "form-groups",
       "variant-matrix",
       "states"
+    ],
+    "ListRow": [
+      "surfaces",
+      "variant-matrix"
     ],
     "LoadingSpinner": [
       "feedback",

@@ -22,6 +22,7 @@ import {
   Button,
   EmptyState,
   KpiCard,
+  ListRow,
   Segmented,
 } from '@/components/ui';
 import {
@@ -201,11 +202,11 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
           {stats.map(stat => {
             const risk = riskMeta(stat);
             return (
-              <button
+              <ListRow
                 key={stat.uid}
-                type="button"
+                density="roomy"
                 onClick={() => onSelectMember(stat.uid)}
-                className="grid w-full gap-4 px-4 py-4 text-left transition-colors hover:bg-canvas/70 sm:px-5 lg:grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] lg:items-center"
+                className="grid gap-4 lg:grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] lg:items-center"
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <UserAvatar user={stat.member} size="lg" />
@@ -261,7 +262,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
                 <span className="lg:col-span-6">
                   <WorkloadBar open={stat.open} done={stat.done} overdue={stat.overdue} />
                 </span>
-              </button>
+              </ListRow>
             );
           })}
         </div>

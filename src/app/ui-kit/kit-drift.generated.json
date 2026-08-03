@@ -8,12 +8,12 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 35,
-    "declaredValues": 319,
+    "componentsWithVariants": 37,
+    "declaredValues": 323,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 190,
+    "usedAndPreviewed": 194,
     "usedWithoutPreview": 0,
     "declaredUnused": 96
   },
@@ -1049,6 +1049,18 @@
         "event"
       ]
     },
+    "ColorSwatch": {
+      "size": [
+        "choice",
+        "trigger"
+      ]
+    },
+    "ListRow": {
+      "density": [
+        "compact",
+        "roomy"
+      ]
+    },
     "CalendarDayNumber": {
       "state": [
         "default",
@@ -1215,6 +1227,8 @@
     "Input.composition.inline-edit": 1,
     "IconAction.appearance.primary": 2,
     "IconAction.size.compact": 3,
+    "ColorSwatch.size.trigger": 1,
+    "ColorSwatch.size.choice": 1,
     "Input.size.sm": 3,
     "Button.size.icon": 15,
     "Label.context.inline": 1,
@@ -1254,6 +1268,7 @@
     "Counter.status.muted": 2,
     "Counter.status.info": 3,
     "Counter.appearance.inverse-outline": 1,
+    "ListRow.density.compact": 1,
     "Pill.weight.medium": 8,
     "UserAvatar.size.xl": 1,
     "Pill.tone.surface": 7,
@@ -1316,6 +1331,7 @@
     "IconAction.composition.chat-composer-cancel": 1,
     "ChatComposerCore.variant.timeline": 1,
     "Button.shape.circle": 1,
+    "ListRow.density.roomy": 1,
     "Pill.size.wide-sm": 5,
     "Pill.appearance.soft-outline": 2,
     "ResponseChoice.size.tile": 1,
@@ -1415,6 +1431,8 @@
     "ChatComposerCore.variant.timeline",
     "ChatComposerCore.variant.workspace",
     "ChatComposerDock.composition.timeline-composer",
+    "ColorSwatch.size.choice",
+    "ColorSwatch.size.trigger",
     "Counter.appearance.inverse-outline",
     "Counter.appearance.solid",
     "Counter.appearance.subtle",
@@ -1520,6 +1538,8 @@
     "Input.size.sm",
     "Label.context.field",
     "Label.context.inline",
+    "ListRow.density.compact",
+    "ListRow.density.roomy",
     "LoadingSpinner.size.lg",
     "LoadingSpinner.size.md",
     "LoadingSpinner.size.sm",

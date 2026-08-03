@@ -11,15 +11,15 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 25,
+    "nativeControls": 21,
     "structures": {
-      "analytics": 3,
+      "analytics": 2,
       "qtplus": 3,
       "board": 1,
-      "settings": 5,
-      "shell": 13
+      "settings": 3,
+      "shell": 12
     },
-    "styledNativeControls": 18,
+    "styledNativeControls": 14,
     "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -32,20 +32,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 24,
+    "button": 20,
     "input": 0,
     "textarea": 1,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 85,
-      "used": 85,
+      "components": 87,
+      "used": 87,
       "unused": 0,
-      "covered": 82,
+      "covered": 84,
       "uncovered": 0,
       "routes": 13,
-      "previews": 108,
+      "previews": 110,
       "internal": 3,
       "unlisted": 0
     },
@@ -55,7 +55,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2360",
+      "location": "src/app/(app)/settings/page.js:2361",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -73,37 +73,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:341",
-      "className": "w-[14px] h-[14px] rounded-full ring-2 ring-offset-2 ring-transparent hover:ring-ink/20 transition-all",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Обрати колір",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/settings/page.js:351",
-      "className": "w-[18px] h-[18px] rounded-full transition-transform hover:scale-110",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Колір …",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/settings/page.js:421",
+      "location": "src/app/(app)/settings/page.js:422",
       "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
       "text": "Завершальний",
       "childElements": [
@@ -206,21 +176,6 @@
       "reviewed": "",
       "resembles": "IconAction",
       "structure": "settings",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/SearchModal.jsx:76",
-      "className": "w-full flex items-center justify-between px-4 py-2.5 hover:bg-canvas transition-colors text-left group",
-      "text": "",
-      "childElements": [
-        "div"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "shell",
       "routes": []
     },
     {
@@ -347,25 +302,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:204",
-      "className": "grid w-full gap-4 px-4 py-4 text-left transition-colors hover:bg-canvas/70 sm:px-5 lg:grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] lg:items-center",
-      "text": "",
-      "childElements": [
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "analytics",
-      "routes": [
-        "/analytics",
-        "/analytics/team/[memberId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:612",
+      "location": "src/components/workspace/WorkloadTab.jsx:613",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -456,10 +393,6 @@
   },
   "nativeHotspots": [
     {
-      "file": "src/app/(app)/settings/page.js",
-      "count": 4
-    },
-    {
       "file": "src/components/WorkspaceSidebar.jsx",
       "count": 4
     },
@@ -472,19 +405,15 @@
       "count": 3
     },
     {
+      "file": "src/app/(app)/settings/page.js",
+      "count": 2
+    },
+    {
       "file": "src/components/MobileNav.jsx",
       "count": 2
     },
     {
-      "file": "src/components/workspace/WorkloadTab.jsx",
-      "count": 2
-    },
-    {
       "file": "src/components/OrgSwitcherScreen.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/SearchModal.jsx",
       "count": 1
     },
     {
@@ -505,6 +434,10 @@
     },
     {
       "file": "src/components/workspace/TimesheetTab.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 1
     }
   ],
@@ -552,17 +485,17 @@
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:329",
+      "location": "src/app/(app)/settings/page.js:330",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:349",
+      "location": "src/app/(app)/settings/page.js:350",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:486",
+      "location": "src/app/(app)/settings/page.js:487",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -637,12 +570,12 @@
       "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
     },
     {
-      "location": "src/components/SearchModal.jsx:41",
+      "location": "src/components/SearchModal.jsx:42",
       "tag": "div",
       "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
     },
     {
-      "location": "src/components/SearchModal.jsx:83",
+      "location": "src/components/SearchModal.jsx:85",
       "tag": "div",
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
@@ -742,7 +675,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:553",
+      "location": "src/components/workspace/WorkloadTab.jsx:554",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

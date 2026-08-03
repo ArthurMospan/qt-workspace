@@ -29,6 +29,8 @@ export { default as MarkdownEditor } from './Forms/MarkdownEditor'
 export { default as SelectableChip } from './Forms/SelectableChip'
 export { default as OptionCard } from './Forms/OptionCard'
 export { default as ResponseChoice } from './Forms/ResponseChoice'
+export { default as ColorSwatch } from './Forms/ColorSwatch'
+export { default as ListRow } from './Layout/ListRow'
 
 // ===== CALENDAR =====
 // The calendar is a structure with its own vocabulary, like chat: a day cell,

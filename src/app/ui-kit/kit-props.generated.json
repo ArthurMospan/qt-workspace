@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 85,
-    "props": 609,
-    "documentedProps": 609,
+    "components": 87,
+    "props": 618,
+    "documentedProps": 618,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1347,6 +1347,57 @@
         }
       ]
     },
+    "ColorSwatch": {
+      "file": "src/components/ui/Forms/ColorSwatch.jsx",
+      "summary": "A round colour dot you can press — the current colour, or one option in a palette.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "color",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The colour it stands for; it arrives from the database, so it is inline style."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name — the dot has no text of its own."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Opens the palette, or picks this colour."
+        },
+        {
+          "name": "selected",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "`choice` only: this is the colour currently picked."
+        },
+        {
+          "name": "size",
+          "default": "'choice'",
+          "type": "'trigger'|'choice'",
+          "values": [
+            "choice",
+            "trigger"
+          ],
+          "description": "Which of the two roles this dot plays."
+        }
+      ]
+    },
     "CommandPalette": {
       "file": "src/components/ui/Navigation/CommandPalette.jsx",
       "summary": "The workspace command palette.",
@@ -2434,6 +2485,36 @@
           "type": "string",
           "values": [],
           "description": "The words that hint uses."
+        }
+      ]
+    },
+    "ListRow": {
+      "file": "src/components/ui/Layout/ListRow.jsx",
+      "summary": "One row of a divided list, as a real button.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement and layout in the parent only."
+        },
+        {
+          "name": "density",
+          "default": "'compact'",
+          "type": "'compact'|'roomy'",
+          "values": [
+            "compact",
+            "roomy"
+          ],
+          "description": "Row height: a search result against a table row."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Opens whatever the row stands for."
         }
       ]
     },
