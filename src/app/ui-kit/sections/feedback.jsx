@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { Alert, LoadingSpinner, EmptyState } from '@/components/ui';
+import { Alert, ConnectionBanner, LoadingSpinner, EmptyState } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { User, MessageSquare, Folder, Plug } from 'lucide-react';
 import { PreviewBlock } from '../preview';
@@ -11,6 +11,7 @@ import { PreviewBlock } from '../preview';
 export default function FeedbackSection() {
   const [qtPlusProject, setQtPlusProject] = useState('');
   const [toast, setToast] = useState(null);
+  const [offline, setOffline] = useState(false);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Alerts" component="Alert" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
@@ -130,6 +131,18 @@ export default function FeedbackSection() {
           </EmptyState>
         </div>
       </PreviewBlock>
+      <PreviewBlock
+        title="Звʼязок"
+        component="ConnectionBanner"
+        description="Постійна смуга, поки браузер каже, що мережі немає. Firestore тихо чергує записи, тому без неї нічого не виглядає зламаним."
+        fullWidth
+      >
+        <Button style="secondary" onClick={() => setOffline(value => !value)}>
+          {offline ? 'Повернути звʼязок' : 'Імітувати офлайн'}
+        </Button>
+        <ConnectionBanner offline={offline} />
+      </PreviewBlock>
+
     </div>
   );
 }

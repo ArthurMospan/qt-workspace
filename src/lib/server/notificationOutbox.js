@@ -26,6 +26,22 @@ function outboxRef() {
   return getAdminDb().collection(OUTBOX_COLLECTION);
 }
 
+// Firestore refuses a batch over 500 writes. Collecting them first and
+// committing in chunks keeps the caller free to write as many as the data
+// implies, which matters most on the first pass after a quiet period.
+const BATCH_LIMIT = 400;
+
+async function commitInChunks(db, writes) {
+  for (let index = 0; index < writes.length; index += BATCH_LIMIT) {
+    const batch = db.batch();
+    for (const write of writes.slice(index, index + BATCH_LIMIT)) {
+      if (write.kind === 'set') batch.set(write.ref, write.data);
+      else batch.update(write.ref, write.data);
+    }
+    await batch.commit();
+  }
+}
+
 // ── Materialise ───────────────────────────────────────────────────────────────
 
 // Writes the rows for every reminder that will come due inside the window, and
@@ -51,7 +67,11 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
 
   let created = 0;
   let updated = 0;
-  const batch = db.batch();
+  // Firestore refuses a batch over 500 writes, and the first materialisation
+  // after a quiet period is exactly when there are most of them.
+  const writes = [];
+  const batch = { set: (ref, data) => writes.push({ ref, data, kind: 'set' }),
+    update: (ref, data) => writes.push({ ref, data, kind: 'update' }) };
   for (const [id, candidate] of wanted) {
     const current = existing.get(id);
     if (!current) {
@@ -88,7 +108,7 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
     cancelled += 1;
   }
 
-  if (created || updated || cancelled) await batch.commit();
+  await commitInChunks(db, writes);
   return { created, updated, cancelled, window: { windowStartMs, windowEndMs } };
 }
 

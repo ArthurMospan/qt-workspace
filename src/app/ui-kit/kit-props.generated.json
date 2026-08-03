@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 80,
-    "props": 582,
-    "documentedProps": 582,
+    "components": 81,
+    "props": 584,
+    "documentedProps": 584,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1251,6 +1251,26 @@
       "file": "src/components/ui/ConfirmProvider.jsx",
       "summary": "Hosts the one confirm dialog the app uses, and hands `useConfirm()` to everything under it — a promise-returning replacement for native `confirm()`/`prompt()`.",
       "props": []
+    },
+    "ConnectionBanner": {
+      "file": "src/components/ui/Feedback/ConnectionBanner.jsx",
+      "summary": "A persistent strip shown while the browser reports no connection.",
+      "props": [
+        {
+          "name": "message",
+          "default": "'Немає звʼязку. Зміни збережуться, щойно зʼяв…",
+          "type": "string",
+          "values": [],
+          "description": "What it says."
+        },
+        {
+          "name": "offline",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether to show it."
+        }
+      ]
     },
     "ContextMenu": {
       "file": "src/components/ui/ContextMenu.jsx",

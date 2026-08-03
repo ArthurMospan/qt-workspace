@@ -92,6 +92,38 @@
     --qt-nav-space: 0px;
   }
 
+  /* A visible focus ring, everywhere, by default.
+     Three components styled their own and everything else fell back to whatever
+     the browser draws — which on a dark sidebar is frequently nothing at all,
+     leaving a keyboard user with no idea where they are. `:focus-visible` only
+     fires for keyboard and assistive navigation, so pointer users see no change.
+     Anything that genuinely needs a different ring overrides it locally. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: max(4px, var(--ui-radius-action));
+  }
+  /* On the dark sidebar and bottom bar the ink ring is invisible; the surface
+     there declares its own text colour, so borrow it. */
+  [data-app-sb] :where(a, button, [tabindex]):focus-visible {
+    outline-color: var(--sb-text, #ffffff);
+  }
+
+  /* The first thing Tab reaches, and the only thing that is invisible until it
+     is. Without it every navigation costs a keyboard user a walk through the
+     entire sidebar before they reach the page they just opened. */
+  .qt-skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    transform: translateY(-200%);
+    transition: transform 150ms ease;
+  }
+  .qt-skip-link:focus-visible {
+    transform: translateY(0);
+  }
+
   /* A sheet that appears instantly reads as a rendering glitch; one that rises
      reads as a drawer. Two hundred milliseconds is the whole effect. */
   @keyframes qt-sheet-in {

@@ -15,6 +15,8 @@ import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import WorkspaceDocumentTitle from '@/components/WorkspaceDocumentTitle';
 import WorkspaceCommandPalette from '@/components/WorkspaceCommandPalette';
+import { ConnectionBanner } from '@/components/ui';
+import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
 
@@ -25,6 +27,7 @@ export default function WorkspaceLayout({ children }) {
   // null on first render, then the matching nav is mounted. This prevents the
   // hidden nav variant from briefly opening its own Firestore subscriptions.
   const isMobile = useIsMobile();
+  const online = useOnlineStatus();
 
   const pathname = usePathname();
   const isChat = pathname?.startsWith('/chat');
@@ -153,6 +156,11 @@ export default function WorkspaceLayout({ children }) {
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
+      {/* The first stop for Tab, invisible until it is focused. */}
+      <a href="#qt-main" className="qt-skip-link rounded-[10px] bg-ink px-[14px] py-[8px] text-[13px] font-bold text-white">
+        Перейти до вмісту
+      </a>
+      <ConnectionBanner offline={!online} />
       {/* Sidebar — full height, floating panel (desktop only; mobile uses MobileNav) */}
       {isMobile === false && (
         <div className="print:hidden shrink-0 h-full hidden md:flex p-[12px] pr-[6px]">
@@ -173,7 +181,7 @@ export default function WorkspaceLayout({ children }) {
               <WorkspaceHeader />
             </div>
           )}
-          <main className="flex-1 flex flex-col overflow-hidden print:overflow-visible bg-transparent">
+          <main id="qt-main" tabIndex={-1} className="flex-1 flex flex-col overflow-hidden print:overflow-visible bg-transparent">
             {children}
           </main>
         </div>
