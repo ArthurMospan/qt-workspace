@@ -1033,6 +1033,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       }}
                       trigger={(
                         <AttributeTrigger
+                          variant="details"
                           condensed={isHeaderScrolled}
                           active={detailsOpen}
                           aria-expanded={detailsOpen}
@@ -1229,7 +1230,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 {isParticipant && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/[0.05] pt-3">
                     <span className="mr-1 text-[11px] font-bold text-muted">Ваша відповідь:</span>
-                    <ResponseChoice size="md" value={response} onChange={handleRespond} disabled={saving} />
+                    <ResponseChoice size="md" surface="surface" value={response} onChange={handleRespond} disabled={saving} />
                   </div>
                 )}
               </div>

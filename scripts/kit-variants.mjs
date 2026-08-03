@@ -129,6 +129,8 @@ const SOURCES = {
     preset: { literal: ['bordered', 'bordered-compact', 'borderless', 'elevated'] },
   },
   AttributeTrigger: { variant: { literal: ['cell', 'details'] } },
+  CalendarEntry: { tone: { literal: ['deadline', 'event'] } },
+  CalendarDayNumber: { state: { literal: ['default', 'outside', 'today'] } },
   ResponseChoice: {
     size: { literal: ['md', 'sm', 'tile'] },
     surface: { literal: ['canvas', 'surface'] },

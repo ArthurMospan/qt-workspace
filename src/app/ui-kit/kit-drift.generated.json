@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 33,
-    "declaredValues": 314,
+    "componentsWithVariants": 35,
+    "declaredValues": 319,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 186,
+    "usedAndPreviewed": 190,
     "usedWithoutPreview": 0,
-    "declaredUnused": 95
+    "declaredUnused": 96
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -26,12 +26,6 @@
       "component": "Alert",
       "prop": "variant",
       "value": "danger",
-      "namespace": null
-    },
-    {
-      "component": "AttributeTrigger",
-      "prop": "variant",
-      "value": "details",
       "namespace": null
     },
     {
@@ -152,6 +146,24 @@
       "component": "Button",
       "prop": "surface",
       "value": "default",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayNumber",
+      "prop": "state",
+      "value": "default",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayNumber",
+      "prop": "state",
+      "value": "outside",
+      "namespace": null
+    },
+    {
+      "component": "CalendarDayNumber",
+      "prop": "state",
+      "value": "today",
       "namespace": null
     },
     {
@@ -410,12 +422,6 @@
       "component": "ResponseChoice",
       "prop": "surface",
       "value": "canvas",
-      "namespace": null
-    },
-    {
-      "component": "ResponseChoice",
-      "prop": "surface",
-      "value": "surface",
       "namespace": null
     },
     {
@@ -1037,6 +1043,19 @@
         "details"
       ]
     },
+    "CalendarEntry": {
+      "tone": [
+        "deadline",
+        "event"
+      ]
+    },
+    "CalendarDayNumber": {
+      "state": [
+        "default",
+        "outside",
+        "today"
+      ]
+    },
     "ResponseChoice": {
       "size": [
         "md",
@@ -1163,6 +1182,8 @@
     "Surface.composition.chart-panel": 2,
     "Surface.composition.member-chart-panel": 1,
     "FilterBar.context.detail": 1,
+    "CalendarEntry.tone.event": 1,
+    "CalendarEntry.tone.deadline": 1,
     "TextAction.tone.muted": 2,
     "TextAction.size.xs": 3,
     "Surface.padding.sm": 1,
@@ -1300,9 +1321,11 @@
     "ResponseChoice.size.tile": 1,
     "TaskAttributesPanel.context.calendar": 1,
     "AttributeTrigger.variant.cell": 2,
+    "AttributeTrigger.variant.details": 1,
     "Textarea.composition.long-form": 1,
     "Pill.tone.surface-ink": 1,
     "ResponseChoice.size.md": 1,
+    "ResponseChoice.surface.surface": 1,
     "IconAction.appearance.inverse": 1,
     "IconAction.appearance.overlay": 1,
     "Card.preset.bordered-compact": 1,
@@ -1375,6 +1398,11 @@
     "Button.surface.canvas",
     "Button.surface.danger-subtle",
     "Button.surface.default",
+    "CalendarDayNumber.state.default",
+    "CalendarDayNumber.state.outside",
+    "CalendarDayNumber.state.today",
+    "CalendarEntry.tone.deadline",
+    "CalendarEntry.tone.event",
     "Card.padding.lg",
     "Card.padding.md",
     "Card.padding.none",
@@ -1400,6 +1428,7 @@
     "Counter.status.success",
     "Counter.variant.count",
     "Counter.variant.dot",
+    "Dialog.bodyPadding.default",
     "Dialog.bodyPadding.flush",
     "Dialog.bodyPadding.invite",
     "Dialog.bodyPadding.responsive",
@@ -1421,6 +1450,7 @@
     "EmptyState.density.compact",
     "EmptyState.surface.card",
     "EmptyState.surface.transparent",
+    "FilterBar.context.default",
     "FilterBar.context.detail",
     "FormGroup.gap.md",
     "FormGroup.gap.sm",

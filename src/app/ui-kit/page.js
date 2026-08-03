@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
-import { Bell, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
+import { Bell, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick, CalendarDays } from 'lucide-react';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -23,6 +23,7 @@ import TaskCRMSection from './sections/task-crm';
 import SidebarSection from './sections/sidebar-layout';
 import TooltipsSection from './sections/tooltips';
 import TaskAttributesSection from './sections/task-attributes';
+import CalendarSection from './sections/calendar';
 import FormGroupsSection from './sections/form-groups';
 import NavMenuSection from './sections/inner-nav-layout';
 import FiltersSection from './sections/filters';
@@ -59,6 +60,7 @@ const GROUPS = [
     title: 'Молекули (Molecules)',
     items: [
       { id: 'task-attributes', label: 'Task Attributes Panel', icon: Settings },
+      { id: 'calendar',     label: 'Календар — власні елементи', icon: CalendarDays },
       { id: 'form-groups',  label: 'Form Groups',        icon: AlignLeft },
       { id: 'filters',      label: 'Filter Bar',         icon: Filter },
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
@@ -128,6 +130,7 @@ const SECTION_MAP = {
   tooltips:        <TooltipsSection />,
   'form-groups':   <FormGroupsSection />,
   'task-attributes': <TaskAttributesSection />,
+  calendar:   <CalendarSection />,
   'variant-matrix': <VariantMatrixSection />,
   states:           <StatesSection />,
 };

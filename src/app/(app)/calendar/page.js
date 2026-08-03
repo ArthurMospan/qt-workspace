@@ -23,6 +23,9 @@ import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
+  CalendarDayNumber,
+  CalendarEntry,
+  CalendarHourSlot,
   EmptyState,
   IconAction,
   FilterBar,
@@ -118,46 +121,38 @@ function EventCard({ event, compact = false, onClick }) {
   const config = TYPE_CONFIG[event.type] || TYPE_CONFIG.event;
   const Icon = config.icon;
   return (
-    <button
-      type="button"
+    <CalendarEntry
+      tone="event"
+      compact={compact}
+      accent={config.color}
+      background={config.bg}
+      title={event.title}
+      leading={<Icon size={compact ? 11 : 12} style={{ color: config.color }} className="shrink-0" />}
+      trailing={event.visibility === 'private'
+        ? <LockKeyhole size={10} className="ml-auto shrink-0 text-muted" aria-label="Приватна подія" />
+        : null}
+      meta={compact ? null : eventTimeLabel(event)}
       onClick={clickEvent => {
         clickEvent.stopPropagation();
         onClick(event);
       }}
-      className={`w-full text-left rounded-[8px] border-l-[3px] transition-[filter,transform] hover:brightness-[0.98] active:scale-[0.99] ${
-        compact ? 'px-[7px] py-[5px]' : 'px-[9px] py-[7px]'
-      }`}
-      style={{ backgroundColor: config.bg, borderLeftColor: config.color }}
-    >
-      <div className="flex items-center gap-1.5 min-w-0">
-        <Icon size={compact ? 11 : 12} style={{ color: config.color }} className="shrink-0" />
-        <span className={`font-bold text-ink truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}>{event.title}</span>
-        {event.visibility === 'private' && <LockKeyhole size={10} className="ml-auto shrink-0 text-muted" aria-label="Приватна подія" />}
-      </div>
-      {!compact && <span className="block text-[10px] text-muted mt-1">{eventTimeLabel(event)}</span>}
-    </button>
+    />
   );
 }
 
 function DeadlineCard({ deadline, compact = false, onClick }) {
   return (
-    <button
-      type="button"
+    <CalendarEntry
+      tone="deadline"
+      compact={compact}
+      dimmed={deadline.completed}
+      leading={<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />}
+      title={`${deadline.issueKey ? `${deadline.issueKey} · ` : ''}${deadline.title}`}
       onClick={clickEvent => {
         clickEvent.stopPropagation();
         onClick(deadline);
       }}
-      className={`w-full text-left rounded-[8px] bg-white border border-line hover:border-[#d4d4d4] transition-colors ${
-        compact ? 'px-[7px] py-[5px]' : 'px-[9px] py-[7px]'
-      } ${deadline.completed ? 'opacity-50' : ''}`}
-    >
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-        <span className={`font-bold text-ink truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-          {deadline.issueKey ? `${deadline.issueKey} · ` : ''}{deadline.title}
-        </span>
-      </div>
-    </button>
+    />
   );
 }
 
@@ -237,11 +232,9 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
               style={{ height: MINUTES_PER_DAY }}
             >
               {HOURS.map(hour => (
-                <button
-                  type="button"
+                <CalendarHourSlot
                   key={hour}
-                  aria-label={`Створити подію о ${hour}:00`}
-                  className="absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors"
+                  label={`Створити подію о ${hour}:00`}
                   style={{ top: hour * 60, height: 60 }}
                   onClick={() => {
                     const start = new Date(day);
@@ -300,15 +293,14 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
               }`}
             >
               <div className="flex items-center justify-between mb-[6px]">
-                <button
-                  type="button"
+                <CalendarDayNumber
+                  state={sameDay(day, today)
+                    ? 'today'
+                    : day.getMonth() === anchor.getMonth() ? 'default' : 'outside'}
                   onClick={() => onSelectDay(day)}
-                  className={`w-7 h-7 rounded-full text-[11px] font-bold ${
-                    sameDay(day, today) ? 'bg-ink text-white' : day.getMonth() === anchor.getMonth() ? 'text-ink hover:bg-canvas' : 'text-faint'
-                  }`}
                 >
                   {day.getDate()}
-                </button>
+                </CalendarDayNumber>
                 {/* The one control in the month grid with a relative in the
                     kit. `xs` is a 24px box at 7px radius, which is what this
                     was drawing by hand; the fade-in on cell hover stays here

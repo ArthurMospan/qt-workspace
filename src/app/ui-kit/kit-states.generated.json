@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 82,
-    "stateful": 79,
-    "hover": 55,
-    "focus": 56,
-    "disabled": 27,
+    "components": 85,
+    "stateful": 82,
+    "hover": 58,
+    "focus": 59,
+    "disabled": 30,
     "loading": 5,
     "error": 6,
-    "long-text": 55
+    "long-text": 58
   },
   "components": {
     "Alert": {
@@ -58,6 +58,24 @@
       "hover": "own",
       "focus": "own",
       "long-text": "children"
+    },
+    "CalendarDayNumber": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "children"
+    },
+    "CalendarEntry": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "title"
+    },
+    "CalendarHourSlot": {
+      "disabled": "native",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "label"
     },
     "Card": {
       "hover": "own",
@@ -428,6 +446,17 @@
       "variant-matrix",
       "states"
     ],
+    "CalendarDayNumber": [
+      "calendar",
+      "variant-matrix"
+    ],
+    "CalendarEntry": [
+      "calendar",
+      "variant-matrix"
+    ],
+    "CalendarHourSlot": [
+      "calendar"
+    ],
     "Card": [
       "surfaces",
       "variant-matrix",
@@ -514,6 +543,7 @@
     ],
     "IconAction": [
       "surfaces",
+      "calendar",
       "inner-nav-layout",
       "variant-matrix",
       "states"
