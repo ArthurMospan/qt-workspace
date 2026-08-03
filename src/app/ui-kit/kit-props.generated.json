@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 78,
-    "props": 572,
-    "documentedProps": 572,
+    "components": 80,
+    "props": 582,
+    "documentedProps": 582,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1185,6 +1185,68 @@
         }
       ]
     },
+    "CommandPalette": {
+      "file": "src/components/ui/Navigation/CommandPalette.jsx",
+      "summary": "The workspace command palette.",
+      "props": [
+        {
+          "name": "commands",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Catalogue from `buildCommands`."
+        },
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on screen."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Search results to append as their own group."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes it."
+        },
+        {
+          "name": "onQueryChange",
+          "default": "",
+          "type": "(query: string) => void",
+          "values": [],
+          "description": "Called as the query changes."
+        },
+        {
+          "name": "onSelect",
+          "default": "",
+          "type": "(command: object) => void",
+          "values": [],
+          "description": "Runs the chosen command."
+        },
+        {
+          "name": "projects",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Projects, used to name the project a found task belongs to."
+        },
+        {
+          "name": "searching",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether results are still loading."
+        }
+      ]
+    },
     "ConfirmProvider": {
       "file": "src/components/ui/ConfirmProvider.jsx",
       "summary": "Hosts the one confirm dialog the app uses, and hands `useConfirm()` to everything under it — a promise-returning replacement for native `confirm()`/`prompt()`.",
@@ -2064,6 +2126,26 @@
           "type": "boolean",
           "values": [],
           "description": "The link came from an import and nobody has confirmed it yet."
+        }
+      ]
+    },
+    "KeyboardShortcutsDialog": {
+      "file": "src/components/ui/Navigation/KeyboardShortcutsDialog.jsx",
+      "summary": "The keyboard cheat sheet.",
+      "props": [
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on screen."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes it."
         }
       ]
     },

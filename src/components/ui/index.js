@@ -84,6 +84,8 @@ export { default as FilterBar } from './FilterBar'
 export { default as Segmented } from './Segmented'
 export { default as ChannelRail } from './Navigation/ChannelRail'
 export { default as MemberRail } from './Navigation/MemberRail'
+export { default as CommandPalette } from './Navigation/CommandPalette'
+export { default as KeyboardShortcutsDialog } from './Navigation/KeyboardShortcutsDialog'
 
 // ===== CHAT =====
 // Chat is a structure, not a screen: the message row, the list around it, the

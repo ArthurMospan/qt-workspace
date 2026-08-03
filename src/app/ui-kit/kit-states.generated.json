@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 78,
-    "stateful": 75,
+    "components": 80,
+    "stateful": 77,
     "hover": 54,
-    "focus": 54,
+    "focus": 55,
     "disabled": 26,
     "loading": 5,
     "error": 6,
-    "long-text": 53
+    "long-text": 54
   },
   "components": {
     "Alert": {
@@ -105,6 +105,9 @@
       "focus": "own",
       "long-text": "label"
     },
+    "CommandPalette": {
+      "focus": "global"
+    },
     "ConfirmProvider": {
       "long-text": "children"
     },
@@ -173,6 +176,9 @@
       "hover": "own",
       "focus": "global",
       "long-text": "children, label"
+    },
+    "KeyboardShortcutsDialog": {
+      "long-text": "children"
     },
     "KpiCard": {
       "hover": "own",
@@ -450,6 +456,9 @@
       "inputs",
       "states"
     ],
+    "CommandPalette": [
+      "navigation-overlays"
+    ],
     "ConfirmProvider": [
       "dialogs",
       "inner-nav-layout"
@@ -512,6 +521,9 @@
     ],
     "IssueLinkRow": [
       "task-elements"
+    ],
+    "KeyboardShortcutsDialog": [
+      "navigation-overlays"
     ],
     "KpiCard": [
       "progress",

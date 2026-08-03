@@ -65,5 +65,19 @@ export function useSearch() {
     }
   }, []);
 
-  return { results, loading, search };
+  // Callers that hide their results surface need to drop them too — otherwise
+  // reopening the command palette shows the previous query's answers before the
+  // new request lands.
+  const clear = useCallback(() => {
+    if (pendingDelay.current) {
+      clearTimeout(pendingDelay.current.timer);
+      pendingDelay.current.resolve(false);
+      pendingDelay.current = null;
+    }
+    activeRequest.current?.abort();
+    setResults([]);
+    setLoading(false);
+  }, []);
+
+  return { results, loading, search, clear };
 }

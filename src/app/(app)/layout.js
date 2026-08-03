@@ -14,6 +14,7 @@ import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import WorkspaceDocumentTitle from '@/components/WorkspaceDocumentTitle';
+import WorkspaceCommandPalette from '@/components/WorkspaceCommandPalette';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
 
@@ -187,6 +188,7 @@ export default function WorkspaceLayout({ children }) {
 
       <WorkspaceToastHost />
       <ProfileModal />
+      <WorkspaceCommandPalette />
     </div>
     </WorkspaceOrganizationRouteGuard>
     </Suspense>

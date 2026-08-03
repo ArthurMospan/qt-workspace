@@ -1,6 +1,7 @@
 'use client';
 // src/app/workspace/my/page.js — My Tasks: Global Kanban Board & Sprints
 import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -62,6 +63,21 @@ export default function MyTasksPage() {
     sprint: 'all'
   });
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  // ?new=1 is how anything outside this page asks for the composer — today the
+  // command palette. Derived rather than copied into state on mount: the URL is
+  // already the state, and mirroring it means two sources that can disagree.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const composerRequestedByUrl = searchParams.get('new') === '1';
+  const composerOpen = showCreateTaskModal || composerRequestedByUrl;
+  const closeComposer = () => {
+    setShowCreateTaskModal(false);
+    setCreateTaskStatus(null);
+    if (!composerRequestedByUrl) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('new');
+    router.replace(next.size ? `/my?${next}` : '/my', { scroll: false });
+  };
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [createTaskStatus, setCreateTaskStatus] = useState(null);
   const [hiddenColumns, setHiddenColumns] = useState(() => {
@@ -236,8 +252,8 @@ export default function MyTasksPage() {
       </div>
 
       <CreateTaskModal
-        isOpen={showCreateTaskModal}
-        onClose={() => { setShowCreateTaskModal(false); setCreateTaskStatus(null); }}
+        isOpen={composerOpen}
+        onClose={closeComposer}
         initialStatus={createTaskStatus}
         onSubmit={async (formData) => {
           if (!formData.projectId) {

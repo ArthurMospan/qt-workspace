@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
-import { Popover, Tooltip, MetaTrigger } from '@/components/ui';
-import { Plus, Edit2, Trash2, Settings, MoreVertical, Copy, Users, Tag as TagIcon } from 'lucide-react';
+import { CommandPalette, KeyboardShortcutsDialog, Popover, Tooltip, MetaTrigger } from '@/components/ui';
+import { Plus, Edit2, Trash2, Settings, MoreVertical, Copy, Users, Tag as TagIcon, Command, Keyboard } from 'lucide-react';
 import { PreviewBlock } from '../preview';
+import { buildCommands } from '@/lib/utils/commandPalette.mjs';
 
 const KIT_MENU_LABELS = [
   { id: 'frontend', label: 'Фронтенд' },
@@ -12,8 +13,26 @@ const KIT_MENU_LABELS = [
   { id: 'design', label: 'Дизайн' },
 ];
 
+const KIT_PALETTE_PROJECTS = [
+  { id: 'p1', name: 'Сайт RetroMagaz', issuePrefix: 'RM' },
+  { id: 'p2', name: 'Мобільний застосунок', issuePrefix: 'MOB' },
+];
+
+const KIT_PALETTE_ISSUES = [
+  { id: 'i1', issueKey: 'RM-128', title: 'Полагодити доставку сповіщень', projectId: 'p1' },
+  { id: 'i2', issueKey: 'MOB-14', title: 'Нижня навігація на iOS', projectId: 'p2' },
+];
+
 export default function NavigationOverlaysSection() {
   const [menuLabelIds, setMenuLabelIds] = useState(['frontend']);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const paletteCommands = buildCommands({
+    projects: KIT_PALETTE_PROJECTS,
+    allowedPermissions: ['create:project'],
+    hasActiveTimer: true,
+    organizationCount: 2,
+  });
   const menuItems = [
     { icon: Edit2, label: 'Редагувати', onClick: () => alert('Редагувати') },
     { icon: Copy, label: 'Дублювати', onClick: () => alert('Дублювати') },
@@ -104,6 +123,31 @@ export default function NavigationOverlaysSection() {
             />
           </div>
         </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Командна палітра"
+        component="CommandPalette"
+        description="⌘K будь-де у воркспейсі: навігація, дії, проєкти та завдання в одному списку. Каталог і ранжування — чисті функції в lib/utils/commandPalette.mjs."
+        fullWidth
+      >
+        <div className="flex items-center gap-[16px] flex-wrap">
+          <Button style="secondary" icon={Command} onClick={() => setPaletteOpen(true)}>
+            Відкрити палітру
+          </Button>
+          <Button style="secondary" icon={Keyboard} onClick={() => setShortcutsOpen(true)}>
+            Гарячі клавіші
+          </Button>
+        </div>
+        <CommandPalette
+          isOpen={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          commands={paletteCommands}
+          issues={KIT_PALETTE_ISSUES}
+          projects={KIT_PALETTE_PROJECTS}
+          onSelect={() => {}}
+        />
+        <KeyboardShortcutsDialog isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       </PreviewBlock>
 
     </div>

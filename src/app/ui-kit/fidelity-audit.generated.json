@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 160,
-    "parsedFiles": 160,
+    "productFiles": 162,
+    "parsedFiles": 162,
     "parseErrors": 0,
     "nativeControls": 56,
     "structures": {
@@ -41,13 +41,13 @@
   },
   "kit": {
     "totals": {
-      "components": 78,
-      "used": 78,
+      "components": 80,
+      "used": 80,
       "unused": 0,
-      "covered": 75,
+      "covered": 77,
       "uncovered": 0,
       "routes": 13,
-      "previews": 101,
+      "previews": 102,
       "internal": 3,
       "unlisted": 0
     },
@@ -1119,7 +1119,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:91",
+      "location": "src/app/(app)/layout.js:92",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },

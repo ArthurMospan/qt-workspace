@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 78,
-    "used": 78,
+    "components": 80,
+    "used": 80,
     "unused": 0,
-    "covered": 75,
+    "covered": 77,
     "uncovered": 0,
     "routes": 13,
-    "previews": 101,
+    "previews": 102,
     "internal": 3,
     "unlisted": 0
   },
@@ -648,6 +648,16 @@
         "src/components/workspace/BillingTab.jsx"
       ]
     },
+    "CommandPalette": {
+      "file": "src/components/ui/Navigation/CommandPalette.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [],
+      "usedIn": [
+        "src/components/WorkspaceCommandPalette.jsx"
+      ]
+    },
     "ConfirmProvider": {
       "file": "src/components/ui/ConfirmProvider.jsx",
       "count": 1,
@@ -753,7 +763,9 @@
       "count": 15,
       "showcased": true,
       "usedByKit": [
+        "CommandPalette",
         "ConfirmProvider",
+        "KeyboardShortcutsDialog",
         "PageHeader"
       ],
       "routes": [
@@ -1009,6 +1021,16 @@
       ],
       "usedIn": [
         "src/components/workspace/IssueDetail.jsx"
+      ]
+    },
+    "KeyboardShortcutsDialog": {
+      "file": "src/components/ui/Navigation/KeyboardShortcutsDialog.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [],
+      "usedIn": [
+        "src/components/WorkspaceCommandPalette.jsx"
       ]
     },
     "KpiCard": {
@@ -1879,7 +1901,7 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:254",
             "src/app/(app)/analytics/page.js:598",
-            "src/app/(app)/my/page.js:176",
+            "src/app/(app)/my/page.js:192",
             "src/components/profile/ProfileView.jsx:185",
             "src/components/workspace/IssueDetail.jsx:972",
             "src/components/workspace/IssueDetail.jsx:975",
@@ -1901,8 +1923,8 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:264",
             "src/app/(app)/analytics/page.js:647",
-            "src/app/(app)/layout.js:94",
-            "src/app/(app)/my/page.js:111",
+            "src/app/(app)/layout.js:95",
+            "src/app/(app)/my/page.js:127",
             "src/app/(app)/page.js:802",
             "src/app/(app)/settings/page.js:2737",
             "src/app/(app)/settings/page.js:2741",
@@ -1949,7 +1971,7 @@
             "src/app/(app)/chat/page.js:914",
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
@@ -2162,7 +2184,7 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:254",
             "src/app/(app)/chat/page.js:914",
-            "src/app/(app)/my/page.js:176",
+            "src/app/(app)/my/page.js:192",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
             "src/app/(app)/page.js:833",
@@ -2240,8 +2262,8 @@
             "src/app/(app)/analytics/page.js:598",
             "src/app/(app)/analytics/page.js:647",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:111",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:485",
             "src/app/(app)/page.js:505",
@@ -2359,7 +2381,7 @@
           "files": [
             "src/app/(app)/calendar/page.js:498",
             "src/app/(app)/chat/page.js:922",
-            "src/app/(app)/layout.js:94",
+            "src/app/(app)/layout.js:95",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -2420,10 +2442,10 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:94",
-            "src/app/(app)/my/page.js:111",
-            "src/app/(app)/my/page.js:176",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/layout.js:95",
+            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:192",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
@@ -2623,10 +2645,10 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:94",
-            "src/app/(app)/my/page.js:111",
-            "src/app/(app)/my/page.js:176",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/layout.js:95",
+            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:192",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
@@ -2825,9 +2847,9 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:94",
-            "src/app/(app)/my/page.js:176",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/layout.js:95",
+            "src/app/(app)/my/page.js:192",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
@@ -2966,7 +2988,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/my/page.js:111",
+            "src/app/(app)/my/page.js:127",
             "src/app/(app)/page.js:802",
             "src/app/(app)/settings/page.js:1961",
             "src/components/profile/ProfileView.jsx:159",
@@ -3039,9 +3061,9 @@
             "src/app/(app)/chat/page.js:922",
             "src/app/(app)/chat/page.js:989",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:111",
-            "src/app/(app)/my/page.js:176",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:192",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/page.js:479",
             "src/app/(app)/page.js:480",
             "src/app/(app)/page.js:484",
@@ -3179,7 +3201,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/app/(app)/layout.js:94",
+            "src/app/(app)/layout.js:95",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41"
           ]
         },
@@ -3974,9 +3996,9 @@
             "src/app/(app)/analytics/page.js:715",
             "src/app/(app)/calendar/page.js:502",
             "src/app/(app)/calendar/page.js:512",
-            "src/app/(app)/my/page.js:136",
-            "src/app/(app)/my/page.js:150",
-            "src/app/(app)/my/page.js:161",
+            "src/app/(app)/my/page.js:152",
+            "src/app/(app)/my/page.js:166",
+            "src/app/(app)/my/page.js:177",
             "src/app/(app)/page.js:817",
             "src/app/(app)/page.js:818",
             "src/app/(app)/page.js:819",
@@ -4061,9 +4083,9 @@
             "src/app/(app)/analytics/page.js:715",
             "src/app/(app)/calendar/page.js:502",
             "src/app/(app)/calendar/page.js:512",
-            "src/app/(app)/my/page.js:136",
-            "src/app/(app)/my/page.js:150",
-            "src/app/(app)/my/page.js:161",
+            "src/app/(app)/my/page.js:152",
+            "src/app/(app)/my/page.js:166",
+            "src/app/(app)/my/page.js:177",
             "src/app/(app)/page.js:817",
             "src/app/(app)/page.js:818",
             "src/app/(app)/page.js:819",
@@ -4144,7 +4166,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/page.js:281",
-            "src/app/(app)/my/page.js:161"
+            "src/app/(app)/my/page.js:177"
           ]
         },
         "member": {
@@ -4178,7 +4200,7 @@
             "src/app/(app)/[projectId]/page.js:302",
             "src/app/(app)/[projectId]/page.js:345",
             "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/my/page.js:136",
+            "src/app/(app)/my/page.js:152",
             "src/app/(app)/sprints/page.js:461"
           ]
         },
@@ -4196,7 +4218,7 @@
             "src/app/(app)/[projectId]/page.js:359",
             "src/app/(app)/analytics/page.js:715",
             "src/app/(app)/calendar/page.js:502",
-            "src/app/(app)/my/page.js:150",
+            "src/app/(app)/my/page.js:166",
             "src/app/(app)/sprints/page.js:475",
             "src/components/workspace/BillingTab.jsx:1160"
           ]
@@ -4320,7 +4342,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:116",
             "src/app/(app)/calendar/page.js:503",
             "src/app/(app)/chat/page.js:961",
-            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:143",
             "src/app/(app)/sprints/page.js:441",
             "src/components/workspace/IssueDetail.jsx:1052",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:612",
@@ -4355,7 +4377,7 @@
             "src/app/(app)/analytics/page.js:681",
             "src/app/(app)/analytics/team/[memberId]/page.js:116",
             "src/app/(app)/calendar/page.js:503",
-            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:143",
             "src/app/(app)/sprints/page.js:441"
           ]
         },
@@ -4396,7 +4418,7 @@
             "src/app/(app)/analytics/page.js:681",
             "src/app/(app)/analytics/team/[memberId]/page.js:116",
             "src/app/(app)/calendar/page.js:503",
-            "src/app/(app)/my/page.js:127",
+            "src/app/(app)/my/page.js:143",
             "src/app/(app)/sprints/page.js:441"
           ]
         },
@@ -5537,7 +5559,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:272",
+            "src/app/(app)/my/page.js:288",
             "src/app/(app)/page.js:476",
             "src/app/(app)/sprints/page.js:103",
             "src/app/(app)/sprints/page.js:146",
@@ -5608,7 +5630,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:272",
+            "src/app/(app)/my/page.js:288",
             "src/components/UserStatusSetter.jsx:68"
           ]
         },
@@ -5692,7 +5714,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:272",
+            "src/app/(app)/my/page.js:288",
             "src/components/workspace/IssueDetail.jsx:1233",
             "src/components/workspace/calendar/CalendarEventPage.jsx:180"
           ]
@@ -5746,7 +5768,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:272"
+            "src/app/(app)/my/page.js:288"
           ]
         },
         "dialog": {
@@ -6005,7 +6027,7 @@
             "src/app/(app)/analytics/page.js:190",
             "src/app/(app)/analytics/team/[memberId]/page.js:77",
             "src/app/(app)/calendar/page.js:528",
-            "src/app/(app)/my/page.js:200",
+            "src/app/(app)/my/page.js:216",
             "src/app/(app)/settings/page.js:2799",
             "src/app/(app)/settings/page.js:2858",
             "src/app/(app)/settings/page.js:2884",
@@ -6497,7 +6519,7 @@
             "src/app/(app)/analytics/page.js:652",
             "src/app/(app)/analytics/page.js:680",
             "src/app/(app)/calendar/page.js:501",
-            "src/app/(app)/my/page.js:126",
+            "src/app/(app)/my/page.js:142",
             "src/app/(app)/page.js:816",
             "src/app/(app)/sprints/page.js:440"
           ]
@@ -6625,6 +6647,7 @@
     "Filter Bar — Projects Page": "<PageHeader\n  title=\"Проєкти\"\n  actions={<Button style=\"primary\" color=\"dark\" size=\"lg\" icon={Plus}>Новий проєкт</Button>}\n  filters={(\n    <FilterBar>\n      <Select filterRole=\"member\" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant=\"ghost\" />\n      <Select filterRole=\"date\" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant=\"ghost\" />\n      <Select filterRole=\"sort\" options={sortOptions} value={sortOption} onChange={setSortOption} variant=\"ghost\" />\n    </FilterBar>\n  )}\n/>",
     "Popover & Tooltip": "<div className=\"flex items-center gap-[24px] flex-wrap\">\n  <Popover\n    trigger={<Button style=\"secondary\">Показати Popover</Button>}\n    position=\"bottom\"\n  >\n    <div className=\"p-2\">\n      <h4 className=\"text-[14px] font-bold mb-1\">Інформаційне вікно</h4>\n      <p className=\"text-[12px] text-[#9a9a9a]\">Корисна інформація або додаткові налаштування.</p>\n    </div>\n  </Popover>\n\n  <Popover\n    position=\"bottom\"\n    align=\"start\"\n    gap={4}\n    hideCloseIcon\n    hideArrow\n    minWidth=\"200px\"\n    padding=\"6px\"\n    triggerClassName=\"inline-flex\"\n    trigger={(\n      <MetaTrigger\n        label=\"Автор:\"\n        user={{ id: 'u1', name: 'Артур Моспан' }}\n        name=\"Артур Моспан\"\n        className=\"text-[12px] font-medium text-muted\"\n      />\n    )}\n  >\n    <div className=\"w-[188px]\">\n      <Button style=\"ghost\" size=\"md\" composition=\"menu-item\">\n        Переглянути профіль\n      </Button>\n      <Button style=\"ghost\" size=\"md\" composition=\"menu-item\">\n        Написати в чат\n      </Button>\n    </div>\n  </Popover>\n\n  <Tooltip content=\"Це підказка при наведенні\" position=\"top\">\n    <Button style=\"secondary\">Наведіть для підказки</Button>\n  </Tooltip>\n</div>",
     "Context Menu": "<div className=\"flex items-start gap-[40px] flex-wrap\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Інтерактивне меню</span>\n    <ContextMenu\n      trigger={<Button style=\"secondary\" size=\"icon\" icon={MoreVertical}>Меню</Button>}\n      items={menuItems}\n    />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Меню-перемикач (мітки задачі)</span>\n    <ContextMenu\n      trigger={(\n        <Button style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n          Додати мітку\n        </Button>\n      )}\n      dropdownClassName=\"w-[220px]\"\n      closeOnSelect={false}\n      items={toggleMenuItems}\n    />\n  </div>\n</div>",
+    "Командна палітра": "<div className=\"flex items-center gap-[16px] flex-wrap\">\n  <Button style=\"secondary\" icon={Command} onClick={() => setPaletteOpen(true)}>\n    Відкрити палітру\n  </Button>\n  <Button style=\"secondary\" icon={Keyboard} onClick={() => setShortcutsOpen(true)}>\n    Гарячі клавіші\n  </Button>\n</div>\n<CommandPalette\n  isOpen={paletteOpen}\n  onClose={() => setPaletteOpen(false)}\n  commands={paletteCommands}\n  issues={KIT_PALETTE_ISSUES}\n  projects={KIT_PALETTE_PROJECTS}\n  onSelect={() => {}}\n/>\n<KeyboardShortcutsDialog isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />",
     "KPI Cards": "<div className=\"grid grid-cols-2 lg:grid-cols-4 gap-4 w-full\">\n  <KpiCard label=\"Всі завдання\" value=\"89 / 124\" sub=\"71% прогресу\" icon={Target} trend={12} />\n  <KpiCard label=\"Velocity (7д)\" value=\"14\" sub=\"завдань за тиждень\" icon={Zap} trend={-5} />\n  <KpiCard label=\"Списано часу\" value=\"45г 30хв\" sub=\"по 4 проєктах\" icon={Clock} />\n  <KpiCard label=\"Команда\" value=\"8\" sub=\"учасників із завданнями\" icon={Users} />\n</div>",
     "Alerts": "<div className=\"flex flex-col gap-[12px] max-w-[600px]\">\n  <Alert variant=\"success\" title=\"Операція успішна\">Проєкт успішно створено та додано до бази даних.</Alert>\n  <Alert variant=\"info\" title=\"Потребує уваги\">Будь ласка, перевірте правильність введених даних.</Alert>\n  <Alert variant=\"warning\" title=\"Попередження\">Термін виконання завдання спливає сьогодні.</Alert>\n  <Alert variant=\"error\" title=\"Не вдалося завантажити проєкти\">Спробуйте оновити сторінку.</Alert>\n</div>",
     "Loading Spinner": "<div className=\"flex items-center gap-[24px]\">\n  <LoadingSpinner size=\"sm\" />\n  <LoadingSpinner size=\"md\" />\n</div>",
