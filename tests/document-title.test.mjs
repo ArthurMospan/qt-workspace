@@ -12,7 +12,8 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('every top-level workspace destination names itself in the tab', () => {
   assert.equal(routeTitle('/'), 'Проєкти');
-  assert.equal(routeTitle('/my'), 'Мої задачі');
+  // Same words as the sidebar entry and the page heading.
+  assert.equal(routeTitle('/my'), 'Мої завдання');
   assert.equal(routeTitle('/chat'), 'Чат');
   assert.equal(routeTitle('/analytics'), 'Аналітика');
   assert.equal(routeTitle('/calendar'), 'Календар');

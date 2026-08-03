@@ -2035,7 +2035,8 @@ export default function SettingsPage() {
           { key: 'commented',     label: 'Новий коментар',           desc: 'У завданнях, де ти виконавець або автор' },
           { key: 'mentioned',     label: 'Згадування',               desc: 'Хтось написав @твоє-імʼя в коментарі' },
           { key: 'statusChanged', label: 'Зміна статусу',            desc: 'Коли твоє завдання рухається по дошці' },
-          { key: 'deadline',      label: 'Дедлайни',                 desc: 'За 24 години до дедлайну та щодня для прострочених завдань' },
+          { key: 'deadline',      label: 'Дедлайни',                 desc: 'За 24 години до дедлайну; для прострочених — у день дедлайну, наступного дня і далі щотижня' },
+          { key: 'chatMessage',   label: 'Повідомлення в чаті',      desc: 'Нові повідомлення в каналах і особистих чатах' },
         ].filter(row => NOTIFICATION_EVENTS.some(event => event.key === row.key));
 
         // Every line is the shared <Row>, so all three cards land on the same

@@ -25,6 +25,8 @@ test('a brand-new account keeps the defaults it had before the matrix', () => {
     mentioned: true,
     statusChanged: false,
     deadline: true,
+    // Chat gained a switch; email never carried chat and still does not.
+    chatMessage: false,
   });
 });
 
@@ -42,17 +44,22 @@ test('a legacy document keeps meaning exactly what it meant', () => {
   const matrix = resolveNotificationMatrix(legacy);
 
   // In-app and Telegram received everything the event flags allowed.
+  // chatMessage had no flag in the legacy shape and no switch anywhere, so it
+  // falls back to what the channel policy was already doing: everything.
   assert.deepEqual(matrix.inapp, {
     assigned: true, commented: true, mentioned: false, statusChanged: true, deadline: false,
+    chatMessage: true,
   });
   assert.deepEqual(matrix.telegram, {
     assigned: true, commented: true, mentioned: false, statusChanged: true, deadline: false,
+    chatMessage: true,
   });
 
   // Email intersected the flags with its hardcoded type list, which is why
   // "Зміна статусу" was on yet no status email ever arrived.
   assert.deepEqual(matrix.email, {
     assigned: true, commented: false, mentioned: false, statusChanged: false, deadline: false,
+    chatMessage: false,
   });
 });
 
@@ -121,7 +128,7 @@ test('channels are independent of one another', () => {
 test('types with no per-event switch follow their channel policy', () => {
   const off = { emailEnabled: false, telegramEnabled: false };
   const on = { emailEnabled: true, telegramEnabled: true };
-  for (const type of ['chat_message', 'alert', 'emergency', 'calendar_reminder', 'test']) {
+  for (const type of ['alert', 'emergency', 'calendar_reminder', 'test']) {
     assert.equal(shouldDeliver(off, 'telegram', type), false, `${type} muted`);
     assert.equal(shouldDeliver(on, 'telegram', type), true, `${type} allowed`);
     assert.equal(shouldDeliver(off, 'inapp', type), true, `${type} in-app`);
@@ -168,4 +175,28 @@ test('channel defaults mirror what the settings page starts from', () => {
   assert.deepEqual(CHANNEL_DEFAULTS, {
     sound: true, popup: true, emailEnabled: false, telegramEnabled: false,
   });
+});
+
+test('chat can be silenced on Telegram without disconnecting Telegram', () => {
+  // Before it had a key, chat_message fell through to the channel policy, which
+  // said yes to everything: connecting Telegram meant a push per message in
+  // every channel, and the only remedy was to disconnect.
+  const on = { telegramEnabled: true };
+  assert.equal(shouldDeliver(on, 'telegram', 'chat_message'), true, 'default is unchanged');
+
+  const muted = { telegramEnabled: true, channels: { telegram: { chatMessage: false } } };
+  assert.equal(shouldDeliver(muted, 'telegram', 'chat_message'), false);
+  // And muting chat leaves the rest of the column alone.
+  assert.equal(shouldDeliver(muted, 'telegram', 'mentioned'), true);
+  // The bell keeps its own answer.
+  assert.equal(shouldDeliver(muted, 'inapp', 'chat_message'), true);
+});
+
+test('the settings page offers a row for every event the model declares', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const page = await readFile(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
+  const rows = page.slice(page.indexOf('const eventRows = ['), page.indexOf('].filter(row =>'));
+  for (const { key } of NOTIFICATION_EVENTS) {
+    assert.match(rows, new RegExp(`key: '${key}'`), `${key} has no row in Settings`);
+  }
 });

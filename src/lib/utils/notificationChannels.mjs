@@ -19,6 +19,10 @@ export const NOTIFICATION_EVENTS = [
   { key: 'mentioned', type: 'mentioned' },
   { key: 'statusChanged', type: 'status_changed' },
   { key: 'deadline', type: 'deadline' },
+  // Chat had no switch of its own, so it rode the channel policy below: turning
+  // Telegram on meant a Telegram push for every message in every channel you
+  // are in, and the only way to stop that was to disconnect Telegram entirely.
+  { key: 'chatMessage', type: 'chat_message' },
 ];
 
 const EVENT_KEY_BY_TYPE = new Map(NOTIFICATION_EVENTS.map(event => [event.type, event.key]));
@@ -34,6 +38,9 @@ export const EVENT_DEFAULTS = {
   // exactly the thing you wanted to know.
   statusChanged: true,
   deadline: true,
+  // True, because that is exactly what an account was already getting before
+  // the switch existed. Gaining a control must not change what anyone receives.
+  chatMessage: true,
 };
 
 // Channel-level switches. `inapp` has none — the record in the bell *is* the

@@ -16,7 +16,9 @@ const BRAND = 'QuickTeam';
 // `/` is exact because every other path also starts with it.
 export const ROUTE_TITLES = [
   { path: '/', exact: true, title: 'Проєкти' },
-  { path: '/my', title: 'Мої задачі' },
+  // The words the screens themselves use — the tab is not the place to invent
+  // a third name for a destination the sidebar and the page already agree on.
+  { path: '/my', title: 'Мої завдання' },
   { path: '/chat', title: 'Чат' },
   { path: '/analytics', title: 'Аналітика' },
   { path: '/calendar', title: 'Календар' },

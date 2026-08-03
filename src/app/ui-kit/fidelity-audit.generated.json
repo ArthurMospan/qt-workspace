@@ -232,7 +232,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2359",
+      "location": "src/app/(app)/settings/page.js:2360",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
