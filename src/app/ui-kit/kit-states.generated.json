@@ -725,6 +725,7 @@
     "Tabs": [
       "tabs",
       "page-headers",
+      "variant-matrix",
       "states"
     ],
     "Tag": [

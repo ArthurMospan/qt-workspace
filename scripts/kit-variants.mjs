@@ -130,7 +130,7 @@ const SOURCES = {
   },
   AttributeTrigger: { variant: { literal: ['cell', 'details'] } },
   CalendarEntry: { tone: { literal: ['deadline', 'event'] } },
-  ColorSwatch: { size: { literal: ['choice', 'trigger'] } },
+  ColorSwatch: { size: { literal: ['choice', 'theme', 'trigger'] } },
   ListRow: { density: { literal: ['compact', 'roomy'] } },
   CalendarDayNumber: { state: { literal: ['default', 'outside', 'today'] } },
   CalendarDayCell: { state: { literal: ['default', 'outside', 'today', 'weekend'] } },
@@ -139,6 +139,7 @@ const SOURCES = {
     surface: { literal: ['canvas', 'surface'] },
   },
   FormGroup: { gap: { literal: ['sm', 'md'] } },
+  Tabs: { variant: { literal: ['raised', 'underline'] } },
   Label: { context: { literal: ['field', 'inline'] } },
   // PageHeader declares no variants: `alt` was removed with the unreachable
   // portal route that was its only caller, leaving one layout and no choice.

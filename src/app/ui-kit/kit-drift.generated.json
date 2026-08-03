@@ -8,12 +8,12 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 38,
-    "declaredValues": 327,
+    "componentsWithVariants": 39,
+    "declaredValues": 330,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 194,
+    "usedAndPreviewed": 197,
     "usedWithoutPreview": 0,
     "declaredUnused": 100
   },
@@ -1076,6 +1076,7 @@
     "ColorSwatch": {
       "size": [
         "choice",
+        "theme",
         "trigger"
       ]
     },
@@ -1115,6 +1116,12 @@
       "gap": [
         "md",
         "sm"
+      ]
+    },
+    "Tabs": {
+      "variant": [
+        "raised",
+        "underline"
       ]
     },
     "Label": {
@@ -1266,6 +1273,7 @@
     "Label.context.inline": 1,
     "Textarea.composition.settings-note": 1,
     "ToggleSwitch.size.sm": 7,
+    "ColorSwatch.size.theme": 1,
     "Input.composition.color-hex": 1,
     "Input.size.md": 5,
     "Card.padding.none": 2,
@@ -1323,6 +1331,7 @@
     "IconAction.appearance.surface-plain": 2,
     "UserAvatar.size.hero": 1,
     "Button.surface.danger-subtle": 1,
+    "Tabs.variant.raised": 1,
     "Card.padding.sm": 1,
     "EmptyState.surface.card": 5,
     "Select.size.md": 1,
@@ -1375,6 +1384,7 @@
     "ResponseChoice.size.md": 1,
     "ResponseChoice.surface.surface": 1,
     "IconAction.appearance.inverse": 1,
+    "Tabs.variant.underline": 1,
     "IconAction.appearance.overlay": 1,
     "Card.preset.bordered-compact": 1,
     "ChatComposerCore.variant.qtplus": 1,
@@ -1468,6 +1478,7 @@
     "ChatComposerCore.variant.workspace",
     "ChatComposerDock.composition.timeline-composer",
     "ColorSwatch.size.choice",
+    "ColorSwatch.size.theme",
     "ColorSwatch.size.trigger",
     "Counter.appearance.inverse-outline",
     "Counter.appearance.solid",
@@ -1680,6 +1691,8 @@
     "Surface.preset.nested-panel",
     "Surface.preset.panel",
     "Surface.preset.popover",
+    "Tabs.variant.raised",
+    "Tabs.variant.underline",
     "Tag.size.default",
     "Tag.size.small",
     "TaskAttributesPanel.context.calendar",

@@ -193,7 +193,7 @@ export default function ProfileView({ user, onClose }) {
 
         {/* TABS */}
         <div className="mt-6 flex justify-center w-full px-8">
-          <Tabs tabs={tabsConfig} activeTab={activeTab} onTabChange={setActiveTab} />
+          <Tabs variant="raised" tabs={tabsConfig} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
       </div>
 

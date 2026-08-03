@@ -2365,19 +2365,13 @@ export default function SettingsPage() {
                           }}
                           className="flex flex-col items-center gap-[6px] group/theme"
                         >
-                          <div
-                            className={`w-[44px] h-[44px] rounded-full transition-all ${
-                              isActive
-                                ? 'ring-2 ring-ink ring-offset-2'
-                                : 'ring-1 ring-line hover:ring-muted'
-                            }`}
-                            style={isCustomUnselected
-                              ? { background: 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)' }
-                              : {
-                                  backgroundColor: opt.bg,
-                                  border: opt.id === 'light' && !isActive ? '1px solid #e0e0e0' : 'none',
-                                }
-                            }
+                          <ColorSwatch
+                            size="theme"
+                            selected={isActive}
+                            label={opt.label}
+                            color={isCustomUnselected
+                              ? 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
+                              : opt.bg}
                           />
                           <span className={`text-[11px] font-medium transition-colors ${isActive ? 'text-ink' : 'text-muted group-hover/theme:text-ink'}`}>{opt.label}</span>
                         </button>

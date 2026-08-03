@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 89,
-    "props": 625,
-    "documentedProps": 625,
+    "props": 626,
+    "documentedProps": 626,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1416,17 +1416,18 @@
           "default": "false",
           "type": "boolean",
           "values": [],
-          "description": "`choice` only: this is the colour currently picked."
+          "description": "`choice` and `theme`: this is the one currently picked."
         },
         {
           "name": "size",
           "default": "'choice'",
-          "type": "'trigger'|'choice'",
+          "type": "'trigger'|'choice'|'theme'",
           "values": [
             "choice",
+            "theme",
             "trigger"
           ],
-          "description": "Which of the two roles this dot plays."
+          "description": "Which role this dot plays: the current colour, one option in a palette, or a 44px theme option."
         }
       ]
     },
@@ -4265,7 +4266,7 @@
     },
     "Tabs": {
       "file": "src/components/ui/Tabs.jsx",
-      "summary": "Horizontal tab strip, 36px tall so it lines up with inputs and buttons in the same row. Arrow keys move between tabs, as the ARIA tab pattern requires.",
+      "summary": "Horizontal tab strip. The `raised` shape is 36px tall so it lines up with inputs and buttons in the same row; the `underline` shape spans its container as a stepper.",
       "props": [
         {
           "name": "activeTab",
@@ -4291,9 +4292,19 @@
         {
           "name": "tabs",
           "default": "[]",
-          "type": "{id: string, label: string, href?: string, count?: number}[]",
+          "type": "{id: string, label: string, href?: string, icon?, count?: number, disabled?: boolean, title?: string}[]",
           "values": [],
           "description": "The tabs; `href` turns one into a link."
+        },
+        {
+          "name": "variant",
+          "default": "'raised'",
+          "type": "'raised'|'underline'",
+          "values": [
+            "raised",
+            "underline"
+          ],
+          "description": "Which of the two strips to draw."
         }
       ]
     },

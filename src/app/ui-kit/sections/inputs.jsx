@@ -98,6 +98,14 @@ export default function InputsSection() {
             </span>
             <span className="text-[9px] text-[#cfcfcf]">choice</span>
           </div>
+          <div className="flex flex-col items-center gap-[8px]">
+            <span className="flex gap-[12px]">
+              <ColorSwatch size="theme" color="#1f1f1f" selected label="Темна тема" />
+              <ColorSwatch size="theme" color="#ffffff" label="Світла тема" />
+              <ColorSwatch size="theme" color="conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)" label="Своя тема" />
+            </span>
+            <span className="text-[9px] text-[#cfcfcf]">theme</span>
+          </div>
         </div>
       </PreviewBlock>
 
