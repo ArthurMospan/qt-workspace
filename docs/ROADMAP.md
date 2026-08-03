@@ -32,6 +32,19 @@ This file contains current owner guardrails and confirmed open work. Completed i
 - Add a “hide completed” toggle to My Tasks, enabled by default.
 - Implement a verified email-change flow with recent re-authentication.
 - Continue accessibility and mobile-layout checks on the main workspace flows.
+- Work the open items in [docs/PRODUCT_GAPS.md](PRODUCT_GAPS.md): the
+  expected-but-absent pieces (loading states, offline handling, skip link,
+  self-hosted fonts, notification delivery receipts) and the UX proposals behind
+  them.
+
+### Notification delivery
+
+- Move the scheduled sweep off GitHub Actions. A `*/5 * * * *` schedule there
+  actually starts a run every 60–210 minutes, so the sweep now covers the gap
+  with a watermark rather than relying on the cadence. An external cron or a
+  host whose cron granularity is better than one run per day is the real fix.
+- Surface sweep health and per-channel delivery failures in Settings; both are
+  recorded and neither is visible.
 
 ## Unprioritized product backlog
 
