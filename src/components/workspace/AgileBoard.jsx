@@ -38,7 +38,7 @@ function InlineAddForm({ onAdd, onCancel }) {
         }}
         placeholder="Назва завдання... (Enter — зберегти)"
         rows={2}
-        className="w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all shadow-sm"
+        className="w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all"
       />
       <div className="flex gap-2 mt-[6px]">
         <Button style="primary" size="sm" onClick={submit}>
