@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import IconAction from '@/components/ui/IconAction';
+import { MediaPlayButton } from '@/components/ui';
 
 function formatTime(t) {
   if (!Number.isFinite(t)) return '00:00';
@@ -94,15 +95,7 @@ export default function AudioCard({ view }) {
       {view.url && <audio ref={audioRef} src={view.url} preload="metadata" playsInline />}
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={!view.url}
-          aria-label={playing ? 'Пауза' : 'Відтворити'}
-          className="w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40"
-        >
-          {playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-[2px]" />}
-        </button>
+        <MediaPlayButton playing={playing} disabled={!view.url} onClick={toggle} />
 
         <div className="flex-1 min-w-0">
           <p className="text-[13px] text-ink font-medium truncate">{view.title}</p>

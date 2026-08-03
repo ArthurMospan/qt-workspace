@@ -11,15 +11,15 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 21,
+    "nativeControls": 20,
     "structures": {
       "analytics": 2,
-      "qtplus": 3,
+      "qtplus": 2,
       "board": 1,
       "settings": 3,
       "shell": 12
     },
-    "styledNativeControls": 14,
+    "styledNativeControls": 13,
     "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -32,20 +32,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 20,
+    "button": 19,
     "input": 0,
     "textarea": 1,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 87,
-      "used": 87,
+      "components": 88,
+      "used": 88,
       "unused": 0,
-      "covered": 84,
+      "covered": 85,
       "uncovered": 0,
       "routes": 13,
-      "previews": 110,
+      "previews": 111,
       "internal": 3,
       "unlisted": 0
     },
@@ -237,21 +237,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:97",
-      "className": "w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "Пауза Відтворити",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "qtplus",
-      "routes": [
-        "/[projectId]"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/workspace/qtplus/cards/FileCard.jsx:65",
       "className": "absolute inset-0 cursor-pointer",
       "text": "",
@@ -418,10 +403,6 @@
     },
     {
       "file": "src/components/workspace/AgileBoard.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/workspace/qtplus/cards/AudioCard.jsx",
       "count": 1
     },
     {
@@ -630,7 +611,7 @@
       "className": "relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
     },
     {
-      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:93",
+      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:94",
       "tag": "div",
       "className": "rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group"
     },

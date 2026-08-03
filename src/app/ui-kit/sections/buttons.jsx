@@ -1,11 +1,28 @@
 'use client';
 import Button from '@/components/ui/Button';
 import { Plus, Edit2, Trash2, Archive, Settings, ExternalLink } from 'lucide-react';
+import { MediaPlayButton } from '@/components/ui';
 import { PreviewBlock } from '../preview';
 
 export default function ButtonsSection() {
   return (
     <div className="flex flex-col gap-[40px]">
+      <PreviewBlock
+        title="Кнопка відтворення"
+        component="MediaPlayButton"
+        description="Play і pause аудіо-картки. Свідомо не IconAction: іконки тут залиті, а не контурні, і колір лишається ink на canvas замість muted. Порожній сірий трикутник не читається як «натисни, щоб послухати» — саме тому це окремий елемент, а не ще один розмір спільної іконкової шкали. Трикутник оптично не по центру власної коробки, тому play зсунутий на 2px праворуч, а pause ні."
+        filePath="src/components/ui/MediaPlayButton.jsx"
+      >
+        <div className="flex items-end gap-[20px]">
+          {[[false, false, 'play'], [true, false, 'pause'], [false, true, 'disabled']].map(([playing, disabled, role]) => (
+            <div key={role} className="flex flex-col items-center gap-[6px]">
+              <MediaPlayButton playing={playing} disabled={disabled} />
+              <span className="text-[9px] text-[#cfcfcf]">{role}</span>
+            </div>
+          ))}
+        </div>
+      </PreviewBlock>
+
       {/* ─── Primary Buttons ─── */}
       <PreviewBlock title="Primary Buttons" component="Button" description="Головні дії. Кольори: фон #1f1f1f (hover #303030), текст #ffffff. Небезпечна дія (danger, color=red): фон #ef4444. Скруглення (border-radius): 10px для всіх розмірів. Висота: Large 36px, Medium 32px, Small 28px." fullWidth>
         <div className="overflow-x-auto w-full">

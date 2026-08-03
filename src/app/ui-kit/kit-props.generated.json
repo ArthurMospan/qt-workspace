@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 87,
-    "props": 618,
-    "documentedProps": 618,
+    "components": 88,
+    "props": 622,
+    "documentedProps": 622,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2638,6 +2638,40 @@
             "md"
           ],
           "description": "Type scale for the rendered body."
+        }
+      ]
+    },
+    "MediaPlayButton": {
+      "file": "src/components/ui/MediaPlayButton.jsx",
+      "summary": "The play/pause control of an audio card.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "No track to play yet."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "(event) => void",
+          "values": [],
+          "description": "Toggles playback."
+        },
+        {
+          "name": "playing",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the track is running; this swaps the glyph and the accessible name."
         }
       ]
     },

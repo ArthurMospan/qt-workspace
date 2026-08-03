@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 87,
-    "used": 87,
+    "components": 88,
+    "used": 88,
     "unused": 0,
-    "covered": 84,
+    "covered": 85,
     "uncovered": 0,
     "routes": 13,
-    "previews": 110,
+    "previews": 111,
     "internal": 3,
     "unlisted": 0
   },
@@ -59,6 +59,7 @@
       "KpiCard",
       "Label",
       "MarkdownEditor",
+      "MediaPlayButton",
       "OptionCard",
       "PageHeader",
       "Pill",
@@ -1260,6 +1261,18 @@
       ],
       "usedIn": [
         "src/components/workspace/IssueDetail.jsx"
+      ]
+    },
+    "MediaPlayButton": {
+      "file": "src/components/ui/MediaPlayButton.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/[projectId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/qtplus/cards/AudioCard.jsx"
       ]
     },
     "MemberRail": {
@@ -3447,7 +3460,7 @@
             "src/components/workspace/AgileBoard.jsx:260",
             "src/components/workspace/AgileBoard.jsx:348",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:113",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         },
@@ -3531,7 +3544,7 @@
             "src/app/(app)/chat/page.js:238",
             "src/app/(app)/chat/page.js:247",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:113"
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:106"
           ]
         },
         "quiet-danger": {
@@ -3693,7 +3706,7 @@
             "src/components/profile/ProfileModal.jsx:46",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/MediaLightbox.jsx:30",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:113",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         }
@@ -3730,7 +3743,7 @@
             "src/components/workspace/AgileBoard.jsx:348",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/MediaLightbox.jsx:30",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:113",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         },
@@ -7040,6 +7053,7 @@
     "Color Palette": "<div className=\"grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[8px]\">\n  {colors.map(t => <TokenChip key={t.label} {...t} isColor />)}\n</div>",
     "Sizing & Spacing": "<div className=\"grid grid-cols-2 lg:grid-cols-3 gap-[8px]\">\n  {sizes.map(t => <TokenChip key={t.label} {...t} />)}\n</div>",
     "Named typography contexts": "<div className=\"flex flex-col gap-[20px]\">\n  {types.map(t => (\n    <div key={t.tag} className=\"flex items-baseline gap-[24px] border-b border-[#f0f0f0] pb-[16px] last:border-0\">\n      <div className=\"w-[72px] shrink-0\">\n        <span className=\"text-[10px] font-mono font-bold text-[#9a9a9a] bg-[#f4f4f5] px-[8px] py-[3px] rounded-[6px]\">{t.tag}</span>\n      </div>\n      <div className=\"flex-1\">\n        <div className={t.cls}>{t.label} — Швидка команда</div>\n      </div>\n      <div className=\"text-right shrink-0\">\n        <div className=\"text-[11px] font-mono text-[#9a9a9a]\">{t.size} / w{t.weight}</div>\n        <div className=\"text-[10px] text-[#cfcfcf] mt-[2px] max-w-[180px]\">{t.note}</div>\n      </div>\n    </div>\n  ))}\n</div>",
+    "Кнопка відтворення": "<div className=\"flex items-end gap-[20px]\">\n  {[[false, false, 'play'], [true, false, 'pause'], [false, true, 'disabled']].map(([playing, disabled, role]) => (\n    <div key={role} className=\"flex flex-col items-center gap-[6px]\">\n      <MediaPlayButton playing={playing} disabled={disabled} />\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
     "Primary Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\">Зберегти</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\">Зберегти</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\">Зберегти</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" icon={Plus}>Новий проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" icon={Plus}>Новий проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" icon={Plus}>Додати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" loading>Збереження...</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" loading>Збереження...</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" loading>Збереження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
     "Secondary Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\">Скасувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\">Скасувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\">Скасувати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" icon={Archive}>Архівувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" icon={Archive}>Архівувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" icon={Plus}>Додати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" loading>Завантаження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
     "Ghost Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\">Детальніше</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\">Детальніше</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\">Детальніше</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" icon={ExternalLink}>Відкрити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" icon={ExternalLink}>Відкрити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" icon={ExternalLink}>Відкрити</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" loading>Завантаження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",

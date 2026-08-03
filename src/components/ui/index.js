@@ -31,6 +31,7 @@ export { default as OptionCard } from './Forms/OptionCard'
 export { default as ResponseChoice } from './Forms/ResponseChoice'
 export { default as ColorSwatch } from './Forms/ColorSwatch'
 export { default as ListRow } from './Layout/ListRow'
+export { default as MediaPlayButton } from './MediaPlayButton'
 
 // ===== CALENDAR =====
 // The calendar is a structure with its own vocabulary, like chat: a day cell,

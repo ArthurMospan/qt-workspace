@@ -13,11 +13,11 @@
     "long-text"
   ],
   "totals": {
-    "components": 87,
-    "stateful": 84,
-    "hover": 60,
-    "focus": 61,
-    "disabled": 32,
+    "components": 88,
+    "stateful": 85,
+    "hover": 61,
+    "focus": 62,
+    "disabled": 33,
     "loading": 5,
     "error": 6,
     "long-text": 60
@@ -235,6 +235,11 @@
       "hover": "own",
       "focus": "global",
       "long-text": "children, content"
+    },
+    "MediaPlayButton": {
+      "disabled": "prop",
+      "hover": "own",
+      "focus": "global"
     },
     "MemberRail": {
       "loading": "prop",
@@ -608,6 +613,9 @@
       "task-elements",
       "variant-matrix",
       "states"
+    ],
+    "MediaPlayButton": [
+      "buttons"
     ],
     "MemberRail": [
       "inner-nav-layout"
