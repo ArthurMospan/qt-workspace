@@ -43,7 +43,10 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
-          SWEEP_INTERVAL_SECONDS: '120'
+          # A pass is now one indexed query against the outbox plus whatever is
+          # actually due, so a tight interval costs almost nothing. Restocking
+          # the outbox is the expensive half and throttles itself server-side.
+          SWEEP_INTERVAL_SECONDS: '60'
           SWEEP_MINUTES: ${{ inputs.once && '0' || '50' }}
         run: |
           set -uo pipefail

@@ -8,7 +8,7 @@ test('scheduled notifications require a production bearer secret', async () => {
   const source = await read('../src/app/api/cron/notifications/route.js');
   assert.match(source, /process\.env\.CRON_SECRET/);
   assert.match(source, /request\.headers\.get\('authorization'\) !== `Bearer \$\{cronSecret\}`/);
-  assert.match(source, /runScheduledNotificationSweep\(\)/);
+  assert.match(source, /runScheduledNotificationSweep\(\{ mode: requested \}\)/);
 });
 
 test('a schedule invokes the notification sweep independently of a browser', async () => {

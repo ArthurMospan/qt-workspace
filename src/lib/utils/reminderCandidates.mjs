@@ -1,4 +1,5 @@
 import { expandOccurrences } from './calendarRecurrence.mjs';
+import { DAILY_REMINDER_HOUR } from './notificationOutbox.mjs';
 
 // The floor for one sweep's look-back. The sweep is *supposed* to run every few
 // minutes; when it does, this is the whole window.
@@ -51,6 +52,49 @@ export function dayKeyInTimeZone(value, timeZone = 'Europe/Kyiv') {
   }
 }
 
+// The instant of a wall-clock hour on a given day in a given timezone.
+//
+// Day-scale reminders have to land at a civilised hour rather than whenever the
+// scheduler happens to notice them, and "09:00" means 09:00 where the
+// organization is. One correction pass is enough everywhere except the hour a
+// DST transition crosses the target, where it can be an hour off twice a year —
+// acceptable for a reminder, and cheaper than carrying a timezone library.
+export function zonedHourToUtcMs(dayKey, hour, timeZone = 'Europe/Kyiv') {
+  const guess = Date.parse(`${dayKey}T${String(hour).padStart(2, '0')}:00:00.000Z`);
+  if (!Number.isFinite(guess)) return NaN;
+  try {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).formatToParts(new Date(guess))
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, part.value]));
+    const asIfUtc = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour) % 24,
+      Number(parts.minute),
+      Number(parts.second),
+    );
+    return guess - (asIfUtc - guess);
+  } catch {
+    return guess;
+  }
+}
+
+export function addDaysToDayKey(dayKey, days) {
+  const base = Date.parse(`${dayKey}T00:00:00.000Z`);
+  if (!Number.isFinite(base)) return '';
+  return new Date(base + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 export function dayOffsetBetweenKeys(fromKey, toKey) {
   if (!fromKey || !toKey) return null;
   const from = Date.parse(`${fromKey}T00:00:00.000Z`);
@@ -85,9 +129,17 @@ export function reminderLabel(msUntilStart) {
   return `До початку ${days} дн`;
 }
 
+// `lookAheadMs` is what turns this from "what should I send right now?" into
+// "what will need sending soon?" — the question the outbox materialiser asks.
+// At zero the behaviour is unchanged.
 export function calendarReminderCandidates(
   events,
-  { nowMs = Date.now(), lookBackMs = REMINDER_LOOKBACK_MS, recipientId = '' } = {},
+  {
+    nowMs = Date.now(),
+    lookBackMs = REMINDER_LOOKBACK_MS,
+    lookAheadMs = 0,
+    recipientId = '',
+  } = {},
 ) {
   const candidates = [];
 
@@ -115,14 +167,14 @@ export function calendarReminderCandidates(
       interval: event.recurrence?.interval,
       until: event.recurrence?.until ? `${event.recurrence.until}T23:59:59.999Z` : null,
       windowStart: new Date(nowMs - lookBackMs),
-      windowEnd: new Date(nowMs + maxReminderMs + 5 * 60 * 1000),
+      windowEnd: new Date(nowMs + maxReminderMs + lookAheadMs + 5 * 60 * 1000),
       maxOccurrences: 64,
     });
 
     for (const occurrence of occurrences) {
       for (const minutes of reminders) {
         const triggerAt = occurrence.getTime() - minutes * 60 * 1000;
-        if (triggerAt > nowMs || triggerAt < nowMs - lookBackMs) continue;
+        if (triggerAt > nowMs + lookAheadMs || triggerAt < nowMs - lookBackMs) continue;
         for (const userId of recipients) {
           if (event.participantResponses?.[userId] === 'declined') continue;
           candidates.push({
@@ -131,9 +183,13 @@ export function calendarReminderCandidates(
             organizationId: event.organizationId,
             type: 'calendar_reminder',
             title: event.title || 'Подія',
-            body: reminderLabel(occurrence.getTime() - nowMs),
+            // Correct for a reminder being sent the moment it is due. When it is
+            // materialised ahead of time the dispatcher recomputes it from
+            // occurrenceStart, because by then the distance has changed.
+            body: reminderLabel(occurrence.getTime() - Math.max(nowMs, triggerAt)),
             calendarEventId: event.id,
             occurrenceStart: occurrence.getTime(),
+            deliverAtMs: triggerAt,
             actorId: event.organizerId || '',
           });
         }
@@ -154,12 +210,13 @@ export function deadlineReminderCandidates(
   issues,
   {
     nowMs = Date.now(),
+    lookAheadMs = 0,
     doneStatusIdsByOrganization = new Map(),
     timeZonesByOrganization = new Map(),
   } = {},
 ) {
   const candidates = [];
-  const horizon = nowMs + DEADLINE_HORIZON_MS;
+  const horizon = nowMs + DEADLINE_HORIZON_MS + lookAheadMs;
   const floor = nowMs - DEADLINE_FLOOR_MS;
 
   for (const issue of issues || []) {
@@ -197,6 +254,15 @@ export function deadlineReminderCandidates(
       dueLabel = dueDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
     }
 
+    // When this should actually arrive. An overdue nag belongs to a day, so it
+    // lands at a readable hour in the organization's timezone instead of
+    // whenever the scheduler first noticed it — which, on a healthy cadence,
+    // means a few minutes past midnight. A "deadline tomorrow" belongs to the
+    // twenty-four-hour mark, or to now if the deadline was set later than that.
+    const deliverAtMs = overdue
+      ? Math.max(zonedHourToUtcMs(dayKey, DAILY_REMINDER_HOUR, timeZone), dueDate.getTime())
+      : Math.max(dueDate.getTime() - DEADLINE_HORIZON_MS, nowMs);
+
     for (const userId of assigneeIds) {
       candidates.push({
         id: overdue
@@ -211,6 +277,7 @@ export function deadlineReminderCandidates(
           ? `${issue.issueKey || 'Завдання'}: дедлайн прострочено${overdueDays > 0 ? ` на ${overdueDays} дн` : ''}`
           : `${issue.issueKey || 'Завдання'}: дедлайн ${dueLabel}`,
         body: issue.title || '',
+        deliverAtMs,
       });
     }
   }

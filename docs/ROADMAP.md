@@ -39,12 +39,19 @@ This file contains current owner guardrails and confirmed open work. Completed i
 
 ### Notification delivery
 
-- Move the scheduled sweep off GitHub Actions. A `*/5 * * * *` schedule there
-  actually starts a run every 60–210 minutes, so the sweep now covers the gap
-  with a watermark rather than relying on the cadence. An external cron or a
-  host whose cron granularity is better than one run per day is the real fix.
-- Surface sweep health and per-channel delivery failures in Settings; both are
+See [docs/NOTIFICATION_DELIVERY.md](NOTIFICATION_DELIVERY.md) for the analysis
+and the target architecture.
+
+- Point an external HTTP cron (cron-job.org, one-minute granularity) at
+  `/api/cron/notifications`. No code change; fixes latency today. GitHub Actions
+  stays wired as a fallback only.
+- Move time-driven notifications onto the scheduled outbox rather than polling
+  two collections for due items. Host-independent, removes the read cost, and
+  makes retries and delivery receipts possible.
+- Surface sweep health and per-recipient delivery failures in Settings; both are
   recorded and neither is visible.
+- When QuickTeam moves to its own server: run the worker in-process on a real
+  interval and drop the external trigger.
 
 ## Unprioritized product backlog
 

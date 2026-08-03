@@ -182,11 +182,10 @@ test('a deadline older than the query floor produces nothing at all', () => {
 test('the sweep remembers when it last ran and never advances that on failure', async () => {
   const source = await read('../src/lib/server/reminderJobs.js');
   assert.match(source, /clampReminderLookback\(state\.elapsedMs\)/);
-  assert.match(source, /runCalendarReminderSweep\(\{ nowMs, lookBackMs \}\)/);
-  // The watermark write is after the awaited sweeps, so a throw skips it.
+  // The watermark write is after the awaited work, so a throw skips it.
   const sweep = source.slice(source.indexOf('export async function runScheduledNotificationSweep'));
   assert.ok(
-    sweep.indexOf('await Promise.all') < sweep.indexOf('lastRunAtMs: nowMs'),
+    sweep.indexOf('await dispatchDueNotifications') < sweep.indexOf('lastRunAtMs: nowMs'),
     'the watermark must be written after the sweep, not before',
   );
 

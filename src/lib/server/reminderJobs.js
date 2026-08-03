@@ -16,6 +16,8 @@ import {
   deadlineReminderCandidates,
 } from '@/lib/utils/reminderCandidates.mjs';
 import { telegramAppLink } from '@/lib/server/telegram';
+import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/notificationOutbox';
+import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
 import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 
 const DELIVERY_CONCURRENCY = 10;
@@ -245,6 +247,28 @@ async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipient
   return [...events.values()];
 }
 
+export async function collectCalendarCandidates({
+  nowMs = Date.now(),
+  lookBackMs = REMINDER_LOOKBACK_MS,
+  lookAheadMs = 0,
+  organizationId = '',
+  recipientId = '',
+} = {}) {
+  const events = await loadReminderEvents({ nowMs, lookBackMs, organizationId, recipientId });
+  return calendarReminderCandidates(events, { nowMs, lookBackMs, lookAheadMs, recipientId })
+    .map(candidate => {
+      const occurrence = new Date(candidate.occurrenceStart).toISOString();
+      return {
+        ...candidate,
+        allowEmail: false,
+        link: withNotificationOrganization(
+          `/calendar/event/${encodeURIComponent(candidate.calendarEventId)}?occurrence=${encodeURIComponent(occurrence)}`,
+          candidate.organizationId,
+        ),
+      };
+    });
+}
+
 export async function runCalendarReminderSweep({
   nowMs = Date.now(),
   organizationId = '',
@@ -273,14 +297,16 @@ export async function runCalendarReminderSweep({
   return { candidates: candidates.length, ...summarize(results, await deliverTelegramDigests(results)) };
 }
 
-export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
+// The deadline half of materialisation: every candidate the window can see,
+// with its delivery time, and no delivery.
+export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadMs = 0 } = {}) {
   const db = getAdminDb();
   const snapshot = await db.collection('issues')
     // Bounded on both sides. Without the floor this read every issue that had
     // ever slipped its deadline, on every pass, and those issues no longer
     // produce candidates anyway.
     .where('dueDate', '>=', admin.firestore.Timestamp.fromMillis(nowMs - DEADLINE_FLOOR_MS))
-    .where('dueDate', '<=', admin.firestore.Timestamp.fromMillis(nowMs + DEADLINE_HORIZON_MS))
+    .where('dueDate', '<=', admin.firestore.Timestamp.fromMillis(nowMs + DEADLINE_HORIZON_MS + lookAheadMs))
     .select(
       'organizationId',
       'projectId',
@@ -294,7 +320,7 @@ export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
     .get();
   const issues = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
   const organizationIds = [...new Set(issues.map(issue => issue.organizationId).filter(Boolean))];
-  if (!organizationIds.length) return { candidates: 0, claimed: 0, email: 0, telegram: 0 };
+  if (!organizationIds.length) return [];
 
   const [organizationSnapshots, workflowSnapshots] = await Promise.all([
     db.getAll(...organizationIds.map(id => db.collection('organizations').doc(id))),
@@ -309,8 +335,9 @@ export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
     id,
     organizationSnapshots[index]?.data()?.timezone || 'Europe/Kyiv',
   ]));
-  const candidates = deadlineReminderCandidates(issues, {
+  return deadlineReminderCandidates(issues, {
     nowMs,
+    lookAheadMs,
     doneStatusIdsByOrganization,
     timeZonesByOrganization,
   }).map(candidate => ({
@@ -322,6 +349,11 @@ export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
       candidate.organizationId,
     ),
   }));
+}
+
+export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
+  const candidates = (await collectDeadlineCandidates({ nowMs }))
+    .filter(candidate => Number(candidate.deliverAtMs) <= nowMs);
   if (!candidates.length) return { candidates: 0, claimed: 0, email: 0, telegram: 0 };
 
   const context = await loadRecipientContext(candidates);
@@ -448,50 +480,92 @@ export async function readSweepState(nowMs) {
   const data = snapshot?.data() || {};
   const lastRunAt = Number(data.lastRunAtMs);
   const lastBirthdayScanAt = Number(data.lastBirthdayScanAtMs);
+  const lastMaterialiseAt = Number(data.lastMaterialiseAtMs);
   const elapsedMs = Number.isFinite(lastRunAt) && lastRunAt <= nowMs
     ? nowMs - lastRunAt
     : REMINDER_LOOKBACK_MS;
   return {
     lastRunAtMs: Number.isFinite(lastRunAt) ? lastRunAt : null,
     lastBirthdayScanAtMs: Number.isFinite(lastBirthdayScanAt) ? lastBirthdayScanAt : null,
+    lastMaterialiseAtMs: Number.isFinite(lastMaterialiseAt) ? lastMaterialiseAt : null,
     elapsedMs,
   };
 }
 
-export async function runScheduledNotificationSweep({ nowMs = Date.now() } = {}) {
+// How often the expensive half runs. Dispatching is what decides latency, and
+// it costs one indexed query; materialising is what costs a collection scan, and
+// it only has to stay far enough ahead of the delivery window.
+export const MATERIALISE_INTERVAL_MS = 20 * 60 * 1000;
+
+export async function materialiseScheduledNotifications({ nowMs = Date.now(), lookBackMs } = {}) {
+  const windowStartMs = nowMs - (lookBackMs ?? REMINDER_LOOKBACK_MS);
+  const windowEndMs = nowMs + MATERIALISE_LEAD_MS;
+  const [calendar, deadlines] = await Promise.all([
+    collectCalendarCandidates({ nowMs, lookBackMs, lookAheadMs: MATERIALISE_LEAD_MS }),
+    collectDeadlineCandidates({ nowMs, lookAheadMs: MATERIALISE_LEAD_MS }),
+  ]);
+  const result = await materialiseCandidates([...calendar, ...deadlines], {
+    windowStartMs,
+    windowEndMs,
+    nowMs,
+  });
+  return { ...result, candidates: calendar.length + deadlines.length };
+}
+
+// One pass. `mode` exists so the cheap half can be driven on a tight schedule
+// without dragging the expensive half along with it: a one-minute external cron
+// calls it with `dispatch`, and something slower keeps the outbox stocked.
+export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode = 'full' } = {}) {
   const state = await readSweepState(nowMs);
   const lookBackMs = clampReminderLookback(state.elapsedMs);
+  const wantsMaterialise = mode === 'full' || mode === 'materialise';
+  const wantsDispatch = mode === 'full' || mode === 'dispatch';
+  const materialiseDue = !Number.isFinite(state.lastMaterialiseAtMs)
+    || nowMs - state.lastMaterialiseAtMs >= MATERIALISE_INTERVAL_MS;
 
-  const [calendar, deadlines, birthdays] = await Promise.all([
-    runCalendarReminderSweep({ nowMs, lookBackMs }),
-    runDeadlineReminderSweep({ nowMs }),
-    runBirthdaySweep({ nowMs, lastScanAtMs: state.lastBirthdayScanAtMs }),
-  ]);
+  const materialised = wantsMaterialise && materialiseDue
+    ? await materialiseScheduledNotifications({ nowMs, lookBackMs })
+    : { skipped: true, created: 0, updated: 0, cancelled: 0 };
+
+  // Dispatch after materialising, so a reminder that became due inside this very
+  // pass goes out in it rather than waiting for the next one.
+  const dispatched = wantsDispatch
+    ? await dispatchDueNotifications({ nowMs })
+    : { skipped: true, due: 0, sent: 0, failed: 0, telegram: 0, email: 0 };
+
+  const birthdays = wantsMaterialise
+    ? await runBirthdaySweep({ nowMs, lastScanAtMs: state.lastBirthdayScanAtMs })
+    : { created: 0, skipped: true };
 
   // Written last and unconditionally after a successful pass: a sweep that
-  // throws must not advance the watermark, or the reminders it failed to deliver
+  // throws must not advance the watermark, or the reminders it failed to record
   // would fall into the gap the watermark exists to close.
   await sweepStateRef().set({
     lastRunAtMs: nowMs,
     lastRunAt: admin.firestore.Timestamp.fromMillis(nowMs),
     lookBackMs,
+    mode,
     previousRunAtMs: state.lastRunAtMs,
+    ...(materialised.skipped ? {} : { lastMaterialiseAtMs: nowMs }),
     ...(birthdays.skipped ? {} : { lastBirthdayScanAtMs: nowMs }),
     counts: {
-      calendar: calendar.claimed,
-      deadlines: deadlines.claimed,
-      birthdays: birthdays.created,
-      telegram: calendar.telegram + deadlines.telegram,
+      materialised: materialised.created || 0,
+      cancelled: materialised.cancelled || 0,
+      sent: dispatched.sent || 0,
+      failed: dispatched.failed || 0,
+      telegram: dispatched.telegram || 0,
+      birthdays: birthdays.created || 0,
     },
   }, { merge: true }).catch(error => {
     console.warn('[reminder-job] Could not record sweep state:', error.message);
   });
 
   return {
+    mode,
     lookBackMs,
     sinceLastRunMs: state.lastRunAtMs === null ? null : nowMs - state.lastRunAtMs,
-    calendar,
-    deadlines,
+    materialised,
+    dispatched,
     birthdays,
   };
 }
