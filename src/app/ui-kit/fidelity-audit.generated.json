@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 32,
+    "nativeControls": 29,
     "structures": {
-      "calendar": 6,
+      "calendar": 4,
       "analytics": 3,
       "qtplus": 3,
       "board": 1,
       "settings": 5,
-      "shell": 14
+      "shell": 13
     },
-    "styledNativeControls": 25,
-    "reviewedNativeControls": 4,
+    "styledNativeControls": 22,
+    "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,20 +33,20 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 31,
+    "button": 28,
     "input": 0,
     "textarea": 1,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 81,
-      "used": 81,
+      "components": 82,
+      "used": 82,
       "unused": 0,
-      "covered": 78,
+      "covered": 79,
       "uncovered": 0,
       "routes": 13,
-      "previews": 103,
+      "previews": 104,
       "internal": 3,
       "unlisted": 0
     },
@@ -347,39 +347,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
-      "className": "flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-bold transition-all disabled:opacity-50 ${…}",
-      "text": "",
-      "childElements": [
-        "Icon"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar",
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:1238",
-      "className": "rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:97",
       "className": "w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40",
       "text": "",
@@ -478,19 +445,6 @@
         "/analytics",
         "/analytics/team/[memberId]"
       ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:110",
-      "className": "rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "notification-response",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
     },
     {
       "tag": "button",
@@ -607,14 +561,6 @@
       "count": 1
     },
     {
-      "file": "src/components/workspace/calendar/CalendarEventDialog.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 1
-    },
-    {
       "file": "src/components/workspace/qtplus/cards/AudioCard.jsx",
       "count": 1
     },
@@ -629,19 +575,10 @@
     {
       "file": "src/components/workspace/TimesheetTab.jsx",
       "count": 1
-    },
-    {
-      "file": "src/components/WorkspaceHeader.jsx",
-      "count": 1
     }
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
-    {
-      "location": "src/components/WorkspaceHeader.jsx:110",
-      "tag": "button",
-      "context": "notification-response"
-    },
     {
       "location": "src/components/WorkspaceSidebar.jsx:234",
       "tag": "button",
@@ -789,32 +726,32 @@
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:211",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:203",
       "tag": "div",
       "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:222",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:214",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:227",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:219",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:259",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:251",
       "tag": "div",
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:625",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:601",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:258",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
@@ -879,7 +816,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:318",
+      "location": "src/components/WorkspaceHeader.jsx:302",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

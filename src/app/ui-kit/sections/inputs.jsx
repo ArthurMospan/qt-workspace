@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
-import { Label, Checkbox, ToggleSwitch, DatePicker, TimePicker, ImageUpload, StatusVisibilityPicker } from '@/components/ui';
+import { Label, Checkbox, ToggleSwitch, DatePicker, TimePicker, ImageUpload, StatusVisibilityPicker, ResponseChoice } from '@/components/ui';
 import { DEFAULT_STATUSES } from '@/lib/hooks/useWorkflowConfig';
 import { Search, User, Calendar, Lock, Eye, EyeOff } from 'lucide-react';
 import { PreviewBlock } from '../preview';
@@ -17,6 +17,7 @@ export default function InputsSection() {
   const [dateSingle, setDateSingle] = useState('');
   const [timeSingle, setTimeSingle] = useState('09:00');
   const [hiddenStatusIds, setHiddenStatusIds] = useState(['done']);
+  const [rsvp, setRsvp] = useState('accepted');
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -34,6 +35,39 @@ export default function InputsSection() {
         <div className="flex items-center gap-[24px] flex-wrap">
           <Checkbox checked={chk} onChange={setChk} label="Я погоджуюся з умовами" id="chk-demo" />
           <ToggleSwitch checked={tgl} onChange={setTgl} label="Активний спринт" />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Відповідь на запрошення"
+        component="ResponseChoice"
+        description="«Буду / Можливо / Не буду» у трьох розмірах. tile — свідомий вибір раз на подію, тому несе семантичні кольори; md і sm — швидка правка у списку, тому осідають на bg-ink: три кольорові чипи в рядку сповіщень читаються як три різні сповіщення. sm має два фони, бо трапляється і в білому списку сповіщень, і в сірому тості."
+        filePath="src/components/ui/Forms/ResponseChoice.jsx"
+        fullWidth
+      >
+        <div className="flex w-full flex-col gap-[16px]">
+          <div className="w-full max-w-[320px]">
+            <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">size=&quot;tile&quot;</p>
+            <ResponseChoice size="tile" value={rsvp} onChange={setRsvp} />
+          </div>
+          <div>
+            <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">size=&quot;md&quot;</p>
+            <ResponseChoice size="md" value={rsvp} onChange={setRsvp} />
+          </div>
+          <div className="flex flex-wrap gap-[16px]">
+            <div>
+              <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">size=&quot;sm&quot; surface=&quot;surface&quot;</p>
+              <ResponseChoice size="sm" surface="surface" value={rsvp} onChange={setRsvp} />
+            </div>
+            <div className="rounded-[10px] bg-canvas p-2">
+              <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">size=&quot;sm&quot; surface=&quot;canvas&quot;</p>
+              <ResponseChoice size="sm" surface="canvas" value={rsvp} onChange={setRsvp} />
+            </div>
+          </div>
+          <div>
+            <p className="mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint">disabled — поки відповідь зберігається</p>
+            <ResponseChoice size="md" value={rsvp} onChange={setRsvp} disabled />
+          </div>
         </div>
       </PreviewBlock>
 

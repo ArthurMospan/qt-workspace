@@ -28,6 +28,7 @@ export { default as FormGroup } from './Forms/FormGroup'
 export { default as MarkdownEditor } from './Forms/MarkdownEditor'
 export { default as SelectableChip } from './Forms/SelectableChip'
 export { default as OptionCard } from './Forms/OptionCard'
+export { default as ResponseChoice } from './Forms/ResponseChoice'
 export { default as TitleInput } from './Forms/TitleInput'
 
 // ===== BUTTON COMPONENTS =====

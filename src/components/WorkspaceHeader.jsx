@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
-import { Counter, Pill, TextAction } from '@/components/ui';
+import { Counter, Pill, ResponseChoice, TextAction } from '@/components/ui';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
@@ -101,30 +101,14 @@ function CalendarResponseActions({
   surface = 'surface',
 }) {
   return (
-    <div className="mt-2 flex items-center gap-1.5">
-      {[
-        ['accepted', 'Буду'],
-        ['tentative', 'Можливо'],
-        ['declined', 'Не буду'],
-      ].map(([value, label]) => (
-        <button
-          key={value}
-          type="button"
-          data-ui-control="notification-response"
-          onClick={event => onRespond(notification, value, event)}
-          disabled={responding}
-          className={`rounded-[7px] px-2 py-1 text-[9px] font-bold transition-colors disabled:opacity-50 ${
-            response === value
-              ? 'bg-ink text-white'
-              : surface === 'surface'
-                ? 'bg-white text-muted ring-1 ring-black/[0.07] hover:text-ink'
-                : 'bg-canvas text-muted hover:text-ink'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <ResponseChoice
+      size="sm"
+      surface={surface}
+      value={response}
+      disabled={responding}
+      onChange={(value, event) => onRespond(notification, value, event)}
+      className="mt-2"
+    />
   );
 }
 

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip } from '@/components/ui';
+import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice } from '@/components/ui';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import TextAction from '@/components/ui/TextAction';
@@ -55,6 +55,7 @@ const VARIANT_BASE = {
     <Segmented value="a" onChange={() => {}} options={[{ value: 'a', label: 'Один' }, { value: 'b', label: 'Два' }]} {...props} />
   ),
   Card: (props) => <Card {...props}><span className="text-[11px] text-muted">Картка</span></Card>,
+  ResponseChoice: (props) => <ResponseChoice value="accepted" onChange={() => {}} {...props} />,
   AttributeTrigger: (props) => (
     <AttributeTrigger {...props}>
       <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Атрибут</span>

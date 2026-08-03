@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react';
 import {
   CalendarDays,
   BellRing,
-  CircleHelp,
-  Check,
   Clock3,
   ExternalLink,
   Flag,
@@ -18,7 +16,6 @@ import {
   Trash2,
   Users,
   Video,
-  X,
 } from 'lucide-react';
 import {
   Button,
@@ -27,6 +24,7 @@ import {
   Input,
   Label,
   Pill,
+  ResponseChoice,
   Select,
   Textarea,
   TimeLogRow,
@@ -51,12 +49,6 @@ const TYPE_LABELS = new Map([
   ...CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option.label]),
   ['birthday', 'День народження'],
 ]);
-
-const RESPONSE_OPTIONS = [
-  { value: 'accepted', label: 'Буду', icon: Check, activeClass: 'bg-emerald-600 text-white border-emerald-600' },
-  { value: 'tentative', label: 'Можливо', icon: CircleHelp, activeClass: 'bg-amber-500 text-white border-amber-500' },
-  { value: 'declined', label: 'Не буду', icon: X, activeClass: 'bg-red-500 text-white border-red-500' },
-];
 
 export const CALENDAR_EVENT_RECURRENCE_OPTIONS = [
   { value: 'none', label: 'Не повторювати' },
@@ -271,23 +263,7 @@ export function CalendarEventDetails({
       {isParticipant && event.organizerId !== currentUserId && (
         <div data-ui-surface="panel" data-ui-padding="compact-md" className="ui-surface">
           <p className="mb-2 text-[12px] font-bold text-ink">Ви приєднаєтесь?</p>
-          <div className="grid grid-cols-3 gap-2">
-            {RESPONSE_OPTIONS.map(option => {
-              const Icon = option.icon;
-              const active = response === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onRespond(option.value)}
-                  disabled={saving}
-                  className={`flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-bold transition-all disabled:opacity-50 ${active ? option.activeClass : 'border-black/[0.06] bg-white text-muted hover:border-black/15 hover:text-ink'}`}
-                >
-                  <Icon size={16} /> {option.label}
-                </button>
-              );
-            })}
-          </div>
+          <ResponseChoice size="tile" value={response} onChange={onRespond} disabled={saving} />
         </div>
       )}
 

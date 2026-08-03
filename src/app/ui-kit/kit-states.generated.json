@@ -13,11 +13,11 @@
     "long-text"
   ],
   "totals": {
-    "components": 81,
-    "stateful": 78,
-    "hover": 54,
-    "focus": 55,
-    "disabled": 26,
+    "components": 82,
+    "stateful": 79,
+    "hover": 55,
+    "focus": 56,
+    "disabled": 27,
     "loading": 5,
     "error": 6,
     "long-text": 55
@@ -271,6 +271,11 @@
     "ProjectSettingsForm": {
       "loading": "prop",
       "long-text": "description"
+    },
+    "ResponseChoice": {
+      "disabled": "prop",
+      "hover": "own",
+      "focus": "global"
     },
     "Segmented": {
       "hover": "own",
@@ -605,6 +610,10 @@
     ],
     "ProjectSettingsForm": [
       "dialogs"
+    ],
+    "ResponseChoice": [
+      "inputs",
+      "variant-matrix"
     ],
     "Segmented": [
       "tabs",

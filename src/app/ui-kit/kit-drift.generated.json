@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 32,
-    "declaredValues": 309,
+    "componentsWithVariants": 33,
+    "declaredValues": 314,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 183,
+    "usedAndPreviewed": 186,
     "usedWithoutPreview": 0,
-    "declaredUnused": 93
+    "declaredUnused": 95
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -404,6 +404,18 @@
       "component": "Popover",
       "prop": "align",
       "value": "end",
+      "namespace": null
+    },
+    {
+      "component": "ResponseChoice",
+      "prop": "surface",
+      "value": "canvas",
+      "namespace": null
+    },
+    {
+      "component": "ResponseChoice",
+      "prop": "surface",
+      "value": "surface",
       "namespace": null
     },
     {
@@ -1025,6 +1037,17 @@
         "details"
       ]
     },
+    "ResponseChoice": {
+      "size": [
+        "md",
+        "sm",
+        "tile"
+      ],
+      "surface": [
+        "canvas",
+        "surface"
+      ]
+    },
     "FormGroup": {
       "gap": [
         "md",
@@ -1218,6 +1241,7 @@
     "Dialog.size.status": 1,
     "Input.composition.status-entry": 1,
     "Button.composition.status-submit": 1,
+    "ResponseChoice.size.sm": 1,
     "Button.shape.compact": 2,
     "Button.surface.canvas": 2,
     "Segmented.surface.canvas": 4,
@@ -1273,10 +1297,12 @@
     "Button.shape.circle": 1,
     "Pill.size.wide-sm": 5,
     "Pill.appearance.soft-outline": 2,
+    "ResponseChoice.size.tile": 1,
     "TaskAttributesPanel.context.calendar": 1,
     "AttributeTrigger.variant.cell": 2,
     "Textarea.composition.long-form": 1,
     "Pill.tone.surface-ink": 1,
+    "ResponseChoice.size.md": 1,
     "IconAction.appearance.inverse": 1,
     "IconAction.appearance.overlay": 1,
     "Card.preset.bordered-compact": 1,
@@ -1514,6 +1540,11 @@
     "Popover.align.start",
     "Popover.padding.default",
     "Popover.padding.tight",
+    "ResponseChoice.size.md",
+    "ResponseChoice.size.sm",
+    "ResponseChoice.size.tile",
+    "ResponseChoice.surface.canvas",
+    "ResponseChoice.surface.surface",
     "Segmented.composition.billing-selection",
     "Segmented.composition.dialog-tabs",
     "Segmented.surface.canvas",

@@ -46,6 +46,7 @@ import {
   MetaTrigger,
   Pill,
   Popover,
+  ResponseChoice,
   Select,
   TaskAttributesPanel,
   Textarea,
@@ -68,12 +69,6 @@ const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
   { value: 'participants', label: 'Лише учасники' },
   { value: 'private', label: 'Лише я', icon: LockKeyhole },
-];
-
-const RESPONSE_OPTIONS = [
-  { value: 'accepted', label: 'Буду' },
-  { value: 'tentative', label: 'Можливо' },
-  { value: 'declined', label: 'Не буду' },
 ];
 
 function memberLabel(member) {
@@ -1234,21 +1229,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 {isParticipant && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/[0.05] pt-3">
                     <span className="mr-1 text-[11px] font-bold text-muted">Ваша відповідь:</span>
-                    {RESPONSE_OPTIONS.map(option => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        disabled={saving}
-                        onClick={() => handleRespond(option.value)}
-                        className={`rounded-[8px] px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${
-                          response === option.value
-                            ? 'bg-ink text-white'
-                            : 'bg-white text-muted hover:text-ink'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                    <ResponseChoice size="md" value={response} onChange={handleRespond} disabled={saving} />
                   </div>
                 )}
               </div>
