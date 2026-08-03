@@ -398,7 +398,8 @@
       "task-elements"
     ],
     "AttributeTrigger": [
-      "task-elements"
+      "task-elements",
+      "variant-matrix"
     ],
     "AvatarButton": [
       "chat-elements",

@@ -5,7 +5,7 @@
  * can take; reach for `Surface` when the block is a region of a page rather
  * than an object in a list.
  *
- * @param {'bordered'|'borderless'|'canvas'|'elevated'} props.preset Which surface it draws. Wins over `variant`.
+ * @param {'bordered'|'bordered-compact'|'borderless'|'canvas'|'elevated'} props.preset Which surface it draws. Wins over `variant`.
  * @param {'white'|'gray'} props.variant Legacy shorthand kept for existing call sites; `gray` means `preset="canvas"`.
  * @param {'none'|'sm'|'md'|'lg'} props.padding Inner spacing token.
  * @param {boolean} props.interactive Adds the pointer, hover tint and focus ring. Set it whenever `onClick` is set.
@@ -23,6 +23,10 @@ export default function Card({
 }) {
   const presetMap = {
     bordered: 'bordered-card',
+    // The same card at the inset radius, for cards that sit in a grid of their
+    // own rather than on a page: the QuickTeam+ material tiles are 12px, and a
+    // 16px one among them reads as a different kind of object.
+    'bordered-compact': 'compact-bordered-card',
     borderless: 'card',
     canvas: 'panel',
     elevated: 'elevated-card',

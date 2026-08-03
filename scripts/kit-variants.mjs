@@ -126,8 +126,9 @@ const SOURCES = {
   },
   Card: {
     padding: { literal: ['none', 'sm', 'md', 'lg'] },
-    preset: { literal: ['bordered', 'borderless', 'elevated'] },
+    preset: { literal: ['bordered', 'bordered-compact', 'borderless', 'elevated'] },
   },
+  AttributeTrigger: { variant: { literal: ['cell', 'details'] } },
   FormGroup: { gap: { literal: ['sm', 'md'] } },
   Label: { context: { literal: ['field', 'inline'] } },
   // PageHeader declares no variants: `alt` was removed with the unreachable

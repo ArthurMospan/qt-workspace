@@ -42,6 +42,7 @@
     ],
     "/[projectId]": [
       "Button",
+      "Card",
       "ChatComposerCore",
       "ChatComposerDock",
       "Checkbox",
@@ -520,10 +521,11 @@
     },
     "Card": {
       "file": "src/components/ui/Layout/Card.jsx",
-      "count": 7,
+      "count": 8,
       "showcased": true,
       "usedByKit": [],
       "routes": [
+        "/[projectId]",
         "/ai-call",
         "/analytics",
         "/settings",
@@ -536,7 +538,8 @@
         "src/components/integrations/IntegrationCard.jsx",
         "src/components/migrations/DataMigrationSettings.jsx",
         "src/components/profile/ProfileView.jsx",
-        "src/components/workspace/BillingTab.jsx"
+        "src/components/workspace/BillingTab.jsx",
+        "src/components/workspace/qtplus/cards/NoteCard.jsx"
       ]
     },
     "ChannelInfoPanel": {
@@ -6339,12 +6342,14 @@
           ]
         },
         "none": {
-          "count": 1,
+          "count": 2,
           "routes": [
+            "/[projectId]",
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2692"
+            "src/app/(app)/settings/page.js:2692",
+            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
           ]
         },
         "(default)": {
@@ -6415,6 +6420,41 @@
             "src/components/migrations/DataMigrationSettings.jsx:124",
             "src/components/migrations/DataMigrationSettings.jsx:80",
             "src/components/workspace/BillingTab.jsx:1263"
+          ]
+        },
+        "bordered-compact": {
+          "count": 1,
+          "routes": [
+            "/[projectId]"
+          ],
+          "files": [
+            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
+          ]
+        }
+      }
+    },
+    "AttributeTrigger": {
+      "variant": {
+        "(default)": {
+          "count": 2,
+          "routes": [
+            "/[projectId]/issue/[issueId]",
+            "/calendar/event/[eventId]",
+            "/sprints"
+          ],
+          "files": [
+            "src/components/workspace/IssueDetail.jsx:1141",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1040"
+          ]
+        },
+        "cell": {
+          "count": 2,
+          "routes": [
+            "/calendar/event/[eventId]"
+          ],
+          "files": [
+            "src/components/workspace/calendar/CalendarEventPage.jsx:889",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:973"
           ]
         }
       }
@@ -6800,7 +6840,7 @@
     "UserAvatar sizes": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {sizes.map(([token, px]) => (\n    <div key={token} className=\"flex flex-col items-center gap-[6px]\">\n      <UserAvatar user={demoUser} size={token} tooltip />\n      <span className=\"text-[9px] font-mono text-[#1f1f1f]\">{token}</span>\n      <span className=\"text-[9px] font-mono text-[#cfcfcf]\">{px}px</span>\n    </div>\n  ))}\n</div>",
     "UserAvatar states": "<UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size=\"lg\" tooltip />\n<UserAvatar user={null} size=\"lg\" />",
     "Панельна ієрархія (Layout Surfaces)": "{/* Level 1: Gray Main Panel */}\n<Surface preset=\"panel\" padding=\"lg\" className=\"w-full\">\n  <div className=\"mb-[16px]\">\n    <span className=\"text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider bg-white border border-[#e9e9e9] px-[8px] py-[3px] rounded-[6px]\">\n      Level 1: Main Panel (#f4f4f5, rounded-[16px])\n    </span>\n    <p className=\"text-[12px] text-[#9a9a9a] mt-[8px]\">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>\n  </div>\n\n  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-[16px]\">\n    {/* Level 2: White Card Surface */}\n    <Surface preset=\"nested-card\" padding=\"lg\">\n      <span className=\"text-[10px] font-bold text-[#6366f1] uppercase tracking-wider bg-[#6366f1]/8 border border-[#6366f1]/15 px-[8px] py-[3px] rounded-[6px]\">\n        Level 2: White Card (rounded-[12px])\n      </span>\n      <p className=\"text-[13px] text-[#1f1f1f] font-semibold mt-[12px]\">Біла плаваюча картка</p>\n      <p className=\"text-[12px] text-[#9a9a9a] mt-[4px]\">Без рамки та без тіней. Чиста біла поверхня для розміщення окремих завдань, деталей або списків.</p>\n    </Surface>\n\n    <Surface preset=\"card\" padding=\"md\" className=\"flex flex-col\">\n      <span className=\"text-[10px] font-bold text-muted uppercase tracking-wider\">\n        Team page card (rounded-[16px])\n      </span>\n      <p className=\"mt-[12px] text-[13px] font-semibold text-ink\">Біла продуктова поверхня</p>\n      <p className=\"mt-[4px] text-[12px] text-muted\">Другий реально використаний Surface-варіант.</p>\n    </Surface>\n  </div>\n\n</Surface>",
-    "Card variants": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <Card preset=\"bordered\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">White card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Стандартна продуктова картка з border-line.</p>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">Borderless white card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Найпоширеніший фактичний варіант у Settings та Analytics.</p>\n  </Card>\n</div>",
+    "Card variants": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <Card preset=\"bordered\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">White card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Стандартна продуктова картка з border-line.</p>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">Borderless white card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Найпоширеніший фактичний варіант у Settings та Analytics.</p>\n  </Card>\n  <Card preset=\"bordered-compact\" padding=\"none\">\n    <p className=\"px-[16px] pt-[16px] text-[13px] font-bold text-ink\">Bordered compact (rounded-[12px])</p>\n    <p className=\"px-[16px] pb-[16px] pt-[4px] text-[12px] text-muted\">Той самий бордер на меншому радіусі — для карток, що стоять сіткою серед собі подібних, як матеріали QuickTeam+.</p>\n  </Card>\n  <Card preset=\"bordered\" padding=\"lg\" interactive onClick={() => {}}>\n    <p className=\"text-[13px] font-bold text-ink\">Interactive card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">З onClick картка стає справжньою кнопкою — фокус, Enter, доступне ім’я — і додає ховер.</p>\n  </Card>\n</div>",
     "Outline danger — Profile emergency call": "<Button\n  style=\"outline\"\n  color=\"red\"\n  size=\"lg\"\n  icon={Zap}\n  className=\"!bg-red-50 hover:!bg-red-100 !border !border-[#ef4444]\"\n>\n  Виклик\n</Button>",
     "IconAction — neutral compact actions": "<div className=\"flex flex-wrap items-center gap-3\">\n  <IconAction label=\"Редагувати\" icon={Edit2} size=\"xs\" appearance=\"quiet\" />\n  <IconAction label=\"Налаштування\" icon={Settings} size=\"sm\" appearance=\"soft\" />\n  <IconAction label=\"Більше\" icon={MoreVertical} size=\"md\" appearance=\"surface\" />\n  <IconAction label=\"Закрити\" icon={X} size=\"md\" appearance=\"surface-plain\" />\n  <IconAction label=\"Видалити\" icon={Trash2} size=\"sm\" appearance=\"surface-danger\" />\n</div>",
     "Tooltip Component": "<div className=\"flex items-center gap-[24px] justify-center w-full py-[40px]\">\n  <Tooltip content=\"Підказка зверху\" position=\"top\">\n    <Button style=\"secondary\">Наведи (Top)</Button>\n  </Tooltip>\n  <Tooltip content=\"Підказка знизу\" position=\"bottom\">\n    <Button style=\"secondary\">Наведи (Bottom)</Button>\n  </Tooltip>\n  <Tooltip content=\"Підказка зліва\" position=\"left\">\n    <Button style=\"secondary\">Наведи (Left)</Button>\n  </Tooltip>\n  <Tooltip content=\"Підказка справа\" position=\"right\">\n    <Button style=\"secondary\">Наведи (Right)</Button>\n  </Tooltip>\n</div>",
@@ -6839,7 +6879,7 @@
     "Опис завдання — дві шкали читання": "<div className=\"grid gap-[16px] md:grid-cols-2\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[9px] font-bold text-[#1f1f1f]\">size=&quot;md&quot; · 14px</span>\n    <MarkdownViewer content={markdown} size=\"md\" />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[9px] font-bold text-[#1f1f1f]\">size=&quot;lg&quot; · 15px</span>\n    <MarkdownViewer content={markdown} size=\"lg\" />\n  </div>\n</div>",
     "Редактор опису": "<MarkdownEditor value={markdown} onChange={setMarkdown} minHeight=\"180px\" />",
     "Трекінг часу": "<div className=\"flex items-center gap-[24px]\">\n  <TimeTrackingControl\n    running={timerRunning}\n    onToggle={() => setTimerRunning(v => !v)}\n    onOpen={() => {}}\n    spentLabel={timerRunning ? '1г 12хв' : '48хв'}\n    estimateLabel=\"4г\"\n  />\n  <span className=\"text-[10px] text-[#cfcfcf]\">натисніть, щоб побачити стан «йде запис»</span>\n</div>",
-    "Тригер «Деталі» у смузі атрибутів": "<div className=\"flex flex-wrap items-center gap-[16px]\">\n  {[[false, false, 'звичайний'], [false, true, 'натиснутий'], [true, false, 'condensed']].map(([condensed, active, role]) => (\n    <div key={role} className=\"flex w-[120px] flex-col items-center gap-[6px]\">\n      <AttributeTrigger condensed={condensed} active={active} aria-label=\"Деталі завдання\">\n        <Settings2 size={14} />\n        <span>Деталі</span>\n      </AttributeTrigger>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
+    "Тригери у смузі атрибутів": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {[[false, false, 'details'], [false, true, 'details · натиснутий'], [true, false, 'details · condensed']].map(([condensed, active, role]) => (\n    <div key={role} className=\"flex w-[120px] flex-col items-center gap-[6px]\">\n      <AttributeTrigger variant=\"details\" condensed={condensed} active={active} aria-label=\"Деталі завдання\">\n        <Settings2 size={14} />\n        <span>Деталі</span>\n      </AttributeTrigger>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n  {[[false, 'cell'], [true, 'cell · condensed']].map(([condensed, role]) => (\n    <div key={role} className=\"flex w-[150px] flex-col items-center gap-[6px]\">\n      <div className=\"w-full rounded-[10px] bg-canvas p-1.5\">\n        <AttributeTrigger variant=\"cell\" condensed={condensed} aria-label=\"Учасники події\">\n          <span className=\"block h-[14px] overflow-hidden text-[10px] font-bold uppercase leading-[14px] tracking-wider text-muted\">Учасники</span>\n          <span className=\"flex items-center text-[13px] font-medium text-ink\"><Users size={13} className=\"mr-1.5 shrink-0 text-muted\" />3 учасників</span>\n        </AttributeTrigger>\n      </div>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
     "Запис у журналі часу": "<div className=\"flex flex-col gap-[8px]\">\n  <TimeLogRow\n    member={demoUser}\n    spentLabel=\"1г 30хв\"\n    dateLabel=\"12 травня\"\n    description=\"Зібрав макети й звів до одного файлу\"\n    canEdit\n    onEdit={() => {}}\n    onDelete={() => {}}\n  />\n  <TimeLogRow member={{ name: 'Олена Коваль' }} spentLabel=\"45хв\" dateLabel=\"12 травня\" />\n</div>",
     "Вкладення завдання": "<AttachmentRow\n  attachment={demoAttachment}\n  onOpen={() => setViewerOpen(true)}\n  onDelete={() => {}}\n  onDownload={() => {}}\n/>",
     "Перегляд вкладення": "<Button style=\"secondary\" size=\"sm\" onClick={() => setViewerOpen(true)}>Відкрити перегляд</Button>\n{viewerOpen && (\n  <AttachmentViewer\n    attachment={{ name: 'brief.pdf', url: 'data:application/pdf;base64,', type: 'application/pdf' }}\n    onClose={() => setViewerOpen(false)}\n  />\n)}",

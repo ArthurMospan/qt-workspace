@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 81,
-    "props": 584,
-    "documentedProps": 584,
+    "props": 585,
+    "documentedProps": 585,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -144,7 +144,7 @@
           "default": "false",
           "type": "boolean",
           "values": [],
-          "description": "Whether the drawer is open; this is the pressed look."
+          "description": "Whether the drawer is open; this is the pressed look. `details` only."
         },
         {
           "name": "className",
@@ -159,6 +159,16 @@
           "type": "boolean",
           "values": [],
           "description": "Scrolled state, matching the strip above it."
+        },
+        {
+          "name": "variant",
+          "default": "'details'",
+          "type": "'details'|'cell'",
+          "values": [
+            "cell",
+            "details"
+          ],
+          "description": "Which shape: the strip's overflow control, or an attribute cell that opens a popover."
         }
       ]
     },
@@ -485,9 +495,10 @@
         {
           "name": "preset",
           "default": "",
-          "type": "'bordered'|'borderless'|'canvas'|'elevated'",
+          "type": "'bordered'|'bordered-compact'|'borderless'|'canvas'|'elevated'",
           "values": [
             "bordered",
+            "bordered-compact",
             "borderless",
             "elevated"
           ],

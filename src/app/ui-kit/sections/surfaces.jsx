@@ -51,6 +51,14 @@ export default function SurfacesSection() {
             <p className="text-[13px] font-bold text-ink">Borderless white card</p>
             <p className="mt-[4px] text-[12px] text-muted">Найпоширеніший фактичний варіант у Settings та Analytics.</p>
           </Card>
+          <Card preset="bordered-compact" padding="none">
+            <p className="px-[16px] pt-[16px] text-[13px] font-bold text-ink">Bordered compact (rounded-[12px])</p>
+            <p className="px-[16px] pb-[16px] pt-[4px] text-[12px] text-muted">Той самий бордер на меншому радіусі — для карток, що стоять сіткою серед собі подібних, як матеріали QuickTeam+.</p>
+          </Card>
+          <Card preset="bordered" padding="lg" interactive onClick={() => {}}>
+            <p className="text-[13px] font-bold text-ink">Interactive card</p>
+            <p className="mt-[4px] text-[12px] text-muted">З onClick картка стає справжньою кнопкою — фокус, Enter, доступне ім’я — і додає ховер.</p>
+          </Card>
         </div>
       </PreviewBlock>
 

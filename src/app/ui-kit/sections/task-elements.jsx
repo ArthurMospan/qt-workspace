@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { AttributeTrigger, UserAvatar, AttachmentRow, TimeLogRow, TimeTrackingControl, MarkdownEditor, MarkdownViewer, AttachmentViewer, TitleInput, DescriptionPlaceholder, IssueLinkRow, SelectableChip } from '@/components/ui';
-import { Settings2, Check, Tag as TagIcon } from 'lucide-react';
+import { Settings2, Check, Tag as TagIcon, Users } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 
 // The task surface's own elements, the way chat has its own. Everything here
@@ -94,19 +94,30 @@ export default function TaskElementsSection() {
       </PreviewBlock>
 
       <PreviewBlock
-        title="Тригер «Деталі» у смузі атрибутів"
-        description="Відкриває поля, які міняють рідше — пріоритет і тип. Хром був у кіті ще раніше, а кнопка, що його носить, писалася на місці виклику, тож єдине, що можна було переплутати, — натиснутий вигляд — жило поза кітом. condensed стискає висоту з 42 до 28px разом зі скролом шапки."
+        title="Тригери у смузі атрибутів"
+        description="Дві форми одного компонента. variant=&quot;details&quot; — власний контрол смуги, що відкриває поля, які міняють рідше; condensed стискає його з 42 до 28px разом зі скролом шапки. variant=&quot;cell&quot; — комірка атрибута, яка сама відкриває поповер: у календаря таких дві, і вони писалися руками в класі кіту, тобто хром був кітовий, а кнопка ні. Натиснутий вигляд належить лише details — комірка фарбує свій підпис і своє значення сама."
         filePath="src/components/ui/Layout/TaskAttributesPanel.jsx"
         component="AttributeTrigger"
         fullWidth
       >
-        <div className="flex flex-wrap items-center gap-[16px]">
-          {[[false, false, 'звичайний'], [false, true, 'натиснутий'], [true, false, 'condensed']].map(([condensed, active, role]) => (
+        <div className="flex flex-wrap items-end gap-[16px]">
+          {[[false, false, 'details'], [false, true, 'details · натиснутий'], [true, false, 'details · condensed']].map(([condensed, active, role]) => (
             <div key={role} className="flex w-[120px] flex-col items-center gap-[6px]">
-              <AttributeTrigger condensed={condensed} active={active} aria-label="Деталі завдання">
+              <AttributeTrigger variant="details" condensed={condensed} active={active} aria-label="Деталі завдання">
                 <Settings2 size={14} />
                 <span>Деталі</span>
               </AttributeTrigger>
+              <span className="text-[9px] text-[#cfcfcf]">{role}</span>
+            </div>
+          ))}
+          {[[false, 'cell'], [true, 'cell · condensed']].map(([condensed, role]) => (
+            <div key={role} className="flex w-[150px] flex-col items-center gap-[6px]">
+              <div className="w-full rounded-[10px] bg-canvas p-1.5">
+                <AttributeTrigger variant="cell" condensed={condensed} aria-label="Учасники події">
+                  <span className="block h-[14px] overflow-hidden text-[10px] font-bold uppercase leading-[14px] tracking-wider text-muted">Учасники</span>
+                  <span className="flex items-center text-[13px] font-medium text-ink"><Users size={13} className="mr-1.5 shrink-0 text-muted" />3 учасників</span>
+                </AttributeTrigger>
+              </div>
               <span className="text-[9px] text-[#cfcfcf]">{role}</span>
             </div>
           ))}

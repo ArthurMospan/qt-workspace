@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 31,
-    "declaredValues": 306,
+    "componentsWithVariants": 32,
+    "declaredValues": 309,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 181,
+    "usedAndPreviewed": 183,
     "usedWithoutPreview": 0,
-    "declaredUnused": 92
+    "declaredUnused": 93
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -26,6 +26,12 @@
       "component": "Alert",
       "prop": "variant",
       "value": "danger",
+      "namespace": null
+    },
+    {
+      "component": "AttributeTrigger",
+      "prop": "variant",
+      "value": "details",
       "namespace": null
     },
     {
@@ -1008,8 +1014,15 @@
       ],
       "preset": [
         "bordered",
+        "bordered-compact",
         "borderless",
         "elevated"
+      ]
+    },
+    "AttributeTrigger": {
+      "variant": [
+        "cell",
+        "details"
       ]
     },
     "FormGroup": {
@@ -1165,7 +1178,7 @@
     "ToggleSwitch.size.sm": 7,
     "Input.composition.color-hex": 1,
     "Input.size.md": 5,
-    "Card.padding.none": 1,
+    "Card.padding.none": 2,
     "Pill.appearance.outline": 2,
     "Pill.size.md": 6,
     "Surface.preset.card": 1,
@@ -1261,10 +1274,12 @@
     "Pill.size.wide-sm": 5,
     "Pill.appearance.soft-outline": 2,
     "TaskAttributesPanel.context.calendar": 1,
+    "AttributeTrigger.variant.cell": 2,
     "Textarea.composition.long-form": 1,
     "Pill.tone.surface-ink": 1,
     "IconAction.appearance.inverse": 1,
     "IconAction.appearance.overlay": 1,
+    "Card.preset.bordered-compact": 1,
     "ChatComposerCore.variant.qtplus": 1,
     "TextAction.tone.danger": 1,
     "Pill.size.chat-day-wide": 1,
@@ -1277,6 +1292,8 @@
     "Alert.variant.info",
     "Alert.variant.success",
     "Alert.variant.warning",
+    "AttributeTrigger.variant.cell",
+    "AttributeTrigger.variant.details",
     "AvatarButton.size.chat-inline",
     "AvatarButton.size.chat-member",
     "AvatarButton.size.chat-mention",
@@ -1337,6 +1354,7 @@
     "Card.padding.none",
     "Card.padding.sm",
     "Card.preset.bordered",
+    "Card.preset.bordered-compact",
     "Card.preset.borderless",
     "Card.preset.elevated",
     "ChatComposerCore.variant.qtplus",

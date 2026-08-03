@@ -886,10 +886,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         if (open) setScheduleDraft({ ...view });
                       }}
                       trigger={(
-                        <button type="button" data-ui-control="calendar-attribute-trigger" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
+                        <AttributeTrigger variant="cell" condensed={isHeaderScrolled}>
                           <span className={attributeLabelClass}>Час події</span>
                           <AttributeValue>{event.allDay ? 'Весь день' : `${formatTime(event.startAt)}–${formatTime(event.endAt)}`}</AttributeValue>
-                        </button>
+                        </AttributeTrigger>
                       )}
                     >
                       {({ close }) => {
@@ -970,10 +970,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       hideCloseIcon
                       className="h-full"
                       trigger={(
-                        <button type="button" data-ui-control="calendar-attribute-trigger" className={`${attributeItemClass} h-full w-full text-left hover:bg-[#ebebeb]`}>
+                        <AttributeTrigger variant="cell" condensed={isHeaderScrolled}>
                           <span className={attributeLabelClass}>Учасники</span>
                           <AttributeValue><Users size={13} className="mr-1.5 shrink-0 text-muted" />{event.participantIds?.length || 0} учасників</AttributeValue>
-                        </button>
+                        </AttributeTrigger>
                       )}
                     >
                       <div className="w-[300px] max-w-full space-y-2">

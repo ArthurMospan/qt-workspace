@@ -27,23 +27,37 @@ export function getTaskAttributeChrome({ condensed = false } = {}) {
  * carrying it was not, so the one part anybody could get wrong — the pressed
  * look — lived outside the kit.
  *
+ * @param {'details'|'cell'} props.variant Which shape: the strip's overflow control, or an attribute cell that opens a popover.
  * @param {boolean} props.condensed Scrolled state, matching the strip above it.
- * @param {boolean} props.active Whether the drawer is open; this is the pressed look.
+ * @param {boolean} props.active Whether the drawer is open; this is the pressed look. `details` only.
  * @param {React.ReactNode} props.children Label.
  * @param {string} props.className Placement in the parent only.
  */
 export function AttributeTrigger({
+  variant = 'details',
   condensed = false,
   active = false,
   className = '',
   children,
   ...props
 }) {
-  const { detailsButtonClass } = getTaskAttributeChrome({ condensed });
+  const { attributeItemClass, detailsButtonClass } = getTaskAttributeChrome({ condensed });
+
+  // Two shapes, one component. `details` is the strip's own overflow control;
+  // `cell` is an attribute cell that opens a popover — the calendar has two of
+  // those, and they were hand-written buttons wearing `attributeItemClass`,
+  // which meant the chrome came from the kit and the element did not.
+  //
+  // The pressed look belongs to `details` alone: a cell colours its own label
+  // and value, so a blanket `text-muted` here would tint the value grey.
+  const isCell = variant === 'cell';
+  const chrome = isCell ? `${attributeItemClass} h-full w-full text-left` : detailsButtonClass;
+  const tone = isCell ? '' : (active ? 'bg-white text-ink' : 'text-muted');
+
   return (
     <button
       type="button"
-      className={`${detailsButtonClass} ${className} ${active ? 'bg-white text-ink' : 'text-muted'}`}
+      className={`${chrome} ${className} ${tone}`}
       {...props}
     >
       {children}

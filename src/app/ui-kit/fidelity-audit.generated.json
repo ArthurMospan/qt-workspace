@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 36,
+    "nativeControls": 33,
     "structures": {
-      "calendar": 9,
+      "calendar": 7,
       "analytics": 3,
-      "qtplus": 4,
+      "qtplus": 3,
       "board": 1,
       "settings": 5,
       "shell": 14
     },
-    "styledNativeControls": 27,
-    "reviewedNativeControls": 6,
+    "styledNativeControls": 26,
+    "reviewedNativeControls": 4,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 35,
+    "button": 32,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -397,42 +397,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:889",
-      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
-      "text": "",
-      "childElements": [
-        "span",
-        "AttributeValue"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "calendar-attribute-trigger",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:973",
-      "className": "${…} h-full w-full text-left hover:bg-[#ebebeb]",
-      "text": "",
-      "childElements": [
-        "span",
-        "AttributeValue"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "calendar-attribute-trigger",
-      "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar/event/[eventId]"
-      ]
-    },
-    {
-      "tag": "button",
       "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:97",
       "className": "w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40",
       "text": "",
@@ -456,23 +420,6 @@
       "styled": false,
       "reviewed": "",
       "resembles": "",
-      "structure": "qtplus",
-      "routes": [
-        "/[projectId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/qtplus/cards/NoteCard.jsx:6",
-      "className": "rounded-[12px] border border-line bg-surface text-left flex flex-col overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow",
-      "text": "",
-      "childElements": [
-        "div"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "IconAction",
       "structure": "qtplus",
       "routes": [
         "/[projectId]"
@@ -657,10 +604,6 @@
       "count": 3
     },
     {
-      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
-      "count": 3
-    },
-    {
       "file": "src/components/MobileNav.jsx",
       "count": 2
     },
@@ -685,15 +628,15 @@
       "count": 1
     },
     {
+      "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
+      "count": 1
+    },
+    {
       "file": "src/components/workspace/qtplus/cards/AudioCard.jsx",
       "count": 1
     },
     {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/workspace/qtplus/cards/NoteCard.jsx",
       "count": 1
     },
     {
@@ -711,16 +654,6 @@
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:889",
-      "tag": "button",
-      "context": "calendar-attribute-trigger"
-    },
-    {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:973",
-      "tag": "button",
-      "context": "calendar-attribute-trigger"
-    },
     {
       "location": "src/components/WorkspaceHeader.jsx:110",
       "tag": "button",
