@@ -11,17 +11,17 @@
     "productFiles": 164,
     "parsedFiles": 164,
     "parseErrors": 0,
-    "nativeControls": 49,
+    "nativeControls": 45,
     "structures": {
-      "calendar": 12,
+      "calendar": 11,
       "analytics": 3,
       "qtplus": 4,
       "ai-call": 1,
       "board": 4,
-      "settings": 7,
-      "shell": 18
+      "settings": 5,
+      "shell": 17
     },
-    "styledNativeControls": 37,
+    "styledNativeControls": 33,
     "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -34,7 +34,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 48,
+    "button": 44,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -57,7 +57,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:119",
+      "location": "src/app/(app)/calendar/page.js:120",
       "className": "w-full text-left rounded-[8px] border-l-[3px] transition-[filter,transform] hover:brightness-[0.98] active:scale-[0.99] ${…}",
       "text": "",
       "childElements": [
@@ -74,7 +74,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:142",
+      "location": "src/app/(app)/calendar/page.js:143",
       "className": "w-full text-left rounded-[8px] bg-white border border-line hover:border-[#d4d4d4] transition-colors ${…} ${…}",
       "text": "",
       "childElements": [
@@ -91,7 +91,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:238",
+      "location": "src/app/(app)/calendar/page.js:239",
       "className": "absolute left-0 right-0 border-t border-[#ededed] hover:bg-black/[0.015] transition-colors",
       "text": "",
       "childElements": [],
@@ -106,7 +106,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:301",
+      "location": "src/app/(app)/calendar/page.js:302",
       "className": "w-7 h-7 rounded-full text-[11px] font-bold ${…}",
       "text": "",
       "childElements": [],
@@ -121,7 +121,7 @@
     },
     {
       "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:310",
+      "location": "src/app/(app)/calendar/page.js:311",
       "className": "w-6 h-6 rounded-[7px] opacity-0 group-hover:opacity-100 hover:bg-canvas flex items-center justify-center text-muted transition-all",
       "text": "",
       "childElements": [
@@ -131,21 +131,6 @@
       "styled": true,
       "reviewed": "",
       "resembles": "IconAction",
-      "structure": "calendar",
-      "routes": [
-        "/calendar"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/calendar/page.js:319",
-      "className": "text-[10px] font-semibold text-muted hover:text-ink pl-1",
-      "text": "ще",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
       "structure": "calendar",
       "routes": [
         "/calendar"
@@ -295,44 +280,6 @@
       "resembles": "",
       "structure": "shell",
       "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/InviteLinkSection.jsx:120",
-      "className": "mt-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink",
-      "text": "Завантажити PNG",
-      "childElements": [
-        "Download"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "settings",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/settings",
-        "/team"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/InviteLinkSection.jsx:97",
-      "className": "mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-bold text-white transition-colors ${…}",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "settings",
-      "routes": [
-        "/",
-        "/[projectId]",
-        "/settings",
-        "/team"
-      ]
     },
     {
       "tag": "button",
@@ -771,19 +718,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHeader.jsx:461",
-      "className": "text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors",
-      "text": "Очистити прочитані",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
       "location": "src/components/WorkspaceSidebar.jsx:234",
       "className": "mt-1 transition-colors shrink-0 ml-[8px]",
       "text": "",
@@ -858,7 +792,7 @@
   "nativeHotspots": [
     {
       "file": "src/app/(app)/calendar/page.js",
-      "count": 6
+      "count": 5
     },
     {
       "file": "src/components/workspace/calendar/CalendarEventPage.jsx",
@@ -889,15 +823,7 @@
       "count": 3
     },
     {
-      "file": "src/components/InviteLinkSection.jsx",
-      "count": 2
-    },
-    {
       "file": "src/components/workspace/WorkloadTab.jsx",
-      "count": 2
-    },
-    {
-      "file": "src/components/WorkspaceHeader.jsx",
       "count": 2
     },
     {
@@ -942,6 +868,10 @@
     },
     {
       "file": "src/components/workspace/TimesheetTab.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/WorkspaceHeader.jsx",
       "count": 1
     }
   ],
@@ -1079,7 +1009,7 @@
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },
     {
-      "location": "src/components/InviteLinkSection.jsx:95",
+      "location": "src/components/InviteLinkSection.jsx:96",
       "tag": "div",
       "className": "mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2"
     },

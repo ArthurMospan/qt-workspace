@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
-import { Counter, Pill } from '@/components/ui';
+import { Counter, Pill, TextAction } from '@/components/ui';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
@@ -458,12 +458,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               {/* Footer */}
               {scopedNotifications.length > 0 && (
                 <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-[#fafafa]">
-                  <button
+                  <TextAction
+                    tone="danger-quiet"
+                    size="sm"
                     onClick={handleClearRead}
                     disabled={readCount === 0}
-                    className="text-[11px] font-medium text-muted hover:text-red-500 disabled:opacity-40 disabled:hover:text-muted transition-colors">
+                  >
                     Очистити прочитані{readCount > 0 ? ` (${readCount})` : ''}
-                  </button>
+                  </TextAction>
                   <span className="text-[10px] text-faint">останні {scopedNotifications.length}</span>
                 </div>
               )}

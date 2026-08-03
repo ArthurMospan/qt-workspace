@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 178,
+    "usedAndPreviewed": 180,
     "usedWithoutPreview": 0,
-    "declaredUnused": 95
+    "declaredUnused": 93
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -534,20 +534,8 @@
     },
     {
       "component": "TextAction",
-      "prop": "size",
-      "value": "sm",
-      "namespace": null
-    },
-    {
-      "component": "TextAction",
       "prop": "tone",
       "value": "ink",
-      "namespace": null
-    },
-    {
-      "component": "TextAction",
-      "prop": "tone",
-      "value": "muted",
       "namespace": null
     },
     {
@@ -1112,8 +1100,8 @@
     "Pill.shape.badge": 7,
     "Button.size.icon-lg": 8,
     "Button.style.secondary": 57,
-    "Button.style.primary": 36,
-    "Button.size.lg": 25,
+    "Button.style.primary": 37,
+    "Button.size.lg": 26,
     "Select.filterRole.sprint": 2,
     "Select.variant.ghost": 23,
     "Select.filterRole.member": 7,
@@ -1145,6 +1133,8 @@
     "Surface.composition.chart-panel": 2,
     "Surface.composition.member-chart-panel": 1,
     "FilterBar.context.detail": 1,
+    "TextAction.tone.muted": 2,
+    "TextAction.size.xs": 3,
     "Surface.padding.sm": 1,
     "MentionMenu.density.composer": 1,
     "ChatComposerCore.variant.workspace": 1,
@@ -1205,6 +1195,7 @@
     "SelectableChip.shape.person": 1,
     "UserAvatar.size.xs": 4,
     "SelectableChip.shape.label": 1,
+    "TextAction.size.sm": 2,
     "Dialog.bodyPadding.invite": 1,
     "Input.composition.invite-field": 1,
     "IconAction.appearance.danger": 1,
@@ -1224,6 +1215,7 @@
     "Segmented.surface.canvas": 4,
     "IconAction.appearance.surface": 1,
     "IconAction.appearance.surface-danger": 1,
+    "TextAction.tone.danger-quiet": 2,
     "Counter.variant.dot": 1,
     "MultiSelect.size.md": 1,
     "Pill.tone.success": 2,
@@ -1280,8 +1272,6 @@
     "IconAction.appearance.overlay": 1,
     "ChatComposerCore.variant.qtplus": 1,
     "TextAction.tone.danger": 1,
-    "TextAction.size.xs": 2,
-    "TextAction.tone.danger-quiet": 1,
     "Pill.size.chat-day-wide": 1,
     "EmptyState.context.centered": 1,
     "EmptyState.density.compact": 1

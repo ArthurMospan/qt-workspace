@@ -73,7 +73,10 @@ export default function TextAction({
     <button
       type={type}
       aria-label={children ? undefined : label}
-      className={`inline-flex items-center transition-[color,opacity] ${sizeClass} ${toneClass} ${className}`}
+      // Disabled belongs to the component, not the call site: «Очистити
+      // прочитані» is disabled whenever nothing is read, and every call site
+      // that needed that was re-inventing the same two utilities.
+      className={`inline-flex items-center transition-[color,opacity] disabled:pointer-events-none disabled:opacity-40 ${sizeClass} ${toneClass} ${className}`}
       {...props}
     >
       {Icon && <Icon size={ICON_SIZES[size] ?? ICON_SIZES.md} />}

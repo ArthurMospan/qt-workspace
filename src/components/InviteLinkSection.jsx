@@ -6,6 +6,7 @@ import { Check, Copy, Download, Link2, Loader2, QrCode } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { Button, TextAction } from '@/components/ui';
 
 export default function InviteLinkSection({ role = 'member' }) {
   const { activeOrgId, activeOrg } = useAppContext();
@@ -94,14 +95,19 @@ export default function InviteLinkSection({ role = 'member' }) {
           </div>
           <div data-ui-surface="local" className="mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2">
             <p className="truncate px-2 py-1 text-[12px] font-medium text-[#5a5a5a]">{link.url}</p>
-            <button
-              type="button"
+            {/* The confirmation used to be a green fill. The kit's Button has
+                two colours — dark and red — and painting a third one on from
+                here is exactly the chrome override the drift guard forbids, so
+                the confirmation is carried by the tick and the label instead. */}
+            <Button
+              style="primary"
+              size="lg"
+              icon={copied ? Check : Copy}
               onClick={copyLink}
-              className={`mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-bold text-white transition-colors ${copied ? 'bg-emerald-500' : 'bg-ink hover:bg-ink-hover'}`}
+              className="mt-1 w-full"
             >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? 'Скопійовано' : 'Копіювати посилання'}
-            </button>
+            </Button>
           </div>
         </div>
         <p className="text-[11px] leading-5 text-muted">
@@ -117,14 +123,9 @@ export default function InviteLinkSection({ role = 'member' }) {
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrDataUrl} alt="QR-код запрошення до команди" className="h-[172px] w-[172px]" />
-        <button
-          type="button"
-          onClick={downloadQr}
-          className="mt-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink"
-        >
-          <Download size={12} />
+        <TextAction tone="muted" size="sm" icon={Download} onClick={downloadQr} className="mt-2">
           Завантажити PNG
-        </button>
+        </TextAction>
       </div>
     </div>
   );

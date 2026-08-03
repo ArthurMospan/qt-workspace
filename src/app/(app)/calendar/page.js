@@ -29,6 +29,7 @@ import {
   PageHeader,
   Select,
   Surface,
+  TextAction,
 } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import CalendarEventDialog, {
@@ -316,9 +317,9 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
                   ? <EventCard key={`e-${item.id}`} event={item} compact onClick={onEventClick} />
                   : <DeadlineCard key={`d-${item.id}`} deadline={item} compact onClick={onDeadlineClick} />)}
                 {items.length > 3 && (
-                  <button type="button" onClick={() => onSelectDay(day)} className="text-[10px] font-semibold text-muted hover:text-ink pl-1">
+                  <TextAction tone="muted" size="xs" onClick={() => onSelectDay(day)} className="pl-1">
                     ще {items.length - 3}
-                  </button>
+                  </TextAction>
                 )}
               </div>
             </div>
