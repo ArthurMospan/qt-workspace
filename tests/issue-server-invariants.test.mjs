@@ -49,12 +49,31 @@ test('reciprocal YouTrack links can upgrade one pending pair deterministically',
 test('issue deletion blocks both billed logs and source-less estimate reservations', async () => {
   const route = await read('../src/app/api/issues/[issueId]/route.js');
   const reservationRead = route.indexOf('transaction.get(estimateReservationRef)');
-  const deletionMarker = route.indexOf('deletionPending: true');
+  const tombstoneWrite = route.indexOf('transaction.create(tombstoneRef');
 
-  assert.ok(reservationRead > 0 && reservationRead < deletionMarker);
+  assert.ok(reservationRead > 0 && reservationRead < tombstoneWrite);
   assert.match(route, /invoiceEstimateReservationId\(/);
   assert.match(route, /ISSUE_HAS_INVOICE_ESTIMATE/);
   assert.match(route, /ISSUE_HAS_BILLED_TIME/);
+});
+
+test('issue deletion is reversible until the retention purge', async () => {
+  const [removeRoute, restoreRoute, trashServer, detail] = await Promise.all([
+    read('../src/app/api/issues/[issueId]/route.js'),
+    read('../src/app/api/issues/[issueId]/restore/route.js'),
+    read('../src/lib/server/issueTrash.js'),
+    read('../src/components/workspace/IssueDetail.jsx'),
+  ]);
+  assert.match(removeRoute, /transaction\.create\(tombstoneRef/);
+  assert.match(removeRoute, /transaction\.delete\(issueRef\)/);
+  assert.doesNotMatch(removeRoute, /recursiveDelete\(issueRef\)/);
+  assert.match(restoreRoute, /canRestoreIssueTombstone/);
+  assert.match(restoreRoute, /transaction\.create\(issueRef/);
+  assert.match(restoreRoute, /transaction\.delete\(tombstoneRef\)/);
+  assert.match(trashServer, /purgeExpiredDeletedIssues/);
+  assert.match(trashServer, /recursiveDelete\(issueRef\)/);
+  assert.match(detail, /label: 'Скасувати'/);
+  assert.match(detail, /restoreIssue\(issueId, deletion\.organizationId\)/);
 });
 
 test('actual task time cannot race a source-less estimate invoice reservation', async () => {

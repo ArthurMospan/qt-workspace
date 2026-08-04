@@ -213,6 +213,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     updateIssue,
     setIssueParent,
     deleteIssue,
+    restoreIssue,
     moveIssue,
   } = useIssues(projectId, { includeLinks: false });
 
@@ -799,13 +800,27 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
       message: childIssues.length > 0
-        ? `${childIssues.length} підзадач не буде видалено — вони стануть самостійними задачами без батьківської.`
-        : 'Задачу та її службові дані буде видалено без можливості відновлення.',
+        ? `Задачу буде прибрано з ${childIssues.length} підзадачами в ієрархії. Одразу після видалення дію можна скасувати.`
+        : 'Задачу буде прибрано. Одразу після видалення дію можна скасувати.',
       confirmText: 'Видалити', danger: true,
     }))) return;
     try {
-      await deleteIssue(issueId, childIssues.length > 0 ? { childPolicy: 'promote' } : undefined);
+      const deletion = await deleteIssue(issueId, childIssues.length > 0 ? { childPolicy: 'promote' } : undefined);
       router.push(`/${projectId}`);
+      showToast('Задачу видалено', 'success', {
+        duration: 8000,
+        action: {
+          label: 'Скасувати',
+          onClick: () => {
+            void restoreIssue(issueId, deletion.organizationId).then(() => {
+              showToast('Задачу відновлено');
+              router.push(`/${projectId}/issue/${issueId}`);
+            }).catch(error => {
+              showToast(error.message || 'Не вдалося відновити задачу', 'error');
+            });
+          },
+        },
+      });
     } catch (error) {
       showToast(error.message || 'Не вдалося видалити задачу', 'error');
     }

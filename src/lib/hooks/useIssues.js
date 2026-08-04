@@ -319,6 +319,25 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     if (!response.ok) {
       throw createResponseError(response, result, 'Не вдалося видалити задачу');
     }
+    return result;
+  }, []);
+
+  const restoreIssue = useCallback(async (issueId, organizationId) => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Authentication required');
+    const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ organizationId }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw createResponseError(response, result, 'Не вдалося відновити задачу');
+    }
+    return result;
   }, []);
 
   // Hierarchy writes go through the authenticated server route, which validates
@@ -457,6 +476,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     updateIssue,
     setIssueParent,
     deleteIssue,
+    restoreIssue,
     moveIssue
   };
 }

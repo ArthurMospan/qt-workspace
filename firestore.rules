@@ -342,6 +342,12 @@ service cloud.firestore {
     }
 
     // ── issueLinks/{id} ──────────────────────────────────────────────────
+    // Soft-deleted snapshots contain the full issue record. Only authenticated
+    // server routes may read them for Undo or retention cleanup.
+    match /deletedIssues/{tombstoneId} {
+      allow read, write: if false;
+    }
+
     match /issueLinks/{id} {
       // Same accessor as issues/{issueId}: reading `resource.data.projectId`
       // directly makes every list query fail, not just the rows it cannot

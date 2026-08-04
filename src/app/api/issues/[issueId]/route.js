@@ -7,6 +7,10 @@ import {
   isBilledTimeLog,
 } from '@/lib/utils/issueDeletion.mjs';
 import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import {
+  issueTombstoneId,
+  issueUndoExpiresAt,
+} from '@/lib/utils/issueTrash.mjs';
 
 const MAX_TRANSACTIONAL_CHILD_PROMOTION = 400;
 
@@ -14,41 +18,6 @@ function apiTransactionError(code, status, message, details = {}) {
   const error = new Error(code);
   error.api = { code, status, message, ...details };
   return error;
-}
-
-async function deleteRefsInBatches(db, refs) {
-  const uniqueRefs = [...new Map(
-    refs.map(ref => [ref.path, ref]),
-  ).values()];
-  for (let offset = 0; offset < uniqueRefs.length; offset += 400) {
-    const batch = db.batch();
-    uniqueRefs.slice(offset, offset + 400).forEach(ref => batch.delete(ref));
-    await batch.commit();
-  }
-  return uniqueRefs.length;
-}
-
-async function deleteIssueRelationsAndTimeLogs(db, issue) {
-  const [sourceLinks, targetLinks, timeLogs] = await Promise.all([
-    db.collection('issueLinks').where('sourceIssueId', '==', issue.id).get(),
-    db.collection('issueLinks').where('targetIssueId', '==', issue.id).get(),
-    db.collection('timeLogs')
-      .where('organizationId', '==', issue.organizationId)
-      .where('issueId', '==', issue.id)
-      .get(),
-  ]);
-  const refs = [
-    ...sourceLinks.docs
-      .filter(document => document.data().organizationId === issue.organizationId)
-      .map(document => document.ref),
-    ...targetLinks.docs
-      .filter(document => document.data().organizationId === issue.organizationId)
-      .map(document => document.ref),
-    ...timeLogs.docs
-      .filter(document => !isBilledTimeLog(document.data()))
-      .map(document => document.ref),
-  ];
-  return deleteRefsInBatches(db, refs);
 }
 
 export async function DELETE(request, context) {
@@ -85,6 +54,11 @@ export async function DELETE(request, context) {
     }
 
     const projectRef = db.collection('projects').doc(issue.projectId);
+    const deletedAtMs = Date.now();
+    const undoExpiresAtMs = issueUndoExpiresAt(deletedAtMs);
+    const tombstoneRef = db.collection('deletedIssues').doc(
+      issueTombstoneId(issue.organizationId, issueId),
+    );
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
       invoiceEstimateReservationId(
         issue.organizationId,
@@ -96,6 +70,7 @@ export async function DELETE(request, context) {
       const currentSnap = await transaction.get(issueRef);
       const projectSnap = await transaction.get(projectRef);
       const estimateReservationSnap = await transaction.get(estimateReservationRef);
+      const tombstoneSnap = await transaction.get(tombstoneRef);
       if (!currentSnap.exists) {
         throw apiTransactionError(
           'ISSUE_NOT_FOUND',
@@ -141,6 +116,13 @@ export async function DELETE(request, context) {
             invoiceIds: reservation.invoiceId ? [reservation.invoiceId] : [],
             estimateReservationId: estimateReservationSnap.id,
           },
+        );
+      }
+      if (tombstoneSnap.exists) {
+        throw apiTransactionError(
+          'ISSUE_ALREADY_DELETED',
+          409,
+          'Задачу вже переміщено до кошика',
         );
       }
 
@@ -205,49 +187,34 @@ export async function DELETE(request, context) {
       }
 
       const now = admin.firestore.FieldValue.serverTimestamp();
-      children.forEach(child => {
-        transaction.update(child.ref, {
-          parentIssueId: null,
-          parentEpicId: admin.firestore.FieldValue.delete(),
-          updatedAt: now,
-        });
+      transaction.create(tombstoneRef, {
+        schemaVersion: 1,
+        issueId,
+        organizationId: current.organizationId,
+        projectId: current.projectId,
+        issue: { id: issueId, ...current },
+        childPolicy,
+        childCount: children.length,
+        deletedBy: authorization.user.uid,
+        deletedAt: now,
+        purgeAfter: admin.firestore.Timestamp.fromMillis(undoExpiresAtMs),
       });
-      transaction.update(issueRef, {
-        deletionPending: true,
-        updatedAt: now,
-      });
+      transaction.delete(issueRef);
       transaction.update(projectRef, {
         issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
         updatedAt: now,
       });
-      return { promotedChildren: children.length };
+      return { childCount: children.length };
     });
-
-    const scopedIssue = {
-      id: issueId,
-      organizationId: issue.organizationId,
-      projectId: issue.projectId,
-    };
-    let removedRelatedDocuments = await deleteIssueRelationsAndTimeLogs(db, scopedIssue);
-
-    // recursiveDelete removes comments/audit subcollections as well as the issue.
-    await db.recursiveDelete(issueRef);
-
-    // Close the gap between the first cleanup query and the issue deletion. A
-    // stale client can finish a time-log write that began before the deletion
-    // marker became visible; the second sweep prevents an orphaned record.
-    removedRelatedDocuments += await deleteIssueRelationsAndTimeLogs(db, scopedIssue);
-
-    if (issue.projectId) {
-      await db.collection('projects').doc(issue.projectId).update({
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }).catch(() => {});
-    }
 
     return NextResponse.json({
       success: true,
-      promotedChildren: deletion.promotedChildren,
-      removedRelatedDocuments,
+      softDeleted: true,
+      issueId,
+      organizationId: issue.organizationId,
+      projectId: issue.projectId,
+      childCount: deletion.childCount,
+      undoExpiresAtMs,
     });
   } catch (error) {
     if (error?.api) {

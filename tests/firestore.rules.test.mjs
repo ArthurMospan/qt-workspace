@@ -186,6 +186,18 @@ test('issue deletion cannot bypass the hierarchy-aware server route', async () =
   await assertFails(deleteDoc(doc(adminDb, 'issues', 'issue-a')));
 });
 
+test('the issue trash is server-only, including for organization admins', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const memberTrash = doc(memberDb, 'deletedIssues', 'org-a_issue-a');
+  const adminTrash = doc(adminDb, 'deletedIssues', 'org-a_issue-a');
+  await assertFails(getDoc(memberTrash));
+  await assertFails(getDoc(adminTrash));
+  await assertFails(setDoc(adminTrash, {
+    organizationId: 'org-a', issueId: 'issue-a', issue: { title: 'Forged' },
+  }));
+});
+
 test('issue execution fields can only be changed by the authoritative status API', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
   const issueRef = doc(memberDb, 'issues', 'issue-a');

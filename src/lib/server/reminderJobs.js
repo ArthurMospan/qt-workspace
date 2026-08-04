@@ -19,6 +19,7 @@ import { telegramAppLink } from '@/lib/server/telegram';
 import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/notificationOutbox';
 import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
 import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
+import { purgeExpiredDeletedIssues } from '@/lib/server/issueTrash';
 
 const DELIVERY_CONCURRENCY = 10;
 // The sweep's own memory of when it last ran. Server-written only; Firestore
@@ -537,6 +538,12 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     ? await runBirthdaySweep({ nowMs, lastScanAtMs: state.lastBirthdayScanAtMs })
     : { created: 0, skipped: true };
 
+  // The same slower pass finalizes issue soft-deletes after their undo window.
+  // Dispatch stays a single indexed outbox query on the every-minute schedule.
+  const issueTrash = wantsMaterialise && materialiseDue
+    ? await purgeExpiredDeletedIssues({ nowMs })
+    : { scanned: 0, purged: 0, failed: 0, related: 0, skipped: true };
+
   // Written last and unconditionally after a successful pass: a sweep that
   // throws must not advance the watermark, or the reminders it failed to record
   // would fall into the gap the watermark exists to close.
@@ -555,6 +562,7 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
       failed: dispatched.failed || 0,
       telegram: dispatched.telegram || 0,
       birthdays: birthdays.created || 0,
+      purgedIssues: issueTrash.purged || 0,
     },
   }, { merge: true }).catch(error => {
     console.warn('[reminder-job] Could not record sweep state:', error.message);
@@ -567,5 +575,6 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     materialised,
     dispatched,
     birthdays,
+    issueTrash,
   };
 }
