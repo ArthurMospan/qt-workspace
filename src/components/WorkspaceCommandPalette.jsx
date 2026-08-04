@@ -39,6 +39,8 @@ export default function WorkspaceCommandPalette() {
 
   const activeTimer = useWorkspaceStore(state => state.activeTimer);
   const stopTimer = useWorkspaceStore(state => state.stopTimer);
+  const paletteRequest = useWorkspaceStore(state => state.commandPaletteRequest);
+  const openCommandPalette = useWorkspaceStore(state => state.openCommandPalette);
 
   const commands = useMemo(() => buildCommands({
     projects,
@@ -47,20 +49,31 @@ export default function WorkspaceCommandPalette() {
     organizationCount: allOrgs?.length || 1,
   }), [activeTimer, allOrgs?.length, orgRole, projects]);
 
+  const closePalette = useCallback(() => {
+    setOpen(false);
+    clear();
+  }, [clear]);
+
+  useEffect(() => {
+    if (!paletteRequest.id) return;
+    queueMicrotask(() => setOpen(true));
+  }, [paletteRequest.id]);
+
   useEffect(() => {
     const onKeyDown = event => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setOpen(value => !value);
+        if (open) closePalette();
+        else openCommandPalette();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [closePalette, open, openCommandPalette]);
 
-  const onQueryChange = useCallback(query => {
+  const onQueryChange = useCallback((query, scope) => {
     if (query.trim().length < 2) clear();
-    else search(query, activeOrgId);
+    else search(query, activeOrgId, scope);
   }, [activeOrgId, clear, search]);
 
   const onSelect = useCallback(command => {
@@ -82,7 +95,7 @@ export default function WorkspaceCommandPalette() {
     <>
       <CommandPalette
         isOpen={open}
-        onClose={() => setOpen(false)}
+        onClose={closePalette}
         commands={commands}
         issues={results}
         matches={matches}
@@ -90,6 +103,9 @@ export default function WorkspaceCommandPalette() {
         projects={projects}
         onQueryChange={onQueryChange}
         onSelect={onSelect}
+        initialQuery={paletteRequest.query}
+        initialScope={paletteRequest.scope}
+        requestKey={paletteRequest.id}
       />
       <KeyboardShortcutsDialog
         isOpen={shortcutsOpen}

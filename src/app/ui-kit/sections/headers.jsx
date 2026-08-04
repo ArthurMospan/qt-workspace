@@ -21,12 +21,16 @@ export default function HeadersSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="2) Звичайний пошук (Search Mode)" description="Пошук для загальних сторінок (старий TopHeader)." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
-        <div className="border border-[#f0f0f0] rounded-[16px] overflow-hidden">
+      <PreviewBlock title="2) Звичайний пошук (Search Mode)" description="Активний локальний фільтр завжди має вихід у широкий пошук; порожня сторінка показує число збігів поза нею." filePath="src/components/ui/Layout/TopHeader.jsx" fullWidth>
+        <div className="min-h-[150px] rounded-[16px] border border-[#f0f0f0] bg-white">
           <TopHeader 
-            mode="search" 
-            searchPlaceholder="Пошук по моїх завданнях..." 
-            unreadCount={0} 
+            mode="search"
+            searchValue="ретро"
+            searchPlaceholder="Пошук по моїх завданнях..."
+            searchLocalResultCount={0}
+            searchOutsideResultCount={4}
+            onSearchEscalate={() => {}}
+            unreadCount={0}
           />
         </div>
       </PreviewBlock>

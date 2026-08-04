@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 91,
-    "props": 635,
-    "documentedProps": 635,
+    "props": 651,
+    "documentedProps": 651,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -264,11 +264,39 @@
           "description": "Clears the query."
         },
         {
+          "name": "onSearchEscalate",
+          "default": "() => {}",
+          "type": "(query: string) => void",
+          "values": [],
+          "description": "Opens the palette with the current query."
+        },
+        {
           "name": "onSearchToggle",
           "default": "() => {}",
           "type": "() => void",
           "values": [],
           "description": "Opens and closes the search."
+        },
+        {
+          "name": "searchLocalResultCount",
+          "default": "null",
+          "type": "number|null",
+          "values": [],
+          "description": "Final local count from the current page."
+        },
+        {
+          "name": "searchOutsideLoading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the broader count is loading."
+        },
+        {
+          "name": "searchOutsideResultCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Broader count shown when local is empty."
         },
         {
           "name": "searchPlaceholder",
@@ -1445,6 +1473,20 @@
           "description": "Catalogue from `buildCommands`."
         },
         {
+          "name": "initialQuery",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Query supplied by the page that opened the palette."
+        },
+        {
+          "name": "initialScope",
+          "default": "null",
+          "type": "{type: 'project', projectId: string, label: string}|null",
+          "values": [],
+          "description": "Removable page scope."
+        },
+        {
           "name": "isOpen",
           "default": "",
           "type": "boolean",
@@ -1492,6 +1534,13 @@
           "type": "object[]",
           "values": [],
           "description": "Projects, used to name the project a found task belongs to."
+        },
+        {
+          "name": "requestKey",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Distinguishes repeated launches with the same query."
         },
         {
           "name": "searching",
@@ -2087,6 +2136,13 @@
           "description": "Placement in the parent only."
         },
         {
+          "name": "localResultCount",
+          "default": "null",
+          "type": "number|null",
+          "values": [],
+          "description": "Final count produced by the current page."
+        },
+        {
           "name": "onChange",
           "default": "",
           "type": "(value: string) => void",
@@ -2099,6 +2155,34 @@
           "type": "() => void",
           "values": [],
           "description": "Clears the field; renders the × while there is text."
+        },
+        {
+          "name": "onEscalate",
+          "default": "",
+          "type": "(query: string) => void",
+          "values": [],
+          "description": "Opens the command palette with this query."
+        },
+        {
+          "name": "onKeyDown",
+          "default": "",
+          "type": "(event: React.KeyboardEvent<HTMLInputElement>) => void",
+          "values": [],
+          "description": "Optional caller keyboard handler after built-in escalation keys."
+        },
+        {
+          "name": "outsideLoading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether that broader count is loading."
+        },
+        {
+          "name": "outsideResultCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Count returned by the broader search when local is empty."
         },
         {
           "name": "placeholder",
@@ -5240,6 +5324,13 @@
           "description": "Clears the query."
         },
         {
+          "name": "onSearchEscalate",
+          "default": "() => {}",
+          "type": "(query: string) => void",
+          "values": [],
+          "description": "Opens the palette with the current query."
+        },
+        {
           "name": "onUserClick",
           "default": "() => {}",
           "type": "() => void",
@@ -5266,6 +5357,27 @@
           "type": "React.ReactNode",
           "values": [],
           "description": "Extra controls for the right side."
+        },
+        {
+          "name": "searchLocalResultCount",
+          "default": "null",
+          "type": "number|null",
+          "values": [],
+          "description": "Final local count from the current page."
+        },
+        {
+          "name": "searchOutsideLoading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the broader count is loading."
+        },
+        {
+          "name": "searchOutsideResultCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Broader count shown when local is empty."
         },
         {
           "name": "searchPlaceholder",

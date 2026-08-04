@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell, Building2, ChevronRight, Folder,
-  Keyboard, PieChart, Plus, Search, Settings, Square, Sun, User, Users, Zap,
+  Keyboard, PieChart, Plus, Search, Settings, Square, Sun, User, Users, X, Zap,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import Dialog from '../Dialog';
@@ -14,6 +14,7 @@ import {
   rankCommands,
   searchCommands,
 } from '@/lib/utils/commandPalette.mjs';
+import { normalizeSearchScope, shouldRemoveSearchScope } from '@/lib/utils/searchScope.mjs';
 
 // ─── UI Kit: CommandPalette ──────────────────────────────────────────────────
 // One keystroke to anywhere. The workspace already had a route table, a project
@@ -54,6 +55,9 @@ const ICONS = {
  * @param {(query: string) => void} props.onQueryChange Called as the query changes.
  * @param {(command: object) => void} props.onSelect Runs the chosen command.
  * @param {object[]} props.projects Projects, used to name the project a found task belongs to.
+ * @param {string} props.initialQuery Query supplied by the page that opened the palette.
+ * @param {{type: 'project', projectId: string, label: string}|null} props.initialScope Removable page scope.
+ * @param {number} props.requestKey Distinguishes repeated launches with the same query.
  */
 export default function CommandPalette({
   isOpen,
@@ -65,6 +69,9 @@ export default function CommandPalette({
   onQueryChange,
   onSelect,
   projects = [],
+  initialQuery = '',
+  initialScope = null,
+  requestKey = 0,
 }) {
   return (
     <Dialog
@@ -82,6 +89,7 @@ export default function CommandPalette({
           that resets state after the fact. */}
       {isOpen && (
         <PaletteBody
+          key={requestKey}
           onClose={onClose}
           commands={commands}
           issues={issues}
@@ -90,14 +98,28 @@ export default function CommandPalette({
           projects={projects}
           onQueryChange={onQueryChange}
           onSelect={onSelect}
+          initialQuery={initialQuery}
+          initialScope={initialScope}
         />
       )}
     </Dialog>
   );
 }
 
-function PaletteBody({ onClose, commands, issues, matches, searching, projects, onQueryChange, onSelect }) {
-  const [query, setQuery] = useState('');
+function PaletteBody({
+  onClose,
+  commands,
+  issues,
+  matches,
+  searching,
+  projects,
+  onQueryChange,
+  onSelect,
+  initialQuery,
+  initialScope,
+}) {
+  const [query, setQuery] = useState(() => String(initialQuery || ''));
+  const [scope, setScope] = useState(() => normalizeSearchScope(initialScope));
   const [cursor, setCursor] = useState(0);
   const listRef = useRef(null);
 
@@ -114,7 +136,7 @@ function PaletteBody({ onClose, commands, issues, matches, searching, projects, 
     [flat],
   );
 
-  useEffect(() => { onQueryChange?.(query); }, [onQueryChange, query]);
+  useEffect(() => { onQueryChange?.(query, scope); }, [onQueryChange, query, scope]);
 
   // Keep the highlighted row in view when the keyboard moves past the fold.
   useEffect(() => {
@@ -130,7 +152,11 @@ function PaletteBody({ onClose, commands, issues, matches, searching, projects, 
   };
 
   const handleKeyDown = event => {
-    if (event.key === 'ArrowDown' || (event.key === 'n' && event.ctrlKey)) {
+    if (shouldRemoveSearchScope({ key: event.key, query, scope })) {
+      event.preventDefault();
+      setScope(null);
+      setCursor(0);
+    } else if (event.key === 'ArrowDown' || (event.key === 'n' && event.ctrlKey)) {
       event.preventDefault();
       setCursor(index => (flat.length ? (index + 1) % flat.length : 0));
     } else if (event.key === 'ArrowUp' || (event.key === 'p' && event.ctrlKey)) {
@@ -146,6 +172,17 @@ function PaletteBody({ onClose, commands, issues, matches, searching, projects, 
     <>
       <div className="flex items-center gap-[10px] border-b border-line px-[16px]">
         <Search size={16} className="shrink-0 text-muted" />
+        {scope && (
+          <button
+            type="button"
+            onClick={() => { setScope(null); setCursor(0); }}
+            aria-label={`Зняти область: ${scope.label}`}
+            className="flex max-w-[190px] shrink-0 items-center gap-[4px] rounded-full bg-canvas px-[8px] py-[4px] text-[11px] font-medium text-muted transition-colors hover:text-ink"
+          >
+            <span className="truncate">{scope.label}</span>
+            <X size={11} className="shrink-0" />
+          </button>
+        )}
         <input
           // Mounted only while open, so this is the focus without an effect.
           autoFocus

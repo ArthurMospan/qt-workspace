@@ -33,6 +33,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { messageMatchesChatSearch } from '@/lib/utils/chatAttachments.mjs';
@@ -808,6 +809,15 @@ export default function ChatPage() {
   const displayMessages = chatSearch.trim()
     ? messages.filter(message => messageMatchesChatSearch(message, chatSearch))
     : messages;
+  const normalizedChatSearch = chatSearch.trim().toLowerCase();
+  const localChatResultCount = displayMessages.length
+    + channels.filter(channel => (
+      channel.status !== 'archived'
+      && channel.name?.toLowerCase().includes(normalizedChatSearch)
+      && (!channel.members?.length || channel.members.includes(myUid))
+    )).length
+    + dms.filter(user => user.name?.toLowerCase().includes(normalizedChatSearch)).length;
+  usePublishLocalSearchResults(chatSearch, localChatResultCount);
 
   // Stale flags (crashed tab, hard reload) are discarded by TTL rather than
   // leaving "X друкує…" on screen forever. The clearing write normally arrives

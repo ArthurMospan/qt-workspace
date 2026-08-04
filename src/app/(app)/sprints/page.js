@@ -30,6 +30,7 @@ import Button from '@/components/ui/Button';
 import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 
 const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
@@ -289,6 +290,7 @@ export default function GlobalSprintsPage() {
     if (typeFilter !== 'all' && i.type !== typeFilter) return false;
     return true;
   });
+  usePublishLocalSearchResults(sprintSearch, filteredIssues.length);
 
   const getSortedIssues = (issueList) => {
     return [...issueList].sort((a, b) => {

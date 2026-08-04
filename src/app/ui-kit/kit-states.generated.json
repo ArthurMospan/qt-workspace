@@ -15,7 +15,7 @@
   "totals": {
     "components": 91,
     "stateful": 87,
-    "hover": 62,
+    "hover": 63,
     "focus": 63,
     "disabled": 34,
     "loading": 5,
@@ -136,6 +136,7 @@
       "long-text": "label"
     },
     "CommandPalette": {
+      "hover": "own",
       "focus": "global"
     },
     "ConfirmProvider": {

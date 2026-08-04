@@ -1,6 +1,7 @@
 'use client';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { auth } from '@/lib/firebase';
+import { searchScopeParams } from '@/lib/utils/searchScope.mjs';
 
 // QUI-104. `results` is still the task list, so the header's search dropdown is
 // unchanged; people, projects and events arrive beside it for callers that show
@@ -22,7 +23,7 @@ export function useSearch() {
     }
   }, []);
 
-  const search = useCallback(async (queryText, orgId) => {
+  const search = useCallback(async (queryText, orgId, scope = null) => {
     const term = queryText.trim();
     if (term.length < 2 || !orgId) {
       if (pendingDelay.current) {
@@ -42,6 +43,8 @@ export function useSearch() {
       pendingDelay.current.resolve(false);
     }
     activeRequest.current?.abort();
+    setResults([]);
+    setMatches(EMPTY);
     setLoading(true);
     const shouldRun = await new Promise(resolve => {
       const timer = setTimeout(() => resolve(true), 250);
@@ -54,7 +57,11 @@ export function useSearch() {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('Authentication required');
-      const params = new URLSearchParams({ organizationId: orgId, q: term });
+      const params = new URLSearchParams({
+        organizationId: orgId,
+        q: term,
+        ...searchScopeParams(scope),
+      });
       const response = await fetch(`/api/search?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,

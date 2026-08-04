@@ -16,6 +16,10 @@ import { HeaderSearch } from '../Forms/HeaderSearch';
  * @param {(value: string) => void} props.onSearchChange Fires with the new query.
  * @param {() => void} props.onSearchClear Clears the query.
  * @param {string} props.searchPlaceholder Placeholder for the search field.
+ * @param {number|null} props.searchLocalResultCount Final local count from the current page.
+ * @param {number} props.searchOutsideResultCount Broader count shown when local is empty.
+ * @param {boolean} props.searchOutsideLoading Whether the broader count is loading.
+ * @param {(query: string) => void} props.onSearchEscalate Opens the palette with the current query.
  * @param {string} props.className Placement in the parent only.
  */
 export function Breadcrumb({
@@ -28,6 +32,10 @@ export function Breadcrumb({
   searchValue = '',
   onSearchChange = () => {},
   onSearchClear = () => {},
+  onSearchEscalate = () => {},
+  searchLocalResultCount = null,
+  searchOutsideResultCount = 0,
+  searchOutsideLoading = false,
   searchPlaceholder = 'Пошук...',
 }) {
   if (!items || items.length === 0) {
@@ -42,6 +50,10 @@ export function Breadcrumb({
           value={searchValue}
           onChange={onSearchChange}
           onClear={onSearchClear}
+          onEscalate={onSearchEscalate}
+          localResultCount={searchLocalResultCount}
+          outsideResultCount={searchOutsideResultCount}
+          outsideLoading={searchOutsideLoading}
           placeholder={searchPlaceholder}
           className="border-ink w-[300px]"
         />

@@ -31,6 +31,10 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { auth, db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { reportLoadError } from '@/lib/utils/errors';
+import {
+  countWorkspaceSearchMatches,
+  createProjectSearchScope,
+} from '@/lib/utils/searchScope.mjs';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
@@ -533,6 +537,8 @@ export default function WorkspaceHeader() {
   const calendarSearch = useWorkspaceStore(s => s.calendarSearch);
   const setCalendarSearch = useWorkspaceStore(s => s.setCalendarSearch);
   const chatOnlineUsers = useWorkspaceStore(s => s.chatOnlineUsers);
+  const localSearchFeedback = useWorkspaceStore(s => s.localSearchFeedback);
+  const openCommandPalette = useWorkspaceStore(s => s.openCommandPalette);
 
   const router   = useRouter();
   const pathname = usePathname();
@@ -542,7 +548,13 @@ export default function WorkspaceHeader() {
   const [globalQuery,     setGlobalQuery]     = useState('');
   const [showSearch,      setShowSearch]      = useState(false);
 
-  const { results: searchResults, loading: searchLoading, search } = useSearch();
+  const {
+    results: searchResults,
+    matches: searchMatches,
+    loading: searchLoading,
+    search,
+    clear: clearSearch,
+  } = useSearch();
 
   // A search belongs to the page where it was entered. Clear every contextual
   // query on navigation so text from Chat/Team/Analytics never leaks into the
@@ -590,6 +602,48 @@ export default function WorkspaceHeader() {
               : pathname === '/'
                 ? workspaceSearch
                 : globalQuery;
+
+  const isContextualSearch = projectSearch
+    || mode === 'chat'
+    || pathname === '/'
+    || pathname.startsWith('/team')
+    || pathname.startsWith('/my')
+    || pathname.startsWith('/sprints')
+    || pathname.startsWith('/analytics')
+    || pathname.startsWith('/calendar');
+  const searchScope = useMemo(
+    () => (projectSearch && project ? createProjectSearchScope(project) : null),
+    [project, projectSearch],
+  );
+  const localResultCount = localSearchFeedback?.pathname === pathname
+    && localSearchFeedback.query === contextualSearchValue
+    ? localSearchFeedback.count
+    : null;
+  const outsideResultCount = countWorkspaceSearchMatches({
+    issues: searchResults,
+    matches: searchMatches,
+  });
+
+  // A broad search is a collection scan today. It is needed for the empty
+  // local-state count, but not for the permanently visible "search everywhere"
+  // row — clicking that row lets the palette perform its own request.
+  useEffect(() => {
+    if (!isContextualSearch) return;
+    const term = contextualSearchValue.trim();
+    if (term.length < 2 || localResultCount !== 0 || !activeOrgId) {
+      clearSearch();
+      return;
+    }
+    search(term, activeOrgId, searchScope);
+  }, [
+    activeOrgId,
+    clearSearch,
+    contextualSearchValue,
+    isContextualSearch,
+    localResultCount,
+    search,
+    searchScope,
+  ]);
 
   return (
     <>
@@ -648,6 +702,10 @@ export default function WorkspaceHeader() {
             setShowSearch(false);
           }
         }}
+        onSearchEscalate={(query) => openCommandPalette({ query, scope: searchScope })}
+        searchLocalResultCount={localResultCount}
+        searchOutsideResultCount={outsideResultCount}
+        searchOutsideLoading={searchLoading}
         projectName={project?.name}
         projectSearchActive={projectSearch}
         onProjectSearchToggle={() => setProjectSearch(true)}

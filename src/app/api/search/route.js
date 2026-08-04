@@ -41,6 +41,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId') || '';
     const term = (searchParams.get('q') || '').trim().toLowerCase().slice(0, 100);
+    const projectId = (searchParams.get('projectId') || '').trim().slice(0, 200);
     const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     if (term.length < 2) return NextResponse.json({ results: [], people: [], projects: [], events: [] });
@@ -50,23 +51,42 @@ export async function GET(request) {
 
     const db = getAdminDb();
     const uid = authorization.user.uid;
+    let issuesQuery = db.collection('issues').where('organizationId', '==', organizationId);
+    let eventsQuery = db.collection('calendarEvents').where('organizationId', '==', organizationId);
+    if (projectId) {
+      issuesQuery = issuesQuery.where('projectId', '==', projectId);
+      eventsQuery = eventsQuery.where('projectId', '==', projectId);
+    }
     // Search must honour the same per-project access model as the rest of the
     // app: a plain member could previously find the titles of tasks in projects
     // they are not on and cannot open. Owners/admins still see everything.
     const isPrivileged = ['owner', 'admin'].includes(authorization.membership?.role);
+    let scopedProject = null;
+    let scopedProjectSnapshot = null;
+    if (projectId) {
+      scopedProjectSnapshot = await db.collection('projects').doc(projectId).get();
+      const data = scopedProjectSnapshot.exists ? scopedProjectSnapshot.data() : null;
+      const canOpen = data?.organizationId === organizationId
+        && data.status !== 'archived'
+        && (isPrivileged || (Array.isArray(data.team) && data.team.includes(uid)));
+      if (!canOpen) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+      scopedProject = { id: scopedProjectSnapshot.id, ...data };
+    }
     const [issuesSnapshot, projectsSnapshot, membershipsSnapshot, eventsSnapshot] = await Promise.all([
-      db.collection('issues')
-        .where('organizationId', '==', organizationId)
+      issuesQuery
         .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt')
         .get(),
-      db.collection('projects')
-        .where('organizationId', '==', organizationId)
-        .select('name', 'description', 'issuePrefix', 'team', 'status')
-        .get(),
+      scopedProjectSnapshot
+        ? Promise.resolve({ docs: [scopedProjectSnapshot] })
+        : db.collection('projects')
+          .where('organizationId', '==', organizationId)
+          .select('name', 'description', 'issuePrefix', 'team', 'status')
+          .get(),
       db.collection('orgMemberships').where('orgId', '==', organizationId).get(),
-      db.collection('calendarEvents')
-        .where('organizationId', '==', organizationId)
-        .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'startAt')
+      eventsQuery
+        .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'projectId', 'startAt')
         .get(),
     ]);
 
@@ -78,7 +98,6 @@ export async function GET(request) {
           .filter(project => Array.isArray(project.team) && project.team.includes(uid))
           .map(project => project.id),
       );
-
     const results = issuesSnapshot.docs
       .map(item => {
         const issue = item.data();
@@ -86,6 +105,7 @@ export async function GET(request) {
       })
       .filter(issue => issue.score > 0)
       .filter(issue => !visibleProjectIds || visibleProjectIds.has(issue.projectId))
+      .filter(issue => !projectId || issue.projectId === projectId)
       .sort((a, b) => b.score - a.score || (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       .slice(0, 50)
       .map(issue => ({
@@ -101,6 +121,7 @@ export async function GET(request) {
     const projects = projectRecords
       .filter(project => project.status !== 'archived')
       .filter(project => !visibleProjectIds || visibleProjectIds.has(project.id))
+      .filter(project => !projectId || project.id === projectId)
       .map(project => ({
         project,
         score: Math.max(
@@ -116,7 +137,12 @@ export async function GET(request) {
 
     // Membership is organization-wide, and so is the team list every member can
     // already open — so people carry no extra visibility rule of their own.
-    const memberships = membershipsSnapshot.docs.map(document => document.data());
+    const scopedMemberIds = projectId
+      ? new Set(Array.isArray(scopedProject.team) ? scopedProject.team : [])
+      : null;
+    const memberships = membershipsSnapshot.docs
+      .map(document => document.data())
+      .filter(membership => !scopedMemberIds || scopedMemberIds.has(membership.userId));
     const profiles = memberships.length
       ? await db.getAll(...memberships.map(membership => db.collection('users').doc(membership.userId)))
       : [];
@@ -153,6 +179,7 @@ export async function GET(request) {
             || event.participantIds?.includes(uid)
             || isPrivileged
       ))
+      .filter(event => !projectId || event.projectId === projectId)
       .map(event => ({
         event,
         score: Math.max(

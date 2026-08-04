@@ -22,6 +22,7 @@ import {
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
 // ── Main Page ────────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ export default function TeamPage() {
     (m.name || '').toLowerCase().includes(teamSearch.toLowerCase()) ||
     (m.email || '').toLowerCase().includes(teamSearch.toLowerCase())
   ), [members, teamSearch]);
+  usePublishLocalSearchResults(teamSearch, filteredMembers.length);
 
   useEffect(() => {
     if (loading || !requestedMemberId) return;

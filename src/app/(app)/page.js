@@ -4,6 +4,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
   chunkProjectIds,
   flattenDocumentBuckets,
@@ -694,6 +695,7 @@ export default function WorkspacePage() {
       return bTime - aTime;
     });
   }, [projects, searchQuery, selectedMember, dateFilter, sortOption, progressByProject, now]);
+  usePublishLocalSearchResults(searchQuery, filteredProjects.length);
 
   // Sliced recent issues list (limit to 6)
   const recentIssues = useMemo(() => {

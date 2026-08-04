@@ -21,6 +21,7 @@ import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
 import { MINUTES_PER_DAY, layoutDayEvents } from '@/lib/utils/calendarLayout.mjs';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
   Button,
   CalendarDayNumber,
@@ -450,6 +451,10 @@ export default function CalendarPage() {
     if (memberFilter !== 'all' && !deadline.assigneeIds?.includes(memberFilter)) return false;
     return true;
   }), [calendarSearch, deadlines, memberFilter, projectFilters, typeFilter]);
+  usePublishLocalSearchResults(
+    calendarSearch,
+    filteredEvents.length + filteredDeadlines.length,
+  );
 
   useEffect(() => {
     if (!events.length) return;

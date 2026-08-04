@@ -146,6 +146,9 @@ export default function NavigationOverlaysSection() {
           issues={KIT_PALETTE_ISSUES}
           projects={KIT_PALETTE_PROJECTS}
           onSelect={() => {}}
+          initialQuery="дизайн"
+          initialScope={{ type: 'project', projectId: 'p1', label: 'у проєкті Mobile App Redesign' }}
+          requestKey={1}
         />
         <KeyboardShortcutsDialog isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       </PreviewBlock>

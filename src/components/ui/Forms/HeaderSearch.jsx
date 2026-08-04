@@ -1,6 +1,7 @@
 'use client';
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { searchEscalationState } from '@/lib/utils/searchScope.mjs';
 
 /**
  * The search field inside the workspace header. Reached through `TopHeader`,
@@ -10,26 +11,65 @@ import { Search, X } from 'lucide-react';
  * @param {(value: string) => void} props.onChange Fires with the new query.
  * @param {() => void} props.onClear Clears the field; renders the × while there is text.
  * @param {string} props.placeholder Placeholder text.
+ * @param {number|null} props.localResultCount Final count produced by the current page.
+ * @param {number} props.outsideResultCount Count returned by the broader search when local is empty.
+ * @param {boolean} props.outsideLoading Whether that broader count is loading.
+ * @param {(query: string) => void} props.onEscalate Opens the command palette with this query.
+ * @param {(event: React.KeyboardEvent<HTMLInputElement>) => void} props.onKeyDown Optional caller keyboard handler after built-in escalation keys.
  * @param {string} props.className Placement in the parent only.
  */
 export const HeaderSearch = forwardRef(({
   value = '',
   onChange,
   onClear,
+  onEscalate,
+  localResultCount = null,
+  outsideResultCount = 0,
+  outsideLoading = false,
   placeholder = 'Пошук...',
   className = '',
+  onKeyDown,
   ...props
 }, ref) => {
+  const [escalationActive, setEscalationActive] = useState(false);
+  const escalation = searchEscalationState({
+    query: value,
+    localResultCount,
+    outsideResultCount,
+    outsideLoading,
+  });
+
+  const openEverywhere = () => onEscalate?.(escalation.term);
+
+  const handleKeyDown = event => {
+    if (event.key === 'ArrowDown' && escalation.active) {
+      event.preventDefault();
+      setEscalationActive(true);
+      return;
+    }
+    if (event.key === 'Enter' && escalationActive && escalation.active) {
+      event.preventDefault();
+      openEverywhere();
+      return;
+    }
+    if (event.key === 'Escape') setEscalationActive(false);
+    onKeyDown?.(event);
+  };
+
   return (
-    <div className={`relative flex items-center border-b border-transparent focus-within:border-line w-full max-w-[320px] h-[36px] transition-colors ${className}`}>
+    <div className={`relative flex h-[36px] w-full max-w-[320px] items-center border-b border-transparent transition-colors focus-within:border-line ${className}`}>
       <Search size={14} className="text-muted absolute left-0 pointer-events-none" />
       <input
         ref={ref}
         type="text"
         value={value}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(e) => {
+          setEscalationActive(false);
+          onChange?.(e.target.value);
+        }}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full h-full bg-transparent text-[13px] text-ink placeholder:text-[#a3a3a3] outline-none pl-[24px] pr-[30px]"
+        className="h-full w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3]"
         {...props}
       />
       {value && (
@@ -39,10 +79,48 @@ export const HeaderSearch = forwardRef(({
             onClear?.();
           }}
           aria-label="Очистити пошук"
-          className="absolute right-[10px] text-faint hover:text-muted transition-colors p-1"
+          className="absolute right-[42px] p-1 text-faint transition-colors hover:text-muted"
         >
           <X size={13} />
         </button>
+      )}
+      <button
+        type="button"
+        onClick={openEverywhere}
+        aria-label="Відкрити пошук скрізь"
+        aria-haspopup="dialog"
+        className="absolute right-0 rounded-[6px] border border-line bg-canvas px-[5px] py-[2px] text-[10px] font-semibold leading-none text-muted transition-colors hover:border-muted hover:text-ink"
+      >
+        ⌘K
+      </button>
+
+      {escalation.active && (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full overflow-hidden rounded-[10px] border border-line bg-white shadow-lg">
+          {escalation.localEmpty && (
+            <button
+              type="button"
+              onMouseDown={event => event.preventDefault()}
+              onClick={openEverywhere}
+              className="w-full px-[12px] py-[9px] text-left text-[12px] text-muted transition-colors hover:bg-canvas"
+            >
+              {escalation.outsideLoading
+                ? 'Шукаємо поза цією сторінкою…'
+                : `Знайдено поза цією сторінкою: ${escalation.outsideCount}`}
+            </button>
+          )}
+          <button
+            type="button"
+            onMouseDown={event => event.preventDefault()}
+            onMouseEnter={() => setEscalationActive(true)}
+            onClick={openEverywhere}
+            className={`flex w-full items-center justify-between border-t border-line px-[12px] py-[9px] text-left text-[12px] font-medium transition-colors ${
+              escalationActive ? 'bg-canvas text-ink' : 'bg-white text-muted hover:bg-canvas hover:text-ink'
+            }`}
+          >
+            <span className="min-w-0 truncate">Шукати «{escalation.term}» скрізь</span>
+            <span className="ml-2 shrink-0 text-[10px] text-faint">⌘K</span>
+          </button>
+        </div>
       )}
     </div>
   );

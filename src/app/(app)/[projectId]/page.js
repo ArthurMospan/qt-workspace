@@ -27,6 +27,7 @@ import { can } from '@/lib/utils/can';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -133,6 +134,7 @@ export default function BoardPage({ params }) {
 
     return true;
   });
+  usePublishLocalSearchResults(projectSearch, boardIssues.length);
 
   const actor = {
     userId:   currentUser?.id   || currentUser?.uid,

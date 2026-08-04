@@ -187,6 +187,23 @@ const useWorkspaceStore = create((set, get) => ({
   calendarSearch: '',
   setCalendarSearch: (q) => set({ calendarSearch: q }),
 
+  // Local pages publish only their final filtered count. The header uses it to
+  // decide whether it needs the broader (and more expensive) search request.
+  localSearchFeedback: null,
+  setLocalSearchFeedback: (feedback) => set({ localSearchFeedback: feedback }),
+
+  // One entry point for ⌘K and for escalation from a local search field. An id
+  // makes two identical requests distinct, so a closed palette can be reopened
+  // with the same query and scope.
+  commandPaletteRequest: { id: 0, query: '', scope: null },
+  openCommandPalette: ({ query = '', scope = null } = {}) => set(state => ({
+    commandPaletteRequest: {
+      id: state.commandPaletteRequest.id + 1,
+      query: String(query || ''),
+      scope,
+    },
+  })),
+
   // ── Chat online users (synced from chat page to header) ───────────
   chatOnlineUsers: [],
   setChatOnlineUsers: (users) => set({ chatOnlineUsers: users }),

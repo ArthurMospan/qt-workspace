@@ -28,6 +28,7 @@ import { parseDueDate } from '@/lib/utils/date';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventOccurrenceKey } from '@/lib/utils/calendarEventNavigation.mjs';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
   effectiveTimeLogMillis,
   isCalendarEventTimeLog,
@@ -486,6 +487,7 @@ export default function WorkspaceAnalyticsPage() {
       return true;
     });
   }, [issues, searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  usePublishLocalSearchResults(analyticsSearch, filteredIssues.length);
   const actionableIssueIds = useMemo(
     () => new Set(selectActionableIssues(issues).map(issue => issue.id)),
     [issues],

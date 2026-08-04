@@ -21,6 +21,7 @@ import Surface from '@/components/ui/Surface';
 import FilterBar from '@/components/ui/FilterBar';
 import Dialog from '@/components/ui/Dialog';
 import { createIssueViaApi } from '@/lib/services/issues';
+import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 
 
 
@@ -123,6 +124,7 @@ export default function MyTasksPage() {
     return [t.issueKey, t.title, t.description, p.name]
       .some(value => String(value || '').toLowerCase().includes(normalizedSearch));
   });
+  usePublishLocalSearchResults(myTaskSearch, filtered.length);
 
   return (
     <div className={`flex-1 h-full bg-transparent ${viewMode === 'kanban' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden hide-scrollbar'}`}>

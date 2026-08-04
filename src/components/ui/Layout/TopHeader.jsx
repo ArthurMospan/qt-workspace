@@ -26,6 +26,10 @@ import Pill from '../DataDisplay/Pill';
  * @param {(value: string) => void} props.onSearchChange Fires with the new query.
  * @param {() => void} props.onSearchClear Clears the query.
  * @param {string} props.searchPlaceholder Placeholder for the search field.
+ * @param {number|null} props.searchLocalResultCount Final local count from the current page.
+ * @param {number} props.searchOutsideResultCount Broader count shown when local is empty.
+ * @param {boolean} props.searchOutsideLoading Whether the broader count is loading.
+ * @param {(query: string) => void} props.onSearchEscalate Opens the palette with the current query.
  * @param {boolean} props.projectSearchActive Whether the project search has replaced the trail.
  * @param {() => void} props.onProjectSearchToggle Opens and closes that search.
  * @param {React.ReactNode} props.rightContent Extra controls for the right side.
@@ -39,6 +43,10 @@ export default function TopHeader({
   searchPlaceholder = 'Пошук...',
   onSearchChange = () => {},
   onSearchClear = () => {},
+  onSearchEscalate = () => {},
+  searchLocalResultCount = null,
+  searchOutsideResultCount = 0,
+  searchOutsideLoading = false,
   
   // Project Props
   projectName = 'Назва проєкту',
@@ -112,6 +120,10 @@ export default function TopHeader({
           searchValue={searchValue}
           onSearchChange={onSearchChange}
           onSearchClear={onSearchClear}
+          onSearchEscalate={onSearchEscalate}
+          searchLocalResultCount={searchLocalResultCount}
+          searchOutsideResultCount={searchOutsideResultCount}
+          searchOutsideLoading={searchOutsideLoading}
           searchPlaceholder={`Пошук по "${projectName}"...`}
         />
       );
@@ -124,6 +136,10 @@ export default function TopHeader({
             value={searchValue}
             onChange={onSearchChange}
             onClear={onSearchClear}
+            onEscalate={onSearchEscalate}
+            localResultCount={searchLocalResultCount}
+            outsideResultCount={searchOutsideResultCount}
+            outsideLoading={searchOutsideLoading}
             placeholder="Пошук по чатах..."
             className="w-[240px]"
           />
@@ -137,6 +153,10 @@ export default function TopHeader({
         value={searchValue}
         onChange={onSearchChange}
         onClear={onSearchClear}
+        onEscalate={onSearchEscalate}
+        localResultCount={searchLocalResultCount}
+        outsideResultCount={searchOutsideResultCount}
+        outsideLoading={searchOutsideLoading}
         placeholder={searchPlaceholder}
       />
     );
