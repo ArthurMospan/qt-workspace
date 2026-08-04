@@ -2069,7 +2069,7 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:268",
             "src/app/(app)/analytics/page.js:650",
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/page.js:801",
             "src/app/(app)/settings/page.js:2732",
@@ -2519,7 +2519,7 @@
           "files": [
             "src/app/(app)/calendar/page.js:523",
             "src/app/(app)/chat/page.js:933",
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -2575,7 +2575,7 @@
             "src/app/(app)/chat/page.js:925",
             "src/app/(app)/chat/page.js:933",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/my/page.js:201",
             "src/app/(app)/my/page.js:308",
@@ -2773,7 +2773,7 @@
             "src/app/(app)/chat/page.js:925",
             "src/app/(app)/chat/page.js:933",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/my/page.js:201",
             "src/app/(app)/my/page.js:308",
@@ -2962,7 +2962,7 @@
             "src/app/(app)/chat/page.js:925",
             "src/app/(app)/chat/page.js:933",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/app/(app)/my/page.js:201",
             "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
@@ -3306,7 +3306,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/app/(app)/layout.js:99",
+            "src/app/(app)/layout.js:100",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:41"
           ]
         },

@@ -15,6 +15,7 @@ import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import IssueReadStateBridge from '@/components/IssueReadStateBridge';
 import WorkspaceDocumentTitle from '@/components/WorkspaceDocumentTitle';
+import FaviconBadge from '@/components/FaviconBadge';
 import WorkspaceCommandPalette from '@/components/WorkspaceCommandPalette';
 import { ConnectionBanner } from '@/components/ui';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
@@ -146,6 +147,7 @@ export default function WorkspaceLayout({ children }) {
         <WorkspaceNotificationBridge />
         <IssueReadStateBridge />
         <WorkspaceDocumentTitle />
+        <FaviconBadge />
         <OrgSwitcherScreen />
       </>
     ); // No onClose provided, meaning they MUST select an org or create one
@@ -156,6 +158,7 @@ export default function WorkspaceLayout({ children }) {
     <WorkspaceNotificationBridge />
     <IssueReadStateBridge />
     <WorkspaceDocumentTitle />
+    <FaviconBadge />
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">

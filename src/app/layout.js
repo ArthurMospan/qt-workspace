@@ -4,7 +4,15 @@ import { AppProvider } from '@/lib/context/AppContext';
 import AutoFix from '@/components/AutoFix';
 import Script from 'next/script';
 
+// `opengraph-image.js` renders the card; Next only turns it into an absolute
+// URL if it knows where the app lives. The same variable the invite links and
+// the emails already resolve against, so there is one answer to "what is our
+// origin" rather than three.
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const OG_DESCRIPTION = 'Внутрішній простір команди: задачі, час, чат і календар';
+
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
   // `template` is what makes the tab useful. Every screen sets its own title
   // through it, so a browser with eight QuickTeam tabs open no longer shows
   // eight tabs reading "QuickTeam".
@@ -13,6 +21,21 @@ export const metadata = {
     template: '%s · QuickTeam',
   },
   description: 'Internal task manager for the QuickTeam team',
+  // A workspace link is pasted into a chat dozens of times a day. Without this
+  // it unfurled as the bare host: no name, no mark, no hint of what it opens.
+  openGraph: {
+    type: 'website',
+    siteName: 'QuickTeam',
+    locale: 'uk_UA',
+    url: SITE_URL,
+    title: 'QuickTeam',
+    description: OG_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'QuickTeam',
+    description: OG_DESCRIPTION,
+  },
   applicationName: 'QuickTeam',
   manifest: '/manifest.webmanifest',
   icons: {
