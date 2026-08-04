@@ -6,7 +6,8 @@
 // this component only renders the grid for the state it receives via props.
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -146,7 +147,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                       </Link>
                     ) : event ? (
                       <Link href={calendarEventHref(event)} className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink hover:underline">
-                        <CalendarDays size={12} className="shrink-0 text-muted" />
+                        <CalendarIcon size={12} className="shrink-0 text-muted" />
                         <span className="truncate">Подія</span>
                       </Link>
                     ) : (

@@ -151,7 +151,7 @@ function VariantCell({ component, prop, value, count, previewed }) {
   return (
     <div className={`flex flex-col gap-[4px] rounded-[10px] border p-[8px] ${tone}`}>
       <div
-        className={`relative isolate flex min-h-[38px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
+        className={`relative isolate flex min-h-[32px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
           NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
         }`}
       >
@@ -220,7 +220,7 @@ export default function VariantMatrixSection() {
             {Object.entries(props).map(([prop, values]) => (
               <div key={prop}>
                 <div className="mb-[6px] font-mono text-[11px] font-bold text-ink">{prop}</div>
-                <div className="grid gap-[6px] [grid-template-columns:repeat(auto-fill,minmax(88px,1fr))]">
+                <div className="grid gap-[5px] [grid-template-columns:repeat(auto-fill,minmax(80px,1fr))]">
                   {values.map(value => (
                     <VariantCell
                       key={value}

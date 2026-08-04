@@ -3,7 +3,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import Counter from '@/components/ui/DataDisplay/Counter';
+import Pill from '@/components/ui/DataDisplay/Pill';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 
@@ -48,11 +48,13 @@ export default function MemberRail({
       <div className="px-4 pt-[16px] pb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="ui-type-dialog-title text-ink">{title}</h2>
-          {/* QUI-108. This was an outline `Pill` — a label component carrying a
-              number, drawn nowhere else in the product that way. The board
-              columns in «Мої завдання» already answer "how many are in this
-              list" with `Counter`, and a count is what this is. */}
-          <Counter value={members.length} size="sm" appearance="subtle" />
+          {/* QUI-108. The same count the board columns show, drawn the same
+              way. This was an outline `Pill`; the first attempt at the fix
+              reached for `Counter`, which is what two of the board's own
+              headers use — but not the one anybody sees, so it still did not
+              match. `tone="count"` is now the single answer, here and in all
+              four of the board's headers. */}
+          <Pill tone="count" size="md">{members.length}</Pill>
         </div>
         {action}
       </div>

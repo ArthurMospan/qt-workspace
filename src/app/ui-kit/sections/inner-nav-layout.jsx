@@ -6,7 +6,8 @@ import { IconAction, SidebarLayout, InnerNavigation, MobilePaneBack, UserAvatar,
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import ChatConversationHeader from '@/components/ui/Chat/ChatConversationHeader';
 import ChatMessageList from '@/components/ui/Chat/ChatMessageList';
-import { Plus, User, Bell, X, MessageSquare, Users, Building } from 'lucide-react';
+import { Plus, User, Bell, X, Users, Building } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { PreviewBlock } from '../preview';
 import { CHAT_DEMO_MEMBERS, CHAT_DEMO_MESSAGES } from '../demo-data';
 
@@ -184,7 +185,7 @@ export default function NavMenuSection() {
               <div data-ui-overlay="responsive-pane" className="hidden shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas md:flex md:w-[280px]">
                 <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
                   <div className="flex items-center gap-2">
-                    <MessageSquare size={16} className="text-muted" />
+                    <ChatIcon size={16} className="text-muted" />
                     <h3 className="ui-type-card-title text-ink">Гілка</h3>
                   </div>
                   <IconAction label="Закрити гілку" icon={X} size="md" appearance="quiet" composition="chat-panel-action" />

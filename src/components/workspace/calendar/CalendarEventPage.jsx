@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   BellRing,
-  CalendarDays,
   Check,
   Clock3,
   Copy,
@@ -23,6 +22,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
@@ -631,7 +631,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     return (
       <div className="flex min-h-[420px] flex-1 items-center justify-center bg-white">
         <EmptyState
-          icon={loadError ? RefreshCw : CalendarDays}
+          icon={loadError ? RefreshCw : CalendarIcon}
           title={loadError ? 'Не вдалося завантажити подію' : 'Подію не знайдено'}
           description={loadError?.message || 'Можливо, подію видалили або у вас немає до неї доступу.'}
           action={loadError ? 'Спробувати ще раз' : 'Повернутися до календаря'}

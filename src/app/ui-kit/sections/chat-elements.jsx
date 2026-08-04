@@ -9,7 +9,8 @@ import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import FileInput from '@/components/ui/Forms/FileInput';
 import TextAction from '@/components/ui/TextAction';
-import { Trash2, MessageSquare, Paperclip, UserPlus } from 'lucide-react';
+import { Trash2, Paperclip, UserPlus } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { PreviewBlock } from '../preview';
 import { CHAT_DEMO_MESSAGES, KIT_MENTION_MEMBERS } from '../demo-data';
 
@@ -80,7 +81,7 @@ export default function ChatElementsSection() {
             ['chat-panel-action', 16, 'закрити гілку, інфо про канал'],
             ['chat-composer-action', 17, 'емодзі та вкладення в композері']].map(([token, px, role]) => (
             <div key={token} className="flex items-center gap-[12px]">
-              <Button style="ghost" size="icon-sm" composition={token} icon={MessageSquare}>{token}</Button>
+              <Button style="ghost" size="icon-sm" composition={token} icon={ChatIcon}>{token}</Button>
               <span className="font-mono text-[10px] font-bold text-[#1f1f1f]">{token}</span>
               <span className="text-[10px] text-[#cfcfcf]">{px}px · {role}</span>
             </div>
@@ -119,7 +120,7 @@ export default function ChatElementsSection() {
           <div className="flex items-center gap-[12px]">
             <span className="w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink">з іконкою</span>
             <TextAction size="sm" icon={UserPlus}>Додати</TextAction>
-            <TextAction size="md" icon={MessageSquare}>3 відповіді</TextAction>
+            <TextAction size="md" icon={ChatIcon}>3 відповіді</TextAction>
             <TextAction size="xs" tone="danger-quiet" icon={Trash2} label="Видалити повідомлення" />
           </div>
         </div>

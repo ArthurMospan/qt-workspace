@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bell, Building2, Calendar, CheckCircle2, ChevronRight, CircleDot, Folder,
-  Keyboard, MessageSquare, PieChart, Plus, Search, Settings, Square, Sun, User, Users, Zap,
+  Bell, Building2, ChevronRight, Folder,
+  Keyboard, PieChart, Plus, Search, Settings, Square, Sun, User, Users, Zap,
 } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import Dialog from '../Dialog';
 import {
   flattenGroups,
@@ -24,10 +25,10 @@ import {
 
 const ICONS = {
   folder: Folder,
-  check: CheckCircle2,
+  check: TaskIcon,
   sun: Sun,
-  message: MessageSquare,
-  calendar: Calendar,
+  message: ChatIcon,
+  calendar: CalendarIcon,
   zap: Zap,
   users: Users,
   chart: PieChart,
@@ -37,7 +38,7 @@ const ICONS = {
   bell: Bell,
   building: Building2,
   keyboard: Keyboard,
-  issue: CircleDot,
+  issue: TaskIcon,
   user: User,
 };
 
@@ -168,9 +169,14 @@ function PaletteBody({ onClose, commands, issues, matches, searching, projects, 
         aria-label="Команди"
         className="max-h-[min(56dvh,420px)] overflow-y-auto overscroll-contain py-[6px]"
       >
+        {/* "Нічого не знайдено" while the request is still in flight is a
+            wrong answer, not a slow one — and it is the answer the palette gave
+            for the whole 250ms debounce plus the round trip. The spinner in the
+            field says the same thing to somebody watching the caret; this says
+            it to somebody watching the list. */}
         {!flat.length && (
           <p className="px-[16px] py-[28px] text-center text-[13px] text-muted">
-            Нічого не знайдено за «{query}»
+            {searching ? 'Шукаємо…' : `Нічого не знайдено за «${query}»`}
           </p>
         )}
 

@@ -284,3 +284,69 @@ test('a member profile offers four icon actions, with the emergency call in the 
   assert.match(calendar, /searchParams\.get\('with'\)/);
   assert.match(eventDialog, /initialParticipantIds/);
 });
+
+// The same count was drawn four different ways for the same question: a
+// `Counter` in the board's collapsed and swimlane headers, a `Pill` with
+// `opacity-60` in the header that actually ships, another `Pill` for swimlane
+// totals, and an outline `Pill` in the team rail. Reaching for `Counter` in the
+// rail matched two of the board's headers and not the one anybody sees.
+test('one count chip answers "how many are in this list"', async () => {
+  const board = await read('../src/components/workspace/AgileBoard.jsx');
+  const rail = await read('../src/components/ui/Navigation/MemberRail.jsx');
+  const globals = await read('../src/app/globals.css');
+
+  assert.match(globals, /data-ui-pill-tone='count'\]/);
+  assert.doesNotMatch(board, /<Counter/, 'the board no longer has a second kind of count');
+  assert.doesNotMatch(board, /opacity-60/, 'the 60% white lives in the tone, not at the call site');
+  assert.equal((board.match(/<Pill tone="count" size="md"/g) || []).length, 5);
+  assert.match(rail, /<Pill tone="count" size="md">\{members\.length\}<\/Pill>/);
+});
+
+// The three feature glyphs were copied into two dozen files by hand, so
+// "change the calendar icon" meant finding every import and hoping none had
+// been missed — and some had.
+test('the sidebar, the mobile bar, the palette and a profile show the same three icons', async () => {
+  const icons = await read('../src/lib/design/icons.js');
+  const sidebar = await read('../src/components/WorkspaceSidebar.jsx');
+  const mobile = await read('../src/components/MobileNav.jsx');
+  const palette = await read('../src/components/ui/Navigation/CommandPalette.jsx');
+  const profile = await read('../src/components/profile/ProfileView.jsx');
+
+  assert.match(icons, /export const TaskIcon = SquareCheckBig/);
+  assert.match(icons, /export const CalendarIcon = Calendar\b/);
+  assert.match(icons, /export const ChatIcon = MessageCircle/);
+
+  for (const source of [sidebar, mobile, palette, profile]) {
+    assert.match(source, /from '@\/lib\/design\/icons'/);
+    // Nobody reaches past the names for the glyph they replaced.
+    assert.doesNotMatch(source, /\bCalendarDays\b/);
+    assert.doesNotMatch(source, /\bMessageSquare\b/);
+  }
+  assert.match(sidebar, /icon: TaskIcon/);
+  assert.match(mobile, /icon: TaskIcon/);
+  // A found task looks like every other task rather than a bullseye nobody
+  // else uses.
+  assert.match(palette, /issue: TaskIcon/);
+});
+
+// «Нічого не знайдено» while the request is still in flight is a wrong answer,
+// not a slow one — and it was the answer for the whole debounce plus round trip.
+test('the palette says it is searching rather than that it found nothing', async () => {
+  const palette = await read('../src/components/ui/Navigation/CommandPalette.jsx');
+  assert.match(palette, /searching \? 'Шукаємо…' : `Нічого не знайдено за «\$\{query\}»`/);
+});
+
+// Four 56px circles, on the shared icons, with the emergency call one level
+// down. `xl` and `contrast` are kit variants rather than a className each.
+test('the member profile actions are one declared size and one declared appearance', async () => {
+  const profile = await read('../src/components/profile/ProfileView.jsx');
+  const button = await read('../src/components/ui/Button.jsx');
+  const iconAction = await read('../src/components/ui/IconAction.jsx');
+  const globals = await read('../src/app/globals.css');
+
+  assert.equal((profile.match(/size="xl" appearance="contrast"|appearance="contrast"/g) || []).length, 4);
+  assert.match(button, /'icon-xl': 'w-\[56px\] p-0'/);
+  assert.match(iconAction, /xl: 'icon-xl'/);
+  assert.match(iconAction, /contrast: '!bg-\[#f1f1f1\] !text-ink/);
+  assert.match(globals, /data-ui-size='icon-56'\] \{[\s\S]{0,120}--ui-control-height: 56px;/);
+});

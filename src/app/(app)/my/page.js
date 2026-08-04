@@ -14,7 +14,7 @@ import { PageHeader, StatusVisibilityPicker, TaskListView } from '@/components/u
 import { Plus, Settings2, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
-import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
+import PageSkeleton from '@/components/ui/Feedback/PageSkeleton';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Layout/Card';
 import Surface from '@/components/ui/Surface';
@@ -219,9 +219,7 @@ export default function MyTasksPage() {
         {/* Main Content Area */}
         <div className={viewMode === 'kanban' ? 'flex min-h-0 flex-1 flex-col' : ''}>
         {loading || sprintsLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <LoadingSpinner size="md" />
-          </div>
+          <PageSkeleton context={viewMode === 'kanban' ? 'board' : 'list'} region="body" />
         ) : viewMode === 'kanban' ? (
           <div className="flex min-h-[500px] flex-1 flex-col">
             <AgileBoard

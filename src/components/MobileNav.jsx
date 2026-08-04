@@ -13,9 +13,10 @@ import { useKeyboardOpen } from '@/lib/hooks/useKeyboardOpen';
 import { Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
-  Folder, CheckCircle2, MessageSquare, PieChart, Menu, X,
-  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CalendarDays,
+  Folder, PieChart, Menu, X,
+  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown,
 } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
@@ -23,13 +24,13 @@ import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
-  { href: '/my',        icon: CheckCircle2,  label: 'Мої' },
-  { href: '/chat',      icon: MessageSquare, label: 'Чат' },
+  { href: '/my',        icon: TaskIcon,      label: 'Мої' },
+  { href: '/chat',      icon: ChatIcon,      label: 'Чат' },
   { href: '/analytics', icon: PieChart,      label: 'Аналітика' },
 ];
 
 const MORE_NAV = [
-  { href: '/calendar', icon: CalendarDays, label: 'Календар' },
+  { href: '/calendar', icon: CalendarIcon, label: 'Календар' },
   { href: '/sprints',  icon: Zap,      label: 'Спринти' },
   { href: '/team',     icon: Users,    label: 'Команда' },
   { href: '/settings', icon: Settings, label: 'Налаштування' },

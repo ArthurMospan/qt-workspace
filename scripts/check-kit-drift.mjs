@@ -41,6 +41,8 @@ const VARIANT_PROP_NAMES = new Set([
   // Skeleton's share-of-the-line. Safe as a variant name: the only other
   // `width=` in the workspace is next/image's, which is not a kit component.
   'width',
+  // How much of a screen PageSkeleton stands in for.
+  'region',
 ]);
 
 // Positioning a component inside its parent is legitimate composition. Owning

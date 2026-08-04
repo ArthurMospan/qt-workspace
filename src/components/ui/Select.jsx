@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowUpDown,
-  CalendarDays,
   Check,
   ChevronDown,
   CircleDot,
@@ -14,6 +13,7 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { getFilterControlWidth } from './FilterBar';
 import UserAvatar from './DataDisplay/UserAvatar';
 
@@ -37,7 +37,7 @@ const FILTER_ROLE_ICONS = {
   priority: Flag,
   sprint: Zap,
   status: CircleDot,
-  date: CalendarDays,
+  date: CalendarIcon,
   member: Users,
   project: Folder,
   sort: ArrowUpDown,

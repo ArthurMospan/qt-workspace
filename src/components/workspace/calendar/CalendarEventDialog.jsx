@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import {
-  CalendarDays,
   BellRing,
   Clock3,
   ExternalLink,
@@ -17,6 +16,7 @@ import {
   Users,
   Video,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import {
   Button,
   DatePicker,
@@ -38,7 +38,7 @@ import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 
 export const CALENDAR_EVENT_TYPE_OPTIONS = [
   { value: 'meeting', label: 'Мітинг', color: '#3b82f6', bg: '#eff6ff', icon: Video },
-  { value: 'event', label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarDays },
+  { value: 'event', label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarIcon },
   { value: 'focus', label: 'Фокус-час', color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
   { value: 'absence', label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
   { value: 'release', label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
@@ -215,7 +215,7 @@ export function CalendarEventDetails({
           <h2 className="ui-type-detail-title leading-tight text-ink">{event.title}</h2>
           <div className="mt-4 grid gap-2 text-[12px] text-muted sm:grid-cols-2">
             <div data-ui-surface="local" className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
-              <CalendarDays size={15} className="mt-0.5 shrink-0 text-ink" />
+              <CalendarIcon size={15} className="mt-0.5 shrink-0 text-ink" />
               <span>{event.allDay ? start.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' }) : `${start.toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'long' })}, ${start.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`}</span>
             </div>
             {(event.location || event.meetingUrl) && (
@@ -617,7 +617,7 @@ export default function CalendarEventDialog({
           </div>
           <div className="grid grid-cols-1 gap-[12px] p-[14px] sm:grid-cols-2">
             <div className="flex flex-col gap-[6px]">
-              <Label icon={CalendarDays}>Початок</Label>
+              <Label icon={CalendarIcon}>Початок</Label>
               <div className="flex gap-[8px]">
                 <DatePicker
                   value={form.startDate}

@@ -7,7 +7,6 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
-import Counter from '@/components/ui/DataDisplay/Counter';
 import Pill from '@/components/ui/DataDisplay/Pill';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
@@ -260,7 +259,7 @@ export default function AgileBoard({
                     <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                     <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                    <Counter value={colTotalIssues.length} size="sm" appearance="subtle" className="mt-4" />
+                    <Pill tone="count" size="md" className="mt-4">{colTotalIssues.length}</Pill>
                   </div>
                 );
               }
@@ -277,7 +276,7 @@ export default function AgileBoard({
                     />
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
                     <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
-                    <Counter value={colTotalIssues.length} size="sm" appearance="subtle" className="ml-1" />
+                    <Pill tone="count" size="md" className="ml-1">{colTotalIssues.length}</Pill>
                   </div>
                   <div className="flex items-center gap-1">
                     {!isArchived && !col.isHiddenContainer && (
@@ -307,7 +306,7 @@ export default function AgileBoard({
               {swimlanes.length > 1 && (
                 <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
                   <h4 className="ui-type-item-title text-ink">{lane.title}</h4>
-                  <Pill tone="surface" size="sm" className="ml-2">{lane.issues.length}</Pill>
+                  <Pill tone="count" size="md" className="ml-2">{lane.issues.length}</Pill>
                 </div>
               )}
               
@@ -348,7 +347,7 @@ export default function AgileBoard({
                             <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                             <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
-                            <Counter value={colIssues.length} size="sm" appearance="subtle" className="mt-4" />
+                            <Pill tone="count" size="md" className="mt-4">{colIssues.length}</Pill>
                           </>
                         )}
                         {swimlanes.length > 1 && (
@@ -375,9 +374,7 @@ export default function AgileBoard({
                             />
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
                             <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
-                            <Pill tone="surface" size="md" className="ml-1 opacity-60">
-                              {colIssues.length}
-                            </Pill>
+                            <Pill tone="count" size="md" className="ml-1">{colIssues.length}</Pill>
                           </div>
                           <div className="flex items-center gap-1">
                             {!isArchived && !col.isHiddenContainer && (

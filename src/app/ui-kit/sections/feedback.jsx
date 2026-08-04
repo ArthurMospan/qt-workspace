@@ -5,7 +5,8 @@ import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
 import { Alert, ConnectionBanner, LoadingSpinner, EmptyState } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
-import { User, MessageSquare, Folder, Plug } from 'lucide-react';
+import { User, Folder, Plug } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { PreviewBlock } from '../preview';
 
 export default function FeedbackSection() {
@@ -79,7 +80,7 @@ export default function FeedbackSection() {
           </Surface>
           <div className="flex min-h-[328px] flex-1 items-center justify-center rounded-[16px] bg-canvas">
             <EmptyState
-              icon={MessageSquare}
+              icon={ChatIcon}
               title="Ще немає повідомлень"
               description="Почніть розмову! 👋"
               context="page"
@@ -94,7 +95,7 @@ export default function FeedbackSection() {
             density="compact"
           />
           <EmptyState
-            icon={MessageSquare}
+            icon={ChatIcon}
             title="Ще немає повідомлень"
             description="Почніть обговорення завдання з командою."
             context="flexible"

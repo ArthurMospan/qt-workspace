@@ -30,6 +30,7 @@ test('every workspace screen names the shape it arrives in', async () => {
     'chat/': 'rail',
     'settings/': 'settings',
   };
+  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
   for (const [segment, context] of Object.entries(expected)) {
     const source = await read(`../src/app/(app)/${segment}loading.js`);
     assert.match(
@@ -39,10 +40,20 @@ test('every workspace screen names the shape it arrives in', async () => {
     );
   }
 
-  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
   // Settings hides the workspace header, so it is the one shape that reserves
   // no room for it — the same split SidebarLayout's contexts already make.
-  assert.match(skeleton, /NO_HEADER_OFFSET = new Set\(\['settings'\]\)/);
+  assert.match(skeleton, /headerOffset: false/);
+
+  // A screen that already drew its own header asks for the body alone, so the
+  // placeholder never draws a second heading over the real one.
+  const board = await read('../src/app/(app)/[projectId]/page.js');
+  const myTasks = await read('../src/app/(app)/my/page.js');
+  for (const source of [board, myTasks]) {
+    assert.match(source, /<PageSkeleton context=[^>]*region="body"/);
+  }
+  // And the board shape is built from the real column, not from the idea of
+  // one: fixed 280px panels on canvas, not a responsive grid of loose cards.
+  assert.match(skeleton, /w-\[280px\] shrink-0 flex-col overflow-hidden rounded-\[16px\] bg-canvas/);
 });
 
 test('losing the connection is visible, persistently', async () => {

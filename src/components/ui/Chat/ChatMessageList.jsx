@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ChevronDown, MessageSquare } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import EmptyState from '../Feedback/EmptyState';
 import Pill from '../DataDisplay/Pill';
 import MessageBubble from './MessageBubble';
@@ -97,7 +98,7 @@ export default function ChatMessageList({
         ) : messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center h-full">
             <EmptyState
-              icon={MessageSquare}
+              icon={ChatIcon}
               title={searchTerm ? 'Нічого не знайдено' : 'Ще немає повідомлень'}
               description={searchTerm ? `За запитом «${searchTerm}»` : 'Почніть розмову! 👋'}
             />

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  CalendarDays,
   CakeSlice,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +13,7 @@ import {
   RefreshCw,
   Users,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
@@ -354,7 +354,7 @@ function AgendaView({ anchor, events, deadlines, onEventClick, onDeadlineClick, 
   if (!groups.length) {
     return (
       <EmptyState
-        icon={CalendarDays}
+        icon={CalendarIcon}
         title="У найближчі 60 днів нічого немає"
         description="Створіть мітинг, подію або командне нагадування."
         action="Створити подію"
@@ -486,7 +486,7 @@ export default function CalendarPage() {
   };
 
   const filterOptions = [
-    { value: 'all', label: 'Усі типи', icon: CalendarDays },
+    { value: 'all', label: 'Усі типи', icon: CalendarIcon },
     ...Object.entries(TYPE_CONFIG).map(([value, config]) => ({ value, label: config.label, icon: config.icon })),
     { value: 'deadline', label: 'Дедлайни задач', icon: Flag },
   ];

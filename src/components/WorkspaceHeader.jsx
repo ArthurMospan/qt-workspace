@@ -16,10 +16,11 @@ import NotificationBell     from '@/components/ui/Layout/NotificationBell';
 import NotificationCard     from '@/components/ui/Layout/NotificationCard';
 import Segmented            from '@/components/ui/Segmented';
 import {
-  Bell, Search, Check, CheckCheck, MessageSquare, GitPullRequest, Zap,
-  UserCheck, AlertCircle, AtSign, CalendarClock, CalendarDays, Settings, Trash2, Mail,
+  Bell, Search, Check, CheckCheck, GitPullRequest, Zap,
+  UserCheck, AlertCircle, AtSign, CalendarClock, Settings, Trash2, Mail,
   ChevronRight, X, Hash, ArrowLeft,
 } from 'lucide-react';
+import { CalendarIcon, ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
 import { Counter, Pill, ResponseChoice, TextAction } from '@/components/ui';
@@ -33,15 +34,15 @@ import { reportLoadError } from '@/lib/utils/errors';
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
-  commented:      { icon: MessageSquare,  color: '#0891b2', label: 'Коментар' },
+  commented:      { icon: ChatIcon,  color: '#0891b2', label: 'Коментар' },
   status_changed: { icon: GitPullRequest, color: '#10b981', label: 'Статус змінено' },
   mentioned:      { icon: AtSign,         color: '#f97316', label: 'Згадано' },
   deadline:       { icon: CalendarClock,  color: '#d97706', label: 'Дедлайн' },
-  chat_message:   { icon: MessageSquare,  color: '#525252', label: 'Повідомлення' },
+  chat_message:   { icon: ChatIcon,  color: '#525252', label: 'Повідомлення' },
   alert:          { icon: AlertCircle,    color: '#dc2626', label: 'Тривога' },
   emergency:      { icon: Zap,            color: '#dc2626', label: 'Екстрений виклик' },
   calendar_invite:{ icon: CalendarClock,  color: '#2563eb', label: 'Запрошення в календар' },
-  calendar_changed:{ icon: CalendarDays,  color: '#525252', label: 'Календар оновлено' },
+  calendar_changed:{ icon: CalendarIcon,  color: '#525252', label: 'Календар оновлено' },
   calendar_reminder:{ icon: CalendarClock, color: '#111827', label: 'Нагадування' },
   test:           { icon: Bell,           color: '#6366f1', label: 'Тест' },
 };

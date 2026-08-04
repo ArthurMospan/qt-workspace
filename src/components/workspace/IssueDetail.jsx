@@ -42,7 +42,7 @@ import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
-  Heart, MessageSquare, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
+  Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, Sparkles, Tag as TagIcon,
   Maximize2, ListTree,

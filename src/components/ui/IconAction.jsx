@@ -6,6 +6,10 @@ import Button from './Button';
 export const APPEARANCES = {
   quiet: '!bg-transparent !text-muted hover:!bg-[#f0f0f0] hover:!text-ink',
   soft: '!bg-canvas !text-muted hover:!bg-[#ebebeb] hover:!text-ink',
+  // Like `soft`, but the icon carries the weight rather than the fill: a dark
+  // glyph on a flat #f1f1f1 disc. Used where the action *is* the control and
+  // there is no label beside it to say what it does.
+  contrast: '!bg-[#f1f1f1] !text-ink hover:!bg-[#e4e4e4]',
   surface: '!border !border-line !bg-white !text-muted hover:!bg-canvas hover:!text-ink',
   primary: '!bg-ink !text-white hover:!bg-ink/90',
   'surface-danger': '!border !border-line !bg-white !text-muted shadow-sm hover:!text-red-500',
@@ -24,6 +28,7 @@ export const BUTTON_SIZES = {
   compact: 'icon-30',
   md: 'icon',
   lg: 'icon-lg',
+  xl: 'icon-xl',
 };
 
 /**
@@ -33,7 +38,7 @@ export const BUTTON_SIZES = {
  *
  * @param {string} props.label Accessible name and tooltip. Required — an icon alone names nothing.
  * @param {React.ComponentType} props.icon lucide icon; its pixel size comes from `size`, never from the call site.
- * @param {'micro'|'xs'|'sm'|'compact'|'md'|'lg'} props.size Box size, mapped onto Button's icon sizes.
+ * @param {'micro'|'xs'|'sm'|'compact'|'md'|'lg'|'xl'} props.size Box size, mapped onto Button's icon sizes.
  * @param {string} props.appearance Fill and hover treatment; the dark ones exist for overlays and dark surfaces.
  * @param {string} props.shape Corner radius token.
  * @param {React.Ref} props.buttonRef Ref to the underlying button, for popovers anchored to it.

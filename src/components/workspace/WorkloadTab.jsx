@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   BriefcaseBusiness,
-  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -17,6 +16,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   Button,
@@ -425,7 +425,7 @@ function RecentTime({ logs, issues, events, projects }) {
             const content = (
               <>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-canvas text-muted">
-                  {event ? <CalendarDays size={14} /> : <BriefcaseBusiness size={14} />}
+                  {event ? <CalendarIcon size={14} /> : <BriefcaseBusiness size={14} />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12px] font-semibold text-ink">

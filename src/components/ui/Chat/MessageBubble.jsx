@@ -9,7 +9,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Edit2, MessageSquare, Pin, Smile, Trash2 } from 'lucide-react';
+import { Edit2, Pin, Smile, Trash2 } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import EmojiPicker from 'emoji-picker-react';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
@@ -204,7 +205,7 @@ export default function MessageBubble({
                 onClick={() => onThread(msg.id)}
                 className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-ink hover:underline transition-colors"
               >
-                <MessageSquare size={12} />
+                <ChatIcon size={12} />
                 {msg.replyCount} {msg.replyCount === 1 ? 'відповідь' : msg.replyCount < 5 ? 'відповіді' : 'відповідей'}
               </button>
             )}
@@ -253,7 +254,7 @@ export default function MessageBubble({
           {!isThread && (
             <Button
               onClick={() => onThread(msg.id)}
-              style="ghost" size="icon-sm" composition="chat-message-action" icon={MessageSquare}
+              style="ghost" size="icon-sm" composition="chat-message-action" icon={ChatIcon}
               title="Відповісти в гілку"
             />
           )}

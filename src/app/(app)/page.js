@@ -10,7 +10,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, CheckCircle2, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Settings2, Activity, MessageSquare } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Settings2, Activity } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';

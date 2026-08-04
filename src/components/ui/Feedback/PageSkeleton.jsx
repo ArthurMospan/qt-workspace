@@ -13,6 +13,12 @@ import Skeleton from './Skeleton';
 // So the shapes are named, one per kind of screen, in the same way SidebarLayout
 // names its three frames: the geometry lives here and nowhere else, and a route
 // asks for a context rather than drawing its own placeholder.
+//
+// `region` decides how much of the screen the shape stands in for. A route's
+// `loading.js` has nothing on screen yet and asks for `page`; a screen that has
+// already drawn its own header and is waiting on data asks for `body`, because
+// drawing a second heading over the real one is exactly the mismatch this
+// component exists to remove.
 
 const range = count => Array.from({ length: count }, (_, index) => index);
 
@@ -40,7 +46,7 @@ function Rail() {
     <Column className="hidden w-[280px] shrink-0 gap-[14px] md:flex">
       <Skeleton preset="title" width="half" />
       {range(7).map(index => (
-        <div key={index} className="flex items-center gap-[10px]" style={stagger(index)}>
+        <div key={index} className="flex items-center gap-[10px]">
           <Skeleton preset="avatar" style={stagger(index)} />
           <Column className="flex-1 gap-[6px]">
             <Skeleton preset="text" width="wide" style={stagger(index)} />
@@ -56,91 +62,116 @@ function Rail() {
 // `scripts/kit-variants.mjs` reads these keys, so a context cannot exist
 // without appearing in the catalogue.
 export const CONTEXTS = {
-  // Дошки: /my and a project's board — columns of task cards.
-  board: () => (
-    <>
-      <HeaderRow />
-      <div className="grid flex-1 grid-cols-1 gap-[16px] md:grid-cols-3">
-        {range(3).map(column => (
-          <Column key={column}>
-            <div className="flex items-center gap-[8px]">
-              <Skeleton preset="text" width="short" style={stagger(column)} />
-              <Skeleton preset="icon" style={stagger(column)} />
+  // Дошки: /my and a project's board.
+  //
+  // Built from the real column rather than from the idea of one. AgileBoard
+  // lays out fixed 280px columns in a horizontal row, each a `bg-canvas`
+  // rounded-[16px] panel with its own header — chevron, colour dot, uppercase
+  // title, count — and cards inset by 8px with an 8px margin between them. The
+  // first version of this was a responsive three-column grid of loose cards on
+  // a white page, which is not a board at all: nothing lined up with what
+  // arrived, so the whole screen jumped when it did.
+  board: {
+    headerRow: true,
+    body: () => (
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+        {[4, 3, 5, 2].map((cards, column) => (
+          <div
+            key={column}
+            className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas"
+          >
+            <div className="flex shrink-0 items-center gap-[6px] px-4 pb-3 pt-4">
+              <Skeleton preset="dot" style={stagger(column)} />
+              <Skeleton preset="caption" width="half" style={stagger(column)} />
+              <Skeleton preset="chip" style={stagger(column)} />
             </div>
-            {range(4).map(card => (
-              <Skeleton key={card} preset="card" style={stagger(column * 4 + card)} />
-            ))}
-          </Column>
-        ))}
-      </div>
-    </>
-  ),
-
-  // Головна: the project grid, three or four to a row.
-  cards: () => (
-    <>
-      <HeaderRow />
-      <div className="flex gap-[10px]">
-        <Skeleton preset="control" className="w-[220px]" />
-        <Skeleton preset="control" className="w-[150px]" />
-        <Skeleton preset="control" className="w-[150px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-[16px] md:grid-cols-2 xl:grid-cols-3">
-        {range(6).map(card => (
-          <Column key={card} className="gap-[12px] rounded-[18px] border border-line p-[18px]">
-            <Skeleton preset="title" width="wide" style={stagger(card)} />
-            <Skeleton preset="text" width="full" style={stagger(card)} />
-            <Skeleton preset="text" width="half" style={stagger(card)} />
-            <div className="mt-[6px] flex gap-[6px]">
-              {range(3).map(avatar => (
-                <Skeleton key={avatar} preset="avatar" style={stagger(card + avatar)} />
+            <div className="flex min-h-0 flex-1 flex-col p-[8px]">
+              {range(cards).map(card => (
+                <Skeleton
+                  key={card}
+                  preset="card"
+                  className="mb-[8px]"
+                  style={stagger(column * 3 + card)}
+                />
               ))}
             </div>
-          </Column>
+          </div>
         ))}
       </div>
-    </>
-  ),
+    ),
+  },
+
+  // Головна: the project grid, three or four to a row.
+  cards: {
+    headerRow: true,
+    body: () => (
+      <>
+        <div className="flex gap-[10px]">
+          <Skeleton preset="control" className="w-[220px]" />
+          <Skeleton preset="control" className="w-[150px]" />
+          <Skeleton preset="control" className="w-[150px]" />
+        </div>
+        <div className="grid grid-cols-1 gap-[16px] md:grid-cols-2 xl:grid-cols-3">
+          {range(6).map(card => (
+            <Column key={card} className="gap-[12px] rounded-[18px] border border-line p-[18px]">
+              <Skeleton preset="title" width="wide" style={stagger(card)} />
+              <Skeleton preset="text" width="full" style={stagger(card)} />
+              <Skeleton preset="text" width="half" style={stagger(card)} />
+              <div className="mt-[6px] flex gap-[6px]">
+                {range(3).map(avatar => (
+                  <Skeleton key={avatar} preset="avatar" style={stagger(card + avatar)} />
+                ))}
+              </div>
+            </Column>
+          ))}
+        </div>
+      </>
+    ),
+  },
 
   // Аналітика: a row of KPI tiles over a pair of charts.
-  analytics: () => (
-    <>
-      <HeaderRow />
-      <div className="grid grid-cols-2 gap-[16px] lg:grid-cols-4">
-        {range(4).map(tile => (
-          <Skeleton key={tile} preset="tile" style={stagger(tile)} />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-[16px] md:grid-cols-2">
-        {range(2).map(chart => (
-          <Skeleton key={chart} preset="chart" style={stagger(chart + 4)} />
-        ))}
-      </div>
-    </>
-  ),
+  analytics: {
+    headerRow: true,
+    body: () => (
+      <>
+        <div className="grid grid-cols-2 gap-[16px] lg:grid-cols-4">
+          {range(4).map(tile => (
+            <Skeleton key={tile} preset="tile" style={stagger(tile)} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-[16px] md:grid-cols-2">
+          {range(2).map(chart => (
+            <Skeleton key={chart} preset="chart" style={stagger(chart + 4)} />
+          ))}
+        </div>
+      </>
+    ),
+  },
 
   // Календар: the weekday strip over a month of day cells.
-  calendar: () => (
-    <>
-      <HeaderRow />
-      <div className="grid grid-cols-7 gap-[8px]">
-        {range(7).map(day => (
-          <Skeleton key={day} preset="text" width="half" className="mx-auto" style={stagger(day)} />
-        ))}
-      </div>
-      <div className="grid flex-1 grid-cols-7 gap-[8px]">
-        {range(35).map(cell => (
-          <Skeleton key={cell} preset="card" style={stagger(cell)} />
-        ))}
-      </div>
-    </>
-  ),
+  calendar: {
+    headerRow: true,
+    body: () => (
+      <>
+        <div className="grid grid-cols-7 gap-[8px]">
+          {range(7).map(day => (
+            <Skeleton key={day} preset="caption" width="half" className="mx-auto" style={stagger(day)} />
+          ))}
+        </div>
+        <div className="grid min-h-0 flex-1 grid-cols-7 gap-[8px]">
+          {range(35).map(cell => (
+            <Skeleton key={cell} preset="card" style={stagger(cell)} />
+          ))}
+        </div>
+      </>
+    ),
+  },
 
   // Спринти: a wide list of rows beside a narrower backlog column.
-  list: () => (
-    <>
-      <HeaderRow />
-      <div className="flex flex-1 flex-col gap-[16px] lg:flex-row">
+  list: {
+    headerRow: true,
+    body: () => (
+      <div className="flex min-h-0 flex-1 flex-col gap-[16px] lg:flex-row">
         <Column className="flex-1 gap-[12px]">
           {range(5).map(row => (
             <Skeleton key={row} preset="card" style={stagger(row)} />
@@ -153,62 +184,70 @@ export const CONTEXTS = {
           ))}
         </Column>
       </div>
-    </>
-  ),
+    ),
+  },
 
   // Команда і Чат: a rail of people or channels beside one pane.
-  rail: () => (
-    <div className="flex flex-1 gap-[18px] overflow-hidden">
-      <Rail />
-      <Column className="flex-1 gap-[14px]">
-        <Skeleton preset="heading" width="short" />
-        <Skeleton preset="panel" />
-      </Column>
-    </div>
-  ),
+  rail: {
+    headerRow: false,
+    body: () => (
+      <div className="flex min-h-0 flex-1 gap-[18px] overflow-hidden">
+        <Rail />
+        <Column className="flex-1 gap-[14px]">
+          <Skeleton preset="heading" width="short" />
+          <Skeleton preset="panel" />
+        </Column>
+      </div>
+    ),
+  },
 
   // Налаштування: the same frame, but it owns the whole viewport — no fixed
   // header sits above it, so nothing is reserved for one.
-  settings: () => (
-    <div className="flex flex-1 gap-[18px] overflow-hidden">
-      <Rail />
-      <Column className="flex-1 gap-[16px]">
-        <Skeleton preset="heading" width="short" />
-        {range(4).map(row => (
-          <Column key={row} className="gap-[10px] rounded-[16px] border border-line p-[18px]">
-            <Skeleton preset="title" width="half" style={stagger(row)} />
-            <Skeleton preset="text" width="wide" style={stagger(row)} />
-            <Skeleton preset="field" style={stagger(row)} />
-          </Column>
-        ))}
-      </Column>
-    </div>
-  ),
+  settings: {
+    headerRow: false,
+    headerOffset: false,
+    body: () => (
+      <div className="flex min-h-0 flex-1 gap-[18px] overflow-hidden">
+        <Rail />
+        <Column className="flex-1 gap-[16px]">
+          <Skeleton preset="heading" width="short" />
+          {range(4).map(row => (
+            <Column key={row} className="gap-[10px] rounded-[16px] border border-line p-[18px]">
+              <Skeleton preset="title" width="half" style={stagger(row)} />
+              <Skeleton preset="text" width="wide" style={stagger(row)} />
+              <Skeleton preset="field" style={stagger(row)} />
+            </Column>
+          ))}
+        </Column>
+      </div>
+    ),
+  },
 };
-
-// Which contexts sit under the fixed WorkspaceHeader and must leave room for it.
-// `settings` is the one screen that hides the header, so it is the one that
-// does not — the same split SidebarLayout's CONTEXTS already makes.
-const NO_HEADER_OFFSET = new Set(['settings']);
 
 /**
  * The placeholder a route shows while it loads, in the shape of the screen that
  * is coming.
  *
  * @param {'board'|'cards'|'analytics'|'calendar'|'list'|'rail'|'settings'} props.context Which screen is arriving.
+ * @param {'page'|'body'} props.region The whole screen, or only the part under a header that is already drawn.
  * @param {string} props.className Placement in the parent only.
  */
-export function PageSkeleton({ context = 'board', className = '' }) {
-  const render = CONTEXTS[context] || CONTEXTS.board;
+export function PageSkeleton({ context = 'board', region = 'page', className = '' }) {
+  const shape = CONTEXTS[context] || CONTEXTS.board;
+  const isPage = region !== 'body';
+
   return (
     <div
       role="status"
       aria-busy="true"
-      className={`flex h-full flex-col gap-[20px] overflow-hidden p-[24px] ${
-        NO_HEADER_OFFSET.has(context) ? '' : 'pt-[72px]'
+      className={`flex min-h-0 flex-col gap-[20px] overflow-hidden ${
+        isPage
+          ? `h-full p-[24px] ${shape.headerOffset === false ? '' : 'pt-[72px]'}`
+          : 'flex-1 py-[8px]'
       } ${className}`}
     >
-      {render()}
+      {isPage && shape.headerRow ? <HeaderRow /> : null}
+      {shape.body()}
       <span className="sr-only">Завантаження…</span>
     </div>
   );

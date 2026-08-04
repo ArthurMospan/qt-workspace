@@ -2,7 +2,8 @@
 // src/app/workspace/chat/page.js — Rebuilt from scratch
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { MessageSquare, Smile, Paperclip, Plus, Trash2, X, UserPlus, Search } from 'lucide-react';
+import { Smile, Paperclip, Plus, Trash2, X, UserPlus, Search } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Button from '@/components/ui/Button';
@@ -290,7 +291,7 @@ function ThreadSidebar({
       {/* Header */}
       <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <MessageSquare size={16} className="text-muted" />
+          <ChatIcon size={16} className="text-muted" />
           <h3 className="ui-type-card-title text-ink">Гілка</h3>
           {replies.length > 0 && (
             <Counter value={replies.length} size="sm" appearance="subtle" />
@@ -325,7 +326,7 @@ function ThreadSidebar({
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-5 pb-12 pt-4 flex flex-col gap-0.5">
         {replies.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <MessageSquare size={32} className="text-faint mb-3" />
+            <ChatIcon size={32} className="text-faint mb-3" />
             <p className="text-[13px] text-muted font-medium">Ще немає відповідей</p>
             <p className="text-[12px] text-faint mt-1">Будь першим!</p>
           </div>

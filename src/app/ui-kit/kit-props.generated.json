@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 91,
-    "props": 634,
-    "documentedProps": 634,
+    "props": 635,
+    "documentedProps": 635,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -410,6 +410,7 @@
             "icon-30",
             "icon-lg",
             "icon-sm",
+            "icon-xl",
             "icon-xs",
             "lg",
             "md",
@@ -2125,6 +2126,7 @@
           "type": "string",
           "values": [
             "auth-close",
+            "contrast",
             "danger",
             "inverse",
             "overlay",
@@ -2182,13 +2184,14 @@
         {
           "name": "size",
           "default": "'md'",
-          "type": "'micro'|'xs'|'sm'|'compact'|'md'|'lg'",
+          "type": "'micro'|'xs'|'sm'|'compact'|'md'|'lg'|'xl'",
           "values": [
             "compact",
             "lg",
             "md",
             "micro",
             "sm",
+            "xl",
             "xs"
           ],
           "description": "Box size, mapped onto Button's icon sizes."
@@ -3403,6 +3406,16 @@
             "settings"
           ],
           "description": "Which screen is arriving."
+        },
+        {
+          "name": "region",
+          "default": "'page'",
+          "type": "'page'|'body'",
+          "values": [
+            "body",
+            "page"
+          ],
+          "description": "The whole screen, or only the part under a header that is already drawn."
         }
       ]
     },
@@ -3528,6 +3541,7 @@
           "type": "string",
           "values": [
             "accent",
+            "count",
             "danger",
             "dark",
             "info",
@@ -4183,7 +4197,9 @@
             "caption",
             "card",
             "chart",
+            "chip",
             "control",
+            "dot",
             "field",
             "heading",
             "icon",

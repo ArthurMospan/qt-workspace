@@ -16,7 +16,9 @@ import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
 import { PageHeader, Pill, TaskListView, Tabs } from '@/components/ui';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { LayoutGrid, BarChart2, Plus, MessageSquare, Settings2, List, Plug, Kanban } from 'lucide-react';
+import PageSkeleton from '@/components/ui/Feedback/PageSkeleton';
+import { LayoutGrid, BarChart2, Plus, Settings2, List, Plug, Kanban } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -243,7 +245,7 @@ export default function BoardPage({ params }) {
                 className={`relative flex items-center justify-center gap-[6px] w-[36px] h-[36px] p-0 sm:w-auto sm:h-auto sm:px-[14px] sm:py-[7px] rounded-[10px] text-[12px] font-semibold transition-all whitespace-nowrap bg-canvas text-muted hover:text-ink hover:bg-ink/8`}
                 title="QuickTeam+"
               >
-                <MessageSquare size={13} />
+                <ChatIcon size={13} />
                 <span className="hidden sm:inline">QuickTeam+</span>
                 {project?.hasUnreadPortal && (
                   <span className="absolute -top-[3px] -right-[3px] w-[10px] h-[10px] rounded-full bg-[#ef4444] border-2 border-white" />
@@ -383,9 +385,9 @@ export default function BoardPage({ params }) {
         // through a blank frame — so any brief `loading` blip read as the
         // board reloading itself.
         loading && boardIssues.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
-          </div>
+          // The board's own shape, not a spinner in the middle of an empty
+          // frame: the columns arrive where the placeholder already drew them.
+          <PageSkeleton context="board" region="body" />
         ) : boardView === 'kanban' ? (
           <div className="flex-1 min-h-[500px] flex flex-col">
             <AgileBoard

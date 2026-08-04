@@ -29,6 +29,7 @@ export const SIZES = {
   md:   'text-[13px]',
   lg:   'text-[13px]',
   icon: 'w-[32px] p-0',
+  'icon-xl': 'w-[56px] p-0',
   'icon-lg': 'w-[36px] p-0',
   'icon-sm': 'w-[28px] p-0',
   'icon-xs': 'w-[20px] p-0',
@@ -53,6 +54,7 @@ const ICON_SIZES = {
   md: 14,
   lg: 16,
   icon: 14,        // 32px box
+  'icon-xl': 22,   // 56px box — the profile action circles
   'icon-lg': 14,   // 36px box
   'icon-sm': 14,   // 28px box
   'icon-xs': 16,   // 20px box
@@ -85,6 +87,7 @@ const UI_SIZES = {
   md: 'md',
   lg: 'lg',
   icon: 'md',
+  'icon-xl': 'icon-56',
   'icon-lg': 'lg',
   'icon-sm': 'sm',
   'icon-xs': 'icon-xs',

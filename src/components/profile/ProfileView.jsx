@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CakeSlice, CalendarDays, CalendarPlus, CheckSquare, Clock3, LockKeyhole, Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { Surface, Card, Badge, StatusBadge, Button, IconAction, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
@@ -157,20 +158,23 @@ export default function ProfileView({ user, onClose }) {
             </p>
           </div>
 
-          {/* Actions — icons only.
-              Three of these are one word each and the fourth was two, so the
-              row read as a sentence of buttons rather than a set of actions;
-              adding «Завдання» and «Подія» as labelled buttons would have made
-              it four words wide. The emergency call moved into the menu: it is
-              the one action here nobody performs by accident, and it was the
-              loudest thing on a colleague's profile. */}
+          {/* Actions — four 56px circles.
+              Labels went first: four one-word buttons read as a sentence rather
+              than a set of actions. Then the icons themselves, which were
+              invented here — `CheckSquare` for a task, `CalendarPlus` for an
+              event, `MessageCircle` for chat — while the sidebar, the mobile bar
+              and the palette each showed something else for the same three
+              things. They all read the same three names now.
+              The emergency call moved into the menu: it is the one action here
+              nobody performs by accident, and it was the loudest thing on a
+              colleague's profile. */}
           {!isMe && (
             <div className="flex items-center gap-2 mt-4">
               <IconAction
                 label="Написати повідомлення"
-                icon={MessageCircle}
-                size="lg"
-                appearance="soft"
+                icon={ChatIcon}
+                size="xl"
+                appearance="contrast"
                 onClick={() => {
                   if (onClose) onClose();
                   router.push(`/chat?dm=${encodeURIComponent(uid)}`);
@@ -178,9 +182,9 @@ export default function ProfileView({ user, onClose }) {
               />
               <IconAction
                 label="Створити завдання для учасника"
-                icon={CheckSquare}
-                size="lg"
-                appearance="soft"
+                icon={TaskIcon}
+                size="xl"
+                appearance="contrast"
                 onClick={() => {
                   if (onClose) onClose();
                   router.push(`/my?new=1&assignee=${encodeURIComponent(uid)}`);
@@ -188,9 +192,9 @@ export default function ProfileView({ user, onClose }) {
               />
               <IconAction
                 label="Створити подію з учасником"
-                icon={CalendarPlus}
-                size="lg"
-                appearance="soft"
+                icon={CalendarIcon}
+                size="xl"
+                appearance="contrast"
                 onClick={() => {
                   if (onClose) onClose();
                   router.push(`/calendar?new=1&with=${encodeURIComponent(uid)}`);
@@ -198,7 +202,7 @@ export default function ProfileView({ user, onClose }) {
               />
               <ContextMenu
                 trigger={
-                  <IconAction label="Інші дії з учасником" icon={MoreVertical} size="lg" appearance="soft" />
+                  <IconAction label="Інші дії з учасником" icon={MoreVertical} size="xl" appearance="contrast" />
                 }
                 items={memberMenu}
               />
@@ -357,7 +361,7 @@ export default function ProfileView({ user, onClose }) {
               </div>
             ) : agendaEvents.length === 0 ? (
               <EmptyState
-                icon={CalendarDays}
+                icon={CalendarIcon}
                 title="Найближчих подій немає"
                 description="Нові події з календаря з’являться тут автоматично"
               />

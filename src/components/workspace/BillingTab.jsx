@@ -10,7 +10,8 @@ import {
   collection, query, where, onSnapshot, doc, getDoc,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Ban, CalendarDays, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
+import { Ban, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
@@ -227,7 +228,7 @@ function IssueRow({
           <TypeBadge
             label={isEvent ? 'Подія' : (typeMeta?.[type]?.label || type)}
             color={typeMeta?.[type]?.color || '#059669'}
-            icon={isEvent ? CalendarDays : undefined}
+            icon={isEvent ? CalendarIcon : undefined}
           />
           {!isEvent && <PriorityBadge priority={issue.priority} />}
           {issueStatusLabel ? (

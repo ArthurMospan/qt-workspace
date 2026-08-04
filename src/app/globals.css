@@ -191,6 +191,13 @@
     --ui-control-height: 30px;
     border-radius: 8px;
   }
+  /* The profile action circles. Big enough to be the only thing naming the
+     action — there is no label beside them — and round, because at 56px a
+     rounded square reads as a card rather than a button. */
+  .ui-control[data-ui-size='icon-56'] {
+    --ui-control-height: 56px;
+    border-radius: 999px;
+  }
   /* Cascade layers, not specificity, decide these rules.
      A class plus an attribute selector is 0,2,0 and outranks `.px-4` at
      0,1,0 — and loses anyway, because Tailwind emits
@@ -603,6 +610,17 @@
     background: var(--color-surface);
     color: var(--color-ink);
   }
+  /* "How many are in this list" — the count beside a column title or a rail
+     heading. It was written four different ways for the same question: a
+     `Counter` in the collapsed and swimlane column headers, a `Pill` with
+     `opacity-60` in the header that actually ships, another `Pill` for swimlane
+     totals, and an outline `Pill` in the team rail. The 60% white is the one
+     the product has always shown, so it is the one that became a tone — and
+     nothing carries an opacity utility to get it any more. */
+  .ui-pill[data-ui-pill-tone='count'] {
+    background: rgb(255 255 255 / 60%);
+    color: var(--color-muted);
+  }
   .ui-pill[data-ui-pill-tone='accent'] {
     background: #fdf4ff;
     color: #c026d3;
@@ -691,6 +709,18 @@
     --ui-skeleton-height: 20px;
     --ui-skeleton-inline-size: 20px;
     --ui-skeleton-radius: 6px;
+  }
+  /* The colour dot beside a board column's title. */
+  [data-ui-skeleton-preset='dot'] {
+    --ui-skeleton-height: 8px;
+    --ui-skeleton-inline-size: 8px;
+    --ui-skeleton-radius: 999px;
+  }
+  /* The count beside it — a `Pill` at rest is 20px tall and about this wide. */
+  [data-ui-skeleton-preset='chip'] {
+    --ui-skeleton-height: 20px;
+    --ui-skeleton-inline-size: 26px;
+    --ui-skeleton-radius: 999px;
   }
   /* The sidebar's organization mark, before the organization is known. */
   [data-ui-skeleton-preset='logo'] {

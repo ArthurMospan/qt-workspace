@@ -182,13 +182,13 @@ test('QUI-70 shares calendar type icons between creation and filtering', async (
   assert.match(page, /CALENDAR_EVENT_TYPE_OPTIONS/);
   assert.match(
     page,
-    /\{ value: 'all', label: 'Усі типи', icon: CalendarDays \}/,
+    /\{ value: 'all', label: 'Усі типи', icon: CalendarIcon \}/,
   );
   assert.match(
     page,
     /Object\.entries\(TYPE_CONFIG\)\.map\(\(\[value, config\]\) => \(\{ value, label: config\.label, icon: config\.icon \}\)\)/,
   );
-  assert.match(dialog, /\{ value: 'event', label: 'Подія',[\s\S]{0,100}icon: CalendarDays \}/);
+  assert.match(dialog, /\{ value: 'event', label: 'Подія',[\s\S]{0,100}icon: CalendarIcon \}/);
 });
 
 test('QUI-69 lays out overlaps and renders people as avatar plus name', async () => {

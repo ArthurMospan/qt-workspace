@@ -5,6 +5,8 @@ import Segmented from '@/components/ui/Segmented';
 import { PreviewBlock } from '../preview';
 
 const ROLES = [
+  ['dot', 'Кольорова крапка колонки — 8px'],
+  ['chip', 'Лічильник біля назви — 20px'],
   ['caption', 'Підпис у сайдбарі — 10px'],
   ['text', 'Рядок тексту — 12px'],
   ['title', 'Заголовок картки — 18px'],
@@ -32,8 +34,14 @@ const CONTEXTS = [
   { value: 'settings', label: 'settings' },
 ];
 
+const REGIONS = [
+  { value: 'page', label: 'region="page"' },
+  { value: 'body', label: 'region="body"' },
+];
+
 export default function SkeletonsSection() {
-  const [context, setContext] = useState('cards');
+  const [context, setContext] = useState('board');
+  const [region, setRegion] = useState('page');
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -104,17 +112,16 @@ export default function SkeletonsSection() {
       <PreviewBlock
         title="PageSkeleton — форма кожного екрана"
         component="PageSkeleton"
-        description="Те, що показує loading.js кожного маршруту. Один скелетон на весь воркспейс був трьома колонками карток — правильно для дошки і неправильно для аналітики, календаря, команди, чату й налаштувань."
+        description={'Те, що показує loading.js кожного маршруту, і те, що екран малює замість спінера, поки чекає на дані. region="page" — цілий екран разом із шапкою; region="body" — лише вміст під шапкою, яку сторінка вже намалювала.'}
         filePath="src/components/ui/Feedback/PageSkeleton.jsx"
         fullWidth
       >
-        <Segmented
-          value={context}
-          onChange={setContext}
-          options={CONTEXTS}
-        />
-        <div className="mt-[12px] h-[560px] w-full overflow-hidden rounded-[16px] border border-line bg-white">
-          <PageSkeleton context={context} />
+        <div className="flex flex-wrap gap-[10px]">
+          <Segmented value={context} onChange={setContext} options={CONTEXTS} />
+          <Segmented value={region} onChange={setRegion} options={REGIONS} />
+        </div>
+        <div className="mt-[12px] flex h-[560px] w-full overflow-hidden rounded-[16px] border border-line bg-white">
+          <PageSkeleton context={context} region={region} />
         </div>
       </PreviewBlock>
     </div>

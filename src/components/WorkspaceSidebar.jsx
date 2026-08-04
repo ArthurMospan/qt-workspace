@@ -8,11 +8,12 @@ import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { Counter, Skeleton } from '@/components/ui';
 import {
-  Folder, Users, MessageSquare, BarChart2,
+  Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
-  Plus, ChevronLeft, ChevronRight, CheckCircle2, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon, Sparkles, CalendarDays
+  Plus, ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
+  Zap, Clock, Square as StopIcon, Sparkles,
 } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicators';
@@ -112,10 +113,10 @@ export default function WorkspaceSidebar() {
 
   const topNav = [
     { href: '/',            icon: Folder,        label: 'Проєкти',     exact: true },
-    { href: '/my',         icon: CheckCircle2,  label: 'Мої завдання' },
+    { href: '/my',         icon: TaskIcon,      label: 'Мої завдання' },
     { href: '/sprints',    icon: Zap,           label: 'Спринти' },
-    { href: '/calendar',   icon: CalendarDays,  label: 'Календар' },
-    { href: '/chat',       icon: MessageSquare, label: 'Чат' },
+    { href: '/calendar',   icon: CalendarIcon,  label: 'Календар' },
+    { href: '/chat',       icon: ChatIcon,      label: 'Чат' },
     { href: '/team',       icon: Users,         label: 'Команда' },
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
     // «Дзвінок → задачі» свідомо НЕ в сайдбарі: це не окремий екран, а вкладка

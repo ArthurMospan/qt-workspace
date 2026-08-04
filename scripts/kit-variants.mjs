@@ -120,6 +120,7 @@ const SOURCES = {
   },
   PageSkeleton: {
     context: { map: ['Feedback/PageSkeleton.jsx', 'CONTEXTS'] },
+    region: { literal: ['page', 'body'] },
   },
   ToggleSwitch: {
     size: { literal: ['sm', 'md', 'lg'] },

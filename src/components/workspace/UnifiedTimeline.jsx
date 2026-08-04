@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, MessageSquare, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
@@ -407,7 +408,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
       <div ref={scrollRef} className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
         {timeline.length === 0 && (
           <EmptyState
-            icon={MessageSquare}
+            icon={ChatIcon}
             title="Ще немає повідомлень"
             description="Почніть обговорення завдання з командою."
             context="flexible"

@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Link from 'next/link';
 import {
-  BarChart2, AlertTriangle, CalendarDays, Clock, Users, Zap, Target, Receipt, ArrowRight,
+  BarChart2, AlertTriangle, Clock, Users, Zap, Target, Receipt, ArrowRight,
   ChevronLeft, ChevronRight, Plus, StickyNote, Video,
 } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -222,7 +223,7 @@ function AnalyticsContent({
 
         <SectionTitle>Календар · {period} днів</SectionTitle>
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard icon={CalendarDays} label="Заплановано"
+          <KpiCard icon={CalendarIcon} label="Заплановано"
             value={calendarStats.upcoming} sub={`наступні ${period} днів`} />
           <KpiCard icon={Video} label="Мітинги"
             value={calendarStats.meetings} sub={`${fmtH(Math.round(calendarStats.meetingMinutes))} за період`} />

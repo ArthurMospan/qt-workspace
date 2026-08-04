@@ -3,7 +3,8 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { EmptyState, ChatComposerCore } from '@/components/ui';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
-import { Info, MessageSquare, Hash, Paperclip, Smile } from 'lucide-react';
+import { Info, Hash, Paperclip, Smile } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { PreviewBlock } from '../preview';
 
 export default function ChatComposerSection() {
@@ -32,7 +33,7 @@ export default function ChatComposerSection() {
           <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2 scroll-pb-12">
             <div className="flex h-full flex-1 items-center justify-center">
               <EmptyState
-                icon={MessageSquare}
+                icon={ChatIcon}
                 title="Ще немає повідомлень"
                 description="Почніть розмову! 👋"
               />

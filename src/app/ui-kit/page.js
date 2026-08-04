@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
-import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick, CalendarDays } from 'lucide-react';
+import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
+import { CalendarIcon } from '@/lib/design/icons';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -61,7 +62,7 @@ const GROUPS = [
     title: 'Молекули (Molecules)',
     items: [
       { id: 'task-attributes', label: 'Task Attributes Panel', icon: Settings },
-      { id: 'calendar',     label: 'Календар — власні елементи', icon: CalendarDays },
+      { id: 'calendar',     label: 'Календар — власні елементи', icon: CalendarIcon },
       { id: 'form-groups',  label: 'Form Groups',        icon: AlignLeft },
       { id: 'filters',      label: 'Filter Bar',         icon: Filter },
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
