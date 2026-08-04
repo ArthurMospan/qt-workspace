@@ -24,12 +24,12 @@
 
 import { useState } from 'react';
 import {
-  IconAction, Input, Textarea, Pill, OptionCard, TextAction, UserAvatar, TitleInput,
-  Button, Checkbox, SelectableChip,
+  IconAction, Input, Textarea, Pill, OptionCard, TextAction, UserAvatar,
+  Button, SelectableChip,
 } from '@/components/ui';
 import {
   ArchiveRestore, ArrowRight, Check, ChevronRight, ChevronsUpDown, Clock, Copy,
-  Download, FileAudio, FileText, LogOut, Menu, MoreVertical, PanelLeftClose,
+  Download, FileText, LogOut, Menu, PanelLeftClose,
   PanelLeftOpen, Play, Plus, QrCode, Settings2, Square, StickyNote, Users, X,
 } from 'lucide-react';
 
@@ -114,14 +114,7 @@ function Kit({ note, children }) {
 // Copied out of the files named beside them. Nothing below rewrites these.
 
 // Fields
-const C_AICALL_TITLE = 'w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-ink outline-none focus:border-ink';
-const C_AICALL_DESC = 'w-full resize-y rounded-[8px] border border-transparent bg-white px-3 py-2 text-[12px] leading-5 text-ink outline-none focus:border-ink';
-const C_AICALL_DATE = 'rounded-[8px] border border-line bg-white px-2 py-[7px] text-[12px] text-ink outline-none focus:border-ink';
-const C_AICALL_CARD = 'rounded-[12px] border p-4 transition-opacity border-line bg-canvas';
 const C_BOARD_COMPOSER = 'w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all shadow-sm';
-const C_PANEL_TITLE = 'w-full bg-transparent text-[13px] font-bold text-ink outline-none';
-const C_PANEL_DESC = 'w-full resize-none bg-transparent text-[12px] leading-5 text-muted outline-none';
-const C_PANEL_CARD = 'rounded-[14px] bg-canvas p-4 transition-opacity';
 
 // Shell chrome
 const C_SB_COLLAPSE = 'mt-1 transition-colors shrink-0 ml-[8px]';
@@ -168,8 +161,6 @@ const C_SWATCH_THEME = 'flex flex-col items-center gap-[6px] group/theme';
 const C_SWATCH_THEME_INNER = 'w-[44px] h-[44px] rounded-full transition-all ring-2 ring-ink ring-offset-2';
 
 // Icon buttons
-const C_KEBAB = 'p-[7px] text-muted hover:bg-white hover:text-ink rounded-[8px] transition-all';
-const C_PANEL_REMOVE = 'rounded-full p-2 text-muted hover:bg-white hover:text-ink';
 const C_BOARD_COLLAPSE = 'text-muted mb-4';
 const C_AUDIO_PLAY = 'w-8 h-8 rounded-[8px] bg-canvas text-ink flex items-center justify-center shrink-0 hover:bg-line transition-colors disabled:opacity-40';
 
@@ -179,7 +170,6 @@ const C_MEMBER_TAB = 'flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12
 
 // One-offs
 const C_COPY_LINK = 'mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-bold text-white transition-colors bg-ink hover:bg-ink-hover';
-const C_DRAFT_CHECK = 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink bg-ink text-white';
 const C_ORG_AVATAR = 'flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100';
 const C_FILE_OVERLAY = 'absolute inset-0 cursor-pointer';
 
@@ -200,54 +190,6 @@ export function useDecisions() {
 
   return [
     // ═══ Поля ════════════════════════════════════════════════════════════
-    {
-      id: 'aicall-fields',
-      family: 'Поля',
-      title: 'Поля картки чернетки на екрані «Дзвінок → задачі»',
-      count: 3,
-      where: 'src/app/(app)/ai-call/page.js:275, :280, :302',
-      why: 'Різниця з кітом менша, ніж здається: поле кіту теж має прозору рамку і теж підсвічує її в фокусі. Відрізняються три речі — фон (біле проти сірого на сірій картці), висота (від padding проти фіксованих 36px) і жирність назви (font-semibold, якої в кіту немає).',
-      shot: <Shot src="/ui-decisions/aicall.jpeg" alt="екран «Дзвінок → задачі» · продакшн" note="Обведено назву задачі та опис у картці чернетки." />,
-      context: (
-        <Frame label="ai-call/page.js:264 · картка чернетки" tone="canvas">
-          <div className={C_AICALL_CARD}>
-            <div className="flex items-start gap-3">
-              <span className="mt-[6px] shrink-0"><Checkbox size="sm" checked onChange={() => {}} ariaLabel="Створювати цю задачу" /></span>
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <Spot><input readOnly value="Полагодити експорт у CSV" className={C_AICALL_TITLE} /></Spot>
-                <textarea readOnly rows={2} value="Ламається на кириличних назвах колонок." className={C_AICALL_DESC} />
-              </div>
-            </div>
-          </div>
-        </Frame>
-      ),
-      now: (
-        <>
-          <Real loc="ai-call/page.js:275" cls={C_AICALL_TITLE}>
-            <input readOnly value="Полагодити експорт у CSV" className={C_AICALL_TITLE} />
-          </Real>
-          <Real loc="ai-call/page.js:280" cls={C_AICALL_DESC}>
-            <textarea readOnly rows={2} value="Ламається на кириличних…" className={C_AICALL_DESC} />
-          </Real>
-          <Real loc="ai-call/page.js:302" cls={C_AICALL_DATE}>
-            <input readOnly type="date" value="2026-08-14" className={C_AICALL_DATE} />
-          </Real>
-        </>
-      ),
-      after: (
-        <>
-          <Kit note="Input — bg-canvas, 36px, радіус 10px. Жирність назви зникає."><Input defaultValue="Полагодити експорт у CSV" readOnly /></Kit>
-          <Kit note="Textarea кіту"><Textarea defaultValue="Ламається на кириличних…" rows={2} readOnly /></Kit>
-          <Kit note="дата — у кіті є DatePicker, це окремий компонент, не Input"><Input defaultValue="14.08.2026" readOnly /></Kit>
-        </>
-      ),
-      options: [
-        { kind: 'adopt', title: 'Узяти поля кіту', note: 'Картка стане сіре-на-сірому: поля зіллються з фоном картки.' },
-        { kind: 'build', title: 'Додати кіту білий варіант поля', note: 'Для полів усередині сірих карток — окремий фон, решта геометрії спільна.' },
-        { kind: 'keep', title: 'Лишити як є', note: 'Екран і далі малює свої три поля.' },
-      ],
-    },
-
     {
       id: 'board-composer',
       family: 'Поля',
@@ -277,49 +219,6 @@ export function useDecisions() {
       options: [
         { kind: 'adopt', title: 'Узяти Textarea кіту', note: 'Тінь і ring зникають — поле сяде на сіре тло колонки.' },
         { kind: 'keep', title: 'Лишити як є', note: 'Тінь відділяє поле від картки під ним.' },
-      ],
-    },
-
-    {
-      id: 'panel-inline',
-      family: 'Поля',
-      title: 'Прозорі поля, що редагують текст на місці',
-      count: 2,
-      where: 'src/components/AudioTaskPanel.jsx:217, :222',
-      why: 'Назва й опис чернетки в панелі аудіо-задач: текст виглядає як текст, коробки немає ніколи — навіть у фокусі. У кіту такої поведінки немає в жодного поля.',
-      context: (
-        <Frame label="AudioTaskPanel.jsx:207 · рядок чернетки" tone="white">
-          <div className={C_PANEL_CARD}>
-            <div className="flex items-start gap-3">
-              <span className={C_DRAFT_CHECK}><Check size={12} /></span>
-              <div className="min-w-0 flex-1 space-y-3">
-                <Spot><input readOnly value="Полагодити експорт у CSV" className={C_PANEL_TITLE} /></Spot>
-                <textarea readOnly rows={2} value="Ламається на кириличних назвах колонок." className={C_PANEL_DESC} />
-              </div>
-            </div>
-          </div>
-        </Frame>
-      ),
-      now: (
-        <>
-          <Real loc="AudioTaskPanel.jsx:217" cls={C_PANEL_TITLE}>
-            <input readOnly value="Полагодити експорт у CSV" className={C_PANEL_TITLE} />
-          </Real>
-          <Real loc="AudioTaskPanel.jsx:222" cls={C_PANEL_DESC}>
-            <textarea readOnly rows={2} value="Ламається на кириличних…" className={C_PANEL_DESC} />
-          </Real>
-        </>
-      ),
-      after: (
-        <>
-          <Kit note="варіант A — TitleInput, риска у фокусі"><TitleInput readOnly value="Полагодити експорт у CSV" className="!text-[13px]" /></Kit>
-          <Kit note="варіант B — звичайне поле кіту, коробка є завжди"><Input defaultValue="Полагодити експорт у CSV" readOnly /></Kit>
-        </>
-      ),
-      options: [
-        { kind: 'build', title: 'Варіант A — розширити TitleInput', note: 'Один компонент «текст, що редагується» на всі розміри.' },
-        { kind: 'adopt', title: 'Варіант B — звичайне поле кіту', note: 'Зʼявляться дві сірі коробки там, де зараз їх немає.' },
-        { kind: 'keep', title: 'Лишити як є', note: 'Панель і далі малює свої два поля.' },
       ],
     },
 
@@ -1065,62 +964,6 @@ export function useDecisions() {
 
     // ═══ Іконкові кнопки ═════════════════════════════════════════════════
     {
-      id: 'quiet-icons',
-      family: 'Іконкові кнопки',
-      title: 'Тихі іконкові кнопки з hover:bg-white',
-      count: 2,
-      where: 'src/app/(app)/page.js:158 · AudioTaskPanel.jsx:156',
-      why: 'Обидві сірі, обидві світлішають до білого під курсором — але сидять на різному тлі, і саме це вирішує. Кебаб лежить на білій картці, тож його hover не робить нічого і кіт його виправить. Хрестик лежить на bg-canvas (#f4f4f5), де білий hover видно — а hover кіту #f0f0f0 темніший за тло на 4 одиниці, тобто майже невидимий.',
-      shot: <Shot src="/ui-decisions/projects.jpeg" alt="екран «Проєкти» · продакшн" note="Обведено кебаб на картці проєкту." />,
-      context: (
-        <Frame label="app/page.js:142 · верхній ряд картки проєкту" tone="canvas">
-          <div className="rounded-[16px] bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex -space-x-2.5">
-                <UserAvatar user={DEMO_USER} size="md" stacked />
-                <UserAvatar user={{ id: 'o', name: 'Олена Коваль' }} size="md" stacked />
-              </div>
-              <Spot><button type="button" aria-label="Дії з проєктом" className={C_KEBAB}><MoreVertical size={16} /></button></Spot>
-            </div>
-            <p className="mt-3 text-[15px] font-bold text-ink">Design</p>
-          </div>
-        </Frame>
-      ),
-      now: (
-        <>
-          <Real loc="app/(app)/page.js:158" cls={C_KEBAB} state="тло — біла картка, тож hover:bg-white не робить нічого">
-            <span className="inline-flex rounded-[8px] bg-white p-1">
-              <button type="button" aria-label="Дії з проєктом" className={C_KEBAB}><MoreVertical size={16} /></button>
-            </span>
-          </Real>
-          <Real loc="AudioTaskPanel.jsx:156" cls={C_PANEL_REMOVE} state="тло — bg-canvas #f4f4f5, білий hover помітний">
-            <span className="inline-flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-muted"><FileAudio size={16} /></span>
-              <span className="text-[13px] font-semibold text-ink">запис.m4a</span>
-              <button type="button" className={C_PANEL_REMOVE} aria-label="Прибрати файл"><X size={14} /></button>
-            </span>
-          </Real>
-        </>
-      ),
-      after: (
-        <>
-          <Kit note="на білій картці hover #f0f0f0 нарешті видно — це покращення">
-            <span className="inline-flex rounded-[8px] bg-white p-1"><IconAction label="Дії з проєктом" icon={MoreVertical} size="sm" appearance="quiet" /></span>
-          </Kit>
-          <Kit note="на #f4f4f5 hover #f0f0f0 — різниця в 4 одиниці яскравості">
-            <span className="inline-flex rounded-[14px] bg-canvas p-2"><IconAction label="Прибрати файл" icon={X} size="sm" appearance="quiet" /></span>
-          </Kit>
-        </>
-      ),
-      afterNote: 'Для хрестика на сірому правильніший appearance="surface" (біле тло + рамка) — але це вже інший вигляд, не той, що зараз.',
-      options: [
-        { kind: 'adopt', title: 'Узяти IconAction quiet для обох', note: 'Кебаб виграє, хрестик втратить помітний hover.' },
-        { kind: 'build', title: 'Додати appearance для світлого hover', note: 'Той, що світлішає, а не темнішає — для іконок на сірому.' },
-        { kind: 'keep', title: 'Лишити як є', note: 'Кожна кнопка тримає hover під своє тло.' },
-      ],
-    },
-
-    {
       id: 'board-collapse',
       family: 'Іконкові кнопки',
       title: 'Стрілка розгортання згорнутої колонки',
@@ -1264,43 +1107,6 @@ export function useDecisions() {
       options: [
         { kind: 'adopt', title: 'Узяти Button кіту', note: 'Висота 40→36px; зелений стан «Скопійовано» доведеться виразити окремо.' },
         { kind: 'keep', title: 'Лишити як є', note: 'Зелена підтвердна заливка тримається на власному класі.' },
-      ],
-    },
-
-    {
-      id: 'draft-check',
-      family: 'Поодинокі',
-      title: 'Галочка «створювати цю задачу»',
-      count: 1,
-      where: 'src/components/AudioTaskPanel.jsx:209',
-      why: 'Прямий дубль: сусідній екран ai-call для тієї самої дії вже бере Checkbox із кіту (ai-call/page.js:267). Тут вона намальована руками — і кругла, тоді як кітова квадратна.',
-      context: (
-        <Frame label="AudioTaskPanel.jsx:207 · рядок чернетки" tone="white">
-          <div className={C_PANEL_CARD}>
-            <div className="flex items-start gap-3">
-              <Spot><button type="button" className={C_DRAFT_CHECK}><Check size={12} /></button></Spot>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold text-ink">Полагодити експорт у CSV</p>
-                <p className="mt-1 text-[12px] leading-5 text-muted">Ламається на кириличних назвах колонок.</p>
-              </div>
-            </div>
-          </div>
-        </Frame>
-      ),
-      now: (
-        <Real loc="AudioTaskPanel.jsx:209" cls={C_DRAFT_CHECK} state="увімкнено">
-          <button type="button" className={C_DRAFT_CHECK}><Check size={12} /></button>
-        </Real>
-      ),
-      after: (
-        <Kit note="Checkbox кіту — той самий, що вже стоїть на ai-call/page.js:267">
-          <Checkbox size="sm" checked onChange={() => {}} ariaLabel="Створювати цю задачу" />
-        </Kit>
-      ),
-      afterNote: 'Кругла галочка стане квадратною. Це єдина видима зміна — і вона зрівняє два екрани, що роблять одне й те саме.',
-      options: [
-        { kind: 'adopt', title: 'Узяти Checkbox', note: 'Дві панелі чернеток нарешті виглядатимуть однаково.' },
-        { kind: 'keep', title: 'Лишити як є', note: 'Кругла галочка лишається власною.' },
       ],
     },
 
