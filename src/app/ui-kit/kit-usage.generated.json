@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 91,
-    "used": 91,
+    "components": 90,
+    "used": 90,
     "unused": 0,
-    "covered": 88,
+    "covered": 87,
     "uncovered": 0,
     "routes": 12,
-    "previews": 117,
+    "previews": 116,
     "internal": 3,
     "unlisted": 0
   },
@@ -28,12 +28,12 @@
       "IconAction",
       "Input",
       "Label",
+      "LoadingSpinner",
       "MarkdownEditor",
       "PageHeader",
       "ProjectSettingsForm",
       "Select",
       "SelectableChip",
-      "Skeleton",
       "Surface",
       "Tabs",
       "Textarea",
@@ -57,10 +57,10 @@
       "Input",
       "KpiCard",
       "Label",
+      "LoadingSpinner",
       "MarkdownEditor",
       "MediaPlayButton",
       "PageHeader",
-      "PageSkeleton",
       "Pill",
       "ProjectSettingsForm",
       "Select",
@@ -250,10 +250,10 @@
       "IconAction",
       "Input",
       "Label",
+      "LoadingSpinner",
       "MarkdownEditor",
       "MultiSelect",
       "PageHeader",
-      "PageSkeleton",
       "Pill",
       "Select",
       "SelectableChip",
@@ -1192,24 +1192,31 @@
     },
     "LoadingSpinner": {
       "file": "src/components/ui/Feedback/LoadingSpinner.jsx",
-      "count": 7,
+      "count": 11,
       "showcased": true,
       "usedByKit": [
         "MemberRail",
         "ProjectSettingsForm"
       ],
       "routes": [
+        "/",
+        "/[projectId]",
         "/analytics",
         "/analytics/team/[memberId]",
         "/calendar",
         "/calendar/event/[eventId]",
+        "/my",
         "/settings",
         "/team"
       ],
       "usedIn": [
+        "src/app/(app)/[projectId]/page.js",
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/app/(app)/calendar/page.js",
+        "src/app/(app)/loading.js",
+        "src/app/(app)/my/page.js",
+        "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/components/profile/ProfileView.jsx",
         "src/components/workspace/BillingTab.jsx",
@@ -1411,29 +1418,6 @@
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js"
-      ]
-    },
-    "PageSkeleton": {
-      "file": "src/components/ui/Feedback/PageSkeleton.jsx",
-      "count": 11,
-      "showcased": true,
-      "usedByKit": [],
-      "routes": [
-        "/[projectId]",
-        "/my"
-      ],
-      "usedIn": [
-        "src/app/(app)/[projectId]/loading.js",
-        "src/app/(app)/[projectId]/page.js",
-        "src/app/(app)/analytics/loading.js",
-        "src/app/(app)/calendar/loading.js",
-        "src/app/(app)/chat/loading.js",
-        "src/app/(app)/loading.js",
-        "src/app/(app)/my/loading.js",
-        "src/app/(app)/my/page.js",
-        "src/app/(app)/settings/loading.js",
-        "src/app/(app)/sprints/loading.js",
-        "src/app/(app)/team/loading.js"
       ]
     },
     "PendingChatAttachments": {
@@ -1641,16 +1625,11 @@
     },
     "Skeleton": {
       "file": "src/components/ui/Feedback/Skeleton.jsx",
-      "count": 2,
+      "count": 1,
       "showcased": true,
-      "usedByKit": [
-        "PageSkeleton"
-      ],
-      "routes": [
-        "/"
-      ],
+      "usedByKit": [],
+      "routes": [],
       "usedIn": [
-        "src/app/(app)/page.js",
         "src/components/WorkspaceSidebar.jsx"
       ]
     },
@@ -2226,7 +2205,7 @@
             "src/app/(app)/chat/page.js:925",
             "src/app/(app)/chat/page.js:933",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:477",
             "src/app/(app)/page.js:481",
@@ -2421,7 +2400,7 @@
             "src/app/(app)/analytics/page.js:650",
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:136",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:482",
             "src/app/(app)/page.js:502",
@@ -2599,7 +2578,7 @@
             "src/app/(app)/layout.js:99",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/my/page.js:201",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:477",
             "src/app/(app)/page.js:481",
@@ -2797,7 +2776,7 @@
             "src/app/(app)/layout.js:99",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/my/page.js:201",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:477",
             "src/app/(app)/page.js:481",
@@ -2985,7 +2964,7 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/layout.js:99",
             "src/app/(app)/my/page.js:201",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:477",
             "src/app/(app)/page.js:481",
@@ -3192,7 +3171,7 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:136",
             "src/app/(app)/my/page.js:201",
-            "src/app/(app)/my/page.js:305",
+            "src/app/(app)/my/page.js:308",
             "src/app/(app)/page.js:476",
             "src/app/(app)/page.js:477",
             "src/app/(app)/page.js:481",
@@ -4664,9 +4643,9 @@
             "src/app/(app)/analytics/page.js:742",
             "src/app/(app)/analytics/team/[memberId]/page.js:99",
             "src/app/(app)/calendar/page.js:550",
-            "src/app/(app)/page.js:842",
-            "src/app/(app)/page.js:858",
-            "src/app/(app)/page.js:869",
+            "src/app/(app)/page.js:844",
+            "src/app/(app)/page.js:851",
+            "src/app/(app)/page.js:862",
             "src/app/(app)/sprints/page.js:656"
           ]
         },
@@ -4719,8 +4698,8 @@
           "files": [
             "src/app/(app)/analytics/page.js:742",
             "src/app/(app)/analytics/team/[memberId]/page.js:99",
-            "src/app/(app)/page.js:842",
-            "src/app/(app)/page.js:869"
+            "src/app/(app)/page.js:844",
+            "src/app/(app)/page.js:862"
           ]
         },
         "sm": {
@@ -4740,7 +4719,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:858",
+            "src/app/(app)/page.js:851",
             "src/components/workspace/IssueDetail.jsx:1479"
           ]
         },
@@ -4776,7 +4755,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:742",
-            "src/app/(app)/page.js:842"
+            "src/app/(app)/page.js:844"
           ]
         },
         "member-chart-panel": {
@@ -4801,8 +4780,8 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:550",
-            "src/app/(app)/page.js:858",
-            "src/app/(app)/page.js:869",
+            "src/app/(app)/page.js:851",
+            "src/app/(app)/page.js:862",
             "src/app/(app)/settings/page.js:2751",
             "src/app/(app)/team/page.js:113",
             "src/components/workspace/BillingTab.jsx:1065",
@@ -5803,7 +5782,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:296",
+            "src/app/(app)/my/page.js:299",
             "src/app/(app)/page.js:473",
             "src/app/(app)/sprints/page.js:104",
             "src/app/(app)/sprints/page.js:147",
@@ -5874,7 +5853,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:296",
+            "src/app/(app)/my/page.js:299",
             "src/components/UserStatusSetter.jsx:68"
           ]
         },
@@ -5956,7 +5935,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:296",
+            "src/app/(app)/my/page.js:299",
             "src/components/workspace/IssueDetail.jsx:1269",
             "src/components/workspace/calendar/CalendarEventPage.jsx:176"
           ]
@@ -6010,7 +5989,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:296"
+            "src/app/(app)/my/page.js:299"
           ]
         },
         "dialog": {
@@ -6113,7 +6092,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/page.js:859",
+            "src/app/(app)/page.js:852",
             "src/components/workspace/AnalyticsTab.jsx:157"
           ]
         },
@@ -6171,7 +6150,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:85",
             "src/app/(app)/calendar/page.js:357",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/page.js:859",
+            "src/app/(app)/page.js:852",
             "src/app/(app)/team/page.js:118",
             "src/components/profile/ProfileView.jsx:379",
             "src/components/workspace/AnalyticsTab.jsx:157",
@@ -6218,7 +6197,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:85",
             "src/app/(app)/calendar/page.js:357",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/page.js:859",
+            "src/app/(app)/page.js:852",
             "src/app/(app)/team/page.js:118",
             "src/components/profile/ProfileView.jsx:379",
             "src/components/workspace/TimesheetTab.jsx:576",
@@ -6248,19 +6227,26 @@
     "LoadingSpinner": {
       "size": {
         "md": {
-          "count": 11,
+          "count": 15,
           "routes": [
+            "/",
+            "/[projectId]",
             "/analytics",
             "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
+            "/my",
             "/settings",
             "/team"
           ],
           "files": [
+            "src/app/(app)/[projectId]/page.js:391",
             "src/app/(app)/analytics/page.js:192",
             "src/app/(app)/analytics/team/[memberId]/page.js:77",
             "src/app/(app)/calendar/page.js:553",
+            "src/app/(app)/loading.js:28",
+            "src/app/(app)/my/page.js:225",
+            "src/app/(app)/page.js:846",
             "src/app/(app)/settings/page.js:2794",
             "src/app/(app)/settings/page.js:2853",
             "src/app/(app)/settings/page.js:2879",
@@ -6286,35 +6272,6 @@
     },
     "Skeleton": {
       "preset": {
-        "title": {
-          "count": 1,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:846"
-          ]
-        },
-        "text": {
-          "count": 2,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:847",
-            "src/app/(app)/page.js:848"
-          ]
-        },
-        "avatar": {
-          "count": 2,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:850",
-            "src/app/(app)/page.js:851"
-          ]
-        },
         "logo": {
           "count": 1,
           "routes": [],
@@ -6332,35 +6289,18 @@
         }
       },
       "width": {
-        "wide": {
-          "count": 3,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:846",
-            "src/app/(app)/page.js:848",
-            "src/components/WorkspaceSidebar.jsx:166"
-          ]
-        },
-        "full": {
-          "count": 1,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:847"
-          ]
-        },
         "(default)": {
-          "count": 3,
-          "routes": [
-            "/"
-          ],
+          "count": 1,
+          "routes": [],
           "files": [
-            "src/app/(app)/page.js:850",
-            "src/app/(app)/page.js:851",
             "src/components/WorkspaceSidebar.jsx:160"
+          ]
+        },
+        "wide": {
+          "count": 1,
+          "routes": [],
+          "files": [
+            "src/components/WorkspaceSidebar.jsx:166"
           ]
         },
         "half": {
@@ -6372,19 +6312,6 @@
         }
       },
       "tone": {
-        "(default)": {
-          "count": 5,
-          "routes": [
-            "/"
-          ],
-          "files": [
-            "src/app/(app)/page.js:846",
-            "src/app/(app)/page.js:847",
-            "src/app/(app)/page.js:848",
-            "src/app/(app)/page.js:850",
-            "src/app/(app)/page.js:851"
-          ]
-        },
         "sidebar": {
           "count": 3,
           "routes": [],
@@ -6392,101 +6319,6 @@
             "src/components/WorkspaceSidebar.jsx:160",
             "src/components/WorkspaceSidebar.jsx:166",
             "src/components/WorkspaceSidebar.jsx:169"
-          ]
-        }
-      }
-    },
-    "PageSkeleton": {
-      "context": {
-        "board": {
-          "count": 3,
-          "routes": [
-            "/[projectId]"
-          ],
-          "files": [
-            "src/app/(app)/[projectId]/loading.js:6",
-            "src/app/(app)/[projectId]/page.js:392",
-            "src/app/(app)/my/loading.js:6"
-          ]
-        },
-        "analytics": {
-          "count": 1,
-          "routes": [],
-          "files": [
-            "src/app/(app)/analytics/loading.js:6"
-          ]
-        },
-        "calendar": {
-          "count": 1,
-          "routes": [],
-          "files": [
-            "src/app/(app)/calendar/loading.js:6"
-          ]
-        },
-        "rail": {
-          "count": 2,
-          "routes": [],
-          "files": [
-            "src/app/(app)/chat/loading.js:6",
-            "src/app/(app)/team/loading.js:6"
-          ]
-        },
-        "cards": {
-          "count": 1,
-          "routes": [],
-          "files": [
-            "src/app/(app)/loading.js:17"
-          ]
-        },
-        "(default)": {
-          "count": 1,
-          "routes": [
-            "/my"
-          ],
-          "files": [
-            "src/app/(app)/my/page.js:224"
-          ]
-        },
-        "settings": {
-          "count": 1,
-          "routes": [],
-          "files": [
-            "src/app/(app)/settings/loading.js:6"
-          ]
-        },
-        "list": {
-          "count": 1,
-          "routes": [],
-          "files": [
-            "src/app/(app)/sprints/loading.js:6"
-          ]
-        }
-      },
-      "region": {
-        "(default)": {
-          "count": 9,
-          "routes": [],
-          "files": [
-            "src/app/(app)/[projectId]/loading.js:6",
-            "src/app/(app)/analytics/loading.js:6",
-            "src/app/(app)/calendar/loading.js:6",
-            "src/app/(app)/chat/loading.js:6",
-            "src/app/(app)/loading.js:17",
-            "src/app/(app)/my/loading.js:6",
-            "src/app/(app)/settings/loading.js:6",
-            "src/app/(app)/sprints/loading.js:6",
-            "src/app/(app)/team/loading.js:6"
-          ]
-        },
-        "body": {
-          "count": 2,
-          "routes": [
-            "/[projectId]",
-            "/my"
-          ],
-          "files": [
-            "src/app/(app)/[projectId]/page.js:392",
-            "src/app/(app)/my/page.js:224"
           ]
         }
       }
@@ -7347,7 +7179,6 @@
     "Skeleton — ролі": "<div className=\"grid w-full grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3\">\n  {ROLES.map(([role, caption]) => (\n    <div key={role} className=\"flex flex-col gap-[6px] rounded-[12px] border border-line p-[12px]\">\n      <div className={role === 'panel' ? 'flex h-[120px]' : 'flex'}>\n        <Skeleton preset={role} />\n      </div>\n      <span className=\"font-mono text-[10px] font-bold text-ink\">{role}</span>\n      <span className=\"text-[10px] text-muted\">{caption}</span>\n    </div>\n  ))}\n</div>",
     "Skeleton — ширини": "<div className=\"flex w-full max-w-[520px] flex-col gap-[8px]\">\n  {WIDTHS.map(width => (\n    <div key={width} className=\"flex items-center gap-[10px]\">\n      <span className=\"w-[52px] shrink-0 font-mono text-[10px] font-bold text-muted\">{width}</span>\n      <Skeleton preset=\"text\" width={width} />\n    </div>\n  ))}\n</div>",
     "Skeleton — тон сайдбара": "<div className=\"grid w-full grid-cols-1 gap-[12px] sm:grid-cols-2\">\n  <div className=\"flex flex-col gap-[10px] rounded-[16px] bg-ink p-[16px] [--sb-text:#ffffff]\">\n    <span className=\"text-[10px] font-bold uppercase tracking-wider text-white/50\">темна тема</span>\n    <div className=\"flex items-start gap-[12px]\">\n      <Skeleton preset=\"logo\" tone=\"sidebar\" className=\"shrink-0\" />\n      <div className=\"flex flex-1 flex-col gap-[6px]\">\n        <Skeleton preset=\"caption\" width=\"wide\" tone=\"sidebar\" />\n        <Skeleton preset=\"caption\" width=\"half\" tone=\"sidebar\" />\n      </div>\n    </div>\n  </div>\n  <div className=\"flex flex-col gap-[10px] rounded-[16px] bg-canvas p-[16px] [--sb-text:#1f1f1f]\">\n    <span className=\"text-[10px] font-bold uppercase tracking-wider text-muted\">світла тема</span>\n    <div className=\"flex items-start gap-[12px]\">\n      <Skeleton preset=\"logo\" tone=\"sidebar\" className=\"shrink-0\" />\n      <div className=\"flex flex-1 flex-col gap-[6px]\">\n        <Skeleton preset=\"caption\" width=\"wide\" tone=\"sidebar\" />\n        <Skeleton preset=\"caption\" width=\"half\" tone=\"sidebar\" />\n      </div>\n    </div>\n  </div>\n</div>",
-    "PageSkeleton — форма кожного екрана": "<div className=\"flex flex-wrap gap-[10px]\">\n  <Segmented value={context} onChange={setContext} options={CONTEXTS} />\n  <Segmented value={region} onChange={setRegion} options={REGIONS} />\n</div>\n<div className=\"mt-[12px] flex h-[560px] w-full overflow-hidden rounded-[16px] border border-line bg-white\">\n  <PageSkeleton context={context} region={region} />\n</div>",
     "Workspace Chat Composer": "<div className=\"h-[420px] w-full\">\n<div className=\"relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas h-full\">\n  <div className=\"relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl\">\n    <Hash size={17} className=\"shrink-0 text-ink\" />\n    <div className=\"min-w-0 flex-1\">\n      <h2 className=\"flex items-center gap-1.5 truncate text-[15px] font-bold text-ink\">general</h2>\n      <p className=\"truncate text-[11px] text-muted\">Загальний канал для всієї команди</p>\n    </div>\n    <Info size={16} className=\"text-muted\" />\n  </div>\n\n  <div className=\"custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-12 pt-2 scroll-pb-12\">\n    <div className=\"flex h-full flex-1 items-center justify-center\">\n      <EmptyState\n        icon={ChatIcon}\n        title=\"Ще немає повідомлень\"\n        description=\"Почніть розмову! 👋\"\n      />\n    </div>\n  </div>\n\n  <ChatComposerDock>\n    <div className=\"relative px-4 pb-4\">\n      <ChatComposerCore\n        variant=\"workspace\"\n        value={message}\n        onChange={event => setMessage(event.target.value)}\n        placeholder=\"Написати в #general...\"\n        toolbar={(\n          <>\n            <button\n              type=\"button\"\n              className=\"w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors\"\n              title=\"Emoji\"\n            >\n              <Smile size={17} />\n            </button>\n            <button\n              type=\"button\"\n              className=\"w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors\"\n              title=\"Прикріпити файл\"\n            >\n              <Paperclip size={17} />\n            </button>\n          </>\n        )}\n        onSubmit={() => setMessage('')}\n        canSubmit={canSend}\n      />\n    </div>\n  </ChatComposerDock>\n</div>\n</div>",
     "Task Timeline & QuickTeam+ composers": "<div className=\"grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2\">\n  <div className=\"flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas\">\n    <div className=\"flex-1 p-4 text-[12px] text-muted\">Task timeline</div>\n    <ChatComposerDock composition=\"timeline-composer\">\n      <ChatComposerCore\n        variant=\"timeline\"\n        value=\"\"\n        onChange={() => {}}\n        placeholder=\"Написати повідомлення...\"\n        leading={<Button className=\"self-center rounded-full\" style=\"ghost\" size=\"icon-sm\" icon={Paperclip} type=\"button\" aria-label=\"Додати файл\" />}\n        onSubmit={() => {}}\n        canSubmit={false}\n      />\n    </ChatComposerDock>\n  </div>\n\n  <div className=\"flex h-[210px] flex-col overflow-hidden rounded-[16px] bg-canvas\">\n    <div className=\"flex-1 p-4 text-[12px] text-muted\">QuickTeam+ chat</div>\n    <ChatComposerDock composition=\"timeline-composer\">\n      <ChatComposerCore\n        variant=\"qtplus\"\n        value=\"\"\n        onChange={() => {}}\n        placeholder=\"Повідомлення…\"\n        onSubmit={() => {}}\n        canSubmit={false}\n      />\n    </ChatComposerDock>\n  </div>\n</div>",
     "Чат — власна шкала аватарів": "<div className=\"flex flex-wrap items-end gap-[20px]\">\n  {[['chat-message', 36, 'рядок повідомлення'], ['chat-member', 28, 'список учасників'],\n    ['chat-inline', 20, 'у рядку'], ['chat-mention', 18, 'згадка в тексті']].map(([token, px, role]) => (\n    <div key={token} className=\"flex flex-col items-center gap-[6px]\">\n      <UserAvatar user={demoUser} size={token} />\n      <span className=\"font-mono text-[9px] font-bold text-[#1f1f1f]\">{token}</span>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{px}px · {role}</span>\n    </div>\n  ))}\n</div>",

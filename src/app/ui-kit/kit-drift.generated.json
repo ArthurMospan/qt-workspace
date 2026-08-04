@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 41,
-    "declaredValues": 367,
+    "componentsWithVariants": 40,
+    "declaredValues": 358,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 236,
+    "usedAndPreviewed": 214,
     "usedWithoutPreview": 0,
-    "declaredUnused": 94
+    "declaredUnused": 107
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -365,12 +365,6 @@
       "namespace": null
     },
     {
-      "component": "PageSkeleton",
-      "prop": "region",
-      "value": "page",
-      "namespace": null
-    },
-    {
       "component": "Pill",
       "prop": "shape",
       "value": "capsule",
@@ -451,7 +445,79 @@
     {
       "component": "Skeleton",
       "prop": "preset",
+      "value": "avatar",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "card",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "chart",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "chip",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "control",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "dot",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "field",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "heading",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
       "value": "icon",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "panel",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "text",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "tile",
+      "namespace": "*[data-ui-skeleton-preset]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "preset",
+      "value": "title",
       "namespace": "*[data-ui-skeleton-preset]"
     },
     {
@@ -459,6 +525,18 @@
       "prop": "tone",
       "value": "default",
       "namespace": "*[data-ui-skeleton-tone]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "width",
+      "value": "full",
+      "namespace": "*[data-ui-skeleton-width]"
+    },
+    {
+      "component": "Skeleton",
+      "prop": "width",
+      "value": "short",
+      "namespace": "*[data-ui-skeleton-width]"
     },
     {
       "component": "Surface",
@@ -1030,21 +1108,6 @@
         "sidebar"
       ]
     },
-    "PageSkeleton": {
-      "context": [
-        "analytics",
-        "board",
-        "calendar",
-        "cards",
-        "list",
-        "rail",
-        "settings"
-      ],
-      "region": [
-        "body",
-        "page"
-      ]
-    },
     "ToggleSwitch": {
       "size": [
         "lg",
@@ -1213,7 +1276,6 @@
     "ChatComposerDock.composition": ".chat-composer-dock[data-ui-composition]"
   },
   "usage": {
-    "PageSkeleton.context.board": 4,
     "Pill.tone.neutral": 12,
     "Pill.size.lg": 6,
     "Pill.shape.badge": 12,
@@ -1226,9 +1288,7 @@
     "Select.filterRole.member": 7,
     "Select.filterRole.priority": 5,
     "Select.filterRole.type": 7,
-    "PageSkeleton.region.body": 2,
-    "PageSkeleton.context.analytics": 1,
-    "LoadingSpinner.size.md": 11,
+    "LoadingSpinner.size.md": 15,
     "Card.preset.borderless": 21,
     "Card.padding.lg": 16,
     "Alert.variant.error": 3,
@@ -1246,7 +1306,6 @@
     "Surface.composition.chart-panel": 2,
     "Surface.composition.member-chart-panel": 1,
     "FilterBar.context.detail": 1,
-    "PageSkeleton.context.calendar": 1,
     "CalendarEntry.tone.event": 1,
     "CalendarEntry.tone.deadline": 1,
     "IconAction.size.xs": 6,
@@ -1254,7 +1313,6 @@
     "TextAction.tone.muted": 5,
     "TextAction.size.xs": 4,
     "Surface.padding.sm": 1,
-    "PageSkeleton.context.rail": 2,
     "MentionMenu.density.composer": 1,
     "ChatComposerCore.variant.workspace": 1,
     "IconAction.appearance.soft": 8,
@@ -1271,8 +1329,6 @@
     "SidebarLayout.context.chat": 1,
     "Button.size.icon-xs": 11,
     "Button.composition.workspace-guard": 2,
-    "PageSkeleton.context.cards": 1,
-    "PageSkeleton.context.list": 2,
     "Dialog.titleContext.dialog": 3,
     "Dialog.size.sm": 10,
     "Dialog.presentation.sheet": 1,
@@ -1282,14 +1338,8 @@
     "UserAvatar.size.sm": 10,
     "Select.filterRole.date": 1,
     "Select.filterRole.sort": 1,
-    "Skeleton.preset.title": 5,
-    "Skeleton.width.wide": 6,
-    "Skeleton.preset.text": 7,
-    "Skeleton.width.full": 2,
-    "Skeleton.preset.avatar": 4,
     "Surface.padding.md": 3,
     "EmptyState.context.page": 3,
-    "PageSkeleton.context.settings": 1,
     "Input.composition.inline-edit": 1,
     "IconAction.appearance.primary": 2,
     "IconAction.size.compact": 3,
@@ -1355,8 +1405,9 @@
     "TextAction.tone.danger-quiet": 2,
     "Skeleton.preset.logo": 1,
     "Skeleton.tone.sidebar": 3,
-    "Skeleton.preset.caption": 4,
-    "Skeleton.width.half": 7,
+    "Skeleton.preset.caption": 2,
+    "Skeleton.width.wide": 1,
+    "Skeleton.width.half": 1,
     "Counter.variant.dot": 2,
     "MultiSelect.size.md": 1,
     "IconAction.size.lg": 3,
@@ -1435,16 +1486,6 @@
     "Button.surface.default": 1,
     "Dialog.bodyPadding.default": 1,
     "Dialog.bodyPadding.horizontal": 1,
-    "Skeleton.preset.heading": 3,
-    "Skeleton.width.short": 4,
-    "Skeleton.preset.control": 4,
-    "Skeleton.preset.dot": 1,
-    "Skeleton.preset.chip": 1,
-    "Skeleton.preset.card": 3,
-    "Skeleton.preset.tile": 1,
-    "Skeleton.preset.chart": 1,
-    "Skeleton.preset.field": 2,
-    "Skeleton.preset.panel": 1,
     "Counter.size.xs": 1,
     "UserAvatar.size.chat-mention": 1,
     "Input.composition.project-name": 1,
@@ -1672,15 +1713,6 @@
     "MultiSelect.variant.default",
     "MultiSelect.variant.ghost",
     "MultiSelect.variant.inline",
-    "PageSkeleton.context.analytics",
-    "PageSkeleton.context.board",
-    "PageSkeleton.context.calendar",
-    "PageSkeleton.context.cards",
-    "PageSkeleton.context.list",
-    "PageSkeleton.context.rail",
-    "PageSkeleton.context.settings",
-    "PageSkeleton.region.body",
-    "PageSkeleton.region.page",
     "Pill.appearance.outline",
     "Pill.appearance.soft-outline",
     "Pill.preset.avatar-counter",

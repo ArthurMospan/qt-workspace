@@ -106,9 +106,17 @@ test('the variant matrix renders every component that can stand alone', () => {
 // into this list on the day they started being drawn. Where a literal is
 // available the call site should pass one instead of spending the ceiling;
 // where the value is genuinely computed, this is the honest place for it.
+//
+// Raised 100 → 107 when the page skeletons were removed. `PageSkeleton` was the
+// only product user of most of `Skeleton`'s presets — dot, chip, card, tile,
+// chart, panel and the rest existed to draw the shape of a whole screen. The
+// route loaders are a spinner now, so the sidebar is the last caller and it
+// asks for two presets. The presets stay declared: they are the component's
+// vocabulary, and `preset="text"` / `width="full"` are its own defaults, which
+// cannot be deleted for want of a call site.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 100,
+    committed.totals.declaredUnused <= 107,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

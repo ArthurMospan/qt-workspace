@@ -118,10 +118,6 @@ const SOURCES = {
     width: { css: ['', 'data-ui-skeleton-width'] },
     tone: { css: ['', 'data-ui-skeleton-tone'] },
   },
-  PageSkeleton: {
-    context: { map: ['Feedback/PageSkeleton.jsx', 'CONTEXTS'] },
-    region: { literal: ['page', 'body'] },
-  },
   ToggleSwitch: {
     size: { literal: ['sm', 'md', 'lg'] },
   },

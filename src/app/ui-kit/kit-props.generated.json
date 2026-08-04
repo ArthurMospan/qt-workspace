@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 91,
-    "props": 651,
-    "documentedProps": 651,
+    "components": 90,
+    "props": 648,
+    "documentedProps": 648,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3462,44 +3462,6 @@
           "type": "string",
           "values": [],
           "description": "Page title."
-        }
-      ]
-    },
-    "PageSkeleton": {
-      "file": "src/components/ui/Feedback/PageSkeleton.jsx",
-      "summary": "The placeholder a route shows while it loads, in the shape of the screen that is coming.",
-      "props": [
-        {
-          "name": "className",
-          "default": "''",
-          "type": "string",
-          "values": [],
-          "description": "Placement in the parent only."
-        },
-        {
-          "name": "context",
-          "default": "'board'",
-          "type": "'board'|'cards'|'analytics'|'calendar'|'list'|'rail'|'settings'",
-          "values": [
-            "analytics",
-            "board",
-            "calendar",
-            "cards",
-            "list",
-            "rail",
-            "settings"
-          ],
-          "description": "Which screen is arriving."
-        },
-        {
-          "name": "region",
-          "default": "'page'",
-          "type": "'page'|'body'",
-          "values": [
-            "body",
-            "page"
-          ],
-          "description": "The whole screen, or only the part under a header that is already drawn."
         }
       ]
     },

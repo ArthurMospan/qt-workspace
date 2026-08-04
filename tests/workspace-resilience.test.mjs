@@ -1,59 +1,49 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('a route transition shows a shape rather than nothing', async () => {
+test('a route transition shows that something is happening', async () => {
   const loading = await read('../src/app/(app)/loading.js');
-  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
-  // A skeleton that occupies the regions the real screen will, so arriving
-  // content does not appear to jump.
-  assert.match(loading, /<PageSkeleton context="cards" \/>/);
-  assert.match(skeleton, /aria-busy="true"/);
-  // And an announcement for anyone who cannot see the shape.
-  assert.match(skeleton, /sr-only">Завантаження…/);
+  assert.match(loading, /aria-busy="true"/);
+  assert.match(loading, /<LoadingSpinner size="md" \/>/);
+  // And an announcement for anyone who cannot see it.
+  assert.match(loading, /sr-only">Завантаження…/);
 });
 
-// One shape for the whole workspace was three columns of task cards: right for
-// a board, and a lie on every screen that has no columns. Each of those screens
-// now names its own.
-test('every workspace screen names the shape it arrives in', async () => {
-  const expected = {
-    '': 'cards',
-    'my/': 'board',
-    '[projectId]/': 'board',
-    'sprints/': 'list',
-    'analytics/': 'analytics',
-    'calendar/': 'calendar',
-    'team/': 'rail',
-    'chat/': 'rail',
-    'settings/': 'settings',
+// Nine per-screen skeletons, each drawing the shape of the screen that was
+// arriving, were meant to stop the layout jumping. They did the opposite: the
+// placeholder's padding never matched the real screen closely enough, so the
+// swap read as everything shifting at once. One loader replaces all of them.
+test('the workspace has exactly one route loader and no page skeletons', async () => {
+  const root = new URL('../src/app/(app)/', import.meta.url);
+
+  const loaders = [];
+  const walk = async dir => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const child = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, dir);
+      if (entry.isDirectory()) await walk(child);
+      else if (entry.name === 'loading.js') loaders.push(child.pathname);
+    }
   };
-  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
-  for (const [segment, context] of Object.entries(expected)) {
-    const source = await read(`../src/app/(app)/${segment}loading.js`);
-    assert.match(
-      source,
-      new RegExp(`context="${context.replace('[', '\[')}"`),
-      `${segment || '/'} must load as "${context}"`,
-    );
+  await walk(root);
+
+  assert.equal(loaders.length, 1, 'only (app)/loading.js may exist');
+  assert.match(loaders[0], /\(app\)\/loading\.js$/);
+
+  // A screen waiting on its own data uses the same spinner, not a portrait of
+  // itself. `PageSkeleton` is gone; nothing may reach for it again.
+  for (const path of ['../src/app/(app)/[projectId]/page.js', '../src/app/(app)/my/page.js', '../src/app/(app)/page.js']) {
+    const source = await read(path);
+    assert.doesNotMatch(source, /PageSkeleton/, `${path} must not use PageSkeleton`);
+    assert.match(source, /<LoadingSpinner size="md" \/>/, `${path} must show the shared loader`);
   }
 
-  // Settings hides the workspace header, so it is the one shape that reserves
-  // no room for it — the same split SidebarLayout's contexts already make.
-  assert.match(skeleton, /headerOffset: false/);
-
-  // A screen that already drew its own header asks for the body alone, so the
-  // placeholder never draws a second heading over the real one.
-  const board = await read('../src/app/(app)/[projectId]/page.js');
-  const myTasks = await read('../src/app/(app)/my/page.js');
-  for (const source of [board, myTasks]) {
-    assert.match(source, /<PageSkeleton context=[^>]*region="body"/);
-  }
-  // And the board shape is built from the real column, not from the idea of
-  // one: fixed 280px panels on canvas, not a responsive grid of loose cards.
-  assert.match(skeleton, /w-\[280px\] shrink-0 flex-col overflow-hidden rounded-\[16px\] bg-canvas/);
+  // The sidebar keeps its skeleton: it waits on organisation data inside a
+  // fixed frame, where the placeholder and the real rows do line up.
+  const sidebar = await read('../src/components/WorkspaceSidebar.jsx');
+  assert.match(sidebar, /<Skeleton preset="logo" tone="sidebar"/);
 });
 
 test('losing the connection is visible, persistently', async () => {

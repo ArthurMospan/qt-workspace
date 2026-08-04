@@ -16,7 +16,7 @@ import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
 import { PageHeader, Pill, TaskListView, Tabs } from '@/components/ui';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import PageSkeleton from '@/components/ui/Feedback/PageSkeleton';
+import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import { LayoutGrid, BarChart2, Plus, Settings2, List, Plug, Kanban } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
@@ -387,9 +387,10 @@ export default function BoardPage({ params }) {
         // through a blank frame — so any brief `loading` blip read as the
         // board reloading itself.
         loading && boardIssues.length === 0 ? (
-          // The board's own shape, not a spinner in the middle of an empty
-          // frame: the columns arrive where the placeholder already drew them.
-          <PageSkeleton context="board" region="body" />
+          <div role="status" aria-busy="true" className="flex min-h-[320px] flex-1 items-center justify-center">
+            <LoadingSpinner size="md" />
+            <span className="sr-only">Завантаження…</span>
+          </div>
         ) : boardView === 'kanban' ? (
           <div className="flex-1 min-h-[500px] flex flex-col">
             <AgileBoard

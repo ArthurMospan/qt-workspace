@@ -134,7 +134,6 @@ const VARIANT_ELSEWHERE = {
   TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',
   ChatComposerDock: 'Прикріплений до низу екрана — див. «Chat Composer Dock»',
   SidebarLayout: 'Каркас цілого екрана — див. «SidebarLayout — 3 контексти»',
-  PageSkeleton: 'Форма цілого екрана — див. «Skeletons»',
 };
 
 // A dark value needs a dark backdrop to be visible at all.

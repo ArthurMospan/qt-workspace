@@ -1,7 +1,5 @@
 'use client';
-import { useState } from 'react';
-import { PageSkeleton, Skeleton } from '@/components/ui';
-import Segmented from '@/components/ui/Segmented';
+import { Skeleton } from '@/components/ui';
 import { PreviewBlock } from '../preview';
 
 const ROLES = [
@@ -24,25 +22,7 @@ const ROLES = [
 
 const WIDTHS = ['full', 'wide', 'half', 'short'];
 
-const CONTEXTS = [
-  { value: 'cards', label: 'cards' },
-  { value: 'board', label: 'board' },
-  { value: 'list', label: 'list' },
-  { value: 'analytics', label: 'analytics' },
-  { value: 'calendar', label: 'calendar' },
-  { value: 'rail', label: 'rail' },
-  { value: 'settings', label: 'settings' },
-];
-
-const REGIONS = [
-  { value: 'page', label: 'region="page"' },
-  { value: 'body', label: 'region="body"' },
-];
-
 export default function SkeletonsSection() {
-  const [context, setContext] = useState('board');
-  const [region, setRegion] = useState('page');
-
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
@@ -106,22 +86,6 @@ export default function SkeletonsSection() {
               </div>
             </div>
           </div>
-        </div>
-      </PreviewBlock>
-
-      <PreviewBlock
-        title="PageSkeleton — форма кожного екрана"
-        component="PageSkeleton"
-        description={'Те, що показує loading.js кожного маршруту, і те, що екран малює замість спінера, поки чекає на дані. region="page" — цілий екран разом із шапкою; region="body" — лише вміст під шапкою, яку сторінка вже намалювала.'}
-        filePath="src/components/ui/Feedback/PageSkeleton.jsx"
-        fullWidth
-      >
-        <div className="flex flex-wrap gap-[10px]">
-          <Segmented value={context} onChange={setContext} options={CONTEXTS} />
-          <Segmented value={region} onChange={setRegion} options={REGIONS} />
-        </div>
-        <div className="mt-[12px] flex h-[560px] w-full overflow-hidden rounded-[16px] border border-line bg-white">
-          <PageSkeleton context={context} region={region} />
         </div>
       </PreviewBlock>
     </div>
