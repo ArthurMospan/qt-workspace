@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { FileAudio, ListChecks, Sparkles, Upload, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { FileAudio, ListChecks, RotateCcw, Sparkles, Upload, X } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
@@ -18,6 +18,37 @@ const PRIORITIES = [
   { value: 'low', label: 'Низький' },
 ];
 
+// A finished analysis is minutes of a real call plus whatever the user has
+// edited since; it must not depend on this component staying mounted. The panel
+// lives inside a modal, and a modal is the least durable place in the app — one
+// stray dismissal, one navigation, one remount from anything above it and the
+// drafts were gone with no way back. They are written to sessionStorage on
+// every change and read back on mount, so the work survives all of that and
+// still disappears when the tab is closed.
+const draftStorageKey = orgId => `qt:ai-call-draft:${orgId || 'unknown'}`;
+
+function readDraft(orgId) {
+  if (typeof window === 'undefined' || !orgId) return null;
+  try {
+    const raw = window.sessionStorage.getItem(draftStorageKey(orgId));
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    return draft && typeof draft === 'object' ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(orgId, draft) {
+  if (typeof window === 'undefined' || !orgId) return;
+  try {
+    if (!draft) window.sessionStorage.removeItem(draftStorageKey(orgId));
+    else window.sessionStorage.setItem(draftStorageKey(orgId), JSON.stringify(draft));
+  } catch {
+    // A full or blocked sessionStorage must not break the panel itself.
+  }
+}
+
 export default function AudioTaskPanel({
   projects = [],
   projectContext = null,
@@ -31,14 +62,29 @@ export default function AudioTaskPanel({
     () => (projects?.length ? projects : projectContext ? [projectContext] : []).filter(Boolean),
     [projects, projectContext],
   );
-  const [projectId, setProjectId] = useState(availableProjects[0]?.id || '');
+  // Read once, at mount, before any state exists to overwrite.
+  const [restored] = useState(() => readDraft(activeOrgId));
+  const [projectId, setProjectId] = useState(restored?.projectId || availableProjects[0]?.id || '');
   const effectiveProjectId = projectId || availableProjects[0]?.id || '';
   const project = availableProjects.find(item => item.id === effectiveProjectId);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState(restored?.transcript || '');
   const [audioFile, setAudioFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(restored?.result || null);
+
+  useEffect(() => {
+    if (!activeOrgId) return;
+    if (!transcript.trim() && !result) writeDraft(activeOrgId, null);
+    else writeDraft(activeOrgId, { projectId: effectiveProjectId, transcript, result });
+  }, [activeOrgId, effectiveProjectId, transcript, result]);
+
+  const discardDraft = () => {
+    setResult(null);
+    setTranscript('');
+    setAudioFile(null);
+    writeDraft(activeOrgId, null);
+  };
 
   const updateTask = (index, patch) => {
     setResult(previous => ({
@@ -127,6 +173,7 @@ export default function AudioTaskPanel({
         created += 1;
       }
       showToast(`Створено завдань: ${created}`, 'success');
+      writeDraft(activeOrgId, null);
       onFinished?.();
     } catch (error) {
       showToast(`Створено ${created}, далі помилка: ${error.message}`, 'error');
@@ -198,9 +245,15 @@ export default function AudioTaskPanel({
           )}
           <div className="flex items-center justify-between gap-3">
             <h3 className="ui-type-card-title flex items-center gap-2 text-ink"><ListChecks size={16} /> Запропоновані завдання</h3>
-            <Button style="primary" size="md" onClick={createTasks} loading={creating} disabled={creating || !result.tasks.some(task => task.include)}>
-              Створити вибрані
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* The drafts now outlive the modal, so there has to be a way to
+                  say "not these" — otherwise last week's call is still sitting
+                  there when the panel is opened for this week's. */}
+              <IconAction label="Почати заново" icon={RotateCcw} size="md" appearance="soft" onClick={discardDraft} />
+              <Button style="primary" size="md" onClick={createTasks} loading={creating} disabled={creating || !result.tasks.some(task => task.include)}>
+                Створити вибрані
+              </Button>
+            </div>
           </div>
           {/* White card, kit fields. The card used to be grey with fields
               painted transparent on top of it, which read as text rather than

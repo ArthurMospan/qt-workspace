@@ -453,17 +453,17 @@
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:152",
+      "location": "src/components/AudioTaskPanel.jsx:199",
       "tag": "div",
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:194",
+      "location": "src/components/AudioTaskPanel.jsx:241",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:213",
+      "location": "src/components/AudioTaskPanel.jsx:266",
       "tag": "div",
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },

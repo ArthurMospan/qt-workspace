@@ -39,10 +39,13 @@ EMAIL_FROM=
 EMAIL_LOGIN_ENABLED=false
 AUTH_OTP_SECRET=
 
-# Optional AI call-to-tasks
+# Optional AI call-to-tasks.
+# Ліміти Gemini рахуються на ключ, тож сюди можна покласти кілька ключів через
+# кому — запити ходять по них по черзі й переходять на наступний, щойно один
+# упреться в квоту. GEMINI_API_KEYS — синонім, обидві змінні складаються.
 GEMINI_API_KEY=
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
+GEMINI_API_KEYS=
+GEMINI_MODEL=gemini-flash-latest
 
 # Optional OneB login
 NEXT_PUBLIC_ONEB_CLIENT_ID=

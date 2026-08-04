@@ -5,7 +5,9 @@
 // Створення задач лишається за користувачем — цей роут нічого не пише в БД.
 //
 // Провайдер один: GEMINI_API_KEY. Безкоштовний tier, читає аудіо НАТИВНО —
-// окремий сервіс транскрипції не потрібен.
+// окремий сервіс транскрипції не потрібен. Ключів може бути кілька через кому:
+// ліміти рахуються на ключ, тож список ключів — це просто більший ліміт.
+// Правила переходу між ними живуть у @/lib/ai/geminiKeys.
 //
 // Тут була ще запасна гілка на Claude (+ Whisper для аудіо). Вона не
 // виконувалась жодного разу: ключа ANTHROPIC_API_KEY немає ні локально, ні в
@@ -15,8 +17,21 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  classifyGeminiFailure,
+  geminiFailureMessage,
+  parseGeminiApiKeys,
+  rotateKeys,
+} from '@/lib/ai/geminiKeys';
 
 export const maxDuration = 300;
+
+// A hung upstream must surface as "Gemini не відповів", not as the platform
+// killing the function at maxDuration and returning its own opaque 500 — which
+// is one of the ways this route came to report «Internal Server Error».
+const GEMINI_TIMEOUT_MS = 120_000;
+// One retry, then the next key. More than that just delays the honest answer.
+const OVERLOAD_RETRY_DELAY_MS = 1_500;
 
 // ~14МБ бінарного аудіо ≈ 19МБ base64 — під ліміт inline-запиту Gemini (20МБ).
 const MAX_AUDIO_BYTES = 14 * 1024 * 1024;
@@ -79,7 +94,14 @@ const ALLOWED_AUDIO_MIME_TYPES = new Set([
 ]);
 
 async function fetchAudio(audioUrl, declaredMimeType = '') {
-  const response = await fetch(audioUrl);
+  let response;
+  try {
+    response = await fetch(audioUrl, { signal: AbortSignal.timeout(60_000) });
+  } catch {
+    // Cloudinary being slow or unreachable is a reportable condition, not the
+    // unhandled throw that used to reach the caller as «Internal Server Error».
+    return { error: 'Не вдалося завантажити аудіофайл зі сховища' };
+  }
   if (!response.ok) return { error: 'Не вдалося завантажити аудіофайл' };
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.length > MAX_AUDIO_BYTES) {
@@ -93,42 +115,82 @@ async function fetchAudio(audioUrl, declaredMimeType = '') {
   return { buffer, mimeType };
 }
 
-async function analyzeWithGemini({ prompt, transcript, audio }) {
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// gemini-flash-latest — аліас на актуальну flash-модель (перевірено: 2.5-flash
+// цьому ключу вже недоступна, "no longer available to new users").
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+
+async function callGemini({ apiKey, body }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      },
+    );
+    if (response.ok) return { status: response.status, data: await response.json() };
+    return { status: response.status, detail: (await response.text()).slice(0, 500) };
+  } catch (error) {
+    // A network failure or the abort above. Status 0 means "never got an
+    // answer", which the next key may well do better on.
+    return { status: 0, detail: error.name === 'AbortError' ? 'timeout' : String(error.message || error) };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function analyzeWithGemini({ prompt, transcript, audio, apiKeys }) {
   const parts = [{ text: prompt }];
   if (transcript) parts.push({ text: `<transcript>\n${transcript}\n</transcript>` });
   if (audio) parts.push({ inline_data: { mime_type: audio.mimeType, data: audio.buffer.toString('base64') } });
-
-  // gemini-flash-latest — аліас на актуальну flash-модель (перевірено: 2.5-flash
-  // цьому ключу вже недоступна, "no longer available to new users").
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
-    {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          response_schema: GEMINI_SCHEMA,
-        },
-      }),
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      response_mime_type: 'application/json',
+      response_schema: GEMINI_SCHEMA,
     },
-  );
-  if (!response.ok) {
-    console.error('[ai/call-to-tasks] gemini rejected request', await response.text());
-    return { error: 'Gemini відхилив запит — перевірте ключ GEMINI_API_KEY' };
+  });
+
+  let lastStatus = 0;
+  for (const apiKey of rotateKeys(apiKeys)) {
+    let attempt = await callGemini({ apiKey, body });
+    if (!attempt.data && classifyGeminiFailure(attempt.status) === 'retry') {
+      await sleep(OVERLOAD_RETRY_DELAY_MS);
+      attempt = await callGemini({ apiKey, body });
+    }
+
+    if (attempt.data) {
+      const text = attempt.data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
+      if (!text) return { error: 'Gemini не повернув результат', status: 502 };
+      try {
+        return { extraction: JSON.parse(text) };
+      } catch {
+        return { error: 'Не вдалося розібрати відповідь Gemini', status: 502 };
+      }
+    }
+
+    lastStatus = attempt.status;
+    console.error('[ai/call-to-tasks] gemini rejected request', {
+      status: attempt.status,
+      // The key itself never reaches the log; its position does, which is all
+      // that is needed to tell "one key is dead" from "the quota is gone".
+      keyIndex: apiKeys.indexOf(apiKey),
+      detail: attempt.detail,
+    });
+    // A malformed request fails identically on every key, so stop asking.
+    if (classifyGeminiFailure(attempt.status) === 'fail' && attempt.status !== 0) break;
   }
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
-  if (!text) return { error: 'Gemini не повернув результат' };
-  try {
-    return { extraction: JSON.parse(text) };
-  } catch {
-    return { error: 'Не вдалося розібрати відповідь Gemini' };
-  }
+
+  return {
+    error: geminiFailureMessage(lastStatus, apiKeys.length),
+    status: lastStatus === 429 ? 429 : 502,
+  };
 }
 
 export async function POST(request) {
@@ -142,7 +204,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Забагато запитів — спробуйте за годину' }, { status: 429 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKeys = parseGeminiApiKeys(process.env);
+    if (!apiKeys.length) {
       return NextResponse.json({ error: 'ШІ-аналіз не налаштовано (немає GEMINI_API_KEY)' }, { status: 503 });
     }
 
@@ -170,10 +233,12 @@ export async function POST(request) {
 
     // Gemini слухає аудіо напряму, тож обидва шляхи ведуть в один виклик.
     const result = audio
-      ? await analyzeWithGemini({ prompt, audio })
-      : await analyzeWithGemini({ prompt, transcript: text.slice(0, 300000) });
+      ? await analyzeWithGemini({ prompt, audio, apiKeys })
+      : await analyzeWithGemini({ prompt, transcript: text.slice(0, 300000), apiKeys });
 
-    if (result.error) return NextResponse.json({ error: result.error }, { status: 502 });
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: result.status || 502 });
+    }
     const extraction = result.extraction;
 
     return NextResponse.json({
