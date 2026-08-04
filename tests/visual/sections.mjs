@@ -22,6 +22,7 @@ export const SECTIONS = [
   { id: 'navigation-overlays', label: 'Navigation & Overlays' },
   { id: 'progress', label: 'KPI Cards' },
   { id: 'feedback', label: 'Feedback & States' },
+  { id: 'skeletons', label: 'Skeletons' },
   { id: 'chat-composer', label: 'Chat Composer Dock' },
   { id: 'chat-elements', label: 'Чат — власні елементи' },
   { id: 'task-crm', label: 'Task Rows' },

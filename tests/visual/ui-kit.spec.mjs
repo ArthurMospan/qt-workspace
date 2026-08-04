@@ -8,7 +8,7 @@
 //
 // Every section is captured at rest, and exactly one — «Матриця станів» — is
 // captured a second time with its hover and focus cells forced. Mixing the
-// pointer into the other 26 baselines would mean each of them encoded an
+// pointer into the other baselines would mean each of them encoded an
 // arbitrary cursor position; keeping it to the section built for it means the
 // two pseudo-classes are photographed without any baseline having to guess.
 import { test, expect } from '@playwright/test';

@@ -113,6 +113,14 @@ const SOURCES = {
   LoadingSpinner: {
     size: { map: ['Feedback/LoadingSpinner.jsx', 'sizes'] },
   },
+  Skeleton: {
+    preset: { css: ['', 'data-ui-skeleton-preset'] },
+    width: { css: ['', 'data-ui-skeleton-width'] },
+    tone: { css: ['', 'data-ui-skeleton-tone'] },
+  },
+  PageSkeleton: {
+    context: { map: ['Feedback/PageSkeleton.jsx', 'CONTEXTS'] },
+  },
   ToggleSwitch: {
     size: { literal: ['sm', 'md', 'lg'] },
   },

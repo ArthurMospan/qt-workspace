@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 89,
-    "stateful": 86,
+    "components": 91,
+    "stateful": 87,
     "hover": 62,
     "focus": 63,
     "disabled": 34,
     "loading": 5,
     "error": 6,
-    "long-text": 61
+    "long-text": 62
   },
   "components": {
     "Alert": {
@@ -297,6 +297,9 @@
     "PageHeader": {
       "long-text": "title"
     },
+    "PageSkeleton": {
+      "long-text": "children"
+    },
     "PendingChatAttachments": {
       "hover": "own",
       "focus": "global"
@@ -337,6 +340,7 @@
     "SidebarLayout": {
       "long-text": "children"
     },
+    "Skeleton": {},
     "StatusPill": {
       "long-text": "label"
     },
@@ -659,6 +663,9 @@
       "filters",
       "page-headers"
     ],
+    "PageSkeleton": [
+      "skeletons"
+    ],
     "PendingChatAttachments": [
       "chat-elements"
     ],
@@ -685,6 +692,7 @@
     ],
     "Segmented": [
       "tabs",
+      "skeletons",
       "variant-matrix",
       "states"
     ],
@@ -704,6 +712,10 @@
     ],
     "SidebarLayout": [
       "inner-nav-layout"
+    ],
+    "Skeleton": [
+      "skeletons",
+      "variant-matrix"
     ],
     "StatusPill": [
       "badges",

@@ -22,6 +22,7 @@ import {
   IconAction,
   PageHeader,
   ProjectSettingsForm,
+  Skeleton,
   useConfirm,
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
@@ -835,13 +836,13 @@ export default function WorkspacePage() {
             <Surface preset="panel" padding="lg" composition="chart-panel" className="w-full flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} data-ui-surface="bordered-panel" data-ui-padding="lg" className="ui-surface flex flex-col gap-[12px] animate-pulse">
-                    <div className="h-[18px] w-2/3 bg-line rounded-[6px]" />
-                    <div className="h-[12px] w-full bg-line rounded-[6px]" />
-                    <div className="h-[12px] w-4/5 bg-line rounded-[6px]" />
+                  <div key={i} data-ui-surface="bordered-panel" data-ui-padding="lg" className="ui-surface flex flex-col gap-[12px]">
+                    <Skeleton preset="title" width="wide" style={{ animationDelay: `${i * 90}ms` }} />
+                    <Skeleton preset="text" width="full" style={{ animationDelay: `${i * 90}ms` }} />
+                    <Skeleton preset="text" width="wide" style={{ animationDelay: `${i * 90}ms` }} />
                     <div className="mt-auto flex gap-2">
-                      <div className="h-[24px] w-[24px] rounded-full bg-line" />
-                      <div className="h-[24px] w-[24px] rounded-full bg-line" />
+                      <Skeleton preset="avatar" style={{ animationDelay: `${i * 90}ms` }} />
+                      <Skeleton preset="avatar" style={{ animationDelay: `${i * 90 + 45}ms` }} />
                     </div>
                   </div>
                 ))}

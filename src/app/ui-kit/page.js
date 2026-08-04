@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
-import { Bell, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick, CalendarDays } from 'lucide-react';
+import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick, CalendarDays } from 'lucide-react';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -31,6 +31,7 @@ import TypographySection from './sections/typography';
 import TokensSection from './sections/tokens';
 import VariantMatrixSection from './sections/variant-matrix';
 import StatesSection from './sections/states';
+import SkeletonsSection from './sections/skeletons';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV SECTIONS
@@ -66,6 +67,7 @@ const GROUPS = [
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
       { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
+      { id: 'skeletons',    label: 'Skeletons',          icon: Loader },
       { id: 'chat-composer', label: 'Chat Composer Dock', icon: MessageSquare },
       { id: 'chat-elements', label: 'Чат — власні елементи', icon: MessageSquare },
     ]
@@ -125,6 +127,7 @@ const SECTION_MAP = {
   'task-crm':  <TaskCRMSection />,
   'task-elements': <TaskElementsSection />,
   feedback:   <FeedbackSection />,
+  skeletons:  <SkeletonsSection />,
   'chat-composer': <ChatComposerSection />,
   'chat-elements': <ChatElementsSection />,
   tooltips:        <TooltipsSection />,

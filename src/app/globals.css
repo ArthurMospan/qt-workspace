@@ -255,30 +255,31 @@
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
   }
-  /* The invite field and the button that sits inside it are one control, so
-     both halves of it are declared here together.
+  /* The invite field and its button: one height, one radius, side by side.
 
-     They were not, and it showed. The button was a plain `size="md"` pinned
-     with `top-[6px] bottom-[6px]`: `height` from `.ui-control` wins against an
-     over-constrained box, so `bottom` was dropped and a 32px button sat 6px
-     below the top of a 52px field and 14px above its bottom — visibly riding
-     high in a field it was supposed to be centred in. And the 150px of room the
-     field reserved was a guess against a button whose width nothing fixed, so
-     the caret stopped a finger's width short of it and the room changed
-     whenever the label did («Запросити» → «Надіслано»).
+     The button used to sit *inside* the field, and the arrangement could not be
+     made to work. It was a plain `size="md"` pinned with `top-[6px]
+     bottom-[6px]`, and `height` from `.ui-control` wins against an
+     over-constrained box — so `bottom` was dropped and a 32px button sat 6px
+     below the top of a 52px field and 14px above its bottom, visibly riding
+     high in the field it was meant to be centred in. The 150px the field
+     reserved for it was a guess at a width nothing fixed, so the caret stopped
+     short of the button and the gap moved whenever the label did («Запросити» →
+     «Надіслано»).
 
-     Now the button's box is stated — 40px in a 52px field is 6px of air top and
-     bottom — its width is fixed so both labels occupy the same box, and the
-     field reserves exactly that width plus the offset and one gap. */
-  .ui-control[data-ui-composition='invite-field'] {
-    --ui-control-height: var(--ui-composition-invite);
-    --ui-control-pr: 146px;
-    border-radius: 14px;
-  }
+     Fixing that by declaring the button's width does not survive: this
+     composition namespace is shared by Button, IconAction and Input, and
+     IconAction's square sizes write `w-[32px]` as a utility, which beats any
+     width the components layer declares. A concrete width here is therefore
+     dead on arrival for one of its owners — `npm run test:visual` says so.
+
+     A row has none of that. Both halves state the same height and radius
+     through custom properties, which no utility can shadow, and neither needs
+     to know how wide the other is. */
+  .ui-control[data-ui-composition='invite-field'],
   .ui-control[data-ui-composition='invite-action'] {
-    --ui-control-height: calc(var(--ui-composition-invite) - 12px);
-    width: 128px;
-    border-radius: 10px;
+    --ui-control-height: var(--ui-composition-invite);
+    border-radius: 14px;
   }
   .ui-control[data-ui-composition='project-name'] {
     --ui-control-height: var(--ui-composition-metric);
@@ -618,6 +619,106 @@
   .ui-pill[data-ui-pill-appearance='soft-outline'] {
     background: var(--color-surface);
     box-shadow: 0 0 0 1px rgb(0 0 0 / 5%);
+  }
+
+  /* ── Skeletons ──────────────────────────────────────────────────────────
+     Every loading placeholder in the product is one of these, and every
+     dimension it can take is named here.
+
+     What was there before was a `bg-canvas` rectangle with `animate-pulse` on
+     it, written out again at each call site. Two things were wrong with that.
+     `bg-canvas` is #f4f4f5 — four units off the white panels it was drawn on —
+     so it read as nothing at all, and a slow fade in opacity is what a disabled
+     control does, not what loading looks like. A skeleton has to say "content
+     is coming", and the thing that says it is a sweep across a block you can
+     actually see.
+
+     Geometry travels as custom properties for the same reason the controls' does
+     (see `.ui-control`): a utility written at a call site is emitted in
+     Tailwind's last layer and would beat anything declared here. Roles come
+     after widths on purpose — a square avatar has to keep its own inline size
+     against whatever width it is handed. */
+  .ui-skeleton {
+    display: block;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    height: var(--ui-skeleton-height, 12px);
+    width: var(--ui-skeleton-inline-size, 100%);
+    border-radius: var(--ui-skeleton-radius, 8px);
+    background: var(--ui-skeleton-bg, #e3e3e6);
+  }
+  .ui-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--ui-skeleton-sheen, rgb(255 255 255 / 75%)) 55%,
+      transparent 100%
+    );
+    animation: ui-skeleton-sweep 1.5s ease-in-out infinite;
+  }
+  /* The block stays; only the sweep goes. A skeleton that vanishes under
+     reduced motion would leave the screen looking empty rather than busy. */
+  @media (prefers-reduced-motion: reduce) {
+    .ui-skeleton::after { animation: none; opacity: 0; }
+  }
+  @keyframes ui-skeleton-sweep {
+    to { transform: translateX(100%); }
+  }
+
+  [data-ui-skeleton-width='full']  { --ui-skeleton-inline-size: 100%; }
+  [data-ui-skeleton-width='wide']  { --ui-skeleton-inline-size: 72%; }
+  [data-ui-skeleton-width='half']  { --ui-skeleton-inline-size: 50%; }
+  [data-ui-skeleton-width='short'] { --ui-skeleton-inline-size: 34%; }
+
+  [data-ui-skeleton-preset='caption'] { --ui-skeleton-height: 10px; --ui-skeleton-radius: 999px; }
+  [data-ui-skeleton-preset='text']    { --ui-skeleton-height: 12px; --ui-skeleton-radius: 999px; }
+  [data-ui-skeleton-preset='title']   { --ui-skeleton-height: 18px; --ui-skeleton-radius: 6px; }
+  [data-ui-skeleton-preset='heading'] { --ui-skeleton-height: 26px; --ui-skeleton-radius: 8px; }
+  [data-ui-skeleton-preset='control'] { --ui-skeleton-height: 32px; --ui-skeleton-radius: 10px; }
+  [data-ui-skeleton-preset='field']   { --ui-skeleton-height: 36px; --ui-skeleton-radius: 10px; }
+  [data-ui-skeleton-preset='avatar']  {
+    --ui-skeleton-height: 32px;
+    --ui-skeleton-inline-size: 32px;
+    --ui-skeleton-radius: 999px;
+  }
+  [data-ui-skeleton-preset='icon'] {
+    --ui-skeleton-height: 20px;
+    --ui-skeleton-inline-size: 20px;
+    --ui-skeleton-radius: 6px;
+  }
+  /* The sidebar's organization mark, before the organization is known. */
+  [data-ui-skeleton-preset='logo'] {
+    --ui-skeleton-height: 32px;
+    --ui-skeleton-inline-size: 32px;
+    --ui-skeleton-radius: 8px;
+  }
+  [data-ui-skeleton-preset='card']  { --ui-skeleton-height: 76px;  --ui-skeleton-radius: 14px; }
+  [data-ui-skeleton-preset='tile']  { --ui-skeleton-height: 104px; --ui-skeleton-radius: 16px; }
+  [data-ui-skeleton-preset='chart'] { --ui-skeleton-height: 240px; --ui-skeleton-radius: 16px; }
+  [data-ui-skeleton-preset='panel'] {
+    --ui-skeleton-height: 100%;
+    --ui-skeleton-radius: 18px;
+    flex: 1 1 auto;
+    min-height: 120px;
+  }
+
+  [data-ui-skeleton-tone='default'] {
+    --ui-skeleton-bg: #e3e3e6;
+    --ui-skeleton-sheen: rgb(255 255 255 / 75%);
+  }
+  /* The sidebar is themed: dark by default, light or a custom colour when the
+     organization sets one. A fixed white tint was invisible on half of those —
+     which is the "занадто прозорий" complaint — so the tint is mixed from the
+     sidebar's own text colour and follows whatever theme is on. */
+  [data-ui-skeleton-tone='sidebar'] {
+    --ui-skeleton-bg: color-mix(in srgb, var(--sb-text, #ffffff) 24%, transparent);
+    --ui-skeleton-sheen: color-mix(in srgb, var(--sb-text, #ffffff) 18%, transparent);
   }
 }
 

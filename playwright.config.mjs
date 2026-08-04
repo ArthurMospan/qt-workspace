@@ -18,7 +18,7 @@ export default defineConfig({
 
   // Font rasterisation differs between Windows and the Linux runner, so a
   // local run can never match a committed baseline. Locally the spec is a
-  // smoke test: it drives all 26 sections and fails on a console error or a
+  // smoke test: it drives every section and fails on a console error or a
   // broken render, but compares no pixels and — importantly — cannot write a
   // Windows baseline into the repository by accident.
   ignoreSnapshots: !process.env.CI,

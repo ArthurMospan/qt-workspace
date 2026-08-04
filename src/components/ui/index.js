@@ -75,6 +75,8 @@ export { default as MobilePaneBack } from './Navigation/MobilePaneBack'
 // ===== FEEDBACK COMPONENTS =====
 export { default as Alert } from './Feedback/Alert'
 export { default as LoadingSpinner } from './Feedback/LoadingSpinner'
+export { default as Skeleton } from './Feedback/Skeleton'
+export { default as PageSkeleton } from './Feedback/PageSkeleton'
 export { default as EmptyState } from './Feedback/EmptyState'
 
 // ===== LAYOUT COMPONENTS =====

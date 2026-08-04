@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 166,
-    "parsedFiles": 166,
+    "productFiles": 175,
+    "parsedFiles": 175,
     "parseErrors": 0,
     "nativeControls": 18,
     "structures": {
@@ -39,13 +39,13 @@
   },
   "kit": {
     "totals": {
-      "components": 89,
-      "used": 89,
+      "components": 91,
+      "used": 91,
       "unused": 0,
-      "covered": 86,
+      "covered": 88,
       "uncovered": 0,
       "routes": 13,
-      "previews": 113,
+      "previews": 117,
       "internal": 3,
       "unlisted": 0
     },
@@ -270,7 +270,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:234",
+      "location": "src/components/WorkspaceSidebar.jsx:241",
       "className": "mt-1 transition-colors shrink-0 ml-[8px]",
       "text": "",
       "childElements": [
@@ -285,7 +285,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:247",
+      "location": "src/components/WorkspaceSidebar.jsx:254",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -300,7 +300,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:298",
+      "location": "src/components/WorkspaceSidebar.jsx:305",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -315,7 +315,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:374",
+      "location": "src/components/WorkspaceSidebar.jsx:381",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -382,17 +382,17 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/WorkspaceSidebar.jsx:234",
+      "location": "src/components/WorkspaceSidebar.jsx:241",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:247",
+      "location": "src/components/WorkspaceSidebar.jsx:254",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:298",
+      "location": "src/components/WorkspaceSidebar.jsx:305",
       "tag": "button",
       "context": "branding-action"
     }
@@ -413,12 +413,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:128",
+      "location": "src/app/(app)/page.js:129",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:137",
+      "location": "src/app/(app)/page.js:138",
       "tag": "div",
       "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },

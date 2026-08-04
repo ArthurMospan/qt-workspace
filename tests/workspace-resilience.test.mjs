@@ -6,12 +6,43 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('a route transition shows a shape rather than nothing', async () => {
   const loading = await read('../src/app/(app)/loading.js');
+  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
   // A skeleton that occupies the regions the real screen will, so arriving
   // content does not appear to jump.
-  assert.match(loading, /animate-pulse/);
-  assert.match(loading, /aria-hidden="true"/);
+  assert.match(loading, /<PageSkeleton context="cards" \/>/);
+  assert.match(skeleton, /aria-busy="true"/);
   // And an announcement for anyone who cannot see the shape.
-  assert.match(loading, /sr-only">Завантаження…/);
+  assert.match(skeleton, /sr-only">Завантаження…/);
+});
+
+// One shape for the whole workspace was three columns of task cards: right for
+// a board, and a lie on every screen that has no columns. Each of those screens
+// now names its own.
+test('every workspace screen names the shape it arrives in', async () => {
+  const expected = {
+    '': 'cards',
+    'my/': 'board',
+    '[projectId]/': 'board',
+    'sprints/': 'list',
+    'analytics/': 'analytics',
+    'calendar/': 'calendar',
+    'team/': 'rail',
+    'chat/': 'rail',
+    'settings/': 'settings',
+  };
+  for (const [segment, context] of Object.entries(expected)) {
+    const source = await read(`../src/app/(app)/${segment}loading.js`);
+    assert.match(
+      source,
+      new RegExp(`context="${context.replace('[', '\[')}"`),
+      `${segment || '/'} must load as "${context}"`,
+    );
+  }
+
+  const skeleton = await read('../src/components/ui/Feedback/PageSkeleton.jsx');
+  // Settings hides the workspace header, so it is the one shape that reserves
+  // no room for it — the same split SidebarLayout's contexts already make.
+  assert.match(skeleton, /NO_HEADER_OFFSET = new Set\(\['settings'\]\)/);
 });
 
 test('losing the connection is visible, persistently', async () => {

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
-import { Counter } from '@/components/ui';
+import { Counter, Skeleton } from '@/components/ui';
 import {
   Folder, Users, MessageSquare, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
@@ -149,16 +149,23 @@ export default function WorkspaceSidebar() {
                   /* ── Skeleton: доки не приїхали дані організації, краще
                      нічого не показувати, ніж "Company name" / бите лого ── */
                   <>
-                    <div className="w-[32px] h-[32px] rounded-[8px] shrink-0 animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                    {/* `--sb-hover` is rgba(255,255,255,0.04) on a dark sidebar
+                        — four percent of white, which is a hover tint and not
+                        a shape. Drawn with it, the skeleton was invisible often
+                        enough that the corner just looked empty. The kit's
+                        `sidebar` tone mixes from the sidebar's own text colour,
+                        so it stays legible on the dark, light and custom
+                        themes alike. */}
+                    <Skeleton preset="logo" tone="sidebar" className="shrink-0" />
                     {/* Той самий розклад висот (16px + 20px), що й у реального
                         контенту нижче — щоб перехід скелетон → справжні дані
                         не смикав layout ні на піксель. */}
-                    <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
+                    <div className="flex flex-1 flex-col mt-[-2px] min-w-0 ml-[12px]">
                       <div className="h-[16px] flex items-center">
-                        <div className="h-[10px] w-[84px] rounded-full animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                        <Skeleton preset="caption" width="wide" tone="sidebar" />
                       </div>
                       <div className="h-[20px] flex items-center">
-                        <div className="h-[10px] w-[56px] rounded-full animate-pulse" style={{ backgroundColor: 'var(--sb-hover, rgba(128,128,128,0.18))' }} />
+                        <Skeleton preset="caption" width="half" tone="sidebar" style={{ animationDelay: '120ms' }} />
                       </div>
                     </div>
                   </>

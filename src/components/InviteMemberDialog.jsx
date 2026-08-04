@@ -118,7 +118,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
         {tab === 'email' ? (
           <form onSubmit={handleInvite} className="flex flex-col gap-3">
             <Label>Email учасника</Label>
-            <div className="relative">
+            <div className="flex gap-2">
               <Input
                 autoFocus
                 size="md"
@@ -135,7 +135,6 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
                 composition="invite-action"
                 loading={inviting}
                 disabled={!email.trim() || inviting || sent}
-                className="absolute right-[6px] top-[6px]"
                 icon={sent ? Check : null}
               >
                 {sent ? 'Надіслано' : 'Запросити'}

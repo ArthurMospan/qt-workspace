@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow, Tabs } from '@/components/ui';
+import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, Skeleton, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow, Tabs } from '@/components/ui';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import TextAction from '@/components/ui/TextAction';
@@ -50,6 +50,13 @@ const VARIANT_BASE = {
   Counter: (props) => <Counter value={3} {...props} />,
   Alert: (props) => <Alert {...props}>Повідомлення</Alert>,
   LoadingSpinner: (props) => <LoadingSpinner {...props} />,
+  // Given a width in the cell so a percentage role has something to be a
+  // percentage of, and a fixed height so `panel` does not swallow the grid.
+  Skeleton: (props) => (
+    <span className="flex h-[40px] w-[76px] items-center">
+      <Skeleton {...props} />
+    </span>
+  ),
   ToggleSwitch: (props) => <ToggleSwitch checked onChange={() => {}} {...props} />,
   Segmented: (props) => (
     <Segmented value="a" onChange={() => {}} options={[{ value: 'a', label: 'Один' }, { value: 'b', label: 'Два' }]} {...props} />
@@ -127,10 +134,11 @@ const VARIANT_ELSEWHERE = {
   TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',
   ChatComposerDock: 'Прикріплений до низу екрана — див. «Chat Composer Dock»',
   SidebarLayout: 'Каркас цілого екрана — див. «SidebarLayout — 3 контексти»',
+  PageSkeleton: 'Форма цілого екрана — див. «Skeletons»',
 };
 
 // A dark value needs a dark backdrop to be visible at all.
-const NEEDS_DARK = /inverse|overlay|auth-close/;
+const NEEDS_DARK = /inverse|overlay|auth-close|sidebar/;
 
 function VariantCell({ component, prop, value, count, previewed }) {
   const render = VARIANT_BASE[component];

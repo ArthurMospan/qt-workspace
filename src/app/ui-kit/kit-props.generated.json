@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 89,
-    "props": 626,
-    "documentedProps": 626,
+    "components": 91,
+    "props": 633,
+    "documentedProps": 633,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3371,6 +3371,34 @@
         }
       ]
     },
+    "PageSkeleton": {
+      "file": "src/components/ui/Feedback/PageSkeleton.jsx",
+      "summary": "The placeholder a route shows while it loads, in the shape of the screen that is coming.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'board'",
+          "type": "'board'|'cards'|'analytics'|'calendar'|'list'|'rail'|'settings'",
+          "values": [
+            "analytics",
+            "board",
+            "calendar",
+            "cards",
+            "list",
+            "rail",
+            "settings"
+          ],
+          "description": "Which screen is arriving."
+        }
+      ]
+    },
     "PendingChatAttachments": {
       "file": "src/components/ui/Chat/ChatAttachmentList.jsx",
       "summary": "The same grid, before the message is sent: local files that can still be removed.",
@@ -4125,6 +4153,69 @@
           "type": "number|string",
           "values": [],
           "description": "Rail width, where the context allows it to differ."
+        }
+      ]
+    },
+    "Skeleton": {
+      "file": "src/components/ui/Feedback/Skeleton.jsx",
+      "summary": "The kit's loading placeholder. One block, in a named shape. It carries no dimensions of its own: `preset`, `width` and `tone` all resolve in `globals.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only — never its own size."
+        },
+        {
+          "name": "preset",
+          "default": "'text'",
+          "type": "'caption'|'text'|'title'|'heading'|'control'|'field'|'avatar'|'icon'|'logo'|'card'|'tile'|'chart'|'panel'",
+          "values": [
+            "avatar",
+            "caption",
+            "card",
+            "chart",
+            "control",
+            "field",
+            "heading",
+            "icon",
+            "logo",
+            "panel",
+            "text",
+            "tile",
+            "title"
+          ],
+          "description": "What the arriving content is; decides height and radius."
+        },
+        {
+          "name": "style",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "Animation delay only, so a row of blocks does not sweep as one slab."
+        },
+        {
+          "name": "tone",
+          "default": "'default'",
+          "type": "'default'|'sidebar'",
+          "values": [
+            "default",
+            "sidebar"
+          ],
+          "description": "Which surface it sits on; `sidebar` follows the sidebar's theme."
+        },
+        {
+          "name": "width",
+          "default": "'full'",
+          "type": "'full'|'wide'|'half'|'short'",
+          "values": [
+            "full",
+            "half",
+            "short",
+            "wide"
+          ],
+          "description": "Share of the line it occupies. Ignored by the square presets."
         }
       ]
     },

@@ -77,12 +77,18 @@ test('a composition can claim the control padding, and two of them do', () => {
   assert.match(globals, /\.ui-field \{ --ui-control-px: 12px; \}/);
   assert.match(globals, /\.ui-field\[data-ui-leading='icon'\] \{ --ui-control-pl: 36px; \}/);
 
-  // The two defects the revision recorded, now delivered. The invite field's
-  // room is no longer a guess: it is the width its button is given, plus the
-  // offset it sits at and one gap.
-  assert.match(globals, /data-ui-composition='invite-field'\] \{[^}]*--ui-control-pr: 146px;[^}]*\}/);
-  assert.match(globals, /data-ui-composition='invite-action'\] \{[^}]*width: 128px;[^}]*\}/);
   assert.match(globals, /data-ui-composition='inline-edit'\] \{[^}]*--ui-control-pr: 54px;[^}]*\}/);
+
+  // The invite field no longer reserves room for a button inside it, because
+  // the button is no longer inside it. Both halves state the same height and
+  // radius, and neither declares a width — a concrete width in this shared
+  // namespace is beaten by IconAction's own `w-[32px]` utility and could never
+  // reach the screen.
+  assert.match(
+    globals,
+    /data-ui-composition='invite-field'\],\s*\n\s*\.ui-control\[data-ui-composition='invite-action'\] \{[^}]*--ui-control-height: var\(--ui-composition-invite\);[^}]*\}/,
+  );
+  assert.doesNotMatch(globals, /data-ui-composition='invite-field'\][^}]*--ui-control-pr/);
 
   // The utilities that used to hold these values must not come back: one of
   // them in either component reinstates the whole problem.

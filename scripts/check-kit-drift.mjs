@@ -38,6 +38,9 @@ const VARIANT_PROP_NAMES = new Set([
   'align', 'appearance', 'bodyPadding', 'composition', 'context', 'density',
   'filterRole', 'gap', 'padding', 'preset', 'presentation', 'shape', 'size',
   'status', 'style', 'surface', 'titleContext', 'tone', 'variant', 'weight',
+  // Skeleton's share-of-the-line. Safe as a variant name: the only other
+  // `width=` in the workspace is next/image's, which is not a kit component.
+  'width',
 ]);
 
 // Positioning a component inside its parent is legitimate composition. Owning
@@ -207,6 +210,46 @@ export function checkKitDrift() {
             if (!declared[prop].includes(value)) {
               undeclaredValues.push({ component, prop, value, location: where, routes });
             }
+          }
+        }
+      },
+    });
+  }
+
+  // A second pass over the kit's own files, counting usage and nothing else.
+  //
+  // A variant a kit component ships on behalf of the product is shipped. The
+  // first pass cannot see that: it walks the workspace graph with the shared UI
+  // directory excluded, so `PageSkeleton` rendering thirteen `Skeleton` presets
+  // across ten routes looked like thirteen variants nobody uses. The same
+  // reasoning the contract already applies to whole components — TopHeader
+  // renders Breadcrumb, so Breadcrumb is used — applied to their values.
+  //
+  // Usage only. `undeclaredValues`, `unknownProps` and `chromeOverrides` are
+  // findings about call sites, and a kit component is not one.
+  for (const file of collectWorkspaceUiFiles({ includeSharedUi: true })) {
+    if (!toPosix(file).includes('src/components/ui/')) continue;
+    let ast;
+    try {
+      ast = parseSource(readFileSync(file, 'utf8'));
+    } catch {
+      continue;
+    }
+    // Inside the kit a sibling is reached relatively (`./Skeleton`), not through
+    // the `@/components/ui` barrel, so the element name is the component name.
+    traverse(ast, {
+      JSXOpeningElement(path) {
+        const component = jsxName(path.node.name);
+        const declared = manifest[component];
+        if (!declared) return;
+        for (const attribute of path.node.attributes || []) {
+          if (attribute.type !== 'JSXAttribute') continue;
+          const prop = attribute.name.name;
+          if (!VARIANT_PROP_NAMES.has(prop) || !(prop in declared)) continue;
+          for (const value of literalValues(attribute.value)) {
+            if (!declared[prop].includes(value)) continue;
+            const key = `${component}.${prop}.${value}`;
+            usage[key] = (usage[key] || 0) + 1;
           }
         }
       },

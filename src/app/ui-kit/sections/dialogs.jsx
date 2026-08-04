@@ -67,6 +67,14 @@ const DIALOG_VARIANTS = [
     open: 'Команда → «+» у шапці списку',
   },
   {
+    id: 'horizontal',
+    label: 'bodyPadding="horizontal"',
+    props: { bodyPadding: 'horizontal', size: 'sm' },
+    note: 'Підтвердження без тексту: сам заголовок уже все сказав, тож вертикального відступу під тілом немає — лишається тільки бічний.',
+    where: 'Будь-яке підтвердження без пояснення — ConfirmProvider',
+    open: 'Проєкт → «Видалити проєкт»',
+  },
+  {
     id: 'sheet',
     label: 'presentation="sheet"',
     props: { presentation: 'sheet', size: 'sm', bodyPadding: 'spacious' },

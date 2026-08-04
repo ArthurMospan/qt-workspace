@@ -169,13 +169,15 @@ test('QUI-137 makes the inline add control look like a button', async () => {
 test('QUI-138 says where each rare Dialog variant actually lives', async () => {
   const kit = await readKitShowcase();
   const list = kit.slice(kit.indexOf('const DIALOG_VARIANTS'), kit.indexOf('function DialogsSection'));
-  for (const id of ['flush', 'responsive', 'spacious', 'invite', 'sheet', 'status']) {
+  for (const id of ['flush', 'responsive', 'spacious', 'invite', 'horizontal', 'sheet', 'status']) {
     assert.match(list, new RegExp(`id: '${id}'`), `${id} must stay listed`);
   }
-  // Six bare buttons labelled with prop syntax read as options invented for the
-  // catalogue; each one now names the screen it ships on and how to open it.
-  assert.equal([...list.matchAll(/\bwhere:/g)].length, 6);
-  assert.equal([...list.matchAll(/\bopen:/g)].length, 6);
+  // Bare buttons labelled with prop syntax read as options invented for the
+  // catalogue; each one now names the screen it ships on and how to open it —
+  // every one of them, however many there are.
+  const declared = [...list.matchAll(/\bid: '/g)].length;
+  assert.equal([...list.matchAll(/\bwhere:/g)].length, declared);
+  assert.equal([...list.matchAll(/\bopen:/g)].length, declared);
   assert.match(kit, /Де на сайті:/);
 });
 
