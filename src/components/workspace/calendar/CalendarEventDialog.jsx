@@ -82,7 +82,7 @@ function localTimeValue(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function calendarEventFormInitialValue(event, initialStart, currentUserId) {
+export function calendarEventFormInitialValue(event, initialStart, currentUserId, initialParticipantIds = []) {
   const editableStart = event?.sourceEventId ? event.seriesStartAt : event?.startAt;
   const editableEnd = event?.sourceEventId ? event.seriesEndAt : event?.endAt;
   const start = editableStart ? new Date(editableStart) : new Date(initialStart || Date.now());
@@ -103,7 +103,10 @@ export function calendarEventFormInitialValue(event, initialStart, currentUserId
     meetingUrl: event?.meetingUrl || '',
     projectId: event?.projectId || '',
     visibility: event?.visibility || 'team',
-    participantIds: event?.participantIds || (currentUserId ? [currentUserId] : []),
+    // A new event opened from a colleague's profile starts with the two of you
+    // on it; an existing event keeps whoever it already has.
+    participantIds: event?.participantIds
+      || [...new Set([currentUserId, ...initialParticipantIds].filter(Boolean))],
     allDay: event?.allDay === true,
     startDate: localDateValue(start),
     startTime: localTimeValue(start),
@@ -334,6 +337,7 @@ export default function CalendarEventDialog({
   isOpen,
   event,
   initialStart,
+  initialParticipantIds,
   members,
   projects,
   currentUserId,
@@ -346,7 +350,7 @@ export default function CalendarEventDialog({
   onCancelEdit,
 }) {
   const confirm = useConfirm();
-  const [form, setForm] = useState(() => calendarEventFormInitialValue(event, initialStart, currentUserId));
+  const [form, setForm] = useState(() => calendarEventFormInitialValue(event, initialStart, currentUserId, initialParticipantIds));
   const [mode, setMode] = useState(initialMode || (event ? 'details' : 'edit'));
   const [saving, setSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);

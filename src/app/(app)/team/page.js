@@ -2,6 +2,7 @@
 
 // src/app/workspace/team/page.js
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
@@ -30,6 +31,10 @@ export default function TeamPage() {
   const { positions = [] } = useWorkflowConfig();
   
   const [showInviteModal, setShowInviteModal] = useState(false);
+  // QUI-104. Search can now answer with a person, and an answer has to land on
+  // that person rather than on whoever happens to be first in the list.
+  const searchParams = useSearchParams();
+  const requestedMemberId = searchParams.get('member') || '';
   const teamSearch = useWorkspaceStore(s => s.teamSearch) || '';
   const [selectedUid, setSelectedUid] = useState(null);
   // Mobile single-pane mode: 'list' (учасники) або 'detail' (профіль); md+ показує обидві
@@ -48,6 +53,15 @@ export default function TeamPage() {
     (m.name || '').toLowerCase().includes(teamSearch.toLowerCase()) ||
     (m.email || '').toLowerCase().includes(teamSearch.toLowerCase())
   ), [members, teamSearch]);
+
+  useEffect(() => {
+    if (loading || !requestedMemberId) return;
+    if (!members.some(member => (member.id || member.uid) === requestedMemberId)) return;
+    queueMicrotask(() => {
+      setSelectedUid(requestedMemberId);
+      setMobilePane('detail');
+    });
+  }, [loading, members, requestedMemberId]);
 
   // Auto-select first member on initial load
   useEffect(() => {

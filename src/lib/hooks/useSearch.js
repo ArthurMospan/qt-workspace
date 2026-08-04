@@ -2,8 +2,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { auth } from '@/lib/firebase';
 
+// QUI-104. `results` is still the task list, so the header's search dropdown is
+// unchanged; people, projects and events arrive beside it for callers that show
+// more than tasks.
+const EMPTY = { people: [], projects: [], events: [] };
+
 export function useSearch() {
   const [results, setResults] = useState([]);
+  const [matches, setMatches] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const activeRequest = useRef(null);
   const pendingDelay = useRef(null);
@@ -26,6 +32,7 @@ export function useSearch() {
       }
       activeRequest.current?.abort();
       setResults([]);
+      setMatches(EMPTY);
       setLoading(false);
       return;
     }
@@ -56,10 +63,16 @@ export function useSearch() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Search failed');
       setResults(result.results || []);
+      setMatches({
+        people: result.people || [],
+        projects: result.projects || [],
+        events: result.events || [],
+      });
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error('[useSearch]', err);
       setResults([]);
+      setMatches(EMPTY);
     } finally {
       if (activeRequest.current === controller) setLoading(false);
     }
@@ -76,8 +89,9 @@ export function useSearch() {
     }
     activeRequest.current?.abort();
     setResults([]);
+    setMatches(EMPTY);
     setLoading(false);
   }, []);
 
-  return { results, loading, search, clear };
+  return { results, matches, loading, search, clear };
 }

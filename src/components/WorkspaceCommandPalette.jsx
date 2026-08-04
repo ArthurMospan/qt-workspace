@@ -19,14 +19,15 @@ import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 
 const PERMISSIONS = ['create:project'];
 
-// Typing into a field must never be intercepted, and neither must a shortcut the
-// browser owns. ⌘K/Ctrl+K is the convention; "?" opens the cheat sheet, but only
-// when it is not being typed into something.
-function isTypingTarget(target) {
-  if (!target) return false;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
-}
+// QUI-103. ⌘K/Ctrl+K is the only global keystroke this file claims.
+//
+// "?" used to open the shortcuts sheet, guarded by a check that the event was
+// not aimed at an input. That guard cannot hold: a question mark is ordinary
+// punctuation, and every place it is typed which is not an `<input>`, a
+// `<textarea>` or a contenteditable — a chat composer's own key handling, a
+// dialog that has focus on itself, the page between two clicks — swallowed the
+// character and put a help panel on screen instead. A printable character is
+// nobody's shortcut. The sheet is still reachable from the palette itself.
 
 export default function WorkspaceCommandPalette() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function WorkspaceCommandPalette() {
   const [open, setOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [orgSwitcherOpen, setOrgSwitcherOpen] = useState(false);
-  const { results, loading, search, clear } = useSearch();
+  const { results, matches, loading, search, clear } = useSearch();
 
   const activeTimer = useWorkspaceStore(state => state.activeTimer);
   const stopTimer = useWorkspaceStore(state => state.stopTimer);
@@ -51,11 +52,6 @@ export default function WorkspaceCommandPalette() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         setOpen(value => !value);
-        return;
-      }
-      if (event.key === '?' && !isTypingTarget(event.target) && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        setShortcutsOpen(true);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -89,6 +85,7 @@ export default function WorkspaceCommandPalette() {
         onClose={() => setOpen(false)}
         commands={commands}
         issues={results}
+        matches={matches}
         searching={loading}
         projects={projects}
         onQueryChange={onQueryChange}

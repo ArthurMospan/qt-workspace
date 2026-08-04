@@ -3,7 +3,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import Pill from '@/components/ui/DataDisplay/Pill';
+import Counter from '@/components/ui/DataDisplay/Counter';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 
@@ -38,15 +38,21 @@ export default function MemberRail({
 }) {
   return (
     <>
-      {/* 32px from the top, like every other rail in the same shell. This was
-          `p-4`, so the team rail started its content 16px down while the chat
-          and settings rails started at 32px — a 16px jump every time somebody
-          switched between two screens the kit says share a frame. Measured on
-          all three: settings 32px, chat 35px, team 16px. */}
-      <div className="px-4 pt-[32px] pb-4 flex items-center justify-between shrink-0">
+      {/* QUI-107. 16px, not the 32px the other two rails open with.
+          Those 32px were copied here to stop the team rail's content starting
+          higher than chat's and settings' — but the three rails do not open
+          with the same thing. Chat and settings open with a 10px uppercase
+          caption; this one opens with a 16px heading and a counter beside it,
+          so the same 32px above a block twice as tall reads as a hole. The
+          heading itself now does the separating work the padding was doing. */}
+      <div className="px-4 pt-[16px] pb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="ui-type-dialog-title text-ink">{title}</h2>
-          <Pill appearance="outline" size="md">{members.length}</Pill>
+          {/* QUI-108. This was an outline `Pill` — a label component carrying a
+              number, drawn nowhere else in the product that way. The board
+              columns in «Мої завдання» already answer "how many are in this
+              list" with `Counter`, and a count is what this is. */}
+          <Counter value={members.length} size="sm" appearance="subtle" />
         </div>
         {action}
       </div>

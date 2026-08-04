@@ -247,3 +247,40 @@ test('both entry points to project settings offer the same capabilities', async 
   assert.match(projectPage, /handleArchiveProject[\s\S]{0,220}router\.push\('\/'\)/);
   assert.match(projectPage, /handleDeleteProject[\s\S]{0,220}router\.push\('\/'\)/);
 });
+
+// A colleague's profile offered two labelled buttons and hid the rest behind an
+// admin-only menu. Four actions with four words beside them read as a sentence
+// rather than a toolbar, and the loudest thing on the screen was the emergency
+// call — the one action nobody performs casually.
+test('a member profile offers four icon actions, with the emergency call in the menu', async () => {
+  const profile = await read('../src/components/profile/ProfileView.jsx');
+  const composer = await read('../src/components/CreateTaskModal.jsx');
+  const myTasks = await read('../src/app/(app)/my/page.js');
+  const calendar = await read('../src/app/(app)/calendar/page.js');
+  const eventDialog = await read('../src/components/workspace/calendar/CalendarEventDialog.jsx');
+
+  // Icons only: no labelled Button survives in the action row.
+  assert.doesNotMatch(profile, />\s*Написати\s*</);
+  assert.doesNotMatch(profile, />\s*Виклик\s*</);
+  for (const label of [
+    'Написати повідомлення',
+    'Створити завдання для учасника',
+    'Створити подію з учасником',
+    'Інші дії з учасником',
+  ]) {
+    assert.match(profile, new RegExp(`label="${label}"`), `${label} must be an icon action`);
+  }
+  // The call is still reachable, one level down, and marked as destructive.
+  assert.match(profile, /label: 'Екстрений виклик', icon: Zap, isDanger: true/);
+  // The menu is no longer admin-only, because it now carries an action every
+  // member has.
+  assert.match(profile, /\.\.\.\(isAdminOrOwner \? \[/);
+
+  // Both new actions land somewhere that knows what to do with them.
+  assert.match(profile, /\/my\?new=1&assignee=/);
+  assert.match(myTasks, /searchParams\.get\('assignee'\)/);
+  assert.match(composer, /initialAssignees\?\.length \? initialAssignees : f\.assignees/);
+  assert.match(profile, /\/calendar\?new=1&with=/);
+  assert.match(calendar, /searchParams\.get\('with'\)/);
+  assert.match(eventDialog, /initialParticipantIds/);
+});

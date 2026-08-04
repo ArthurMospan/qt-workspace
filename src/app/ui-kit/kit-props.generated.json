@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 91,
-    "props": 633,
-    "documentedProps": 633,
+    "props": 634,
+    "documentedProps": 634,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1456,6 +1456,13 @@
           "type": "object[]",
           "values": [],
           "description": "Search results to append as their own group."
+        },
+        {
+          "name": "matches",
+          "default": "",
+          "type": "{people: object[], projects: object[], events: object[]}",
+          "values": [],
+          "description": "The other kinds search found — people, projects, calendar events."
         },
         {
           "name": "onClose",

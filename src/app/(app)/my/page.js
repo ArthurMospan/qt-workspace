@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/my/page.js — My Tasks: Global Kanban Board & Sprints
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
@@ -69,6 +69,12 @@ export default function MyTasksPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const composerRequestedByUrl = searchParams.get('new') === '1';
+  // A member profile can ask for the composer with that member already on it.
+  const requestedAssignee = searchParams.get('assignee') || '';
+  const composerAssignees = useMemo(
+    () => (requestedAssignee ? [requestedAssignee] : null),
+    [requestedAssignee],
+  );
   const composerOpen = showCreateTaskModal || composerRequestedByUrl;
   const closeComposer = () => {
     setShowCreateTaskModal(false);
@@ -76,6 +82,7 @@ export default function MyTasksPage() {
     if (!composerRequestedByUrl) return;
     const next = new URLSearchParams(searchParams.toString());
     next.delete('new');
+    next.delete('assignee');
     router.replace(next.size ? `/my?${next}` : '/my', { scroll: false });
   };
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -255,6 +262,7 @@ export default function MyTasksPage() {
         isOpen={composerOpen}
         onClose={closeComposer}
         initialStatus={createTaskStatus}
+        initialAssignees={composerAssignees}
         onSubmit={async (formData) => {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');

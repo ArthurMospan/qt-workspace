@@ -157,8 +157,12 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
           <div className="relative no-nav flex items-center gap-[8px]">
             <ContextMenu
               onOpenChange={setMenuOpen}
+              // QUI-105. 32px, not 28px. This is the only control on a project
+              // card and it sits in a corner with nothing beside it to make a
+              // small target forgivable — `sm` is the size for dense toolbars,
+              // which this is the opposite of.
               trigger={
-                <IconAction label="Дії з проєктом" icon={MoreVertical} size="sm" appearance="quiet" />
+                <IconAction label="Дії з проєктом" icon={MoreVertical} size="md" appearance="quiet" />
               }
               items={[
                 // One entry, one dialog — the same one the project page opens.

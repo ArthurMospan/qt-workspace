@@ -19,7 +19,7 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 
 
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialAssignees = null }) {
   const { currentUser } = useAppContext();
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
@@ -72,10 +72,14 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       setForm(f => ({
         ...f,
         projectId: f.projectId || projects?.[0]?.id || '',
+        // Opened from a colleague's profile, the composer arrives with that
+        // colleague already on it — otherwise "create a task for them" means
+        // finding them again in a chip list.
+        assignees: initialAssignees?.length ? initialAssignees : f.assignees,
         status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
       }));
     });
-  }, [isOpen, initialStatus, visibleStatuses, projects]);
+  }, [isOpen, initialAssignees, initialStatus, visibleStatuses, projects]);
 
   useEffect(() => {
     if (isOpen && form.status) {

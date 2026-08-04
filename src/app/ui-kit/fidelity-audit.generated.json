@@ -498,12 +498,12 @@
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:138",
+      "location": "src/components/profile/ProfileView.jsx:142",
       "tag": "div",
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:312",
+      "location": "src/components/profile/ProfileView.jsx:327",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
     },
@@ -528,27 +528,27 @@
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:203",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:206",
       "tag": "div",
       "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:214",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:217",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:219",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:222",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:251",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:254",
       "tag": "div",
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:601",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:605",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },

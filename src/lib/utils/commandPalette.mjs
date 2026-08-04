@@ -6,13 +6,15 @@
 // already has a route table, a project list, a permission helper and a search
 // API; this is the layer that lets one keystroke reach all four.
 
-export const COMMAND_GROUPS = ['action', 'navigation', 'project', 'issue'];
+export const COMMAND_GROUPS = ['action', 'navigation', 'project', 'issue', 'person', 'event'];
 
 export const GROUP_LABELS = {
   action: 'Дії',
   navigation: 'Перейти',
   project: 'Проєкти',
   issue: 'Завдання',
+  person: 'Люди',
+  event: 'Події',
 };
 
 // Latin spellings sit next to the Ukrainian ones on purpose. People type with
@@ -69,7 +71,8 @@ const ACTIONS = [
   {
     id: 'action-shortcuts',
     label: 'Гарячі клавіші',
-    hint: '?',
+    // QUI-103. The hint used to read "?", advertising a global shortcut that
+    // ate every question mark anybody typed. The palette is the way in now.
     icon: 'keyboard',
     action: 'open-shortcuts',
     keywords: 'garyachi klavishi shortcuts keyboard help dopomoga',
@@ -173,12 +176,55 @@ export function issueCommands(results = [], projects = []) {
   }));
 }
 
+// QUI-104. The other three kinds the server now answers with. Projects appear
+// here as well as in `buildCommands` — the static list only knows the projects
+// already loaded in the client and matches their names, while these are matched
+// on the server by description and issue prefix too. `groupCommands` renders one
+// «Проєкти» group, and identical ids collapse rather than doubling up.
+const dedupe = commands => {
+  const seen = new Set();
+  return commands.filter(command => !seen.has(command.id) && seen.add(command.id));
+};
+
+export function searchCommands({ people = [], projects = [], events = [] } = {}) {
+  return [
+    ...people.slice(0, 6).map(person => ({
+      id: `person-${person.id}`,
+      group: 'person',
+      label: person.name || 'Учасник',
+      hint: person.email || '',
+      href: `/team?member=${encodeURIComponent(person.id)}`,
+      icon: 'user',
+    })),
+    ...projects.slice(0, 6).map(project => ({
+      id: `project-${project.id}`,
+      group: 'project',
+      label: project.name || 'Проєкт',
+      href: `/${project.id}`,
+      icon: 'folder',
+    })),
+    ...events.slice(0, 6).map(event => ({
+      id: `event-${event.id}`,
+      group: 'event',
+      label: event.title || 'Подія',
+      hint: event.startAt
+        ? new Date(event.startAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })
+        : '',
+      href: `/calendar/event/${event.id}`,
+      icon: 'calendar',
+    })),
+  ];
+}
+
+export { dedupe as dedupeCommands };
+
 // Grouped for rendering, in the catalogue's own order, with the flat index each
 // row needs for keyboard selection.
 export function groupCommands(commands) {
   const groups = [];
+  const unique = dedupe(commands || []);
   for (const group of COMMAND_GROUPS) {
-    const items = (commands || []).filter(command => command.group === group);
+    const items = unique.filter(command => command.group === group);
     if (items.length) groups.push({ group, label: GROUP_LABELS[group], items });
   }
   return groups;

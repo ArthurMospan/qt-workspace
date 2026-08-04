@@ -4,15 +4,15 @@ import Dialog from '../Dialog';
 
 // ─── UI Kit: KeyboardShortcutsDialog ─────────────────────────────────────────
 // The app had shortcuts and no way to find out about them, which makes a
-// shortcut a secret rather than a feature. One list, opened with "?", which is
-// itself the first entry.
+// shortcut a secret rather than a feature. One list, opened from the command
+// palette — QUI-103 took "?" away, because a printable character cannot be a
+// global shortcut without eating the character.
 
 export const SHORTCUT_GROUPS = [
   {
     label: 'Скрізь',
     items: [
       { keys: ['⌘', 'K'], label: 'Командна палітра', alt: ['Ctrl', 'K'] },
-      { keys: ['?'], label: 'Цей список' },
       { keys: ['Esc'], label: 'Закрити вікно або панель' },
     ],
   },

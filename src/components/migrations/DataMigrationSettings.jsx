@@ -149,12 +149,13 @@ export default function DataMigrationSettings({
       </Card>
 
       <section>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h3 className="ui-type-compact-title text-ink">Доступно зараз</h3>
-            <p className="mt-0.5 text-[11px] text-muted">Повний керований імпорт із попередньою перевіркою.</p>
-          </div>
-          <Pill tone="success" size="lg">1 джерело готове</Pill>
+        {/* QUI-106. There was a green «1 джерело готове» pill here. The one
+            source is on the screen directly below it, with its own «Готово до
+            імпорту» badge — the pill counted what the reader could already see,
+            in the loudest colour on the page. */}
+        <div className="mb-3">
+          <h3 className="ui-type-compact-title text-ink">Доступно зараз</h3>
+          <p className="mt-0.5 text-[11px] text-muted">Повний керований імпорт із попередньою перевіркою.</p>
         </div>
 
         <YouTrackImportCard

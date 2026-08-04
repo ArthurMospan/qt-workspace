@@ -1,20 +1,39 @@
+// QUI-104. Search used to read one collection — `issues` — and answer with
+// tasks only. Typing a colleague's name, a project's name or the title of a
+// meeting therefore returned nothing at all, which reads as "search is broken"
+// rather than "search does not cover that". It now answers across the four
+// things a workspace is made of: tasks, people, projects and calendar events.
+//
+// Each kind keeps its own visibility rule. Widening what search *finds* must
+// never widen what a member can *see* — a plain member could once read the
+// titles of tasks in projects they cannot open, and that regression is not
+// worth repeating three more times.
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
-function scoreIssue(issue, term) {
-  const key = (issue.issueKey || '').toLowerCase();
-  const title = (issue.title || '').toLowerCase();
-  const description = (issue.description || '').toLowerCase();
-  const projectId = (issue.projectId || '').toLowerCase();
-  if (key === term) return 100;
-  if (key.startsWith(term)) return 80;
-  if (title.startsWith(term)) return 60;
-  if (key.includes(term)) return 50;
-  if (title.includes(term)) return 40;
-  if (projectId.includes(term)) return 30;
-  if (description.includes(term)) return 20;
+// One ladder for every kind, so a project called "Design" and a task called
+// "Design" rank against each other consistently. Fields are weighted by how
+// deliberately somebody types them: an exact key beats a title, a title beats
+// prose buried in a description.
+const WEIGHTS = { key: [100, 80, 50], name: [90, 60, 40], body: [0, 0, 20] };
+
+function scoreField(value, term, ladder) {
+  const text = String(value || '').toLowerCase();
+  if (!text) return 0;
+  if (text === term) return ladder[0];
+  if (text.startsWith(term)) return ladder[1];
+  if (text.includes(term)) return ladder[2];
   return 0;
+}
+
+function scoreIssue(issue, term) {
+  return Math.max(
+    scoreField(issue.issueKey, term, WEIGHTS.key),
+    scoreField(issue.title, term, WEIGHTS.name),
+    scoreField(issue.description, term, WEIGHTS.body),
+    scoreField(issue.projectId, term, [0, 0, 30]),
+  );
 }
 
 export async function GET(request) {
@@ -24,34 +43,43 @@ export async function GET(request) {
     const term = (searchParams.get('q') || '').trim().toLowerCase().slice(0, 100);
     const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    if (term.length < 2) return NextResponse.json({ results: [] });
+    if (term.length < 2) return NextResponse.json({ results: [], people: [], projects: [], events: [] });
     if (!(await enforceRateLimit('search', authorization.user.uid, 60, 60))) {
       return NextResponse.json({ error: 'Too many search requests' }, { status: 429 });
     }
 
     const db = getAdminDb();
+    const uid = authorization.user.uid;
     // Search must honour the same per-project access model as the rest of the
     // app: a plain member could previously find the titles of tasks in projects
     // they are not on and cannot open. Owners/admins still see everything.
     const isPrivileged = ['owner', 'admin'].includes(authorization.membership?.role);
-    const [snap, projectsSnapshot] = await Promise.all([
+    const [issuesSnapshot, projectsSnapshot, membershipsSnapshot, eventsSnapshot] = await Promise.all([
       db.collection('issues')
         .where('organizationId', '==', organizationId)
         .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt')
         .get(),
-      isPrivileged
-        ? Promise.resolve(null)
-        : db.collection('projects')
-          .where('organizationId', '==', organizationId)
-          .where('team', 'array-contains', authorization.user.uid)
-          .select()
-          .get(),
+      db.collection('projects')
+        .where('organizationId', '==', organizationId)
+        .select('name', 'description', 'issuePrefix', 'team', 'status')
+        .get(),
+      db.collection('orgMemberships').where('orgId', '==', organizationId).get(),
+      db.collection('calendarEvents')
+        .where('organizationId', '==', organizationId)
+        .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'startAt')
+        .get(),
     ]);
-    const visibleProjectIds = projectsSnapshot
-      ? new Set(projectsSnapshot.docs.map(document => document.id))
-      : null;
 
-    const results = snap.docs
+    const projectRecords = projectsSnapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+    const visibleProjectIds = isPrivileged
+      ? null
+      : new Set(
+        projectRecords
+          .filter(project => Array.isArray(project.team) && project.team.includes(uid))
+          .map(project => project.id),
+      );
+
+    const results = issuesSnapshot.docs
       .map(item => {
         const issue = item.data();
         return { id: item.id, ...issue, score: scoreIssue(issue, term) };
@@ -69,7 +97,83 @@ export async function GET(request) {
         assigneeIds: Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [],
       }));
 
-    return NextResponse.json({ results }, { headers: { 'Cache-Control': 'private, no-store' } });
+    // An archived project is not somewhere to be sent, so it is not an answer.
+    const projects = projectRecords
+      .filter(project => project.status !== 'archived')
+      .filter(project => !visibleProjectIds || visibleProjectIds.has(project.id))
+      .map(project => ({
+        project,
+        score: Math.max(
+          scoreField(project.name, term, WEIGHTS.name),
+          scoreField(project.issuePrefix, term, WEIGHTS.key),
+          scoreField(project.description, term, WEIGHTS.body),
+        ),
+      }))
+      .filter(entry => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(entry => ({ id: entry.project.id, name: entry.project.name || 'Проєкт' }));
+
+    // Membership is organization-wide, and so is the team list every member can
+    // already open — so people carry no extra visibility rule of their own.
+    const memberships = membershipsSnapshot.docs.map(document => document.data());
+    const profiles = memberships.length
+      ? await db.getAll(...memberships.map(membership => db.collection('users').doc(membership.userId)))
+      : [];
+    const people = memberships
+      .map((membership, index) => {
+        const profile = profiles[index]?.exists ? profiles[index].data() : {};
+        return {
+          membership,
+          profile,
+          score: Math.max(
+            scoreField(profile.name, term, WEIGHTS.name),
+            scoreField(profile.email, term, WEIGHTS.name),
+          ),
+        };
+      })
+      .filter(entry => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(entry => ({
+        id: entry.membership.userId,
+        name: entry.profile.name || entry.profile.email || 'Учасник',
+        email: entry.profile.email || '',
+      }));
+
+    // The same visibility rule the calendar itself applies: a private event is
+    // the organizer's alone, a participant-only event reaches its participants.
+    const events = eventsSnapshot.docs
+      .map(document => ({ id: document.id, ...document.data() }))
+      .filter(event => (
+        event.visibility === 'private'
+          ? event.organizerId === uid
+          : event.visibility !== 'participants'
+            || event.organizerId === uid
+            || event.participantIds?.includes(uid)
+            || isPrivileged
+      ))
+      .map(event => ({
+        event,
+        score: Math.max(
+          scoreField(event.title, term, WEIGHTS.name),
+          scoreField(event.location, term, WEIGHTS.body),
+          scoreField(event.description, term, WEIGHTS.body),
+        ),
+      }))
+      .filter(entry => entry.score > 0)
+      .sort((a, b) => b.score - a.score || (b.event.startAt?.toMillis?.() || 0) - (a.event.startAt?.toMillis?.() || 0))
+      .slice(0, 8)
+      .map(entry => ({
+        id: entry.event.id,
+        title: entry.event.title || 'Подія',
+        startAt: entry.event.startAt?.toDate?.()?.toISOString() || null,
+      }));
+
+    return NextResponse.json(
+      { results, people, projects, events },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (error) {
     return routeErrorResponse(error, { context: 'search', fallbackMessage: 'Search failed' });
   }

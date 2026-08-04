@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CakeSlice, CalendarDays, Clock3, LockKeyhole, Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
-import { Surface, Card, Badge, StatusBadge, Button, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
+import { CakeSlice, CalendarDays, CalendarPlus, CheckSquare, Clock3, LockKeyhole, Mail, MapPin, Phone, MessageCircle, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { Surface, Card, Badge, StatusBadge, Button, IconAction, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -114,9 +114,13 @@ export default function ProfileView({ user, onClose }) {
     { id: 'events', label: `Події (${agendaEvents.length})` },
   ];
 
-  const adminMenu = [
-    { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/settings?section=team&user=${uid}`); } },
-    { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&teamMember=${uid}`); } }
+  const memberMenu = [
+    { label: 'Екстрений виклик', icon: Zap, isDanger: true, onClick: handleEmergencyCall },
+    ...(isAdminOrOwner ? [
+      { isDivider: true },
+      { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/settings?section=team&user=${uid}`); } },
+      { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&teamMember=${uid}`); } },
+    ] : []),
   ];
 
   return (
@@ -153,40 +157,51 @@ export default function ProfileView({ user, onClose }) {
             </p>
           </div>
 
-          {/* Actions */}
+          {/* Actions — icons only.
+              Three of these are one word each and the fourth was two, so the
+              row read as a sentence of buttons rather than a set of actions;
+              adding «Завдання» and «Подія» as labelled buttons would have made
+              it four words wide. The emergency call moved into the menu: it is
+              the one action here nobody performs by accident, and it was the
+              loudest thing on a colleague's profile. */}
           {!isMe && (
             <div className="flex items-center gap-2 mt-4">
-              <Button
+              <IconAction
+                label="Написати повідомлення"
+                icon={MessageCircle}
+                size="lg"
+                appearance="soft"
                 onClick={() => {
                   if (onClose) onClose();
                   router.push(`/chat?dm=${encodeURIComponent(uid)}`);
                 }}
-                style="secondary"
-                color="dark"
+              />
+              <IconAction
+                label="Створити завдання для учасника"
+                icon={CheckSquare}
                 size="lg"
-                icon={MessageCircle}
-              >
-                Написати
-              </Button>
-              <Button
-                onClick={handleEmergencyCall}
-                style="outline"
-                color="red"
+                appearance="soft"
+                onClick={() => {
+                  if (onClose) onClose();
+                  router.push(`/my?new=1&assignee=${encodeURIComponent(uid)}`);
+                }}
+              />
+              <IconAction
+                label="Створити подію з учасником"
+                icon={CalendarPlus}
                 size="lg"
-                icon={Zap}
-                surface="danger-subtle"
-              >
-                Виклик
-              </Button>
-              
-              {isAdminOrOwner && (
-                <ContextMenu
-                  trigger={
-                    <Button style="secondary" color="dark" size="icon-lg" icon={MoreVertical} aria-label="Дії з учасником" />
-                  }
-                  items={adminMenu}
-                />
-              )}
+                appearance="soft"
+                onClick={() => {
+                  if (onClose) onClose();
+                  router.push(`/calendar?new=1&with=${encodeURIComponent(uid)}`);
+                }}
+              />
+              <ContextMenu
+                trigger={
+                  <IconAction label="Інші дії з учасником" icon={MoreVertical} size="lg" appearance="soft" />
+                }
+                items={memberMenu}
+              />
             </div>
           )}
         </div>

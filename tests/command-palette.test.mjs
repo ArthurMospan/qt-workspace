@@ -9,6 +9,7 @@ import {
   groupCommands,
   issueCommands,
   rankCommands,
+  searchCommands,
 } from '../src/lib/utils/commandPalette.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
@@ -93,6 +94,11 @@ test('grouping keeps the catalogue order and flattens to the keyboard order', ()
   const commands = [
     ...buildCommands({ projects, allowedPermissions: ['create:project'] }),
     ...issueCommands([{ id: 'i1', title: 'Задача', projectId: 'p1' }], projects),
+    ...searchCommands({
+      people: [{ id: 'u1', name: 'Артур Моспан', email: 'arthur@quickteam.app' }],
+      projects: [],
+      events: [{ id: 'e1', title: 'Планерка', startAt: '2026-08-14T09:00:00.000Z' }],
+    }),
   ];
   const groups = groupCommands(commands);
   assert.deepEqual(groups.map(entry => entry.group), COMMAND_GROUPS);
@@ -102,7 +108,47 @@ test('grouping keeps the catalogue order and flattens to the keyboard order', ()
   assert.equal(flat.length, commands.length);
   // The flat order is what ArrowDown walks, so it must match what is rendered.
   assert.equal(flat[0].group, 'action');
-  assert.equal(flat[flat.length - 1].group, 'issue');
+  assert.equal(flat[flat.length - 1].group, 'event');
+});
+
+// QUI-104. Typing a colleague's name found nothing at all, because search read
+// one collection and that collection was `issues`.
+test('search answers with people, projects and events, not only tasks', () => {
+  const commands = searchCommands({
+    people: [{ id: 'u1', name: 'Артур Моспан', email: 'arthur@quickteam.app' }],
+    projects: [{ id: 'p9', name: 'Редизайн сайту' }],
+    events: [{ id: 'e1', title: 'Планерка', startAt: '2026-08-14T09:00:00.000Z' }],
+  });
+
+  const byGroup = Object.fromEntries(commands.map(command => [command.group, command]));
+  assert.equal(byGroup.person.label, 'Артур Моспан');
+  // A person result has to land on that person, not on the top of the list.
+  assert.equal(byGroup.person.href, '/team?member=u1');
+  assert.equal(byGroup.project.href, '/p9');
+  assert.equal(byGroup.event.href, '/calendar/event/e1');
+  assert.match(byGroup.event.hint, /серпня/);
+  for (const command of commands) {
+    assert.ok(command.href, `${command.id} does nothing`);
+    assert.ok(COMMAND_GROUPS.includes(command.group), `${command.id} has an unknown group`);
+  }
+});
+
+// A project the client already knows and a project the server matched are the
+// same project; rendering it twice is a bug the user sees before anyone else.
+test('a project found twice is listed once', () => {
+  const groups = groupCommands([
+    ...buildCommands({ projects, allowedPermissions: [] }),
+    ...searchCommands({ projects: [{ id: 'p1', name: 'Сайт RetroMagaz' }] }),
+  ]);
+  const projectGroup = groups.find(entry => entry.group === 'project');
+  assert.equal(projectGroup.items.filter(item => item.id === 'project-p1').length, 1);
+});
+
+// The team page is where a person result lands, so it has to read the id back.
+test('the team screen selects the member the search sent it to', async () => {
+  const page = await read('../src/app/(app)/team/page.js');
+  assert.match(page, /searchParams\.get\('member'\)/);
+  assert.match(page, /setSelectedUid\(requestedMemberId\)/);
 });
 
 test('every command is reachable: it navigates or it acts, never neither', () => {
@@ -123,4 +169,24 @@ test('the palette is opened from one place and rendered from the kit', async () 
   assert.match(layout, /CommandPalette/);
   const index = await read('../src/components/ui/index.js');
   assert.match(index, /CommandPalette/);
+});
+
+// QUI-103. "?" was a global shortcut, guarded only by "the event is not aimed
+// at an input". That guard cannot hold: a question mark is ordinary
+// punctuation, so everywhere else it was typed the character was swallowed and
+// a help panel appeared instead.
+test('no printable character is a global shortcut', async () => {
+  const host = await read('../src/components/WorkspaceCommandPalette.jsx');
+  const dialog = await read('../src/components/ui/Navigation/KeyboardShortcutsDialog.jsx');
+  const catalogue = await read('../src/lib/utils/commandPalette.mjs');
+
+  assert.doesNotMatch(host, /event\.key === '\?'/);
+  assert.doesNotMatch(host, /isTypingTarget/);
+  // ⌘K/Ctrl+K stays: a modifier combination is nobody's typing.
+  assert.match(host, /event\.metaKey \|\| event\.ctrlKey/);
+  // And the sheet stops advertising a key that no longer opens it.
+  assert.doesNotMatch(dialog, /keys: \['\?'\]/);
+  assert.doesNotMatch(catalogue, /hint: '\?'/);
+  // It is still reachable — from the palette, which is where it lives now.
+  assert.match(catalogue, /action: 'open-shortcuts'/);
 });

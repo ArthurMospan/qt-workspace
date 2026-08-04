@@ -234,10 +234,13 @@ test('every rail in the two-pane shell insets its content the same way', () => {
   assert.match(shell, /export const RAIL_INSET = 'px-\[16px\] py-\[32px\]'/);
   assert.match(channelRail, /px-\[16px\] py-\[32px\]/, 'the chat rail keeps the shared inset');
   assert.match(innerNavigation, /px-\[16px\] py-\[32px\]/, 'the settings rail keeps the shared inset');
-  // MemberRail splits the inset because its header does not scroll with the
-  // list, so the top is what has to match.
-  assert.match(memberRail, /px-4 pt-\[32px\] pb-4/, 'the team rail starts where the others do');
-  assert.doesNotMatch(memberRail, /"p-4 flex items-center/, 'the 16px header inset must not come back');
+  // QUI-107. MemberRail splits the inset because its header does not scroll
+  // with the list, and it opens with a heading and a counter rather than the
+  // 10px caption the other two open with — twice the block, so it starts
+  // higher. What must not come back is `p-4`, which set the *sides* to 16px
+  // too and left the header narrower than the list under it.
+  assert.match(memberRail, /px-4 pt-\[16px\] pb-4/, 'the team rail opens above its taller heading');
+  assert.doesNotMatch(memberRail, /"p-4 flex items-center/, 'the all-round 16px header inset must not come back');
 });
 
 // QUI: `editor`/`editor-active` were merged away as byte-identical duplicates

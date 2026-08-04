@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell, Building2, Calendar, CheckCircle2, ChevronRight, CircleDot, Folder,
-  Keyboard, MessageSquare, PieChart, Plus, Search, Settings, Square, Sun, Users, Zap,
+  Keyboard, MessageSquare, PieChart, Plus, Search, Settings, Square, Sun, User, Users, Zap,
 } from 'lucide-react';
 import Dialog from '../Dialog';
 import {
@@ -11,6 +11,7 @@ import {
   groupCommands,
   issueCommands,
   rankCommands,
+  searchCommands,
 } from '@/lib/utils/commandPalette.mjs';
 
 // ─── UI Kit: CommandPalette ──────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const ICONS = {
   building: Building2,
   keyboard: Keyboard,
   issue: CircleDot,
+  user: User,
 };
 
 /**
@@ -46,6 +48,7 @@ const ICONS = {
  * @param {() => void} props.onClose Closes it.
  * @param {object[]} props.commands Catalogue from `buildCommands`.
  * @param {object[]} props.issues Search results to append as their own group.
+ * @param {{people: object[], projects: object[], events: object[]}} props.matches The other kinds search found — people, projects, calendar events.
  * @param {boolean} props.searching Whether results are still loading.
  * @param {(query: string) => void} props.onQueryChange Called as the query changes.
  * @param {(command: object) => void} props.onSelect Runs the chosen command.
@@ -56,6 +59,7 @@ export default function CommandPalette({
   onClose,
   commands = [],
   issues = [],
+  matches,
   searching = false,
   onQueryChange,
   onSelect,
@@ -80,6 +84,7 @@ export default function CommandPalette({
           onClose={onClose}
           commands={commands}
           issues={issues}
+          matches={matches}
           searching={searching}
           projects={projects}
           onQueryChange={onQueryChange}
@@ -90,7 +95,7 @@ export default function CommandPalette({
   );
 }
 
-function PaletteBody({ onClose, commands, issues, searching, projects, onQueryChange, onSelect }) {
+function PaletteBody({ onClose, commands, issues, matches, searching, projects, onQueryChange, onSelect }) {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const listRef = useRef(null);
@@ -98,7 +103,8 @@ function PaletteBody({ onClose, commands, issues, searching, projects, onQueryCh
   const groups = useMemo(() => groupCommands([
     ...rankCommands(commands, query),
     ...issueCommands(issues, projects),
-  ]), [commands, issues, projects, query]);
+    ...searchCommands(matches),
+  ]), [commands, issues, matches, projects, query]);
   const flat = useMemo(() => flattenGroups(groups), [groups]);
   // The flat order is what the arrow keys walk, so each row asks the flat list
   // for its own position rather than a counter incremented while rendering.

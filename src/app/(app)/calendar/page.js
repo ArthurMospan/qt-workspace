@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CalendarDays,
   CakeSlice,
@@ -416,6 +416,23 @@ export default function CalendarPage() {
   const [memberFilter, setMemberFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [initialStart, setInitialStart] = useState(null);
+  // A member profile can ask for a new event with that member already invited.
+  const searchParams = useSearchParams();
+  const requestedParticipant = searchParams.get('with') || '';
+  const dialogParticipantIds = useMemo(
+    () => (requestedParticipant ? [requestedParticipant] : []),
+    [requestedParticipant],
+  );
+  useEffect(() => {
+    if (searchParams.get('new') !== '1') return;
+    queueMicrotask(() => {
+      setInitialStart(new Date());
+      setDialogOpen(true);
+    });
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('new');
+    router.replace(next.size ? `/calendar?${next}` : '/calendar', { scroll: false });
+  }, [router, searchParams]);
 
   const filteredEvents = useMemo(() => events.filter(event => {
     const search = calendarSearch.trim().toLowerCase();
@@ -576,11 +593,18 @@ export default function CalendarPage() {
         <CalendarEventDialog
           isOpen
           initialStart={initialStart}
+          initialParticipantIds={dialogParticipantIds}
           members={members}
           projects={projects}
           currentUserId={currentUserId}
           canManage
-          onClose={() => setDialogOpen(false)}
+          onClose={() => {
+            setDialogOpen(false);
+            if (!requestedParticipant) return;
+            const next = new URLSearchParams(searchParams.toString());
+            next.delete('with');
+            router.replace(next.size ? `/calendar?${next}` : '/calendar', { scroll: false });
+          }}
           onSave={handleSave}
         />
       )}
