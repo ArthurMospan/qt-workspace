@@ -77,8 +77,11 @@ test('a composition can claim the control padding, and two of them do', () => {
   assert.match(globals, /\.ui-field \{ --ui-control-px: 12px; \}/);
   assert.match(globals, /\.ui-field\[data-ui-leading='icon'\] \{ --ui-control-pl: 36px; \}/);
 
-  // The two defects the revision recorded, now delivered.
-  assert.match(globals, /data-ui-composition='invite-field'\] \{[^}]*--ui-control-pr: 150px;[^}]*\}/);
+  // The two defects the revision recorded, now delivered. The invite field's
+  // room is no longer a guess: it is the width its button is given, plus the
+  // offset it sits at and one gap.
+  assert.match(globals, /data-ui-composition='invite-field'\] \{[^}]*--ui-control-pr: 146px;[^}]*\}/);
+  assert.match(globals, /data-ui-composition='invite-action'\] \{[^}]*width: 128px;[^}]*\}/);
   assert.match(globals, /data-ui-composition='inline-edit'\] \{[^}]*--ui-control-pr: 54px;[^}]*\}/);
 
   // The utilities that used to hold these values must not come back: one of

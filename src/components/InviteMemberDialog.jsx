@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Mail, Shield, UserRound } from 'lucide-react';
 import Dialog from '@/components/ui/Dialog';
+import Alert from '@/components/ui/Feedback/Alert';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Label from '@/components/ui/Forms/Label';
@@ -35,6 +36,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
   const [role, setRole] = useState('member');
   const [inviting, setInviting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [undelivered, setUndelivered] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -43,6 +45,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
       setEmail('');
       setRole('member');
       setSent(false);
+      setUndelivered(false);
     });
   }, [isOpen]);
 
@@ -54,7 +57,18 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
       const uid = currentUser?.id || currentUser?.uid;
       const result = await inviteMember(email.trim().toLowerCase(), uid, role);
       setSent(true);
-      showToast(result.type === 'added_directly' ? 'Учасника додано до команди' : 'Запрошення надіслано', 'success');
+      if (result.type === 'added_directly') {
+        showToast('Учасника додано до команди', 'success');
+      } else if (result.emailSent === false) {
+        // The invitation exists and works — it is accepted automatically on the
+        // invitee's first login with that address. What did not happen is the
+        // letter, and saying «Запрошення надіслано» for that is how "email
+        // invites don't work" became invisible: nothing anywhere said so.
+        setUndelivered(true);
+        showToast('Запрошення створено, але лист не пішов — надішліть посилання', 'warning');
+      } else {
+        showToast('Запрошення надіслано', 'success');
+      }
       setTimeout(() => {
         setEmail('');
         setSent(false);
@@ -118,17 +132,26 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
                 type="submit"
                 style="primary"
                 size="md"
+                composition="invite-action"
                 loading={inviting}
-                disabled={!email.trim() || inviting}
-                className={`absolute bottom-[6px] right-[6px] top-[6px] ${sent ? '!bg-emerald-500' : ''}`}
+                disabled={!email.trim() || inviting || sent}
+                className="absolute right-[6px] top-[6px]"
                 icon={sent ? Check : null}
               >
                 {sent ? 'Надіслано' : 'Запросити'}
               </Button>
             </div>
-            <p className="text-[11px] leading-5 text-muted">
-              Людина отримає лист із безпечним входом до вашої команди.
-            </p>
+            {undelivered ? (
+              <Alert variant="warning" title="Лист не надіслано">
+                Запрошення збережено — воно спрацює, щойно людина увійде з цією адресою.
+                Але поштовий провайдер не налаштовано, тож листа не буде: надішліть
+                посилання з вкладки «Посилання та QR».
+              </Alert>
+            ) : (
+              <p className="text-[11px] leading-5 text-muted">
+                Людина отримає лист із безпечним входом до вашої команди.
+              </p>
+            )}
           </form>
         ) : (
           <InviteLinkSection role={role} />

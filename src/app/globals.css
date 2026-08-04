@@ -255,12 +255,30 @@
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
   }
-  /* Room for the inline «Запросити» button. Declared since the preset was
-     written, delivered only now that padding travels as a custom property. */
+  /* The invite field and the button that sits inside it are one control, so
+     both halves of it are declared here together.
+
+     They were not, and it showed. The button was a plain `size="md"` pinned
+     with `top-[6px] bottom-[6px]`: `height` from `.ui-control` wins against an
+     over-constrained box, so `bottom` was dropped and a 32px button sat 6px
+     below the top of a 52px field and 14px above its bottom — visibly riding
+     high in a field it was supposed to be centred in. And the 150px of room the
+     field reserved was a guess against a button whose width nothing fixed, so
+     the caret stopped a finger's width short of it and the room changed
+     whenever the label did («Запросити» → «Надіслано»).
+
+     Now the button's box is stated — 40px in a 52px field is 6px of air top and
+     bottom — its width is fixed so both labels occupy the same box, and the
+     field reserves exactly that width plus the offset and one gap. */
   .ui-control[data-ui-composition='invite-field'] {
     --ui-control-height: var(--ui-composition-invite);
-    --ui-control-pr: 150px;
+    --ui-control-pr: 146px;
     border-radius: 14px;
+  }
+  .ui-control[data-ui-composition='invite-action'] {
+    --ui-control-height: calc(var(--ui-composition-invite) - 12px);
+    width: 128px;
+    border-radius: 10px;
   }
   .ui-control[data-ui-composition='project-name'] {
     --ui-control-height: var(--ui-composition-metric);

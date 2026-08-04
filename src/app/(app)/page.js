@@ -37,6 +37,13 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
+import { sendProjectInvitations } from '@/lib/services/projectInvitations';
+import {
+  failedInvitesMessage,
+  malformedEmailsMessage,
+  parseInviteEmails,
+  undeliveredEmailsMessage,
+} from '@/lib/utils/inviteEmails';
 
 // ── Project Card ─────────────────────────────────────────────────────────────
 const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
@@ -392,12 +399,6 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
 
   const [error, setError] = useState(null);
 
-  // One address per line. Blank lines are ignored so a trailing newline — what
-  // you get from pasting a column out of a spreadsheet — is not an error.
-  const parsedInviteEmails = [...new Set(
-    inviteEmails.split('\n').map(line => line.trim().toLowerCase()).filter(Boolean),
-  )];
-
   const handleCreate = async () => {
     // A disabled primary button gave no reason why, so the form now says what
     // is missing and marks the field instead of silently refusing the click.
@@ -405,9 +406,9 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       setNameError('Вкажіть назву проєкту');
       return;
     }
-    const malformed = parsedInviteEmails.filter(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    const { emails: invitees, malformed } = parseInviteEmails(inviteEmails);
     if (malformed.length) {
-      setInviteEmailsError(`Не схоже на email: ${malformed.slice(0, 3).join(', ')}`);
+      setInviteEmailsError(malformedEmailsMessage(malformed));
       return;
     }
     setInviteEmailsError('');
@@ -441,17 +442,14 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       // id: accepting then joins the organization and this project in one step.
       // The project is already created, so a failing address is reported rather
       // than thrown — it must not read as "the project was not created".
-      if (parsedInviteEmails.length) {
-        const failed = [];
-        for (const email of parsedInviteEmails) {
-          try {
-            await inviteMember(email, null, 'member', [result.id]);
-          } catch (inviteError) {
-            failed.push(`${email} — ${inviteError.message}`);
-          }
-        }
-        if (failed.length) {
-          setInviteEmailsError(`Проєкт створено, але не вдалося запросити: ${failed.join('; ')}`);
+      if (invitees.length) {
+        const { failures, undelivered } = await sendProjectInvitations(inviteMember, {
+          emails: invitees,
+          projectId: result.id,
+        });
+        const problem = failedInvitesMessage(failures) || undeliveredEmailsMessage(undelivered);
+        if (problem) {
+          setInviteEmailsError(`Проєкт створено. ${problem}`);
           setSaving(false);
           return;
         }
@@ -530,6 +528,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
               if (inviteEmailsError) setInviteEmailsError('');
             } : undefined}
             inviteEmailsError={inviteEmailsError}
+            inviteEmailsHint="Кожен рядок — окрема адреса. Запрошення підуть після створення проєкту; хто прийме — одразу потрапить і в організацію, і в цей проєкт."
           />
         </div>
       )}

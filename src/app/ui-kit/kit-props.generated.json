@@ -346,6 +346,7 @@
             "duration-minutes",
             "inline-add-action",
             "inline-edit",
+            "invite-action",
             "invite-field",
             "menu-item",
             "metric-editor",
@@ -2306,6 +2307,7 @@
             "duration-minutes",
             "inline-add-action",
             "inline-edit",
+            "invite-action",
             "invite-field",
             "menu-item",
             "metric-editor",
@@ -3680,6 +3682,13 @@
           "description": "Validation message for that list."
         },
         {
+          "name": "inviteEmailsHint",
+          "default": "'Кожен рядок — окрема адреса. Хто прийме запр…",
+          "type": "string",
+          "values": [],
+          "description": "Sentence under that list; says when the invitations go out."
+        },
+        {
           "name": "loading",
           "default": "false",
           "type": "boolean",
@@ -3713,13 +3722,6 @@
           "type": "(ids: string[]) => void",
           "values": [],
           "description": "Fires with the new hidden list."
-        },
-        {
-          "name": "onInvite",
-          "default": "",
-          "type": "() => void",
-          "values": [],
-          "description": "Opens the full invite dialog. Not used while creating a project."
         },
         {
           "name": "onInviteEmailsChange",

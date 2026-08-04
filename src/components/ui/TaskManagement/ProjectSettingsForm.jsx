@@ -3,7 +3,6 @@
 import { UserPlus, Users } from 'lucide-react';
 import FormGroup from '@/components/ui/Forms/FormGroup';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
-import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import Label from '@/components/ui/Forms/Label';
@@ -33,10 +32,10 @@ import StatusVisibilityPicker from './StatusVisibilityPicker';
  * @param {string} props.ownerId The project's author, who cannot be removed from it.
  * @param {string} props.teamHint Sentence under the team picker.
  * @param {string} props.teamPlaceholder Placeholder for that picker.
- * @param {() => void} props.onInvite Opens the full invite dialog. Not used while creating a project.
  * @param {string} props.inviteEmails Inline invitations, one email per line, sent with the form.
  * @param {(value: string) => void} props.onInviteEmailsChange Fires with the edited list; its presence is what enables inline invites.
  * @param {string} props.inviteEmailsError Validation message for that list.
+ * @param {string} props.inviteEmailsHint Sentence under that list; says when the invitations go out.
  * @param {boolean} props.loading Busy: the form is saving and its controls are blocked.
  * @param {React.ReactNode} props.dangerZone Delete-project block; only the settings dialog passes one.
  */
@@ -56,13 +55,16 @@ export default function ProjectSettingsForm({
   ownerId,
   teamHint = 'Ви як автор проєкту будете додані автоматично.',
   teamPlaceholder = 'Оберіть учасників проєкту',
-  onInvite,
   // Inline invitations, one email per line, sent when the surrounding form is
-  // submitted. Project creation uses this instead of `onInvite`: opening the
-  // full invite dialog mid-flow abandons the project being created.
+  // submitted. This is the only way either dialog invites anybody. Project
+  // settings used to open the full invite dialog on top of itself instead — so
+  // the same form offered two different affordances for the same act depending
+  // on which dialog was hosting it, and the settings one could not attach the
+  // project the user was standing in.
   inviteEmails,
   onInviteEmailsChange,
   inviteEmailsError = '',
+  inviteEmailsHint = 'Кожен рядок — окрема адреса. Хто прийме запрошення — одразу потрапить і в організацію, і в цей проєкт.',
   loading = false,
   dangerZone = null,
 }) {
@@ -136,22 +138,11 @@ export default function ProjectSettingsForm({
                     error={Boolean(inviteEmailsError)}
                   />
                   <p className={`text-[11px] ${inviteEmailsError ? 'text-[#ef4444]' : 'text-muted'}`}>
-                    {inviteEmailsError || 'Кожен рядок — окрема адреса. Запрошення підуть після створення проєкту; хто прийме — одразу потрапить і в організацію, і в цей проєкт.'}
+                    {inviteEmailsError || inviteEmailsHint}
                   </p>
                 </div>
               ) : null}
             />
-            {onInvite ? (
-              <Button
-                style="secondary"
-                size="lg"
-                icon={UserPlus}
-                onClick={onInvite}
-                title="Запросити нову людину в організацію"
-              >
-                Запросити
-              </Button>
-            ) : null}
           </div>
           {teamHint ? <p className="mt-1.5 text-[11px] text-muted">{teamHint}</p> : null}
         </FormGroup>

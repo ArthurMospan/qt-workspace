@@ -264,7 +264,11 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   // deleting the project is reachable from the settings dialog itself.
   assert.match(settingsDialog, /dangerZone=\{dangerZone\}/);
   assert.match(settingsDialog, /Небезпечна зона/);
-  assert.match(settingsDialog, /<InviteMemberDialog/);
+  // Inviting is the inline list the create dialog already used, not a second
+  // dialog stacked on this one: the same form must not offer two different
+  // affordances for the same act depending on who is hosting it.
+  assert.doesNotMatch(settingsDialog, /<InviteMemberDialog/);
+  assert.match(settingsDialog, /inviteEmails=\{inviteEmails\}/);
   assert.match(workspace, /<ProjectSettingsForm/);
   assert.match(settingsForm, /<StatusVisibilityPicker/);
   assert.match(settingsForm, /<MultiSelect/);

@@ -10,10 +10,16 @@ import {
   ProjectSettingsForm,
   useConfirm,
 } from '@/components/ui';
-import InviteMemberDialog from '@/components/InviteMemberDialog';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { updateProjectSettings } from '@/lib/services/projects';
+import { sendProjectInvitations } from '@/lib/services/projectInvitations';
+import {
+  failedInvitesMessage,
+  malformedEmailsMessage,
+  parseInviteEmails,
+  undeliveredEmailsMessage,
+} from '@/lib/utils/inviteEmails';
 
 export default function BoardConfigModal({
   project,
@@ -40,7 +46,8 @@ export default function BoardConfigModal({
     Array.isArray(project?.team) ? project.team : [],
   );
   const [saving, setSaving] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteEmailsError, setInviteEmailsError] = useState('');
   const isArchived = project?.status === 'archived';
   const backlogStatusId = statuses.some(status => status.id === 'backlog')
     ? 'backlog'
@@ -63,6 +70,12 @@ export default function BoardConfigModal({
       showToast('Дошка повинна мати хоча б одну видиму колонку', 'error');
       return;
     }
+    const { emails: invitees, malformed } = parseInviteEmails(inviteEmails);
+    if (malformed.length) {
+      setInviteEmailsError(malformedEmailsMessage(malformed));
+      return;
+    }
+    setInviteEmailsError('');
 
     const newlyHidden = statusesToHide.filter(
       statusId => !(project?.hiddenColumns || []).includes(statusId),
@@ -90,6 +103,22 @@ export default function BoardConfigModal({
         hiddenColumns: statusesToHide,
         ...(canManageTeam ? { team: teamMemberIds } : {}),
       });
+
+      // Settings are already saved, so a refused address is reported in place
+      // rather than thrown — it must never read as "the changes were not saved".
+      if (invitees.length) {
+        const { failures, undelivered } = await sendProjectInvitations(inviteMember, {
+          emails: invitees,
+          projectId: project.id,
+        });
+        const problem = failedInvitesMessage(failures) || undeliveredEmailsMessage(undelivered);
+        if (problem) {
+          setInviteEmailsError(problem);
+          setSaving(false);
+          return;
+        }
+      }
+
       showToast(
         result.movedIssues > 0
           ? `Налаштування збережено, ${result.movedIssues} завд. перенесено в Беклог ✓`
@@ -199,17 +228,17 @@ export default function BoardConfigModal({
           onTeamMemberIdsChange={canManageTeam ? setTeamMemberIds : undefined}
           ownerId={project?.createdBy}
           teamHint="Учасники поза цим списком не бачитимуть проєкт."
-          onInvite={canManageTeam && canInvite ? () => setShowInvite(true) : undefined}
+          inviteEmails={inviteEmails}
+          onInviteEmailsChange={canManageTeam && canInvite ? value => {
+            setInviteEmails(value);
+            if (inviteEmailsError) setInviteEmailsError('');
+          } : undefined}
+          inviteEmailsError={inviteEmailsError}
+          inviteEmailsHint="Кожен рядок — окрема адреса. Запрошення підуть при збереженні; хто прийме — одразу потрапить і в організацію, і в цей проєкт."
           loading={loading}
           dangerZone={dangerZone}
         />
       </Dialog>
-
-      <InviteMemberDialog
-        isOpen={showInvite}
-        onClose={() => setShowInvite(false)}
-        inviteMember={inviteMember}
-      />
     </>
   );
 }
