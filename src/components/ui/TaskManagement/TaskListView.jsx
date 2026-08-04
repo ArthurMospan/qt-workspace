@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Counter from '@/components/ui/DataDisplay/Counter';
@@ -73,7 +74,7 @@ export default function TaskListView({
     return (
       <Surface preset="panel" padding="md" className="w-full">
         <EmptyState
-          icon={ClipboardList}
+          icon={TaskIcon}
           title={emptyTitle}
           description={emptyDescription}
           context="page"

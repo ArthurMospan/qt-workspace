@@ -2,7 +2,8 @@
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { Check, ListTodo, Play, Tag as TagIcon } from 'lucide-react';
+import { Check, Play, Tag as TagIcon } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -173,7 +174,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         <div className="border-b border-line px-5 py-3 sm:px-7">
           <Tabs
             tabs={[
-              { id: 'task', label: 'Завдання', icon: ListTodo },
+              { id: 'task', label: 'Завдання', icon: TaskIcon },
               { id: 'audio', label: 'Аудіо-завдання (AI)', icon: Play },
             ]}
             activeTab={mode}

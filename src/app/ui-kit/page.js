@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
 import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
-import { CalendarIcon } from '@/lib/design/icons';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -69,15 +69,15 @@ const GROUPS = [
       { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
       { id: 'skeletons',    label: 'Skeletons',          icon: Loader },
-      { id: 'chat-composer', label: 'Chat Composer Dock', icon: MessageSquare },
-      { id: 'chat-elements', label: 'Чат — власні елементи', icon: MessageSquare },
+      { id: 'chat-composer', label: 'Chat Composer Dock', icon: ChatIcon },
+      { id: 'chat-elements', label: 'Чат — власні елементи', icon: ChatIcon },
     ]
   },
   {
     title: 'Організми (Organisms)',
     items: [
-      { id: 'task-crm',     label: 'Task Rows',          icon: CheckSquare },
-      { id: 'task-elements', label: 'Задачі — власні елементи', icon: CheckSquare },
+      { id: 'task-crm',     label: 'Task Rows',          icon: TaskIcon },
+      { id: 'task-elements', label: 'Задачі — власні елементи', icon: TaskIcon },
       { id: 'dialogs',      label: 'Dialogs & Modals',   icon: MessageSquare },
     ]
   },

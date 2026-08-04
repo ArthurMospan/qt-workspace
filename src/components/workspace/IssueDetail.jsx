@@ -47,6 +47,7 @@ import {
   Link2, Copy, Sparkles, Tag as TagIcon,
   Maximize2, ListTree,
 } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
@@ -257,7 +258,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // Build TYPES and PRIORITIES with icon mapping preserved
   const TYPES = rawTypes.map(t => ({
     ...t,
-    icon: TYPE_ICONS[t.id] || CheckSquare,
+    icon: TYPE_ICONS[t.id] || TaskIcon,
     color: t.color || DEFAULT_TYPES.find(d => d.id === t.id)?.color || '#9a9a9a',
   }));
   const PRIORITIES = rawPriorities.map(p => ({
@@ -403,7 +404,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     id: 'epic',
     label: 'Епік (legacy)',
     color: '#8b5cf6',
-    icon: TYPE_ICONS.epic || CheckSquare,
+    icon: TYPE_ICONS.epic || TaskIcon,
   };
   const creatableTypes = TYPES.filter(type => type.id !== 'epic');
   const EDITABLE_TYPES = issue.type === 'epic'

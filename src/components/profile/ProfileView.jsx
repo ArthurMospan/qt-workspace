@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
-import { Surface, Card, Badge, StatusBadge, Button, IconAction, Tabs, ContextMenu, EmptyState, LoadingSpinner } from '@/components/ui';
+import { Surface, Card, Badge, StatusBadge, Button, IconAction, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -170,42 +170,58 @@ export default function ProfileView({ user, onClose }) {
               colleague's profile. */}
           {!isMe && (
             <div className="flex items-center gap-2 mt-4">
-              <IconAction
-                label="Написати повідомлення"
-                icon={ChatIcon}
-                size="xl"
-                appearance="contrast"
-                onClick={() => {
-                  if (onClose) onClose();
-                  router.push(`/chat?dm=${encodeURIComponent(uid)}`);
-                }}
-              />
-              <IconAction
-                label="Створити завдання для учасника"
-                icon={TaskIcon}
-                size="xl"
-                appearance="contrast"
-                onClick={() => {
-                  if (onClose) onClose();
-                  router.push(`/my?new=1&assignee=${encodeURIComponent(uid)}`);
-                }}
-              />
-              <IconAction
-                label="Створити подію з учасником"
-                icon={CalendarIcon}
-                size="xl"
-                appearance="contrast"
-                onClick={() => {
-                  if (onClose) onClose();
-                  router.push(`/calendar?new=1&with=${encodeURIComponent(uid)}`);
-                }}
-              />
-              <ContextMenu
-                trigger={
-                  <IconAction label="Інші дії з учасником" icon={MoreVertical} size="xl" appearance="contrast" />
-                }
-                items={memberMenu}
-              />
+              {/* Each circle carries its name twice: as the accessible label a
+                  screen reader reads, and as a tooltip for everyone else. An
+                  icon on its own says nothing, and these four are the whole
+                  action row — there is no text anywhere near them. */}
+              <Tooltip content="Написати повідомлення">
+                <IconAction
+                  label="Написати повідомлення"
+                  icon={ChatIcon}
+                  size="xl"
+                  appearance="contrast"
+                  onClick={() => {
+                    if (onClose) onClose();
+                    router.push(`/chat?dm=${encodeURIComponent(uid)}`);
+                  }}
+                />
+              </Tooltip>
+              <Tooltip content="Створити завдання">
+                <IconAction
+                  label="Створити завдання для учасника"
+                  icon={TaskIcon}
+                  size="xl"
+                  appearance="contrast"
+                  onClick={() => {
+                    if (onClose) onClose();
+                    router.push(`/my?new=1&assignee=${encodeURIComponent(uid)}`);
+                  }}
+                />
+              </Tooltip>
+              <Tooltip content="Створити подію">
+                <IconAction
+                  label="Створити подію з учасником"
+                  icon={CalendarIcon}
+                  size="xl"
+                  appearance="contrast"
+                  onClick={() => {
+                    if (onClose) onClose();
+                    router.push(`/calendar?new=1&with=${encodeURIComponent(uid)}`);
+                  }}
+                />
+              </Tooltip>
+              {/* The tooltip goes around the menu, not around its trigger:
+                  ContextMenu clones the trigger to attach its own onClick, and
+                  Tooltip does not forward props to what it wraps — so a Tooltip
+                  as the trigger would swallow the click that opens the menu. */}
+              <Tooltip content="Ще дії">
+                <ContextMenu
+                  trigger={
+                    <IconAction label="Інші дії з учасником" icon={MoreVertical} size="xl" appearance="contrast" />
+                  }
+                  items={memberMenu}
+                />
+              </Tooltip>
             </div>
           )}
         </div>

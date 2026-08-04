@@ -350,3 +350,17 @@ test('the member profile actions are one declared size and one declared appearan
   assert.match(iconAction, /contrast: '!bg-\[#f1f1f1\] !text-ink/);
   assert.match(globals, /data-ui-size='icon-56'\] \{[\s\S]{0,120}--ui-control-height: 56px;/);
 });
+
+// Icons alone name nothing, and these four are the whole action row — there is
+// no text anywhere near them.
+test('every profile action circle carries a tooltip as well as a label', async () => {
+  const profile = await read('../src/components/profile/ProfileView.jsx');
+  for (const content of ['Написати повідомлення', 'Створити завдання', 'Створити подію', 'Ще дії']) {
+    assert.match(profile, new RegExp(`<Tooltip content="${content}">`), content);
+  }
+  // The menu is wrapped, not its trigger: ContextMenu clones the trigger to
+  // attach its own onClick, and Tooltip forwards nothing to what it wraps — so
+  // a Tooltip in the trigger slot would swallow the click that opens the menu.
+  assert.match(profile, /<Tooltip content="Ще дії">\s*<ContextMenu/);
+  assert.doesNotMatch(profile, /trigger=\{\s*<Tooltip/);
+});

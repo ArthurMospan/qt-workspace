@@ -1,6 +1,7 @@
 'use client';
 // src/components/ui/TaskManagement/TaskRow.jsx — Beautiful list-row representation of a task
-import { Calendar, Clock, CheckSquare, Lock } from 'lucide-react';
+import { Clock, Lock } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
@@ -190,7 +191,7 @@ export default function TaskRow({
               <div className={`flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${
                 isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
               }`}>
-                <Calendar size={10} strokeWidth={2} className="shrink-0" />
+                <CalendarIcon size={10} strokeWidth={2} className="shrink-0" />
                 <span>{fmtDate(due)}</span>
                 {isOverdue && <span className="font-bold uppercase text-[8px] ml-0.5">• Прострочено</span>}
               </div>
@@ -215,7 +216,7 @@ export default function TaskRow({
 
             {checklistAll > 0 && (
               <div className="flex items-center gap-[3px] text-[9px] font-bold text-muted">
-                <CheckSquare size={9} />
+                <TaskIcon size={9} />
                 <span>{checklistDone}/{checklistAll} чекліст</span>
               </div>
             )}
@@ -234,9 +235,7 @@ export default function TaskRow({
             {/* Chat Count */}
             {msgCount > 0 && (
               <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
+                <ChatIcon size={12} />
                 {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
                 {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                 <span className="font-mono text-[10px]">{msgCount}</span>

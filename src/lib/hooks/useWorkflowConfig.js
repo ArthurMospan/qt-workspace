@@ -9,14 +9,15 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
-import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, CheckSquare, Bug } from 'lucide-react';
+import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, Bug } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import { localizeBuiltInWorkflowItems } from '@/lib/utils/workflowDefaults.mjs';
 
 // Single source of truth for priority/type icons — every place that renders
 // a priority or type (sprints, SearchModal, IssueDetail, analytics…) reads
 // from here instead of keeping its own copy, so the icon set can't drift.
 export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
-export const TYPE_ICONS = { epic: Zap, feature: Star, task: CheckSquare, bug: Bug };
+export const TYPE_ICONS = { epic: Zap, feature: Star, task: TaskIcon, bug: Bug };
 // Canonical default workflow for an org that has never saved
 // settings/workflow. Must stay in sync with the id lists in
 // src/app/api/issues/route.js (server can't import this client module) and

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
-import { MessagesSquare } from 'lucide-react';
+import { ChatIcon } from '@/lib/design/icons';
 import { usePortalChat } from '@/lib/portal/usePortalChat';
 import { toChatMessageView, dayLabel, unreadCount } from '@/lib/portal/qtplusChatView.mjs';
 import ChatMessage from './ChatMessage';
@@ -71,7 +71,7 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
       : 'flex flex-col h-[520px] max-h-[70vh] rounded-[16px] bg-canvas overflow-hidden'}>
       {!embedded && (
         <div className="relative z-10 flex shrink-0 items-center gap-2 bg-canvas/90 px-3 py-2 backdrop-blur-xl">
-          <MessagesSquare size={15} className="text-muted" />
+          <ChatIcon size={15} className="text-muted" />
           <span className="text-[13px] text-ink font-semibold">Чат</span>
           {unread > 0 && (
             <Counter value={unread} size="md" className="ml-auto" />
@@ -90,7 +90,7 @@ export default function QtPlusChatPanel({ qtProjectId, portalUser, currentUser, 
           </p>
         ) : views.length === 0 ? (
           <EmptyState
-            icon={MessagesSquare}
+            icon={ChatIcon}
             title="Ще немає повідомлень"
             description="Напишіть перше повідомлення."
             context="centered"

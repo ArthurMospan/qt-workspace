@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { User, CheckSquare, Clock, Hash } from 'lucide-react';
+import { User, Clock, Hash } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import Pill from '@/components/ui/DataDisplay/Pill';
@@ -115,7 +116,7 @@ export default function HoverCard({ type, value, children, members }) {
                 <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{data.title}</p>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f0f0f0]">
                   <div className="flex items-center gap-1">
-                    <CheckSquare size={12} className="text-muted" />
+                    <TaskIcon size={12} className="text-muted" />
                     <span className="text-[11px] font-medium text-ink">{data.type || 'Завдання'}</span>
                   </div>
                   {data.dueDate && (

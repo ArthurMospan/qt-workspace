@@ -4,7 +4,8 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Calendar, CheckSquare, Lock, Paperclip } from 'lucide-react';
+import { Lock, Paperclip } from 'lucide-react';
+import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import Tag from '@/components/ui/DataDisplay/Tag';
@@ -236,7 +237,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
 
           {checklistAll > 0 && (
             <div className="mb-[12px] flex items-center gap-[5px] text-[10px] font-medium text-muted">
-              <CheckSquare size={11} />
+              <TaskIcon size={11} />
               <span><strong className="text-ink">{checklistDone}/{checklistAll}</strong> старий чекліст</span>
             </div>
           )}
@@ -291,7 +292,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
             <div className={`flex items-center gap-[5px] mb-[12px] text-[11px] font-medium ${
               isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
             }`}>
-              <Calendar size={11} strokeWidth={1.8} className="shrink-0" />
+              <CalendarIcon size={11} strokeWidth={1.8} className="shrink-0" />
               <span>{formatDate(due)}</span>
               {isOverdue && <span className="font-semibold">• Прострочено</span>}
             </div>
@@ -344,9 +345,10 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               {/* Chat count indicator: totally flat, no background, no border, no shadow */}
               {msgCount > 0 && (
                 <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
+                  {/* Drawn by hand until now, which is why the chat glyph
+                      never changed with the rest of the site: a path in a file
+                      is invisible to every rename. */}
+                  <ChatIcon size={13} />
                   {isMentioned && <Pill tone="dark" size="sm">@</Pill>}
                   {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
                   <span className="font-mono">{msgCount}</span>

@@ -503,7 +503,7 @@
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:331",
+      "location": "src/components/profile/ProfileView.jsx:347",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
     },
@@ -558,7 +558,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1507",
+      "location": "src/components/workspace/IssueDetail.jsx:1508",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
