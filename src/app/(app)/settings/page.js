@@ -2306,19 +2306,11 @@ export default function SettingsPage() {
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
               <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); persistBranding({ orgLogo: v }); }} theme="light" showLabel={false} showHint={false} />
             </Row>
-            <Row label="Organization ID" desc="Унікальний ідентифікатор для API інтеграцій">
-              <div className="flex items-center gap-2">
-                <code className="text-[12px] bg-canvas border border-line px-2 py-1 rounded-[6px] text-muted font-mono">
-                  {activeOrgId || 'quickteam'}
-                </code>
-                <Button
-                  onClick={() => { navigator.clipboard.writeText(activeOrgId || 'quickteam'); showToast('Скопійовано'); }}
-                  aria-label="Скопіювати ідентифікатор організації"
-                  style="ghost" size="icon-sm"
-                  icon={Copy}
-                />
-              </div>
-            </Row>
+            {/* The organisation ID used to sit here, under "Загальні". Nothing
+                on this screen asks for it: it is an argument to an API call,
+                and the place to print it is the instructions that tell you to
+                make that call. Settings is where you change what the
+                organisation *is*, not where you look up its key. */}
           </Card>
 
           {/* Zone 2: Branding */}

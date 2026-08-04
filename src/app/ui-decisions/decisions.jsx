@@ -543,7 +543,7 @@ export function useDecisions() {
       title: 'Відповідь на запрошення: «Буду / Можливо / Не буду»',
       count: 3,
       where: 'CalendarEventDialog.jsx:279 · CalendarEventPage.jsx:1236 · WorkspaceHeader.jsx:110',
-      why: 'Один і той самий контрол у трьох місцях і трьох розмірах: плитка 62px у діалозі, кнопка 8px на сторінці події, чип 7px у сповіщеннях. Обраний стан скрізь один — bg-ink text-white. Це найчистіший випадок дублювання з тих, що лишились.',
+      why: 'Один і той самий контрол у трьох місцях і трьох розмірах: плитка 62px у діалозі, кнопка 8px на сторінці події, чип 7px у сповіщеннях. Обраний стан всюди один — bg-ink text-white. Це найчистіший випадок дублювання з тих, що лишились.',
       context: (
         <Frame label="CalendarEventDialog.jsx:274 · «Ви приєднаєтесь?»" tone="white">
           <p className="mb-2 text-[12px] font-bold text-ink">Ви приєднаєтесь?</p>

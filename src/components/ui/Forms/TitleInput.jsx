@@ -30,7 +30,14 @@ const TitleInput = forwardRef(function TitleInput({ className = '', ...props }, 
       // heading — and the box stood 42px tall where the calendar's own copy of
       // this input, which did state it, stood 36px. The declared value wins
       // over the inherited accident.
-      className={`text-[24px] font-bold text-ink tracking-tight leading-tight bg-transparent border-b-2 border-ink pb-1 outline-none w-full ${className}`.trim()}
+      //
+      // `rounded-none` for the same class of reason. The global `:focus-visible`
+      // rule sets a border-radius so the focus ring follows the control's own
+      // corners — right for every filled control, and wrong here: this one has
+      // no box, only a rule underneath, so the radius arrived on focus and bent
+      // the two ends of that rule upward. A control that draws its own chrome
+      // states its own corners.
+      className={`text-[24px] font-bold text-ink tracking-tight leading-tight bg-transparent border-b-2 border-ink rounded-none pb-1 outline-none w-full ${className}`.trim()}
       {...props}
     />
   );

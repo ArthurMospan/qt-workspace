@@ -25,7 +25,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 45,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -55,7 +55,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2361",
+      "location": "src/app/(app)/settings/page.js:2353",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -221,7 +221,7 @@
     },
     {
       "tag": "textarea",
-      "location": "src/components/workspace/AgileBoard.jsx:30",
+      "location": "src/components/workspace/AgileBoard.jsx:29",
       "className": "w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all",
       "text": "",
       "childElements": [],
@@ -413,14 +413,14 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:130",
+      "location": "src/app/(app)/page.js:138",
       "tag": "div",
-      "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
+      "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:139",
+      "location": "src/app/(app)/page.js:147",
       "tag": "div",
-      "className": "w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas"
+      "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
       "location": "src/app/(app)/settings/page.js:330",
@@ -518,7 +518,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:242",
+      "location": "src/components/workspace/AgileBoard.jsx:241",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
@@ -611,6 +611,11 @@
       "location": "src/components/workspace/TimesheetTab.jsx:559",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
+    },
+    {
+      "location": "src/components/workspace/UnifiedTimeline.jsx:571",
+      "tag": "div",
+      "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
       "location": "src/components/workspace/WorkloadTab.jsx:554",

@@ -119,20 +119,22 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
           <form onSubmit={handleInvite} className="flex flex-col gap-3">
             <Label>Email учасника</Label>
             <div className="flex gap-2">
+              {/* The kit's standard large control, both halves. They used to
+                  share an `invite-*` composition that made them 52px tall with
+                  a 14px radius — a whole size that existed for one row, and
+                  visibly the largest field and button in the product. */}
               <Input
                 autoFocus
-                size="md"
+                size="lg"
                 type="email"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 placeholder="name@example.com"
-                composition="invite-field"
               />
               <Button
                 type="submit"
                 style="primary"
-                size="md"
-                composition="invite-action"
+                size="lg"
                 loading={inviting}
                 disabled={!email.trim() || inviting || sent}
                 icon={sent ? Check : null}

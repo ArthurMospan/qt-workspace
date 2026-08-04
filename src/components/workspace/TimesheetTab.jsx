@@ -121,15 +121,15 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
           <div key={key}
             className={`rounded-[16px] border p-[8px] flex flex-col gap-[8px] min-h-[260px] transition-colors ${
               isToday
-                ? 'border-[#dbe9e0] bg-white ring-2 ring-[#eaf2ed]'
+                ? 'border-ink/25 bg-white ring-2 ring-ink/[0.06]'
                 : isWeekend
                   ? 'border-black/[0.05] bg-white'
                   : 'border-black/[0.05] bg-white'
             }`}>
             {/* Day header */}
             <div className="flex items-center justify-between px-[4px] pt-[2px]">
-              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-[#2f6b4b]' : 'text-muted'}`}>
-                {DAY_LABELS[i]} <span className={`text-[13px] ${isToday ? 'text-[#2f6b4b]' : 'text-ink'}`}>{d.getDate()}</span>
+              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-ink' : 'text-muted'}`}>
+                {DAY_LABELS[i]} <span className="text-[13px] text-ink">{d.getDate()}</span>
               </span>
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
@@ -202,8 +202,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
-                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#2f6b4b]' : 'text-muted'}`}>
+              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-canvas' : 'bg-white'}`}>
+                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-ink' : 'text-muted'}`}>
                   {DAY_LABELS[i]} {d.getDate()}
                 </span>
               </th>
@@ -224,7 +224,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
+                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-canvas' : 'bg-white'}`}>
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
@@ -304,7 +304,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
                 onClick={() => onSelectDay?.(d)}
                 title="Відкрити тиждень"
               >
-                <span className={`text-[12px] font-bold ${isToday ? 'text-[#2f6b4b]' : inMonth ? 'text-ink' : 'text-muted'}`}>
+                <span className={`text-[12px] font-bold ${inMonth ? 'text-ink' : 'text-muted'}`}>
                   {d.getDate()}
                 </span>
                 {cell?.minutes > 0 && (

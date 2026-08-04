@@ -103,7 +103,6 @@ export const semanticContract = {
     lg: 'var(--ui-control-lg)',
     workspaceGuard: 'var(--ui-composition-guard)',
     metricEditor: 'var(--ui-composition-metric)',
-    inviteField: 'var(--ui-composition-invite)',
   },
   radii: {
     action: 'var(--ui-radius-action)',

@@ -53,7 +53,6 @@
     --ui-control-lg: 36px;
     --ui-composition-guard: 40px;
     --ui-composition-metric: 42px;
-    --ui-composition-invite: 52px;
 
     --ui-radius-action: 10px;
     --ui-radius-field: 10px;
@@ -156,8 +155,10 @@
   /* Horizontal padding travels the same way the height does, and for the same
      reason. Written as a utility inside Button or Input it lands in Tailwind's
      last layer, where it beats every composition rule here however specific —
-     which is how `invite-field` came to declare 150px of room for the invite
-     button and render 12px for months. A custom property has no such fight:
+     which is how the invite field came to declare 150px of room for the button
+     inside it and render 12px for months. (That composition is gone — the row
+     is two standard controls now — but the mechanism it broke on is not.)
+     A custom property has no such fight:
      nothing in the utility layer can set one, so a composition that wants the
      padding simply takes it.
      `--ui-control-px` is both sides; `--ui-control-pl`/`--ui-control-pr` are
@@ -261,32 +262,6 @@
   .ui-control[data-ui-composition='duration-compact-minutes'] {}
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
-  }
-  /* The invite field and its button: one height, one radius, side by side.
-
-     The button used to sit *inside* the field, and the arrangement could not be
-     made to work. It was a plain `size="md"` pinned with `top-[6px]
-     bottom-[6px]`, and `height` from `.ui-control` wins against an
-     over-constrained box — so `bottom` was dropped and a 32px button sat 6px
-     below the top of a 52px field and 14px above its bottom, visibly riding
-     high in the field it was meant to be centred in. The 150px the field
-     reserved for it was a guess at a width nothing fixed, so the caret stopped
-     short of the button and the gap moved whenever the label did («Запросити» →
-     «Надіслано»).
-
-     Fixing that by declaring the button's width does not survive: this
-     composition namespace is shared by Button, IconAction and Input, and
-     IconAction's square sizes write `w-[32px]` as a utility, which beats any
-     width the components layer declares. A concrete width here is therefore
-     dead on arrival for one of its owners — `npm run test:visual` says so.
-
-     A row has none of that. Both halves state the same height and radius
-     through custom properties, which no utility can shadow, and neither needs
-     to know how wide the other is. */
-  .ui-control[data-ui-composition='invite-field'],
-  .ui-control[data-ui-composition='invite-action'] {
-    --ui-control-height: var(--ui-composition-invite);
-    border-radius: 14px;
   }
   .ui-control[data-ui-composition='project-name'] {
     --ui-control-height: var(--ui-composition-metric);

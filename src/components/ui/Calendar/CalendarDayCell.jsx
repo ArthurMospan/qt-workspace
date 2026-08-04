@@ -13,9 +13,11 @@ import React from 'react';
 
 const STATES = {
   default: 'border-black/[0.05] bg-white hover:border-black/10 hover:shadow-sm',
-  // Today keeps a soft green ring rather than the ink fill the date circle
-  // uses: a whole tile filled with ink would out-shout the numbers inside it.
-  today: 'border-[#dbe9e0] bg-white ring-2 ring-[#eaf2ed] hover:border-[#c6dccd]',
+  // Today keeps a ring rather than the ink fill the date circle uses: a whole
+  // tile filled with ink would out-shout the numbers inside it. The ring was
+  // green, which read as a status — the timesheet already spends green on "the
+  // day is full" — so today is drawn in the page's own ink instead.
+  today: 'border-ink/25 bg-white ring-2 ring-ink/[0.06] hover:border-ink/40',
   // A weekend is an ordinary day with nothing expected of it, so it loses only
   // the lift on hover.
   weekend: 'border-black/[0.05] bg-white hover:border-black/10',

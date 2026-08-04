@@ -2,6 +2,8 @@
 import React, { forwardRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { searchEscalationState } from '@/lib/utils/searchScope.mjs';
+import { paletteShortcutLabel } from '@/lib/utils/platformKeys.mjs';
+import { useApplePlatform } from '@/lib/hooks/useApplePlatform';
 
 /**
  * The search field inside the workspace header. Reached through `TopHeader`,
@@ -32,6 +34,10 @@ export const HeaderSearch = forwardRef(({
   ...props
 }, ref) => {
   const [escalationActive, setEscalationActive] = useState(false);
+  // The hint used to read ⌘K on every machine, naming a key most of the team
+  // does not have. The palette already answers to both.
+  const apple = useApplePlatform();
+  const paletteKeys = paletteShortcutLabel(apple);
   const escalation = searchEscalationState({
     query: value,
     localResultCount,
@@ -87,11 +93,15 @@ export const HeaderSearch = forwardRef(({
       <button
         type="button"
         onClick={openEverywhere}
-        aria-label="Відкрити пошук скрізь"
+        aria-label="Відкрити пошук всюди"
         aria-haspopup="dialog"
-        className="absolute right-0 rounded-[6px] border border-line bg-canvas px-[5px] py-[2px] text-[10px] font-semibold leading-none text-muted transition-colors hover:border-muted hover:text-ink"
+        // A hint, not a control: the field beside it is the thing to use. Boxed
+        // in a bordered canvas chip it was the loudest element in the header,
+        // so it loses the box and sits back to the faint tier, and only comes
+        // forward under the cursor.
+        className="absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-faint transition-colors hover:text-muted"
       >
-        ⌘K
+        {paletteKeys}
       </button>
 
       {escalation.active && (
@@ -117,8 +127,8 @@ export const HeaderSearch = forwardRef(({
               escalationActive ? 'bg-canvas text-ink' : 'bg-white text-muted hover:bg-canvas hover:text-ink'
             }`}
           >
-            <span className="min-w-0 truncate">Шукати «{escalation.term}» скрізь</span>
-            <span className="ml-2 shrink-0 text-[10px] text-faint">⌘K</span>
+            <span className="min-w-0 truncate">Шукати «{escalation.term}» всюди</span>
+            <span className="ml-2 shrink-0 text-[10px] text-faint">{paletteKeys}</span>
           </button>
         </div>
       )}

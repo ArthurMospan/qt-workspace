@@ -191,7 +191,13 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
 
   return (
     <div ref={rootRef} className="min-w-[780px]">
-      <div className="grid border-b border-line bg-white sticky top-0 z-10" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
+      {/* The dates row is a sticky header, and it had the same hairline as the
+          grid lines inside it — so nothing said where the header ended and the
+          days began, and the only separation you ever saw was a stripe that
+          appeared under the cursor and read as a rendering fault. A header that
+          content scrolls under gets a real edge: a darker rule and the shadow
+          that explains why it is still on screen. */}
+      <div className="grid border-b border-ink/10 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.08)] bg-white sticky top-0 z-10" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
         <div className="border-r border-line" />
         {days.map((day, index) => (
           <div key={dateKey(day)} className="h-[58px] flex items-center justify-center gap-2 border-r last:border-r-0 border-line">
@@ -215,7 +221,15 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
       <div className="grid" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
         <div className="relative border-r border-line" style={{ height: MINUTES_PER_DAY }}>
           {HOURS.map(hour => (
-            <span key={hour} className="absolute right-2 -translate-y-1/2 text-[10px] font-medium text-muted" style={{ top: hour * 60 }}>
+            <span
+              key={hour}
+              // Every label is centred on its own hour line — except midnight,
+              // which has no line above it to be centred on. Translated up like
+              // the rest, half of "00:00" left the column and landed in the
+              // all-day row, which is what made that row look crooked.
+              className={`absolute right-2 text-[10px] font-medium text-muted ${hour === 0 ? '' : '-translate-y-1/2'}`}
+              style={{ top: hour === 0 ? 4 : hour * 60 }}
+            >
               {String(hour).padStart(2, '0')}:00
             </span>
           ))}

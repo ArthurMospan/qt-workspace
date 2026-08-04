@@ -30,7 +30,6 @@ test('the composition rules are readable, and only declare what can travel', () 
 test('the presets keep the one mechanism that survives the cascade', () => {
   assert.match(globals, /--ui-control-height: var\(--ui-composition-metric\)/);
   assert.match(globals, /--ui-control-height: var\(--ui-composition-guard\)/);
-  assert.match(globals, /--ui-control-height: var\(--ui-composition-invite\)/);
   assert.match(globals, /--ui-control-line: calc\(var\(--ui-control-height\) - 24px\)/);
 });
 
@@ -40,7 +39,7 @@ test('the presets keep the one mechanism that survives the cascade', () => {
 test('every composition the product passes is still declared', () => {
   const manifest = extractVariants();
   for (const [component, values] of Object.entries({
-    Input: ['metric-editor', 'metric-text', 'invite-field', 'inline-edit', 'duration-hours', 'duration-minutes', 'duration-compact-hours', 'duration-compact-minutes', 'status-entry', 'project-name'],
+    Input: ['metric-editor', 'metric-text', 'inline-edit', 'duration-hours', 'duration-minutes', 'duration-compact-hours', 'duration-compact-minutes', 'status-entry', 'project-name'],
     Segmented: ['dialog-tabs', 'billing-selection'],
     Textarea: ['transcript', 'audio-transcript', 'project-description', 'long-form', 'settings-note'],
     Button: ['menu-item', 'settings-row-action', 'status-submit', 'workspace-guard', 'inline-add-action'],
@@ -79,16 +78,16 @@ test('a composition can claim the control padding, and two of them do', () => {
 
   assert.match(globals, /data-ui-composition='inline-edit'\] \{[^}]*--ui-control-pr: 54px;[^}]*\}/);
 
-  // The invite field no longer reserves room for a button inside it, because
-  // the button is no longer inside it. Both halves state the same height and
-  // radius, and neither declares a width — a concrete width in this shared
-  // namespace is beaten by IconAction's own `w-[32px]` utility and could never
-  // reach the screen.
-  assert.match(
-    globals,
-    /data-ui-composition='invite-field'\],\s*\n\s*\.ui-control\[data-ui-composition='invite-action'\] \{[^}]*--ui-control-height: var\(--ui-composition-invite\);[^}]*\}/,
-  );
-  assert.doesNotMatch(globals, /data-ui-composition='invite-field'\][^}]*--ui-control-pr/);
+  // The invite row is two standard `size="lg"` controls now. It used to be a
+  // composition of its own at 52px with a 14px radius — the largest field and
+  // button in the product, for one row in one dialog. A named size that only
+  // restates the standard one is exactly the duplication the kit forbids, so
+  // neither the selector nor the variable it read may come back.
+  assert.doesNotMatch(globals, /data-ui-composition='invite-field'\]/);
+  assert.doesNotMatch(globals, /data-ui-composition='invite-action'\]/);
+  assert.doesNotMatch(globals, /--ui-composition-invite/);
+  const inviteDialog = readFileSync(new URL('../src/components/InviteMemberDialog.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(inviteDialog, /composition="invite-/);
 
   // The utilities that used to hold these values must not come back: one of
   // them in either component reinstates the whole problem.

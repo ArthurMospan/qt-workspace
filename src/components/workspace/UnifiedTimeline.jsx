@@ -562,8 +562,13 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             />
           )}
 
+          {/* The dock's top half is a transparent gradient, so a 5% black tint
+              here was not a panel — it was the last message showing through its
+              own reply preview, at almost full contrast. Same treatment the chat
+              header uses for exactly this problem: a near-opaque canvas over a
+              real blur, with a hairline to end it. */}
           {(replyTo || editingComment) && (
-            <div className="mb-2 flex items-start gap-2 rounded-[10px] bg-black/[0.05] px-3 py-2">
+            <div data-ui-surface="local" className="mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl">
               <div className="min-w-0 flex-1 border-l-2 border-[#8d8d8d] pl-2">
                 <div className="text-[11px] font-bold text-ink">{editingComment ? 'Редагування повідомлення' : `Відповідь для ${replyTo.authorName || 'учасника'}`}</div>
                 <div className="truncate text-[11px] text-muted">{editingComment?.text || replyTo?.text || 'Вкладення'}</div>

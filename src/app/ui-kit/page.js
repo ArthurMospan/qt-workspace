@@ -202,7 +202,7 @@ export default function UIKitPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 md:px-[32px] py-[14px] md:py-[18px] border-b border-[#f0f0f0] shrink-0">
             <div className="min-w-0">
               <h1 className="text-[24px] font-bold text-[#1f1f1f]">{current?.label}</h1>
-              <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Всі компоненти — живі. Зміни в src/components/ui/ відображаються тут і скрізь.</p>
+              <p className="text-[12px] text-[#9a9a9a] mt-[2px]">Всі компоненти — живі. Зміни в src/components/ui/ відображаються тут і всюди.</p>
             </div>
             <select
               aria-label="Секція UI Kit"

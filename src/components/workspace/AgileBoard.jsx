@@ -6,7 +6,6 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
-import IconAction from '@/components/ui/IconAction';
 import Pill from '@/components/ui/DataDisplay/Pill';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
@@ -256,7 +255,19 @@ export default function AgileBoard({
                       toggleColumnCollapse(col.id);
                     }}
                   >
-                    <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
+                    {/* The mirror image of the collapse control in the open header:
+                        same component, same ghost style, same icon-xs box —
+                        only the arrow points the other way. It used to be an
+                        IconAction at a different size and weight, so the two
+                        halves of one gesture read as unrelated buttons. The
+                        strip itself carries the click; this is its affordance. */}
+                    <Button
+                      style="ghost"
+                      size="icon-xs"
+                      icon={ChevronRight}
+                      className="mb-4 hover:!bg-white"
+                      title="Розгорнути колонку"
+                    />
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                     <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
                     <Pill tone="count" size="md" className="mt-4">{colTotalIssues.length}</Pill>
@@ -344,7 +355,13 @@ export default function AgileBoard({
                       >
                         {swimlanes.length === 1 && (
                           <>
-                            <IconAction label="Розгорнути колонку" icon={ChevronRight} size="sm" appearance="quiet" className="mb-4" />
+                            <Button
+                              style="ghost"
+                              size="icon-xs"
+                              icon={ChevronRight}
+                              className="mb-4 hover:!bg-white"
+                              title="Розгорнути колонку"
+                            />
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
                             <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
                             <Pill tone="count" size="md" className="mt-4">{colIssues.length}</Pill>

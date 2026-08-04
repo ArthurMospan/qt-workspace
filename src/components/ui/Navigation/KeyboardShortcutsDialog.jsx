@@ -1,6 +1,7 @@
 'use client';
 
 import Dialog from '../Dialog';
+import { useApplePlatform } from '@/lib/hooks/useApplePlatform';
 
 // ─── UI Kit: KeyboardShortcutsDialog ─────────────────────────────────────────
 // The app had shortcuts and no way to find out about them, which makes a
@@ -10,7 +11,7 @@ import Dialog from '../Dialog';
 
 export const SHORTCUT_GROUPS = [
   {
-    label: 'Скрізь',
+    label: 'Всюди',
     items: [
       { keys: ['⌘', 'K'], label: 'Командна палітра', alt: ['Ctrl', 'K'] },
       { keys: ['Esc'], label: 'Закрити вікно або панель' },
@@ -46,6 +47,11 @@ function Key({ children }) {
  * @param {() => void} props.onClose Closes it.
  */
 export default function KeyboardShortcutsDialog({ isOpen, onClose }) {
+  // Every item that differs between keyboards has carried an `alt` since this
+  // list was written, and the list rendered `keys` regardless — so a Windows
+  // machine was told to press a key it does not have.
+  const apple = useApplePlatform();
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -66,7 +72,7 @@ export default function KeyboardShortcutsDialog({ isOpen, onClose }) {
                 <div key={item.label} className="flex items-center justify-between gap-[16px]">
                   <span className="text-[13px] text-ink">{item.label}</span>
                   <span className="flex shrink-0 items-center gap-[4px]">
-                    {item.keys.map(key => <Key key={key}>{key}</Key>)}
+                    {(apple ? item.keys : item.alt || item.keys).map(key => <Key key={key}>{key}</Key>)}
                   </span>
                 </div>
               ))}

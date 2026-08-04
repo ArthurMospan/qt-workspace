@@ -63,6 +63,14 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
 
+  // The featured card is twice the size in both directions. A 32px avatar reads
+  // as a detail there and as the loudest thing on a small card, so the stack
+  // steps down with the card — avatar, placeholder and overlap together, or the
+  // fallback circles end up larger than the faces beside them.
+  const stackAvatar = isLarge ? 'md' : 'sm';
+  const stackChip = isLarge ? 30 : 24;
+  const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
+
   useEffect(() => {
     if (!project?.id || !activeOrgId || !currentUser) return;
     const uid = currentUser.id || currentUser.uid;
@@ -125,24 +133,24 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       >
         {/* Top row: avatars + kebab */}
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
-          <div className="flex -space-x-[10px]">
+          <div className={`flex ${stackOverlap}`}>
             {teamCount === 0 && (
-              <div data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
-                <Users size={13} className="text-muted" />
+              <div data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                <Users size={isLarge ? 13 : 11} className="text-muted" />
               </div>
             )}
             {(project.team || []).slice(0, 4).map(uid => {
               const m = members.find(mbr => (mbr.id || mbr.uid) === uid);
               return m ? (
-                <UserAvatar key={uid} user={m} size="md" stacked />
+                <UserAvatar key={uid} user={m} size={stackAvatar} stacked />
               ) : (
-                <div key={uid} data-ui-surface="local" className="w-[30px] h-[30px] rounded-full bg-white flex items-center justify-center border-2 border-canvas">
-                  <User size={13} className="text-muted" />
+                <div key={uid} data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                  <User size={isLarge ? 13 : 11} className="text-muted" />
                 </div>
               );
             })}
             {teamCount > 4 && (
-              <div className="w-[30px] h-[30px] rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">
+              <div style={{ width: stackChip, height: stackChip }} className="rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">
                 +{teamCount - 4}
               </div>
             )}
