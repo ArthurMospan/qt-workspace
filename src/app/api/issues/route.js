@@ -304,6 +304,11 @@ export async function POST(request) {
         createdBy: authorization.user.uid,
         createdAt: now,
         updatedAt: now,
+        lastActivityType: 'created',
+        lastActivityAt: now,
+        lastActivityActorId: authorization.user.uid,
+        lastActivityActorName: authorization.user.name || authorization.user.email || '',
+        lastActivityActorAvatar: authorization.user.picture || null,
         ...(doneIds.includes(status) ? { completedAt: now } : {}),
       };
       transaction.create(issueRef, payload);

@@ -262,9 +262,15 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         });
       }
       if (Object.keys(directData).length > 0) {
+        const actorId = userId || currentUserId;
         await updateDoc(doc(db, 'issues', issueId), {
           ...directData,
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          lastActivityType: 'updated',
+          lastActivityAt: serverTimestamp(),
+          lastActivityActorId: actorId || null,
+          lastActivityActorName: userName || currentUser?.name || currentUser?.displayName || currentUser?.email || '',
+          lastActivityActorAvatar: currentUser?.avatar || currentUser?.photoURL || null,
         });
       }
     } catch (err) {
@@ -296,7 +302,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         to
       });
     }
-  }, [issues, projectId, applyPatch, revertPatch]);
+  }, [issues, projectId, applyPatch, revertPatch, currentUser, currentUserId]);
 
   // -------------------------------------------------------------------------
   // deleteIssue

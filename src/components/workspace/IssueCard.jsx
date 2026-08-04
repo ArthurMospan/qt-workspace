@@ -16,6 +16,9 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import { issueDisplayParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { Counter } from '@/components/ui';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -42,6 +45,8 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const router   = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
+  const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issue.id] || 0);
+  const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();
@@ -198,6 +203,12 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
             {parentIssueId && (
               <span className="truncate text-[9px] font-semibold text-muted" title={parentIssue?.title || 'Підзадача'}>
                 ↳ {parentIssue?.issueKey || 'ПІДЗАДАЧА'}
+              </span>
+            )}
+
+            {hasUnreadActivity && (
+              <span role="status" aria-label="Непрочитані зміни" title="У задачі є непрочитані зміни">
+                <Counter variant="dot" size="sm" status="info" />
               </span>
             )}
 

@@ -117,6 +117,36 @@ test('an authenticated outsider cannot self-join an organization', async () => {
   }));
 });
 
+test('issue read cursors are private, identity-bound and timestamp-only', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const cursorRef = doc(memberDb, 'organizations', 'org-a', 'issueReadState', 'member-a_issue-a');
+
+  await assertSucceeds(setDoc(cursorRef, {
+    userId: 'member-a',
+    issueId: 'issue-a',
+    lastSeenAt: new Date(100),
+  }));
+  await assertSucceeds(updateDoc(cursorRef, { lastSeenAt: new Date(200) }));
+  await assertSucceeds(getDoc(cursorRef));
+  await assertFails(getDoc(doc(ownerDb, 'organizations', 'org-a', 'issueReadState', 'member-a_issue-a')));
+  await assertFails(setDoc(doc(memberDb, 'organizations', 'org-a', 'issueReadState', 'forged'), {
+    userId: 'member-a', issueId: 'issue-a', lastSeenAt: new Date(100),
+  }));
+  await assertFails(setDoc(doc(memberDb, 'organizations', 'org-a', 'issueReadState', 'member-a_issue-b'), {
+    userId: 'owner-a', issueId: 'issue-b', lastSeenAt: new Date(100),
+  }));
+  await assertFails(updateDoc(cursorRef, { issueId: 'issue-b' }));
+  await assertFails(updateDoc(cursorRef, { debug: true }));
+});
+
+test('issue read cursors can only be listed through the current user scope', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const cursorCollection = collection(memberDb, 'organizations', 'org-a', 'issueReadState');
+  await assertSucceeds(getDocs(query(cursorCollection, where('userId', '==', 'member-a'))));
+  await assertFails(getDocs(cursorCollection));
+});
+
 test('an admin cannot bypass the invitation API by writing memberships directly', async () => {
   const db = environment.authenticatedContext('admin-a').firestore();
   const membership = { id: 'org-a_new-user', orgId: 'org-a', userId: 'new-user', role: 'member' };

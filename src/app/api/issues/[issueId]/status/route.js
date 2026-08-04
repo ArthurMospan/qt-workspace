@@ -400,6 +400,13 @@ export async function PATCH(request, context) {
         status: requestedStatus,
         updatedAt: now,
       };
+      if (currentStatus !== requestedStatus) {
+        issueUpdates.lastActivityType = 'status';
+        issueUpdates.lastActivityAt = now;
+        issueUpdates.lastActivityActorId = authorization.user.uid;
+        issueUpdates.lastActivityActorName = authorization.user.name || authorization.user.email || '';
+        issueUpdates.lastActivityActorAvatar = authorization.user.picture || null;
+      }
       if (requestedOrder !== undefined) issueUpdates.order = requestedOrder;
       if (completedAtNeedsSet) {
         issueUpdates.completedAt = now;

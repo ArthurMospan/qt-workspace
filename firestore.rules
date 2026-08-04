@@ -552,6 +552,22 @@ service cloud.firestore {
         request.resource.data.channelId == resource.data.channelId;
     }
 
+    match /organizations/{orgId}/issueReadState/{stateId} {
+      allow read, delete: if isOrgMember(orgId) && resource.data.userId == request.auth.uid;
+      allow create: if isOrgMember(orgId) &&
+        request.resource.data.keys().hasOnly(['userId', 'issueId', 'lastSeenAt']) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.issueId is string &&
+        request.resource.data.lastSeenAt is timestamp &&
+        stateId == request.auth.uid + '_' + request.resource.data.issueId;
+      allow update: if isOrgMember(orgId) &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.issueId == resource.data.issueId &&
+        request.resource.data.lastSeenAt is timestamp &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeenAt']);
+    }
+
     match /organizations/{orgId}/activeDMs/{uid} {
       allow read: if isOrgMember(orgId);
       allow create, update: if isOrgMember(orgId) && userIsOrgMember(orgId, uid) &&

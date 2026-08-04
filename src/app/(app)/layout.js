@@ -13,6 +13,7 @@ import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
+import IssueReadStateBridge from '@/components/IssueReadStateBridge';
 import WorkspaceDocumentTitle from '@/components/WorkspaceDocumentTitle';
 import WorkspaceCommandPalette from '@/components/WorkspaceCommandPalette';
 import { ConnectionBanner } from '@/components/ui';
@@ -143,6 +144,7 @@ export default function WorkspaceLayout({ children }) {
     return (
       <>
         <WorkspaceNotificationBridge />
+        <IssueReadStateBridge />
         <WorkspaceDocumentTitle />
         <OrgSwitcherScreen />
       </>
@@ -152,6 +154,7 @@ export default function WorkspaceLayout({ children }) {
   return (
     <ConfirmProvider>
     <WorkspaceNotificationBridge />
+    <IssueReadStateBridge />
     <WorkspaceDocumentTitle />
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>

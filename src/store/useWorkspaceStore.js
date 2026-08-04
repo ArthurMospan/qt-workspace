@@ -161,6 +161,12 @@ const useWorkspaceStore = create((set, get) => ({
   setUnreadChatCount: (count) => set(state =>
     (state.unreadChatCount === count ? state : { unreadChatCount: count })),
 
+  // Per-issue read cursors are published once at the workspace boundary. Card
+  // selectors read a single number from this map, so unchanged cards do not
+  // subscribe to Firestore or rerender for another issue's cursor.
+  issueReadState: {},
+  setIssueReadState: (readState) => set({ issueReadState: readState }),
+
   // ── Breadcrumbs (set by each page) ────────────────────────────────
   breadcrumbs: [],   // [{ label, href? }]
   setBreadcrumbs: (crumbs) => set({ breadcrumbs: crumbs }),

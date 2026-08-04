@@ -56,6 +56,9 @@ import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
+import { markIssueSeen } from '@/lib/services/issueReadState';
+import { issueActivityCursor } from '@/lib/utils/issueReadState.mjs';
+import { reportLoadError } from '@/lib/utils/errors';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -201,7 +204,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { formatDate } = useLocalization();
-  const { projects, currentUser, activeOrg, orgRole } = useAppContext();
+  const { projects, currentUser, activeOrg, activeOrgId, orgRole } = useAppContext();
   const {
     issues,
     loading: issuesLoading,
@@ -293,6 +296,23 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const [draft, setDraft] = useState({});
 
   const issue = issues.find(i => i.id === issueId);
+  const issueActivityAt = issueActivityCursor(issue);
+  const currentUserId = currentUser?.uid || currentUser?.id || null;
+
+  // Opening a task consumes exactly the activity revision currently on screen.
+  // If newer activity arrives while the detail remains open, the dependency
+  // changes and advances the same per-issue cursor again.
+  useEffect(() => {
+    if (!issueActivityAt || !activeOrgId || !currentUserId) return;
+    void markIssueSeen({
+      organizationId: activeOrgId,
+      issueId,
+      userId: currentUserId,
+      lastSeenAt: new Date(issueActivityAt),
+    }).catch(error => {
+      reportLoadError('[IssueDetail] mark issue seen', error);
+    });
+  }, [activeOrgId, currentUserId, issueActivityAt, issueId]);
 
   useEffect(() => {
     const logTimeParam = searchParams.get('logTime');
