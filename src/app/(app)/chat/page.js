@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/chat/page.js — Rebuilt from scratch
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Smile, Paperclip, Plus, Trash2, X, UserPlus, Search } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
@@ -279,7 +279,9 @@ function ThreadSidebar({
   const scrollRef = useRef(null);
   const confirmDialog = useConfirm();
 
-  useEffect(() => {
+  // Before the paint, like the main conversation: a thread opens showing its
+  // latest reply rather than scrolling to it.
+  useLayoutEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -459,11 +461,16 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
+  const chatContentRef = useRef(null);
   const composerRef = useRef(null);
   const messageRefs = useRef(new Map());
   const typingRef = useRef(null);
   const lastTailIdRef = useRef(null);
   const pendingHistoryHeightRef = useRef(null);
+  // Whether this conversation has already been placed at its latest message.
+  // Until it has, the list must not animate anywhere: it should simply be
+  // rendered at the bottom, the way every messenger opens a chat.
+  const initialScrollDoneRef = useRef(false);
   // Notification links open the exact conversation instead of dropping the
   // user on #general.
   useEffect(() => {
@@ -510,10 +517,17 @@ export default function ChatPage() {
   }, []);
 
   // Auto-scroll to bottom on new messages.
+  //
+  // `useLayoutEffect`, not `useEffect`: this runs before the browser paints, so
+  // the first frame of a conversation is already at its newest message. It used
+  // to run after the paint and then animate — you saw the top of the history for
+  // a moment and watched the list scroll itself down, which is not how a
+  // messenger opens a chat.
+  //
   // Growing the history window prepends older messages: that is neither new
   // activity (no unread badge) nor a reason to jump — the previous reading
   // position is restored by compensating for the added height.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const count = messages.length;
     const tailId = messages[count - 1]?.id ?? null;
     const previousTailId = lastTailIdRef.current;
@@ -531,12 +545,17 @@ export default function ChatPage() {
       return;
     }
 
+    // Landing in a conversation is a placement, not a movement. Smooth is only
+    // ever right for a message that arrives while you are already reading the
+    // bottom of one you have been sitting in.
+    const isInitialPlacement = !initialScrollDoneRef.current;
     if (!isScrolledUp) {
-      if (scrollElement) {
+      if (scrollElement && count > 0) {
         scrollElement.scrollTo({
           top: scrollElement.scrollHeight,
-          behavior: count <= 1 ? 'instant' : 'smooth',
+          behavior: isInitialPlacement || count <= 1 ? 'instant' : 'smooth',
         });
+        initialScrollDoneRef.current = true;
       }
     } else if (hasNewTail && previousTailId !== null && count > lastMsgCount && lastMsgCount > 0) {
       queueMicrotask(() => setUnreadBadge(v => v + (count - lastMsgCount)));
@@ -549,11 +568,13 @@ export default function ChatPage() {
     loadOlderMessages();
   };
 
-  // Keep the last message visible when attachment previews or a growing
-  // textarea change the composer height.
+  // Keep the last message visible when the conversation's own height changes
+  // under it: a growing composer, an attachment preview, and — the one that
+  // used to leave you a few hundred pixels short — images inside the messages
+  // finishing their decode after the list was already placed. While you are
+  // reading the bottom, the bottom is where you stay.
   useEffect(() => {
-    const composer = composerRef.current;
-    if (!composer || typeof ResizeObserver === 'undefined') return undefined;
+    if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(() => {
       if (isScrolledUp) return;
       requestAnimationFrame(() => {
@@ -561,24 +582,31 @@ export default function ChatPage() {
         scrollElement?.scrollTo({ top: scrollElement.scrollHeight, behavior: 'instant' });
       });
     });
-    observer.observe(composer);
+    if (composerRef.current) observer.observe(composerRef.current);
+    // The scroller itself has a fixed box, so observing it reports nothing; the
+    // messages inside it are what grow.
+    if (chatContentRef.current) observer.observe(chatContentRef.current);
     return () => observer.disconnect();
-  }, [isScrolledUp]);
+  }, [isScrolledUp, messages.length]);
 
-  // Mark as read + scroll to bottom when switching channel
+  // Mark as read when switching channel, and hand the new conversation back to
+  // the layout effect above to place.
+  //
+  // There used to be a `setTimeout(…, 100)` here that called `scrollIntoView`
+  // as well — a second correction racing the first, a tenth of a second after
+  // the paint. Between the two, opening a channel showed the history moving.
+  // Clearing the flag is enough: the next render places the list at the bottom
+  // before it is ever painted.
   useEffect(() => {
     markAsRead(getRoomId());
     lastTailIdRef.current = null;
     pendingHistoryHeightRef.current = null;
+    initialScrollDoneRef.current = false;
     queueMicrotask(() => {
       setIsScrolledUp(false);
       setUnreadBadge(0);
       setLastMsgCount(0);
     });
-    // Force scroll to bottom on channel switch
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
-    }, 100);
   }, [activeChannel.id, activeChannel.type]); // eslint-disable-line
 
   // Messages received while the conversation is already open are read
@@ -1099,6 +1127,7 @@ export default function ChatPage() {
             {/* Messages list */}
             <ChatMessageList
               scrollRef={chatScrollRef}
+              contentRef={chatContentRef}
               endRef={messagesEndRef}
               registerMessageRef={(id, element) => {
                 if (element) messageRefs.current.set(id, element);

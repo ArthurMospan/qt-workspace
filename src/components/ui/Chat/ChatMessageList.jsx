@@ -51,6 +51,7 @@ function isSameDay(a, b) {
  * @param {boolean} props.hasMore There is older history to page into.
  * @param {() => void} props.onLoadMore Fetches that older page.
  * @param {React.RefObject} props.scrollRef The scroller, shared with the composer dock.
+ * @param {React.RefObject} props.contentRef The messages themselves, whose height changes as images decode.
  * @param {React.RefObject} props.endRef Anchor at the bottom, for scroll-to-latest.
  * @param {(id: string, node) => void} props.registerMessageRef Records each message's node, for jumping to a search hit.
  * @param {() => void} props.onJumpToLatest Scrolls to the newest message.
@@ -66,6 +67,7 @@ function isSameDay(a, b) {
  */
 export default function ChatMessageList({
   scrollRef,
+  contentRef,
   endRef,
   registerMessageRef,
   messages = [],
@@ -104,7 +106,11 @@ export default function ChatMessageList({
             />
           </div>
         ) : (
-          <>
+          // One element around the messages so their combined height is
+          // observable. An image that finishes decoding after the list was
+          // placed grows this box, and the screen re-pins the bottom; without a
+          // box to watch, the reader was simply left short of it.
+          <div ref={contentRef}>
             {/* Only the latest window is subscribed; older history loads on
                 demand so opening a busy channel is not an unbounded read. */}
             {hasMore && !searchTerm.trim() && (
@@ -146,7 +152,7 @@ export default function ChatMessageList({
                 </div>
               );
             })}
-          </>
+          </div>
         )}
 
         {/* Typing indicator */}

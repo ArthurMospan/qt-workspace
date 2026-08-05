@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   chatAttachmentKind,
   collectChatAttachments,
@@ -115,4 +116,38 @@ test('formatChatFileSize produces readable labels', () => {
   assert.equal(formatChatFileSize(1024), '1.0 КБ');
   assert.equal(formatChatFileSize(5 * 1024 * 1024), '5.0 МБ');
   assert.equal(formatChatFileSize(undefined), '');
+});
+
+// A conversation opens showing its newest message. It does not scroll to it.
+//
+// Measured on the running app before this change: the list rendered at
+// scrollTop 0 and animated 363px down over 10 frames — the visible "my chats
+// are scrolling themselves" the report described. After: the first frame in
+// which the list was scrollable was already at the bottom, and none of the 303
+// sampled frames sat off it.
+test('the chat places itself at the latest message instead of scrolling to it', async () => {
+  const page = await readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8');
+
+  // Before the paint, not after it.
+  assert.match(page, /useLayoutEffect\(\(\) => \{\s*\r?\n\s*const count = messages\.length;/);
+  // Smooth is reserved for a message arriving in a conversation you are already
+  // sitting in; landing in one is instant.
+  assert.match(page, /behavior: isInitialPlacement \|\| count <= 1 \? 'instant' : 'smooth'/);
+  assert.match(page, /const isInitialPlacement = !initialScrollDoneRef\.current;/);
+  // Switching conversation re-arms the placement rather than firing a second,
+  // delayed correction that raced the first.
+  assert.match(page, /initialScrollDoneRef\.current = false;/);
+  assert.doesNotMatch(page, /setTimeout\(\(\) => \{\s*\r?\n\s*messagesEndRef\.current\?\.scrollIntoView/);
+
+  // The thread panel opens the same way.
+  assert.match(page, /useLayoutEffect\(\(\) => \{\s*\r?\n\s*if \(scrollRef\.current\) \{/);
+
+  // And an image that decodes after the list was placed re-pins the bottom,
+  // which needs one observable box around the messages.
+  const list = await readFile(
+    new URL('../src/components/ui/Chat/ChatMessageList.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(list, /<div ref=\{contentRef\}>/);
+  assert.match(page, /observer\.observe\(chatContentRef\.current\)/);
 });

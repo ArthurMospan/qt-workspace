@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 91,
-    "props": 664,
-    "documentedProps": 664,
+    "props": 665,
+    "documentedProps": 665,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1176,6 +1176,13 @@
       "file": "src/components/ui/Chat/ChatMessageList.jsx",
       "summary": "The scrolling conversation: day separators, avatar grouping, the unread divider, the jump-to-latest button and paging into history.",
       "props": [
+        {
+          "name": "contentRef",
+          "default": "",
+          "type": "React.RefObject",
+          "values": [],
+          "description": "The messages themselves, whose height changes as images decode."
+        },
         {
           "name": "endRef",
           "default": "",
