@@ -1,5 +1,6 @@
 'use client';
-import { TaskListView } from '@/components/ui';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { TaskListCard, TaskListView } from '@/components/ui';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -167,6 +168,36 @@ export default function TaskCRMSection() {
           showProjectName
           hiddenStatusIds={[lastStatusId]}
         />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task List Card — плоский список задач"
+        description="Один вигляд для всіх списків задач в аналітиці: «Прострочені» в Огляді, «Поточний фокус» і «Завершено» в Команді, «Нещодавно закриті» в Продуктивності. На відміну від Task List View тут немає групування за статусом — набір уже визначив той, хто його показує. Рядки ті самі TaskRow, тож задача клікабельна скрізь однаково."
+        filePath="src/components/ui/TaskManagement/TaskListCard.jsx"
+      >
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TaskListCard
+            title="Прострочені"
+            icon={AlertTriangle}
+            iconClassName="text-red-500"
+            issues={demoIssues.slice(0, 3)}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+            limit={3}
+          />
+          <TaskListCard
+            title="Нещодавно закриті завдання"
+            icon={CheckCircle2}
+            iconClassName="text-emerald-600"
+            issues={[]}
+            members={demoMembers}
+            projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+            emptyText="За вказаний період завдань не закрито"
+          />
+        </div>
       </PreviewBlock>
 
       <PreviewBlock

@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 90,
-    "props": 648,
-    "documentedProps": 648,
+    "components": 91,
+    "props": 664,
+    "documentedProps": 664,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4600,6 +4600,124 @@
           "type": "boolean",
           "values": [],
           "description": "Keeps everything on one row instead of wrapping."
+        }
+      ]
+    },
+    "TaskListCard": {
+      "file": "src/components/ui/TaskManagement/TaskListCard.jsx",
+      "summary": "A titled card holding a flat list of tasks — \"Прострочені\", \"Поточний фокус\", \"Нещодавно закриті\".",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Optional control on the right of the caption."
+        },
+        {
+          "name": "allIssues",
+          "default": "",
+          "type": "object[]",
+          "values": [],
+          "description": "Every task in scope, for parents and blockers."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "count",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Shown next to the title; defaults to the number of tasks."
+        },
+        {
+          "name": "emptyText",
+          "default": "'Завдань немає'",
+          "type": "string",
+          "values": [],
+          "description": "Sentence shown when there is nothing to list."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "Leading glyph on the caption."
+        },
+        {
+          "name": "iconClassName",
+          "default": "'text-muted'",
+          "type": "string",
+          "values": [],
+          "description": "Colour for that glyph, where it carries meaning."
+        },
+        {
+          "name": "issueLinks",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Relations, for the blocked marker."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "The tasks to list."
+        },
+        {
+          "name": "labels",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Label definitions, for the chips."
+        },
+        {
+          "name": "limit",
+          "default": "8",
+          "type": "number",
+          "values": [],
+          "description": "How many rows to draw."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Workspace members, for avatars."
+        },
+        {
+          "name": "projects",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Projects, for naming each row's project."
+        },
+        {
+          "name": "showProjectName",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether each row names its project — true on cross-project lists."
+        },
+        {
+          "name": "sprints",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Sprint definitions."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Caption above the list."
         }
       ]
     },

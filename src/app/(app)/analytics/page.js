@@ -21,6 +21,7 @@ import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
   Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader, KpiCard, Segmented, Surface,
+  TaskListCard,
 } from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -38,7 +39,6 @@ import {
   filterTeamTimeLogs,
   memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
-import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import {
   selectActionableIssues,
   sumRawTimeLogMinutes,
@@ -308,30 +308,16 @@ function AnalyticsContent({
         {/* Overdue + Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {stats.overdue.length > 0 && (
-            <Card preset="borderless" padding="lg">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={13} className="shrink-0 text-red-500" />
-                <h2 className="ui-type-eyebrow uppercase tracking-wider text-muted">
-                  Прострочені ({stats.overdue.length})
-                </h2>
-              </div>
-              <div className="flex flex-col gap-2">
-              {stats.overdue.slice(0, 6).map(issue => {
-                const proj = projects.find(p => p.id === issue.projectId);
-                return (
-                  <TaskRow
-                    key={issue.id}
-                    issue={issue}
-                    issues={issueReferenceIssues}
-                    members={members}
-                    projectId={issue.projectId}
-                    projectName={proj?.name}
-                    showProjectName
-                  />
-                );
-              })}
-              </div>
-            </Card>
+            <TaskListCard
+              title="Прострочені"
+              icon={AlertTriangle}
+              iconClassName="text-red-500"
+              issues={stats.overdue}
+              allIssues={issueReferenceIssues}
+              members={members}
+              projects={projects}
+              limit={6}
+            />
           )}
           <Card preset="borderless" padding="lg">
             <SectionTitle>Інсайти</SectionTitle>
@@ -773,7 +759,7 @@ export default function WorkspaceAnalyticsPage() {
         )}
 
         {activeTab === 'velocity' && (
-          <VelocityTab issues={analyticsIssues} projects={visibleProjects} period={period} />
+          <VelocityTab issues={analyticsIssues} projects={visibleProjects} members={members} period={period} />
         )}
 
         {activeTab === 'workload' && (

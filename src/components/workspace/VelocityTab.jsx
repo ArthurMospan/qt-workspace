@@ -3,7 +3,7 @@
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
-import { EmptyState, KpiCard, Pill } from '@/components/ui';
+import { EmptyState, KpiCard, Pill, TaskListCard } from '@/components/ui';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 
@@ -159,7 +159,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function VelocityTab({ issues = [], projects = [], period = 30 }) {
+export default function VelocityTab({ issues = [], projects = [], members = [], period = 30 }) {
   const { doneStatusIds, types = [] } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const actionableIssues = useMemo(
@@ -251,6 +251,16 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
       byProject,
     };
   }, [actionableIssues, projects, period, doneSet, now, types]);
+
+  const recentlyClosed = useMemo(
+    () => actionableIssues
+      .filter(issue => (
+        doneSet.has(issue.columnId || issue.status)
+        && getCompletedAtMillis(issue) >= now - period * 86400000
+      ))
+      .sort((left, right) => getCompletedAtMillis(right) - getCompletedAtMillis(left)),
+    [actionableIssues, doneSet, now, period],
+  );
 
   if (actionableIssues.length === 0) {
     return (
@@ -361,44 +371,19 @@ export default function VelocityTab({ issues = [], projects = [], period = 30 })
           )}
         </div>
 
-        {/* Recent done issues */}
-        <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-          <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
-            Нещодавно закриті завдання
-          </h3>
-          {stats.donePeriod === 0 ? (
-            <p className="text-[13px] text-muted py-4 text-center">За вказаний період завдань не закрито</p>
-          ) : (
-            <div className="divide-y divide-[#f0f0f0]">
-              {actionableIssues
-                .filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= now - period * 86400000)
-                .sort((a, b) => getCompletedAtMillis(b) - getCompletedAtMillis(a))
-                .slice(0, 8)
-                .map(issue => {
-                  const proj = projects.find(p => p.id === issue.projectId);
-                  const cycleMs = getCompletedAtMillis(issue) - (issue.createdAt?.toMillis?.() ?? 0);
-                  const cycleDays = cycleMs > 0 ? Math.round(cycleMs / 86400000) : null;
-                  return (
-                    <div key={issue.id} className="py-3 flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-ink truncate">{issue.title}</p>
-                        <p className="text-[10px] text-muted mt-0.5">
-                          {issue.issueKey && <span className="font-semibold mr-1">{issue.issueKey}</span>}
-                          {proj?.name}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {cycleDays !== null && (
-                          <span className="text-[11px] text-muted">{cycleDays}д цикл</span>
-                        )}
-                        <Pill tone="success" size="md">✓ Виконано</Pill>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
+        {/* Recent done issues. These were the one list of tasks in the product
+            you could not click: a title, a project and a cycle time, drawn by
+            hand. They are `TaskListCard` rows now, like every other list. */}
+        <TaskListCard
+          title="Нещодавно закриті завдання"
+          icon={CheckCircle2}
+          iconClassName="text-emerald-600"
+          count={stats.donePeriod}
+          issues={recentlyClosed}
+          members={members}
+          projects={projects}
+          emptyText="За вказаний період завдань не закрито"
+        />
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflow
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 import { parseDueDate } from '@/lib/utils/date';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
-import TaskRow from '@/components/ui/TaskManagement/TaskRow';
+import { TaskListCard } from '@/components/ui';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
@@ -278,27 +278,16 @@ export default function AnalyticsTab({
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
         {stats.overdue.length > 0 && (
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle size={13} className="shrink-0 text-red-500" />
-              <h3 className="ui-type-eyebrow uppercase tracking-wider text-muted">
-                Прострочені завдання ({stats.overdue.length})
-              </h3>
-            </div>
-            <div className="flex flex-col gap-2">
-              {stats.overdue.slice(0, 8).map(issue => (
-                <TaskRow
-                  key={issue.id}
-                  issue={issue}
-                  issues={issues}
-                  members={members}
-                  projectId={projectId}
-                  projectName={project?.name}
-                  showProjectName
-                />
-              ))}
-            </div>
-          </div>
+          <TaskListCard
+            title="Прострочені завдання"
+            icon={AlertTriangle}
+            iconClassName="text-red-500"
+            issues={stats.overdue}
+            allIssues={issues}
+            members={members}
+            projects={project ? [project] : []}
+            limit={8}
+          />
         )}
 
         {/* ── Per-member table ─────────────────────────────────────── */}

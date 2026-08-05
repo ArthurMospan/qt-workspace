@@ -23,10 +23,11 @@ import {
   EmptyState,
   KpiCard,
   ListRow,
+  Pill,
   Segmented,
+  TaskListCard,
 } from '@/components/ui';
 import {
-  DEFAULT_PRIORITIES,
   getCompletedAtMillis,
   useWorkflowConfig,
 } from '@/lib/hooks/useWorkflowConfig';
@@ -46,8 +47,6 @@ import {
   selectActionableIssues,
   sumRawTimeLogMinutes,
 } from '@/lib/utils/issueAccounting.mjs';
-
-const PRIORITY_META = Object.fromEntries(DEFAULT_PRIORITIES.map(priority => [priority.id, priority]));
 
 function fmtH(minutes) {
   if (!minutes) return '0г';
@@ -70,11 +69,6 @@ function timestampMillis(value) {
   if (value?.toDate) return value.toDate().getTime();
   const parsed = value ? new Date(value).getTime() : 0;
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function issueStatusLabel(issue, statuses) {
-  const statusId = issue.columnId || issue.status;
-  return statuses.find(status => status.id === statusId)?.label || statusId || 'Без статусу';
 }
 
 function positionLabel(member, positions) {
@@ -107,29 +101,20 @@ function relativeActivity(value, now) {
   return new Date(value).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
 }
 
-function riskMeta(stat) {
+// How this person's week is going, in one chip. It was four hand-mixed colour
+// pairs that had been the kit's four semantic pill tones all along — the same
+// greens, ambers and reds, half a shade off each.
+function RiskPill({ stat }) {
   if (stat.overdue > 0) {
-    return {
-      label: `${stat.overdue} прострочено`,
-      className: 'bg-red-50 text-red-600',
-    };
+    return <Pill tone="danger" size="md">{stat.overdue} прострочено</Pill>;
   }
   if (stat.open >= 8) {
-    return {
-      label: 'Високе навантаження',
-      className: 'bg-amber-50 text-amber-700',
-    };
+    return <Pill tone="warning" size="md">Високе навантаження</Pill>;
   }
   if (stat.open > 0 && stat.minutes === 0) {
-    return {
-      label: 'Час не списано',
-      className: 'bg-slate-100 text-slate-600',
-    };
+    return <Pill tone="neutral" size="md">Час не списано</Pill>;
   }
-  return {
-    label: 'Стабільно',
-    className: 'bg-emerald-50 text-emerald-700',
-  };
+  return <Pill tone="success" size="md">Стабільно</Pill>;
 }
 
 // Open work is neutral, not black: a full-width ink bar read as an alert on a
@@ -200,7 +185,6 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
 
         <div className="divide-y divide-line">
           {stats.map(stat => {
-            const risk = riskMeta(stat);
             return (
               <ListRow
                 key={stat.uid}
@@ -253,9 +237,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
                 </span>
 
                 <span className="flex items-center justify-between gap-3 lg:block lg:text-right">
-                  <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${risk.className}`}>
-                    {risk.label}
-                  </span>
+                  <RiskPill stat={stat} />
                   <ChevronRight size={15} className="text-faint lg:hidden" />
                 </span>
 
@@ -346,49 +328,20 @@ function ProjectDistribution({ stat, projects }) {
   );
 }
 
-function IssueList({
-  title,
-  issues,
-  projects,
-  statuses,
-  emptyText,
-  overdueIssueIds = [],
-  limit = 8,
-}) {
-  const overdueSet = new Set(overdueIssueIds);
+// A list of tasks on this screen used to be a priority dot with a subtitle line
+// — a third way of drawing a task, after the board row and the overview list.
+// `TaskListCard` is the one way now: the same row, the same badges, the same
+// click through to the task.
+function IssueList({ title, issues, projects, members, emptyText, limit = 8 }) {
   return (
-    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-      <h3 className="ui-type-eyebrow mb-3 uppercase tracking-wider text-muted">{title}</h3>
-      {issues.length === 0 ? (
-        <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
-      ) : (
-        <div className="divide-y divide-line">
-          {issues.slice(0, limit).map(issue => {
-            const project = projects.find(item => item.id === issue.projectId);
-            const overdue = overdueSet.has(issue.id);
-            return (
-              <Link
-                key={issue.id}
-                href={`/${issue.projectId}/issue/${issue.id}`}
-                className="flex items-center gap-3 py-3 transition-colors hover:text-ink"
-              >
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: PRIORITY_META[issue.priority]?.color || '#c7c7c7' }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-semibold text-ink">{issue.title}</span>
-                  <span className="mt-0.5 block truncate text-[10px] text-muted">
-                    {issue.issueKey || 'Завдання'} · {project?.name || 'Без проєкту'} · {issueStatusLabel(issue, statuses)}
-                  </span>
-                </span>
-                {overdue && <span className="shrink-0 text-[10px] font-bold text-red-500">Прострочено</span>}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <TaskListCard
+      title={title}
+      issues={issues}
+      members={members}
+      projects={projects}
+      emptyText={emptyText}
+      limit={limit}
+    />
   );
 }
 
@@ -461,7 +414,7 @@ function RecentTime({ logs, issues, events, projects }) {
   );
 }
 
-function MemberOverview({ stat, projects, statuses, events, period }) {
+function MemberOverview({ stat, projects, members, events, period }) {
   const completionRate = stat.done + stat.open > 0
     ? Math.round((stat.done / (stat.done + stat.open)) * 100)
     : 0;
@@ -479,9 +432,8 @@ function MemberOverview({ stat, projects, statuses, events, period }) {
           title="Поточний фокус"
           issues={stat.inProgressItems}
           projects={projects}
-          statuses={statuses}
+          members={members}
           emptyText="Немає задач у статусі «В роботі»"
-          overdueIssueIds={stat.overdueItems.map(issue => issue.id)}
           limit={6}
         />
         <ProjectDistribution stat={stat} projects={projects} />
@@ -489,9 +441,8 @@ function MemberOverview({ stat, projects, statuses, events, period }) {
           title={`Завершено за ${period} днів`}
           issues={stat.doneItems}
           projects={projects}
-          statuses={statuses}
+          members={members}
           emptyText="За вибраний період задач не завершено"
-          overdueIssueIds={stat.overdueItems.map(issue => issue.id)}
           limit={8}
         />
         <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
@@ -500,7 +451,7 @@ function MemberOverview({ stat, projects, statuses, events, period }) {
   );
 }
 
-function MemberWork({ stat, projects, statuses, events }) {
+function MemberWork({ stat, projects, members, events }) {
   const [filter, setFilter] = useState('open');
   const visibleIssues = useMemo(() => {
     if (filter === 'done') return stat.doneItems;
@@ -527,9 +478,8 @@ function MemberWork({ stat, projects, statuses, events }) {
           title="Завдання"
           issues={visibleIssues}
           projects={projects}
-          statuses={statuses}
+          members={members}
           emptyText="За цим фільтром завдань немає"
-          overdueIssueIds={stat.overdueItems.map(issue => issue.id)}
           limit={50}
         />
         <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
@@ -584,7 +534,6 @@ function MemberDetail({
   members,
   positions,
   projects,
-  statuses,
   events,
   period,
   onBack,
@@ -635,16 +584,16 @@ function MemberDetail({
 
       <div key={view}>
         {view === 'overview' && (
-          <MemberOverview stat={stat} projects={projects} statuses={statuses} events={events} period={period} />
+          <MemberOverview stat={stat} projects={projects} members={members} events={events} period={period} />
         )}
         {view === 'work' && (
-          <MemberWork stat={stat} projects={projects} statuses={statuses} events={events} />
+          <MemberWork stat={stat} projects={projects} members={members} events={events} />
         )}
         {view === 'timesheet' && (
           <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
         )}
         {view === 'productivity' && (
-          <VelocityTab issues={stat.issues} projects={projects} period={period} />
+          <VelocityTab issues={stat.issues} projects={projects} members={members} period={period} />
         )}
       </div>
     </div>
@@ -667,7 +616,7 @@ export default function WorkloadTab({
   detailFilters,
 }) {
   const [now, setNow] = useState(() => Date.now());
-  const { doneStatusIds, positions = [], statuses = [] } = useWorkflowConfig();
+  const { doneStatusIds, positions = [] } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
   const actionableIssues = useMemo(
     () => selectActionableIssues(issues, hierarchyIssues),
@@ -782,7 +731,6 @@ export default function WorkloadTab({
           members={members}
           positions={positions}
           projects={projects}
-          statuses={statuses}
           events={events}
           period={period}
           onBack={() => onSelectMember?.('all')}

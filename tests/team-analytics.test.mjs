@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   filterTeamIssues,
   filterTeamTimeLogs,
@@ -74,4 +75,43 @@ test('team analytics counts leaf and standalone work but never its summary paren
 test('employee analytics opens as a dedicated encoded route', () => {
   assert.equal(memberAnalyticsHref('user/42'), '/analytics/team/user%2F42');
   assert.equal(memberAnalyticsHref(''), '/analytics?tab=workload');
+});
+
+// One shape for a list of tasks, everywhere it is listed.
+//
+// Analytics drew three. Overview used TaskRow; the team pages drew a priority
+// dot with a subtitle line; "Нещодавно закриті" drew a title, a project and a
+// cycle time — and was the one list of tasks in the product you could not click
+// through to the task. They are all `TaskListCard` now.
+test('every analytics list of tasks is the shared TaskListCard', async () => {
+  const files = [
+    '../src/app/(app)/analytics/page.js',
+    '../src/components/workspace/AnalyticsTab.jsx',
+    '../src/components/workspace/VelocityTab.jsx',
+    '../src/components/workspace/WorkloadTab.jsx',
+  ];
+  for (const file of files) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8');
+    assert.match(source, /<TaskListCard/, file);
+    // No screen keeps a second way of drawing a task row beside it.
+    assert.doesNotMatch(source, /<TaskRow/, file);
+  }
+
+  const card = await readFile(
+    new URL('../src/components/ui/TaskManagement/TaskListCard.jsx', import.meta.url),
+    'utf8',
+  );
+  // Rows are TaskRow, which is what makes them clickable and identical to the
+  // board's list view.
+  assert.match(card, /<TaskRow/);
+  assert.match(card, /showProjectName = true/);
+
+  // And it is a kit component: exported from the barrel and previewed.
+  const index = await readFile(new URL('../src/components/ui/index.js', import.meta.url), 'utf8');
+  assert.match(index, /export \{ default as TaskListCard \}/);
+  const preview = await readFile(
+    new URL('../src/app/ui-kit/sections/task-crm.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(preview, /<TaskListCard/);
 });

@@ -39,13 +39,13 @@
   },
   "kit": {
     "totals": {
-      "components": 90,
-      "used": 90,
+      "components": 91,
+      "used": 91,
       "unused": 0,
-      "covered": 87,
+      "covered": 88,
       "uncovered": 0,
       "routes": 12,
-      "previews": 116,
+      "previews": 117,
       "internal": 3,
       "unlisted": 0
     },
@@ -252,7 +252,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:613",
+      "location": "src/components/workspace/WorkloadTab.jsx:562",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -618,7 +618,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:554",
+      "location": "src/components/workspace/WorkloadTab.jsx:504",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

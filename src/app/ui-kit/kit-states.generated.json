@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 90,
-    "stateful": 86,
+    "components": 91,
+    "stateful": 87,
     "hover": 63,
     "focus": 63,
     "disabled": 34,
     "loading": 5,
     "error": 6,
-    "long-text": 61
+    "long-text": 62
   },
   "components": {
     "Alert": {
@@ -365,6 +365,9 @@
       "hover": "own",
       "focus": "global",
       "long-text": "children"
+    },
+    "TaskListCard": {
+      "long-text": "title"
     },
     "TaskListView": {
       "hover": "own"
@@ -741,6 +744,9 @@
     ],
     "TaskAttributesPanel": [
       "task-attributes"
+    ],
+    "TaskListCard": [
+      "task-crm"
     ],
     "TaskListView": [
       "task-crm"
