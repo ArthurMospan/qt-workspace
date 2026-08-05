@@ -20,7 +20,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
+  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock, MoveRight
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -44,7 +44,8 @@ import {
   Pill,
   Surface,
   useConfirm,
-  Popover
+  Popover,
+  ContextMenu
 } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -71,8 +72,9 @@ import {
 } from '@/lib/hooks/useWorkflowConfig';
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
 import {
+  flattenStatusGroups,
+  groupStatusesByCategory,
   isClosingCategory,
-  isStatusCategoryId,
   STATUS_CATEGORIES,
   STATUS_CATEGORY_IDS,
 } from '@/lib/utils/statusCategories.mjs';
@@ -314,7 +316,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, category = '', onMoveToCategory }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -407,6 +409,31 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
           {label}
         </span>
+      )}
+
+      {/* Move to another category. Dragging the row into another section is the
+          same act and the one most people will reach for; this is how it is done
+          from the keyboard, because the drag library can only move an item
+          between lists that sit side by side, and these are stacked. */}
+      {variant === 'status' && !editing && onMoveToCategory && (
+        <ContextMenu
+          className="shrink-0"
+          trigger={(
+            <IconAction
+              label={`Перемістити «${item.label}» в іншу категорію`}
+              icon={MoveRight}
+              size="sm"
+              appearance="quiet"
+            />
+          )}
+          items={STATUS_CATEGORY_IDS
+            .filter(categoryId => categoryId !== category)
+            .map(categoryId => ({
+              label: STATUS_CATEGORIES[categoryId].label,
+              icon: STATUS_CATEGORY_ICONS[categoryId],
+              onClick: () => onMoveToCategory(categoryId),
+            }))}
+        />
       )}
 
       {/* Actions */}
@@ -1774,22 +1801,7 @@ export default function SettingsPage() {
   // and Shortcut do it. That makes the two-layer model visible instead of
   // explained — and it means the flat array we save is always in category order,
   // so a project board's columns come out in the order work actually flows.
-  const statusesByCategory = useMemo(() => {
-    const groups = new Map(STATUS_CATEGORY_IDS.map(categoryId => [categoryId, []]));
-    for (const status of statuses) {
-      const category = isStatusCategoryId(status.category) ? status.category : 'in-progress';
-      groups.get(category).push(status);
-    }
-    return groups;
-  }, [statuses]);
-
-  const flattenStatusGroups = groups => STATUS_CATEGORY_IDS.flatMap(
-    categoryId => (groups.get(categoryId) || []).map(status => ({
-      ...status,
-      category: categoryId,
-      isDone: isClosingCategory(categoryId),
-    })),
-  );
+  const statusesByCategory = useMemo(() => groupStatusesByCategory(statuses), [statuses]);
 
   // The two invariants the whole product rests on, enforced here and again in the
   // API: something has to close a task, and something has to stay open for new
@@ -1805,6 +1817,27 @@ export default function SettingsPage() {
         + 'одразу вважатимуться закритими';
     }
     return null;
+  };
+
+  const handleStatusMoveToCategory = (id, categoryId) => {
+    const groups = groupStatusesByCategory(statuses);
+    let moved = null;
+    for (const [key, items] of groups) {
+      const at = items.findIndex(status => status.id === id);
+      if (at < 0) continue;
+      if (key === categoryId) return;
+      [moved] = items.splice(at, 1);
+      break;
+    }
+    if (!moved) return;
+    groups.get(categoryId).push(moved);
+    const next = flattenStatusGroups(groups);
+    const problem = statusGroupsBreakInvariant(next);
+    if (problem) {
+      showToast(problem, 'error');
+      return;
+    }
+    setStatuses(next);
   };
 
   const handleStatusDragEnd = result => {
@@ -1838,11 +1871,7 @@ export default function SettingsPage() {
   // starts out looking like what it means, and can be recoloured after.
   const handleAddStatus = categoryId => {
     setStatuses(prev => {
-      const groups = new Map(STATUS_CATEGORY_IDS.map(id => [id, []]));
-      for (const status of prev) {
-        const category = isStatusCategoryId(status.category) ? status.category : 'in-progress';
-        groups.get(category).push(status);
-      }
+      const groups = groupStatusesByCategory(prev);
       groups.get(categoryId).push({
         id: `s-${Date.now()}`,
         label: 'Новий статус',
@@ -2934,6 +2963,8 @@ export default function SettingsPage() {
                                     onSave={stA.onSave} onDelete={handleStatusDeleteClick}
                                     canDelete={canDeleteStatus(s)}
                                     variant="status"
+                                    category={categoryId}
+                                    onMoveToCategory={value => handleStatusMoveToCategory(s.id, value)}
                                     provided={dragProvided}
                                   />
                                 )}

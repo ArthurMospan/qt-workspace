@@ -101,7 +101,12 @@ test('the workflow editor groups statuses by category and moves them by dragging
   assert.doesNotMatch(settings, /STATUS_CATEGORY_OPTIONS/);
   // Saved in canonical category order, so a project board's columns follow the
   // flow of work rather than the order somebody happened to add them in.
-  assert.match(settings, /const flattenStatusGroups = groups => STATUS_CATEGORY_IDS\.flatMap\(/);
+  assert.match(settings, /flattenStatusGroups\(groups\)/);
+  // The drag library moves an item between lists that sit side by side, and
+  // these are stacked — so without this menu a category could only be changed
+  // with a mouse. Both paths ask the same guard.
+  assert.match(settings, /onMoveToCategory=\{value => handleStatusMoveToCategory\(s\.id, value\)\}/);
+  assert.match(settings, /const handleStatusMoveToCategory = \(id, categoryId\) => \{/);
   // No id is special any more: what may be deleted is decided by the invariants.
   assert.doesNotMatch(settings, /!\['backlog', 'done'\]\.includes/);
 });

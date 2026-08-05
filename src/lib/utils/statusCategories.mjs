@@ -278,6 +278,36 @@ export function statusCategoryColumns(statuses) {
 }
 
 /**
+ * The workflow as the editor shows it: one list per category, in canonical
+ * order, every category present even when it holds nothing — an empty section is
+ * how you add the first «Скасовано». A status with no category is read as work in
+ * progress rather than dropped, so nothing can fall out of the editor.
+ */
+export function groupStatusesByCategory(statuses) {
+  const groups = new Map(STATUS_CATEGORY_IDS.map(categoryId => [categoryId, []]));
+  const categories = statusCategoryMap(statuses);
+  for (const status of statusList(statuses)) {
+    const category = categories.get(status.id) || 'in-progress';
+    groups.get(category).push(status);
+  }
+  return groups;
+}
+
+/**
+ * The inverse: back to the flat array the workflow document stores, in canonical
+ * category order with each status's category and `isDone` written out. Saving
+ * through this is what keeps the stored order the order work flows in, so a
+ * project board's columns never come out shuffled by when somebody added them.
+ */
+export function flattenStatusGroups(groups) {
+  return STATUS_CATEGORY_IDS.flatMap(categoryId => (groups.get(categoryId) || []).map(status => ({
+    ...status,
+    category: categoryId,
+    isDone: isClosingCategory(categoryId),
+  })));
+}
+
+/**
  * Which status a task should get when it is dropped into a category column.
  *
  * A task keeps the status it already has whenever that status is in the target

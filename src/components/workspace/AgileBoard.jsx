@@ -144,24 +144,36 @@ export default function AgileBoard({
     .sort(compareIssues);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
-  const [collapsedCols, setCollapsedCols] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(`qt_board_collapsed_${projectId || 'default'}`);
-        if (saved) return JSON.parse(saved);
-      } catch {}
+  // Which columns are folded, remembered per board *and per grouping*: the two
+  // modes have different columns, and one key let a collapsed «У роботі» category
+  // fold the unrelated status that happens to share its id.
+  const collapsedKey = `qt_board_collapsed_${projectId || 'default'}${byCategory ? '_category' : ''}`;
+  // Read from the key rather than copied into state on mount: switching grouping
+  // changes the key, and a copy would keep showing the folds of the mode you
+  // just left. The override is this session's edits to the key it belongs to, so
+  // it stops applying the moment the key changes — no effect has to reset it.
+  const storedCollapsedCols = useMemo(() => {
+    if (typeof window === 'undefined') return ['__hidden__'];
+    try {
+      const saved = localStorage.getItem(collapsedKey);
+      return saved ? JSON.parse(saved) : ['__hidden__'];
+    } catch {
+      return ['__hidden__'];
     }
-    return ['__hidden__'];
-  });
+  }, [collapsedKey]);
+  const [collapsedOverride, setCollapsedOverride] = useState(null);
+  const collapsedCols = collapsedOverride?.key === collapsedKey
+    ? collapsedOverride.columnIds
+    : storedCollapsedCols;
 
   const toggleColumnCollapse = (id) => {
-    setCollapsedCols(prev => {
-      const next = prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`qt_board_collapsed_${projectId || 'default'}`, JSON.stringify(next));
-      }
-      return next;
-    });
+    const next = collapsedCols.includes(id)
+      ? collapsedCols.filter(c => c !== id)
+      : [...collapsedCols, id];
+    setCollapsedOverride({ key: collapsedKey, columnIds: next });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(collapsedKey, JSON.stringify(next));
+    }
   };
 
   useEffect(() => {

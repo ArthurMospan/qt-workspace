@@ -99,6 +99,13 @@ export default function MyTasksPage() {
   });
 
   const updateHiddenCategories = (next) => {
+    // A board with every column folded away shows nothing but the «Приховані»
+    // lane, and there is no control on it to get back — the picker is the only
+    // way in, so the last visible column cannot be the one you fold.
+    if (categoryColumns.length > 0 && next.length >= categoryColumns.length) {
+      showToast('Хоча б одна колонка має лишатися видимою', 'error');
+      return;
+    }
     setHiddenCategories(next);
     localStorage.setItem('qt_my_tasks_hidden_categories', JSON.stringify(next));
   };
