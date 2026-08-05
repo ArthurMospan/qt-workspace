@@ -15,6 +15,12 @@ import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
  * you retype, the project is ordinary text because it is a name you read, and
  * the parent is a link-shaped fragment behind a real icon.
  *
+ * Two keys sit here on a subtask, and they are not equals: the first names this
+ * task, the second names the one it hangs under. They are set in the same type
+ * for that reason — one kind of thing, read the same way — and told apart by
+ * weight and colour alone. The parent used to be the darker and heavier of the
+ * two, which read as the card's own name with something faint in front of it.
+ *
  * @param {object} props.issue The task.
  * @param {object} props.project Its project, for re-prefixing a legacy key.
  * @param {string} props.projectName Its project's name.
@@ -37,7 +43,7 @@ export default function TaskIdentity({
   return (
     <span className={`flex min-w-0 items-center gap-[6px] ${className}`}>
       {key && (
-        <span className="shrink-0 font-mono text-[10px] font-bold tracking-wide text-faint">
+        <span className="shrink-0 font-mono text-[10px] font-bold tracking-wide text-muted">
           {key}
         </span>
       )}
@@ -57,10 +63,10 @@ export default function TaskIdentity({
               below the baseline in some fonts and above it in others, and no
               font in the stack draws it at the weight of the text beside it. */}
           <span
-            className="flex min-w-0 items-center gap-[3px] text-[10px] font-medium text-muted"
+            className="flex min-w-0 items-center gap-[3px] font-mono text-[10px] font-medium tracking-wide text-faint"
             title={parentIssue.title || 'Батьківське завдання'}
           >
-            <CornerDownRight size={11} strokeWidth={2} className="shrink-0 text-faint" />
+            <CornerDownRight size={11} strokeWidth={2} className="shrink-0" />
             <span className="min-w-0 truncate">
               {parentIssue.issueKey || parentIssue.title || 'Батьківське завдання'}
             </span>
