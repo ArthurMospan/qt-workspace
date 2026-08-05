@@ -27,6 +27,21 @@ This file contains current owner guardrails and confirmed open work. Completed i
 - Provide a reconnect path for revoked/invalid grants on already linked projects.
 - Tighten provider rules and add live cross-repository smoke coverage before a broad client rollout.
 
+### Status categories — the remaining step
+
+A status has a local label and a shared category (see the README). Two follow-ups
+are deliberately not built yet:
+
+- Let one column of a project board hold several statuses, mapped explicitly. That
+  is what "hidden columns" are really reaching for: today a status a project does
+  not want is switched off per project, and a column that could gather «Код-ревʼю»
+  and «QA» under one heading would express it directly. `hiddenColumns` and its
+  server-side refusal stay correct in the meantime.
+- Decide whether `cancelled` should keep counting as completed work. It closes a
+  task exactly as `done` does today, which is what the product always described,
+  so progress, velocity and `completedAt` treat the two alike. Splitting them is a
+  product decision, not a bug, and it would touch analytics and invoices.
+
 ### Product polish
 
 - Add a “hide completed” toggle to My Tasks, enabled by default.

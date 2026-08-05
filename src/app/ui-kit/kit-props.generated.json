@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 93,
-    "props": 677,
-    "documentedProps": 677,
+    "props": 679,
+    "documentedProps": 679,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4826,7 +4826,7 @@
     },
     "TaskListView": {
       "file": "src/components/ui/TaskManagement/TaskListView.jsx",
-      "summary": "The list view of a board: tasks grouped by status, hidden statuses folded into one «Приховані» group at the end.",
+      "summary": "The list view of a board: tasks grouped by status — or, on a list that spans projects, by the five shared status categories — with hidden groups folded into one «Приховані» group at the end.",
       "props": [
         {
           "name": "activeTimerIssueId",
@@ -4857,11 +4857,18 @@
           "description": "Headline of the empty state."
         },
         {
-          "name": "hiddenStatusIds",
+          "name": "groupBy",
+          "default": "'status'",
+          "type": "'status'|'category'",
+          "values": [],
+          "description": "What a section is: one status, or one status category."
+        },
+        {
+          "name": "hiddenGroupIds",
           "default": "[]",
           "type": "string[]",
           "values": [],
-          "description": "Statuses folded into the «Приховані» group."
+          "description": "Groups folded into «Приховані» — status ids, or category ids under `groupBy=\"category\"`."
         },
         {
           "name": "issueLinks",
@@ -5008,6 +5015,13 @@
           "type": "boolean",
           "values": [],
           "description": "Whether the row names its project — true only on cross-project lists."
+        },
+        {
+          "name": "showStatusName",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the row names its status — true only where the section heading cannot, i.e. a category holding several statuses."
         },
         {
           "name": "sprints",

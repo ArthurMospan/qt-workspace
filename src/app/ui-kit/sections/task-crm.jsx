@@ -188,7 +188,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task List View — живий shared organism"
-        description="Саме цей organism рендерить обидва списки: hiddenStatusIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view. Кожну секцію можна згорнути кнопкою праворуч (той самий ghost icon, що згортає колонку канбану); розділювальної лінії під заголовком немає — секції відділяє відступ."
+        description="Саме цей organism рендерить обидва списки: hiddenGroupIds збирає відповідні задачі в секцію «Приховані», а showProjectName додає проєкт лише у cross-project view. Кожну секцію можна згорнути кнопкою праворуч (той самий ghost icon, що згортає колонку канбану); розділювальної лінії під заголовком немає — секції відділяє відступ."
         filePath="src/components/ui/TaskManagement/TaskListView.jsx"
         fullWidth
       >
@@ -200,7 +200,26 @@ export default function TaskCRMSection() {
           sprints={demoSprints}
           projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
           showProjectName
-          hiddenStatusIds={[lastStatusId]}
+          hiddenGroupIds={[lastStatusId]}
+        />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task List View — групування за категоріями"
+        description="groupBy=&quot;category&quot; — той самий organism на крос-проєктному списку «Мої завдання». Секції тут не статуси, а пʼять спільних категорій, тому назви статусів різних проєктів не змагаються за одну секцію."
+        filePath="src/components/ui/TaskManagement/TaskListView.jsx"
+        fullWidth
+      >
+        <TaskListView
+          issues={demoIssues}
+          allIssues={demoIssues}
+          members={demoMembers}
+          labels={demoLabels}
+          sprints={demoSprints}
+          projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+          showProjectName
+          groupBy="category"
+          hiddenGroupIds={['cancelled']}
         />
       </PreviewBlock>
 
@@ -249,6 +268,30 @@ export default function TaskCRMSection() {
             projectId="ui-kit-project"
             project={{ id: 'ui-kit-project', name: 'QuickTeam', hiddenColumns: [] }}
             sprints={demoSprints}
+            onAddIssue={() => {}}
+            onMoveIssue={() => {}}
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Agile Board — колонки-категорії"
+        description="groupBy=&quot;category&quot; — режим «Моїх завдань». Колонки не статуси, а пʼять спільних категорій: у категорії з кількох статусів картка додатково називає свій власний статус, бо колонка вже цього не каже. Кидання в колонку ставить задачі статус тієї ж категорії з її власного проєкту, тому приховані колонки проєкту не можуть зробити переміщення нелегальним."
+        filePath="src/components/workspace/AgileBoard.jsx"
+        fullWidth
+      >
+        <div className="h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4">
+          <AgileBoard
+            issues={demoIssues}
+            allIssues={demoIssues}
+            members={demoMembers}
+            projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
+            projectId="ui-kit-my"
+            sprints={demoSprints}
+            showProjectName
+            groupBy="category"
+            hiddenColumns={['cancelled']}
+            showHiddenLane
             onAddIssue={() => {}}
             onMoveIssue={() => {}}
           />

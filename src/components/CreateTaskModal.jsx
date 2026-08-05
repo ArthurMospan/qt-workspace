@@ -7,6 +7,7 @@ import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
@@ -21,7 +22,11 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 
 
 
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialAssignees = null }) {
+// `initialCategory` is what the «+» on a category column of «Мої завдання»
+// asks for: the composer has no project yet, and a category has a different
+// status in every project, so the status can only be resolved once a project is
+// chosen — and again if it is changed.
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null }) {
   const { currentUser } = useAppContext();
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
@@ -55,6 +60,22 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     () => types.filter(type => type.id !== 'epic'),
     [types],
   );
+  // Resolved against the whole workflow, never against the already-filtered
+  // list: a status's category is read from its place in the full workflow.
+  const categoryStatusId = useMemo(
+    () => (initialCategory
+      ? resolveCategoryStatusId(initialCategory, statuses, {
+        hiddenStatusIds: activeHiddenCols || [],
+      })
+      : null),
+    [activeHiddenCols, initialCategory, statuses],
+  );
+  const defaultStatusId = () => (
+    initialStatus
+    || categoryStatusId
+    || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id)
+    || 'todo'
+  );
 
   // Reset when the dialog *opens*, not whenever the values the reset reads
   // happen to change identity. `visibleStatuses` is a useMemo over
@@ -82,19 +103,24 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         // colleague already on it — otherwise "create a task for them" means
         // finding them again in a chip list.
         assignees: initialAssignees?.length ? initialAssignees : f.assignees,
-        status: initialStatus || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id || 'todo')
+        status: defaultStatusId(),
       }));
     });
-  }, [isOpen, initialAssignees, initialStatus, visibleStatuses, projects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialAssignees, initialStatus, categoryStatusId, visibleStatuses, projects]);
 
   useEffect(() => {
     if (isOpen && form.status) {
       const isValid = visibleStatuses.some(s => s.id === form.status);
       if (!isValid && visibleStatuses.length > 0) {
-        queueMicrotask(() => setForm(f => ({ ...f, status: visibleStatuses[0].id })));
+        // Switching the project keeps the *category* the column asked for and
+        // takes that project's status for it; falling straight to the first
+        // visible status would quietly move the task to another column.
+        const next = categoryStatusId || visibleStatuses[0].id;
+        queueMicrotask(() => setForm(f => ({ ...f, status: next })));
       }
     }
-  }, [form.projectId, form.status, isOpen, visibleStatuses]);
+  }, [categoryStatusId, form.projectId, form.status, isOpen, visibleStatuses]);
 
   useEffect(() => {
     if (isOpen && form.sprintId && !availableSprints.some(sprint => sprint.id === form.sprintId)) {

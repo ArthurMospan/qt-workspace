@@ -19,6 +19,8 @@ This is a single Next.js 16.2.6 App Router application with React 19 and Firebas
 ## Architecture and security invariants
 
 - `issues` is the canonical task collection. `tasks` is legacy/read-only; do not build new functionality on it.
+- A status has a local label and a shared `category` (`backlog` | `todo` | `in-progress` | `done` | `cancelled`). `src/lib/utils/statusCategories.mjs` is the only place that decides what a category means, which statuses close a task, and which status a category resolves to in a given project. Never re-derive any of that: do not read `isDone` directly, do not compare against the id `'backlog'`, `'in-progress'` or `'done'`, and do not infer meaning from a status's position in the list. `isDone` is written as a consequence of the category, never as a second opinion about it.
+- Anything that spans projects groups by category, never by status name: a status one project has hidden is not a column another project's cards can be dropped into. A drop on a category column writes a status of that category from the task's own project.
 - The organization roles are `owner`, `admin`, and `member`. Client collaboration lives in QuickTeam+, not in the internal workspace.
 - Firestore rules are authoritative. Client permission checks and hidden UI are only defensive.
 - Privileged creation/deletion of projects, issues, memberships, invitations, and API keys must go through authenticated server routes.

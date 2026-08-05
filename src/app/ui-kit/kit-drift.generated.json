@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 212,
+    "usedAndPreviewed": 213,
     "usedWithoutPreview": 0,
-    "declaredUnused": 107
+    "declaredUnused": 106
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -422,12 +422,6 @@
       "component": "Select",
       "prop": "size",
       "value": "lg",
-      "namespace": null
-    },
-    {
-      "component": "Select",
-      "prop": "size",
-      "value": "sm",
       "namespace": null
     },
     {
@@ -1272,13 +1266,13 @@
   "usage": {
     "Pill.tone.neutral": 13,
     "Pill.size.lg": 6,
-    "Pill.shape.badge": 12,
+    "Pill.shape.badge": 14,
     "Button.size.icon-lg": 8,
     "Button.style.secondary": 58,
     "Button.style.primary": 38,
     "Button.size.lg": 25,
     "Select.filterRole.sprint": 2,
-    "Select.variant.ghost": 23,
+    "Select.variant.ghost": 24,
     "Select.filterRole.member": 7,
     "Select.filterRole.priority": 5,
     "Select.filterRole.type": 7,
@@ -1340,6 +1334,7 @@
     "ColorSwatch.size.trigger": 1,
     "ColorSwatch.size.choice": 1,
     "Input.size.sm": 4,
+    "Select.size.sm": 1,
     "Button.size.icon": 14,
     "Label.context.inline": 1,
     "Textarea.composition.settings-note": 1,
@@ -1354,7 +1349,7 @@
     "Surface.preset.card": 1,
     "Surface.padding.none": 2,
     "UserAvatar.size.lg": 2,
-    "Pill.size.sm": 17,
+    "Pill.size.sm": 19,
     "Pill.tone.ink-subtle": 3,
     "Button.composition.settings-row-action": 5,
     "SidebarLayout.context.settings": 1,
@@ -1381,7 +1376,7 @@
     "Counter.status.info": 4,
     "Counter.appearance.inverse-outline": 1,
     "ListRow.density.compact": 1,
-    "Pill.weight.medium": 8,
+    "Pill.weight.medium": 10,
     "UserAvatar.size.xl": 1,
     "Pill.tone.surface": 5,
     "Button.style.outline": 1,

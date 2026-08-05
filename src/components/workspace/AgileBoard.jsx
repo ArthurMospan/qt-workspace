@@ -66,13 +66,25 @@ export default function AgileBoard({
   onRequestAddIssue,
   onMoveIssue,
   swimlane = 'none',
+  groupBy = 'status',
   hiddenColumns = [],
   showHiddenLane = false,
   issueLinks = [],
   isArchived,
 }) {
   const [mounted, setMounted] = useState(dndReady);
-  const { statuses: globalStatuses, labels } = useWorkflowConfig();
+  const {
+    statuses: globalStatuses,
+    labels,
+    categoryColumns,
+    statusCategoryById,
+  } = useWorkflowConfig();
+  // A board of one project has that project's statuses as its columns. A board
+  // that spans projects cannot: a status one project has switched off is not a
+  // column the other's cards may be dropped into, which is the collision this
+  // mode removes. Its columns are the five shared categories instead, so every
+  // card on it has exactly one column it belongs to.
+  const byCategory = groupBy === 'category';
   const contextIssues = allIssues || issues;
   // A subtask carries its own status, so it is a card of its own on every
   // board. IssueCard prints the parent's key on it, which is what keeps the
@@ -88,8 +100,9 @@ export default function AgileBoard({
   );
 
   const columns = useMemo(() => {
-    const visibleColumns = globalStatuses.filter(s => !activeHiddenCols.includes(s.id));
-    const hiddenColIds = activeHiddenCols.filter(id => globalStatuses.some(s => s.id === id));
+    const allColumns = byCategory ? categoryColumns : globalStatuses;
+    const visibleColumns = allColumns.filter(s => !activeHiddenCols.includes(s.id));
+    const hiddenColIds = activeHiddenCols.filter(id => allColumns.some(s => s.id === id));
     const next = [...visibleColumns];
     if (showHiddenLane && hiddenColIds.length > 0) {
       next.push({
@@ -101,15 +114,33 @@ export default function AgileBoard({
       });
     }
     return next;
-  }, [globalStatuses, activeHiddenCols, showHiddenLane]);
+  }, [byCategory, categoryColumns, globalStatuses, activeHiddenCols, showHiddenLane]);
+
+  // Which column a card belongs to. In category mode a card's own status is not
+  // a column of this board — its category is.
+  const columnIdOf = useMemo(() => (byCategory
+    ? issue => statusCategoryById.get(columnOf(issue)) || ''
+    : columnOf), [byCategory, statusCategoryById]);
+
+  // Columns that hold more than one status: the card has to name its own status
+  // there, otherwise a category column silently flattens «Код-ревʼю» and «QA»
+  // into one indistinguishable pile.
+  const multiStatusColumnIds = useMemo(() => {
+    if (!byCategory) return new Set();
+    const counts = new Map();
+    for (const category of statusCategoryById.values()) {
+      counts.set(category, (counts.get(category) || 0) + 1);
+    }
+    return new Set([...counts].filter(([, count]) => count > 1).map(([category]) => category));
+  }, [byCategory, statusCategoryById]);
 
   // One definition of "the cards of this column, in this order", used to render
   // a column and to read back where a card was dropped into it. Two definitions
   // is what let the board show one order and write another.
   const columnCards = (laneIssues, column) => (laneIssues || [])
     .filter(issue => (column?.isHiddenContainer
-      ? column.colIds.includes(columnOf(issue))
-      : columnOf(issue) === column?.id))
+      ? column.colIds.includes(columnIdOf(issue))
+      : columnIdOf(issue) === column?.id))
     .sort(compareIssues);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
@@ -453,6 +484,9 @@ export default function AgileBoard({
                                 isTimerActive={activeTimerIssueId === issue.id}
                                 issueLinks={issueLinks}
                                 isArchived={isArchived}
+                                showStatusName={byCategory && (
+                                  col.isHiddenContainer || multiStatusColumnIds.has(col.id)
+                                )}
                               />
                             ))}
                             {provided.placeholder}

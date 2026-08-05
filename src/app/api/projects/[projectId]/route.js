@@ -5,6 +5,7 @@ import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTrans
 import {
   DEFAULT_STATUS_IDS,
   resolveDoneStatusIds,
+  resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 
@@ -113,9 +114,10 @@ export async function PATCH(request, context) {
 
         const workflow = workflowSnap.data() || {};
         const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
-        const backlogStatusId = statusIds.includes('backlog')
-          ? 'backlog'
-          : statusIds[0];
+        // Where the tasks of a newly hidden column go. The category answers it,
+        // so a project whose workflow has no column literally called 'backlog'
+        // no longer falls back to whatever happens to be first in the list.
+        const backlogStatusId = resolveEntryStatusId(workflow.statuses);
         if (
           requestedHidden.some(statusId => !statusIds.includes(statusId))
           || requestedHidden.includes(backlogStatusId)

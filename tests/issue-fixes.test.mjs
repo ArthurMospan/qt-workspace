@@ -59,16 +59,18 @@ test('QUI-76 uses the shared deterministic avatar in project activity', async ()
   assert.doesNotMatch(source, /stats\.lastAction\.actor\.slice\(0,\s*2\)/);
 });
 
-test('QUI-75 exposes status visibility settings in both My Tasks views', async () => {
+test('QUI-75 exposes column visibility settings in both My Tasks views', async () => {
   const source = await read('../src/app/(app)/my/page.js');
   const settingsButton = source.match(
-    /<Button[\s\S]{0,240}title="Налаштування видимості статусів"[\s\S]{0,40}\/>/,
+    /<Button[\s\S]{0,240}title="Налаштування видимості колонок"[\s\S]{0,40}\/>/,
   );
 
   assert.ok(settingsButton, 'the visibility settings action must always be rendered');
   assert.doesNotMatch(settingsButton[0], /viewMode === 'kanban'/);
-  assert.match(source, /<TaskListView[\s\S]{0,420}hiddenStatusIds=\{hiddenColumns\}/);
-  assert.match(source, /<StatusVisibilityPicker[\s\S]{0,180}hiddenStatusIds=\{hiddenColumns\}/);
+  // The columns of this board are the shared status categories, so the setting
+  // is over categories in both views and in the picker they share.
+  assert.match(source, /<TaskListView[\s\S]{0,420}hiddenGroupIds=\{hiddenCategories\}/);
+  assert.match(source, /<StatusVisibilityPicker[\s\S]{0,220}hiddenStatusIds=\{hiddenCategories\}/);
 });
 
 test('QUI-74 gives sprint backlog cards the canonical Kanban card width', async () => {
@@ -299,7 +301,9 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   assert.match(projectRoute, /completedAt: admin\.firestore\.FieldValue\.delete\(\)/);
   assert.match(createProjectRoute, /hiddenColumns: requestedHidden/);
   assert.match(createIssueRoute, /\(project\.hiddenColumns \|\| \[\]\)\.includes\(statusCandidate\)/);
-  assert.match(myTasks, /localStorage\.setItem\('qt_my_tasks_hidden'/);
+  // «Мої завдання» folds away a *category*, not a status name — see
+  // tests/status-categories.test.mjs. The key changed with the meaning.
+  assert.match(myTasks, /localStorage\.setItem\('qt_my_tasks_hidden_categories'/);
   assert.match(kit, /title="Project Status Visibility"[\s\S]{0,500}<StatusVisibilityPicker/);
 });
 

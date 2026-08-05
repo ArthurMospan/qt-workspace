@@ -41,7 +41,10 @@ function hexToRgba(hex, alpha) {
 // project's own board every card would repeat the project you are already in.
 // `projectName` is still always accepted — the issue key prefix is derived from
 // it below, which has to work whether or not the badge is shown.
-export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, isTimerActive, isArchived, className = '' }) {
+// `showStatusName` is for a column that is not a status: on «Мої завдання» the
+// columns are the five shared categories, so a card in «У роботі» could be in
+// «Код-ревʼю» or in «QA» and the column no longer says which.
+export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, className = '' }) {
   const router   = useRouter();
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
@@ -49,7 +52,10 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
-  const { types, priorities, doneStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, doneStatusIds } = useWorkflowConfig();
+  const statusObj = showStatusName
+    ? statuses.find(status => status.id === (issue.columnId || issue.status)) || null
+    : null;
   
   const typeObj = types.find(t => t.id === issue.type) || {
     id: issue.type || 'task',
@@ -240,6 +246,19 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                 label={typeLabel}
                 color={typeObj.color || '#9a9a9a'}
               />
+            )}
+
+            {/* Only where the column cannot say it — see `showStatusName`. */}
+            {statusObj && (
+              <Pill
+                color={statusObj.color || '#9a9a9a'}
+                size="sm"
+                shape="badge"
+                weight="medium"
+                title={`Статус: ${statusObj.label}`}
+              >
+                {statusObj.label}
+              </Pill>
             )}
 
             {isBlocked && (

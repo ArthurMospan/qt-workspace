@@ -417,7 +417,7 @@ export default function BoardPage({ params }) {
             sprints={sprints}
             projectId={projectId}
             projectName={project?.name}
-            hiddenStatusIds={project?.hiddenColumns || []}
+            hiddenGroupIds={project?.hiddenColumns || []}
             activeTimerIssueId={activeTimer?.issueId}
           />
         )

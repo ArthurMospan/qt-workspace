@@ -4,22 +4,18 @@ import { randomUUID } from 'node:crypto';
 import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 import {
   DEFAULT_PRIORITY_IDS,
-  DEFAULT_STATUS_IDS,
   DEFAULT_TYPE_IDS,
   resolveDoneStatusIds,
+  resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 
 function resolveIntegrationWorkflow({ workflow, project = null, requestedPriority }) {
-  const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
   const hiddenStatusIds = new Set(
     Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
   );
-  const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
-  const status = visibleStatusIds.includes('backlog')
-    ? 'backlog'
-    : visibleStatusIds[0];
+  const status = resolveEntryStatusId(workflow.statuses, [...hiddenStatusIds]);
   if (!status) {
     const error = new Error('INVALID_PROJECT_WORKFLOW');
     error.issueApi = {

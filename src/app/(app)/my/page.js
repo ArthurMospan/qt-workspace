@@ -49,9 +49,9 @@ function filterTasks(tasks, filters, sprintMap) {
 export default function MyTasksPage() {
   const { currentUser, projects, activeOrgId } = useAppContext();
   const { members } = useOrganization();
-  const { labels, statuses, types, priorities } = useWorkflowConfig();
+  const { labels, types, priorities, categoryColumns } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
-  const { tasks, allIssues, issueLinks, loading, moveTask } = useAllMyTasks(uid);
+  const { tasks, allIssues, issueLinks, loading, moveTaskToCategory } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
@@ -79,7 +79,7 @@ export default function MyTasksPage() {
   const composerOpen = showCreateTaskModal || composerRequestedByUrl;
   const closeComposer = () => {
     setShowCreateTaskModal(false);
-    setCreateTaskStatus(null);
+    setCreateTaskCategory(null);
     if (!composerRequestedByUrl) return;
     const next = new URLSearchParams(searchParams.toString());
     next.delete('new');
@@ -87,22 +87,29 @@ export default function MyTasksPage() {
     router.replace(next.size ? `/my?${next}` : '/my', { scroll: false });
   };
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [createTaskStatus, setCreateTaskStatus] = useState(null);
-  const [hiddenColumns, setHiddenColumns] = useState(() => {
+  const [createTaskCategory, setCreateTaskCategory] = useState(null);
+  // This board's columns are the five shared status categories, so what a person
+  // folds away here is a category too. Kept under its own key: the old value held
+  // status ids, which mean nothing to these columns.
+  const [hiddenCategories, setHiddenCategories] = useState(() => {
     if (typeof window !== 'undefined') {
-      try { return JSON.parse(localStorage.getItem('qt_my_tasks_hidden')) || []; } catch(e){}
+      try { return JSON.parse(localStorage.getItem('qt_my_tasks_hidden_categories')) || []; } catch(e){}
     }
     return [];
   });
 
-  const updateHiddenColumns = (next) => {
-    setHiddenColumns(next);
-    localStorage.setItem('qt_my_tasks_hidden', JSON.stringify(next));
+  const updateHiddenCategories = (next) => {
+    setHiddenCategories(next);
+    localStorage.setItem('qt_my_tasks_hidden_categories', JSON.stringify(next));
   };
 
-  const handleMoveIssue = async (issueId, columnId, position) => {
+  // A drop names a category, and the task takes a status of that category from
+  // its own project — which is why no column of this board can be "missing" from
+  // a project, and why the drop cannot be refused by settings the person
+  // dropping the card may not even be able to see.
+  const handleMoveIssue = async (issueId, categoryId, position) => {
     try {
-      await moveTask(issueId, columnId, position, {
+      await moveTaskToCategory(issueId, categoryId, position, {
         userId: uid,
         userName: currentUser?.name || '',
       });
@@ -137,7 +144,7 @@ export default function MyTasksPage() {
           actions={
             <div className="flex gap-2">
               <Button
-                onClick={() => { setCreateTaskStatus(null); setShowCreateTaskModal(true); }}
+                onClick={() => { setCreateTaskCategory(null); setShowCreateTaskModal(true); }}
                 icon={Plus}
                 size="lg"
                 style="primary"
@@ -206,7 +213,7 @@ export default function MyTasksPage() {
                 icon={Settings2}
                 size="icon-lg"
                 style="secondary"
-                title="Налаштування видимості статусів"
+                title="Налаштування видимості колонок"
               />
               <Tabs
                 tabs={[
@@ -238,10 +245,11 @@ export default function MyTasksPage() {
               projectId="my"
               sprints={sprints}
               showProjectName
-              hiddenColumns={hiddenColumns}
+              groupBy="category"
+              hiddenColumns={hiddenCategories}
               showHiddenLane
-              onRequestAddIssue={columnId => {
-                setCreateTaskStatus(columnId);
+              onRequestAddIssue={categoryId => {
+                setCreateTaskCategory(categoryId);
                 setShowCreateTaskModal(true);
               }}
               onMoveIssue={handleMoveIssue}
@@ -258,7 +266,8 @@ export default function MyTasksPage() {
             sprints={sprints}
             projects={projects}
             showProjectName
-            hiddenStatusIds={hiddenColumns}
+            groupBy="category"
+            hiddenGroupIds={hiddenCategories}
           />
         )}
         </div>
@@ -267,7 +276,7 @@ export default function MyTasksPage() {
       <CreateTaskModal
         isOpen={composerOpen}
         onClose={closeComposer}
-        initialStatus={createTaskStatus}
+        initialCategory={createTaskCategory}
         initialAssignees={composerAssignees}
         onSubmit={async (formData) => {
           if (!formData.projectId) {
@@ -311,7 +320,7 @@ export default function MyTasksPage() {
         <Dialog
           isOpen
           onClose={() => setShowSettingsModal(false)}
-          title="Налаштування видимості статусів"
+          title="Налаштування видимості колонок"
           titleContext="dialog"
           size="sm"
           presentation="sheet"
@@ -327,15 +336,17 @@ export default function MyTasksPage() {
           )}
         >
           <div>
-            <h3 className="ui-type-card-title mb-2 text-ink">Видимість статусів</h3>
+            <h3 className="ui-type-card-title mb-2 text-ink">Видимість колонок</h3>
             <p className="mb-4 text-[13px] text-muted">
-              На дошці та у режимі «Списком» завдання прихованих статусів
-              збираються в окрему секцію «Приховані».
+              Ці колонки — категорії статусів, спільні для всіх проєктів: скільки б
+              статусів не було в налаштуваннях, кожне завдання належить рівно до
+              однієї категорії. На дошці та у режимі «Списком» завдання прихованих
+              категорій збираються в окрему секцію «Приховані».
             </p>
             <StatusVisibilityPicker
-              statuses={statuses}
-              hiddenStatusIds={hiddenColumns}
-              onChange={updateHiddenColumns}
+              statuses={categoryColumns}
+              hiddenStatusIds={hiddenCategories}
+              onChange={updateHiddenCategories}
               backlogStatusId={null}
             />
           </div>

@@ -1,3 +1,10 @@
+// Relative, not aliased: this module is loaded straight by `node --test`.
+import {
+  isStatusCategoryId,
+  isTerminalStatusCategory,
+  withStatusCategories,
+} from './statusCategories.mjs';
+
 const SECTION_LIMITS = Object.freeze({
   statuses: { min: 1, max: 50 },
   types: { min: 1, max: 100 },
@@ -70,8 +77,14 @@ function normalizeWorkflowSection(section, items) {
     if (typeof item.color === 'string' && item.color.trim()) {
       next.color = item.color.trim().slice(0, 32);
     }
-    if (section === 'statuses' && typeof item.isDone === 'boolean') {
-      next.isDone = item.isDone;
+    if (section === 'statuses') {
+      // The category is the shared layer of a status and the only thing that
+      // decides whether it closes a task. An unknown value is dropped rather
+      // than rejected: the derivation below then reads the same status the way
+      // every pre-category document is read, so an older client that still
+      // sends only `isDone` keeps working.
+      if (isStatusCategoryId(item.category)) next.category = item.category;
+      if (typeof item.isDone === 'boolean') next.isDone = item.isDone;
     }
     if (section === 'positions') {
       const hourlyRate = Number(item.hourlyRate);
@@ -81,7 +94,29 @@ function normalizeWorkflowSection(section, items) {
     }
     normalized.push(next);
   }
-  return { value: normalized };
+  if (section !== 'statuses') return { value: normalized };
+
+  // Every saved status carries an explicit category and an `isDone` that agrees
+  // with it, so no reader ever has to derive either and the two can never drift.
+  const statuses = withStatusCategories(normalized);
+  const terminal = statuses.filter(status => isTerminalStatusCategory(status.category));
+  if (terminal.length === 0) {
+    return mutationError(
+      'MISSING_TERMINAL_STATUS',
+      'Потрібен щонайменше один статус категорії «Готово» або «Скасовано» — '
+        + 'без нього не рахуються прогрес, швидкість і рахунок',
+      { section },
+    );
+  }
+  if (terminal.length === statuses.length) {
+    return mutationError(
+      'MISSING_OPEN_STATUS',
+      'Потрібен щонайменше один незавершальний статус — інакше нові завдання '
+        + 'одразу вважатимуться закритими',
+      { section },
+    );
+  }
+  return { value: statuses };
 }
 
 export function normalizeWorkflowMutationInput(body) {

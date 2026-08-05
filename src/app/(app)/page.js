@@ -38,6 +38,7 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -262,11 +263,11 @@ const ISSUE_ACTIVITY_EVENTS = {
 };
 
 function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
-  const { statuses, doneStatusIds } = useWorkflowConfig();
-  const inProgressStatusIds = useMemo(
-    () => statuses.slice(1).filter(status => !doneStatusIds.includes(status.id)).map(status => status.id),
-    [statuses, doneStatusIds],
-  );
+  const { statuses } = useWorkflowConfig();
+  // «в роботі» used to be `statuses.slice(1)` minus the terminal ones — a guess
+  // that counted «До виконання» as work in progress and depended on a status's
+  // position in the list. It is now the category that says so.
+  const inProgressIds = useMemo(() => inProgressStatusIds(statuses), [statuses]);
 
   const stats = useMemo(() => {
     let inProgressCount = 0;
@@ -274,7 +275,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     let newestActivity = null;
 
     for (const issue of issues) {
-      if (inProgressStatusIds.includes(issue.columnId || issue.status)) {
+      if (inProgressIds.includes(issue.columnId || issue.status)) {
         inProgressCount++;
       }
 
@@ -356,7 +357,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
       comments: commentsCount,
       lastAction: lastActionStr
     };
-  }, [currentUser, inProgressStatusIds, issues, members, orgLoading]);
+  }, [currentUser, inProgressIds, issues, members, orgLoading]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';

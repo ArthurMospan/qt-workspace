@@ -122,6 +122,14 @@ Primary collections:
 
 `tasks` is a legacy read-only collection. New development must use `issues`.
 
+### Statuses have two layers
+
+`organizations/{orgId}/settings/workflow` holds the organization's statuses. Each one carries a free label and a `category`, which is one of exactly five fixed values: `backlog`, `todo`, `in-progress`, `done`, `cancelled`. Labels are local — an organization may have as many as it likes, named whatever it likes. Categories are shared, and every surface that spans projects reads them: «Мої завдання» builds its columns from categories, and `done`/`cancelled` are what close a task, so `completedAt`, progress, velocity, overdue and invoices all follow the category and nothing else. `isDone` is still written, derived from the category, for documents and clients that predate it.
+
+The rules live in [src/lib/utils/statusCategories.mjs](src/lib/utils/statusCategories.mjs) and are shared by the client and the server routes. A workflow saved before categories existed needs no migration: its category is derived from what it already says (an explicit `isDone`, a built-in id, the entry column), and the terminal set it had is preserved exactly. The next save through `/api/organizations/{organizationId}/workflow` writes the resolved categories out, and that API refuses a workflow with nothing to finish in or nothing to start in.
+
+A project board's columns are that project's statuses, and `projects/{id}.hiddenColumns` may switch some off. A board that spans projects cannot use status names as columns for that reason, which is what categories are for: a drop on a category column writes a status of that category belonging to the task's own project, so no cross-project drop can be refused by a project setting.
+
 ## Development rules
 
 - Read the versioned Next.js guides in `node_modules/next/dist/docs/` before changing framework APIs.

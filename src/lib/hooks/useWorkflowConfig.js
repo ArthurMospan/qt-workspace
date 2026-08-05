@@ -11,7 +11,14 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, Bug } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
-import { localizeBuiltInWorkflowItems } from '@/lib/utils/workflowDefaults.mjs';
+import {
+  localizeBuiltInWorkflowItems,
+  resolveDoneStatusIds,
+} from '@/lib/utils/workflowDefaults.mjs';
+import {
+  statusCategoryColumns,
+  statusCategoryMap,
+} from '@/lib/utils/statusCategories.mjs';
 
 // Single source of truth for priority/type icons — every place that renders
 // a priority or type (sprints, SearchModal, IssueDetail, analytics…) reads
@@ -21,41 +28,46 @@ export const TYPE_ICONS = { epic: Zap, feature: Star, task: TaskIcon, bug: Bug }
 // Canonical default workflow for an org that has never saved
 // settings/workflow. Must stay in sync with the id lists in
 // src/app/api/issues/route.js (server can't import this client module) and
-// must keep 'backlog' (new issues default there) and 'done' (terminal
-// fallback in getDoneStatusIds). Settings imports these too — the board,
+// must keep a `backlog` category (new issues land there) and a `done` one
+// (something has to close a task). Settings imports these too — the board,
 // the settings page and the API must always describe the same workflow.
+//
+// `category` is the shared layer of a status: the label is this organization's
+// business, the category is what «Мої завдання», analytics and billing read.
+// See src/lib/utils/statusCategories.mjs.
 export const DEFAULT_STATUSES = [{
   id: 'backlog',
   label: 'Беклог',
-  color: '#9a9a9a'
+  color: '#9a9a9a',
+  category: 'backlog',
 }, {
   id: 'todo',
   label: 'До виконання',
-  color: '#6366f1'
+  color: '#6366f1',
+  category: 'todo',
 }, {
   id: 'in-progress',
   label: 'У роботі',
-  color: '#f59e0b'
+  color: '#f59e0b',
+  category: 'in-progress',
 }, {
   id: 'done',
   label: 'Готово',
   color: '#10b981',
+  category: 'done',
   isDone: true,
 }];
 // ── Terminal ("done") status helpers ───────────────────────────────────────────
-// A status counts as terminal (work complete) when it carries `isDone: true`.
-// The whole app must ask these helpers instead of comparing against a hardcoded
-// id `'done'`, so renaming/adding a final status stays correct everywhere
+// A status closes a task when its category does — `done` or `cancelled`. The
+// whole app must ask these helpers instead of comparing against a hardcoded id
+// `'done'`, so renaming/adding a final status stays correct everywhere
 // (analytics, billing, backlog, sprints, overdue, dependencies…).
-// Back-compat: configs saved before the flag existed have no `isDone`, so we
-// fall back to a status whose id is 'done', and finally to the last column.
+//
+// The rule itself lives in the shared, server-importable module: this used to be
+// a second copy of it, free to drift from the one the API enforces.
 export function getDoneStatusIds(statuses) {
   const list = Array.isArray(statuses) && statuses.length ? statuses : DEFAULT_STATUSES;
-  const flagged = list.filter(s => s?.isDone === true).map(s => s.id);
-  if (flagged.length) return flagged;
-  const named = list.find(s => s?.id === 'done');
-  if (named) return [named.id];
-  return [list[list.length - 1].id];
+  return resolveDoneStatusIds(list);
 }
 
 // True when `statusId` is one of the terminal statuses for the given config.
@@ -243,8 +255,20 @@ export function useWorkflowConfig() {
   // Terminal status ids derived from the live config — components use this
   // instead of hardcoding `'done'`.
   const doneStatusIds = useMemo(() => getDoneStatusIds(snapshot.statuses), [snapshot.statuses]);
+  // The shared layer of the workflow, resolved once per snapshot: which category
+  // each status belongs to, and the columns a cross-project view is built from.
+  const statusCategoryById = useMemo(
+    () => statusCategoryMap(snapshot.statuses),
+    [snapshot.statuses],
+  );
+  const categoryColumns = useMemo(
+    () => statusCategoryColumns(snapshot.statuses),
+    [snapshot.statuses],
+  );
   return {
     ...snapshot,
     doneStatusIds,
+    statusCategoryById,
+    categoryColumns,
   };
 }

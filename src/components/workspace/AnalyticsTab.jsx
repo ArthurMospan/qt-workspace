@@ -15,6 +15,10 @@ import { Alert, Card, TaskListCard } from '@/components/ui';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import {
+  backlogStatusIds,
+  inProgressStatusIds,
+} from '@/lib/utils/statusCategories.mjs';
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
@@ -42,7 +46,10 @@ export default function AnalyticsTab({
   }, []);
 
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
-  const firstStatusId = statuses?.[0]?.id;
+  // Both used to be guessed: the backlog as "the first status in the list", and
+  // work in progress as the literal id 'in-progress'. Categories say it outright.
+  const backlogSet = useMemo(() => new Set(backlogStatusIds(statuses)), [statuses]);
+  const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
   const actionableIssues = useMemo(
     () => selectActionableIssues(issues),
     [issues],
@@ -59,7 +66,7 @@ export default function AnalyticsTab({
   const stats = useMemo(() => {
     const total   = filteredIssues.length;
     const done    = filteredIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
-    const inProg  = filteredIssues.filter(i => i.columnId === 'in-progress').length;
+    const inProg  = filteredIssues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
     const blockerPriority = filteredIssues.filter(i => (
       i.priority === 'blocker'
       && !doneSet.has(i.columnId || i.status)
@@ -73,7 +80,7 @@ export default function AnalyticsTab({
       return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
     });
     const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status));
-    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && (i.columnId || i.status) !== firstStatusId && !doneSet.has(i.columnId || i.status));
+    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !doneSet.has(i.columnId || i.status));
     const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
     // Budget
@@ -144,7 +151,8 @@ export default function AnalyticsTab({
     statuses,
     priorities,
     doneSet,
-    firstStatusId,
+    backlogSet,
+    inProgressSet,
     issueLinks,
     issues,
     now,

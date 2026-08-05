@@ -16,6 +16,10 @@ import { pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import {
+  resolveCategoryStatusId,
+  statusCategoryLabel,
+} from '@/lib/utils/statusCategories.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 
@@ -231,6 +235,32 @@ export function useAllMyTasks(userId) {
     userId,
   ]);
 
+  /**
+   * A drop on the category columns of «Мої завдання». The column names a
+   * category; the status written is one the task's *own project* uses, so a
+   * column of this board can never be missing from a project and a drop can
+   * never be refused by a project setting the person dropping the card cannot
+   * see. A task already in the target category keeps its status — moving inside
+   * one category is a reorder, not a status change.
+   */
+  const moveTaskToCategory = useCallback(async (taskId, categoryId, position, actorUser = {}) => {
+    const current = allIssues.find(issue => issue.id === taskId);
+    if (!current) throw new Error('Issue not found');
+    const project = (projects || []).find(item => item.id === current.projectId);
+    const statusId = resolveCategoryStatusId(categoryId, statuses, {
+      currentStatusId: current.columnId || current.status || null,
+      hiddenStatusIds: Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
+    });
+    if (!statusId) {
+      throw new Error(
+        `У проєкті «${project?.name || current.projectId}» немає доступної колонки `
+          + `категорії «${statusCategoryLabel(categoryId) || categoryId}». `
+          + 'Увімкніть її в налаштуваннях проєкту або оберіть інший статус',
+      );
+    }
+    return moveTask(taskId, statusId, position, actorUser);
+  }, [allIssues, moveTask, projects, statuses]);
+
   const updateTask = useCallback(async (taskId, data) => {
     const current = tasks.find(task => task.id === taskId);
     if (
@@ -294,6 +324,7 @@ export function useAllMyTasks(userId) {
     issueLinks,
     loading,
     moveTask,
+    moveTaskToCategory,
     updateTask
   };
 }

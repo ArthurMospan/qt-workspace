@@ -62,7 +62,6 @@ import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
 import IntegrationCard, { IntegrationCode, IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import DataMigrationSettings from '@/components/migrations/DataMigrationSettings';
 import {
-  getDoneStatusIds,
   DEFAULT_STATUSES,
   DEFAULT_TYPES,
   DEFAULT_PRIORITIES,
@@ -70,6 +69,12 @@ import {
   DEFAULT_POSITIONS,
 } from '@/lib/hooks/useWorkflowConfig';
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
+import {
+  isStatusCategoryId,
+  isTerminalStatusCategory,
+  STATUS_CATEGORIES,
+  STATUS_CATEGORY_IDS,
+} from '@/lib/utils/statusCategories.mjs';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
@@ -308,7 +313,16 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, isDone = false, onToggleDone, doneLocked = false, doneLockReason = '' }) {
+// Options for the per-status category control. Fixed set, canonical order — the
+// five categories are the shared vocabulary, so unlike the statuses themselves
+// they are not the organization's to extend.
+const STATUS_CATEGORY_OPTIONS = STATUS_CATEGORY_IDS.map(categoryId => ({
+  value: categoryId,
+  label: STATUS_CATEGORIES[categoryId].label,
+  dotColor: STATUS_CATEGORIES[categoryId].color,
+}));
+
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, category = '', onCategoryChange, categoryLocked = false, categoryLockReason = '' }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -403,32 +417,34 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
         </span>
       )}
 
-      {/* Terminal (done) toggle — statuses only.
-          QUI-131. Several terminal statuses is a legitimate setup: «Готово»,
-          «Скасовано» and «Дубль» all close a task. The first status is not one
-          of them — it is where new tasks land and where a deleted column's
-          tasks fall back to, so a board whose entry column also counted as
-          finished would report every new task as already done. It is shown
-          locked rather than hidden, so the rule is visible instead of surprising. */}
-      {variant === 'status' && !editing && onToggleDone && (
-        doneLocked ? (
+      {/* Category — statuses only. The name of a status is this organization's
+          business; its category is the layer every cross-project surface reads:
+          «Мої завдання» builds its columns from categories, and «Готово»/
+          «Скасовано» are what close a task, so progress, швидкість, прострочені
+          and рахунок all follow this control and nothing else.
+          It replaces the old «Завершальний» toggle, which was the same idea with
+          one value. The last remaining terminal category cannot be moved away
+          and the last open one cannot be closed — both are refused with a reason
+          rather than hidden, so the rule is visible instead of surprising. */}
+      {variant === 'status' && !editing && onCategoryChange && (
+        categoryLocked ? (
           <span
-            title={doneLockReason}
-            className="flex shrink-0 items-center gap-[4px] rounded-full px-[8px] py-[3px] text-[10px] font-bold text-faint opacity-60"
+            title={categoryLockReason}
+            className="flex shrink-0 items-center gap-[6px] rounded-full px-[10px] py-[3px] text-[11px] font-semibold text-muted"
           >
-            <Lock size={10} /> Завершальний
+            <Lock size={10} />
+            {STATUS_CATEGORIES[category]?.label || category}
           </span>
         ) : (
-          <button
-            type="button"
-            onClick={onToggleDone}
-            title={isDone ? 'Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати)' : 'Позначити завершальним'}
-            className={`shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${
-              isDone ? 'bg-[#10b981]/12 text-[#10b981]' : 'text-faint hover:text-muted hover:bg-canvas'
-            }`}
-          >
-            <Check size={11} /> Завершальний
-          </button>
+          <Select
+            size="sm"
+            variant="ghost"
+            value={category}
+            onChange={onCategoryChange}
+            options={STATUS_CATEGORY_OPTIONS}
+            ariaLabel={`Категорія статусу «${item.label}»`}
+            className="w-[176px] shrink-0"
+          />
         )
       )}
 
@@ -1791,27 +1807,37 @@ export default function SettingsPage() {
   const lbA = makeUpdater(setLabels);
   const posA = makeUpdater(setPositions);
 
-  // Toggle whether a status counts as "work complete". We materialize explicit
-  // `isDone` flags on every status so the terminal set is unambiguous (no reliance
-  // on the implicit 'done'-id fallback). There is always ≥1 terminal status:
-  // clearing the last one just falls back to the default via getDoneStatusIds.
-  const handleToggleStatusDone = (id) => {
-    setStatuses(prev => {
-      // The entry column can never be terminal: new tasks land there, and so do
-      // the tasks of any column that gets deleted. Marking it done would report
-      // every freshly created task as already finished.
-      if (prev[0]?.id === id) return prev;
-      const done = new Set(getDoneStatusIds(prev));
-      if (done.has(id)) {
-        // Something has to close a task. Without a terminal status, progress,
-        // velocity, overdue and billing all lose their definition of "finished".
-        if (done.size <= 1) return prev;
-        done.delete(id);
-      } else {
-        done.add(id);
-      }
-      return prev.map(s => ({ ...s, isDone: done.has(s.id) }));
-    });
+  // Move a status to another category. This is the generalisation of the old
+  // «Завершальний» toggle: `isDone` was the same idea with a single value, and it
+  // is now written out as a consequence of the category so nothing has to derive
+  // it. The two invariants the whole product rests on are enforced here and
+  // again in the API: something has to close a task, and something has to stay
+  // open for new work to land in.
+  const handleStatusCategoryChange = (id, category) => {
+    if (!isStatusCategoryId(category)) return;
+    const current = statuses.find(s => s.id === id);
+    if (!current || current.category === category) return;
+    const next = statuses.map(s => (s.id === id
+      ? { ...s, category, isDone: isTerminalStatusCategory(category) }
+      : s));
+    const terminalCount = next.filter(s => isTerminalStatusCategory(s.category)).length;
+    if (terminalCount === 0) {
+      showToast(
+        'Потрібен щонайменше один статус категорії «Готово» або «Скасовано» — '
+          + 'без нього не рахуються прогрес, швидкість і рахунок',
+        'error',
+      );
+      return;
+    }
+    if (terminalCount === next.length) {
+      showToast(
+        'Потрібен щонайменше один незавершальний статус — інакше нові завдання '
+          + 'одразу вважатимуться закритими',
+        'error',
+      );
+      return;
+    }
+    setStatuses(next);
   };
 
   const handleStatusDeleteClick = async (id) => {
@@ -2813,9 +2839,10 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'statuses': {
-        const doneIds = getDoneStatusIds(statuses);
+        const terminalStatuses = statuses.filter(s => isTerminalStatusCategory(s.category));
+        const openStatuses = statuses.filter(s => !isTerminalStatusCategory(s.category));
         return (
-        <Section title="Статуси завдань" desc="Статуси завдань — застосовуються до всіх проєктів. Позначте «завершальні» — за ними рахуються прогрес, швидкість, прострочені та рахунок. Завершальних може бути кілька («Готово», «Скасовано», «Дубль» — усі закривають задачу), але щонайменше один. Перша колонка завершальною бути не може: у неї потрапляють нові задачі.">
+        <Section title="Статуси завдань" desc="Назва статусу — ваша, категорія — спільна. Назв може бути скільки завгодно («Код-ревʼю», «QA», «Погодження»), а категорій рівно пʼять, і саме вони працюють там, де завдання різних проєктів зустрічаються: «Мої завдання» будують колонки з категорій, а «Готово» і «Скасовано» закривають задачу — за ними рахуються прогрес, швидкість, прострочені та рахунок. Тому щонайменше один статус має закривати задачу і щонайменше один — залишатися відкритим.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -2833,12 +2860,15 @@ export default function SettingsPage() {
                               onSave={stA.onSave} onDelete={handleStatusDeleteClick}
                               canDelete={statuses.length > 1 && !['backlog', 'done'].includes(s.id)}
                               variant="status"
-                              isDone={doneIds.includes(s.id)}
-                              onToggleDone={() => handleToggleStatusDone(s.id)}
-                              doneLocked={i === 0 || (doneIds.length === 1 && doneIds.includes(s.id))}
-                              doneLockReason={i === 0
-                                ? 'Перша колонка — сюди потрапляють нові задачі й задачі видалених колонок, тому завершальною вона бути не може'
-                                : 'Єдиний завершальний статус — без нього не рахуються прогрес, швидкість і рахунок'}
+                              category={s.category}
+                              onCategoryChange={value => handleStatusCategoryChange(s.id, value)}
+                              categoryLocked={
+                                (terminalStatuses.length === 1 && terminalStatuses[0]?.id === s.id)
+                                || (openStatuses.length === 1 && openStatuses[0]?.id === s.id)
+                              }
+                              categoryLockReason={isTerminalStatusCategory(s.category)
+                                ? 'Єдиний статус, що закриває задачу — без нього не рахуються прогрес, швидкість і рахунок'
+                                : 'Єдиний відкритий статус — новим завданням більше нікуди потрапляти'}
                               provided={provided}
                             />
                           )}
@@ -2853,7 +2883,17 @@ export default function SettingsPage() {
                 onClick={() => {
                   setStatuses(p => {
                     const newStatuses = [...p];
-                    newStatuses.splice(newStatuses.length - 1, 0, { id: `s-${Date.now()}`, label: 'Новий статус', color: '#6366f1', isNew: true });
+                    // Added before the last column, and «У роботі» by default:
+                    // a status somebody adds by hand is almost always another
+                    // step of the work itself (ревʼю, QA, погодження).
+                    newStatuses.splice(newStatuses.length - 1, 0, {
+                      id: `s-${Date.now()}`,
+                      label: 'Новий статус',
+                      color: '#6366f1',
+                      category: 'in-progress',
+                      isDone: false,
+                      isNew: true,
+                    });
                     return newStatuses;
                   });
                 }}

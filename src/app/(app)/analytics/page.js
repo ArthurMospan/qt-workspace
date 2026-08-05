@@ -44,6 +44,10 @@ import {
   sumRawTimeLogMinutes,
 } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import {
+  backlogStatusIds,
+  inProgressStatusIds,
+} from '@/lib/utils/statusCategories.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -77,7 +81,13 @@ function AnalyticsContent({
 }) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
-  const firstStatusId = statuses?.[0]?.id;
+  // Work still in the backlog is not expected to carry an estimate. That used to
+  // be read as "the first status in the list", which is a position, not a
+  // meaning — and it missed every other backlog column an org had added.
+  const backlogSet = useMemo(() => new Set(backlogStatusIds(statuses)), [statuses]);
+  // «У роботі» is a category, never the literal id 'in-progress': an org that
+  // renamed or split that column used to report zero here.
+  const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -118,7 +128,7 @@ function AnalyticsContent({
 
     const total      = issues.length;
     const done       = issues.filter(i => doneSet.has(i.columnId || i.status)).length;
-    const inProgress = issues.filter(i => i.columnId === 'in-progress').length;
+    const inProgress = issues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
     const blockerPriority = issues.filter(i => (
       i.priority === 'blocker'
       && !doneSet.has(i.columnId || i.status)
@@ -166,7 +176,7 @@ function AnalyticsContent({
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
     const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status)).length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && (i.columnId || i.status) !== firstStatusId && !doneSet.has(i.columnId || i.status)).length;
+    const unestimated = issues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !doneSet.has(i.columnId || i.status)).length;
 
     return {
       total, done, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
@@ -175,7 +185,8 @@ function AnalyticsContent({
     };
   }, [
     doneSet,
-    firstStatusId,
+    backlogSet,
+    inProgressSet,
     issueLinks,
     issueReferenceIssues,
     issues,

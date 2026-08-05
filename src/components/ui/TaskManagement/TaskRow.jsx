@@ -10,6 +10,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
+import Pill from '@/components/ui/DataDisplay/Pill';
 import TaskCounters from './TaskCounters';
 import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
@@ -51,6 +52,7 @@ function fmtDate(raw) {
  * @param {string} props.projectId Current project.
  * @param {string} props.projectName Its name.
  * @param {boolean} props.showProjectName Whether the row names its project — true only on cross-project lists.
+ * @param {boolean} props.showStatusName Whether the row names its status — true only where the section heading cannot, i.e. a category holding several statuses.
  * @param {() => void} props.onClick Opens the task.
  */
 export default function TaskRow({
@@ -64,6 +66,7 @@ export default function TaskRow({
   projectId,
   projectName,
   showProjectName = false,
+  showStatusName = false,
   isTimerActive,
   onClick,
 }) {
@@ -71,10 +74,15 @@ export default function TaskRow({
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
-  const { types, priorities, doneStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, doneStatusIds } = useWorkflowConfig();
 
   const task = issue;
   if (!task) return null;
+
+  // Only where the section heading cannot say it — see `showStatusName`.
+  const statusObj = showStatusName
+    ? statuses.find(status => status.id === (task.columnId || task.status)) || null
+    : null;
 
   const typeObj = types.find(t => t.id === task.type) || {
     id: task.type || 'task',
@@ -239,6 +247,18 @@ export default function TaskRow({
               label={typeLabel}
               color={typeObj.color || '#9a9a9a'}
             />
+          )}
+
+          {statusObj && (
+            <Pill
+              color={statusObj.color || '#9a9a9a'}
+              size="sm"
+              shape="badge"
+              weight="medium"
+              title={`Статус: ${statusObj.label}`}
+            >
+              {statusObj.label}
+            </Pill>
           )}
 
           {isBlocked && (

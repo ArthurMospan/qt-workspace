@@ -8,6 +8,7 @@ import {
   DEFAULT_STATUS_IDS,
   DEFAULT_TYPE_IDS,
   resolveDoneStatusIds,
+  resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import {
@@ -188,7 +189,11 @@ export async function POST(request) {
         freshWorkflow.statuses,
         DEFAULT_STATUS_IDS,
       );
-      const statusCandidate = requestedStatus || freshStatusIds[0];
+      const entryStatusId = resolveEntryStatusId(
+        freshWorkflow.statuses,
+        project.hiddenColumns,
+      );
+      const statusCandidate = requestedStatus || entryStatusId;
       if (!freshStatusIds.includes(statusCandidate)) {
         throw hierarchyTransactionError({
           code: 'INVALID_WORKFLOW_STATUS',
@@ -196,11 +201,8 @@ export async function POST(request) {
           message: 'Статус не належить до поточного workflow',
         });
       }
-      const backlogStatusId = freshStatusIds.includes('backlog')
-        ? 'backlog'
-        : freshStatusIds[0];
       const status = (project.hiddenColumns || []).includes(statusCandidate)
-        ? backlogStatusId
+        ? entryStatusId
         : statusCandidate;
       const doneIds = resolveDoneStatusIds(freshWorkflow.statuses);
       const freshPriorityIds = new Set(workflowIds(

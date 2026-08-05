@@ -8,18 +8,18 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 174,
-    "parsedFiles": 174,
+    "productFiles": 175,
+    "parsedFiles": 175,
     "parseErrors": 0,
-    "nativeControls": 18,
+    "nativeControls": 17,
     "structures": {
       "analytics": 1,
       "qtplus": 1,
       "board": 1,
-      "settings": 3,
+      "settings": 2,
       "shell": 12
     },
-    "styledNativeControls": 11,
+    "styledNativeControls": 10,
     "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -32,7 +32,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 17,
+    "button": 16,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -45,7 +45,7 @@
       "covered": 90,
       "uncovered": 0,
       "routes": 12,
-      "previews": 119,
+      "previews": 121,
       "internal": 3,
       "unlisted": 0
     },
@@ -55,7 +55,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2381",
+      "location": "src/app/(app)/settings/page.js:2407",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -66,23 +66,6 @@
       "styled": false,
       "reviewed": "",
       "resembles": "IconAction",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/app/(app)/settings/page.js:422",
-      "className": "shrink-0 flex items-center gap-[4px] text-[10px] font-bold px-[8px] py-[3px] rounded-full transition-colors ${…}",
-      "text": "Завершальний",
-      "childElements": [
-        "Check"
-      ],
-      "ariaLabel": "Завершальний статус — за ним рахується прогрес/швидкість/рахунок (клік, щоб прибрати) Позначити завершальним",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
       "structure": "settings",
       "routes": [
         "/settings"
@@ -252,7 +235,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:555",
+      "location": "src/components/workspace/WorkloadTab.jsx:556",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -355,12 +338,12 @@
       "count": 3
     },
     {
-      "file": "src/app/(app)/settings/page.js",
+      "file": "src/components/MobileNav.jsx",
       "count": 2
     },
     {
-      "file": "src/components/MobileNav.jsx",
-      "count": 2
+      "file": "src/app/(app)/settings/page.js",
+      "count": 1
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",
@@ -413,27 +396,27 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:140",
+      "location": "src/app/(app)/page.js:141",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:149",
+      "location": "src/app/(app)/page.js:150",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:330",
+      "location": "src/app/(app)/settings/page.js:344",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:350",
+      "location": "src/app/(app)/settings/page.js:364",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:487",
+      "location": "src/app/(app)/settings/page.js:503",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -518,7 +501,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:248",
+      "location": "src/components/workspace/AgileBoard.jsx:279",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
@@ -558,7 +541,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1562",
+      "location": "src/components/workspace/IssueDetail.jsx:1566",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
@@ -618,7 +601,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:497",
+      "location": "src/components/workspace/WorkloadTab.jsx:498",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

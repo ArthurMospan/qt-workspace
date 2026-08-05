@@ -5,14 +5,16 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { entryStatusId } from '@/lib/utils/statusCategories.mjs';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Surface from '@/components/ui/Surface';
 import TaskRow from './TaskRow';
 
 /**
- * The list view of a board: tasks grouped by status, hidden statuses folded
- * into one «Приховані» group at the end.
+ * The list view of a board: tasks grouped by status — or, on a list that spans
+ * projects, by the five shared status categories — with hidden groups folded into
+ * one «Приховані» group at the end.
  *
  * @param {object[]} props.issues The tasks to show.
  * @param {object[]} props.allIssues Every task in scope, for resolving parents and links.
@@ -21,7 +23,8 @@ import TaskRow from './TaskRow';
  * @param {object[]} props.sprints Sprint definitions, for the sprint column.
  * @param {object[]} props.projects Projects, needed when the list spans more than one.
  * @param {object[]} props.issueLinks Relations between tasks.
- * @param {string[]} props.hiddenStatusIds Statuses folded into the «Приховані» group.
+ * @param {'status'|'category'} props.groupBy What a section is: one status, or one status category.
+ * @param {string[]} props.hiddenGroupIds Groups folded into «Приховані» — status ids, or category ids under `groupBy="category"`.
  * @param {string} props.projectId Current project.
  * @param {string} props.projectName Its name, for the per-row project chip.
  * @param {boolean} props.showProjectName Whether each row names its project — true only on cross-project lists.
@@ -40,32 +43,56 @@ export default function TaskListView({
   projectId,
   projectName,
   showProjectName = false,
-  hiddenStatusIds = [],
+  groupBy = 'status',
+  hiddenGroupIds = [],
   activeTimerIssueId,
   emptyTitle = 'Завдань не знайдено',
   emptyDescription = 'Змініть фільтри або створіть нове завдання.',
 }) {
-  const { statuses } = useWorkflowConfig();
+  const { statuses, categoryColumns, statusCategoryById } = useWorkflowConfig();
   const [collapsedSections, setCollapsedSections] = useState([]);
   const toggleSection = sectionId => setCollapsedSections(current => (
     current.includes(sectionId)
       ? current.filter(id => id !== sectionId)
       : [...current, sectionId]
   ));
-  const firstStatusId = statuses[0]?.id;
-  const visibleStatuses = statuses.filter(status => !hiddenStatusIds.includes(status.id));
-  const statusIdForIssue = issue => issue.columnId || issue.status || firstStatusId;
-  const visibleSections = visibleStatuses.map(status => ({
-    ...status,
-    issues: issues.filter(issue => statusIdForIssue(issue) === status.id),
-  }));
-  const hiddenIssues = issues.filter(issue => hiddenStatusIds.includes(statusIdForIssue(issue)));
+  const byCategory = groupBy === 'category';
+  const entryStatus = entryStatusId(statuses);
+  const statusIdForIssue = issue => issue.columnId || issue.status || entryStatus;
+  // A section is a status, or — across projects, where one project's statuses
+  // are not the other's — the category every task of every project has.
+  const groups = byCategory ? categoryColumns : statuses;
+  const groupIdForIssue = issue => (byCategory
+    ? statusCategoryById.get(statusIdForIssue(issue)) || ''
+    : statusIdForIssue(issue));
+  // A section that gathers several statuses cannot name the status of its rows,
+  // so the rows name it themselves — the same rule the board's cards follow.
+  const multiStatusGroupIds = new Set();
+  if (byCategory) {
+    const counts = new Map();
+    for (const category of statusCategoryById.values()) {
+      counts.set(category, (counts.get(category) || 0) + 1);
+    }
+    for (const [category, count] of counts) {
+      if (count > 1) multiStatusGroupIds.add(category);
+    }
+  }
+  const visibleSections = groups
+    .filter(group => !hiddenGroupIds.includes(group.id))
+    .map(group => ({
+      ...group,
+      showStatusName: multiStatusGroupIds.has(group.id),
+      issues: issues.filter(issue => groupIdForIssue(issue) === group.id),
+    }));
+  const hiddenIssues = issues.filter(issue => hiddenGroupIds.includes(groupIdForIssue(issue)));
   const sections = [
     ...visibleSections,
     ...(hiddenIssues.length > 0 ? [{
       id: '__hidden__',
       label: 'Приховані',
       color: 'var(--color-muted)',
+      // This one always mixes statuses, whatever the grouping is.
+      showStatusName: byCategory,
       issues: hiddenIssues,
     }] : []),
   ].filter(section => section.issues.length > 0);
@@ -140,6 +167,7 @@ export default function TaskListView({
                     projectId={resolvedProjectId}
                     projectName={resolvedProjectName}
                     showProjectName={showProjectName}
+                    showStatusName={section.showStatusName}
                     isTimerActive={activeTimerIssueId === issue.id}
                   />
                 );

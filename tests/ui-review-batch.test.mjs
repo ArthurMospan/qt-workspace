@@ -62,18 +62,24 @@ test('QUI-130 drops the epic copy and leads the type list with Задача', as
   assert.ok(types.indexOf("id: 'task'") < types.indexOf("id: 'feature'"), 'Задача leads the list');
 });
 
-test('QUI-131 allows several terminal statuses but never the entry column', async () => {
+// QUI-131 approved "several statuses may close a task, but the board must keep
+// somewhere for new work to land". The control that says so is now the status's
+// category — `isDone` was the same idea with a single value — so the invariant is
+// stated over categories and no longer over a position in the list.
+test('QUI-131 allows several closing statuses but never a workflow without an open one', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
-  const toggle = settings.slice(
-    settings.indexOf('const handleToggleStatusDone'),
+  const change = settings.slice(
+    settings.indexOf('const handleStatusCategoryChange'),
     settings.indexOf('const handleStatusDeleteClick'),
   );
-  // The first status takes new tasks and the fallback of any deleted column.
-  assert.match(toggle, /if \(prev\[0\]\?\.id === id\) return prev;/);
-  // Something has to close a task, so the last terminal status cannot be cleared.
-  assert.match(toggle, /if \(done\.size <= 1\) return prev;/);
-  assert.match(settings, /doneLocked=\{i === 0 \|\| \(doneIds\.length === 1/);
-  assert.match(settings, /Завершальних може бути кілька/);
+  // Something has to close a task…
+  assert.match(change, /if \(terminalCount === 0\) \{/);
+  // …and something has to stay open for new tasks to land in.
+  assert.match(change, /if \(terminalCount === next\.length\) \{/);
+  // Both are shown as a locked row with the reason, never silently refused.
+  assert.match(settings, /categoryLocked=\{[\s\S]{0,200}terminalStatuses\.length === 1/);
+  assert.match(settings, /categoryLockReason=\{isTerminalStatusCategory/);
+  assert.match(settings, /Назва статусу — ваша, категорія — спільна/);
 });
 
 test('QUI-132 leaves one clock on the time field, and only on touch', async () => {

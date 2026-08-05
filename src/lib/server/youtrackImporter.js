@@ -44,14 +44,15 @@ import {
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import {
   resolveDoneStatusIds,
+  resolveEntryStatusId,
 } from '@/lib/utils/workflowDefaults.mjs';
 
 const DEFAULT_WORKFLOW = {
   statuses: [
-    { id: 'backlog', label: 'Беклог' },
-    { id: 'todo', label: 'До виконання' },
-    { id: 'in-progress', label: 'У роботі' },
-    { id: 'done', label: 'Готово', isDone: true },
+    { id: 'backlog', label: 'Беклог', category: 'backlog' },
+    { id: 'todo', label: 'До виконання', category: 'todo' },
+    { id: 'in-progress', label: 'У роботі', category: 'in-progress' },
+    { id: 'done', label: 'Готово', category: 'done', isDone: true },
   ],
   priorities: [
     { id: 'blocker', label: 'Критичний' },
@@ -377,10 +378,8 @@ function importedWorkflowFields({
   const hiddenStatusIds = new Set(
     Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
   );
-  const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
-  const fallbackStatus = visibleStatusIds.includes('backlog')
-    ? 'backlog'
-    : visibleStatusIds[0] || statusIds[0];
+  const fallbackStatus = resolveEntryStatusId(workflow.statuses, [...hiddenStatusIds])
+    || statusIds[0];
   const status = hiddenStatusIds.has(mappedStatus)
     ? fallbackStatus
     : mappedStatus;

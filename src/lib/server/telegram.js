@@ -8,9 +8,9 @@ import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import {
   DEFAULT_PRIORITY_IDS,
-  DEFAULT_STATUS_IDS,
   DEFAULT_TYPE_IDS,
   resolveDoneStatusIds,
+  resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 
@@ -206,14 +206,10 @@ export async function createIssueFromTelegram({
     if (project.deletionPending === true) throw new Error('Проєкт уже видаляється');
     if (project.status === 'archived') throw new Error('Проєкт архівовано');
     const workflow = workflowSnapshot.data() || {};
-    const statusIds = workflowIds(workflow.statuses, DEFAULT_STATUS_IDS);
     const hiddenStatusIds = new Set(
       Array.isArray(project.hiddenColumns) ? project.hiddenColumns : [],
     );
-    const visibleStatusIds = statusIds.filter(statusId => !hiddenStatusIds.has(statusId));
-    const status = visibleStatusIds.includes('backlog')
-      ? 'backlog'
-      : visibleStatusIds[0];
+    const status = resolveEntryStatusId(workflow.statuses, [...hiddenStatusIds]);
     if (!status) throw new Error('У проєкті немає доступного статусу');
     const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
     const priority = priorityIds.includes('medium')

@@ -12,6 +12,7 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import { usePortalSession }    from '@/lib/portal/usePortalSession';
 import QtPlusChatPanel from '@/components/workspace/qtplus/chat/QtPlusChatPanel';
 import { useWorkflowConfig }   from '@/lib/hooks/useWorkflowConfig';
+import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { ISSUE_LINK_OPTIONS, issueLinkPerspective, useIssueLinks } from '@/lib/hooks/useIssueLinks';
 import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
 import MarkdownViewer, { setTaskChecked } from '@/components/ui/DataDisplay/MarkdownViewer';
@@ -761,11 +762,14 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       showToast('Підзадача не може мати власні підзадачі', 'error');
       return;
     }
-    const initialStatus = (
-      visibleStatuses.find(status => status.id === 'todo' && !doneStatusIds.includes(status.id))
-      || visibleStatuses.find(status => !doneStatusIds.includes(status.id))
-      || visibleStatuses[0]
-    )?.id || 'backlog';
+    // A new subtask starts where planned work starts — the category says which
+    // column that is, instead of hoping the project still has one called 'todo'.
+    const initialStatus = resolveCategoryStatusId('todo', STATUSES, {
+      hiddenStatusIds: activeHiddenCols,
+    })
+      || visibleStatuses.find(status => !doneStatusIds.includes(status.id))?.id
+      || visibleStatuses[0]?.id
+      || 'backlog';
     const childTypeId = creatableTypes.find(type => type.id === 'task')?.id || creatableTypes[0]?.id;
     if (!childTypeId) {
       showToast('Спершу додайте активний тип задачі в налаштуваннях', 'error');

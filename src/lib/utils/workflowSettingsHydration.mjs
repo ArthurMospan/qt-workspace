@@ -1,4 +1,5 @@
 import { localizeBuiltInWorkflowItems } from './workflowDefaults.mjs';
+import { withStatusCategories } from './statusCategories.mjs';
 
 export const WORKFLOW_SETTINGS_SECTIONS = Object.freeze([
   'statuses',
@@ -23,8 +24,15 @@ export function hydrateWorkflowSettings(storedWorkflow, defaults) {
       : defaults?.[section];
     const items = Array.isArray(source) ? source : [];
     const localized = localizeBuiltInWorkflowItems(section, items);
+    // A workflow saved before categories existed carries none, and the editor
+    // must not show an empty control for a status whose category the rest of the
+    // app already knows. Resolving it here also makes the loaded state the
+    // autosave baseline, so opening Settings never writes on its own.
+    const resolved = section === 'statuses'
+      ? withStatusCategories(localized)
+      : localized;
 
     // Give each organization its own in-memory objects as well as arrays.
-    return [section, localized.map(item => ({ ...item }))];
+    return [section, resolved.map(item => ({ ...item }))];
   }));
 }

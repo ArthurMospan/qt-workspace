@@ -48,6 +48,7 @@ import {
   sumRawTimeLogMinutes,
 } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
+import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
 
 function fmtH(minutes) {
   if (!minutes) return '0г';
@@ -609,8 +610,11 @@ export default function WorkloadTab({
   detailFilters,
 }) {
   const [now, setNow] = useState(() => Date.now());
-  const { doneStatusIds, positions = [] } = useWorkflowConfig();
+  const { doneStatusIds, positions = [], statuses } = useWorkflowConfig();
   const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  // The category, not the literal id 'in-progress': an org that renamed that
+  // column showed every member as having nothing in progress.
+  const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
   const actionableIssues = useMemo(
     () => selectActionableIssues(issues, hierarchyIssues),
     [hierarchyIssues, issues],
@@ -635,7 +639,7 @@ export default function WorkloadTab({
         const due = parseDueDate(issue.dueDate);
         return due && due.getTime() < now;
       });
-      const inProgressItems = openItems.filter(issue => issue.columnId === 'in-progress');
+      const inProgressItems = openItems.filter(issue => inProgressSet.has(issue.columnId || issue.status));
       const allLogs = timeLogs
         .filter(log => log.userId === uid)
         .sort((a, b) => effectiveTimeLogMillis(b) - effectiveTimeLogMillis(a));
@@ -665,7 +669,7 @@ export default function WorkloadTab({
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [actionableIssues, doneSet, hierarchyIssues, members, now, period, timeLogs]);
+  }, [actionableIssues, doneSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)

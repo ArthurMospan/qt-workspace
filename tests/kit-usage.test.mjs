@@ -150,8 +150,9 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   const issueCard = readFileSync(new URL('../src/components/workspace/IssueCard.jsx', import.meta.url), 'utf8');
   const myTasks = readFileSync(new URL('../src/app/(app)/my/page.js', import.meta.url), 'utf8');
   const project = readFileSync(new URL('../src/app/(app)/[projectId]/page.js', import.meta.url), 'utf8');
-  assert.match(taskList, /hiddenStatusIds = \[\]/);
-  assert.match(taskList, /visibleStatuses = statuses\.filter/);
+  assert.match(taskList, /hiddenGroupIds = \[\]/);
+  // A section is a status, or a status category on a list that spans projects.
+  assert.match(taskList, /const groups = byCategory \? categoryColumns : statuses;/);
   assert.match(taskList, /label: 'Приховані'/);
   assert.match(taskList, /showProjectName=\{showProjectName\}/);
   assert.match(taskRow, /showProjectName = false/);
@@ -160,8 +161,8 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   assert.match(taskRow, /showProjectName=\{showProjectName\}/);
   const taskIdentity = readFileSync(new URL('../src/components/ui/TaskManagement/TaskIdentity.jsx', import.meta.url), 'utf8');
   assert.match(taskIdentity, /showProjectName && Boolean\(projectName\)/);
-  assert.match(myTasks, /hiddenStatusIds=\{hiddenColumns\}/);
-  assert.match(project, /hiddenStatusIds=\{project\?\.hiddenColumns \|\| \[\]\}/);
+  assert.match(myTasks, /hiddenGroupIds=\{hiddenCategories\}/);
+  assert.match(project, /hiddenGroupIds=\{project\?\.hiddenColumns \|\| \[\]\}/);
   assert.match(myTasks, /<AgileBoard[\s\S]{0,500}showHiddenLane/);
   assert.match(myTasks, /<AgileBoard[\s\S]{0,600}onRequestAddIssue=/);
   assert.doesNotMatch(project, /<AgileBoard[\s\S]{0,700}showHiddenLane/);

@@ -6,11 +6,15 @@ import {
   sameStringSet,
 } from '../src/lib/utils/workflowMutation.mjs';
 
+// Statuses carry their category explicitly, because that is what the normalizer
+// writes back: the category decides whether a status closes a task, and `isDone`
+// is derived from it so the two can never disagree in a saved document.
+// tests/status-categories.test.mjs covers the derivation itself.
 function workflow() {
   return {
     statuses: [
-      { id: 'todo', label: 'До виконання', color: '#fff', isDone: false },
-      { id: 'done', label: 'Готово', color: '#000', isDone: true },
+      { id: 'todo', label: 'До виконання', color: '#fff', category: 'todo', isDone: false },
+      { id: 'done', label: 'Готово', color: '#000', category: 'done', isDone: true },
     ],
     types: [{ id: 'task', label: 'Задача' }],
     priorities: [{ id: 'medium', label: 'Середній' }],

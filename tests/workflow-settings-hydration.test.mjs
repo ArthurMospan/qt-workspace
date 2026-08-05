@@ -30,9 +30,12 @@ test('missing workflow replaces every section from the previous organization wit
   };
 
   assert.deepEqual(Object.keys(organizationB), WORKFLOW_SETTINGS_SECTIONS);
+  // Statuses come back with their category resolved: the editor must never show
+  // an empty category control, and the loaded payload is the autosave baseline,
+  // so resolving it here is also what keeps opening Settings from writing.
   assert.deepEqual(
     organizationB.statuses,
-    [{ id: 'backlog', label: 'Беклог' }],
+    [{ id: 'backlog', label: 'Беклог', category: 'backlog', isDone: false }],
   );
   assert.deepEqual(
     organizationB.types,
@@ -58,7 +61,12 @@ test('partial legacy workflow fills all missing sections without replacing store
     labels: [],
   }, defaults);
 
-  assert.deepEqual(hydrated.statuses, [{ id: 'review', label: 'Review' }]);
+  // A custom id is never guessed at by name; as the only column it is where new
+  // work lands. tests/status-categories.test.mjs covers the derivation itself.
+  assert.deepEqual(
+    hydrated.statuses,
+    [{ id: 'review', label: 'Review', category: 'backlog', isDone: false }],
+  );
   assert.deepEqual(hydrated.labels, []);
   assert.equal(hydrated.types[0].id, 'task');
   assert.equal(hydrated.priorities[0].id, 'medium');
