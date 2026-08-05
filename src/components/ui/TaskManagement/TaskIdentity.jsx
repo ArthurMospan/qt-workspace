@@ -12,10 +12,13 @@ import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
  * The card and the list row each drew this by hand, and both ran the three
  * through one uppercase monospace span joined by bullets — so the project name
  * read as part of the identifier rather than as the project, and a task with no
- * key got an invented one. The keys are monospace because they are identifiers
- * you retype; the project is ordinary text because it is a name you read. Only
- * the card's own key carries any weight: everything after it is context, set
- * one step quieter so the line reads as a name with its address after it.
+ * key got an invented one.
+ *
+ * All three are monospace: two of them are identifiers, and setting the third
+ * in the body face put a second typeface on a 10px line, which showed as a
+ * seam rather than as a distinction. They are told apart by weight and colour
+ * instead — only the card's own key carries any, and everything after it is
+ * context, so the line reads as a name with its address behind it.
  *
  * Two keys sit here on a subtask, and they are not equals: the first names this
  * task, the second names the one it hangs under. They are set in the same type
@@ -76,7 +79,7 @@ export default function TaskIdentity({
       {showsProject && (
         <>
           {(key || parentIssue) && divider}
-          <span className="min-w-0 truncate text-[10px] font-medium text-faint">
+          <span className="min-w-0 truncate font-mono text-[10px] font-medium tracking-wide text-faint">
             {projectName}
           </span>
         </>

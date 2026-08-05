@@ -4,8 +4,8 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Lock, Paperclip } from 'lucide-react';
-import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
+import { Lock } from 'lucide-react';
+import { CalendarIcon, TaskIcon } from '@/lib/design/icons';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import Tag from '@/components/ui/DataDisplay/Tag';
@@ -18,7 +18,7 @@ import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { Counter, TaskIdentity } from '@/components/ui';
+import { TaskCounters, TaskIdentity } from '@/components/ui';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -46,14 +46,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
   const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issue.id] || 0);
-  // One unread marker per card. A new message already has its own, and a better
-  // one: it sits on the chat counter, so it comes with the number of messages
-  // and turns into the «@» pill when the message names you. The dot up in the
-  // identity row was drawn from the same event, so a comment lit up two marks
-  // two rows apart that meant the same thing. It now speaks only for the
-  // activity the counter cannot: a status change, an edit, a task filed.
-  const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId)
-    && issue.lastActivityType !== 'comment';
+  const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();
@@ -129,7 +122,11 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
       issue.lastCommentAuthorId !== currentUserId &&
       !(issue.lastCommentReadBy || []).includes(currentUserId)
     );
-    const isMentioned = hasUnreadChat && (issue.lastCommentMentionIds || []).includes(currentUserId);
+    // How many unread messages have named you, kept per person on the task and
+    // cleared when that person reads the chat. It used to be a bare «@» taken
+    // from the last message alone, so being named three times and being named
+    // once looked the same, and the second message hid the first.
+    const mentionCount = Number(issue.unreadMentions?.[currentUserId]) || 0;
 
     return (
       <div
@@ -194,12 +191,6 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
               className="max-w-[220px]"
             />
-
-            {hasUnreadActivity && (
-              <span role="status" aria-label="Непрочитані зміни" title="У задачі є непрочитані зміни">
-                <Counter variant="dot" size="sm" status="info" />
-              </span>
-            )}
 
             {isTimerActive && (
               <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
@@ -333,28 +324,12 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               ) : null}
             </div>
 
-            <div className="flex items-center gap-[10px] shrink-0">
-              {/* Attachments indicator */}
-              {attachCount > 0 && (
-                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${attachCount} вкладень`} aria-label={`${attachCount} вкладень`}>
-                  <Paperclip size={12} strokeWidth={2} />
-                  <span>{attachCount}</span>
-                </div>
-              )}
-
-              {/* Chat count indicator: totally flat, no background, no border, no shadow */}
-              {msgCount > 0 && (
-                <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
-                  {/* Drawn by hand until now, which is why the chat glyph
-                      never changed with the rest of the site: a path in a file
-                      is invisible to every rename. */}
-                  <ChatIcon size={13} />
-                  {isMentioned && <Pill tone="dark" size="sm">@</Pill>}
-                  {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
-                  <span>{msgCount}</span>
-                </div>
-              )}
-            </div>
+            <TaskCounters
+              attachments={attachCount}
+              mentions={mentionCount}
+              messages={msgCount}
+              unread={hasUnreadActivity || hasUnreadChat}
+            />
           </div>
 
         </div>

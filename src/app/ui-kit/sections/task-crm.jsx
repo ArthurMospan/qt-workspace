@@ -1,6 +1,6 @@
 'use client';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
+import { TaskCounters, TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -103,7 +103,7 @@ export default function TaskCRMSection() {
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
         title="Task Identity — ключ, батьківське завдання, проєкт"
-        description="Порядок від завдання назовні: свій ключ → під ким висить → у якому проєкті. Ключі моноширинні, бо це ідентифікатори, які перенабирають; проєкт — звичайний текст, бо це назва, яку читають. Вагу має лише власний ключ, решта — контекст на тон тихіше. Спільний line-height на всі три, інакше кожен рахує свою висоту рядка від свого шрифту і назва проєкту сидить нижче за ключі. Іконка справжня, а не символ «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа."
+        description="Порядок від завдання назовні: свій ключ → під ким висить → у якому проєкті. Усі три моноширинні: два з них ідентифікатори, а третій шрифт на рядку в 10px читався як шов, а не як різниця. Розрізняються вагою і кольором — вагу має лише власний ключ, решта контекст. Спільний line-height на всі три, інакше кожен рахує свою висоту рядка від свого шрифту і назва проєкту сидить нижче за ключі. Іконка справжня, а не символ «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа."
         filePath="src/components/ui/TaskManagement/TaskIdentity.jsx"
       >
         <div className="flex flex-col gap-3">
@@ -119,6 +119,19 @@ export default function TaskCRMSection() {
           <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName="QuickTeam" showProjectName />
           {/* No key at all — the title below it is the task's name. */}
           <TaskIdentity issue={{}} projectName="QuickTeam" showProjectName />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task Counters — вкладення, згадки, повідомлення, крапка"
+        description="Три лічильники одного вигляду й одна крапка «є нове», завжди останньою. Згадка — такий самий лічильник, а не пілюля: це той самий тип факту (скільки чогось є), і відрізняється лише кольором, бо з трьох саме вона адресована особисто тобі. Крапка одна на картку і покриває будь-яку активність — раніше один коментар засвічував дві однакові крапки в різних кутах картки."
+        filePath="src/components/ui/TaskManagement/TaskCounters.jsx"
+      >
+        <div className="flex flex-col gap-3">
+          <TaskCounters attachments={2} messages={12} />
+          <TaskCounters attachments={1} mentions={3} messages={12} unread />
+          <TaskCounters messages={4} unread size="sm" />
+          <TaskCounters unread />
         </div>
       </PreviewBlock>
 

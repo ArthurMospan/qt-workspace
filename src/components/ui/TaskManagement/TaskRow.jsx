@@ -1,7 +1,7 @@
 'use client';
 // src/components/ui/TaskManagement/TaskRow.jsx — Beautiful list-row representation of a task
 import { Clock, Lock } from 'lucide-react';
-import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
+import { CalendarIcon, TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
+import TaskCounters from './TaskCounters';
 import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
@@ -112,7 +113,7 @@ export default function TaskRow({
     task.lastCommentAuthorId !== currentUserId &&
     !(task.lastCommentReadBy || []).includes(currentUserId)
   );
-  const isMentioned = hasUnreadChat && (task.lastCommentMentionIds || []).includes(currentUserId);
+  const mentionCount = Number(task.unreadMentions?.[currentUserId]) || 0;
 
   const isBlocked = openBlockerIssues(
     task.id,
@@ -215,23 +216,17 @@ export default function TaskRow({
               {task.title}
             </p>
 
-            {/* Chat Count */}
-            {msgCount > 0 && (
-              // A count of messages is a quantity you read, not an identifier
-              // you retype — it was set in the same monospace as the task key,
-              // which is what made a bare number beside an icon look like a
-              // code fragment rather than "12 повідомлень".
-              <div
-                className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`}
-                title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}
-                aria-label={`${msgCount} повідомлень в чаті завдання`}
-              >
-                <ChatIcon size={12} />
-                {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
-                {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
-                <span className="text-[10px]">{msgCount}</span>
-              </div>
-            )}
+            {/* The same three counts, in the same order and the same shapes as
+                on a board card. A count of messages is a quantity you read, not
+                an identifier you retype — it was set in the same monospace as
+                the task key, which is what made a bare number beside an icon
+                look like a code fragment rather than "12 повідомлень". */}
+            <TaskCounters
+              mentions={mentionCount}
+              messages={msgCount}
+              unread={hasUnreadChat}
+              size="sm"
+            />
           </div>
         </div>
 

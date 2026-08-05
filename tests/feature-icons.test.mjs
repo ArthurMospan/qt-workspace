@@ -61,10 +61,16 @@ test('the task card and the task row use the shared icons', () => {
     'src/components/ui/TaskManagement/TaskRow.jsx',
   ]) {
     const source = readFileSync(join(ROOT, file), 'utf8');
-    assert.match(source, /import \{ CalendarIcon, ChatIcon, TaskIcon \} from '@\/lib\/design\/icons'/, file);
+    assert.match(source, /import \{ CalendarIcon, TaskIcon \} from '@\/lib\/design\/icons'/, file);
     assert.doesNotMatch(source, /<svg[\s\S]{0,200}M21 15a2 2/, `${file} still draws the bubble by hand`);
-    assert.match(source, /<ChatIcon size=\{1[23]\} \/>/, file);
+    // The message count itself is one component now, used by both, so neither
+    // holds a chat glyph of its own to drift.
+    assert.match(source, /<TaskCounters\b/, file);
+    assert.doesNotMatch(source, /ChatIcon/, file);
   }
+  const counters = readFileSync(join(ROOT, 'src/components/ui/TaskManagement/TaskCounters.jsx'), 'utf8');
+  assert.match(counters, /import \{ ChatIcon \} from '@\/lib\/design\/icons'/);
+  assert.match(counters, /<ChatIcon size=\{scale\.icon \+ 1\} \/>/);
 });
 
 // A `CheckCircle`-shaped tick that means "this succeeded" is a different

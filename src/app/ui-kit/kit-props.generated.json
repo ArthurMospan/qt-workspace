@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 92,
-    "props": 671,
-    "documentedProps": 671,
+    "components": 93,
+    "props": 677,
+    "documentedProps": 677,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4607,6 +4607,54 @@
           "type": "boolean",
           "values": [],
           "description": "Keeps everything on one row instead of wrapping."
+        }
+      ]
+    },
+    "TaskCounters": {
+      "file": "src/components/ui/TaskManagement/TaskCounters.jsx",
+      "summary": "What a task carries, counted at the edge of its card or row: files, times you were named, messages — and one dot for \"something in here is new\".",
+      "props": [
+        {
+          "name": "attachments",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Files on the task."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "mentions",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Unread messages naming the current user."
+        },
+        {
+          "name": "messages",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Messages in the task chat."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'sm'|'md'",
+          "values": [],
+          "description": "`sm` for a list row, `md` for a board card."
+        },
+        {
+          "name": "unread",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether anything on the task is new to this user."
         }
       ]
     },

@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useComments.js — Internal comments for an issue (subcollection)
 import { useState, useEffect, useCallback } from 'react';
-import { arrayUnion, collection, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayUnion, collection, deleteField, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
@@ -81,6 +81,15 @@ export function useComments(issueId) {
         lastCommentAuthorId: authorId,
         lastCommentMentionIds: options.mentionedUserIds || [],
         lastCommentReadBy: authorId ? [authorId] : [],
+        // One tally per person, so a card can say "you were named three times"
+        // instead of only "you were named in the last message" — which is all
+        // `lastCommentMentionIds` can ever say, and the next message erases it.
+        // Cleared for a reader in `markCommentsRead` below.
+        ...Object.fromEntries(
+          [...new Set(options.mentionedUserIds || [])]
+            .filter(userId => userId && userId !== authorId)
+            .map(userId => [`unreadMentions.${userId}`, increment(1)]),
+        ),
       });
     });
     if (typeof window !== 'undefined') {
@@ -149,6 +158,10 @@ export function useComments(issueId) {
       });
       batch.update(doc(db, 'issues', issueId), {
         lastCommentReadBy: arrayUnion(userId),
+        // Reading the chat is what answers a mention, so the tally goes rather
+        // than resetting to zero — an absent key costs nothing to store and
+        // reads the same as a zero everywhere it is counted.
+        [`unreadMentions.${userId}`]: deleteField(),
       });
       await batch.commit();
     } catch (error) {
