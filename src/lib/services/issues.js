@@ -1,6 +1,7 @@
 'use client';
 
 import { auth } from '@/lib/firebase';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 
 async function authenticatedIssueRequest(url, options, fallbackMessage) {
   const token = await auth.currentUser?.getIdToken();
@@ -32,6 +33,38 @@ export async function createIssueViaApi({ organizationId, projectId, data }) {
     method: 'POST',
     body: JSON.stringify({ organizationId, projectId, data }),
   }, 'Не вдалося створити задачу');
+}
+
+/**
+ * Tell whoever was just given a task. Being assigned is the same event wherever
+ * the task was created from, so both composers say it the same way — the one on
+ * «Мої завдання» used to say nothing at all, and a task created there reached
+ * its assignee only if they happened to look at the board.
+ *
+ * Best-effort: a task that exists must not appear to have failed because a
+ * notification did not go out. The actor is excluded server-side too.
+ */
+export function notifyIssueAssigned({
+  issueId,
+  title,
+  assigneeIds = [],
+  actorId,
+  actorName,
+  projectId,
+  organizationId,
+}) {
+  const recipients = [...new Set(assigneeIds)].filter(uid => uid && uid !== actorId);
+  if (!recipients.length || !issueId || !projectId) return Promise.resolve(null);
+  return sendNotification({
+    userIds: recipients,
+    type: 'assigned',
+    title: `${actorName || 'Колега'} призначив вам нове завдання`,
+    body: title || '',
+    link: `/${projectId}/issue/${issueId}`,
+    issueId,
+    projectId,
+    organizationId,
+  }).catch(() => null);
 }
 
 export async function transitionIssueStatusViaApi({

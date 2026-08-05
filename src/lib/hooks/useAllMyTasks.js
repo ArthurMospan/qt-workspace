@@ -12,8 +12,11 @@ import {
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { reportLoadError } from '@/lib/utils/errors';
-import { pickPatchableFields } from '@/lib/utils/optimistic.mjs';
+import { pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
+import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
+import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 
 function issueLabel(issue) {
@@ -28,7 +31,7 @@ export function useAllMyTasks(userId) {
     orgLoading,
     projectsLoading,
   } = useAppContext();
-  const { doneStatusIds } = useWorkflowConfig();
+  const { doneStatusIds, statuses } = useWorkflowConfig();
   const [snapshotTasks, setSnapshotTasks] = useState([]);
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
@@ -134,6 +137,100 @@ export function useAllMyTasks(userId) {
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
   }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading]);
+  // Shared by the board and by any other status write: a parent or a blocked
+  // task may not be closed while real work under it is still open.
+  const assertCompletable = useCallback((taskId, current, nextStatus) => {
+    if (!current || !nextStatus) return;
+    const wasDone = doneStatusIds.includes(current.columnId || current.status);
+    const willBeDone = doneStatusIds.includes(nextStatus);
+    if (!willBeDone || wasDone) return;
+    const blockers = issueCompletionBlockers({
+      issueId: taskId,
+      issues: allIssues,
+      issueLinks,
+      doneStatusIds,
+    });
+    if (blockers.canComplete) return;
+    const reasons = [];
+    if (blockers.children.length > 0) {
+      reasons.push(
+        `спочатку завершіть підзавдання: ${blockers.children.map(issueLabel).join(', ')}`,
+      );
+    }
+    if (blockers.dependencies.length > 0) {
+      reasons.push(
+        `завдання ще блокують: ${blockers.dependencies.map(issueLabel).join(', ')}`,
+      );
+    }
+    throw new Error(`Не можна завершити завдання — ${reasons.join('; ')}.`);
+  }, [allIssues, doneStatusIds, issueLinks]);
+
+  /**
+   * A drop on the "Мої завдання" board. Its columns mix projects, but `order`
+   * numbers one project's column, so the card is positioned among its own
+   * project's cards and its neighbours there are renumbered with it — exactly
+   * what the project board does. This used to write the raw index of a
+   * cross-project list as the card's `order` and update nobody else, so the
+   * card landed at whatever row that number meant in its project and the
+   * project's own board inherited the collision.
+   */
+  const moveTask = useCallback(async (taskId, columnId, position, actorUser = {}) => {
+    const current = allIssues.find(issue => issue.id === taskId);
+    if (!current) throw new Error('Issue not found');
+    assertCompletable(taskId, current, columnId);
+
+    const plan = planDrop(allIssues, taskId, columnId, position, { scopeToProject: true });
+    if (!plan) throw new Error('Issue not found');
+    const fromColumnId = current.columnId || current.status || null;
+
+    applyPatch(plan.patches);
+    applyAllPatch(plan.patches);
+    try {
+      await transitionIssueStatusViaApi({
+        issueId: taskId,
+        status: columnId,
+        order: plan.patches[taskId]?.order,
+        orderUpdates: Object.entries(plan.patches)
+          .filter(([, patch]) => patch.order !== undefined)
+          .map(([id, patch]) => ({ issueId: id, order: patch.order })),
+      });
+    } catch (error) {
+      revertPatch(Object.keys(plan.patches));
+      revertAllPatch(Object.keys(plan.patches));
+      throw error;
+    }
+
+    // The same event as a move on the project board, so it reaches the same
+    // people. Moving a task here used to tell nobody at all.
+    if (fromColumnId !== columnId) {
+      const recipients = issueParticipants(current, {
+        actorId: actorUser.userId || userId,
+      });
+      if (recipients.length) {
+        sendNotification({
+          userIds: recipients,
+          type: 'status_changed',
+          title: `${current.issueKey || 'Задача'}: статус змінено`,
+          body: `${current.title || ''} → ${statusLabel(columnId, statuses)}`,
+          link: `/${current.projectId}/issue/${taskId}`,
+          issueId: taskId,
+          projectId: current.projectId,
+          organizationId: activeOrgId,
+        }).catch(() => {});
+      }
+    }
+  }, [
+    activeOrgId,
+    allIssues,
+    applyAllPatch,
+    applyPatch,
+    assertCompletable,
+    revertAllPatch,
+    revertPatch,
+    statuses,
+    userId,
+  ]);
+
   const updateTask = useCallback(async (taskId, data) => {
     const current = tasks.find(task => task.id === taskId);
     if (
@@ -153,32 +250,7 @@ export function useAllMyTasks(userId) {
     delete directData.columnId;
     delete directData.completedAt;
     if (hasStatusUpdate) delete directData.order;
-    if (current && nextStatus) {
-      const wasDone = doneStatusIds.includes(current.columnId || current.status);
-      const willBeDone = doneStatusIds.includes(nextStatus);
-      if (willBeDone && !wasDone) {
-        const blockers = issueCompletionBlockers({
-          issueId: taskId,
-          issues: allIssues,
-          issueLinks,
-          doneStatusIds,
-        });
-        if (!blockers.canComplete) {
-          const reasons = [];
-          if (blockers.children.length > 0) {
-            reasons.push(
-              `спочатку завершіть підзавдання: ${blockers.children.map(issueLabel).join(', ')}`,
-            );
-          }
-          if (blockers.dependencies.length > 0) {
-            reasons.push(
-              `завдання ще блокують: ${blockers.dependencies.map(issueLabel).join(', ')}`,
-            );
-          }
-          throw new Error(`Не можна завершити завдання — ${reasons.join('; ')}.`);
-        }
-      }
-    }
+    assertCompletable(taskId, current, nextStatus);
     // Paint the new column before the round-trip, otherwise the drop animation
     // lands the card back where it started and the echo teleports it.
     const optimistic = pickPatchableFields(data);
@@ -209,11 +281,9 @@ export function useAllMyTasks(userId) {
       throw err;
     }
   }, [
-    allIssues,
     applyAllPatch,
     applyPatch,
-    doneStatusIds,
-    issueLinks,
+    assertCompletable,
     revertAllPatch,
     revertPatch,
     tasks,
@@ -223,6 +293,7 @@ export function useAllMyTasks(userId) {
     allIssues,
     issueLinks,
     loading,
+    moveTask,
     updateTask
   };
 }

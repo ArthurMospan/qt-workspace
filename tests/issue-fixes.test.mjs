@@ -95,7 +95,14 @@ test('QUI-73 and QUI-81 show newly created sprint, backlog and board tasks first
   assert.match(source, /\[sortDir,\s*setSortDir\]\s*=\s*useState\('asc'\)/);
   assert.match(source, /return sortDir === 'asc' \? res : -res/);
   assert.match(createRoute, /order:\s*-next/);
-  assert.match(board, /\.sort\(\(a, b\) => \(a\.order \?\? 0\) - \(b\.order \?\? 0\)\)/);
+  // The board sorts by the shared comparator, not by a rule of its own. Its
+  // own copy read a missing `order` as 0 while the move planner read it as
+  // last, so the column the user saw and the column the planner numbered were
+  // two different lists and a dropped card landed off by however many they
+  // disagreed about.
+  assert.match(board, /import \{ columnOf, compareIssues \} from '@\/lib\/utils\/optimistic\.mjs'/);
+  assert.match(board, /const columnCards = \(laneIssues, column\) =>[\s\S]{0,320}\.sort\(compareIssues\)/);
+  assert.doesNotMatch(board, /\(a\.order \?\? 0\) - \(b\.order \?\? 0\)/);
 });
 
 test('QUI-80 gives every FilterBar selector a semantic icon role', async () => {

@@ -10,13 +10,14 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import {
   createIssueViaApi,
+  notifyIssueAssigned,
   transitionIssueStatusViaApi,
 } from '@/lib/services/issues';
 import { createResponseError, reportLoadError } from '@/lib/utils/errors';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
-import { compareIssues, pickPatchableFields, planMove } from '@/lib/utils/optimistic.mjs';
+import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 
 // Stable string form of an audited field, so array values compare by content
 // rather than by identity. Order-insensitive for arrays: reordering assignees
@@ -203,22 +204,19 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       },
     });
 
-    // Step 4: Notify assignees who didn't create the task themselves
-    const notifyIds = (data.assigneeIds || []).filter(uid => uid && uid !== userId);
-    if (notifyIds.length) {
-      sendNotification({
-        userIds: notifyIds,
-        type: 'assigned',
-        title: `${userName || 'Колега'} призначив вам нове завдання`,
-        body: data.title || '',
-        link: `/${projectId}/issue/${result.id}`,
-        issueId: result.id,
-        projectId,
-        organizationId: activeOrgId,
-        // No `actor` here: /api/notifications resolves the sender from the
-        // verified ID token. Passing one was silently discarded.
-      }).catch(() => {});
-    }
+    // Step 4: Notify assignees who didn't create the task themselves. Said the
+    // same way by every composer, so it cannot go out from one and not another.
+    // No `actor` is passed: /api/notifications resolves the sender from the
+    // verified ID token, and passing one was silently discarded.
+    notifyIssueAssigned({
+      issueId: result.id,
+      title: data.title,
+      assigneeIds: data.assigneeIds || [],
+      actorId: userId,
+      actorName: userName,
+      projectId,
+      organizationId: activeOrgId,
+    });
     return {
       id: result.id,
       issueKey: result.issueKey
@@ -381,7 +379,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   //   Side-effects:
   //     - 'client-approval': sets clientApprovalPending on linked stage
   // -------------------------------------------------------------------------
-  const moveIssue = useCallback(async (issueId, newColumnId, newOrder, actorUser = {}) => {
+  const moveIssue = useCallback(async (issueId, newColumnId, position, actorUser = {}) => {
     const { userId } = actorUser;
     const issue = issues.find(i => i.id === issueId);
     if (!issue) throw new Error('Issue not found');
@@ -419,7 +417,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // One plan drives both the repaint and the writes, so the overlay retires
     // the moment Firestore echoes back instead of disagreeing with it. Cards
     // whose position is unchanged are left out — no repaint, no write.
-    const plan = planMove(issues, issueId, newColumnId, newOrder);
+    const plan = planDrop(issues, issueId, newColumnId, position);
     if (!plan) throw new Error('Issue not found');
 
     // Paint first: @hello-pangea/dnd animates the card into the list as it

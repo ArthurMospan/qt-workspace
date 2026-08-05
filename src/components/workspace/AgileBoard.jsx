@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
+import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -102,6 +103,15 @@ export default function AgileBoard({
     return next;
   }, [globalStatuses, activeHiddenCols, showHiddenLane]);
 
+  // One definition of "the cards of this column, in this order", used to render
+  // a column and to read back where a card was dropped into it. Two definitions
+  // is what let the board show one order and write another.
+  const columnCards = (laneIssues, column) => (laneIssues || [])
+    .filter(issue => (column?.isHiddenContainer
+      ? column.colIds.includes(columnOf(issue))
+      : columnOf(issue) === column?.id))
+    .sort(compareIssues);
+
   const [activeAddColId, setActiveAddColId] = useState(null);
   const [collapsedCols, setCollapsedCols] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -157,26 +167,26 @@ export default function AgileBoard({
       }
     }
 
+    // The column the user was looking at, not an index into rows they could not
+    // see. Filters, swimlanes and the cross-project columns of «Мої завдання»
+    // all mean the visible list is a subset of what `order` numbers, so the
+    // caller resolves this against its own scope. It used to be resolved here,
+    // against a list sorted by a rule of its own, and a card that was dropped
+    // between two others landed wherever that other rule had put them.
     const destinationLane = destLaneId
       ? swimlanes.find(lane => lane.id === destLaneId)
       : swimlanes[0];
-    const visibleDestinationIssues = (destinationLane?.issues || boardIssues)
-      .filter(candidate => (
-        candidate.id !== draggableId
-        && (destColId === '__hidden__'
-          ? columns.find(column => column.id === '__hidden__')?.colIds.includes(candidate.columnId)
-          : candidate.columnId === destColId)
-      ))
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const beforeIssue = visibleDestinationIssues[destination.index];
-    const fullDestinationColumn = contextIssues
-      .filter(candidate => candidate.id !== draggableId && candidate.columnId === destColId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const fullIndex = beforeIssue
-      ? Math.max(0, fullDestinationColumn.findIndex(candidate => candidate.id === beforeIssue.id))
-      : fullDestinationColumn.length;
+    const destinationColumn = columns.find(column => column.id === destColId);
+    const visibleColumnIds = columnCards(destinationLane?.issues || boardIssues, destinationColumn)
+      .filter(candidate => candidate.id !== draggableId)
+      .map(candidate => candidate.id);
 
-    onMoveIssue(draggableId, destColId, fullIndex, updateFields);
+    onMoveIssue(
+      draggableId,
+      destColId,
+      { visibleColumnIds, visibleIndex: destination.index },
+      updateFields,
+    );
   };
 
   const swimlanes = (() => {
@@ -231,10 +241,7 @@ export default function AgileBoard({
           <div className="flex gap-4 pb-2 shrink-0 full-bleed">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
-              const colTotalIssues = boardIssues.filter(i => {
-                if (col.isHiddenContainer) return col.colIds.includes(i.columnId);
-                return i.columnId === col.id;
-              });
+              const colTotalIssues = columnCards(boardIssues, col);
 
               if (isCollapsed) {
                 return (
@@ -323,13 +330,8 @@ export default function AgileBoard({
               
               <div className={`flex gap-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0' : ''}`}>
                 {columns.map(col => {
-                  const colIssues = lane.issues
-                    .filter(i => {
-                      if (col.isHiddenContainer) return col.colIds.includes(i.columnId);
-                      return i.columnId === col.id;
-                    })
-                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                  
+                  const colIssues = columnCards(lane.issues, col);
+
                   const dropId = swimlanes.length > 1 ? `${lane.id}::${col.id}` : col.id;
 
                   const isCollapsed = collapsedCols.includes(col.id);

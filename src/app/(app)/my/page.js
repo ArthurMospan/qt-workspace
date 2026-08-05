@@ -20,7 +20,7 @@ import Card from '@/components/ui/Layout/Card';
 import Surface from '@/components/ui/Surface';
 import FilterBar from '@/components/ui/FilterBar';
 import Dialog from '@/components/ui/Dialog';
-import { createIssueViaApi } from '@/lib/services/issues';
+import { createIssueViaApi, notifyIssueAssigned } from '@/lib/services/issues';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 
 
@@ -51,7 +51,7 @@ export default function MyTasksPage() {
   const { members } = useOrganization();
   const { labels, statuses, types, priorities } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
-  const { tasks, allIssues, issueLinks, loading, updateTask } = useAllMyTasks(uid);
+  const { tasks, allIssues, issueLinks, loading, moveTask } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
@@ -100,9 +100,12 @@ export default function MyTasksPage() {
     localStorage.setItem('qt_my_tasks_hidden', JSON.stringify(next));
   };
 
-  const handleMoveIssue = async (issueId, columnId, order) => {
+  const handleMoveIssue = async (issueId, columnId, position) => {
     try {
-      await updateTask(issueId, { columnId, status: columnId, order });
+      await moveTask(issueId, columnId, position, {
+        userId: uid,
+        userName: currentUser?.name || '',
+      });
       showToast('Статус оновлено ✓');
     } catch (err) {
       console.error(err);
@@ -270,7 +273,7 @@ export default function MyTasksPage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          await createIssueViaApi({
+          const created = await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
             data: {
@@ -285,6 +288,15 @@ export default function MyTasksPage() {
               sprintId: formData.sprintId || null,
               reporterId: uid,
             },
+          });
+          notifyIssueAssigned({
+            issueId: created.id,
+            title: formData.title,
+            assigneeIds: formData.assignees || [],
+            actorId: uid,
+            actorName: currentUser?.name || '',
+            projectId: formData.projectId,
+            organizationId: activeOrgId,
           });
 
           showToast('Задачу створено ✓');

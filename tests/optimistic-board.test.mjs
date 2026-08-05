@@ -4,11 +4,14 @@ import assert from 'node:assert/strict';
 
 import {
   applyPatches,
+  columnMembers,
   compareIssues,
   patchLanded,
+  planDrop,
   planMove,
   prunePatches,
   pickPatchableFields,
+  resolveDropIndex,
 } from '../src/lib/utils/optimistic.mjs';
 
 const board = () => ([
@@ -73,6 +76,76 @@ test('planMove into an empty column produces index 0', () => {
   const plan = planMove(board(), 'a', 'done', 0);
   assert.equal(plan.insertAt, 0);
   assert.deepEqual(plan.patches.a, { columnId: 'done', status: 'done', order: 0 });
+});
+
+// ── resolveDropIndex / planDrop ───────────────────────────────────────────
+//
+// What the user sees is never the whole column: filters hide cards, and on
+// «Мої завдання» a column holds cards from several projects, each numbering its
+// own column from zero. The index the drag library reports counts visible rows;
+// the index written has to count the rows `order` actually numbers.
+
+const filteredColumn = () => ([
+  { id: 'a', columnId: 'todo', order: 0, projectId: 'p1' },
+  { id: 'hidden', columnId: 'todo', order: 1, projectId: 'p1' },
+  { id: 'b', columnId: 'todo', order: 2, projectId: 'p1' },
+  { id: 'c', columnId: 'todo', order: 3, projectId: 'p1' },
+]);
+
+test('resolveDropIndex takes the slot of the visible card the drop landed on', () => {
+  const column = columnMembers(filteredColumn(), 'todo');
+  // The board is filtered down to a, b, c — 'hidden' is not on screen.
+  assert.equal(resolveDropIndex(column, ['a', 'b', 'c'], 1), 2, 'lands above b, not above hidden');
+  assert.equal(resolveDropIndex(column, ['a', 'b', 'c'], 0), 0);
+});
+
+test('resolveDropIndex drops after the last visible card, not past hidden ones', () => {
+  const column = columnMembers(filteredColumn(), 'todo');
+  // Dropping at the bottom of a filtered column means "after c", and c is not
+  // the last row of the real column when a filter is on.
+  assert.equal(resolveDropIndex(column, ['a', 'b'], 2), 3, 'after b, before c');
+});
+
+test('resolveDropIndex ignores neighbours outside the ordering scope', () => {
+  // A «Мої завдання» column: only p1 cards can be positioned relative to a p1
+  // card, so the p2 rows between them are not anchors.
+  const column = columnMembers(filteredColumn(), 'todo', { projectId: 'p1' });
+  assert.equal(resolveDropIndex(column, ['x2', 'b', 'y2'], 0), 2, 'first p1 card at or below');
+  assert.equal(resolveDropIndex(column, ['a', 'x2', 'y2'], 1), 1, 'just after the p1 card above');
+  assert.equal(resolveDropIndex(column, ['x2', 'y2'], 2), 0, 'nothing to be relative to → top');
+});
+
+test('planDrop positions a card among its own project only', () => {
+  const issues = [
+    { id: 'p1-a', columnId: 'todo', order: 0, projectId: 'p1' },
+    { id: 'p1-b', columnId: 'todo', order: 1, projectId: 'p1' },
+    { id: 'p2-a', columnId: 'todo', order: 0, projectId: 'p2' },
+    { id: 'moved', columnId: 'doing', order: 7, projectId: 'p1' },
+  ];
+  const plan = planDrop(
+    issues,
+    'moved',
+    'todo',
+    // On screen: p1-a, p2-a, p1-b — dropped onto the last row.
+    { visibleColumnIds: ['p1-a', 'p2-a', 'p1-b'], visibleIndex: 2 },
+    { scopeToProject: true },
+  );
+
+  assert.deepEqual(plan.patches.moved, { columnId: 'todo', status: 'todo', order: 1 });
+  assert.deepEqual(plan.patches['p1-b'], { order: 2 });
+  assert.equal(plan.patches['p2-a'], undefined, 'another project is never renumbered');
+});
+
+test('planDrop takes an explicit index for a status change made off the board', () => {
+  const plan = planDrop(board(), 'a', 'doing', { index: 0 });
+
+  assert.deepEqual(plan.patches.a, { columnId: 'doing', status: 'doing', order: 0 });
+  assert.deepEqual(plan.patches.x, { order: 1 });
+  assert.deepEqual(plan.patches.y, { order: 2 });
+});
+
+test('planDrop returns null for an unknown card', () => {
+  assert.equal(planDrop(board(), 'nope', 'todo', { index: 0 }), null);
 });
 
 // ── applyPatches ──────────────────────────────────────────────────────────

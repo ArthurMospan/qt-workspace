@@ -756,7 +756,11 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       spentMinutes: 0,
       spentMinutesMirrorVersion: 1,
       timeLogMutationVersion: 0,
-      order: next,
+      // One sign for the whole collection: a task nobody has positioned yet
+      // sorts above the ones somebody has, newest first. `+next` put an
+      // imported task below every card on the board instead, and mixed the two
+      // conventions inside one column.
+      order: -next,
       createdBy: job.createdBy,
     });
     transaction.update(projectRef, {

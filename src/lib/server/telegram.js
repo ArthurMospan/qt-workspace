@@ -250,7 +250,11 @@ export async function createIssueFromTelegram({
       timeLogMutationVersion: 0,
       parentIssueId: null,
       watcherIds: [],
-      order: next,
+      // Negative and falling, like every other task: a card nobody has
+      // positioned yet sits above the ones somebody has, newest first. This
+      // used to be `+next`, which buried a task arriving from Telegram at the
+      // bottom of its column — the one place a new task is never looked for.
+      order: -next,
       source: 'telegram',
       sourceMeta: {
         chatId: String(telegramChatId),
@@ -263,6 +267,13 @@ export async function createIssueFromTelegram({
       createdBy: 'telegram-bot',
       createdAt: now,
       updatedAt: now,
+      // Without these the project card had no activity record for this task, so
+      // one that had just arrived announced itself as "Оновлено завдання". The
+      // actor is the same external id the reporter carries — a label, not a
+      // QuickTeam account — so the card states the event without naming anyone.
+      lastActivityType: 'created',
+      lastActivityAt: now,
+      lastActivityActorId: `telegram:${telegramUser.id || 'unknown'}`,
       ...(completed ? { completedAt: now } : {}),
     });
     transaction.update(projectRef, { issueCounter: next, updatedAt: now });

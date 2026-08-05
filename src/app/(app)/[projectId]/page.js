@@ -192,12 +192,12 @@ export default function BoardPage({ params }) {
     }
   }, [createIssue, showToast]); // eslint-disable-line
 
-  const handleMoveIssue = useCallback(async (issueId, newColumnId, newIndex, updateFields = null) => {
+  const handleMoveIssue = useCallback(async (issueId, newColumnId, position, updateFields = null) => {
     // Both writes are kicked off synchronously so each paints its optimistic
     // result before the first await. Awaiting them in sequence also chained two
     // full round-trips onto a swimlane drop, which is what made the card sit
     // there for about a second before settling.
-    const move = moveIssue(issueId, newColumnId, newIndex, actor);
+    const move = moveIssue(issueId, newColumnId, position, actor);
     const fields = updateFields
       ? updateIssue(issueId, updateFields, actor)
       : Promise.resolve();

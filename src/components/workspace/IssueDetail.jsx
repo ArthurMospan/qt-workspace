@@ -581,7 +581,13 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
         return;
       }
     }
-    try { await moveIssue(issueId, s, issue.order ?? 0, actor); }
+    // A status changed here comes with no board and no slot, so it is stated as
+    // one: the top of its new column. It used to pass `issue.order` — the
+    // card's position *number* — where an insert *index* was expected, so a
+    // task landed at whatever row its old number happened to name, and the
+    // negative number every freshly created task carries always clamped to the
+    // very top.
+    try { await moveIssue(issueId, s, { index: 0 }, actor); }
     catch (err) { showToast(err.message, 'error'); }
   };
 

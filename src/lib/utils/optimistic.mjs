@@ -128,6 +128,47 @@ export function prunePatches(items, patches) {
 }
 
 /**
+ * Cards that live in `columnId`, in the order a board renders them.
+ * `projectId` narrows the list to one project: `order` numbers a single
+ * project's column, so a board that mixes projects — "Мої завдання" — can only
+ * position a card among its own project's cards.
+ */
+export function columnMembers(issues, columnId, { projectId = null, excludeIssueId = null } = {}) {
+  return (issues || [])
+    .filter(issue => (
+      issue?.id !== excludeIssueId
+      && columnOf(issue) === columnId
+      && (!projectId || issue.projectId === projectId)
+    ))
+    .sort(compareIssues);
+}
+
+/**
+ * Where a drop belongs in `column`, given the column the user was actually
+ * looking at. A board shows a filtered, and on "Мої завдання" a cross-project,
+ * subset of the cards `order` numbers, so the index the drag library reports is
+ * not the index to write.
+ *
+ * The rule is "keep the neighbours the user aimed between": take the position
+ * of the first card at or below the drop slot that shares the moved card's
+ * scope, else just after the nearest one above it. With no shared neighbour at
+ * all there is nothing to be relative to, and the top is the one place a card
+ * cannot get lost.
+ */
+export function resolveDropIndex(column, visibleIds = [], visibleIndex = 0) {
+  const positionOf = id => column.findIndex(issue => issue.id === id);
+  for (let cursor = Math.max(0, visibleIndex); cursor < visibleIds.length; cursor += 1) {
+    const at = positionOf(visibleIds[cursor]);
+    if (at >= 0) return at;
+  }
+  for (let cursor = Math.min(visibleIndex, visibleIds.length) - 1; cursor >= 0; cursor -= 1) {
+    const at = positionOf(visibleIds[cursor]);
+    if (at >= 0) return at + 1;
+  }
+  return 0;
+}
+
+/**
  * Work out the full result of dropping `issueId` at `targetIndex` of
  * `targetColumnId`. The returned patch map is the single description of the
  * move: the board paints it immediately and the Firestore batch writes exactly
@@ -159,4 +200,30 @@ export function planMove(issues, issueId, targetColumnId, targetIndex) {
   });
 
   return { from: columnOf(moving), insertAt, ordered, patches };
+}
+
+/**
+ * Plan a drop described the way a board sees it, rather than as an index into
+ * data the user never saw. `position` is either an explicit `{ index }` — a
+ * status change made outside a board, which belongs at the top of its new
+ * column so it cannot be lost — or the visible column that was dropped into.
+ *
+ * `scopeToProject` is what "Мої завдання" needs: its columns mix projects, and
+ * an index counted across all of them is meaningless as an `order`, because
+ * every project numbers its own column from zero.
+ */
+export function planDrop(issues, issueId, targetColumnId, position = {}, { scopeToProject = false } = {}) {
+  const moving = (issues || []).find(issue => issue.id === issueId);
+  if (!moving) return null;
+  const scoped = scopeToProject
+    ? issues.filter(issue => issue.projectId === moving.projectId)
+    : issues;
+  const index = Number.isFinite(position?.index)
+    ? position.index
+    : resolveDropIndex(
+      columnMembers(scoped, targetColumnId, { excludeIssueId: issueId }),
+      position?.visibleColumnIds || [],
+      position?.visibleIndex ?? 0,
+    );
+  return planMove(scoped, issueId, targetColumnId, index);
 }

@@ -19,6 +19,49 @@ test('all interactive status moves use the authenticated status API', async () =
   assert.doesNotMatch(myTasks, /\bdeleteField\b/);
 });
 
+// A card's `order` is its position inside one project's column. Every writer
+// has to mean the same thing by it, or a drop lands wherever the other writer's
+// numbers happen to fall.
+test('every board writes a position it planned, never a raw index', async () => {
+  const [projectIssues, myTasks, detail, board] = await Promise.all([
+    read('../src/lib/hooks/useIssues.js'),
+    read('../src/lib/hooks/useAllMyTasks.js'),
+    read('../src/components/workspace/IssueDetail.jsx'),
+    read('../src/components/workspace/AgileBoard.jsx'),
+  ]);
+
+  // Both boards plan the whole column and send the peers they renumbered.
+  for (const [name, source] of [['useIssues', projectIssues], ['useAllMyTasks', myTasks]]) {
+    assert.match(source, /planDrop\(/, name);
+    assert.match(source, /orderUpdates/, name);
+  }
+  // «Мої завдання» mixes projects, so its plan is scoped to one of them.
+  assert.match(myTasks, /planDrop\([\s\S]{0,120}\{ scopeToProject: true \}\)/);
+  // The board hands over the column the user saw, not an index into rows it
+  // resolved with a sort rule of its own.
+  assert.match(board, /\{ visibleColumnIds, visibleIndex: destination\.index \}/);
+  // A status changed off the board states its slot; it used to pass the card's
+  // own `order` value where an insert index was expected.
+  assert.match(detail, /moveIssue\(issueId, s, \{ index: 0 \}, actor\)/);
+  assert.doesNotMatch(detail, /moveIssue\([^)]*issue\.order/);
+});
+
+test('a task nobody has positioned yet sorts above the ones somebody has', async () => {
+  // One sign, every writer. `+next` buried Telegram and imported tasks at the
+  // bottom of the column and a fixed 0 collided with the first planned slot.
+  for (const path of [
+    '../src/app/api/issues/route.js',
+    '../src/lib/server/telegram.js',
+    '../src/lib/server/youtrackImporter.js',
+  ]) {
+    const source = await read(path);
+    assert.match(source, /order: -next,/, path);
+    assert.doesNotMatch(source, /order: next,/, path);
+  }
+  const external = await read('../src/app/api/v1/tasks/route.js');
+  assert.match(external, /order: -\(\(freshProject\.data\(\)\.issueCounter \|\| 0\) \+ 1\)/);
+});
+
 test('browser Firestore writes cannot bypass execution fields', async () => {
   const rules = await read('../firestore.rules');
   const issueBlock = rules.slice(

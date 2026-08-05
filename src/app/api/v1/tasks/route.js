@@ -170,11 +170,22 @@ export async function POST(req) {
           spentMinutes: 0,
           spentMinutesMirrorVersion: 1,
           timeLogMutationVersion: 0,
-          order: 0,
+          // Above every task somebody has already positioned, like any other
+          // new task — a bug arriving from an integration is exactly the thing
+          // that must not land at the bottom of a column, which is where a
+          // fixed 0 put it. It reads the project counter without consuming a
+          // number (the key here is not derived from it), so it can tie with
+          // the next task created in the app; a tie is two adjacent cards, and
+          // the first drag through that column renumbers both.
+          order: -((freshProject.data().issueCounter || 0) + 1),
           assigneeIds: [],
           reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
           createdAt: now,
           updatedAt: now,
+          // Activity the project card can read, so a task that has just arrived
+          // does not describe itself as one that was updated.
+          lastActivityType: 'created',
+          lastActivityAt: now,
           ...(resolved.completed ? { completedAt: now } : {}),
         };
         transaction.create(issueRef, payload);
@@ -212,11 +223,15 @@ export async function POST(req) {
           spentMinutes: 0,
           spentMinutesMirrorVersion: 1,
           timeLogMutationVersion: 0,
+          // No project means no column to be positioned in; the value only has
+          // to exist for the field to be present when it is triaged into one.
           order: 0,
           assigneeIds: [],
           reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
           createdAt: now,
           updatedAt: now,
+          lastActivityType: 'created',
+          lastActivityAt: now,
           ...(resolved.completed ? { completedAt: now } : {}),
         };
         transaction.create(issueRef, payload);
