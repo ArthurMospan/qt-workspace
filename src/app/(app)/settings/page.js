@@ -2764,10 +2764,15 @@ export default function SettingsPage() {
       }
 
       // ──────────────────────────────────────────────────────────────
+      // Everyone may see who is on the team; only owners and admins may change
+      // anything about them. Both controls used to render for everyone, and
+      // both lead to a wall: the invitations route requires owner/admin, and
+      // the member dialog disables every field it contains. A control that
+      // cannot do anything is not a disabled control, it is the wrong control.
       case 'team': return (
-        <Section title="Учасники команди" rightAction={
+        <Section title="Учасники команди" rightAction={isAdmin ? (
           <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
-        }>
+        ) : null}>
           <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
             <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[16px]">
               {members.map((member, i) => {
@@ -2788,13 +2793,15 @@ export default function SettingsPage() {
                     <div className="flex shrink-0 items-center gap-2">
                       <Pill size="lg" className="hidden sm:inline-flex">{positionLabel}</Pill>
                       <Pill tone="ink-subtle" size="lg">{ROLE_LABELS[member.role] || member.role}</Pill>
-                      <Button
-                        onClick={() => setMemberSettingsId(member.id || member.uid)}
-                        style="secondary"
-                        size="icon"
-                        icon={SlidersHorizontal}
-                        title="Налаштувати учасника"
-                      />
+                      {isAdmin && (
+                        <Button
+                          onClick={() => setMemberSettingsId(member.id || member.uid)}
+                          style="secondary"
+                          size="icon"
+                          icon={SlidersHorizontal}
+                          title="Налаштувати учасника"
+                        />
+                      )}
                     </div>
                   </div>
                 );

@@ -10,6 +10,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { parseDueDate } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
+import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
@@ -113,23 +114,6 @@ export default function TaskRow({
   );
   const isMentioned = hasUnreadChat && (task.lastCommentMentionIds || []).includes(currentUserId);
 
-  // Generate dynamic, readable project prefix instead of generic WS-
-  const getDisplayKey = () => {
-    if (task.issueKey && !task.issueKey.startsWith('WS-')) {
-      return task.issueKey;
-    }
-    const pName = projectName || projectId || 'WS';
-    const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-    let prefix = cleanProj.slice(0, 3).toUpperCase();
-    if (prefix.length < 2) {
-      prefix = pName.slice(0, 2).toUpperCase();
-    }
-    const numPart = task.issueKey?.split('-')[1] || task.id?.slice(0, 4) || '101';
-    return `${prefix}-${numPart}`;
-  };
-
-  const displayKey = getDisplayKey();
-
   const isBlocked = openBlockerIssues(
     task.id,
     contextIssues,
@@ -177,14 +161,13 @@ export default function TaskRow({
         <div className="flex flex-col gap-[2px] min-w-0 flex-1">
           {/* Issue Key, Project, Due Date, Subtasks (Top Row) */}
           <div className="flex items-center gap-[8px] flex-wrap">
-            <span className="font-mono text-[#c5c5c5] font-bold text-[9px] tracking-wider select-none shrink-0">
-              {displayKey}{showProjectName && projectName ? ` • ${projectName.toUpperCase()}` : ''}
-            </span>
-            {parentIssueId && (
-              <span className="max-w-[160px] truncate text-[8px] font-semibold text-muted" title={parentIssue?.title || 'Підзадача'}>
-                ↳ {parentIssue?.issueKey || 'ПІДЗАДАЧА'}
-              </span>
-            )}
+            <TaskIdentity
+              issue={task}
+              projectName={projectName}
+              showProjectName={showProjectName}
+              parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
+              className="max-w-full"
+            />
 
             {/* Due Date */}
             {due && (
@@ -234,11 +217,19 @@ export default function TaskRow({
 
             {/* Chat Count */}
             {msgCount > 0 && (
-              <div className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`} title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}>
+              // A count of messages is a quantity you read, not an identifier
+              // you retype — it was set in the same monospace as the task key,
+              // which is what made a bare number beside an icon look like a
+              // code fragment rather than "12 повідомлень".
+              <div
+                className={`flex items-center gap-[4px] text-[11px] font-bold select-none shrink-0 ${hasUnreadChat ? 'text-ink' : 'text-muted'}`}
+                title={isMentioned ? 'Вас згадали в новому повідомленні' : hasUnreadChat ? 'Є нові повідомлення' : `${msgCount} повідомлень в чаті`}
+                aria-label={`${msgCount} повідомлень в чаті завдання`}
+              >
                 <ChatIcon size={12} />
                 {isMentioned && <span className="rounded-full bg-ink px-1.5 py-0.5 text-[8px] leading-none text-white">@</span>}
                 {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
-                <span className="font-mono text-[10px]">{msgCount}</span>
+                <span className="text-[10px]">{msgCount}</span>
               </div>
             )}
           </div>

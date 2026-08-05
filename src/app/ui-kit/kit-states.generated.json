@@ -13,7 +13,7 @@
     "long-text"
   ],
   "totals": {
-    "components": 91,
+    "components": 92,
     "stateful": 87,
     "hover": 63,
     "focus": 63,
@@ -366,6 +366,7 @@
       "focus": "global",
       "long-text": "children"
     },
+    "TaskIdentity": {},
     "TaskListCard": {
       "long-text": "title"
     },
@@ -744,6 +745,9 @@
     ],
     "TaskAttributesPanel": [
       "task-attributes"
+    ],
+    "TaskIdentity": [
+      "task-crm"
     ],
     "TaskListCard": [
       "task-crm"

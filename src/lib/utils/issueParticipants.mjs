@@ -11,6 +11,18 @@
 // heard that it moved, and comments notified nobody at all unless they carried
 // an @mention.
 
+// An imported task remembers who reported it in the system it came from, and
+// that person is usually not a QuickTeam account at all: the YouTrack importer
+// writes `external:youtrack:<connection>:<id>` for anyone it could not map to a
+// member. Such an id is a label, not a recipient — and because
+// /api/notifications rejects a batch outright when one recipient is not a
+// member, letting one through meant nobody on the task heard anything.
+//
+// Firebase uids have no colon, so the namespace prefix is the whole test.
+export function isExternalActorId(userId) {
+  return typeof userId === 'string' && userId.includes(':');
+}
+
 export function issueParticipants(issue, {
   actorId = '',
   commentAuthorIds = [],
@@ -29,7 +41,12 @@ export function issueParticipants(issue, {
   ];
 
   return [...new Set(
-    candidates.filter(uid => typeof uid === 'string' && uid.length > 0 && !excluded.has(uid)),
+    candidates.filter(uid => (
+      typeof uid === 'string'
+      && uid.length > 0
+      && !excluded.has(uid)
+      && !isExternalActorId(uid)
+    )),
   )];
 }
 

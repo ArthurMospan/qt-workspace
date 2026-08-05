@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 91,
-    "props": 665,
-    "documentedProps": 665,
+    "components": 92,
+    "props": 671,
+    "documentedProps": 671,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4607,6 +4607,54 @@
           "type": "boolean",
           "values": [],
           "description": "Keeps everything on one row instead of wrapping."
+        }
+      ]
+    },
+    "TaskIdentity": {
+      "file": "src/components/ui/TaskManagement/TaskIdentity.jsx",
+      "summary": "What a task is called, above its title: its key, the project it belongs to on a cross-project list, and the parent it hangs under.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "issue",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The task."
+        },
+        {
+          "name": "parentIssue",
+          "default": "null",
+          "type": "object",
+          "values": [],
+          "description": "The task this one hangs under, if any."
+        },
+        {
+          "name": "project",
+          "default": "null",
+          "type": "object",
+          "values": [],
+          "description": "Its project, for re-prefixing a legacy key."
+        },
+        {
+          "name": "projectName",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Its project's name."
+        },
+        {
+          "name": "showProjectName",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether to name the project — true only on cross-project lists."
         }
       ]
     },

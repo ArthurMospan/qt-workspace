@@ -39,13 +39,13 @@
   },
   "kit": {
     "totals": {
-      "components": 91,
-      "used": 91,
+      "components": 92,
+      "used": 92,
       "unused": 0,
-      "covered": 88,
+      "covered": 89,
       "uncovered": 0,
       "routes": 12,
-      "previews": 117,
+      "previews": 118,
       "internal": 3,
       "unlisted": 0
     },
@@ -413,12 +413,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:138",
+      "location": "src/app/(app)/page.js:139",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:147",
+      "location": "src/app/(app)/page.js:148",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -558,7 +558,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1543",
+      "location": "src/components/workspace/IssueDetail.jsx:1556",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },

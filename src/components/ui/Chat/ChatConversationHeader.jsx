@@ -46,7 +46,14 @@ export default function ChatConversationHeader({
   onBack,
 }) {
   return (
-    <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
+    // `rounded-t-*` matters only in Chromium, and it is not decoration there.
+    // This bar caps a pane that rounds its corners with `overflow: hidden`, and
+    // Chromium does not apply an ancestor's *rounded* clip to a descendant that
+    // paints a `backdrop-filter` — the blur fills the corner square while every
+    // other browser clips it, which is why the header looked square in Chrome
+    // and correct in Firefox. Giving the bar the pane's own radius makes its
+    // box the thing being rounded, so no ancestor clip is needed.
+    <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
       {/* A 26px box: an 18px glyph with 4px around it, which is not on the
           IconAction scale (20/24/28/30/32/36). Inventing a size for one caller
           is what the variant budget exists to stop, so the geometry stays here

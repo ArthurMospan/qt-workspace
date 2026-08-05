@@ -5,6 +5,7 @@ import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { formatTelegramNotification } from '@/lib/utils/telegramMessage.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_STATUS_IDS,
@@ -160,12 +161,6 @@ export async function deliverTelegramNotification({
   return { delivered: results.filter(item => item.status === 'fulfilled').length };
 }
 
-function projectPrefix(project) {
-  if (project.issuePrefix) return String(project.issuePrefix).slice(0, 8).toUpperCase();
-  const letters = String(project.name || 'WS').match(/\p{L}/gu)?.join('') || 'WS';
-  return letters.slice(0, 3).toUpperCase();
-}
-
 export async function createIssueFromTelegram({
   organizationId,
   projectId,
@@ -232,7 +227,7 @@ export async function createIssueFromTelegram({
     const type = typeSelection.type;
     const completed = resolveDoneStatusIds(workflow.statuses).includes(status);
     const next = (project.issueCounter || 0) + 1;
-    issueKey = `${projectPrefix(project)}-${next}`;
+    issueKey = `${projectIssuePrefix(project)}-${next}`;
     const now = admin.firestore.FieldValue.serverTimestamp();
     transaction.create(issueRef, {
       issueKey,

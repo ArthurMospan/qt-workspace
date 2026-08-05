@@ -300,6 +300,19 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const issueActivityAt = issueActivityCursor(issue);
   const currentUserId = currentUser?.uid || currentUser?.id || null;
 
+  // Who this task can be given to: the project's team, exactly as the create
+  // dialog already offers. Offering the whole organization made assigning
+  // someone the side door into the project — picking a non-member silently
+  // added them to `project.team`, because an assignee who cannot open their own
+  // task is worse still. Anyone already assigned stays on the list even if they
+  // have since left the team; otherwise they could never be un-assigned.
+  const assignableIds = new Set([...teamUids, ...(issue?.assigneeIds || [])]);
+  const assignableMembers = assignableIds.size === 0
+    // A project with no team recorded at all is legacy data, not a project
+    // nobody may be assigned to.
+    ? members
+    : members.filter(member => assignableIds.has(member.id || member.uid));
+
   // Opening a task consumes exactly the activity revision currently on screen.
   // If newer activity arrives while the detail remains open, the dependency
   // changes and advances the same per-issue cursor again.
@@ -1092,7 +1105,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                       disabled={isArchived}
                       value={issue.assigneeIds || []}
                       onChange={setAssignees}
-                      options={members.map(m => ({ value: m.id || m.uid, label: m.name, user: m }))}
+                      options={assignableMembers.map(m => ({ value: m.id || m.uid, label: m.name, user: m }))}
                       placeholder="Не призначено"
                       searchPlaceholder="Знайти учасника..."
                       buttonClassName={compactSelectClass}

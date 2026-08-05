@@ -1,6 +1,6 @@
 'use client';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { TaskListCard, TaskListView } from '@/components/ui';
+import { TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -101,6 +101,27 @@ export default function TaskCRMSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
+      <PreviewBlock
+        title="Task Identity — ключ, проєкт, батьківське завдання"
+        description="Три різні речі, і виглядають вони по-різному: ключ — моноширинний, бо це ідентифікатор, який перенабирають; проєкт — звичайний текст, бо це назва, яку читають; батько — за справжньою іконкою замість символу «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа."
+        filePath="src/components/ui/TaskManagement/TaskIdentity.jsx"
+      >
+        <div className="flex flex-col gap-3">
+          <TaskIdentity issue={{ issueKey: 'QT-142' }} />
+          <TaskIdentity issue={{ issueKey: 'QT-142' }} projectName="QuickTeam" showProjectName />
+          <TaskIdentity
+            issue={{ issueKey: 'QT-142' }}
+            projectName="QuickTeam"
+            showProjectName
+            parentIssue={{ issueKey: 'QT-100', title: 'Переробити календар' }}
+          />
+          {/* A legacy `WS-` key keeps its number and takes the project's prefix. */}
+          <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName="QuickTeam" showProjectName />
+          {/* No key at all — the title below it is the task's name. */}
+          <TaskIdentity issue={{}} projectName="QuickTeam" showProjectName />
+        </div>
+      </PreviewBlock>
+
       <PreviewBlock title="Task Row (List View)" description="Один shared row для project і cross-project контекстів; назву проєкту вмикає лише semantic prop showProjectName." fullWidth>
         <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
           <p className="ui-type-eyebrow uppercase tracking-wider text-muted">Project context — назва проєкту прихована</p>

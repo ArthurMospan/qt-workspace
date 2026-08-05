@@ -155,7 +155,11 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   assert.match(taskList, /label: 'Приховані'/);
   assert.match(taskList, /showProjectName=\{showProjectName\}/);
   assert.match(taskRow, /showProjectName = false/);
-  assert.match(taskRow, /showProjectName && projectName/);
+  // The row hands the decision to `TaskIdentity`, which is where the key, the
+  // project and the parent are drawn for both the row and the board card.
+  assert.match(taskRow, /showProjectName=\{showProjectName\}/);
+  const taskIdentity = readFileSync(new URL('../src/components/ui/TaskManagement/TaskIdentity.jsx', import.meta.url), 'utf8');
+  assert.match(taskIdentity, /showProjectName && Boolean\(projectName\)/);
   assert.match(myTasks, /hiddenStatusIds=\{hiddenColumns\}/);
   assert.match(project, /hiddenStatusIds=\{project\?\.hiddenColumns \|\| \[\]\}/);
   assert.match(myTasks, /<AgileBoard[\s\S]{0,500}showHiddenLane/);
@@ -170,13 +174,24 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   assert.match(issueDetail, /ISSUE_LINK_OPTIONS/);
   // QUI-127 approved the opposite of what this used to assert: a subtask keeps
   // its own status, so it is a card of its own in whatever column that status
-  // puts it in, and the card prints `↳ PARENT-KEY` to keep the hierarchy
-  // readable. Collapsing children into the parent hid real work from its
-  // column, so the `collapseHierarchy` prop and its filter are gone for good.
+  // puts it in, and the card names its parent to keep the hierarchy readable.
+  // Collapsing children into the parent hid real work from its column, so the
+  // `collapseHierarchy` prop and its filter are gone for good.
   assert.doesNotMatch(agileBoard, /collapseHierarchy/);
   assert.doesNotMatch(project, /collapseHierarchy/);
   assert.match(agileBoard, /const boardIssues = issues;/);
-  assert.match(issueCard, /↳ \{parentIssue\?\.issueKey \|\| 'ПІДЗАДАЧА'\}/);
+  // The parent is passed to `TaskIdentity`, which draws it behind a real icon.
+  // It used to be the literal character "↳" written into both the card and the
+  // row — a glyph with no consistent metrics across the font stack, which is
+  // what made it sit crooked against the text beside it.
+  assert.match(issueCard, /parentIssue=\{parentIssueId \? \(parentIssue \|\| \{ issueKey: '' \}\) : null\}/);
+  const identity = readFileSync(new URL('../src/components/ui/TaskManagement/TaskIdentity.jsx', import.meta.url), 'utf8');
+  assert.match(identity, /<CornerDownRight/);
+  // Rendered, not merely mentioned — the component's own comment explains why
+  // the character was dropped, so the check is for it appearing in JSX.
+  for (const source of [issueCard, taskRow, identity]) {
+    assert.doesNotMatch(source, /^(?!\s*(\/\/|\*)).*>\s*↳/m);
+  }
   assert.doesNotMatch(agileBoard, /parentEpicId|swimlane === 'epic'/);
 });
 

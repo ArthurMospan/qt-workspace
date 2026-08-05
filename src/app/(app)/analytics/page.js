@@ -272,9 +272,14 @@ function AnalyticsContent({
                 <tbody className="divide-y divide-[#f8f8f8]">
                   {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
                     <tr key={p.id} className="group">
+                      {/* «Внутрішній / Клієнтський» is gone. Client
+                          collaboration lives in QuickTeam+, not in the internal
+                          workspace, so every project in this table was
+                          "Внутрішній" — a column that answered a question
+                          nobody could ask, left over from a model the product
+                          no longer has. */}
                       <td className="py-3 pr-4">
                         <p className="text-[13px] font-semibold text-ink">{p.name}</p>
-                        <span className="text-[10px] text-faint">{p.visibility === 'internal' ? 'Внутрішній' : 'Клієнтський'}</span>
                       </td>
                       <td className="py-3 pr-4 text-[13px] font-semibold text-ink">{total}</td>
                       <td className="py-3 pr-4">

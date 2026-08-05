@@ -65,14 +65,30 @@ export async function POST(request) {
       }
     }
 
-    const membershipSnaps = await db.getAll(...userIds.map(uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`)));
-    const recipientsValid = userIds.every((uid, index) => membershipSnaps[index].exists &&
+    // Nobody is told about their own action. Every caller already filters the
+    // actor out of its audience, which means the guarantee rested on nine call
+    // sites all remembering to — so it is made here, once, where the actor is
+    // known for certain from the verified token. `test` is the one type that is
+    // addressed to yourself on purpose.
+    const audienceIds = type === 'test'
+      ? userIds
+      : userIds.filter(uid => uid !== authorization.user.uid);
+    if (!audienceIds.length) return NextResponse.json({ delivered: 0, recipients: 0 });
+
+    // A recipient who is no longer a member is dropped, not fatal. This used to
+    // reject the whole request, so a single stale id — the external reporter an
+    // imported task carries, a person who has since left — silenced the
+    // notification for everyone else on the task too.
+    const membershipSnaps = await db.getAll(...audienceIds.map(uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`)));
+    const userIdsToNotify = audienceIds.filter((uid, index) => membershipSnaps[index].exists &&
       membershipSnaps[index].data().orgId === organizationId && membershipSnaps[index].data().userId === uid);
-    if (!recipientsValid) return NextResponse.json({ error: 'One or more recipients are not organization members' }, { status: 403 });
+    if (!userIdsToNotify.length) {
+      return NextResponse.json({ error: 'No recipient is an organization member' }, { status: 403 });
+    }
 
     const [settingsSnaps, profileSnaps, senderSnap] = await Promise.all([
-      db.getAll(...userIds.map(uid => db.collection('users').doc(uid).collection('settings').doc('notifications'))),
-      db.getAll(...userIds.map(uid => db.collection('users').doc(uid))),
+      db.getAll(...userIdsToNotify.map(uid => db.collection('users').doc(uid).collection('settings').doc('notifications'))),
+      db.getAll(...userIdsToNotify.map(uid => db.collection('users').doc(uid))),
       db.collection('users').doc(authorization.user.uid).get(),
     ]);
     const sender = senderSnap.exists ? senderSnap.data() : {};
@@ -80,7 +96,7 @@ export async function POST(request) {
     // notification record and the other channels rode along on it, so muting an
     // event in the bell also silenced the email and the Telegram message — the
     // three are independent columns now.
-    const recipients = userIds.map((userId, index) => ({
+    const recipients = userIdsToNotify.map((userId, index) => ({
       userId,
       prefs: settingsSnaps[index].exists ? settingsSnaps[index].data() : {},
       profile: profileSnaps[index].exists ? profileSnaps[index].data() : {},

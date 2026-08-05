@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import {
   DEFAULT_LABEL_IDS,
   DEFAULT_PRIORITY_IDS,
@@ -16,12 +17,6 @@ import {
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { issueParentStatusConflict } from '@/lib/utils/issueStatusTransition.mjs';
-
-function projectPrefix(project) {
-  if (project.issuePrefix) return String(project.issuePrefix).slice(0, 8).toUpperCase();
-  const letters = String(project.name || 'WS').match(/\p{L}/gu)?.join('') || 'WS';
-  return letters.slice(0, 3).toUpperCase();
-}
 
 function normalizedDate(value) {
   if (value == null || value === '') return null;
@@ -273,7 +268,7 @@ export async function POST(request) {
         if (statusConflict) throw hierarchyTransactionError(statusConflict);
       }
       const next = (project.issueCounter || 0) + 1;
-      issueKey = `${projectPrefix(project)}-${next}`;
+      issueKey = `${projectIssuePrefix(project)}-${next}`;
       const now = admin.firestore.FieldValue.serverTimestamp();
       const payload = {
         issueKey,

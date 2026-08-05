@@ -16,6 +16,7 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
+import { isExternalActorId } from '@/lib/utils/issueParticipants.mjs';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import {
   Counter,
@@ -242,6 +243,23 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
 };
 
 // Helper Component for Real-time project statistics and details
+// What the activity record says happened, said two ways: with a person in front
+// of it, and without one when nothing recorded who acted.
+const ISSUE_ACTIVITY_VERBS = {
+  comment: 'написав у чаті завдання',
+  created: 'створив завдання',
+  status: 'змінив статус завдання',
+  restored: 'відновив завдання',
+  updated: 'оновив завдання',
+};
+const ISSUE_ACTIVITY_EVENTS = {
+  comment: 'Нове повідомлення в чаті завдання',
+  created: 'Створено завдання',
+  status: 'Змінено статус завдання',
+  restored: 'Відновлено завдання',
+  updated: 'Оновлено завдання',
+};
+
 function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
   const { statuses, doneStatusIds } = useWorkflowConfig();
   const inProgressStatusIds = useMemo(
@@ -276,36 +294,41 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 
     let lastActionStr = null;
     if (newestIssue) {
-      let actorName = 'Команда';
-      let actorAvatar = null;
+      // Who *acted* — which is only ever what the activity record says. This
+      // used to fall through to `reporterId` and then `reporterName`, so a task
+      // with no recorded activity was attributed to whoever originally filed
+      // it. On anything imported from YouTrack that reporter is an external
+      // person with a synthetic id who has no QuickTeam account at all, and the
+      // card announced that they had "оновив завдання" — an action by someone
+      // who does not exist, on a task nobody had touched.
+      //
+      // The reporter is not the actor. With no actor recorded there is nothing
+      // truthful to say about who did it, so the line says what happened
+      // without naming anyone.
+      const actorId = newestIssue.lastActivityActorId || newestIssue.updatedBy || '';
+      const isExternalActor = isExternalActorId(actorId);
       let actorUser = null;
-      if (newestIssue.lastActivityActorId) {
-        actorUser = members.find(m => (m.id || m.uid) === newestIssue.lastActivityActorId);
-        if (!actorUser && (newestIssue.lastActivityActorId === currentUser?.id || newestIssue.lastActivityActorId === currentUser?.uid)) actorUser = currentUser;
-      } else if (newestIssue.updatedBy) {
-        actorUser = members.find(m => (m.id || m.uid) === newestIssue.updatedBy);
-        if (!actorUser && (newestIssue.updatedBy === currentUser?.id || newestIssue.updatedBy === currentUser?.uid)) actorUser = currentUser;
-      } else if (newestIssue.reporterId) {
-        actorUser = members.find(m => (m.id || m.uid) === newestIssue.reporterId);
-        if (!actorUser && (newestIssue.reporterId === currentUser?.id || newestIssue.reporterId === currentUser?.uid)) actorUser = currentUser;
-      } else if (newestIssue.reporterName) {
-        actorUser = members.find(m => m.email && m.email.toLowerCase() === newestIssue.reporterName.toLowerCase());
-        if (!actorUser && currentUser?.email && currentUser.email.toLowerCase() === newestIssue.reporterName.toLowerCase()) actorUser = currentUser;
+      if (actorId && !isExternalActor) {
+        actorUser = members.find(m => (m.id || m.uid) === actorId) || null;
+        if (!actorUser && (actorId === currentUser?.id || actorId === currentUser?.uid)) actorUser = currentUser;
       }
 
-      if (!actorUser && orgLoading) {
+      // A member list still loading is not a member who cannot be found.
+      if (actorId && !actorUser && !isExternalActor && orgLoading) {
         lastActionStr = null;
       } else {
+        let actorName = '';
+        let actorAvatar = null;
         if (actorUser) {
-          actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0];
-          actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl;
-        } else if (newestIssue.lastActivityActorName) {
+          actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0] || '';
+          actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl || null;
+        } else if (actorId && newestIssue.lastActivityActorName) {
+          // Recorded by whoever performed the action, so it names the person
+          // who did it even if they have since left the organization.
           actorName = newestIssue.lastActivityActorName;
           actorAvatar = newestIssue.lastActivityActorAvatar || null;
         } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
           actorName = 'BuggyBag';
-        } else if (newestIssue.reporterName) {
-          actorName = newestIssue.reporterName;
         }
 
         lastActionStr = {
@@ -313,12 +336,11 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           title: newestIssue.title,
           actor: actorName,
           actorAvatar,
-          actorUser: actorUser || {
-            id: newestIssue.lastActivityActorId || newestIssue.updatedBy || newestIssue.reporterId || undefined,
-            name: actorName,
-            avatar: actorAvatar,
-          },
-          action: newestIssue.lastActivityType === 'comment' ? 'написав у чаті завдання' : 'оновив завдання',
+          actorUser: actorUser || (actorName ? { id: actorId || undefined, name: actorName, avatar: actorAvatar } : null),
+          // Every type that was not a comment used to read "оновив завдання",
+          // so a task that had just been created announced itself as updated.
+          action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[newestIssue.lastActivityType]
+            || (actorName ? 'оновив завдання' : 'Оновлено завдання'),
           time: newestIssue.lastActivityAt || newestIssue.updatedAt || newestIssue.createdAt,
           projectId: newestIssue.projectId,
           id: newestIssue.id
@@ -348,12 +370,17 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     <div className="z-10 mt-auto flex flex-col gap-[14px] w-full">
       {isLarge && stats.lastAction && (
         <div className="bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
-          <UserAvatar user={stats.lastAction.actorUser} size="sm" />
+          {/* No avatar and no name line when nothing recorded who acted —
+              an empty bold line above the sentence read as a person whose
+              name had failed to load. */}
+          {stats.lastAction.actorUser && <UserAvatar user={stats.lastAction.actorUser} size="sm" />}
 
           {/* Activity Text details */}
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-bold text-ink">{stats.lastAction.actor}</span>
+              {stats.lastAction.actor
+                ? <span className="font-bold text-ink">{stats.lastAction.actor}</span>
+                : <span className="font-bold text-muted">Активність</span>}
               {stats.lastAction.time && (
                 <span className="text-[10px] text-muted shrink-0 font-medium">{timeAgoString(stats.lastAction.time)}</span>
               )}

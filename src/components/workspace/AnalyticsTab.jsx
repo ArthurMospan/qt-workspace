@@ -10,7 +10,9 @@ import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflow
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
 import { parseDueDate } from '@/lib/utils/date';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
-import { TaskListCard } from '@/components/ui';
+import Link from 'next/link';
+import { Alert, Card, TaskListCard } from '@/components/ui';
+import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 
@@ -305,12 +307,20 @@ export default function AnalyticsTab({
                 </thead>
                 <tbody className="divide-y divide-line">
                   {stats.memberStats.map(({ m, total, done, open, overdue: od, minutes }) => (
-                    <tr key={m.id || m.uid}>
+                    <tr key={m.id || m.uid} className="group transition-colors hover:bg-canvas/60">
+                      {/* Every other place a person appears in analytics opens
+                          their page; here the row named them and went nowhere,
+                          which is the one screen where "who is loaded up?" most
+                          obviously wants a next click. */}
                       <td className="py-3 pr-6">
-                        <div className="flex items-center gap-2">
+                        <Link
+                          href={memberAnalyticsHref(m.id || m.uid)}
+                          className="flex items-center gap-2 transition-colors hover:text-ink"
+                          title={`Аналітика: ${m.name || m.email}`}
+                        >
                           <UserAvatar user={m} size="sm" />
-                          <span className="text-[12px] font-medium text-ink">{m.name || m.email}</span>
-                        </div>
+                          <span className="text-[12px] font-medium text-ink group-hover:underline">{m.name || m.email}</span>
+                        </Link>
                       </td>
                       <td className="py-3 pr-6 text-[13px] font-semibold text-ink">{total}</td>
                       <td className="py-3 pr-6"><span className="text-[12px] font-semibold text-[#10b981]">{done}</span></td>
@@ -335,43 +345,42 @@ export default function AnalyticsTab({
           || stats.unestimated.length > 0
           || stats.blockerPriority > 0
           || stats.dependencyBlocked > 0) && (
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
+          // The same notices the workspace overview calls «Інсайти», drawn the
+          // same way. This block was four hand-tinted rows — red-50, amber-50,
+          // yellow-50 and a grey nested panel — so one screen said these things
+          // with `Alert` and the other with four different colours of its own,
+          // and no two rows inside it matched either.
+          <Card preset="borderless" padding="lg">
             <SectionTitle>Увага</SectionTitle>
             <div className="flex flex-col gap-3">
               {stats.dependencyBlocked > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-[12px]">
-                  <AlertTriangle size={14} className="text-red-500 shrink-0" />
-                  <p className="text-[12px] font-medium text-red-700">
-                    <span className="font-bold">{stats.dependencyBlocked}</span> завдань заблоковано незавершеними залежностями
-                  </p>
-                </div>
+                <Alert
+                  variant="error"
+                  title={`${stats.dependencyBlocked} завдань заблоковано`}
+                  description="Їх стримують незавершені залежності"
+                />
               )}
               {stats.blockerPriority > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-[12px]">
-                  <AlertCircle size={14} className="text-amber-600 shrink-0" />
-                  <p className="text-[12px] font-medium text-amber-800">
-                    <span className="font-bold">{stats.blockerPriority}</span> завдань із пріоритетом «Критичний»
-                  </p>
-                </div>
+                <Alert
+                  variant="warning"
+                  title={`${stats.blockerPriority} завдань із пріоритетом «Критичний»`}
+                  description="Потребують негайної уваги"
+                />
               )}
               {stats.noAssignee.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-[12px]">
-                  <Users size={14} className="text-yellow-600 shrink-0" />
-                  <p className="text-[12px] font-medium text-yellow-700">
-                    <span className="font-bold">{stats.noAssignee.length}</span> завдань без виконавця
-                  </p>
-                </div>
+                <Alert
+                  variant="warning"
+                  title={`${stats.noAssignee.length} завдань без виконавця`}
+                />
               )}
               {stats.unestimated.length > 0 && (
-                <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface flex items-center gap-3">
-                  <Clock size={14} className="text-muted shrink-0" />
-                  <p className="text-[12px] font-medium text-ink">
-                    <span className="font-bold">{stats.unestimated.length}</span> завдань без оцінки часу
-                  </p>
-                </div>
+                <Alert
+                  variant="info"
+                  title={`${stats.unestimated.length} завдань без оцінки`}
+                />
               )}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* ── Empty state ───────────────────────────────────────────── */}

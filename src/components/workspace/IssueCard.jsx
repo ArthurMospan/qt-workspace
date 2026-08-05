@@ -18,7 +18,7 @@ import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { Counter } from '@/components/ui';
+import { Counter, TaskIdentity } from '@/components/ui';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -88,23 +88,6 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const attachCount = (issue.attachments || []).length;
 
   const isDraggable = typeof index === 'number';
-
-  // Generate dynamic, readable project prefix instead of generic WS-
-  const getDisplayKey = () => {
-    if (issue.issueKey && !issue.issueKey.startsWith('WS-')) {
-      return issue.issueKey;
-    }
-    const pName = projectName || projectId || 'WS';
-    const cleanProj = pName.replace(/[^a-zA-Z]/g, '');
-    let prefix = cleanProj.slice(0, 3).toUpperCase();
-    if (prefix.length < 2) {
-      prefix = pName.slice(0, 2).toUpperCase();
-    }
-    const numPart = issue.issueKey?.split('-')[1] || issue.id?.slice(0, 4) || '101';
-    return `${prefix}-${numPart}`;
-  };
-
-  const displayKey = getDisplayKey();
 
   const isBlocked = openBlockerIssues(
     issue.id,
@@ -197,14 +180,13 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         <div className="relative z-10 p-[14px] flex flex-col flex-1">
           {/* Row 1: Code + Project (merged, original mono bold font, separated by •) + Priority */}
           <div className="flex items-center gap-[8px] mb-[10px] flex-wrap">
-            <span className="font-mono text-[#c5c5c5] font-bold text-[10px] tracking-wider select-none truncate max-w-[180px]">
-              {displayKey}{showProjectName && projectName ? ` • ${projectName.toUpperCase()}` : ''}
-            </span>
-            {parentIssueId && (
-              <span className="truncate text-[9px] font-semibold text-muted" title={parentIssue?.title || 'Підзадача'}>
-                ↳ {parentIssue?.issueKey || 'ПІДЗАДАЧА'}
-              </span>
-            )}
+            <TaskIdentity
+              issue={issue}
+              projectName={projectName}
+              showProjectName={showProjectName}
+              parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
+              className="max-w-[220px]"
+            />
 
             {hasUnreadActivity && (
               <span role="status" aria-label="Непрочитані зміни" title="У задачі є непрочитані зміни">
@@ -347,9 +329,9 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
             <div className="flex items-center gap-[10px] shrink-0">
               {/* Attachments indicator */}
               {attachCount > 0 && (
-                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${attachCount} вкладень`}>
+                <div className="flex items-center gap-[4px] text-muted text-[11px] font-bold select-none" title={`${attachCount} вкладень`} aria-label={`${attachCount} вкладень`}>
                   <Paperclip size={12} strokeWidth={2} />
-                  <span className="font-mono">{attachCount}</span>
+                  <span>{attachCount}</span>
                 </div>
               )}
 
@@ -362,7 +344,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                   <ChatIcon size={13} />
                   {isMentioned && <Pill tone="dark" size="sm">@</Pill>}
                   {hasUnreadChat && !isMentioned && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
-                  <span className="font-mono">{msgCount}</span>
+                  <span>{msgCount}</span>
                 </div>
               )}
             </div>
