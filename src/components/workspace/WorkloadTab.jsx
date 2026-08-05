@@ -47,6 +47,7 @@ import {
   selectActionableIssues,
   sumRawTimeLogMinutes,
 } from '@/lib/utils/issueAccounting.mjs';
+import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 
 function fmtH(minutes) {
   if (!minutes) return '0г';
@@ -64,13 +65,6 @@ function memberName(member) {
   return member?.name || member?.displayName || member?.email || 'Без імені';
 }
 
-function timestampMillis(value) {
-  if (value?.toMillis) return value.toMillis();
-  if (value?.toDate) return value.toDate().getTime();
-  const parsed = value ? new Date(value).getTime() : 0;
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function positionLabel(member, positions) {
   return positions.find(position => position.id === member?.positionId)?.label
     || member?.title
@@ -78,12 +72,11 @@ function positionLabel(member, positions) {
 }
 
 function latestActivityMillis(memberIssues, memberLogs) {
+  // What happened to their tasks, not when the documents were last written:
+  // somebody else dragging a card past one of theirs renumbered it, and that
+  // used to count as this person being active today.
   const issueTime = memberIssues.reduce(
-    (latest, issue) => Math.max(
-      latest,
-      timestampMillis(issue.updatedAt),
-      timestampMillis(issue.createdAt),
-    ),
+    (latest, issue) => Math.max(latest, issueActivity(issue).millis),
     0,
   );
   return memberLogs.reduce(

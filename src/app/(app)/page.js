@@ -17,6 +17,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import { isExternalActorId } from '@/lib/utils/issueParticipants.mjs';
+import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import {
   Counter,
@@ -270,19 +271,20 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
   const stats = useMemo(() => {
     let inProgressCount = 0;
     let newestIssue = null;
-    let newestTime = 0;
+    let newestActivity = null;
 
     for (const issue of issues) {
       if (inProgressStatusIds.includes(issue.columnId || issue.status)) {
         inProgressCount++;
       }
 
-      const activityTimestamp = issue.lastActivityAt || issue.updatedAt || issue.createdAt;
-      const updatedAtTime = activityTimestamp?.toMillis?.()
-        || (activityTimestamp ? new Date(activityTimestamp).getTime() : 0)
-        || 0;
-      if (updatedAtTime > newestTime) {
-        newestTime = updatedAtTime;
+      // Only what the activity record says, never `updatedAt` — see
+      // `issueActivity`. A card whose position was renumbered because somebody
+      // dropped another card into its column had its document written and
+      // nothing else, and it used to take this whole line with it.
+      const activity = issueActivity(issue);
+      if (activity.millis > (newestActivity?.millis || 0)) {
+        newestActivity = activity;
         newestIssue = issue;
       }
     }
@@ -339,9 +341,9 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           actorUser: actorUser || (actorName ? { id: actorId || undefined, name: actorName, avatar: actorAvatar } : null),
           // Every type that was not a comment used to read "оновив завдання",
           // so a task that had just been created announced itself as updated.
-          action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[newestIssue.lastActivityType]
+          action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[newestActivity.type]
             || (actorName ? 'оновив завдання' : 'Оновлено завдання'),
-          time: newestIssue.lastActivityAt || newestIssue.updatedAt || newestIssue.createdAt,
+          time: newestActivity.at,
           projectId: newestIssue.projectId,
           id: newestIssue.id
         };
@@ -734,11 +736,12 @@ export default function WorkspacePage() {
 
   // Sliced recent issues list (limit to 6)
   const recentIssues = useMemo(() => {
-    const sorted = [...allIssues].sort((a, b) => {
-      const aTime = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
-      const bTime = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
-      return bTime - aTime;
-    });
+    // "Recent" means recently acted on, not recently written to. Sorted by
+    // `updatedAt`, this list filled with the neighbours of whatever card was
+    // dragged last.
+    const sorted = [...allIssues].sort(
+      (a, b) => issueActivity(b).millis - issueActivity(a).millis,
+    );
     return sorted.slice(0, 6);
   }, [allIssues]);
 

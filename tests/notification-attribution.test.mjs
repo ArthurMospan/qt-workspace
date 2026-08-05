@@ -6,6 +6,7 @@ import {
   isExternalActorId,
   issueParticipants,
 } from '../src/lib/utils/issueParticipants.mjs';
+import { issueActivity, isIssueUnread } from '../src/lib/utils/issueReadState.mjs';
 import { projectIssuePrefix, taskDisplayKey } from '../src/lib/utils/issueKeys.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
@@ -83,6 +84,53 @@ test('project activity names only who the activity record says acted', async () 
   for (const event of ['Створено завдання', 'Змінено статус завдання', 'Оновлено завдання']) {
     assert.ok(page.includes(event), event);
   }
+});
+
+// A drag renumbers every card in the column it lands in, so cards nobody
+// touched are written in the same batch as the one that moved. Reading that as
+// activity put a task nobody had opened at the top of the project's feed,
+// saying it had been updated seconds ago.
+test('a document written is not somebody doing something', () => {
+  const reordered = {
+    id: 'a',
+    createdAt: { toMillis: () => 1_000 },
+    updatedAt: { toMillis: () => 9_000 },
+  };
+  assert.equal(issueActivity(reordered).millis, 1_000, 'falls back to creation, never to updatedAt');
+  assert.equal(issueActivity(reordered).type, 'created');
+
+  const commented = {
+    id: 'b',
+    createdAt: { toMillis: () => 1_000 },
+    updatedAt: { toMillis: () => 9_000 },
+    lastActivityAt: { toMillis: () => 5_000 },
+    lastActivityType: 'comment',
+  };
+  assert.equal(issueActivity(commented).millis, 5_000);
+  assert.equal(issueActivity(commented).type, 'comment');
+
+  assert.deepEqual(issueActivity({ id: 'c' }), { at: null, millis: 0, type: null });
+
+  // The unread cursor keeps its own rule: creation is not unread activity, or
+  // every task ever filed would be unread to everyone who never opened it.
+  assert.equal(isIssueUnread(reordered, 0, 'someone'), false);
+});
+
+test('nothing on the dashboard ranks tasks by when their document was written', async () => {
+  const [home, workload] = await Promise.all([
+    read('../src/app/(app)/page.js'),
+    read('../src/components/workspace/WorkloadTab.jsx'),
+  ]);
+
+  for (const [name, source] of [['home', home], ['workload', workload]]) {
+    assert.match(source, /issueActivity\(/, name);
+    // A project's own `updatedAt` still sorts the project list — that one is a
+    // project being worked in, which is what the sort says. No task is ranked
+    // by it any more.
+    assert.doesNotMatch(source, /issue\.updatedAt|issue\.createdAt/, name);
+  }
+  assert.match(home, /const sorted = \[\.\.\.allIssues\]\.sort\(\s*\r?\n?\s*\(a, b\) => issueActivity\(b\)\.millis - issueActivity\(a\)\.millis,?\s*\r?\n?\s*\)/);
+  assert.doesNotMatch(home, /newestIssue\.lastActivityType/);
 });
 
 test('a task key is never invented from a document id', async () => {
