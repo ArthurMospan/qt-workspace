@@ -46,7 +46,14 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
   const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issue.id] || 0);
-  const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
+  // One unread marker per card. A new message already has its own, and a better
+  // one: it sits on the chat counter, so it comes with the number of messages
+  // and turns into the «@» pill when the message names you. The dot up in the
+  // identity row was drawn from the same event, so a comment lit up two marks
+  // two rows apart that meant the same thing. It now speaks only for the
+  // activity the counter cannot: a status change, an edit, a task filed.
+  const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId)
+    && issue.lastActivityType !== 'comment';
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
   const { types, priorities, doneStatusIds } = useWorkflowConfig();

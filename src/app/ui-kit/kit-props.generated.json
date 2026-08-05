@@ -4612,7 +4612,7 @@
     },
     "TaskIdentity": {
       "file": "src/components/ui/TaskManagement/TaskIdentity.jsx",
-      "summary": "What a task is called, above its title: its key, the project it belongs to on a cross-project list, and the parent it hangs under.",
+      "summary": "What a task is called, above its title: its key, the parent it hangs under, and the project it belongs to on a cross-project list — in that order, from the task outwards.",
       "props": [
         {
           "name": "className",

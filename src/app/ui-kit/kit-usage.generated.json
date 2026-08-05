@@ -4859,8 +4859,8 @@
             "src/components/workspace/BillingTab.jsx:272",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:262",
-            "src/components/workspace/IssueCard.jsx:318",
+            "src/components/workspace/IssueCard.jsx:269",
+            "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/WorkloadTab.jsx:108",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:360",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:798"
@@ -4949,7 +4949,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:248",
+            "src/components/workspace/IssueCard.jsx:255",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/WorkloadTab.jsx:102"
           ]
@@ -4964,7 +4964,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:268"
           ]
         },
@@ -5023,7 +5023,7 @@
             "src/components/workspace/AgileBoard.jsx:369",
             "src/components/workspace/AgileBoard.jsx:396",
             "src/components/workspace/BillingTab.jsx:272",
-            "src/components/workspace/IssueCard.jsx:318",
+            "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/VelocityTab.jsx:319",
             "src/components/workspace/WorkloadTab.jsx:102",
             "src/components/workspace/WorkloadTab.jsx:105",
@@ -5050,9 +5050,9 @@
             "src/components/workspace/BillingTab.jsx:245",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:248",
-            "src/components/workspace/IssueCard.jsx:262",
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:255",
+            "src/components/workspace/IssueCard.jsx:269",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/IssueDetail.jsx:149"
           ]
@@ -5118,8 +5118,8 @@
             "src/app/(app)/settings/page.js:2788",
             "src/components/workspace/BillingTab.jsx:242",
             "src/components/workspace/BillingTab.jsx:245",
-            "src/components/workspace/IssueCard.jsx:248",
-            "src/components/workspace/IssueCard.jsx:262"
+            "src/components/workspace/IssueCard.jsx:255",
+            "src/components/workspace/IssueCard.jsx:269"
           ]
         },
         "(default)": {
@@ -5152,8 +5152,8 @@
             "src/components/workspace/BillingTab.jsx:272",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:318",
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/IssueDetail.jsx:149",
             "src/components/workspace/UnifiedTimeline.jsx:165",
@@ -5206,10 +5206,10 @@
             "src/components/workspace/BillingTab.jsx:272",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:248",
-            "src/components/workspace/IssueCard.jsx:262",
-            "src/components/workspace/IssueCard.jsx:318",
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:255",
+            "src/components/workspace/IssueCard.jsx:269",
+            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/IssueDetail.jsx:149",
             "src/components/workspace/UnifiedTimeline.jsx:165",
@@ -5282,9 +5282,9 @@
             "src/components/workspace/BillingTab.jsx:245",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:248",
-            "src/components/workspace/IssueCard.jsx:262",
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:255",
+            "src/components/workspace/IssueCard.jsx:269",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/IssueDetail.jsx:149",
             "src/components/workspace/UnifiedTimeline.jsx:165",
@@ -5312,7 +5312,7 @@
           ],
           "files": [
             "src/components/workspace/BillingTab.jsx:272",
-            "src/components/workspace/IssueCard.jsx:318"
+            "src/components/workspace/IssueCard.jsx:325"
           ]
         }
       },
@@ -5350,8 +5350,8 @@
             "src/components/workspace/BillingTab.jsx:272",
             "src/components/workspace/BillingTab.jsx:479",
             "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/IssueCard.jsx:318",
-            "src/components/workspace/IssueCard.jsx:345",
+            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:352",
             "src/components/workspace/IssueDetail.jsx:1014",
             "src/components/workspace/IssueDetail.jsx:149",
             "src/components/workspace/WorkloadTab.jsx:102",
@@ -5381,8 +5381,8 @@
           "files": [
             "src/components/SearchModal.jsx:115",
             "src/components/migrations/DataMigrationSettings.jsx:106",
-            "src/components/workspace/IssueCard.jsx:248",
-            "src/components/workspace/IssueCard.jsx:262",
+            "src/components/workspace/IssueCard.jsx:255",
+            "src/components/workspace/IssueCard.jsx:269",
             "src/components/workspace/UnifiedTimeline.jsx:165",
             "src/components/workspace/VelocityTab.jsx:319",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:798",
@@ -5434,7 +5434,7 @@
           "files": [
             "src/app/(app)/page.js:378",
             "src/components/workspace/AnalyticsTab.jsx:321",
-            "src/components/workspace/IssueCard.jsx:310",
+            "src/components/workspace/IssueCard.jsx:317",
             "src/components/workspace/TimesheetTab.jsx:220",
             "src/components/workspace/TimesheetTab.jsx:560"
           ]
@@ -5674,7 +5674,7 @@
             "src/components/MobileNav.jsx:267",
             "src/components/WorkspaceSidebar.jsx:289",
             "src/components/WorkspaceSidebar.jsx:339",
-            "src/components/workspace/IssueCard.jsx:193"
+            "src/components/workspace/IssueCard.jsx:200"
           ]
         },
         "md": {
@@ -5724,7 +5724,7 @@
           ],
           "files": [
             "src/components/WorkspaceSidebar.jsx:339",
-            "src/components/workspace/IssueCard.jsx:193"
+            "src/components/workspace/IssueCard.jsx:200"
           ]
         }
       },
@@ -5766,7 +5766,7 @@
             "src/components/MobileNav.jsx:219",
             "src/components/MobileNav.jsx:267",
             "src/components/WorkspaceSidebar.jsx:339",
-            "src/components/workspace/IssueCard.jsx:193"
+            "src/components/workspace/IssueCard.jsx:200"
           ]
         }
       },
@@ -5799,7 +5799,7 @@
             "src/components/MobileNav.jsx:267",
             "src/components/WorkspaceSidebar.jsx:289",
             "src/components/WorkspaceSidebar.jsx:339",
-            "src/components/workspace/IssueCard.jsx:193",
+            "src/components/workspace/IssueCard.jsx:200",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6957,7 +6957,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:272"
+            "src/components/workspace/IssueCard.jsx:279"
           ]
         },
         "(default)": {
@@ -7266,7 +7266,7 @@
     "FileInput — невидима половина «прикріпити»": "<div className=\"flex items-center gap-[12px]\">\n  <FileInput\n    ref={fileInputRef}\n    multiple\n    onChange={event => setPickedFiles(Array.from(event.target.files || []).map(file => file.name))}\n  />\n  <Button style=\"secondary\" size=\"md\" icon={Paperclip} onClick={() => fileInputRef.current?.click()}>\n    Прикріпити файл\n  </Button>\n  <span className=\"text-[11px] text-muted\">\n    {pickedFiles.length > 0 ? pickedFiles.join(', ') : 'Нічого не вибрано'}\n  </span>\n</div>",
     "ChatSearchBanner": "<div className=\"w-full overflow-hidden rounded-[12px] border border-line\">\n  <ChatSearchBanner query=\"онбординг\" count={3} onClear={() => {}} />\n</div>",
     "ChannelInfoPanel": "{/* md+ only: нижче панель — `fixed inset-0`, бо на телефоні вона\n    повноекранна, а не рейка збоку. */}\n<div className=\"hidden h-[520px] w-full justify-center md:flex\">\n  <ChannelInfoPanel\n    channel={{\n      id: 'general',\n      name: 'general',\n      description: 'Загальний канал для всієї команди',\n      members: ['kit-arthur', 'kit-olena'],\n    }}\n    members={KIT_MENTION_MEMBERS}\n    messages={CHAT_DEMO_MESSAGES}\n    activeTab={panelTab}\n    onTabChange={setPanelTab}\n    isAdminOrOwner\n    onOpenAttachment={() => {}}\n    onJumpToMessage={() => {}}\n    onClose={() => {}}\n    onSaveDescription={async () => true}\n    onAddMember={async () => true}\n    onAddAllMembers={async () => true}\n    onRemoveMember={async () => true}\n  />\n</div>\n<p className=\"text-[11px] text-muted md:hidden\">\n  На вузькому екрані панель займає весь екран — превʼю показане від 768px.\n</p>",
-    "Task Identity — ключ, проєкт, батьківське завдання": "<div className=\"flex flex-col gap-3\">\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} />\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} projectName=\"QuickTeam\" showProjectName />\n  <TaskIdentity\n    issue={{ issueKey: 'QT-142' }}\n    projectName=\"QuickTeam\"\n    showProjectName\n    parentIssue={{ issueKey: 'QT-100', title: 'Переробити календар' }}\n  />\n  {/* A legacy `WS-` key keeps its number and takes the project's prefix. */}\n  <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName=\"QuickTeam\" showProjectName />\n  {/* No key at all — the title below it is the task's name. */}\n  <TaskIdentity issue={{}} projectName=\"QuickTeam\" showProjectName />\n</div>",
+    "Task Identity — ключ, батьківське завдання, проєкт": "<div className=\"flex flex-col gap-3\">\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} />\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} projectName=\"QuickTeam\" showProjectName />\n  <TaskIdentity\n    issue={{ issueKey: 'QT-142' }}\n    projectName=\"QuickTeam\"\n    showProjectName\n    parentIssue={{ issueKey: 'QT-100', title: 'Переробити календар' }}\n  />\n  {/* A legacy `WS-` key keeps its number and takes the project's prefix. */}\n  <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName=\"QuickTeam\" showProjectName />\n  {/* No key at all — the title below it is the task's name. */}\n  <TaskIdentity issue={{}} projectName=\"QuickTeam\" showProjectName />\n</div>",
     "Task Row (List View)": "<div className=\"bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]\">\n  <p className=\"ui-type-eyebrow uppercase tracking-wider text-muted\">Project context — назва проєкту прихована</p>\n  <TaskRow\n    issue={task1}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n  />\n  <p className=\"ui-type-eyebrow mt-2 uppercase tracking-wider text-muted\">Cross-project context — назва проєкту видима</p>\n  <TaskRow\n    issue={task2}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task3}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task4}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task5}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n</div>",
     "Task List View — живий shared organism": "<TaskListView\n  issues={demoIssues}\n  allIssues={demoIssues}\n  members={demoMembers}\n  labels={demoLabels}\n  sprints={demoSprints}\n  projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  showProjectName\n  hiddenStatusIds={[lastStatusId]}\n/>",
     "Task List Card — плоский список задач": "<div className=\"grid gap-4 lg:grid-cols-2\">\n  <TaskListCard\n    title=\"Прострочені\"\n    icon={AlertTriangle}\n    iconClassName=\"text-red-500\"\n    issues={demoIssues.slice(0, 3)}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    limit={3}\n  />\n  <TaskListCard\n    title=\"Нещодавно закриті завдання\"\n    icon={CheckCircle2}\n    iconClassName=\"text-emerald-600\"\n    issues={[]}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    emptyText=\"За вказаний період завдань не закрито\"\n  />\n</div>",
