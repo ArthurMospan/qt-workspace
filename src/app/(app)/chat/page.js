@@ -12,7 +12,7 @@ import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, ChannelRail, Counter, FileInput, IconAction, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
+import { useConfirm, ChannelRail, Counter, FileInput, FormGroup, IconAction, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -420,6 +420,7 @@ export default function ChatPage() {
   const requestPaneClose = useMobilePaneBack(mobilePane === 'chat', () => setMobilePane('list'));
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelNameError, setNewChannelNameError] = useState('');
   const [newChannelDescription, setNewChannelDescription] = useState('');
   const [newChannelMemberIds, setNewChannelMemberIds] = useState([]);
   const [isSubmittingChannel, setIsSubmittingChannel] = useState(false);
@@ -721,6 +722,7 @@ export default function ChatPage() {
 
   const resetChannelDraft = () => {
     setNewChannelName('');
+    setNewChannelNameError('');
     setNewChannelDescription('');
     setNewChannelMemberIds([]);
   };
@@ -733,7 +735,12 @@ export default function ChatPage() {
 
   const handleCreateChannel = async (event) => {
     event.preventDefault();
-    if (!newChannelName.trim() || isSubmittingChannel) return;
+    if (isSubmittingChannel) return;
+    if (!newChannelName.trim()) {
+      setNewChannelNameError('Вкажіть назву каналу');
+      return;
+    }
+    setNewChannelNameError('');
 
     setIsSubmittingChannel(true);
     try {
@@ -935,25 +942,27 @@ export default function ChatPage() {
               form="create-channel-form"
               size="md"
               loading={isSubmittingChannel}
-              disabled={!newChannelName.trim()}
             >
               Створити канал
             </Button>
           </>
         )}
       >
-        <form id="create-channel-form" onSubmit={handleCreateChannel} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-[6px]">
-            <Label htmlFor="new-channel-name" required>Назва каналу</Label>
+        <form id="create-channel-form" noValidate onSubmit={handleCreateChannel} className="flex flex-col gap-5">
+          <FormGroup label="Назва каналу" required error={newChannelNameError}>
             <Input
               id="new-channel-name"
               autoFocus
               value={newChannelName}
-              onChange={event => setNewChannelName(event.target.value)}
+              onChange={event => {
+                setNewChannelName(event.target.value);
+                if (newChannelNameError) setNewChannelNameError('');
+              }}
               placeholder="наприклад, дизайн-команда"
               maxLength={80}
+              error={Boolean(newChannelNameError)}
             />
-          </div>
+          </FormGroup>
 
           <div className="flex flex-col gap-[6px]">
             <Label htmlFor="new-channel-description">Опис</Label>

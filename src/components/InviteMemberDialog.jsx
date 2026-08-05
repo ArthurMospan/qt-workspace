@@ -33,6 +33,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
   const showToast = useWorkspaceStore(state => state.showToast);
   const [tab, setTab] = useState('email');
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [role, setRole] = useState('member');
   const [inviting, setInviting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -43,6 +44,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
     queueMicrotask(() => {
       setTab('email');
       setEmail('');
+      setEmailError('');
       setRole('member');
       setSent(false);
       setUndelivered(false);
@@ -51,7 +53,12 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
 
   const handleInvite = async event => {
     event.preventDefault();
-    if (!email.trim() || inviting) return;
+    if (inviting) return;
+    if (!email.trim()) {
+      setEmailError('Вкажіть email учасника');
+      return;
+    }
+    setEmailError('');
     setInviting(true);
     try {
       const uid = currentUser?.id || currentUser?.uid;
@@ -116,8 +123,8 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
         />
 
         {tab === 'email' ? (
-          <form onSubmit={handleInvite} className="flex flex-col gap-3">
-            <Label>Email учасника</Label>
+          <form noValidate onSubmit={handleInvite} className="flex flex-col gap-3">
+            <Label required>Email учасника</Label>
             <div className="flex gap-2">
               {/* The kit's standard large control, both halves. They used to
                   share an `invite-*` composition that made them 52px tall with
@@ -128,20 +135,25 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
                 size="lg"
                 type="email"
                 value={email}
-                onChange={event => setEmail(event.target.value)}
+                onChange={event => {
+                  setEmail(event.target.value);
+                  if (emailError) setEmailError('');
+                }}
                 placeholder="name@example.com"
+                error={Boolean(emailError)}
               />
               <Button
                 type="submit"
                 style="primary"
                 size="lg"
                 loading={inviting}
-                disabled={!email.trim() || inviting || sent}
+                disabled={sent}
                 icon={sent ? Check : null}
               >
                 {sent ? 'Надіслано' : 'Запросити'}
               </Button>
             </div>
+            {emailError && <span className="text-[11px] text-red-500">{emailError}</span>}
             {undelivered ? (
               <Alert variant="warning" title="Лист не надіслано">
                 Запрошення збережено — воно спрацює, щойно людина увійде з цією адресою.

@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import Label from '@/components/ui/Forms/Label';
+import FormGroup from '@/components/ui/Forms/FormGroup';
 import SelectableChip from '@/components/ui/Forms/SelectableChip';
 import { Input } from '@/components/ui/Input';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
@@ -35,6 +36,10 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Missing required fields are reported under the field that is missing, the
+  // same way the project dialog does it. The submit button used to be disabled
+  // instead, which says "you cannot do this" without ever saying why.
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const selectedProject = projects?.find(p => p.id === form.projectId) || projectContext;
   const activeHiddenCols = selectedProject?.hiddenColumns;
@@ -108,7 +113,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   if (!isOpen) return null;
 
-  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const set = (key, val) => {
+    setForm(f => ({ ...f, [key]: val }));
+    // The message goes as soon as the reason for it does.
+    setFieldErrors(current => (current[key] ? { ...current, [key]: '' } : current));
+  };
 
   const toggleAssignee = (uid) => setForm(current => ({
     ...current,
@@ -125,7 +134,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    const nextErrors = {};
+    if (!form.title.trim()) nextErrors.title = 'Вкажіть назву завдання';
+    if (projects && projects.length > 0 && !form.projectId) {
+      nextErrors.projectId = 'Оберіть проєкт';
+    }
+    if (Object.keys(nextErrors).length) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+    setFieldErrors({});
     setLoading(true);
     setError('');
     try {
@@ -163,7 +181,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             form="create-task-form"
             style="primary"
             size="md"
-            disabled={!form.title.trim() || loading || creatableTypes.length === 0}
+            disabled={creatableTypes.length === 0}
             loading={loading}
           >
             {loading ? 'Створення...' : 'Створити завдання'}
@@ -190,27 +208,26 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:p-7 lg:grid-cols-2"
         >
           {/* Title */}
-          <div className="flex flex-col gap-[6px] lg:col-span-2">
-            <Label required>Назва</Label>
+          <FormGroup label="Назва" required error={fieldErrors.title} className="lg:col-span-2">
             <Input
               autoFocus
               value={form.title}
               onChange={e => set('title', e.target.value)}
               placeholder="Що потрібно зробити?"
+              error={Boolean(fieldErrors.title)}
             />
-          </div>
+          </FormGroup>
 
           {/* Project Selector (if projects passed) */}
           {projects && projects.length > 0 && (
-            <div className="flex flex-col gap-[6px]">
-              <Label required>Проєкт</Label>
+            <FormGroup label="Проєкт" required error={fieldErrors.projectId}>
               <Select
                 value={form.projectId}
                 onChange={val => set('projectId', val)}
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Оберіть проєкт..."
               />
-            </div>
+            </FormGroup>
           )}
 
           {/* Description */}

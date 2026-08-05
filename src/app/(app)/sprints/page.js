@@ -41,8 +41,14 @@ function SprintEditModal({ sprint, onClose, onSave }) {
   const [startDate, setStartDate] = useState(() => toLocalDateInput(sprint.startDate));
   const [endDate, setEndDate] = useState(() => toLocalDateInput(sprint.endDate));
 
+  const [nameError, setNameError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setNameError('Вкажіть назву спринта');
+      return;
+    }
     onSave({
       name,
       goal,
@@ -64,9 +70,14 @@ function SprintEditModal({ sprint, onClose, onSave }) {
         </>
       }
     >
-        <form id="sprint-edit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Назва спринта">
-            <Input type="text" required value={name} onChange={e => setName(e.target.value)} />
+        <form id="sprint-edit-form" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormGroup label="Назва спринта" required error={nameError}>
+            <Input
+              type="text"
+              value={name}
+              onChange={e => { setName(e.target.value); if (nameError) setNameError(''); }}
+              error={Boolean(nameError)}
+            />
           </FormGroup>
           <FormGroup label="Ціль спринта">
             <Textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2} />
@@ -90,8 +101,14 @@ function SprintCreateModal({ onClose, onSave }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  const [nameError, setNameError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setNameError('Вкажіть назву спринта');
+      return;
+    }
     onSave({
       name,
       goal,
@@ -113,9 +130,15 @@ function SprintCreateModal({ onClose, onSave }) {
         </>
       }
     >
-        <form id="sprint-create-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Назва спринта">
-            <Input type="text" required placeholder="Наприклад: Спринт 1" value={name} onChange={e => setName(e.target.value)} />
+        <form id="sprint-create-form" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormGroup label="Назва спринта" required error={nameError}>
+            <Input
+              type="text"
+              placeholder="Наприклад: Спринт 1"
+              value={name}
+              onChange={e => { setName(e.target.value); if (nameError) setNameError(''); }}
+              error={Boolean(nameError)}
+            />
           </FormGroup>
           <FormGroup label="Ціль спринта">
             <Textarea value={goal} placeholder="Опишіть ціль цього спринта..." onChange={e => setGoal(e.target.value)} rows={2} />

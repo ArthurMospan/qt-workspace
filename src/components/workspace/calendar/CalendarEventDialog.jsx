@@ -21,6 +21,7 @@ import {
   Button,
   DatePicker,
   Dialog,
+  FormGroup,
   Input,
   Label,
   Pill,
@@ -362,8 +363,8 @@ export function CalendarEventDetails({
             )}
           </div>
           {canTrackTime ? (
-            <form className="grid gap-2 sm:grid-cols-[110px_1fr_auto]" onSubmit={onAddTime}>
-              <Input name="minutes" type="number" min="1" max="10080" required placeholder="Хвилини" aria-label="Витрачено хвилин" />
+            <form className="grid gap-2 sm:grid-cols-[110px_1fr_auto]" noValidate onSubmit={onAddTime}>
+              <Input name="minutes" type="number" min="1" max="10080" placeholder="Хвилини" aria-label="Витрачено хвилин" />
               <Input name="description" maxLength={2000} placeholder="Що зроблено (необов’язково)" aria-label="Опис роботи" />
               <Button type="submit" size="sm" loading={timeSaving}>Додати</Button>
             </form>
@@ -420,6 +421,7 @@ export default function CalendarEventDialog({
   const [saving, setSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);
   const [error, setError] = useState('');
+  const [titleError, setTitleError] = useState('');
   const eventId = event?.sourceEventId || event?.id || '';
   const occurrenceStartAt = event?.startAt || '';
   const {
@@ -460,6 +462,11 @@ export default function CalendarEventDialog({
   const submit = async eventObject => {
     eventObject.preventDefault();
     if (!canManage) return;
+    if (!form.title.trim()) {
+      setTitleError('Вкажіть назву події');
+      return;
+    }
+    setTitleError('');
     setSaving(true);
     setError('');
     try {
@@ -503,12 +510,19 @@ export default function CalendarEventDialog({
     formEvent.preventDefault();
     const formElement = formEvent.currentTarget;
     const data = new FormData(formElement);
+    const minutes = Number(data.get('minutes'));
+    // Checked here rather than by the browser, so the message reads like the
+    // rest of the product instead of an untranslated native bubble.
+    if (!Number.isFinite(minutes) || minutes < 1) {
+      setError('Вкажіть, скільки хвилин списати');
+      return;
+    }
     setTimeSaving(true);
     setError('');
     try {
       await addTimeLog({
         userId: currentUserId,
-        spentMinutes: Number(data.get('minutes')),
+        spentMinutes: minutes,
         description: data.get('description'),
       });
       formElement.reset();
@@ -606,18 +620,24 @@ export default function CalendarEventDialog({
       size="lg"
       footer={footer}
     >
-      <form id="calendar-event-form" onSubmit={submit} className="flex flex-col gap-[20px]">
-        <div className="flex flex-col gap-[6px]">
-          <Label required>Назва</Label>
+      {/* `noValidate`: the browser's own "Please fill out this field" bubble is
+          untranslated, unstyled and appears in a different place than every
+          other message in the product. Required fields are checked on submit and
+          reported under the field, like the project dialog does. */}
+      <form id="calendar-event-form" noValidate onSubmit={submit} className="flex flex-col gap-[20px]">
+        <FormGroup label="Назва" required error={titleError}>
           <Input
             autoFocus
-            required
             value={form.title}
-            onChange={e => update('title', e.target.value)}
+            onChange={e => {
+              update('title', e.target.value);
+              if (titleError) setTitleError('');
+            }}
             placeholder="Наприклад, синхронізація команди"
             disabled={!canManage}
+            error={Boolean(titleError)}
           />
-        </div>
+        </FormGroup>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
           <div className="flex flex-col gap-[6px]">
