@@ -54,7 +54,7 @@ async function performRequest(issueId, method, body) {
 }
 
 export function useIssueLinks(issueId) {
-  const { doneStatusIds } = useWorkflowConfig();
+  const { closedStatusIds } = useWorkflowConfig();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,9 +113,9 @@ export function useIssueLinks(issueId) {
     const blockingLinks = links.filter(link => link.relationType === 'blocks' && link.targetIssueId === targetIssueId);
     return blockingLinks.some(link => {
       const blocker = allIssues.find(issue => issue.id === link.sourceIssueId) || link.sourceIssue;
-      return blocker && !doneStatusIds.includes(blocker.columnId ?? blocker.status);
+      return blocker && !closedStatusIds.includes(blocker.columnId ?? blocker.status);
     });
-  }, [links, doneStatusIds]);
+  }, [links, closedStatusIds]);
 
   return { links, loading, error, refresh, addLink, removeLink, hasBlocker };
 }

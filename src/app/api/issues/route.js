@@ -7,7 +7,7 @@ import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_STATUS_IDS,
   DEFAULT_TYPE_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
@@ -204,7 +204,7 @@ export async function POST(request) {
       const status = (project.hiddenColumns || []).includes(statusCandidate)
         ? entryStatusId
         : statusCandidate;
-      const doneIds = resolveDoneStatusIds(freshWorkflow.statuses);
+      const closedIds = resolveClosedStatusIds(freshWorkflow.statuses);
       const freshPriorityIds = new Set(workflowIds(
         freshWorkflow.priorities,
         DEFAULT_PRIORITY_IDS,
@@ -265,7 +265,7 @@ export async function POST(request) {
             status,
           },
           parentIssue: parent,
-          doneStatusIds: doneIds,
+          closedStatusIds: closedIds,
         });
         if (statusConflict) throw hierarchyTransactionError(statusConflict);
       }
@@ -306,7 +306,7 @@ export async function POST(request) {
         lastActivityActorId: authorization.user.uid,
         lastActivityActorName: authorization.user.name || authorization.user.email || '',
         lastActivityActorAvatar: authorization.user.picture || null,
-        ...(doneIds.includes(status) ? { completedAt: now } : {}),
+        ...(closedIds.includes(status) ? { completedAt: now } : {}),
       };
       transaction.create(issueRef, payload);
       transaction.update(projectRef, {

@@ -211,7 +211,7 @@ export function deadlineReminderCandidates(
   {
     nowMs = Date.now(),
     lookAheadMs = 0,
-    doneStatusIdsByOrganization = new Map(),
+    closedStatusIdsByOrganization = new Map(),
     timeZonesByOrganization = new Map(),
   } = {},
 ) {
@@ -228,8 +228,8 @@ export function deadlineReminderCandidates(
     if (!issue.id || !issue.organizationId || !issue.projectId || !dueDate || !assigneeIds.length) continue;
     if (dueDate.getTime() > horizon || dueDate.getTime() < floor) continue;
 
-    const doneStatusIds = doneStatusIdsByOrganization.get(issue.organizationId) || new Set(['done']);
-    if (doneStatusIds.has(issue.columnId || issue.status)) continue;
+    const closedStatusIds = closedStatusIdsByOrganization.get(issue.organizationId) || new Set(['done']);
+    if (closedStatusIds.has(issue.columnId || issue.status)) continue;
 
     const timeZone = timeZonesByOrganization.get(issue.organizationId) || 'Europe/Kyiv';
     const overdue = dueDate.getTime() < nowMs;

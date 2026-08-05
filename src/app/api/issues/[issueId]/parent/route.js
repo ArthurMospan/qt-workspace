@@ -13,7 +13,7 @@ import {
 } from '@/lib/utils/issueHierarchyModel.mjs';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { issueParentStatusConflict } from '@/lib/utils/issueStatusTransition.mjs';
-import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
+import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 
 function hierarchyTransactionError(details) {
   const error = new Error(details.code);
@@ -151,10 +151,10 @@ export async function PATCH(request, context) {
 
       let parent = null;
       let childIds = [];
-      let doneStatusIds = [];
+      let closedStatusIds = [];
       if (parentIssueId) {
         const workflowSnap = await transaction.get(workflowRef);
-        doneStatusIds = resolveDoneStatusIds(workflowSnap.data()?.statuses);
+        closedStatusIds = resolveClosedStatusIds(workflowSnap.data()?.statuses);
         const parentSnap = await transaction.get(
           db.collection('issues').doc(parentIssueId),
         );
@@ -190,7 +190,7 @@ export async function PATCH(request, context) {
       const statusConflict = issueParentStatusConflict({
         issue: { id: issueId, ...current },
         parentIssue: parent,
-        doneStatusIds,
+        closedStatusIds,
       });
       if (statusConflict) throw hierarchyTransactionError(statusConflict);
 

@@ -79,8 +79,12 @@ function AnalyticsContent({
   period,
   onTabChange,
 }) {
-  const { statuses, doneStatusIds } = useWorkflowConfig();
-  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const { statuses, closedStatusIds, deliveredStatusIds } = useWorkflowConfig();
+  // Closed answers "is there work left" — overdue, blockers, open counts.
+  // Delivered answers "was anything produced" — completion, velocity. Counting a
+  // cancelled task as delivered is how a workspace reports progress it never made.
+  const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
+  const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   // Work still in the backlog is not expected to carry an estimate. That used to
   // be read as "the first status in the list", which is a position, not a
   // meaning — and it missed every other backlog column an org had added.
@@ -127,29 +131,29 @@ function AnalyticsContent({
     const periodAgo = now - period * 24 * 3600 * 1000;
 
     const total      = issues.length;
-    const done       = issues.filter(i => doneSet.has(i.columnId || i.status)).length;
+    const done       = issues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
     const inProgress = issues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
     const blockerPriority = issues.filter(i => (
       i.priority === 'blocker'
-      && !doneSet.has(i.columnId || i.status)
+      && !closedSet.has(i.columnId || i.status)
     )).length;
     const dependencyBlocked = issues.filter(i => (
-      !doneSet.has(i.columnId || i.status)
+      !closedSet.has(i.columnId || i.status)
       && openBlockerIssues(
         i.id,
         issueReferenceIssues,
         issueLinks,
-        doneSet,
+        closedSet,
       ).length > 0
     )).length;
 
     const overdue = issues.filter(i => {
       const due = parseDueDate(i.dueDate);
-      return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
+      return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
     });
 
     const recentDone = issues.filter(i => {
-      if (!doneSet.has(i.columnId || i.status)) return false;
+      if (!deliveredSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > periodAgo;
     }).length;
@@ -159,11 +163,11 @@ function AnalyticsContent({
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
-      const pDone    = pIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
-      const pOpen    = pIssues.filter(i => !doneSet.has(i.columnId || i.status)).length;
+      const pDone    = pIssues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
+      const pOpen    = pIssues.filter(i => !closedSet.has(i.columnId || i.status)).length;
       const pOverdue = pIssues.filter(i => {
         const due = parseDueDate(i.dueDate);
-        return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
+        return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
       }).length;
       const pMin = sumRawTimeLogMinutes(periodLogs.filter(l => l.projectId === p.id));
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
@@ -175,8 +179,8 @@ function AnalyticsContent({
     })).filter(s => s.count > 0);
     const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
-    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status)).length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !doneSet.has(i.columnId || i.status)).length;
+    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !closedSet.has(i.columnId || i.status)).length;
+    const unestimated = issues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !closedSet.has(i.columnId || i.status)).length;
 
     return {
       total, done, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
@@ -184,7 +188,8 @@ function AnalyticsContent({
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
   }, [
-    doneSet,
+    closedSet,
+    deliveredSet,
     backlogSet,
     inProgressSet,
     issueLinks,

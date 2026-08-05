@@ -58,7 +58,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   const {
     activeOrgId, currentUser, authLoading, orgLoading
   } = useAppContext();
-  const { doneStatusIds, statuses } = useWorkflowConfig();
+  const { closedStatusIds, statuses } = useWorkflowConfig();
   const [snapshotIssues, setSnapshotIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [linksReady, setLinksReady] = useState(!includeLinks);
@@ -388,7 +388,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // still open would make the hierarchy contradict the board and analytics.
     // Description checkboxes and legacy `subtasks[]` are lightweight checklist
     // items and deliberately do not participate in this guard.
-    if (doneStatusIds.includes(newColumnId)) {
+    if (closedStatusIds.includes(newColumnId)) {
       if (includeLinks && !linksReady) {
         throw new Error(linksError
           ? 'Не вдалося перевірити залежності. Оновіть сторінку й повторіть.'
@@ -398,7 +398,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         issueId,
         issues,
         issueLinks,
-        doneStatusIds,
+        closedStatusIds,
       });
       if (blockers.children.length > 0) {
         throw new Error(`Спершу закрийте підзадачі: ${blockers.children.length} ще в роботі`);
@@ -470,7 +470,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         console.warn('[useIssues] could not update stage clientApprovalPending', err);
       }
     }
-  }, [activeOrgId, includeLinks, issues, issueLinks, linksError, linksReady, projectId, doneStatusIds, statuses, applyPatch, revertPatch]);
+  }, [activeOrgId, includeLinks, issues, issueLinks, linksError, linksReady, projectId, closedStatusIds, statuses, applyPatch, revertPatch]);
   return {
     issues,
     issueLinks,

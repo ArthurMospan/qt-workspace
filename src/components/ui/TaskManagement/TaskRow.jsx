@@ -74,7 +74,7 @@ export default function TaskRow({
   const { currentUser } = useAppContext();
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
-  const { types, priorities, statuses, doneStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
 
   const task = issue;
   if (!task) return null;
@@ -104,14 +104,14 @@ export default function TaskRow({
     .filter(Boolean);
 
   const due = parseDueDate(task.dueDate);
-  const isOverdue = due && due < new Date() && !doneStatusIds.includes(task.columnId) && !doneStatusIds.includes(task.status);
+  const isOverdue = due && due < new Date() && !closedStatusIds.includes(task.columnId) && !closedStatusIds.includes(task.status);
 
   const contextIssues = allIssues || issues;
   const parentIssueId = existingParentIssueId(task);
   const parentIssue = contextIssues.find(candidate => candidate.id === parentIssueId);
   const childIssues = contextIssues.filter(candidate => existingParentIssueId(candidate) === task.id);
   const childAll = childIssues.length;
-  const childDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const childDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
   const checklistAll = (task.subtasks || []).length;
   const checklistDone = (task.subtasks || []).filter(item => item.done).length;
 
@@ -127,7 +127,7 @@ export default function TaskRow({
     task.id,
     contextIssues,
     issueLinks,
-    doneStatusIds,
+    closedStatusIds,
   ).length > 0;
 
   const handleRowClick = (e) => {

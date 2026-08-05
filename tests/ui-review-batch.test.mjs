@@ -68,18 +68,42 @@ test('QUI-130 drops the epic copy and leads the type list with Задача', as
 // stated over categories and no longer over a position in the list.
 test('QUI-131 allows several closing statuses but never a workflow without an open one', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
-  const change = settings.slice(
-    settings.indexOf('const handleStatusCategoryChange'),
-    settings.indexOf('const handleStatusDeleteClick'),
+  const guard = settings.slice(
+    settings.indexOf('const statusGroupsBreakInvariant'),
+    settings.indexOf('const handleStatusDragEnd'),
   );
   // Something has to close a task…
-  assert.match(change, /if \(terminalCount === 0\) \{/);
+  assert.match(guard, /if \(closing === 0\) \{/);
   // …and something has to stay open for new tasks to land in.
-  assert.match(change, /if \(terminalCount === next\.length\) \{/);
-  // Both are shown as a locked row with the reason, never silently refused.
-  assert.match(settings, /categoryLocked=\{[\s\S]{0,200}terminalStatuses\.length === 1/);
-  assert.match(settings, /categoryLockReason=\{isTerminalStatusCategory/);
+  assert.match(guard, /if \(closing === next\.length\) \{/);
+  // Every path that could break either one asks the same guard: dragging a
+  // status into another category, and deleting one.
+  assert.match(settings, /if \(source\.droppableId !== destination\.droppableId\) \{\s*\n\s*const problem = statusGroupsBreakInvariant\(next\);/);
+  assert.match(settings, /const problem = statusGroupsBreakInvariant\(statuses\.filter\(s => s\.id !== id\)\);/);
+  // And the delete control is disabled rather than refusing after the click.
+  assert.match(settings, /const canDeleteStatus = status => \(/);
   assert.match(settings, /Назва статусу — ваша, категорія — спільна/);
+});
+
+// The editor is a list per category, the way Linear and Shortcut do it: a status
+// belongs to the section it sits in, so the two-layer model is visible instead of
+// explained, and the saved array always comes out in the order work flows.
+test('the workflow editor groups statuses by category and moves them by dragging', async () => {
+  const settings = await read('../src/app/(app)/settings/page.js');
+
+  assert.match(settings, /STATUS_CATEGORY_IDS\.map\(\(categoryId, categoryIndex\) => \{/);
+  assert.match(settings, /<Droppable droppableId=\{categoryId\}>/);
+  assert.match(settings, /onDragEnd=\{handleStatusDragEnd\}/);
+  assert.match(settings, /handleAddStatus\(categoryId\)/);
+  // The row carries no category control of its own any more — where it sits is
+  // the answer, and two ways to say one thing is how they drift apart.
+  assert.doesNotMatch(settings, /onCategoryChange/);
+  assert.doesNotMatch(settings, /STATUS_CATEGORY_OPTIONS/);
+  // Saved in canonical category order, so a project board's columns follow the
+  // flow of work rather than the order somebody happened to add them in.
+  assert.match(settings, /const flattenStatusGroups = groups => STATUS_CATEGORY_IDS\.flatMap\(/);
+  // No id is special any more: what may be deleted is decided by the invariants.
+  assert.doesNotMatch(settings, /!\['backlog', 'done'\]\.includes/);
 });
 
 test('QUI-132 leaves one clock on the time field, and only on touch', async () => {

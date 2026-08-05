@@ -14,7 +14,7 @@ import {
 } from '@/lib/utils/issueRelations.mjs';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { issueBlockLinkStatusConflict } from '@/lib/utils/issueStatusTransition.mjs';
-import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
+import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 
 function apiTransactionError(code, status, message, details = {}) {
   const error = new Error(code);
@@ -300,7 +300,7 @@ export async function POST(request, context) {
         sourceIssue: { id: sourceSnap.id, ...sourceSnap.data() },
         targetIssue: { id: targetSnap.id, ...targetSnap.data() },
         relationType: requested.relationType,
-        doneStatusIds: resolveDoneStatusIds(workflowSnap.data()?.statuses),
+        closedStatusIds: resolveClosedStatusIds(workflowSnap.data()?.statuses),
       });
       if (statusConflict) {
         throw apiTransactionError(

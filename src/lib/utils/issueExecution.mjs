@@ -4,21 +4,21 @@ function cleanId(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function doneSetOf(doneStatusIds) {
-  return doneStatusIds instanceof Set ? doneStatusIds : new Set(doneStatusIds || []);
+function closedSetOf(closedStatusIds) {
+  return closedStatusIds instanceof Set ? closedStatusIds : new Set(closedStatusIds || []);
 }
 
 export function issueStatusId(issue) {
   return issue?.columnId || issue?.status || null;
 }
 
-export function openChildIssues(issueId, issues = [], doneStatusIds = []) {
+export function openChildIssues(issueId, issues = [], closedStatusIds = []) {
   const currentId = cleanId(issueId);
   if (!currentId) return [];
-  const doneSet = doneSetOf(doneStatusIds);
+  const closedSet = closedSetOf(closedStatusIds);
   return issues.filter(candidate => (
     existingParentIssueId(candidate) === currentId
-    && !doneSet.has(issueStatusId(candidate))
+    && !closedSet.has(issueStatusId(candidate))
   ));
 }
 
@@ -39,11 +39,11 @@ export function openBlockerIssues(
   issueId,
   issues = [],
   issueLinks = [],
-  doneStatusIds = [],
+  closedStatusIds = [],
 ) {
   const currentId = cleanId(issueId);
   if (!currentId) return [];
-  const doneSet = doneSetOf(doneStatusIds);
+  const closedSet = closedSetOf(closedStatusIds);
   const byId = new Map(
     issues.flatMap(issue => {
       const id = cleanId(issue?.id);
@@ -63,7 +63,7 @@ export function openBlockerIssues(
     // A dangling legacy link is reviewable data, but it must not permanently
     // prevent work from being completed when the referenced task no longer
     // exists.
-    if (blocker && !doneSet.has(issueStatusId(blocker))) blockers.push(blocker);
+    if (blocker && !closedSet.has(issueStatusId(blocker))) blockers.push(blocker);
   }
 
   return blockers;
@@ -73,14 +73,14 @@ export function issueCompletionBlockers({
   issueId,
   issues = [],
   issueLinks = [],
-  doneStatusIds = [],
+  closedStatusIds = [],
 } = {}) {
-  const children = openChildIssues(issueId, issues, doneStatusIds);
+  const children = openChildIssues(issueId, issues, closedStatusIds);
   const dependencies = openBlockerIssues(
     issueId,
     issues,
     issueLinks,
-    doneStatusIds,
+    closedStatusIds,
   );
   return {
     children,

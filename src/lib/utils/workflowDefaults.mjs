@@ -9,8 +9,9 @@
 // Relative, not aliased: this module is loaded straight by `node --test`, which
 // knows nothing about the `@/` path alias.
 import {
+  closedStatusIds,
+  deliveredStatusIds,
   statusCategoryMap,
-  terminalStatusIds,
 } from './statusCategories.mjs';
 
 export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'done'];
@@ -83,14 +84,22 @@ export function statusLabel(statusId, statuses = []) {
   return configured?.label || STATUS_LABELS[statusId] || statusId || '';
 }
 
-// Terminal ("done") statuses for a workflow configuration.
-// A status is terminal when its category closes a task — `done` or `cancelled`.
-// The rule lives in statusCategories.mjs, which also knows how to read a
-// workflow saved before categories existed (an `isDone` flag, then an id of
-// 'done', then the last column), so this stays the one answer the server routes
-// and the UI both get.
-export function resolveDoneStatusIds(statuses) {
-  const resolved = terminalStatusIds(statuses);
+// Statuses that close a task — category `done` or `cancelled`. Overdue,
+// blockers, a parent waiting on its children, reminders and `completedAt` all
+// read this. The rule lives in statusCategories.mjs, which also knows how to
+// read a workflow saved before categories existed (an `isDone` flag, then an id
+// of 'done', then the last column), so this stays the one answer the server
+// routes and the UI both get.
+export function resolveClosedStatusIds(statuses) {
+  const resolved = closedStatusIds(statuses);
+  return resolved.length ? resolved : ['done'];
+}
+
+// Statuses that mean work was delivered — category `done` alone. Everything that
+// measures output rather than "is there work left" asks this one, so a cancelled
+// task stops counting as a finished one.
+export function resolveDeliveredStatusIds(statuses) {
+  const resolved = deliveredStatusIds(statuses);
   return resolved.length ? resolved : ['done'];
 }
 

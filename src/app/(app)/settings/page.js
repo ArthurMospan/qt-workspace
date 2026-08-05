@@ -67,11 +67,12 @@ import {
   DEFAULT_PRIORITIES,
   DEFAULT_LABELS,
   DEFAULT_POSITIONS,
+  STATUS_CATEGORY_ICONS,
 } from '@/lib/hooks/useWorkflowConfig';
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
 import {
+  isClosingCategory,
   isStatusCategoryId,
-  isTerminalStatusCategory,
   STATUS_CATEGORIES,
   STATUS_CATEGORY_IDS,
 } from '@/lib/utils/statusCategories.mjs';
@@ -313,16 +314,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// Options for the per-status category control. Fixed set, canonical order — the
-// five categories are the shared vocabulary, so unlike the statuses themselves
-// they are not the organization's to extend.
-const STATUS_CATEGORY_OPTIONS = STATUS_CATEGORY_IDS.map(categoryId => ({
-  value: categoryId,
-  label: STATUS_CATEGORIES[categoryId].label,
-  dotColor: STATUS_CATEGORIES[categoryId].color,
-}));
-
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, category = '', onCategoryChange, categoryLocked = false, categoryLockReason = '' }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -415,37 +407,6 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
           {label}
         </span>
-      )}
-
-      {/* Category — statuses only. The name of a status is this organization's
-          business; its category is the layer every cross-project surface reads:
-          «Мої завдання» builds its columns from categories, and «Готово»/
-          «Скасовано» are what close a task, so progress, швидкість, прострочені
-          and рахунок all follow this control and nothing else.
-          It replaces the old «Завершальний» toggle, which was the same idea with
-          one value. The last remaining terminal category cannot be moved away
-          and the last open one cannot be closed — both are refused with a reason
-          rather than hidden, so the rule is visible instead of surprising. */}
-      {variant === 'status' && !editing && onCategoryChange && (
-        categoryLocked ? (
-          <span
-            title={categoryLockReason}
-            className="flex shrink-0 items-center gap-[6px] rounded-full px-[10px] py-[3px] text-[11px] font-semibold text-muted"
-          >
-            <Lock size={10} />
-            {STATUS_CATEGORIES[category]?.label || category}
-          </span>
-        ) : (
-          <Select
-            size="sm"
-            variant="ghost"
-            value={category}
-            onChange={onCategoryChange}
-            options={STATUS_CATEGORY_OPTIONS}
-            ariaLabel={`Категорія статусу «${item.label}»`}
-            className="w-[176px] shrink-0"
-          />
-        )
       )}
 
       {/* Actions */}
@@ -1807,37 +1768,91 @@ export default function SettingsPage() {
   const lbA = makeUpdater(setLabels);
   const posA = makeUpdater(setPositions);
 
-  // Move a status to another category. This is the generalisation of the old
-  // «Завершальний» toggle: `isDone` was the same idea with a single value, and it
-  // is now written out as a consequence of the category so nothing has to derive
-  // it. The two invariants the whole product rests on are enforced here and
-  // again in the API: something has to close a task, and something has to stay
-  // open for new work to land in.
-  const handleStatusCategoryChange = (id, category) => {
-    if (!isStatusCategoryId(category)) return;
-    const current = statuses.find(s => s.id === id);
-    if (!current || current.category === category) return;
-    const next = statuses.map(s => (s.id === id
-      ? { ...s, category, isDone: isTerminalStatusCategory(category) }
-      : s));
-    const terminalCount = next.filter(s => isTerminalStatusCategory(s.category)).length;
-    if (terminalCount === 0) {
-      showToast(
-        'Потрібен щонайменше один статус категорії «Готово» або «Скасовано» — '
-          + 'без нього не рахуються прогрес, швидкість і рахунок',
-        'error',
-      );
-      return;
+  // ── The workflow editor is a list per category ─────────────────────────────
+  // A status's category is where it sits, not a dropdown on its row: you move a
+  // status between «У роботі» and «Готово» by dragging it there, the way Linear
+  // and Shortcut do it. That makes the two-layer model visible instead of
+  // explained — and it means the flat array we save is always in category order,
+  // so a project board's columns come out in the order work actually flows.
+  const statusesByCategory = useMemo(() => {
+    const groups = new Map(STATUS_CATEGORY_IDS.map(categoryId => [categoryId, []]));
+    for (const status of statuses) {
+      const category = isStatusCategoryId(status.category) ? status.category : 'in-progress';
+      groups.get(category).push(status);
     }
-    if (terminalCount === next.length) {
-      showToast(
-        'Потрібен щонайменше один незавершальний статус — інакше нові завдання '
-          + 'одразу вважатимуться закритими',
-        'error',
-      );
-      return;
+    return groups;
+  }, [statuses]);
+
+  const flattenStatusGroups = groups => STATUS_CATEGORY_IDS.flatMap(
+    categoryId => (groups.get(categoryId) || []).map(status => ({
+      ...status,
+      category: categoryId,
+      isDone: isClosingCategory(categoryId),
+    })),
+  );
+
+  // The two invariants the whole product rests on, enforced here and again in the
+  // API: something has to close a task, and something has to stay open for new
+  // work to land in. Refused with the reason, never silently undone.
+  const statusGroupsBreakInvariant = next => {
+    const closing = next.filter(status => isClosingCategory(status.category)).length;
+    if (closing === 0) {
+      return 'Потрібен щонайменше один статус категорії «Готово» або «Скасовано» — '
+        + 'без нього не рахуються прогрес, швидкість і рахунок';
+    }
+    if (closing === next.length) {
+      return 'Потрібен щонайменше один відкритий статус — інакше нові завдання '
+        + 'одразу вважатимуться закритими';
+    }
+    return null;
+  };
+
+  const handleStatusDragEnd = result => {
+    const { source, destination } = result;
+    if (!destination) return;
+    if (
+      source.droppableId === destination.droppableId
+      && source.index === destination.index
+    ) return;
+    const groups = new Map(
+      [...statusesByCategory].map(([categoryId, items]) => [categoryId, [...items]]),
+    );
+    const from = groups.get(source.droppableId);
+    const to = groups.get(destination.droppableId);
+    if (!from || !to) return;
+    const [moved] = from.splice(source.index, 1);
+    if (!moved) return;
+    to.splice(destination.index, 0, moved);
+    const next = flattenStatusGroups(groups);
+    if (source.droppableId !== destination.droppableId) {
+      const problem = statusGroupsBreakInvariant(next);
+      if (problem) {
+        showToast(problem, 'error');
+        return;
+      }
     }
     setStatuses(next);
+  };
+
+  // Added into the category you pressed «+» on, and coloured like it: a status
+  // starts out looking like what it means, and can be recoloured after.
+  const handleAddStatus = categoryId => {
+    setStatuses(prev => {
+      const groups = new Map(STATUS_CATEGORY_IDS.map(id => [id, []]));
+      for (const status of prev) {
+        const category = isStatusCategoryId(status.category) ? status.category : 'in-progress';
+        groups.get(category).push(status);
+      }
+      groups.get(categoryId).push({
+        id: `s-${Date.now()}`,
+        label: 'Новий статус',
+        color: STATUS_CATEGORIES[categoryId].color,
+        category: categoryId,
+        isDone: isClosingCategory(categoryId),
+        isNew: true,
+      });
+      return flattenStatusGroups(groups);
+    });
   };
 
   const handleStatusDeleteClick = async (id) => {
@@ -1851,11 +1866,21 @@ export default function SettingsPage() {
       showToast('Дошка повинна мати хоча б одну видиму колонку', 'error');
       return;
     }
-    const target = statuses.find(s => s.id !== id && !s.isNew);
+    const problem = statusGroupsBreakInvariant(statuses.filter(s => s.id !== id));
+    if (problem) {
+      showToast(problem, 'error');
+      return;
+    }
+    // The tasks go to a status of the same category first: deleting «QA» must not
+    // send its work to «Готово» just because that happens to be next in the list.
+    const remaining = statuses.filter(s => s.id !== id && !s.isNew);
+    const target = remaining.find(s => s.category === targetStatus.category)
+      || remaining.find(s => !isClosingCategory(s.category))
+      || remaining[0];
     if (!target) return;
     if (!(await confirmDialog({
-      title: 'Видалити колонку?',
-      message: `Усі завдання зі статусом "${targetStatus.label}" буде атомарно переміщено в "${target.label}". Продовжити?`,
+      title: 'Видалити статус?',
+      message: `Усі завдання зі статусом «${targetStatus.label}» буде атомарно переміщено в «${target.label}». Продовжити?`,
       confirmText: 'Видалити й перемістити',
       danger: true,
     }))) return;
@@ -2839,71 +2864,94 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'statuses': {
-        const terminalStatuses = statuses.filter(s => isTerminalStatusCategory(s.category));
-        const openStatuses = statuses.filter(s => !isTerminalStatusCategory(s.category));
+        const closingStatuses = statuses.filter(s => isClosingCategory(s.category));
+        const openStatuses = statuses.filter(s => !isClosingCategory(s.category));
+        // The last status that closes a task and the last one that stays open
+        // cannot be deleted — the same two invariants the drag guard enforces,
+        // shown as a disabled control rather than a refusal after the click.
+        const canDeleteStatus = status => (
+          statuses.filter(s => !s.isNew).length > 1
+          && !(isClosingCategory(status.category) && closingStatuses.length === 1)
+          && !(!isClosingCategory(status.category) && openStatuses.length === 1)
+        );
         return (
-        <Section title="Статуси завдань" desc="Назва статусу — ваша, категорія — спільна. Назв може бути скільки завгодно («Код-ревʼю», «QA», «Погодження»), а категорій рівно пʼять, і саме вони працюють там, де завдання різних проєктів зустрічаються: «Мої завдання» будують колонки з категорій, а «Готово» і «Скасовано» закривають задачу — за ними рахуються прогрес, швидкість, прострочені та рахунок. Тому щонайменше один статус має закривати задачу і щонайменше один — залишатися відкритим.">
+        <Section title="Статуси завдань" desc="Назва статусу — ваша, категорія — спільна. Назв може бути скільки завгодно («Код-ревʼю», «QA», «Погодження»), а категорій рівно пʼять, і саме вони працюють там, де зустрічаються завдання різних проєктів: «Мої завдання» будують колонки з категорій, а «Готово» закриває задачу й дає результат, «Скасовано» — лише закриває. Категорія статусу — це те, у якій секції він лежить: перетягніть його, щоб змінити.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
             <Card preset="borderless">
-              <DragDropContext onDragEnd={(res) => handleDragEnd(res, statuses, setStatuses)}>
-                <Droppable droppableId="statuses-list">
-                  {(provided) => (
-                    <div ref={provided.innerRef} {...provided.droppableProps}>
-                      {statuses.map((s, i) => (
-                        <Draggable key={s.id || `new-${i}`} draggableId={s.id || `new-${i}`} index={i}>
-                          {(provided) => (
-                            <WorkflowItem item={s}
-                              onSave={stA.onSave} onDelete={handleStatusDeleteClick}
-                              canDelete={statuses.length > 1 && !['backlog', 'done'].includes(s.id)}
-                              variant="status"
-                              category={s.category}
-                              onCategoryChange={value => handleStatusCategoryChange(s.id, value)}
-                              categoryLocked={
-                                (terminalStatuses.length === 1 && terminalStatuses[0]?.id === s.id)
-                                || (openStatuses.length === 1 && openStatuses[0]?.id === s.id)
-                              }
-                              categoryLockReason={isTerminalStatusCategory(s.category)
-                                ? 'Єдиний статус, що закриває задачу — без нього не рахуються прогрес, швидкість і рахунок'
-                                : 'Єдиний відкритий статус — новим завданням більше нікуди потрапляти'}
-                              provided={provided}
-                            />
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
+              <DragDropContext onDragEnd={handleStatusDragEnd}>
+                {STATUS_CATEGORY_IDS.map((categoryId, categoryIndex) => {
+                  const category = STATUS_CATEGORIES[categoryId];
+                  const CategoryIcon = STATUS_CATEGORY_ICONS[categoryId];
+                  const items = statusesByCategory.get(categoryId) || [];
+                  return (
+                    <section
+                      key={categoryId}
+                      className={categoryIndex > 0 ? 'mt-5 border-t border-line pt-5' : ''}
+                    >
+                      <header className="mb-2 flex items-start gap-[10px]">
+                        <CategoryIcon
+                          size={16}
+                          strokeWidth={2}
+                          style={{ color: category.color }}
+                          className="mt-[2px] shrink-0"
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="ui-type-card-title text-ink">{category.label}</h3>
+                            <Pill tone="count" size="md">{items.length}</Pill>
+                          </div>
+                          <p className="mt-[2px] text-[12px] leading-snug text-muted">
+                            {category.hint}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleAddStatus(categoryId)}
+                          style="ghost"
+                          size="icon"
+                          icon={Plus}
+                          title={`Додати статус у «${category.label}»`}
+                          aria-label={`Додати статус у «${category.label}»`}
+                        />
+                      </header>
+                      <Droppable droppableId={categoryId}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`rounded-[12px] transition-colors ${
+                              snapshot.isDraggingOver ? 'bg-canvas' : ''
+                            }`}
+                          >
+                            {items.map((s, i) => (
+                              <Draggable key={s.id || `new-${i}`} draggableId={s.id || `new-${i}`} index={i}>
+                                {(dragProvided) => (
+                                  <WorkflowItem item={s}
+                                    onSave={stA.onSave} onDelete={handleStatusDeleteClick}
+                                    canDelete={canDeleteStatus(s)}
+                                    variant="status"
+                                    provided={dragProvided}
+                                  />
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                            {items.length === 0 && !snapshot.isDraggingOver && (
+                              <p className="px-[8px] py-[10px] text-[12px] text-faint">
+                                Немає статусів. Перетягніть сюди статус або натисніть «+».
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </Droppable>
+                    </section>
+                  );
+                })}
               </DragDropContext>
-              <Button
-                onClick={() => {
-                  setStatuses(p => {
-                    const newStatuses = [...p];
-                    // Added before the last column, and «У роботі» by default:
-                    // a status somebody adds by hand is almost always another
-                    // step of the work itself (ревʼю, QA, погодження).
-                    newStatuses.splice(newStatuses.length - 1, 0, {
-                      id: `s-${Date.now()}`,
-                      label: 'Новий статус',
-                      color: '#6366f1',
-                      category: 'in-progress',
-                      isDone: false,
-                      isNew: true,
-                    });
-                    return newStatuses;
-                  });
-                }}
-                style="ghost" size="lg"
-                icon={Plus}
-                composition="settings-row-action"
-                className="mt-2"
-              >
-                Додати статус
-              </Button>
             </Card>
           )}
           {!wfLoading && renderWorkflowResetFooter()}

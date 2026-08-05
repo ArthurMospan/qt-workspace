@@ -43,7 +43,7 @@ import {
 } from '@/lib/utils/issueStatusTransition.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import {
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   resolveEntryStatusId,
 } from '@/lib/utils/workflowDefaults.mjs';
 
@@ -408,7 +408,7 @@ function importedWorkflowFields({
     priority,
     type: typeSelection.type,
     labelIds: labelIdsFor(tags, workflow),
-    doneStatusIds: resolveDoneStatusIds(workflow.statuses),
+    closedStatusIds: resolveClosedStatusIds(workflow.statuses),
   };
 }
 
@@ -584,14 +584,14 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       });
       const currentStatus = currentIssue.columnId || currentIssue.status || null;
       const nextStatus = workflowFields.status;
-      const doneStatusSet = new Set(workflowFields.doneStatusIds);
+      const closedStatusSet = new Set(workflowFields.closedStatusIds);
       const enteringTerminal = (
-        !doneStatusSet.has(currentStatus)
-        && doneStatusSet.has(nextStatus)
+        !closedStatusSet.has(currentStatus)
+        && closedStatusSet.has(nextStatus)
       );
       const leavingTerminal = (
-        doneStatusSet.has(currentStatus)
-        && !doneStatusSet.has(nextStatus)
+        closedStatusSet.has(currentStatus)
+        && !closedStatusSet.has(nextStatus)
       );
       let transitionError = null;
 
@@ -653,7 +653,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
           issueId: currentIssue.id,
           issue: currentIssue,
           nextStatusId: nextStatus,
-          doneStatusIds: workflowFields.doneStatusIds,
+          closedStatusIds: workflowFields.closedStatusIds,
           childIssues,
           parentIssue,
           issueLinks: rawLinks,
@@ -669,7 +669,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       if (!transitionError) {
         acceptedWorkflowFields.columnId = nextStatus;
         acceptedWorkflowFields.status = nextStatus;
-        acceptedWorkflowFields.completedAt = doneStatusSet.has(nextStatus)
+        acceptedWorkflowFields.completedAt = closedStatusSet.has(nextStatus)
           ? timestamp(issue.resolved || issue.updated, sourceUpdatedAt)
           : admin.firestore.FieldValue.delete();
       }
@@ -738,13 +738,13 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       typeName,
       tags,
     });
-    const { doneStatusIds, ...persistedWorkflowFields } = workflowFields;
+    const { closedStatusIds, ...persistedWorkflowFields } = workflowFields;
     const next = (project.issueCounter || 0) + 1;
     const issueKey = `${cleanProjectPrefix(project.issuePrefix || project.name)}-${next}`;
     transaction.create(issueRef, {
       ...importedFields,
       ...persistedWorkflowFields,
-      ...(doneStatusIds.includes(workflowFields.status)
+      ...(closedStatusIds.includes(workflowFields.status)
         ? { completedAt: timestamp(issue.resolved || issue.updated, sourceUpdatedAt) }
         : {}),
       organizationId: job.organizationId,
@@ -1321,7 +1321,7 @@ async function processPendingLink(jobRef, job) {
     }
 
     if (!existingLink.exists) {
-      const doneStatusIds = resolveDoneStatusIds(
+      const closedStatusIds = resolveClosedStatusIds(
         workflowValues(workflowSnapshot).statuses,
       );
       const statusConflict = issueBlockLinkStatusConflict({
@@ -1334,7 +1334,7 @@ async function processPendingLink(jobRef, job) {
           ...freshTarget.data(),
         },
         relationType: canonical.relationType,
-        doneStatusIds,
+        closedStatusIds,
       });
       if (statusConflict) {
         transaction.update(rowSnapshot.ref, {

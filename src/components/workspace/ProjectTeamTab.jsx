@@ -38,8 +38,9 @@ export default function ProjectTeamTab({
   const searchParams = useSearchParams();
   const showToast = useWorkspaceStore(state => state.showToast);
   const { byUser } = useProjectTimeLogs(projectId);
-  const { doneStatusIds } = useWorkflowConfig();
-  const doneSet = new Set(doneStatusIds);
+  const { closedStatusIds, deliveredStatusIds } = useWorkflowConfig();
+  // Workload counts what is still open; the badge counts what was delivered.
+  const deliveredSet = new Set(deliveredStatusIds);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -51,14 +52,14 @@ export default function ProjectTeamTab({
   }, [allMembers, memberSearch]);
   const visibleMembers = useMemo(() => members.filter(member => {
     const uid = member.id || member.uid;
-    const completedStatuses = new Set(doneStatusIds);
+    const completedStatuses = new Set(closedStatusIds);
     const assigned = issues.some(issue =>
       issue.assigneeIds?.includes(uid) && !completedStatuses.has(issue.columnId || issue.status));
     if (roleFilter !== 'all' && member.role !== roleFilter) return false;
     if (workloadFilter === 'assigned' && !assigned) return false;
     if (workloadFilter === 'available' && assigned) return false;
     return true;
-  }), [doneStatusIds, issues, members, roleFilter, workloadFilter]);
+  }), [closedStatusIds, issues, members, roleFilter, workloadFilter]);
 
   const toggleMember = userId => {
     if (userId === project?.createdBy) return;
@@ -106,7 +107,7 @@ export default function ProjectTeamTab({
             {visibleMembers.map(member => {
               const uid = member.id || member.uid;
               const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
-              const done = memberIssues.filter(issue => doneSet.has(issue.columnId || issue.status)).length;
+              const done = memberIssues.filter(issue => deliveredSet.has(issue.columnId || issue.status)).length;
               const open = memberIssues.length - done;
               const mins = byUser[uid] || 0;
               const h = Math.floor(mins / 60);

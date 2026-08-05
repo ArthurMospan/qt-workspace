@@ -38,14 +38,17 @@ export default function AnalyticsTab({
   typeFilter = 'all',
 }) {
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
-  const { statuses, doneStatusIds, priorities } = useWorkflowConfig();
+  const { statuses, closedStatusIds, deliveredStatusIds, priorities } = useWorkflowConfig();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
 
-  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
+  // See the workspace analytics page: closed is "no work left", delivered is
+  // "something was produced", and only the second may drive a percentage.
+  const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   // Both used to be guessed: the backlog as "the first status in the list", and
   // work in progress as the literal id 'in-progress'. Categories say it outright.
   const backlogSet = useMemo(() => new Set(backlogStatusIds(statuses)), [statuses]);
@@ -65,22 +68,22 @@ export default function AnalyticsTab({
 
   const stats = useMemo(() => {
     const total   = filteredIssues.length;
-    const done    = filteredIssues.filter(i => doneSet.has(i.columnId || i.status)).length;
+    const done    = filteredIssues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
     const inProg  = filteredIssues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
     const blockerPriority = filteredIssues.filter(i => (
       i.priority === 'blocker'
-      && !doneSet.has(i.columnId || i.status)
+      && !closedSet.has(i.columnId || i.status)
     )).length;
     const dependencyBlocked = filteredIssues.filter(i => (
-      !doneSet.has(i.columnId || i.status)
-      && openBlockerIssues(i.id, issues, issueLinks, doneSet).length > 0
+      !closedSet.has(i.columnId || i.status)
+      && openBlockerIssues(i.id, issues, issueLinks, closedSet).length > 0
     )).length;
     const overdue = filteredIssues.filter(i => {
       const due = parseDueDate(i.dueDate);
-      return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
+      return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
     });
-    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !doneSet.has(i.columnId || i.status));
-    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !doneSet.has(i.columnId || i.status));
+    const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !closedSet.has(i.columnId || i.status));
+    const unestimated = filteredIssues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !closedSet.has(i.columnId || i.status));
     const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
     // Budget
@@ -93,12 +96,12 @@ export default function AnalyticsTab({
     const weekAgo = now - 7 * 24 * 3600 * 1000;
     const twoWeeksAgo = now - 14 * 24 * 3600 * 1000;
     const recentDone = filteredIssues.filter(i => {
-      if (!doneSet.has(i.columnId || i.status)) return false;
+      if (!deliveredSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > weekAgo;
     }).length;
     const prevDone = filteredIssues.filter(i => {
-      if (!doneSet.has(i.columnId || i.status)) return false;
+      if (!deliveredSet.has(i.columnId || i.status)) return false;
       const t = getCompletedAtMillis(i);
       return t > twoWeeksAgo && t <= weekAgo;
     }).length;
@@ -119,7 +122,7 @@ export default function AnalyticsTab({
       color: priority.color,
       count: filteredIssues.filter(i => (
         i.priority === priority.id
-        && !doneSet.has(i.columnId || i.status)
+        && !closedSet.has(i.columnId || i.status)
       )).length,
     })).filter(s => s.count > 0);
 
@@ -127,11 +130,11 @@ export default function AnalyticsTab({
     const memberStats = members.map(m => {
       const uid    = m.id || m.uid;
       const mine   = filteredIssues.filter(i => i.assigneeIds?.includes(uid));
-      const mDone  = mine.filter(i => doneSet.has(i.columnId || i.status)).length;
-      const mOpen  = mine.filter(i => !doneSet.has(i.columnId || i.status)).length;
+      const mDone  = mine.filter(i => deliveredSet.has(i.columnId || i.status)).length;
+      const mOpen  = mine.filter(i => !closedSet.has(i.columnId || i.status)).length;
       const mOverdue = mine.filter(i => {
         const due = parseDueDate(i.dueDate);
-        return due && due.getTime() < now && !doneSet.has(i.columnId || i.status);
+        return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
       }).length;
       const mMin  = byUser[uid] || 0;
       return { m, uid, total: mine.length, done: mDone, open: mOpen, overdue: mOverdue, minutes: mMin };
@@ -150,7 +153,8 @@ export default function AnalyticsTab({
     byUser,
     statuses,
     priorities,
-    doneSet,
+    closedSet,
+    deliveredSet,
     backlogSet,
     inProgressSet,
     issueLinks,

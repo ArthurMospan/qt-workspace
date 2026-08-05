@@ -52,7 +52,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
-  const { types, priorities, statuses, doneStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
   const statusObj = showStatusName
     ? statuses.find(status => status.id === (issue.columnId || issue.status)) || null
     : null;
@@ -81,14 +81,14 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     .filter(Boolean);
 
   const due       = parseDueDate(issue.dueDate);
-  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
+  const isOverdue = due && due < new Date() && !closedStatusIds.includes(issue.columnId || issue.status);
 
   const contextIssues = allIssues || issues;
   const parentIssueId = existingParentIssueId(issue);
   const parentIssue = contextIssues.find(candidate => candidate.id === parentIssueId);
   const childIssues = contextIssues.filter(candidate => existingParentIssueId(candidate) === issue.id);
   const childAll = childIssues.length;
-  const childDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const childDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
   const checklistAll = (issue.subtasks || []).length;
   const checklistDone = (issue.subtasks || []).filter(item => item.done).length;
   const attachCount = (issue.attachments || []).length;
@@ -99,7 +99,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     issue.id,
     contextIssues,
     issueLinks,
-    doneStatusIds,
+    closedStatusIds,
   ).length > 0;
 
   const renderCardContent = (provided = {}, snapshot = {}) => {

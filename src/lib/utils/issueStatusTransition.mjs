@@ -169,9 +169,9 @@ function executionViolationKey(violation) {
 export function issueExecutionGraphViolations({
   issues = [],
   issueLinks = [],
-  doneStatusIds = [],
+  closedStatusIds = [],
 } = {}) {
-  const doneStatusSet = doneSetOf(doneStatusIds);
+  const closedStatusSet = closedSetOf(closedStatusIds);
   const issuesById = issueMapOf(issues);
   const violations = new Map();
 
@@ -183,8 +183,8 @@ export function issueExecutionGraphViolations({
     if (
       liveIssue(parent)
       && sameExecutionScope(parent, child)
-      && doneStatusSet.has(issueStatusId(parent))
-      && !doneStatusSet.has(issueStatusId(child))
+      && closedStatusSet.has(issueStatusId(parent))
+      && !closedStatusSet.has(issueStatusId(child))
     ) {
       const violation = {
         type: 'completed-parent-open-child',
@@ -202,8 +202,8 @@ export function issueExecutionGraphViolations({
       liveIssue(blocker)
       && liveIssue(target)
       && sameExecutionScope(blocker, target)
-      && doneStatusSet.has(issueStatusId(target))
-      && !doneStatusSet.has(issueStatusId(blocker))
+      && closedStatusSet.has(issueStatusId(target))
+      && !closedStatusSet.has(issueStatusId(blocker))
     ) {
       const violation = {
         type: 'completed-target-open-blocker',
@@ -223,26 +223,26 @@ export function introducedIssueExecutionViolations({
   currentIssues = [],
   nextIssues = [],
   issueLinks = [],
-  currentDoneStatusIds = [],
-  nextDoneStatusIds = [],
+  currentClosedStatusIds = [],
+  nextClosedStatusIds = [],
 } = {}) {
   const currentKeys = new Set(
     issueExecutionGraphViolations({
       issues: currentIssues,
       issueLinks,
-      doneStatusIds: currentDoneStatusIds,
+      closedStatusIds: currentClosedStatusIds,
     }).map(executionViolationKey),
   );
   return issueExecutionGraphViolations({
     issues: nextIssues,
     issueLinks,
-    doneStatusIds: nextDoneStatusIds,
+    closedStatusIds: nextClosedStatusIds,
   }).filter(violation => !currentKeys.has(executionViolationKey(violation)));
 }
 
-function doneSetOf(doneStatusIds) {
+function closedSetOf(closedStatusIds) {
   return new Set(
-    [...(doneStatusIds || [])]
+    [...(closedStatusIds || [])]
       .map(value => (typeof value === 'string' ? value.trim() : ''))
       .filter(Boolean),
   );
@@ -292,13 +292,13 @@ function transitionError(code, message, details) {
 export function issueParentStatusConflict({
   issue,
   parentIssue,
-  doneStatusIds = [],
+  closedStatusIds = [],
 } = {}) {
   if (!liveIssue(issue) || !liveIssue(parentIssue)) return null;
-  const doneStatusSet = doneSetOf(doneStatusIds);
+  const closedStatusSet = closedSetOf(closedStatusIds);
   if (
-    doneStatusSet.has(issueStatusId(parentIssue))
-    && !doneStatusSet.has(issueStatusId(issue))
+    closedStatusSet.has(issueStatusId(parentIssue))
+    && !closedStatusSet.has(issueStatusId(issue))
   ) {
     return transitionError(
       'COMPLETED_PARENT_REQUIRES_COMPLETED_CHILD',
@@ -315,7 +315,7 @@ export function issueBlockLinkStatusConflict({
   sourceIssue,
   targetIssue,
   relationType,
-  doneStatusIds = [],
+  closedStatusIds = [],
 } = {}) {
   if (
     relationType !== 'blocks'
@@ -324,10 +324,10 @@ export function issueBlockLinkStatusConflict({
   ) {
     return null;
   }
-  const doneStatusSet = doneSetOf(doneStatusIds);
+  const closedStatusSet = closedSetOf(closedStatusIds);
   if (
-    doneStatusSet.has(issueStatusId(targetIssue))
-    && !doneStatusSet.has(issueStatusId(sourceIssue))
+    closedStatusSet.has(issueStatusId(targetIssue))
+    && !closedStatusSet.has(issueStatusId(sourceIssue))
   ) {
     return transitionError(
       'COMPLETED_TARGET_REQUIRES_COMPLETED_BLOCKER',
@@ -350,7 +350,7 @@ export function evaluateIssueStatusTransition({
   issueId,
   issue,
   nextStatusId,
-  doneStatusIds = [],
+  closedStatusIds = [],
   childIssues = [],
   parentIssue = null,
   issueLinks = [],
@@ -358,11 +358,11 @@ export function evaluateIssueStatusTransition({
 } = {}) {
   const currentIssueId = cleanId(issueId);
   const fromStatusId = issueStatusId(issue);
-  const doneStatusSet = doneSetOf(doneStatusIds);
-  const wasDone = doneStatusSet.has(fromStatusId);
-  const willBeDone = doneStatusSet.has(nextStatusId);
-  const enteringTerminal = !wasDone && willBeDone;
-  const leavingTerminal = wasDone && !willBeDone;
+  const closedStatusSet = closedSetOf(closedStatusIds);
+  const wasClosed = closedStatusSet.has(fromStatusId);
+  const willBeClosed = closedStatusSet.has(nextStatusId);
+  const enteringTerminal = !wasClosed && willBeClosed;
+  const leavingTerminal = wasClosed && !willBeClosed;
   const relatedById = issueMapOf([
     ...(Array.isArray(relatedIssues) ? relatedIssues : []),
     ...(Array.isArray(childIssues) ? childIssues : []),
@@ -376,7 +376,7 @@ export function evaluateIssueStatusTransition({
         .filter(child => (
           liveIssue(child)
           && existingParentIssueId(child) === currentIssueId
-          && !doneStatusSet.has(issueStatusId(child))
+          && !closedStatusSet.has(issueStatusId(child))
         ))
         .map(child => [cleanId(child.id), child]),
     ).values()]
@@ -386,7 +386,7 @@ export function evaluateIssueStatusTransition({
     ? blockEdges.flatMap(edge => {
       if (edge.targetIssueId !== currentIssueId) return [];
       const blocker = relatedById.get(edge.sourceIssueId);
-      return liveIssue(blocker) && !doneStatusSet.has(issueStatusId(blocker))
+      return liveIssue(blocker) && !closedStatusSet.has(issueStatusId(blocker))
         ? [blocker]
         : [];
     })
@@ -397,7 +397,7 @@ export function evaluateIssueStatusTransition({
     && parentIssueId
     && cleanId(parentIssue?.id) === parentIssueId
     && liveIssue(parentIssue)
-    && doneStatusSet.has(issueStatusId(parentIssue))
+    && closedStatusSet.has(issueStatusId(parentIssue))
     ? parentIssue
     : null;
 
@@ -405,7 +405,7 @@ export function evaluateIssueStatusTransition({
     ? blockEdges.flatMap(edge => {
       if (edge.sourceIssueId !== currentIssueId) return [];
       const target = relatedById.get(edge.targetIssueId);
-      return liveIssue(target) && doneStatusSet.has(issueStatusId(target))
+      return liveIssue(target) && closedStatusSet.has(issueStatusId(target))
         ? [target]
         : [];
     })

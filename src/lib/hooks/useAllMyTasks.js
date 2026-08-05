@@ -35,7 +35,7 @@ export function useAllMyTasks(userId) {
     orgLoading,
     projectsLoading,
   } = useAppContext();
-  const { doneStatusIds, statuses } = useWorkflowConfig();
+  const { closedStatusIds, statuses } = useWorkflowConfig();
   const [snapshotTasks, setSnapshotTasks] = useState([]);
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
@@ -145,14 +145,14 @@ export function useAllMyTasks(userId) {
   // task may not be closed while real work under it is still open.
   const assertCompletable = useCallback((taskId, current, nextStatus) => {
     if (!current || !nextStatus) return;
-    const wasDone = doneStatusIds.includes(current.columnId || current.status);
-    const willBeDone = doneStatusIds.includes(nextStatus);
-    if (!willBeDone || wasDone) return;
+    const wasClosed = closedStatusIds.includes(current.columnId || current.status);
+    const willBeClosed = closedStatusIds.includes(nextStatus);
+    if (!willBeClosed || wasClosed) return;
     const blockers = issueCompletionBlockers({
       issueId: taskId,
       issues: allIssues,
       issueLinks,
-      doneStatusIds,
+      closedStatusIds,
     });
     if (blockers.canComplete) return;
     const reasons = [];
@@ -167,7 +167,7 @@ export function useAllMyTasks(userId) {
       );
     }
     throw new Error(`Не можна завершити завдання — ${reasons.join('; ')}.`);
-  }, [allIssues, doneStatusIds, issueLinks]);
+  }, [allIssues, closedStatusIds, issueLinks]);
 
   /**
    * A drop on the "Мої завдання" board. Its columns mix projects, but `order`

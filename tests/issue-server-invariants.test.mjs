@@ -189,7 +189,7 @@ test('external task creators resolve the fresh workflow in their create transact
     assert.ok(transactionStart > 0 && workflowRead > transactionStart);
     assert.ok(workflowRead < issueCreate);
     assert.match(source, /hiddenColumns/);
-    assert.match(source, /resolveDoneStatusIds/);
+    assert.match(source, /resolveClosedStatusIds/);
   }
 });
 

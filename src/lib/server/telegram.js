@@ -9,7 +9,7 @@ import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
@@ -221,7 +221,7 @@ export async function createIssueFromTelegram({
     );
     if (typeSelection.error) throw new Error(typeSelection.error.message);
     const type = typeSelection.type;
-    const completed = resolveDoneStatusIds(workflow.statuses).includes(status);
+    const completed = resolveClosedStatusIds(workflow.statuses).includes(status);
     const next = (project.issueCounter || 0) + 1;
     issueKey = `${projectIssuePrefix(project)}-${next}`;
     const now = admin.firestore.FieldValue.serverTimestamp();

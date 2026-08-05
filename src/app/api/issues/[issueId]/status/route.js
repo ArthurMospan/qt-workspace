@@ -15,7 +15,7 @@ import {
 } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   statusLabel,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
@@ -221,17 +221,17 @@ export async function PATCH(request, context) {
           { statusId: requestedStatus },
         );
       }
-      const doneStatusIds = resolveDoneStatusIds(workflow.statuses)
+      const closedStatusIds = resolveClosedStatusIds(workflow.statuses)
         .filter(statusId => typeof statusId === 'string' && statusId.trim());
-      const doneStatusSet = new Set(doneStatusIds);
+      const closedStatusSet = new Set(closedStatusIds);
       const currentStatus = current.columnId || current.status || null;
       const enteringTerminal = (
-        !doneStatusSet.has(currentStatus)
-        && doneStatusSet.has(requestedStatus)
+        !closedStatusSet.has(currentStatus)
+        && closedStatusSet.has(requestedStatus)
       );
       const leavingTerminal = (
-        doneStatusSet.has(currentStatus)
-        && !doneStatusSet.has(requestedStatus)
+        closedStatusSet.has(currentStatus)
+        && !closedStatusSet.has(requestedStatus)
       );
 
       let childDocuments = [];
@@ -340,7 +340,7 @@ export async function PATCH(request, context) {
         issueId,
         issue: current,
         nextStatusId: requestedStatus,
-        doneStatusIds,
+        closedStatusIds,
         childIssues,
         parentIssue,
         issueLinks: rawLinks,
@@ -358,7 +358,7 @@ export async function PATCH(request, context) {
         );
       }
 
-      const willBeDone = doneStatusSet.has(requestedStatus);
+      const willBeClosed = closedStatusSet.has(requestedStatus);
       const hasCompletedAt = Object.prototype.hasOwnProperty.call(current, 'completedAt');
       const statusFieldsChanged = (
         current.columnId !== requestedStatus
@@ -368,8 +368,8 @@ export async function PATCH(request, context) {
         requestedOrder !== undefined
         && current.order !== requestedOrder
       );
-      const completedAtNeedsSet = willBeDone && !current.completedAt;
-      const completedAtNeedsClear = !willBeDone && hasCompletedAt;
+      const completedAtNeedsSet = willBeClosed && !current.completedAt;
+      const completedAtNeedsClear = !willBeClosed && hasCompletedAt;
       const peerChanges = orderUpdates.flatMap(update => {
         const document = additionalById.get(update.issueId);
         return document.data().order !== update.order
@@ -390,7 +390,7 @@ export async function PATCH(request, context) {
           order: current.order ?? null,
           reorderedIssueCount: 0,
           completedAtChange: null,
-          completed: willBeDone,
+          completed: willBeClosed,
         };
       }
 
@@ -444,7 +444,7 @@ export async function PATCH(request, context) {
         completedAtChange: completedAtNeedsSet
           ? 'set'
           : (completedAtNeedsClear ? 'cleared' : null),
-        completed: willBeDone,
+        completed: willBeClosed,
       };
     });
 

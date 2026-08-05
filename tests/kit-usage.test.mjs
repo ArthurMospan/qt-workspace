@@ -162,7 +162,12 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   const taskIdentity = readFileSync(new URL('../src/components/ui/TaskManagement/TaskIdentity.jsx', import.meta.url), 'utf8');
   assert.match(taskIdentity, /showProjectName && Boolean\(projectName\)/);
   assert.match(myTasks, /hiddenGroupIds=\{hiddenCategories\}/);
-  assert.match(project, /hiddenGroupIds=\{project\?\.hiddenColumns \|\| \[\]\}/);
+  // Hidden columns are status ids, so they mean nothing to a list grouped by
+  // category — there the sections are the five shared ones and nothing is folded.
+  assert.match(
+    project,
+    /hiddenGroupIds=\{boardGrouping === 'category' \? \[\] : \(project\?\.hiddenColumns \|\| \[\]\)\}/,
+  );
   assert.match(myTasks, /<AgileBoard[\s\S]{0,500}showHiddenLane/);
   assert.match(myTasks, /<AgileBoard[\s\S]{0,600}onRequestAddIssue=/);
   assert.doesNotMatch(project, /<AgileBoard[\s\S]{0,700}showHiddenLane/);

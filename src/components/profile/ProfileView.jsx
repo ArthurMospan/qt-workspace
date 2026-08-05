@@ -48,7 +48,7 @@ export default function ProfileView({ user, onClose }) {
   const router = useRouter();
   const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
   const { tasks } = useAllMyTasks(user?.id || user?.uid);
-  const { positions = [], doneStatusIds } = useWorkflowConfig();
+  const { positions = [], closedStatusIds } = useWorkflowConfig();
   const { members: orgMembers } = useOrganization();
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
   const [activeTab, setActiveTab] = useState('profile');
@@ -68,7 +68,7 @@ export default function ProfileView({ user, onClose }) {
 
   const allActiveTasks = tasks.filter(task => {
     const project = projects.find(item => item.id === task.projectId);
-    return project?.status !== 'archived' && !doneStatusIds.includes(task.columnId || task.status);
+    return project?.status !== 'archived' && !closedStatusIds.includes(task.columnId || task.status);
   });
   const nowTime = now;
   const agendaEvents = calendarEvents

@@ -80,7 +80,7 @@ test('deadline candidates skip terminal issues and dedupe the overdue nag per da
     },
   ], {
     nowMs,
-    doneStatusIdsByOrganization: new Map([['org-1', new Set(['closed'])]]),
+    closedStatusIdsByOrganization: new Map([['org-1', new Set(['closed'])]]),
     timeZonesByOrganization: new Map([['org-1', 'Europe/Kyiv']]),
   });
 
@@ -158,7 +158,7 @@ const overdueIssue = dueDate => ({
 
 const sweepOverdue = (dueDate, nowMs) => deadlineReminderCandidates([overdueIssue(dueDate)], {
   nowMs,
-  doneStatusIdsByOrganization: new Map([['org-1', new Set(['closed'])]]),
+  closedStatusIdsByOrganization: new Map([['org-1', new Set(['closed'])]]),
   timeZonesByOrganization: new Map([['org-1', 'Europe/Kyiv']]),
 });
 

@@ -145,18 +145,18 @@ function actionableDescendantIds(parentId, index) {
  * legacy hierarchy is reduced to its leaf descendants so it cannot count an
  * intermediate summary and its children at the same time.
  */
-export function buildParentIssueProgress(issues = [], doneStatusIds = []) {
+export function buildParentIssueProgress(issues = [], closedStatusIds = []) {
   const index = buildIssueAccountingIndex(issues);
-  const doneSet = doneStatusIds instanceof Set
-    ? doneStatusIds
-    : new Set(doneStatusIds);
+  const closedSet = closedStatusIds instanceof Set
+    ? closedStatusIds
+    : new Set(closedStatusIds);
 
   return [...index.summaryIssueIds].map(parentId => {
     const childIds = actionableDescendantIds(parentId, index);
     const done = childIds.reduce((count, childId) => {
       const child = index.byId.get(childId);
       const statusId = child?.columnId || child?.status;
-      return count + (doneSet.has(statusId) ? 1 : 0);
+      return count + (closedSet.has(statusId) ? 1 : 0);
     }, 0);
     return {
       issue: index.byId.get(parentId),

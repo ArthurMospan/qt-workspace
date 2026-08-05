@@ -584,7 +584,7 @@ export default function WorkspacePage() {
   const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members, loading: orgLoading } = useOrganization();
-  const { labels, doneStatusIds, statuses } = useWorkflowConfig();
+  const { labels, deliveredStatusIds, statuses } = useWorkflowConfig();
   const { sprints } = useSprints();
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -665,23 +665,24 @@ export default function WorkspacePage() {
     return () => window.removeEventListener('quickteam:issue-activity', handleIssueActivity);
   }, []);
 
-  // Real progress per project: % of issues in a terminal status (the stored
-  // `progress` field is never updated). Terminal statuses come from the config.
+  // Real progress per project: % of issues actually delivered (the stored
+  // `progress` field is never updated). Delivered, not merely closed — a project
+  // whose tasks were cancelled has not made that much progress.
   const progressByProject = useMemo(() => {
-    const doneSet = new Set(doneStatusIds);
+    const deliveredSet = new Set(deliveredStatusIds);
     const counts = {};
     for (const issue of allIssues) {
       if (!issue.projectId) continue;
       const entry = counts[issue.projectId] || (counts[issue.projectId] = { total: 0, done: 0 });
       entry.total++;
-      if (doneSet.has(issue.columnId || issue.status)) entry.done++;
+      if (deliveredSet.has(issue.columnId || issue.status)) entry.done++;
     }
     const pct = {};
     for (const [pid, { total, done }] of Object.entries(counts)) {
       pct[pid] = total > 0 ? Math.round((done / total) * 100) : 0;
     }
     return pct;
-  }, [allIssues, doneStatusIds]);
+  }, [allIssues, deliveredStatusIds]);
 
   const issuesByProject = useMemo(() => {
     const grouped = {};

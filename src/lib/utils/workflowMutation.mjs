@@ -1,7 +1,7 @@
 // Relative, not aliased: this module is loaded straight by `node --test`.
 import {
   isStatusCategoryId,
-  isTerminalStatusCategory,
+  isClosingCategory,
   withStatusCategories,
 } from './statusCategories.mjs';
 
@@ -99,7 +99,7 @@ function normalizeWorkflowSection(section, items) {
   // Every saved status carries an explicit category and an `isDone` that agrees
   // with it, so no reader ever has to derive either and the two can never drift.
   const statuses = withStatusCategories(normalized);
-  const terminal = statuses.filter(status => isTerminalStatusCategory(status.category));
+  const terminal = statuses.filter(status => isClosingCategory(status.category));
   if (terminal.length === 0) {
     return mutationError(
       'MISSING_TERMINAL_STATUS',

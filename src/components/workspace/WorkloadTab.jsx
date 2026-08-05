@@ -610,8 +610,11 @@ export default function WorkloadTab({
   detailFilters,
 }) {
   const [now, setNow] = useState(() => Date.now());
-  const { doneStatusIds, positions = [], statuses } = useWorkflowConfig();
-  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const { closedStatusIds, deliveredStatusIds, positions = [], statuses } = useWorkflowConfig();
+  // What is left to do reads the closed set; what a person actually finished in
+  // the period reads the delivered one — a task they cancelled is not output.
+  const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
+  const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   // The category, not the literal id 'in-progress': an org that renamed that
   // column showed every member as having nothing in progress.
   const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
@@ -631,9 +634,9 @@ export default function WorkloadTab({
       const uid = memberId(member);
       const memberIssues = actionableIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const timesheetIssues = hierarchyIssues.filter(issue => issue.assigneeIds?.includes(uid));
-      const openItems = memberIssues.filter(issue => !doneSet.has(issue.columnId || issue.status));
+      const openItems = memberIssues.filter(issue => !closedSet.has(issue.columnId || issue.status));
       const doneItems = memberIssues
-        .filter(issue => doneSet.has(issue.columnId || issue.status) && getCompletedAtMillis(issue) >= periodAgo)
+        .filter(issue => deliveredSet.has(issue.columnId || issue.status) && getCompletedAtMillis(issue) >= periodAgo)
         .sort((a, b) => getCompletedAtMillis(b) - getCompletedAtMillis(a));
       const overdueItems = openItems.filter(issue => {
         const due = parseDueDate(issue.dueDate);
@@ -669,20 +672,20 @@ export default function WorkloadTab({
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [actionableIssues, doneSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs]);
+  }, [actionableIssues, closedSet, deliveredSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)
     : null;
   const summary = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
-    const openItems = actionableIssues.filter(issue => !doneSet.has(issue.columnId || issue.status));
+    const openItems = actionableIssues.filter(issue => !closedSet.has(issue.columnId || issue.status));
     return {
       minutes: sumRawTimeLogMinutes(
         timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo),
       ),
       done: actionableIssues.filter(issue => (
-        doneSet.has(issue.columnId || issue.status)
+        deliveredSet.has(issue.columnId || issue.status)
         && getCompletedAtMillis(issue) >= periodAgo
       )).length,
       open: openItems.length,
@@ -691,7 +694,7 @@ export default function WorkloadTab({
         return due && due.getTime() < now;
       }).length,
     };
-  }, [actionableIssues, doneSet, now, period, timeLogs]);
+  }, [actionableIssues, closedSet, deliveredSet, now, period, timeLogs]);
 
   if (members.length === 0) {
     return (

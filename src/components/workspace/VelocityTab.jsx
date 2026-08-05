@@ -53,7 +53,7 @@ function BarChart({ data, colorA = '#1f1f1f', colorB = '#10b981', labelA = 'Ст
 }
 
 // ── Burndown Chart ────────────────────────────────────────────────────────────
-function BurndownChart({ issues, days = 30, doneSet, now }) {
+function BurndownChart({ issues, days = 30, closedSet, now }) {
   const data = useMemo(() => {
     const total = issues.length;
     if (total === 0) return [];
@@ -66,13 +66,13 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
       const remaining = issues.filter(iss => {
         const created = iss.createdAt?.toMillis?.() ?? 0;
         if (created > dayEnd) return false;
-        if (!doneSet.has(iss.columnId || iss.status)) return true;
+        if (!closedSet.has(iss.columnId || iss.status)) return true;
         const closedAt = getCompletedAtMillis(iss);
         return closedAt > dayEnd;
       }).length;
       return { label, remaining, ideal: Math.round(total - (total / Math.min(days, 30)) * i) };
     });
-  }, [issues, days, doneSet, now]);
+  }, [issues, days, closedSet, now]);
 
   const maxVal = Math.max(...data.map(d => Math.max(d.remaining, d.ideal)), 1);
 
@@ -135,7 +135,7 @@ function BurndownChart({ issues, days = 30, doneSet, now }) {
 }
 
 // ── Weekly Velocity Chart ─────────────────────────────────────────────────────
-function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
+function WeeklyVelocityChart({ issues, weeksBack = 8, deliveredSet, now }) {
   const data = useMemo(() => {
     return Array.from({ length: weeksBack }, (_, i) => {
       const weekIdx = weeksBack - 1 - i;
@@ -143,7 +143,7 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
       const weekEnd = now - weekIdx * 7 * 86400000;
       const label = fmtShortDate(new Date(weekStart));
       const closed = issues.filter(iss => {
-        if (!doneSet.has(iss.columnId || iss.status)) return false;
+        if (!deliveredSet.has(iss.columnId || iss.status)) return false;
         const t = getCompletedAtMillis(iss);
         return t >= weekStart && t < weekEnd;
       }).length;
@@ -153,15 +153,19 @@ function WeeklyVelocityChart({ issues, weeksBack = 8, doneSet, now }) {
       }).length;
       return { label, a: created, b: closed };
     });
-  }, [issues, weeksBack, doneSet, now]);
+  }, [issues, weeksBack, deliveredSet, now]);
 
   return <BarChart data={data} colorA="#1f1f1f" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function VelocityTab({ issues = [], projects = [], members = [], period = 30 }) {
-  const { doneStatusIds, types = [] } = useWorkflowConfig();
-  const doneSet = useMemo(() => new Set(doneStatusIds), [doneStatusIds]);
+  const { closedStatusIds, deliveredStatusIds, types = [] } = useWorkflowConfig();
+  // The burndown draws work *remaining*, so a cancelled task leaves the line the
+  // same way a finished one does — that is the closed set. Everything else here
+  // measures output, and cancelling something produces none of it.
+  const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
+  const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   const actionableIssues = useMemo(
     () => selectActionableIssues(issues),
     [issues],
@@ -176,7 +180,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
     const periodAgo = now - period * 86400000;
     const prevPeriodAgo = now - period * 2 * 86400000;
 
-    const doneAll = actionableIssues.filter(i => doneSet.has(i.columnId || i.status));
+    const doneAll = actionableIssues.filter(i => deliveredSet.has(i.columnId || i.status));
 
     const donePeriod = doneAll.filter(i => {
       const t = getCompletedAtMillis(i);
@@ -219,21 +223,21 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
       return {
         label,
         a: actionableIssues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
-        b: actionableIssues.filter(iss => { if (!doneSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
+        b: actionableIssues.filter(iss => { if (!deliveredSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
       };
     });
 
     // By type breakdown — types come from the shared workflow config
     const byType = types.map(({ id: type, label, color }) => {
       const typeIssues = actionableIssues.filter(i => i.type === type);
-      const typeDone = typeIssues.filter(i => doneSet.has(i.columnId || i.status));
+      const typeDone = typeIssues.filter(i => deliveredSet.has(i.columnId || i.status));
       return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
     const byProject = projects.map(p => {
       const pIssues = actionableIssues.filter(i => i.projectId === p.id);
-      const pDone = pIssues.filter(i => doneSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
+      const pDone = pIssues.filter(i => deliveredSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
       return { p, count: pDone.length, total: pIssues.length };
     }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
 
@@ -250,16 +254,16 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
       byType,
       byProject,
     };
-  }, [actionableIssues, projects, period, doneSet, now, types]);
+  }, [actionableIssues, projects, period, deliveredSet, now, types]);
 
   const recentlyClosed = useMemo(
     () => actionableIssues
       .filter(issue => (
-        doneSet.has(issue.columnId || issue.status)
+        deliveredSet.has(issue.columnId || issue.status)
         && getCompletedAtMillis(issue) >= now - period * 86400000
       ))
       .sort((left, right) => getCompletedAtMillis(right) - getCompletedAtMillis(left)),
-    [actionableIssues, doneSet, now, period],
+    [actionableIssues, deliveredSet, now, period],
   );
 
   if (actionableIssues.length === 0) {
@@ -337,7 +341,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
           <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
             Burndown Chart ({period} днів)
           </h3>
-          <BurndownChart issues={actionableIssues} days={period} doneSet={doneSet} now={now} />
+          <BurndownChart issues={actionableIssues} days={period} closedSet={closedSet} now={now} />
         </div>
 
         {/* Weekly velocity */}
@@ -346,7 +350,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
             <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
               Velocity по тижнях (8 тижнів)
             </h3>
-            <WeeklyVelocityChart issues={actionableIssues} weeksBack={8} doneSet={doneSet} now={now} />
+            <WeeklyVelocityChart issues={actionableIssues} weeksBack={8} deliveredSet={deliveredSet} now={now} />
           </div>
 
           {/* By project */}

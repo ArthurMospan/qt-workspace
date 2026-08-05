@@ -9,11 +9,15 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
-import { AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, Bug } from 'lucide-react';
+import {
+  AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, Bug,
+  Circle, CircleCheck, CircleDashed, CircleDotDashed, CircleX,
+} from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import {
   localizeBuiltInWorkflowItems,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
+  resolveDeliveredStatusIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import {
   statusCategoryColumns,
@@ -25,6 +29,17 @@ import {
 // from here instead of keeping its own copy, so the icon set can't drift.
 export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
 export const TYPE_ICONS = { epic: Zap, feature: Star, task: TaskIcon, bug: Bug };
+// One glyph per status category, for the places where a category stands on its
+// own: the workflow editor and the columns of a cross-project board. A ring that
+// fills in as work moves right — dashed while it is only collected, empty once
+// planned, half while it runs, closed at the end.
+export const STATUS_CATEGORY_ICONS = {
+  backlog: CircleDashed,
+  todo: Circle,
+  'in-progress': CircleDotDashed,
+  done: CircleCheck,
+  cancelled: CircleX,
+};
 // Canonical default workflow for an org that has never saved
 // settings/workflow. Must stay in sync with the id lists in
 // src/app/api/issues/route.js (server can't import this client module) and
@@ -57,26 +72,38 @@ export const DEFAULT_STATUSES = [{
   category: 'done',
   isDone: true,
 }];
-// ── Terminal ("done") status helpers ───────────────────────────────────────────
-// A status closes a task when its category does — `done` or `cancelled`. The
-// whole app must ask these helpers instead of comparing against a hardcoded id
-// `'done'`, so renaming/adding a final status stays correct everywhere
-// (analytics, billing, backlog, sprints, overdue, dependencies…).
+// ── The two ends of a task ─────────────────────────────────────────────────────
+// "Finished" is two questions, and the app used to answer both with one list.
 //
-// The rule itself lives in the shared, server-importable module: this used to be
-// a second copy of it, free to drift from the one the API enforces.
-export function getDoneStatusIds(statuses) {
+//   closed    — nothing left to do here: category `done` or `cancelled`. Overdue,
+//               blockers, a parent waiting on its children, reminders and
+//               `completedAt` read this. A cancelled task must stop being
+//               overdue and must stop blocking whatever it blocked.
+//   delivered — something was produced: category `done` alone. Completion
+//               percentage, velocity, "closed in this period" and the invoice
+//               preset read this, so a sprint whose work was dropped does not
+//               report itself as finished.
+//
+// Neither is ever compared against a hardcoded id, and the rules live in the
+// shared, server-importable module — these used to be a second copy of them,
+// free to drift from the one the API enforces.
+export function getClosedStatusIds(statuses) {
   const list = Array.isArray(statuses) && statuses.length ? statuses : DEFAULT_STATUSES;
-  return resolveDoneStatusIds(list);
+  return resolveClosedStatusIds(list);
 }
 
-// True when `statusId` is one of the terminal statuses for the given config.
-export function isDoneStatus(statusId, statuses) {
-  return getDoneStatusIds(statuses).includes(statusId);
+export function getDeliveredStatusIds(statuses) {
+  const list = Array.isArray(statuses) && statuses.length ? statuses : DEFAULT_STATUSES;
+  return resolveDeliveredStatusIds(list);
+}
+
+// True when `statusId` closes a task in the given config.
+export function isClosedStatus(statusId, statuses) {
+  return getClosedStatusIds(statuses).includes(statusId);
 }
 
 // Historical issues may not have completedAt yet. The updatedAt fallback keeps
-// old analytics usable while every new terminal transition records completedAt.
+// old analytics usable while every new closing transition records completedAt.
 export function getCompletedAtMillis(issue) {
   const value = issue?.completedAt || issue?.updatedAt;
   if (!value) return 0;
@@ -252,9 +279,14 @@ export function useWorkflowConfig() {
   const { activeOrgId } = useAppContext();
   const store = useMemo(() => getWorkflowStore(activeOrgId), [activeOrgId]);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
-  // Terminal status ids derived from the live config — components use this
-  // instead of hardcoding `'done'`.
-  const doneStatusIds = useMemo(() => getDoneStatusIds(snapshot.statuses), [snapshot.statuses]);
+  // Both ends of a task, derived from the live config. Ask for the one you mean:
+  // `closedStatusIds` for "is there work left", `deliveredStatusIds` for "was
+  // anything produced".
+  const closedStatusIds = useMemo(() => getClosedStatusIds(snapshot.statuses), [snapshot.statuses]);
+  const deliveredStatusIds = useMemo(
+    () => getDeliveredStatusIds(snapshot.statuses),
+    [snapshot.statuses],
+  );
   // The shared layer of the workflow, resolved once per snapshot: which category
   // each status belongs to, and the columns a cross-project view is built from.
   const statusCategoryById = useMemo(
@@ -267,7 +299,8 @@ export function useWorkflowConfig() {
   );
   return {
     ...snapshot,
-    doneStatusIds,
+    closedStatusIds,
+    deliveredStatusIds,
     statusCategoryById,
     categoryColumns,
   };

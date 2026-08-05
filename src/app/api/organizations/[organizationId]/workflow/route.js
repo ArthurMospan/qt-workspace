@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import {
@@ -99,7 +99,7 @@ export async function PATCH(request, context) {
 
     const { workflow: nextWorkflow, statusMigrations } = normalized.value;
     const nextStatusIds = nextWorkflow.statuses.map(status => status.id);
-    const nextDoneStatusIds = resolveDoneStatusIds(nextWorkflow.statuses);
+    const nextClosedStatusIds = resolveClosedStatusIds(nextWorkflow.statuses);
     const migrationTargetIds = new Set(
       statusMigrations.map(migration => migration.toStatusId),
     );
@@ -131,12 +131,12 @@ export async function PATCH(request, context) {
         currentWorkflow.statuses,
         DEFAULT_STATUS_IDS,
       );
-      const currentDoneStatusIds = resolveDoneStatusIds(
+      const currentClosedStatusIds = resolveClosedStatusIds(
         currentWorkflow.statuses,
       );
       const executionSemanticsChanged = (
         !sameStringSet(currentStatusIds, nextStatusIds)
-        || !sameStringSet(currentDoneStatusIds, nextDoneStatusIds)
+        || !sameStringSet(currentClosedStatusIds, nextClosedStatusIds)
         || statusMigrations.length > 0
       );
 
@@ -220,8 +220,8 @@ export async function PATCH(request, context) {
         currentIssues,
         nextIssues,
         issueLinks: scopedLinks,
-        currentDoneStatusIds,
-        nextDoneStatusIds,
+        currentClosedStatusIds,
+        nextClosedStatusIds,
       });
       if (violations.length > 0) {
         throw workflowError(
@@ -235,8 +235,8 @@ export async function PATCH(request, context) {
         );
       }
 
-      const currentDoneSet = new Set(currentDoneStatusIds);
-      const nextDoneSet = new Set(nextDoneStatusIds);
+      const currentDoneSet = new Set(currentClosedStatusIds);
+      const nextDoneSet = new Set(nextClosedStatusIds);
       const issueChanges = [];
       nextIssues.forEach((nextIssue, index) => {
         const currentIssue = currentIssues[index];
@@ -246,12 +246,12 @@ export async function PATCH(request, context) {
           currentIssue.columnId !== nextStatusId
           || currentIssue.status !== nextStatusId
         );
-        const wasDone = currentDoneSet.has(currentStatusId);
-        const willBeDone = nextDoneSet.has(nextStatusId);
-        const completedAtNeedsSet = willBeDone
-          && (!wasDone || (statusChanged && !currentIssue.completedAt));
-        const completedAtNeedsClear = !willBeDone
-          && (wasDone || statusChanged)
+        const wasClosed = currentDoneSet.has(currentStatusId);
+        const willBeClosed = nextDoneSet.has(nextStatusId);
+        const completedAtNeedsSet = willBeClosed
+          && (!wasClosed || (statusChanged && !currentIssue.completedAt));
+        const completedAtNeedsClear = !willBeClosed
+          && (wasClosed || statusChanged)
           && owns(currentIssue, 'completedAt');
         if (
           statusChanged
@@ -261,8 +261,8 @@ export async function PATCH(request, context) {
           issueChanges.push({
             currentIssue,
             nextStatusId,
-            wasDone,
-            willBeDone,
+            wasClosed,
+            willBeClosed,
             completedAtNeedsSet,
             completedAtNeedsClear,
           });
@@ -367,8 +367,8 @@ export async function PATCH(request, context) {
           action: 'workflow-status-migrated',
           from: statusIdOf(change.currentIssue),
           to: change.nextStatusId,
-          fromCompleted: change.wasDone,
-          toCompleted: change.willBeDone,
+          fromCompleted: change.wasClosed,
+          toCompleted: change.willBeClosed,
           createdAt: now,
         });
       }
@@ -391,8 +391,8 @@ export async function PATCH(request, context) {
         changed: true,
         migratedIssues: issueChanges.length,
         changedTerminalSemantics: !sameStringSet(
-          currentDoneStatusIds,
-          nextDoneStatusIds,
+          currentClosedStatusIds,
+          nextClosedStatusIds,
         ),
         updatedProjects: projectChanges.size,
       };
@@ -401,7 +401,7 @@ export async function PATCH(request, context) {
     return NextResponse.json({
       success: true,
       ...result,
-      doneStatusIds: nextDoneStatusIds,
+      closedStatusIds: nextClosedStatusIds,
     });
   } catch (error) {
     if (error?.workflow) {

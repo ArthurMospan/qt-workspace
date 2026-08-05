@@ -573,7 +573,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const { logs, loading: logsLoading } = useProjectAllTimeLogs(projectId);
-  const { statuses, doneStatusIds, types = [] } = useWorkflowConfig();
+  const { statuses, deliveredStatusIds, types = [] } = useWorkflowConfig();
   const [savedInvoiceState, setSavedInvoiceState] = useState({
     projectKey: '',
     invoices: [],
@@ -1045,7 +1045,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   const doneIssueIds = billingItems
     .filter(issue => (
       !conflictingItemIds.has(issue.id)
-      && doneStatusIds.includes(issue.columnId || issue.status)
+      && deliveredStatusIds.includes(issue.columnId || issue.status)
     ))
     .map(issue => issue.id);
   const selectedConflictCount = [...checkedIds].filter(

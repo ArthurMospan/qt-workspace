@@ -254,7 +254,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   } = useIssueLinks(issueId);
 
   const {
-    types: rawTypes, priorities: rawPriorities, statuses: STATUSES, labels: availableLabels = [], doneStatusIds
+    types: rawTypes, priorities: rawPriorities, statuses: STATUSES, labels: availableLabels = [], closedStatusIds
   } = useWorkflowConfig();
 
   const activeHiddenCols = project?.hiddenColumns || [];
@@ -460,7 +460,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const PrioIcon    = priorityCfg.icon;
 
   const due       = parseDueDate(issue.dueDate);
-  const isOverdue = due && due < new Date() && !doneStatusIds.includes(issue.columnId || issue.status);
+  const isOverdue = due && due < new Date() && !closedStatusIds.includes(issue.columnId || issue.status);
   const dueStr    = due ? formatDate(due) : null;
   const {
     attributeItemClass,
@@ -497,7 +497,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const childIssues = issues
     .filter(candidate => existingParentIssueId(candidate) === issueId)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const childIssuesDone = childIssues.filter(child => doneStatusIds.includes(child.columnId || child.status)).length;
+  const childIssuesDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
   const openChildCount = childIssues.length - childIssuesDone;
   const parentCandidates = issues.filter(candidate => (
     candidate.id !== issueId
@@ -565,7 +565,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   };
 
   const handleStatusChange = async (s) => {
-    if (doneStatusIds.includes(s)) {
+    if (closedStatusIds.includes(s)) {
       const freshLinks = await refreshLinks();
       if (!freshLinks) {
         showToast('Не вдалося перевірити залежності. Оновіть сторінку й повторіть.', 'error');
@@ -575,7 +575,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
         issueId,
         issues,
         issueLinks: freshLinks,
-        doneStatusIds,
+        closedStatusIds,
       });
       if (blockers.dependencies.length > 0) {
         showToast(`Задачу ще блокують: ${blockers.dependencies.length}`, 'error');
@@ -767,7 +767,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     const initialStatus = resolveCategoryStatusId('todo', STATUSES, {
       hiddenStatusIds: activeHiddenCols,
     })
-      || visibleStatuses.find(status => !doneStatusIds.includes(status.id))?.id
+      || visibleStatuses.find(status => !closedStatusIds.includes(status.id))?.id
       || visibleStatuses[0]?.id
       || 'backlog';
     const childTypeId = creatableTypes.find(type => type.id === 'task')?.id || creatableTypes[0]?.id;

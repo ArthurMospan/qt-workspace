@@ -137,7 +137,7 @@ test('an overdue nag is delivered at a readable hour, in the organization timezo
     status: 'in-progress',
   }], {
     nowMs,
-    doneStatusIdsByOrganization: new Map([['org', new Set(['done'])]]),
+    closedStatusIdsByOrganization: new Map([['org', new Set(['done'])]]),
     timeZonesByOrganization: new Map([['org', 'Europe/Kyiv']]),
   });
 
@@ -161,7 +161,7 @@ test('an upcoming deadline is announced twenty-four hours out', () => {
   }], {
     nowMs: due - 30 * HOUR,
     lookAheadMs: 12 * HOUR,
-    doneStatusIdsByOrganization: new Map([['org', new Set(['done'])]]),
+    closedStatusIdsByOrganization: new Map([['org', new Set(['done'])]]),
     timeZonesByOrganization: new Map([['org', 'Europe/Kyiv']]),
   });
 

@@ -55,7 +55,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2407",
+      "location": "src/app/(app)/settings/page.js:2432",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -406,17 +406,17 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:344",
+      "location": "src/app/(app)/settings/page.js:336",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:364",
+      "location": "src/app/(app)/settings/page.js:356",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:503",
+      "location": "src/app/(app)/settings/page.js:464",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

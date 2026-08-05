@@ -5,7 +5,7 @@ import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
@@ -42,7 +42,7 @@ function resolveIntegrationWorkflow({ workflow, project = null, requestedPriorit
       ? requestedPriority
       : (priorityIds.includes('high') ? 'high' : priorityIds[0]),
     type: typeSelection.type,
-    completed: resolveDoneStatusIds(workflow.statuses).includes(status),
+    completed: resolveClosedStatusIds(workflow.statuses).includes(status),
   };
 }
 

@@ -4,7 +4,7 @@ import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
-  resolveDoneStatusIds,
+  resolveClosedStatusIds,
   resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
@@ -171,13 +171,13 @@ export async function PATCH(request, context) {
               && projectIssueIds.has(link.targetIssueId)
             ));
         }
-        const doneStatusIds = resolveDoneStatusIds(workflow.statuses);
+        const closedStatusIds = resolveClosedStatusIds(workflow.statuses);
         const violations = introducedIssueExecutionViolations({
           currentIssues,
           nextIssues,
           issueLinks: scopedLinks,
-          currentDoneStatusIds: doneStatusIds,
-          nextDoneStatusIds: doneStatusIds,
+          currentClosedStatusIds: closedStatusIds,
+          nextClosedStatusIds: closedStatusIds,
         });
         if (violations.length > 0) {
           throw projectTransactionError(
@@ -203,20 +203,20 @@ export async function PATCH(request, context) {
           );
         }
 
-        const doneSet = new Set(doneStatusIds);
+        const closedSet = new Set(closedStatusIds);
         const now = admin.firestore.FieldValue.serverTimestamp();
         for (const issue of currentIssues.filter(item => issueIdsToMove.has(item.id))) {
           const issueRef = db.collection('issues').doc(issue.id);
-          const wasDone = doneSet.has(issue.columnId || issue.status);
-          const willBeDone = doneSet.has(backlogStatusId);
+          const wasClosed = closedSet.has(issue.columnId || issue.status);
+          const willBeClosed = closedSet.has(backlogStatusId);
           transaction.update(issueRef, {
             columnId: backlogStatusId,
             status: backlogStatusId,
             updatedAt: now,
-            ...(willBeDone && !issue.completedAt
+            ...(willBeClosed && !issue.completedAt
               ? { completedAt: now }
               : {}),
-            ...(!willBeDone && Object.prototype.hasOwnProperty.call(issue, 'completedAt')
+            ...(!willBeClosed && Object.prototype.hasOwnProperty.call(issue, 'completedAt')
               ? { completedAt: admin.firestore.FieldValue.delete() }
               : {}),
           });
@@ -228,8 +228,8 @@ export async function PATCH(request, context) {
             action: 'hidden-column-migrated',
             from: issue.columnId || issue.status || null,
             to: backlogStatusId,
-            fromCompleted: wasDone,
-            toCompleted: willBeDone,
+            fromCompleted: wasClosed,
+            toCompleted: willBeClosed,
             createdAt: now,
           });
         }

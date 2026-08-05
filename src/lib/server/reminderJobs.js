@@ -18,7 +18,7 @@ import {
 import { telegramAppLink } from '@/lib/server/telegram';
 import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/notificationOutbox';
 import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
-import { resolveDoneStatusIds } from '@/lib/utils/workflowDefaults.mjs';
+import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 import { purgeExpiredDeletedIssues } from '@/lib/server/issueTrash';
 
 const DELIVERY_CONCURRENCY = 10;
@@ -328,9 +328,9 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
     db.getAll(...organizationIds.map(id =>
       db.collection('organizations').doc(id).collection('settings').doc('workflow'))),
   ]);
-  const doneStatusIdsByOrganization = new Map(organizationIds.map((id, index) => [
+  const closedStatusIdsByOrganization = new Map(organizationIds.map((id, index) => [
     id,
-    new Set(resolveDoneStatusIds(workflowSnapshots[index]?.data()?.statuses)),
+    new Set(resolveClosedStatusIds(workflowSnapshots[index]?.data()?.statuses)),
   ]));
   const timeZonesByOrganization = new Map(organizationIds.map((id, index) => [
     id,
@@ -339,7 +339,7 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
   return deadlineReminderCandidates(issues, {
     nowMs,
     lookAheadMs,
-    doneStatusIdsByOrganization,
+    closedStatusIdsByOrganization,
     timeZonesByOrganization,
   }).map(candidate => ({
     ...candidate,

@@ -12,7 +12,7 @@ import {
   normalizedIssueBlockEdges,
 } from '../src/lib/utils/issueStatusTransition.mjs';
 
-const doneStatusIds = ['done'];
+const closedStatusIds = ['done'];
 
 function evaluate(overrides = {}) {
   return evaluateIssueStatusTransition({
@@ -23,7 +23,7 @@ function evaluate(overrides = {}) {
       columnId: 'in-progress',
     },
     nextStatusId: 'done',
-    doneStatusIds,
+    closedStatusIds,
     ...overrides,
   });
 }
@@ -86,17 +86,17 @@ test('an open child cannot be attached to a completed parent', () => {
   assert.equal(issueParentStatusConflict({
     issue: { id: 'child', columnId: 'todo' },
     parentIssue: { id: 'parent', columnId: 'done' },
-    doneStatusIds,
+    closedStatusIds,
   }).code, 'COMPLETED_PARENT_REQUIRES_COMPLETED_CHILD');
   assert.equal(issueParentStatusConflict({
     issue: { id: 'child', columnId: 'done' },
     parentIssue: { id: 'parent', columnId: 'done' },
-    doneStatusIds,
+    closedStatusIds,
   }), null);
   assert.equal(issueParentStatusConflict({
     issue: { id: 'child', columnId: 'todo' },
     parentIssue: { id: 'parent', columnId: 'in-progress' },
-    doneStatusIds,
+    closedStatusIds,
   }), null);
 });
 
@@ -105,19 +105,19 @@ test('an open blocker cannot be linked to an already completed target', () => {
     sourceIssue: { id: 'blocker', columnId: 'todo' },
     targetIssue: { id: 'target', columnId: 'done' },
     relationType: 'blocks',
-    doneStatusIds,
+    closedStatusIds,
   }).code, 'COMPLETED_TARGET_REQUIRES_COMPLETED_BLOCKER');
   assert.equal(issueBlockLinkStatusConflict({
     sourceIssue: { id: 'blocker', columnId: 'done' },
     targetIssue: { id: 'target', columnId: 'done' },
     relationType: 'blocks',
-    doneStatusIds,
+    closedStatusIds,
   }), null);
   assert.equal(issueBlockLinkStatusConflict({
     sourceIssue: { id: 'source', columnId: 'todo' },
     targetIssue: { id: 'target', columnId: 'done' },
     relationType: 'relates-to',
-    doneStatusIds,
+    closedStatusIds,
   }), null);
 });
 
@@ -136,7 +136,7 @@ test('whole-graph validation supports atomic bulk moves and normalized legacy li
   assert.deepEqual(issueExecutionGraphViolations({
     issues,
     issueLinks: links,
-    doneStatusIds,
+    closedStatusIds,
   }), [
     {
       type: 'completed-target-open-blocker',
@@ -154,7 +154,7 @@ test('whole-graph validation supports atomic bulk moves and normalized legacy li
   assert.deepEqual(issueExecutionGraphViolations({
     issues: allReopened,
     issueLinks: links,
-    doneStatusIds,
+    closedStatusIds,
   }), []);
 });
 
@@ -171,8 +171,8 @@ test('bulk validation distinguishes newly introduced violations from legacy corr
   assert.deepEqual(introducedIssueExecutionViolations({
     currentIssues,
     nextIssues,
-    currentDoneStatusIds: doneStatusIds,
-    nextDoneStatusIds: doneStatusIds,
+    currentClosedStatusIds: closedStatusIds,
+    nextClosedStatusIds: closedStatusIds,
   }), [{
     type: 'completed-parent-open-child',
     parentIssueId: 'new-parent',
@@ -337,7 +337,7 @@ test('non-terminal moves and terminal-to-terminal moves need no dependency gate'
   assert.equal(evaluate({
     issue: { id: 'current', columnId: 'done' },
     nextStatusId: 'released',
-    doneStatusIds: ['done', 'released'],
+    closedStatusIds: ['done', 'released'],
     issueLinks: links,
     relatedIssues,
   }).error, null);

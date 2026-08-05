@@ -204,9 +204,9 @@ export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
-  const { labels, statuses, priorities, types, doneStatusIds } = useWorkflowConfig();
+  const { labels, statuses, priorities, types, closedStatusIds } = useWorkflowConfig();
   const statusOrder = statuses.map(s => s.id);
-  const isDoneCol = (id) => doneStatusIds.includes(id);
+  const isClosedCol = (id) => closedStatusIds.includes(id);
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
   const sprintSearch = useWorkspaceStore(s => s.sprintSearch);
@@ -752,7 +752,7 @@ export default function GlobalSprintsPage() {
         <SprintCompleteModal
           sprint={showCompleteSprintModal}
           sprints={sprints}
-          incompleteIssues={issues.filter(i => i.sprintId === showCompleteSprintModal.id && !isDoneCol(i.status) && !isDoneCol(i.columnId))}
+          incompleteIssues={issues.filter(i => i.sprintId === showCompleteSprintModal.id && !isClosedCol(i.status) && !isClosedCol(i.columnId))}
           onClose={() => setShowCompleteSprintModal(null)}
           onConfirm={async (moveToSprintId) => {
             try {

@@ -68,7 +68,7 @@ test('completion reports children and dependencies independently', () => {
       sourceIssueId: 'blocker',
       targetIssueId: 'parent',
     }],
-    doneStatusIds: ['done'],
+    closedStatusIds: ['done'],
   });
   assert.equal(result.canComplete, false);
   assert.deepEqual(result.children.map(issue => issue.id), ['open-child']);

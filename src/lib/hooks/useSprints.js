@@ -11,7 +11,7 @@ export function useSprints() {
   const {
     activeOrgId, currentUser
   } = useAppContext();
-  const { doneStatusIds } = useWorkflowConfig();
+  const { closedStatusIds } = useWorkflowConfig();
   // uid, not the object: a new `currentUser` identity (any write to the user
   // document produces one) used to re-subscribe and re-read every sprint.
   const currentUserId = currentUser?.id || currentUser?.uid || null;
@@ -114,7 +114,7 @@ export function useSprints() {
     const issueSnap = await getDocs(issuesQuery);
     const incomplete = issueSnap.docs.filter(issueDoc => {
       const issue = issueDoc.data();
-      return !doneStatusIds.includes(issue.columnId || issue.status);
+      return !closedStatusIds.includes(issue.columnId || issue.status);
     });
 
     for (let offset = 0; offset < incomplete.length; offset += 400) {
@@ -130,7 +130,7 @@ export function useSprints() {
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-  }, [activeOrgId, sprints, doneStatusIds]);
+  }, [activeOrgId, sprints, closedStatusIds]);
   return {
     sprints,
     loading,

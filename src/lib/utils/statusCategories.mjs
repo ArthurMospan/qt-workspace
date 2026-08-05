@@ -30,45 +30,57 @@ export const STATUS_CATEGORY_IDS = Object.freeze([
   'cancelled',
 ]);
 
-// `terminal: true` means "the task is closed": progress, velocity, overdue,
-// billing and `completedAt` all read this. Both closing categories count, which
-// is exactly how the product already described its terminal statuses — «Готово»,
-// «Скасовано» and «Дубль» all close a task.
+// Two flags, because "finished" is two different questions and answering both
+// with one word is how a cancelled task ends up counted as delivered work.
+//
+// `closes` — there is no work left here. Overdue, blockers, a parent waiting on
+// its children, reminders and `completedAt` all read this, and both closing
+// categories count: a cancelled task must stop being overdue and must stop
+// blocking whatever it blocked.
+// `delivers` — something was actually produced. Completion percentage, velocity,
+// "closed in this period" and the invoice preset read this, and only «Готово»
+// counts: a sprint where half the work was dropped is not a finished sprint.
 export const STATUS_CATEGORIES = Object.freeze({
   backlog: Object.freeze({
     id: 'backlog',
     label: 'Беклог',
     color: '#9a9a9a',
-    terminal: false,
+    closes: false,
+    delivers: false,
     hint: 'Зібрано, але ще не заплановано. Сюди потрапляють нові завдання.',
   }),
   todo: Object.freeze({
     id: 'todo',
     label: 'До виконання',
     color: '#6366f1',
-    terminal: false,
+    closes: false,
+    delivers: false,
     hint: 'Заплановано й готове до роботи.',
   }),
   'in-progress': Object.freeze({
     id: 'in-progress',
     label: 'У роботі',
     color: '#f59e0b',
-    terminal: false,
+    closes: false,
+    delivers: false,
     hint: 'Робота триває — разом із ревʼю, QA та погодженнями.',
   }),
   done: Object.freeze({
     id: 'done',
     label: 'Готово',
     color: '#10b981',
-    terminal: true,
-    hint: 'Роботу завершено. За цією категорією рахуються прогрес, швидкість і рахунок.',
+    closes: true,
+    delivers: true,
+    hint: 'Роботу завершено. Саме за цією категорією рахуються прогрес, швидкість і рахунок.',
   }),
   cancelled: Object.freeze({
     id: 'cancelled',
     label: 'Скасовано',
     color: '#71717a',
-    terminal: true,
-    hint: 'Завдання закрито без виконання: скасовано, дубль, не актуально.',
+    closes: true,
+    delivers: false,
+    hint: 'Закрито без виконання: скасовано, дубль, не актуально. Задача більше '
+      + 'нікого не блокує й не прострочена, але у прогрес і швидкість не йде.',
   }),
 });
 
@@ -93,8 +105,14 @@ export function isStatusCategoryId(value) {
     && Object.prototype.hasOwnProperty.call(STATUS_CATEGORIES, value);
 }
 
-export function isTerminalStatusCategory(value) {
-  return isStatusCategoryId(value) && STATUS_CATEGORIES[value].terminal === true;
+/** The task is closed: nothing is left to do in this category. */
+export function isClosingCategory(value) {
+  return isStatusCategoryId(value) && STATUS_CATEGORIES[value].closes === true;
+}
+
+/** Work was actually delivered — the narrower of the two. */
+export function isDeliveringCategory(value) {
+  return isStatusCategoryId(value) && STATUS_CATEGORIES[value].delivers === true;
 }
 
 export function statusCategoryLabel(value) {
@@ -177,25 +195,43 @@ export function withStatusCategories(statuses) {
     return {
       ...status,
       category,
-      isDone: isTerminalStatusCategory(category),
+      isDone: isClosingCategory(category),
     };
   });
 }
 
 /**
  * Statuses that close a task. Never empty for a non-empty workflow: a workflow
- * whose categories somehow leave nothing terminal still has to give progress,
+ * whose categories somehow leave nothing closing still has to give progress,
  * billing and overdue a definition of "finished", and the last column is the
  * same fallback the app used before categories existed.
  */
-export function terminalStatusIds(statuses) {
+export function closedStatusIds(statuses) {
   const list = statusList(statuses);
   if (!list.length) return [];
   const categories = statusCategoryMap(list);
-  const terminal = list
-    .filter(status => isTerminalStatusCategory(categories.get(status.id)))
+  const closed = list
+    .filter(status => isClosingCategory(categories.get(status.id)))
     .map(status => status.id);
-  return terminal.length ? terminal : [list[list.length - 1].id];
+  return closed.length ? closed : [list[list.length - 1].id];
+}
+
+/**
+ * Statuses that mean the work was delivered — «Готово» and nothing else.
+ *
+ * Everything that measures output asks this instead of `closedStatusIds`:
+ * completion percentage, velocity, "closed in this period", the invoice preset.
+ * A workflow that closes tasks only by cancelling them has nothing to measure,
+ * so it falls back to the closed set rather than reporting a flat zero.
+ */
+export function deliveredStatusIds(statuses) {
+  const list = statusList(statuses);
+  if (!list.length) return [];
+  const categories = statusCategoryMap(list);
+  const delivered = list
+    .filter(status => isDeliveringCategory(categories.get(status.id)))
+    .map(status => status.id);
+  return delivered.length ? delivered : closedStatusIds(list);
 }
 
 /** Statuses of one category, in workflow order. */
@@ -275,6 +311,6 @@ export function entryStatusId(statuses) {
   const categories = statusCategoryMap(list);
   const backlog = list.find(status => categories.get(status.id) === 'backlog');
   if (backlog) return backlog.id;
-  const open = list.find(status => !isTerminalStatusCategory(categories.get(status.id)));
+  const open = list.find(status => !isClosingCategory(categories.get(status.id)));
   return (open || list[0]).id;
 }
