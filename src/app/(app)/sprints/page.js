@@ -540,7 +540,12 @@ export default function GlobalSprintsPage() {
                         {/* The bare 16px chevron was the only reliable target and
                             the row shrank to its content, so the empty space beside
                             the title did nothing. Now the whole strip toggles and
-                            the chevron is the same ghost icon button as the board. */}
+                            the chevron is the same control the board and the task
+                            list use to fold a section: ghost, `icon-xs`, a 20px
+                            box. It was `icon` — a 32px box — which made the one
+                            accordion in the product that collapses a group of
+                            tasks look like a different kind of control from the
+                            two others that do exactly that. */}
                         <div
                           className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-[#ebebeb]"
                           onClick={() => toggleSection(sprint.id)}
@@ -556,7 +561,7 @@ export default function GlobalSprintsPage() {
                         >
                           <Button
                             style="ghost"
-                            size="icon"
+                            size="icon-xs"
                             icon={isExpanded ? ChevronDown : ChevronRight}
                             className="shrink-0 hover:!bg-white"
                             aria-expanded={isExpanded}

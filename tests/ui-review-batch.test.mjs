@@ -364,3 +364,25 @@ test('every profile action circle carries a tooltip as well as a label', async (
   assert.match(profile, /<Tooltip content="Ще дії">\s*<ContextMenu/);
   assert.doesNotMatch(profile, /trigger=\{\s*<Tooltip/);
 });
+
+// The sprint accordion, the board column and the task list section are three
+// places that fold a group of tasks away. They are one control.
+test('every collapse control that folds a group of tasks is the same button', async () => {
+  const [sprints, board, listView] = await Promise.all([
+    readFile(new URL('../src/app/(app)/sprints/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/AgileBoard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/TaskManagement/TaskListView.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  for (const [name, source] of [['sprints', sprints], ['board', board], ['list view', listView]]) {
+    assert.match(
+      source,
+      /style="ghost"\s*\r?\n\s*size="icon-xs"/,
+      `${name} must fold with the shared ghost icon-xs control`,
+    );
+  }
+  // The sprint header specifically: it used to be `icon`, a 32px box against
+  // the other two at 20px.
+  assert.doesNotMatch(sprints, /size="icon"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
+  assert.match(sprints, /size="icon-xs"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
+});
