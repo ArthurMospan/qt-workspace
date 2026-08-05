@@ -16,7 +16,7 @@ function LoadingScreen() {
 export default function WorkspaceOrganizationRouteGuard({ children }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { activeOrgId, allOrgs, switchOrg } = useAppContext();
+  const { activeOrgId, allOrgs, switchOrg, orgLoading } = useAppContext();
   const requestedOrgId = searchParams.get('org');
   const requestedOrg = requestedOrgId
     ? allOrgs.find(organization => organization.id === requestedOrgId)
@@ -30,6 +30,11 @@ export default function WorkspaceOrganizationRouteGuard({ children }) {
 
   if (!requestedOrgId || requestedOrgId === activeOrgId) return children;
   if (requestedOrg) return <LoadingScreen />;
+  // An empty membership list is not proof of an organization you cannot reach.
+  // Following a notification link on a cold load renders this guard before the
+  // organizations arrive, and announcing «Немає доступу до організації» there
+  // accuses the reader of something that is about to be false.
+  if (orgLoading || allOrgs.length === 0) return <LoadingScreen />;
 
   return (
     <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">

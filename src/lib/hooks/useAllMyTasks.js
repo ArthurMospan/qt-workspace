@@ -24,6 +24,9 @@ export function useAllMyTasks(userId) {
   const {
     activeOrgId,
     projects,
+    authLoading,
+    orgLoading,
+    projectsLoading,
   } = useAppContext();
   const { doneStatusIds } = useWorkflowConfig();
   const [snapshotTasks, setSnapshotTasks] = useState([]);
@@ -51,7 +54,9 @@ export function useAllMyTasks(userId) {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
         setIssueLinks([]);
-        setLoading(false);
+        // An empty project list before the projects have loaded is not a user
+        // with nothing assigned to them.
+        setLoading(Boolean(authLoading || orgLoading || projectsLoading));
       });
       return;
     }
@@ -128,7 +133,7 @@ export function useAllMyTasks(userId) {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [userId, activeOrgId, projectScope]);
+  }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading]);
   const updateTask = useCallback(async (taskId, data) => {
     const current = tasks.find(task => task.id === taskId);
     if (

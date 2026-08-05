@@ -55,7 +55,7 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 export function useIssues(projectId, { includeLinks = true } = {}) {
   const {
-    activeOrgId, currentUser
+    activeOrgId, currentUser, authLoading, orgLoading
   } = useAppContext();
   const { doneStatusIds, statuses } = useWorkflowConfig();
   const [snapshotIssues, setSnapshotIssues] = useState([]);
@@ -87,13 +87,21 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       // skip the reset below and render an empty board instead of a spinner.
       targetRef.current = null;
       deliveredRef.current = false;
+      // "Nothing was asked" is not "nothing was found". On a page refresh the
+      // uid and the organization arrive a beat after the first render, and
+      // reporting `loading: false` with an empty list there is what made the
+      // task page flash «Задачу не знайдено» for a second before the task
+      // appeared. While auth or the organization is still resolving the honest
+      // answer is that we are still loading; only a caller with no project at
+      // all has genuinely finished with nothing.
+      const stillResolving = authLoading || orgLoading || !currentUserId || !activeOrgId;
       queueMicrotask(() => {
         setSnapshotIssues([]);
         setIssueLinks([]);
         setLinksReady(!includeLinks);
         setLinksError(null);
         setError(null);
-        setLoading(false);
+        setLoading(Boolean(projectId) && stillResolving);
       });
       return;
     }
@@ -172,7 +180,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, currentUserId]);
+  }, [projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

@@ -32,7 +32,7 @@ export default function MemberAnalyticsPage() {
   const { memberId } = useParams();
   const router = useRouter();
   const { projects = [] } = useAppContext();
-  const { members = [] } = useOrganization();
+  const { members = [], loading: membersLoading } = useOrganization();
   const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(project => project.id));
   const { events, loading: calendarLoading } = useCalendarEvents();
   const [projectFilters, setProjectFilters] = useState([]);
@@ -71,7 +71,8 @@ export default function MemberAnalyticsPage() {
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
   }, [member]);
 
-  if (loading || calendarLoading) {
+  // The member list has to have arrived before "not found" can mean anything.
+  if (loading || calendarLoading || membersLoading) {
     return (
       <div className="flex min-h-[360px] flex-1 items-center justify-center">
         <LoadingSpinner size="md" />

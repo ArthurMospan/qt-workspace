@@ -65,7 +65,7 @@ function expandRecurringEvents(sourceEvents) {
 }
 
 export function useCalendarEvents() {
-  const { activeOrgId } = useAppContext();
+  const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [events, setEvents] = useState([]);
   const [deadlines, setDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +75,10 @@ export function useCalendarEvents() {
     if (!activeOrgId) {
       setEvents([]);
       setDeadlines([]);
-      setLoading(false);
+      // Not asked yet is not answered with nothing: on a cold load the
+      // organization arrives after the first render, and finishing here made
+      // the event page announce «Подію не знайдено» before it had looked.
+      setLoading(Boolean(authLoading || orgLoading));
       return;
     }
     if (!silent) {
@@ -95,7 +98,7 @@ export function useCalendarEvents() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [activeOrgId]);
+  }, [activeOrgId, authLoading, orgLoading]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(refresh, 0);

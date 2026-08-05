@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 
 export function useWorkspaceAnalytics(projectIds = []) {
-  const { activeOrgId } = useAppContext();
+  const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [issues, setIssues] = useState([]);
   const [timeLogs, setTimeLogs] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
@@ -24,7 +24,10 @@ export function useWorkspaceAnalytics(projectIds = []) {
         setIssues([]);
         setTimeLogs([]);
         setIssueLinks([]);
-        setLoading(false);
+        // Still resolving the organization is not the same as having read it
+        // and found nothing — the difference is a spinner versus an empty
+        // state that says the workspace has no data.
+        setLoading(Boolean(authLoading || orgLoading));
       });
       return undefined;
     }
@@ -143,7 +146,7 @@ export function useWorkspaceAnalytics(projectIds = []) {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, projectIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeOrgId, authLoading, orgLoading, projectIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { issues, timeLogs, issueLinks, loading };
 }

@@ -628,7 +628,7 @@
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },
     {
-      "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:36",
+      "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     }
