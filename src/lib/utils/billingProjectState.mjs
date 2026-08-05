@@ -89,21 +89,26 @@ export function setBillingMemberPreset(state, {
   };
 }
 
-export function applyBillingRatePreset(state, {
-  projectKey,
-  memberIds = [],
-  rate,
-}) {
+// Re-denominates every rate already entered for this project. Changing an
+// invoice's currency used to leave the numbers untouched, so "120" silently
+// stopped meaning $120 and started meaning ₴120; converting is the only way the
+// figures keep their value across the switch.
+export function convertBillingMemberRates(state, { projectKey, factor }) {
   const current = state?.projectKey === projectKey
     ? state
     : emptyBillingMemberState(projectKey);
-  const rates = { ...current.rates };
+  if (!Number.isFinite(factor) || factor <= 0 || factor === 1) return current;
+  const rates = {};
   const touchedRateIds = new Set(current.touchedRateIds || []);
-  memberIds.forEach(uid => {
-    if (!uid) return;
-    rates[uid] = rate;
+  for (const [uid, rate] of Object.entries(current.rates || {})) {
+    const value = Number(rate);
+    if (!Number.isFinite(value) || value === 0) {
+      rates[uid] = rate;
+      continue;
+    }
+    rates[uid] = Math.round(value * factor * 100) / 100;
     touchedRateIds.add(uid);
-  });
+  }
   return {
     ...current,
     rates,

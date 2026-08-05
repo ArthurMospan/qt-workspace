@@ -495,15 +495,17 @@ function PositionItem({ item, onSave, onDelete }) {
             placeholder="Назва посади"
             className="flex-1"
           />
+          {/* The rate is a number, not an amount in dollars. Which currency it
+              is worth is chosen per invoice, and printing "$" here promised a
+              denomination this field never carried. */}
           <div className="w-[120px] flex items-center gap-1">
-            <span className="text-[12px] text-muted">$</span>
             <Input
               size="sm"
               type="number"
               value={hourlyRate}
               onChange={e => setHourlyRate(e.target.value)}
               placeholder="Ставка"
-              className="w-[50px] text-right"
+              className="w-[70px] text-right"
             />
             <span className="text-[11px] text-muted">/год</span>
           </div>
@@ -511,7 +513,7 @@ function PositionItem({ item, onSave, onDelete }) {
       ) : (
         <div className="flex flex-1 items-center justify-between">
           <span className="text-[13px] font-semibold text-ink">{item.label}</span>
-          <span className="text-[12px] font-medium text-muted">${item.hourlyRate || 0}/год</span>
+          <span className="text-[12px] font-medium text-muted">{item.hourlyRate || 0}/год</span>
         </div>
       )}
 
@@ -2943,7 +2945,7 @@ export default function SettingsPage() {
       );
 
       case 'positions': return (
-        <Section title="Посади та ставки" desc="Налаштування посад команди та погодинних ставок виконавців">
+        <Section title="Посади та ставки" desc="Погодинні ставки виконавців. Валюту обирають у рахунку — тут це просто число за годину">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />

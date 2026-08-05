@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  convertBillingMemberRates,
   emptyBillingMemberState,
   reconcileBillingMemberState,
   setBillingMemberRate,
@@ -119,4 +120,50 @@ test('BillingTab hides and clears project-scoped invoice and rate state on switc
     /previous\?\.projectKey === billingProjectKey \? previous : null/,
   );
   assert.doesNotMatch(billing, /\bsetSavedInvoices\b|\bsetMemberRates\b|\bsetMemberPresets\b/);
+});
+
+test('changing the invoice currency converts the figures rather than relabelling them', () => {
+  let state = emptyBillingMemberState('org:project');
+  state = setBillingMemberRate(state, { projectKey: 'org:project', uid: 'u1', rate: 30 });
+  state = setBillingMemberRate(state, { projectKey: 'org:project', uid: 'u2', rate: 0 });
+
+  const converted = convertBillingMemberRates(state, {
+    projectKey: 'org:project',
+    factor: 41.5,
+  });
+  assert.equal(converted.rates.u1, 1245);
+  // A rate nobody set stays unset rather than becoming a converted zero.
+  assert.equal(converted.rates.u2, 0);
+  assert.ok(converted.touchedRateIds.includes('u1'));
+
+  // Rounded to the cent, so an invoice never shows a number it cannot print.
+  const rounded = convertBillingMemberRates(
+    setBillingMemberRate(emptyBillingMemberState('k'), { projectKey: 'k', uid: 'u', rate: 33.33 }),
+    { projectKey: 'k', factor: 1.0777 },
+  );
+  assert.equal(rounded.rates.u, 35.92);
+
+  // A meaningless factor is a no-op, not a wipe.
+  for (const factor of [0, -2, Number.NaN, 1]) {
+    assert.deepEqual(
+      convertBillingMemberRates(state, { projectKey: 'org:project', factor }).rates,
+      state.rates,
+    );
+  }
+});
+
+test('the invoice cannot be saved while its figures and its currency disagree', async () => {
+  const billing = await read('../src/components/workspace/BillingTab.jsx');
+
+  assert.match(billing, /const currencyChanged = currency !== amountsCurrency && hasEnteredAmounts/);
+  assert.match(billing, /disabled=\{checkedCount === 0 \|\| currencyChanged\}/);
+  // Both the preview and the save are gated, not just one of them.
+  assert.equal(billing.match(/disabled=\{checkedCount === 0 \|\| currencyChanged\}/g).length, 2);
+  // The busy state is the button's own, so the label cannot shift under a
+  // spinner rendered beside it.
+  assert.match(billing, /loading=\{saving\}[\s\S]{0,260}Зберегти чернетку/);
+  assert.doesNotMatch(billing, /<LoadingSpinner size="sm" className="mr-2 inline" \/>/);
+  // The per-position bulk buttons are gone; the position picker on each row is
+  // the one way to apply a position's rate.
+  assert.doesNotMatch(billing, /Швидкі пресети/);
 });

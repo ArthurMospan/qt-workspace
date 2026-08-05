@@ -37,7 +37,7 @@ import {
   voidInvoiceViaApi,
 } from '@/lib/services/invoices';
 import {
-  applyBillingRatePreset,
+  convertBillingMemberRates,
   emptyBillingMemberState,
   reconcileBillingMemberState,
   setBillingMemberPreset,
@@ -83,7 +83,14 @@ function RateRow({ uid, member, rate, onRateChange, preset, onPresetChange, curr
   const rateInputId = `billing-rate-${uid}`;
 
   return (
-    <div className="grid gap-3 border-b border-[#f0f0f0] py-3 last:border-0 sm:grid-cols-[minmax(180px,1fr)_minmax(170px,0.9fr)_150px] sm:items-end">
+    // The same white-card-on-grey the billable items use. These rows were flat
+    // on the panel's own grey with a near-invisible hairline between them, so
+    // three people read as one block of text.
+    <div
+      data-ui-surface="billing-item"
+      data-ui-padding="wide"
+      className="ui-surface grid gap-3 sm:grid-cols-[minmax(180px,1fr)_minmax(170px,0.9fr)_150px] sm:items-end"
+    >
       <div className="flex min-w-0 items-center gap-3 sm:pb-1">
         <UserAvatar user={member} size="md" />
         <div className="min-w-0">
@@ -670,6 +677,11 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
 
   // ── Invoice meta
   const [currency, setCurrency] = useState('USD');
+  // The currency the amounts on screen were actually typed in. It only differs
+  // from `currency` between choosing a new one and deciding what to do about the
+  // figures, which is the gap where an invoice used to silently change value.
+  const [amountsCurrency, setAmountsCurrency] = useState('USD');
+  const [conversionRate, setConversionRate] = useState('');
   const [discountPct, setDiscountPct] = useState(0);
   const [taxPct, setTaxPct] = useState(0);
   const [clientName, setClientName] = useState('');
@@ -772,6 +784,52 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
       cancelled = true;
     };
   }, [billingMembers, billingProjectKey, logsLoading, positions]);
+
+  // ── Currency of the figures vs currency of the invoice ──
+  const hasEnteredAmounts = useMemo(
+    () => Object.values(memberRates).some(rate => Number(rate) > 0)
+      || Object.values(manualPrices).some(price => Number(price) > 0),
+    [manualPrices, memberRates],
+  );
+  const changeCurrency = next => {
+    setCurrency(next);
+    setConversionRate('');
+    // Nothing entered yet means nothing to convert: the figures will simply be
+    // typed in the new currency, so there is no question to ask.
+    if (!hasEnteredAmounts) setAmountsCurrency(next);
+  };
+
+  const currencyChanged = currency !== amountsCurrency && hasEnteredAmounts;
+  const parsedConversionRate = useMemo(() => {
+    const value = Number(conversionRate);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [conversionRate]);
+
+  const applyConversion = () => {
+    if (!parsedConversionRate) return;
+    setMemberRateState(previous => convertBillingMemberRates(previous, {
+      projectKey: billingProjectKey,
+      factor: parsedConversionRate,
+    }));
+    setManualPrices(previous => Object.fromEntries(
+      Object.entries(previous).map(([id, price]) => {
+        const value = Number(price);
+        return [
+          id,
+          Number.isFinite(value) && value !== 0
+            ? Math.round(value * parsedConversionRate * 100) / 100
+            : price,
+        ];
+      }),
+    ));
+    setAmountsCurrency(currency);
+    setConversionRate('');
+  };
+
+  const keepAmountsAsIs = () => {
+    setAmountsCurrency(currency);
+    setConversionRate('');
+  };
 
   // Load saved invoices
   useEffect(() => {
@@ -1060,65 +1118,44 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Умови оплати, терміни..." rows={2} />
               </Field>
 
-              {/* Rates section */}
+              {/* Rates section. The per-position "quick presets" row is gone:
+                  picking a position on the row itself already fills that
+                  person's rate, so the buttons were a second way to do the same
+                  thing that overwrote everybody at once. */}
               <Field label="Ставки виконавців">
-                <Surface preset="bordered-panel" padding="none" className="overflow-hidden">
-                  {positions.length > 0 && (
-                    <div className="px-4 pt-3 pb-2 bg-[#fafafa]">
-                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Швидкі пресети</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {positions.map(preset => (
-                          <Button key={preset.id}
-                            onClick={() => {
-                              setMemberRateState(previous => applyBillingRatePreset(previous, {
-                                projectKey: billingProjectKey,
-                                memberIds: billingMembers.map(member => member.id || member.uid),
-                                rate: preset.hourlyRate,
-                              }));
-                            }}
-                            style="secondary"
-                            size="sm"
-                          >
-                            {preset.label}: {preset.hourlyRate} {currency}/г
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+                <Surface preset="bordered-panel" padding="sm" className="flex flex-col gap-2">
+                  {billingMembers.length === 0 ? (
+                    <p className="py-3 text-center text-[12px] text-faint">Учасників з часом немає</p>
+                  ) : (
+                    billingMembers.map(m => {
+                      const uid = m.id || m.uid;
+                      return (
+                        <RateRow
+                          key={uid}
+                          uid={uid}
+                          member={m}
+                          rate={memberRates[uid] ?? 0}
+                          onRateChange={rate => setMemberRateState(previous => (
+                            setBillingMemberRate(previous, {
+                              projectKey: billingProjectKey,
+                              uid,
+                              rate,
+                            })
+                          ))}
+                          preset={memberPresets[uid] || ''}
+                          onPresetChange={presetId => setMemberRateState(previous => (
+                            setBillingMemberPreset(previous, {
+                              projectKey: billingProjectKey,
+                              uid,
+                              presetId,
+                            })
+                          ))}
+                          currency={currency}
+                          positions={positions}
+                        />
+                      );
+                    })
                   )}
-                  <div className="px-4 py-2 divide-y divide-[#f0f0f0]">
-                    {billingMembers.length === 0 ? (
-                      <p className="text-[12px] text-faint py-3 text-center">Учасників з часом немає</p>
-                    ) : (
-                      billingMembers.map(m => {
-                        const uid = m.id || m.uid;
-                        return (
-                          <RateRow
-                            key={uid}
-                            uid={uid}
-                            member={m}
-                            rate={memberRates[uid] ?? 0}
-                            onRateChange={rate => setMemberRateState(previous => (
-                              setBillingMemberRate(previous, {
-                                projectKey: billingProjectKey,
-                                uid,
-                                rate,
-                              })
-                            ))}
-                            preset={memberPresets[uid] || ''}
-                            onPresetChange={presetId => setMemberRateState(previous => (
-                              setBillingMemberPreset(previous, {
-                                projectKey: billingProjectKey,
-                                uid,
-                                presetId,
-                              })
-                            ))}
-                            currency={currency}
-                            positions={positions}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
                 </Surface>
               </Field>
 
@@ -1270,7 +1307,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             <Field label="Валюта">
               <Select
                 value={currency}
-                onChange={setCurrency}
+                onChange={changeCurrency}
                 options={CURRENCIES.map(c => ({ value: c, label: c }))}
               />
             </Field>
@@ -1283,6 +1320,40 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 onChange={e => setTaxPct(Math.min(100, Math.max(0, Number(e.target.value))))} />
             </Field>
           </div>
+
+          {/* Rates and manual prices are plain numbers; only this selector says
+              what they are worth. Switching it therefore has to be answered:
+              either convert the figures at a stated rate, or confirm they were
+              already meant in the new currency. Doing neither is what made an
+              invoice change value by 40× without a single digit moving. */}
+          {currencyChanged && (
+            <Alert
+              variant="warning"
+              title={`Суми введено в ${amountsCurrency}`}
+              description={`Валюта рахунку тепер ${currency}. Вкажіть курс, щоб перерахувати ставки й ручні ціни, або підтвердьте, що суми вже в ${currency}.`}
+            >
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-[12px] font-semibold text-ink">1 {amountsCurrency} =</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.0001"
+                  size="sm"
+                  className="w-[110px]"
+                  value={conversionRate}
+                  onChange={e => setConversionRate(e.target.value)}
+                  suffix={currency}
+                  aria-label={`Курс ${amountsCurrency} до ${currency}`}
+                />
+                <Button size="sm" onClick={applyConversion} disabled={!parsedConversionRate}>
+                  Перерахувати
+                </Button>
+                <Button size="sm" style="ghost" onClick={keepAmountsAsIs}>
+                  Залишити як є
+                </Button>
+              </div>
+            </Alert>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface">
@@ -1336,9 +1407,12 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           ) : null}
 
           <div className="flex flex-col gap-2 mt-1">
+            {/* Both actions wait for the currency question to be answered: an
+                invoice whose figures are in one currency and whose header says
+                another is wrong in a way the reader cannot see. */}
             <Button
               onClick={showDraftPreview}
-              disabled={checkedCount === 0}
+              disabled={checkedCount === 0 || currencyChanged}
               style="primary"
               size="lg"
               icon={Eye}
@@ -1346,15 +1420,19 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             >
               Переглянути рахунок
             </Button>
+            {/* `loading` is the button's own busy state: it swaps the icon for
+                a spinner in place. Rendering a LoadingSpinner *next to* the
+                label instead added a second glyph, so the button grew wider and
+                the text shifted the moment you pressed it. */}
             <Button
               onClick={saveInvoice}
-              disabled={saving || checkedCount === 0}
+              disabled={checkedCount === 0 || currencyChanged}
+              loading={saving}
               style="secondary"
               size="lg"
-              icon={saving ? null : Save}
+              icon={Save}
               className="w-full"
             >
-              {saving && <LoadingSpinner size="sm" className="mr-2 inline" />}
               Зберегти чернетку
             </Button>
           </div>
