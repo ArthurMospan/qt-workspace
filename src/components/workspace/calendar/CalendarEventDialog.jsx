@@ -35,20 +35,40 @@ import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
+import {
+  POINT_EVENT_DURATION_MINUTES,
+  applyCalendarEventTypeRules,
+  calendarEventDefaultVisibility,
+  calendarEventHasDuration,
+  calendarEventInvitesOthers,
+  calendarEventRequiresReminder,
+  calendarEventSupportsPlace,
+  calendarEventSupportsProject,
+  calendarEventSupportsReminders,
+  calendarEventSupportsRsvp,
+  calendarEventSupportsTracking,
+  calendarEventTypeLabel,
+  calendarEventVisibilityOptionsFor,
+  isKnownCalendarEventType,
+  normalizeCalendarEventVisibility,
+} from '@/lib/utils/calendarEventTypes.mjs';
 
-export const CALENDAR_EVENT_TYPE_OPTIONS = [
-  { value: 'meeting', label: 'Мітинг', color: '#3b82f6', bg: '#eff6ff', icon: Video },
-  { value: 'event', label: 'Подія', color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarIcon },
-  { value: 'focus', label: 'Фокус-час', color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
-  { value: 'absence', label: 'Відсутність', color: '#f59e0b', bg: '#fffbeb', icon: Users },
-  { value: 'release', label: 'Реліз / етап', color: '#ef4444', bg: '#fef2f2', icon: Flag },
-  { value: 'note', label: 'Нотатка', color: '#64748b', bg: '#f8fafc', icon: StickyNote },
-  { value: 'reminder', label: 'Нагадування', color: '#f97316', bg: '#fff7ed', icon: BellRing },
-];
-const TYPE_LABELS = new Map([
-  ...CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option.label]),
-  ['birthday', 'День народження'],
-]);
+// Only the presentation lives here — what each type *is* (and therefore which
+// fields it may carry) is decided once in calendarEventTypes.mjs, which the
+// server enforces too.
+const TYPE_PRESENTATION = {
+  meeting: { color: '#3b82f6', bg: '#eff6ff', icon: Video },
+  event: { color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarIcon },
+  focus: { color: '#14b8a6', bg: '#f0fdfa', icon: Clock3 },
+  absence: { color: '#f59e0b', bg: '#fffbeb', icon: Users },
+  release: { color: '#ef4444', bg: '#fef2f2', icon: Flag },
+  note: { color: '#64748b', bg: '#f8fafc', icon: StickyNote },
+  reminder: { color: '#f97316', bg: '#fff7ed', icon: BellRing },
+};
+
+export const CALENDAR_EVENT_TYPE_OPTIONS = Object.entries(TYPE_PRESENTATION).map(
+  ([value, presentation]) => ({ value, label: calendarEventTypeLabel(value), ...presentation }),
+);
 
 export const CALENDAR_EVENT_RECURRENCE_OPTIONS = [
   { value: 'none', label: 'Не повторювати' },
@@ -93,11 +113,10 @@ export function calendarEventFormInitialValue(event, initialStart, currentUserId
   const end = editableEnd ? new Date(editableEnd) : new Date(start.getTime() + 60 * 60 * 1000);
   return {
     title: event?.title || '',
-    type: CALENDAR_EVENT_TYPE_OPTIONS.some(option => option.value === event?.type)
-      ? event.type
-      : event?.type
-        ? 'event'
-        : 'meeting',
+    // A stored type is kept as it is, including the read-only `birthday` one and
+    // the legacy `milestone` alias, so the screen describes the event it is
+    // actually showing rather than falling back to a generic "Подія".
+    type: isKnownCalendarEventType(event?.type) ? event.type : 'meeting',
     description: event?.description || '',
     location: event?.location || '',
     meetingUrl: event?.meetingUrl || '',
@@ -133,22 +152,38 @@ export function calendarEventFormPayload(form, currentUserId) {
     startAt = new Date(`${form.startDate}T${form.startTime}:00`);
     endAt = new Date(`${form.endDate}T${form.endTime}:00`);
   }
+  // A type with no duration of its own never asked for an end, so it does not
+  // have one to validate — the server derives the same value.
+  if (!calendarEventHasDuration(form.type) && Number.isFinite(startAt.getTime())) {
+    endAt = new Date(startAt.getTime() + (form.allDay
+      ? 24 * 60 * 60 * 1000
+      : POINT_EVENT_DURATION_MINUTES * 60 * 1000));
+  }
   if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) {
     throw new Error('Вкажіть коректні дату й час');
   }
   if (endAt <= startAt) throw new Error('Завершення має бути пізніше за початок');
 
+  const typed = applyCalendarEventTypeRules({
+    type: form.type,
+    projectId: form.projectId,
+    location: form.location,
+    meetingUrl: form.meetingUrl,
+    participantIds: form.visibility === 'private'
+      ? (currentUserId ? [currentUserId] : [])
+      : form.participantIds,
+    reminderMinutes: form.reminderMinutes,
+  }, { ownerId: currentUserId });
+
   return {
     title,
     type: form.type,
     description: form.description,
-    location: form.location,
-    meetingUrl: form.meetingUrl,
-    projectId: form.projectId,
-    visibility: form.visibility,
-    participantIds: form.visibility === 'private'
-      ? (currentUserId ? [currentUserId] : [])
-      : form.participantIds,
+    location: typed.location,
+    meetingUrl: typed.meetingUrl,
+    projectId: typed.projectId,
+    visibility: normalizeCalendarEventVisibility(form.type, form.visibility),
+    participantIds: typed.participantIds,
     allDay: form.allDay,
     startAt: startAt.toISOString(),
     endAt: endAt.toISOString(),
@@ -157,7 +192,30 @@ export function calendarEventFormPayload(form, currentUserId) {
       interval: Number(form.recurrenceInterval) || 1,
       until: form.recurrenceUntil,
     },
+    reminderMinutes: typed.reminderMinutes,
+  };
+}
+
+// Switching the type mid-edit rewrites the fields the new type cannot hold, so
+// the form never shows a project on a note or a guest list on an absence — and
+// never silently submits one that is merely hidden.
+export function calendarEventFormWithType(form, type, currentUserId) {
+  const typed = applyCalendarEventTypeRules({
+    type,
+    projectId: form.projectId,
+    location: form.location,
+    meetingUrl: form.meetingUrl,
+    participantIds: form.participantIds,
     reminderMinutes: form.reminderMinutes,
+  }, { ownerId: currentUserId });
+  return {
+    ...form,
+    ...typed,
+    // The old type's visibility only survives if the new one can honour it;
+    // otherwise the new type's own default applies.
+    visibility: normalizeCalendarEventVisibility(type, form.visibility) === form.visibility
+      ? form.visibility
+      : calendarEventDefaultVisibility(type),
   };
 }
 
@@ -207,7 +265,7 @@ export function CalendarEventDetails({
         <div className="bg-gradient-to-br from-black/[0.035] to-transparent p-[18px]">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Pill tone="dark" size="wide-sm">
-              {TYPE_LABELS.get(event.type) || 'Подія'}
+              {calendarEventTypeLabel(event.type)}
             </Pill>
             {project && <Pill tone="surface" size="wide-sm" appearance="soft-outline">{project.name}</Pill>}
             {event.recurrence?.frequency !== 'none' && <Pill tone="surface" size="wide-sm" appearance="soft-outline" icon={Repeat2}>{recurrence?.label}</Pill>}
@@ -244,6 +302,9 @@ export function CalendarEventDetails({
         </>
       )}
 
+      {/* A self-audience entry has exactly one participant — you — so a
+          "Учасники" list of one is noise rather than information. */}
+      {calendarEventInvitesOthers(event.type) && (
       <div>
         <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted">Учасники</p>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -262,8 +323,12 @@ export function CalendarEventDetails({
           })}
         </div>
       </div>
+      )}
 
-      {isParticipant && event.organizerId !== currentUserId && (
+      {/* Only a type that actually invites people asks whether you are coming.
+          "Буду / Не буду" on a reminder you set for yourself was the clearest
+          case of the form ignoring what the event is. */}
+      {calendarEventSupportsRsvp(event.type) && isParticipant && event.organizerId !== currentUserId && (
         <div data-ui-surface="panel" data-ui-padding="compact-md" className="ui-surface">
           <p className="mb-2 text-[12px] font-bold text-ink">Ви приєднаєтесь?</p>
           <ResponseChoice size="tile" value={response} onChange={onRespond} disabled={saving} />
@@ -276,7 +341,7 @@ export function CalendarEventDetails({
         </a>
       )}
 
-      {!event.readOnly && ['meeting', 'event', 'focus', 'release'].includes(event.type) && (
+      {!event.readOnly && calendarEventSupportsTracking(event.type) && (
         <div data-ui-surface="bordered-card" data-ui-padding="compact-md" className="ui-surface">
           <div className="mb-3 flex items-start justify-between gap-4">
             <div>
@@ -387,6 +452,10 @@ export default function CalendarEventDialog({
   const isParticipant = event?.participantIds?.includes(currentUserId);
 
   const update = (key, value) => setForm(previous => ({ ...previous, [key]: value }));
+  const changeType = value => setForm(previous =>
+    calendarEventFormWithType(previous, value, currentUserId));
+  const invitesOthers = calendarEventInvitesOthers(form.type);
+  const hasDuration = calendarEventHasDuration(form.type);
 
   const submit = async eventObject => {
     eventObject.preventDefault();
@@ -555,20 +624,22 @@ export default function CalendarEventDialog({
             <Label>Тип</Label>
             <Select
               value={form.type}
-              onChange={value => update('type', value)}
+              onChange={changeType}
               options={CALENDAR_EVENT_TYPE_OPTIONS}
               disabled={!canManage}
             />
           </div>
-          <div className="flex flex-col gap-[6px]">
-            <Label>Проєкт</Label>
-            <Select
-              value={form.projectId}
-              onChange={value => update('projectId', value)}
-              options={projectOptions}
-              disabled={!canManage}
-            />
-          </div>
+          {calendarEventSupportsProject(form.type) && (
+            <div className="flex flex-col gap-[6px]">
+              <Label>Проєкт</Label>
+              <Select
+                value={form.projectId}
+                onChange={value => update('projectId', value)}
+                options={projectOptions}
+                disabled={!canManage}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2">
@@ -587,19 +658,25 @@ export default function CalendarEventDialog({
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-[6px]">
-            <Label icon={BellRing}>Нагадування</Label>
-            <MultiSelect
-              value={form.reminderMinutes}
-              onChange={value => update('reminderMinutes', value)}
-              options={CALENDAR_EVENT_REMINDER_OPTIONS}
-              placeholder="Додати нагадування"
-              searchPlaceholder="Знайти інтервал..."
-              className="w-full"
-              dropdownClassName="w-full"
-            />
-            <p className="text-[10px] text-muted">Можна вибрати до п’яти нагадувань.</p>
-          </div>
+          {calendarEventSupportsReminders(form.type) && (
+            <div className="flex flex-col gap-[6px]">
+              <Label icon={BellRing} required={calendarEventRequiresReminder(form.type)}>Нагадування</Label>
+              <MultiSelect
+                value={form.reminderMinutes}
+                onChange={value => update('reminderMinutes', value)}
+                options={CALENDAR_EVENT_REMINDER_OPTIONS}
+                placeholder="Додати нагадування"
+                searchPlaceholder="Знайти інтервал..."
+                className="w-full"
+                dropdownClassName="w-full"
+              />
+              <p className="text-[10px] text-muted">
+                {calendarEventRequiresReminder(form.type)
+                  ? 'Нагадування прийде вам — навіть якщо ви створили його собі самі.'
+                  : 'Можна вибрати до п’яти нагадувань.'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div data-ui-surface="local" className="overflow-hidden rounded-[14px] border border-line bg-white">
@@ -615,55 +692,68 @@ export default function CalendarEventDialog({
               size="sm"
             />
           </div>
-          <div className="grid grid-cols-1 gap-[12px] p-[14px] sm:grid-cols-2">
+          <div className={`grid grid-cols-1 gap-[12px] p-[14px] ${hasDuration ? 'sm:grid-cols-2' : ''}`}>
             <div className="flex flex-col gap-[6px]">
-              <Label icon={CalendarIcon}>Початок</Label>
+              {/* A reminder, a note and a release happen *at* a time rather than
+                  *between* two, so they are asked for one. */}
+              <Label icon={CalendarIcon}>{hasDuration ? 'Початок' : 'Коли'}</Label>
               <div className="flex gap-[8px]">
                 <DatePicker
                   value={form.startDate}
                   onChange={value => update('startDate', value)}
                   disabled={!canManage}
-                  aria-label="Дата початку"
+                  aria-label={hasDuration ? 'Дата початку' : 'Дата'}
                 />
                 {!form.allDay && (
                   <TimePicker
                     value={form.startTime}
                     onChange={value => update('startTime', value)}
                     disabled={!canManage}
-                    aria-label="Час початку"
+                    aria-label={hasDuration ? 'Час початку' : 'Час'}
                   />
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-[6px]">
-              <Label icon={Clock3}>Завершення</Label>
-              <div className="flex gap-[8px]">
-                <DatePicker
-                  value={form.endDate}
-                  onChange={value => update('endDate', value)}
-                  disabled={!canManage}
-                  aria-label="Дата завершення"
-                />
-                {!form.allDay && (
-                  <TimePicker
-                    value={form.endTime}
-                    onChange={value => update('endTime', value)}
+            {hasDuration && (
+              <div className="flex flex-col gap-[6px]">
+                <Label icon={Clock3}>Завершення</Label>
+                <div className="flex gap-[8px]">
+                  <DatePicker
+                    value={form.endDate}
+                    onChange={value => update('endDate', value)}
                     disabled={!canManage}
-                    aria-label="Час завершення"
+                    aria-label="Дата завершення"
                   />
-                )}
+                  {!form.allDay && (
+                    <TimePicker
+                      value={form.endTime}
+                      onChange={value => update('endTime', value)}
+                      disabled={!canManage}
+                      aria-label="Час завершення"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col gap-[6px]">
-          <Label icon={form.visibility === 'private' ? LockKeyhole : Users}>
-            {form.visibility === 'private'
-              ? (form.type === 'note' ? 'Приватна нотатка' : 'Приватна подія')
-              : 'Учасники'}
+          <Label icon={!invitesOthers || form.visibility === 'private' ? LockKeyhole : Users}>
+            {!invitesOthers
+              ? 'Лише для вас'
+              : form.visibility === 'private'
+                ? 'Приватна подія'
+                : 'Учасники'}
           </Label>
-          {form.visibility === 'private' ? (
+          {!invitesOthers ? (
+            // No guest list, because the entry belongs to one day: yours. It can
+            // still be visible to the team — that is the visibility control
+            // below, not a participant list.
+            <div data-ui-surface="compact-bordered-panel" data-ui-padding="row" className="ui-surface text-[12px] text-muted">
+              Цей запис стосується лише вас: інших учасників не запрошують і відповіді не збирають.
+            </div>
+          ) : form.visibility === 'private' ? (
             <div data-ui-surface="compact-bordered-panel" data-ui-padding="row" className="ui-surface text-[12px] text-muted">
               Цю подію бачите лише ви. Запрошення та командні сповіщення не надсилаються.
             </div>
@@ -679,7 +769,7 @@ export default function CalendarEventDialog({
               dropdownClassName="w-full"
             />
           )}
-          {event && form.visibility !== 'private' && form.participantIds.length > 0 && (
+          {event && invitesOthers && form.visibility !== 'private' && form.participantIds.length > 0 && (
             <div className="flex flex-wrap gap-[6px] pt-[2px]">
               {form.participantIds.map(uid => {
                 const member = members.find(item => (item.id || item.uid) === uid);
@@ -697,16 +787,18 @@ export default function CalendarEventDialog({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-          <div className="flex flex-col gap-[6px]">
-            <Label icon={MapPin}>Місце</Label>
-            <Input value={form.location} onChange={e => update('location', e.target.value)} placeholder="Офіс або кімната" disabled={!canManage} />
+        {calendarEventSupportsPlace(form.type) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+            <div className="flex flex-col gap-[6px]">
+              <Label icon={MapPin}>Місце</Label>
+              <Input value={form.location} onChange={e => update('location', e.target.value)} placeholder="Офіс або кімната" disabled={!canManage} />
+            </div>
+            <div className="flex flex-col gap-[6px]">
+              <Label icon={Link2}>Посилання</Label>
+              <Input type="url" value={form.meetingUrl} onChange={e => update('meetingUrl', e.target.value)} placeholder="https://meet..." disabled={!canManage} />
+            </div>
           </div>
-          <div className="flex flex-col gap-[6px]">
-            <Label icon={Link2}>Посилання</Label>
-            <Input type="url" value={form.meetingUrl} onChange={e => update('meetingUrl', e.target.value)} placeholder="https://meet..." disabled={!canManage} />
-          </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-[6px]">
           <Label>Опис</Label>
@@ -718,11 +810,9 @@ export default function CalendarEventDialog({
           <Select
             value={form.visibility}
             onChange={value => update('visibility', value)}
-            options={[
-              { value: 'team', label: 'Уся команда' },
-              { value: 'participants', label: 'Лише учасники' },
-              { value: 'private', label: 'Лише я', icon: LockKeyhole },
-            ]}
+            options={calendarEventVisibilityOptionsFor(form.type).map(option => (
+              option.value === 'private' ? { ...option, icon: LockKeyhole } : option
+            ))}
             disabled={!canManage}
           />
         </div>

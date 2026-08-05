@@ -164,7 +164,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Забагато подій за короткий час' }, { status: 429 });
     }
 
-    const normalized = normalizedCalendarEventInput(body);
+    const normalized = normalizedCalendarEventInput(body, null, {
+      ownerId: authorization.user.uid,
+    });
     if (normalized.error) return NextResponse.json({ error: normalized.error }, { status: 400 });
     const eventData = normalized.value;
     if (eventData.visibility === 'private') {

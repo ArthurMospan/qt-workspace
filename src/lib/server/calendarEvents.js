@@ -4,6 +4,14 @@ import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { normalizeCalendarRecurrenceInterval } from '@/lib/utils/calendarTimeLog.mjs';
+import {
+  POINT_EVENT_DURATION_MINUTES,
+  applyCalendarEventTypeRules,
+  calendarEventHasDuration,
+  calendarEventSupportsTracking,
+  isKnownCalendarEventType,
+  normalizeCalendarEventVisibility,
+} from '@/lib/utils/calendarEventTypes.mjs';
 
 export const CALENDAR_EVENT_TYPES = new Set([
   'meeting',
@@ -49,18 +57,21 @@ export function serializeCalendarEvent(document) {
   };
 }
 
-export function normalizedCalendarEventInput(input, current = null) {
+// `ownerId` is the organizer: who the event belongs to. It is what lets the type
+// table decide the participant list — a self-audience type is always exactly its
+// owner, no matter what the client sent.
+export function normalizedCalendarEventInput(input, current = null, { ownerId = '' } = {}) {
   const title = cleanText(input.title ?? current?.title, 200);
   const description = cleanText(input.description ?? current?.description, 10_000);
-  const location = cleanText(input.location ?? current?.location, 500);
-  const meetingUrl = cleanText(input.meetingUrl ?? current?.meetingUrl, 1_000);
-  const projectId = cleanText(input.projectId ?? current?.projectId, 128);
+  const rawLocation = cleanText(input.location ?? current?.location, 500);
+  const rawMeetingUrl = cleanText(input.meetingUrl ?? current?.meetingUrl, 1_000);
+  const rawProjectId = cleanText(input.projectId ?? current?.projectId, 128);
   const type = cleanText(input.type ?? current?.type, 32) || 'meeting';
-  const visibility = cleanText(input.visibility ?? current?.visibility, 32) || 'team';
+  const rawVisibility = cleanText(input.visibility ?? current?.visibility, 32) || '';
   const startAt = timestampFromInput(input.startAt ?? current?.startAt);
-  const endAt = timestampFromInput(input.endAt ?? current?.endAt);
+  let endAt = timestampFromInput(input.endAt ?? current?.endAt);
   const allDay = input.allDay === undefined ? current?.allDay === true : input.allDay === true;
-  const participantIds = [...new Set(
+  const rawParticipantIds = [...new Set(
     (Array.isArray(input.participantIds) ? input.participantIds : current?.participantIds || [])
       .filter(item => typeof item === 'string' && item.length > 0),
   )].slice(0, 50);
@@ -73,17 +84,23 @@ export function normalizedCalendarEventInput(input, current = null) {
     interval: recurrenceInterval,
     until: recurrenceUntil,
   };
-  const reminderMinutes = [...new Set(
+  const rawReminderMinutes = [...new Set(
     (Array.isArray(input.reminderMinutes) ? input.reminderMinutes : current?.reminderMinutes || [15])
       .map(value => Number(value))
       .filter(value => CALENDAR_REMINDERS.has(value)),
   )].sort((a, b) => a - b).slice(0, 5);
 
   if (!title) return { error: 'Вкажіть назву події' };
-  if (!CALENDAR_EVENT_TYPES.has(type)) return { error: 'Невідомий тип події' };
-  if (!CALENDAR_VISIBILITIES.has(visibility)) return { error: 'Невідома видимість події' };
+  // `birthday` is generated from member profiles on read and is never stored, so
+  // it is not an acceptable type on write even though it is a known one.
+  if (type === 'birthday' || !isKnownCalendarEventType(type)) {
+    return { error: 'Невідомий тип події' };
+  }
+  if (rawVisibility && !CALENDAR_VISIBILITIES.has(rawVisibility)) {
+    return { error: 'Невідома видимість події' };
+  }
   if (!CALENDAR_RECURRENCES.has(recurrence.frequency)) return { error: 'Невідомий тип повторення' };
-  if (!startAt || !endAt || startAt === undefined || endAt === undefined) {
+  if (!startAt || startAt === undefined || endAt === undefined) {
     return { error: 'Вкажіть коректні дату й час' };
   }
   if (recurrence.until) {
@@ -92,6 +109,17 @@ export function normalizedCalendarEventInput(input, current = null) {
       return { error: 'Дата завершення повторення має бути після початку події' };
     }
   }
+
+  // A type with no duration of its own is a moment on the calendar, so its end
+  // is derived rather than asked for. Whatever end the client sent — or the one
+  // a meeting had before it was turned into a reminder — is discarded.
+  if (!calendarEventHasDuration(type)) {
+    const spanMs = allDay
+      ? 24 * 60 * 60 * 1000
+      : POINT_EVENT_DURATION_MINUTES * 60 * 1000;
+    endAt = admin.firestore.Timestamp.fromMillis(startAt.toMillis() + spanMs);
+  }
+  if (!endAt) return { error: 'Вкажіть коректні дату й час' };
   if (endAt.toMillis() <= startAt.toMillis()) {
     return { error: 'Завершення має бути пізніше за початок' };
   }
@@ -99,21 +127,36 @@ export function normalizedCalendarEventInput(input, current = null) {
     return { error: 'Подія не може тривати понад рік' };
   }
 
+  // Everything the type does not support is dropped here rather than at the call
+  // site, so no route can persist a note with a project or an absence with a
+  // guest list.
+  const typed = applyCalendarEventTypeRules({
+    type,
+    projectId: rawProjectId,
+    location: rawLocation,
+    meetingUrl: rawMeetingUrl,
+    participantIds: rawParticipantIds,
+    reminderMinutes: rawReminderMinutes,
+  }, { ownerId });
+
   return {
     value: {
       title,
       description,
-      location,
-      meetingUrl,
-      projectId,
+      location: typed.location,
+      meetingUrl: typed.meetingUrl,
+      projectId: typed.projectId,
       type,
-      visibility,
+      visibility: normalizeCalendarEventVisibility(
+        type,
+        rawVisibility || current?.visibility || '',
+      ),
       startAt,
       endAt,
       allDay,
-      participantIds,
+      participantIds: typed.participantIds,
       recurrence,
-      reminderMinutes,
+      reminderMinutes: typed.reminderMinutes,
     },
   };
 }

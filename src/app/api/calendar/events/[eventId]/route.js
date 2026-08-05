@@ -246,7 +246,9 @@ export async function PATCH(request, context) {
         );
       }
 
-      const normalized = normalizedCalendarEventInput(body, current);
+      const normalized = normalizedCalendarEventInput(body, current, {
+        ownerId: current.organizerId,
+      });
       if (normalized.error) {
         throw eventMutationError(
           'CALENDAR_EVENT_INVALID',

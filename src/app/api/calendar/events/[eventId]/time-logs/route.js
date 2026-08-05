@@ -14,6 +14,7 @@ import {
   isCalendarEventOccurrence,
   isCanonicalCalendarOccurrence,
 } from '@/lib/utils/calendarTimeLog.mjs';
+import { calendarEventSupportsTracking } from '@/lib/utils/calendarEventTypes.mjs';
 
 const MAX_MINUTES = 525_600;
 
@@ -141,7 +142,15 @@ async function readLiveEventContext({
       'У вас немає доступу до цієї події',
     );
   }
-  const canTrackTime = event.visibility === 'team';
+  // Two independent gates. Visibility keeps a restricted event's hours out of
+  // team analytics; the type table decides whether hours are a meaningful thing
+  // to record against this kind of entry at all — you do not spend time "in" a
+  // release, an absence or a note.
+  const typeAllowsTracking = calendarEventSupportsTracking(event.type);
+  const canTrackTime = event.visibility === 'team' && typeAllowsTracking;
+  const trackingDisabledReason = canTrackTime
+    ? null
+    : typeAllowsTracking ? 'visibility' : 'type';
   if (!isCalendarEventOccurrence(event, occurrenceStartAt)) {
     throw calendarTimeError(
       'CALENDAR_TIME_OCCURRENCE_MISMATCH',
@@ -183,6 +192,7 @@ async function readLiveEventContext({
     project,
     projectRef,
     canTrackTime,
+    trackingDisabledReason,
   };
 }
 
@@ -259,7 +269,7 @@ export async function GET(request, context) {
       .where('eventId', '==', eventId)
       .where('occurrenceStartAt', '==', occurrenceStartAt);
     const logs = await db.runTransaction(async transaction => {
-      const { event, canTrackTime } = await readLiveEventContext({
+      const { event, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
         db,
         eventRef,
@@ -281,7 +291,7 @@ export async function GET(request, context) {
           - new Date(left.loggedAt || 0).getTime()
         )),
         canTrackTime,
-        trackingDisabledReason: canTrackTime ? null : 'visibility',
+        trackingDisabledReason,
       };
     });
 
@@ -351,7 +361,7 @@ export async function POST(request, context) {
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logRef = db.collection('timeLogs').doc();
     await db.runTransaction(async transaction => {
-      const { event, projectRef, canTrackTime } = await readLiveEventContext({
+      const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
         db,
         eventRef,
@@ -362,9 +372,13 @@ export async function POST(request, context) {
       });
       if (!canTrackTime) {
         throw calendarTimeError(
-          'CALENDAR_TIME_VISIBILITY_DISABLED',
+          trackingDisabledReason === 'type'
+            ? 'CALENDAR_TIME_TYPE_DISABLED'
+            : 'CALENDAR_TIME_VISIBILITY_DISABLED',
           409,
-          'Списання часу доступне лише для командних подій',
+          trackingDisabledReason === 'type'
+            ? 'Цей тип події не передбачає списання часу'
+            : 'Списання часу доступне лише для командних подій',
         );
       }
       const now = admin.firestore.FieldValue.serverTimestamp();
@@ -435,7 +449,7 @@ export async function PATCH(request, context) {
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logRef = db.collection('timeLogs').doc(logId);
     await db.runTransaction(async transaction => {
-      const { event, projectRef, canTrackTime } = await readLiveEventContext({
+      const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
         db,
         eventRef,
@@ -446,9 +460,13 @@ export async function PATCH(request, context) {
       });
       if (!canTrackTime) {
         throw calendarTimeError(
-          'CALENDAR_TIME_VISIBILITY_DISABLED',
+          trackingDisabledReason === 'type'
+            ? 'CALENDAR_TIME_TYPE_DISABLED'
+            : 'CALENDAR_TIME_VISIBILITY_DISABLED',
           409,
-          'Змінювати час можна лише для командних подій',
+          trackingDisabledReason === 'type'
+            ? 'Цей тип події не передбачає списання часу'
+            : 'Змінювати час можна лише для командних подій',
         );
       }
       const logSnapshot = await transaction.get(logRef);

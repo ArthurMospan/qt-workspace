@@ -63,7 +63,19 @@ import {
   CALENDAR_EVENT_TYPE_OPTIONS,
   calendarEventFormInitialValue,
   calendarEventFormPayload,
+  calendarEventFormWithType,
 } from '@/components/workspace/calendar/CalendarEventDialog';
+import {
+  calendarEventHasDuration,
+  calendarEventInvitesOthers,
+  calendarEventSupportsPlace,
+  calendarEventSupportsProject,
+  calendarEventSupportsReminders,
+  calendarEventSupportsRsvp,
+  calendarEventSupportsTracking,
+  calendarEventTypeLabel,
+  calendarEventVisibilityOptionsFor,
+} from '@/lib/utils/calendarEventTypes.mjs';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -505,7 +517,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
   const updateQuickField = (key, value) => {
     const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
-    return persistQuickForm({ ...base, [key]: value });
+    // Changing the type rewrites everything the new type cannot hold, so the
+    // attribute row cannot leave a project attached to a note.
+    return persistQuickForm(key === 'type'
+      ? calendarEventFormWithType(base, value, currentUserId)
+      : { ...base, [key]: value });
   };
 
   const updateEventDate = value => {
@@ -649,6 +665,15 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     .map(value => CALENDAR_EVENT_REMINDER_OPTIONS.find(option => option.value === value)?.label)
     .filter(Boolean);
   const visibilityOption = VISIBILITY_OPTIONS.find(option => option.value === view.visibility);
+  // What this kind of entry is allowed to carry. Everything below reads these
+  // rather than testing the type string in place.
+  const showsProject = calendarEventSupportsProject(view.type);
+  const showsParticipants = calendarEventInvitesOthers(view.type);
+  const showsTracking = calendarEventSupportsTracking(view.type);
+  const showsPlace = calendarEventSupportsPlace(view.type);
+  const showsReminders = calendarEventSupportsReminders(view.type);
+  const showsRsvp = calendarEventSupportsRsvp(view.type);
+  const showsDuration = calendarEventHasDuration(view.type);
   const {
     attributeItemClass,
     attributeLabelClass,
@@ -824,11 +849,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       ) : (
                         <AttributeValue>
                           {typeOption?.icon && <typeOption.icon size={13} className="mr-1.5 shrink-0 text-muted" />}
-                          {typeOption?.label || 'Подія'}
+                          {calendarEventTypeLabel(view.type)}
                         </AttributeValue>
                       )}
                     </div>
 
+                    {showsProject && (
                     <div
                       className={attributeItemClass}
                       onClick={clickEvent => {
@@ -850,6 +876,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         <AttributeValue muted={!event.projectId}>{projectOption?.label || 'Без проєкту'}</AttributeValue>
                       )}
                     </div>
+                    )}
 
                     <div
                       className={attributeItemClass}
@@ -883,7 +910,13 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       trigger={(
                         <AttributeTrigger variant="cell" condensed={isHeaderScrolled}>
                           <span className={attributeLabelClass}>Час події</span>
-                          <AttributeValue>{event.allDay ? 'Весь день' : `${formatTime(event.startAt)}–${formatTime(event.endAt)}`}</AttributeValue>
+                          <AttributeValue>
+                            {event.allDay
+                              ? 'Весь день'
+                              : showsDuration
+                                ? `${formatTime(event.startAt)}–${formatTime(event.endAt)}`
+                                : formatTime(event.startAt)}
+                          </AttributeValue>
                         </AttributeTrigger>
                       )}
                     >
@@ -904,9 +937,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                                 ariaLabel="Подія на весь день"
                               />
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className={`grid gap-2 ${showsDuration ? 'grid-cols-2' : 'grid-cols-1'}`}>
                               <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Початок</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                                  {showsDuration ? 'Початок' : 'Коли'}
+                                </span>
                                 <Input
                                   type="date"
                                   value={schedule.startDate}
@@ -922,23 +957,25 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                                   />
                                 )}
                               </div>
-                              <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Завершення</span>
-                                <Input
-                                  type="date"
-                                  value={schedule.endDate}
-                                  onChange={inputEvent => setScheduleDraft(current => ({ ...current, endDate: inputEvent.target.value }))}
-                                  disabled={!canManage || attributeSaving}
-                                />
-                                {!schedule.allDay && (
+                              {showsDuration && (
+                                <div className="space-y-1.5">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Завершення</span>
                                   <Input
-                                    type="time"
-                                    value={schedule.endTime}
-                                    onChange={inputEvent => setScheduleDraft(current => ({ ...current, endTime: inputEvent.target.value }))}
+                                    type="date"
+                                    value={schedule.endDate}
+                                    onChange={inputEvent => setScheduleDraft(current => ({ ...current, endDate: inputEvent.target.value }))}
                                     disabled={!canManage || attributeSaving}
                                   />
-                                )}
-                              </div>
+                                  {!schedule.allDay && (
+                                    <Input
+                                      type="time"
+                                      value={schedule.endTime}
+                                      onChange={inputEvent => setScheduleDraft(current => ({ ...current, endTime: inputEvent.target.value }))}
+                                      disabled={!canManage || attributeSaving}
+                                    />
+                                  )}
+                                </div>
+                              )}
                             </div>
                             {canManage ? (
                               <div className="flex justify-end">
@@ -960,6 +997,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       }}
                     </Popover>
 
+                    {showsParticipants && (
                     <Popover
                       position="bottom"
                       hideCloseIcon
@@ -986,7 +1024,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         {!canManage && <p className="text-[11px] text-muted">Список доступний лише для перегляду.</p>}
                       </div>
                     </Popover>
+                    )}
 
+                    {showsTracking && (
                     <div
                       className={`${attributeItemClass} ${canTrackTime ? 'cursor-pointer hover:bg-[#ebebeb]' : ''}`}
                       title={canTrackTime ? 'Відкрити трекінг часу' : trackingDisabledMessage}
@@ -1022,6 +1062,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         spentLabel={isTimerMine ? formatElapsed((totalMinutes * 60) + timerElapsed) : formatMinutes(totalMinutes)}
                       />
                     </div>
+                    )}
 
                     <Popover
                       position="bottom"
@@ -1053,7 +1094,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                                 disabled={!canManage || attributeSaving}
                                 value={detailValues.visibility}
                                 onChange={value => setDetailsDraft(current => ({ ...current, visibility: value }))}
-                                options={VISIBILITY_OPTIONS}
+                                options={calendarEventVisibilityOptionsFor(detailValues.type)}
                               />
                             </div>
                             <div className="space-y-1.5">
@@ -1086,19 +1127,21 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                                 </div>
                               )}
                             </div>
-                            <div className="space-y-1.5">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Нагадування</span>
-                              <MultiSelect
-                                value={detailValues.reminderMinutes}
-                                onChange={value => setDetailsDraft(current => ({ ...current, reminderMinutes: value }))}
-                                options={CALENDAR_EVENT_REMINDER_OPTIONS}
-                                placeholder="Додати нагадування"
-                                searchPlaceholder="Знайти інтервал…"
-                                disabled={!canManage || attributeSaving}
-                                className="w-full"
-                                dropdownClassName="w-[280px]"
-                              />
-                            </div>
+                            {showsReminders && (
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Нагадування</span>
+                                <MultiSelect
+                                  value={detailValues.reminderMinutes}
+                                  onChange={value => setDetailsDraft(current => ({ ...current, reminderMinutes: value }))}
+                                  options={CALENDAR_EVENT_REMINDER_OPTIONS}
+                                  placeholder="Додати нагадування"
+                                  searchPlaceholder="Знайти інтервал…"
+                                  disabled={!canManage || attributeSaving}
+                                  className="w-full"
+                                  dropdownClassName="w-[280px]"
+                                />
+                              </div>
+                            )}
                             {canManage ? (
                               <div className="flex justify-end">
                                 <Button
@@ -1115,7 +1158,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                               <div className="space-y-1 text-[11px] text-muted">
                                 <p>Видимість: {visibilityOption?.label}</p>
                                 <p>Повторення: {recurrenceOption?.label}</p>
-                                <p>Нагадування: {reminderLabels.length ? reminderLabels.join(', ') : 'немає'}</p>
+                                {showsReminders && (
+                                  <p>Нагадування: {reminderLabels.length ? reminderLabels.join(', ') : 'немає'}</p>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1147,6 +1192,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
               )}
             </section>
 
+            {showsPlace && (
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <MapPin size={14} className="text-muted" />
@@ -1172,7 +1218,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 />
               )}
             </section>
+            )}
 
+            {showsPlace && (
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <Link2 size={14} className="text-muted" />
@@ -1202,7 +1250,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 </div>
               )}
             </section>
+            )}
 
+            {showsParticipants && (
             <section>
               <div className="mb-3 flex items-center gap-2">
                 <Users size={14} className="text-muted" />
@@ -1227,7 +1277,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   <p className="text-[13px] text-faint">Учасників не додано</p>
                 )}
 
-                {isParticipant && (
+                {showsRsvp && isParticipant && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/[0.05] pt-3">
                     <span className="mr-1 text-[11px] font-bold text-muted">Ваша відповідь:</span>
                     <ResponseChoice size="md" surface="surface" value={response} onChange={handleRespond} disabled={saving} />
@@ -1235,6 +1285,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 )}
               </div>
             </section>
+            )}
           </main>
 
           {actionError && !timePanelOpen && (

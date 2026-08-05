@@ -32,6 +32,7 @@ const TYPE_ICONS = {
   calendar_reminder: '📅',
   calendar_invite: '📩',
   calendar_changed: '🗓',
+  birthday: '🎂',
   alert: '⚠️',
   emergency: '🚨',
   test: '🧪',

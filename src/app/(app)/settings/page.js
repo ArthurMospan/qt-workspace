@@ -1268,7 +1268,33 @@ export default function SettingsPage() {
     try {
       await updateDoc(doc(db, 'users', uid), { [field]: value, updatedAt: serverTimestamp() });
       showToast('Збережено');
+      if (field === 'birthday') await announceBirthdayIfToday(value);
     } catch { showToast('Помилка збереження', 'error'); }
+  };
+
+  // The scheduled sweep claims each day once, and by the time anyone opens
+  // Settings it has already run — so a birthday saved *for today* produced no
+  // greeting and no notification until the next year. Ask the server to
+  // announce it now instead. Everything it writes is keyed by day and member,
+  // so the regular sweep landing later changes nothing.
+  const announceBirthdayIfToday = async value => {
+    const organizationId = activeOrgId;
+    if (!organizationId || typeof value !== 'string') return;
+    const match = value.match(/^\d{4}-(\d{2}-\d{2})$/);
+    const today = new Date();
+    const todayKey = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    if (!match || match[1] !== todayKey) return;
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+      await fetch('/api/calendar/birthday', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ organizationId }),
+      });
+    } catch {
+      // The greeting is a nicety, not part of saving the profile field.
+    }
   };
 
   const handleSectionChange = async (newSection) => {

@@ -163,9 +163,12 @@ test('QUI-71 uses shared date and time controls throughout the calendar event fo
   ]);
 
   assert.doesNotMatch(dialog, /<Input type="(?:date|time)"/);
-  assert.match(dialog, /<DatePicker[\s\S]{0,220}aria-label="Дата початку"/);
+  // A type with no duration of its own asks for one moment rather than a range,
+  // so the start controls label themselves accordingly; the end pair only
+  // renders for types that have an end.
+  assert.match(dialog, /<DatePicker[\s\S]{0,220}aria-label=\{hasDuration \? 'Дата початку' : 'Дата'\}/);
   assert.match(dialog, /<DatePicker[\s\S]{0,220}aria-label="Дата завершення"/);
-  assert.match(dialog, /<TimePicker[\s\S]{0,220}aria-label="Час початку"/);
+  assert.match(dialog, /<TimePicker[\s\S]{0,220}aria-label=\{hasDuration \? 'Час початку' : 'Час'\}/);
   assert.match(dialog, /<TimePicker[\s\S]{0,220}aria-label="Час завершення"/);
   assert.match(dialog, /value=\{form\.recurrenceUntil\}[\s\S]{0,120}minDate=\{form\.startDate\}/);
   assert.match(datePicker, /disabled=\{Boolean\(isBeforeMinimum\)\}/);
@@ -188,7 +191,14 @@ test('QUI-70 shares calendar type icons between creation and filtering', async (
     page,
     /Object\.entries\(TYPE_CONFIG\)\.map\(\(\[value, config\]\) => \(\{ value, label: config\.label, icon: config\.icon \}\)\)/,
   );
-  assert.match(dialog, /\{ value: 'event', label: 'Подія',[\s\S]{0,100}icon: CalendarIcon \}/);
+  // The options are now derived: the label comes from the shared type table and
+  // only the icon and colours live in the dialog, so the filter and the picker
+  // cannot drift apart.
+  assert.match(dialog, /event: \{ color: '#8b5cf6', bg: '#f5f3ff', icon: CalendarIcon \}/);
+  assert.match(
+    dialog,
+    /Object\.entries\(TYPE_PRESENTATION\)\.map\(\s*\(\[value, presentation\]\) => \(\{ value, label: calendarEventTypeLabel\(value\), \.\.\.presentation \}\)/s,
+  );
 });
 
 test('QUI-69 lays out overlaps and renders people as avatar plus name', async () => {

@@ -371,22 +371,84 @@ function birthdayParts(nowMs, timeZone) {
   return { year, month, day };
 }
 
-async function runOrganizationBirthdaySweep(organizationId, timeZone, nowMs) {
+// Everyone but the birthday person gets a bell entry pointing at the greeting.
+// Deterministic ids, so a re-run — the scheduled sweep after an on-demand one —
+// writes the same documents rather than a second set.
+async function createBirthdayNotifications({
+  organizationId,
+  memberIds,
+  birthdayUserId,
+  dayKey,
+  name,
+}) {
+  const db = getAdminDb();
+  const recipients = memberIds.filter(userId => userId && userId !== birthdayUserId);
+  if (!recipients.length) return;
+  const link = withNotificationOrganization('/chat', organizationId);
+  const batch = db.batch();
+  for (const userId of recipients) {
+    batch.create(
+      db.collection('notifications').doc(`birthday_${dayKey}_${birthdayUserId}_${userId}`),
+      {
+        userId,
+        type: 'birthday',
+        title: `Сьогодні день народження у ${name}`,
+        body: 'Привітайте колегу в загальному чаті 🎉',
+        link,
+        issueId: '',
+        projectId: '',
+        organizationId,
+        actorId: 'quickteam-system',
+        actorName: 'QuickTeam',
+        actorAvatar: '',
+        read: false,
+        inapp: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+    );
+  }
+  await batch.commit().catch(error => {
+    // A batch of `create`s fails as a whole if any id already exists, which is
+    // exactly what a repeat pass looks like. Nothing to repair.
+    if (error.code === 6 || error.code === 'already-exists') return;
+    console.warn('[reminder-job] Birthday notifications failed:', error.message);
+  });
+}
+
+// `userId` narrows the scan to one person, and `force` skips the once-a-day
+// claim. Both exist for the same reason: the claim is a cost control, not a
+// correctness one — the greeting itself is idempotent through its document id —
+// and a birthday saved *after* the day's scheduled pass had already claimed the
+// day used to be silently skipped until the following year.
+async function runOrganizationBirthdaySweep(
+  organizationId,
+  timeZone,
+  nowMs,
+  { userId = '', force = false } = {},
+) {
   const db = getAdminDb();
   const today = birthdayParts(nowMs, timeZone);
-  const claimRef = db.collection('organizations').doc(organizationId)
-    .collection('settings').doc(`birthdaySweep_${today.year}_${today.month}_${today.day}`);
-  try {
-    await claimRef.create({ claimedAt: admin.firestore.FieldValue.serverTimestamp() });
-  } catch (error) {
-    if (error.code === 6 || error.code === 'already-exists') return 0;
-    throw error;
+  const dayKey = `${today.year}_${today.month}_${today.day}`;
+  if (!force) {
+    const claimRef = db.collection('organizations').doc(organizationId)
+      .collection('settings').doc(`birthdaySweep_${dayKey}`);
+    try {
+      await claimRef.create({ claimedAt: admin.firestore.FieldValue.serverTimestamp() });
+    } catch (error) {
+      if (error.code === 6 || error.code === 'already-exists') return 0;
+      throw error;
+    }
   }
 
   const membershipsSnapshot = await db.collection('orgMemberships')
     .where('orgId', '==', organizationId)
     .get();
-  const memberships = membershipsSnapshot.docs.map(document => document.data());
+  const allMemberships = membershipsSnapshot.docs.map(document => document.data());
+  if (!allMemberships.length) return 0;
+  const memberIds = allMemberships.map(membership => membership.userId).filter(Boolean);
+  const memberships = userId
+    ? allMemberships.filter(membership => membership.userId === userId)
+    : allMemberships;
   if (!memberships.length) return 0;
   const profiles = await db.getAll(...memberships.map(membership =>
     db.collection('users').doc(membership.userId)));
@@ -401,11 +463,11 @@ async function runOrganizationBirthdaySweep(organizationId, timeZone, nowMs) {
         : '';
     if (birthday.slice(5) !== `${today.month}-${today.day}`) return;
 
-    const greetingId = `birthday_${today.year}_${today.month}_${today.day}_${membership.userId}`;
+    const name = profile.name || profile.email || 'нашого колеги';
+    const greetingId = `birthday_${dayKey}_${membership.userId}`;
     const messageRef = db.collection('organizations').doc(organizationId)
       .collection('channels').doc('general').collection('messages').doc(greetingId);
     try {
-      const name = profile.name || profile.email || 'нашого колеги';
       const text = `🎉 Сьогодні день народження у ${name}! Вітаємо, бажаємо натхнення, крутих результатів і чудового року попереду!`;
       await messageRef.create({
         text,
@@ -431,7 +493,17 @@ async function runOrganizationBirthdaySweep(organizationId, timeZone, nowMs) {
       created += 1;
     } catch (error) {
       if (error.code !== 6 && error.code !== 'already-exists') throw error;
+      // The greeting was already posted today; the notifications below are
+      // written anyway, because an earlier pass may have posted the message
+      // before this half existed.
     }
+    await createBirthdayNotifications({
+      organizationId,
+      memberIds,
+      birthdayUserId: membership.userId,
+      dayKey,
+      name,
+    });
   });
 
   return created;
@@ -447,6 +519,8 @@ export async function runBirthdaySweep({
   nowMs = Date.now(),
   organizationId = '',
   lastScanAtMs = null,
+  userId = '',
+  force = false,
 } = {}) {
   const db = getAdminDb();
   if (!organizationId && Number.isFinite(lastScanAtMs) &&
@@ -465,7 +539,12 @@ export async function runBirthdaySweep({
   const counts = await mapWithConcurrency(
     organizations,
     DELIVERY_CONCURRENCY,
-    organization => runOrganizationBirthdaySweep(organization.id, organization.timeZone, nowMs),
+    organization => runOrganizationBirthdaySweep(
+      organization.id,
+      organization.timeZone,
+      nowMs,
+      { userId, force },
+    ),
   );
   return {
     created: counts.reduce((total, count) => total + (count || 0), 0),
