@@ -10,7 +10,6 @@ import { useSprints }    from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
@@ -51,7 +50,7 @@ export default function BoardPage({ params }) {
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   const { members } = useTeamMembers(teamUids);
   const { members: organizationMembers } = useOrganization();
-  const { labels, priorities, types, statuses } = useWorkflowConfig();
+  const { labels, priorities, types } = useWorkflowConfig();
 
   // Portal tab visible only when project is shared (synced to QT)
   const isShared = project?.visibility === 'shared';
@@ -81,16 +80,6 @@ export default function BoardPage({ params }) {
     const stored = localStorage.getItem(`qt_project_view_${projectId}`);
     return stored === 'list' ? 'list' : 'kanban';
   });
-  // Columns are this project's statuses by default. Switched to categories, the
-  // board shows the same five columns «Мої завдання» does — which is what a
-  // project with many statuses actually wants when it says "fewer columns", and
-  // it needs no per-project column mapping to get it.
-  const [boardGrouping, setBoardGrouping] = useState(() => {
-    if (typeof window === 'undefined') return 'status';
-    return localStorage.getItem(`qt_board_grouping_${projectId}`) === 'category'
-      ? 'category'
-      : 'status';
-  });
 
   const canManageQtPlus = can(orgRole, 'edit:project_settings');
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
@@ -116,9 +105,8 @@ export default function BoardPage({ params }) {
       localStorage.setItem(`qt_board_priority_${projectId}`, boardPriorityFilter);
       localStorage.setItem(`qt_board_type_${projectId}`, boardTypeFilter);
       localStorage.setItem(`qt_project_view_${projectId}`, boardView);
-      localStorage.setItem(`qt_board_grouping_${projectId}`, boardGrouping);
     }
-  }, [boardSprintFilter, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, boardGrouping, projectId]);
+  }, [boardSprintFilter, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, projectId]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -153,32 +141,16 @@ export default function BoardPage({ params }) {
     userName: currentUser?.name || '',
   };
 
-  // `columnId` is a status while the board groups by status, and a category
-  // while it groups by category — in which case the status is the first one of
-  // that category this project actually uses.
-  const resolveBoardStatusId = useCallback((columnId, currentStatusId = null) => {
-    if (boardGrouping !== 'category') return columnId;
-    return resolveCategoryStatusId(columnId, statuses, {
-      currentStatusId,
-      hiddenStatusIds: project?.hiddenColumns || [],
-    });
-  }, [boardGrouping, project?.hiddenColumns, statuses]);
-
   const handleAddIssue = useCallback(async (columnId, title) => {
     try {
-      const status = resolveBoardStatusId(columnId);
-      if (!status) {
-        showToast('У цьому проєкті немає доступного статусу для цієї колонки', 'error');
-        return;
-      }
-      const data = { title, columnId: status };
+      const data = { title, columnId };
 
       await createIssue(data, actor);
       showToast('Задачу додано ✓');
     } catch (err) {
       showToast('Помилка: ' + err.message, 'error');
     }
-  }, [createIssue, resolveBoardStatusId, showToast]); // eslint-disable-line
+  }, [createIssue, showToast]); // eslint-disable-line
 
   // Archiving or deleting the project you are standing in has to leave it —
   // the projects list does not, because it stays on the list either way.
@@ -221,24 +193,11 @@ export default function BoardPage({ params }) {
   }, [createIssue, showToast]); // eslint-disable-line
 
   const handleMoveIssue = useCallback(async (issueId, newColumnId, position, updateFields = null) => {
-    const current = issues.find(issue => issue.id === issueId);
-    const targetStatusId = resolveBoardStatusId(
-      newColumnId,
-      current?.columnId || current?.status || null,
-    );
-    if (!targetStatusId) {
-      showToast(
-        'У цьому проєкті немає доступного статусу цієї категорії. '
-          + 'Увімкніть колонку в налаштуваннях проєкту',
-        'error',
-      );
-      return;
-    }
     // Both writes are kicked off synchronously so each paints its optimistic
     // result before the first await. Awaiting them in sequence also chained two
     // full round-trips onto a swimlane drop, which is what made the card sit
     // there for about a second before settling.
-    const move = moveIssue(issueId, targetStatusId, position, actor);
+    const move = moveIssue(issueId, newColumnId, position, actor);
     const fields = updateFields
       ? updateIssue(issueId, updateFields, actor)
       : Promise.resolve();
@@ -248,7 +207,7 @@ export default function BoardPage({ params }) {
     if (failed) {
       showToast(`Помилка переміщення. Відновлено попередній стан: ${failed.reason?.message || failed.reason}`, 'error');
     }
-  }, [issues, moveIssue, resolveBoardStatusId, updateIssue, showToast]); // eslint-disable-line
+  }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
   const isBoard = activeTab === 'board' && boardView === 'kanban';
   const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
@@ -375,16 +334,6 @@ export default function BoardPage({ params }) {
                 />
               </FilterBar>
               <div className="ml-auto flex items-center gap-2">
-                <Select
-                  filterRole="status"
-                  value={boardGrouping}
-                  onChange={setBoardGrouping}
-                  options={[
-                    { value: 'status', label: 'Колонки: статуси' },
-                    { value: 'category', label: 'Колонки: категорії' },
-                  ]}
-                  variant="ghost"
-                />
                 <Tabs
                   tabs={[
                     { id: 'kanban', icon: Kanban },
@@ -453,7 +402,6 @@ export default function BoardPage({ params }) {
               activeTimerIssueId={activeTimer?.issueId}
               onAddIssue={handleAddIssue}
               onMoveIssue={handleMoveIssue}
-              groupBy={boardGrouping}
               issueLinks={issueLinks}
               sprints={sprints}
               isArchived={isArchived}
@@ -469,8 +417,7 @@ export default function BoardPage({ params }) {
             sprints={sprints}
             projectId={projectId}
             projectName={project?.name}
-            groupBy={boardGrouping}
-            hiddenGroupIds={boardGrouping === 'category' ? [] : (project?.hiddenColumns || [])}
+            hiddenGroupIds={project?.hiddenColumns || []}
             activeTimerIssueId={activeTimer?.issueId}
           />
         )

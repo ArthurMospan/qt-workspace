@@ -29,18 +29,23 @@ This file contains current owner guardrails and confirmed open work. Completed i
 
 ### Status categories — the remaining step
 
-A status has a local label and a shared category (see the README). Two follow-ups
-are deliberately not built yet:
+A status has a local label and a shared category (see the README). One follow-up
+is deliberately not built:
 
 - Let one column of a project board hold several statuses, mapped explicitly. That
   is what "hidden columns" are really reaching for: today a status a project does
   not want is switched off per project, and a column that could gather «Код-ревʼю»
   and «QA» under one heading would express it directly. `hiddenColumns` and its
   server-side refusal stay correct in the meantime.
-- Decide whether `cancelled` should keep counting as completed work. It closes a
-  task exactly as `done` does today, which is what the product always described,
-  so progress, velocity and `completedAt` treat the two alike. Splitting them is a
-  product decision, not a bug, and it would touch analytics and invoices.
+
+A project board briefly offered a per-person "group by category" toggle instead,
+and it was removed rather than moved into project settings. Grouping is not a
+view preference there: a drop on a category column lets the category pick the
+status, so two people looking at one board would mean different things by the
+same gesture. A project board has a shared status vocabulary — that is what makes
+it a project board — and «fewer columns» is what hiding a column is for, at no
+cost in precision. Only «Мої завдання» groups by category, because across
+projects no shared vocabulary exists.
 
 ### Product polish
 

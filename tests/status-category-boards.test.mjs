@@ -183,25 +183,32 @@ test('the incoming column survives a project switching the backlog off', () => {
 
 // ── The seams, read from the source ───────────────────────────────────────────
 
-test('both boards resolve a category the same way, through the same helper', async () => {
+// Categories are what a board uses when there is no shared status vocabulary —
+// across projects. A project board has one, so it keeps it: its columns are that
+// project's statuses, and a drop names the status it means instead of letting a
+// category pick one. Fewer columns on a project board is what hiding a column is
+// for, and it costs no precision.
+test('only the cross-project board groups by category', async () => {
   const [myTasks, projectPage, board] = await Promise.all([
     read('../src/lib/hooks/useAllMyTasks.js'),
     read('../src/app/(app)/[projectId]/page.js'),
     read('../src/components/workspace/AgileBoard.jsx'),
   ]);
 
-  for (const [name, source] of [['useAllMyTasks', myTasks], ['project page', projectPage]]) {
-    assert.match(source, /resolveCategoryStatusId\(/, name);
-    assert.match(source, /hiddenStatusIds:/, name);
-    // Both keep the status the card already has when it is already in the
-    // target category, which is what makes a reorder a reorder.
-    assert.match(source, /currentStatusId/, name);
-  }
-  // A project board grouped by categories does not fold anything away: hidden
-  // columns are status ids and mean nothing to a category column.
-  assert.match(projectPage, /hiddenGroupIds=\{boardGrouping === 'category' \? \[\]/);
-  // The board remembers folded columns per grouping — a category id and a status
-  // id are different columns even when they share a name.
+  assert.match(myTasks, /resolveCategoryStatusId\(/);
+  assert.match(myTasks, /hiddenStatusIds:/);
+  // It keeps the status the card already has when it is already in the target
+  // category, which is what makes a reorder a reorder.
+  assert.match(myTasks, /currentStatusId/);
+
+  // The project board has no grouping choice at all: two people looking at one
+  // board must mean the same thing by dropping a card in the same place.
+  assert.doesNotMatch(projectPage, /groupBy=/);
+  assert.doesNotMatch(projectPage, /resolveCategoryStatusId/);
+  assert.match(projectPage, /hiddenGroupIds=\{project\?\.hiddenColumns \|\| \[\]\}/);
+
+  // The board still remembers folded columns per grouping — a category id and a
+  // status id are different columns even when they share a name.
   assert.match(board, /const collapsedKey = `qt_board_collapsed_\$\{projectId \|\| 'default'\}\$\{byCategory \? '_category' : ''\}`/);
 });
 
