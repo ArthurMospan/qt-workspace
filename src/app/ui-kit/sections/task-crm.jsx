@@ -1,12 +1,14 @@
 'use client';
+import { useState } from 'react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { TaskCounters, TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
+import { Button, StatusTransitionPicker, TaskCounters, TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { PreviewBlock } from '../preview';
 
 export default function TaskCRMSection() {
+  const [statusPickerOpen, setStatusPickerOpen] = useState(false);
   const { statuses } = useWorkflowConfig();
   const firstStatusId = statuses[0]?.id || DEFAULT_STATUSES[0].id;
   const secondStatusId = statuses[1]?.id || firstStatusId;
@@ -101,6 +103,32 @@ export default function TaskCRMSection() {
 
   return (
     <div className="flex flex-col gap-[32px]">
+      <PreviewBlock
+        title="Status Transition Picker — точний статус після drop"
+        description="На крос-проєктній дошці користувач кидає картку в спільну категорію. Якщо у її проєкті там кілька реальних колонок, ця міні-дошка показує їхні назви й кольори та дає завершити маршрут одним кліком. За одного кандидата вона не відкривається взагалі."
+        filePath="src/components/ui/TaskManagement/StatusTransitionPicker.jsx"
+        component="StatusTransitionPicker"
+      >
+        <Button style="secondary" size="lg" onClick={() => setStatusPickerOpen(true)}>
+          Перенести QUI-41 в «У роботі»
+        </Button>
+        {statusPickerOpen ? (
+          <StatusTransitionPicker
+            isOpen
+            issue={task1}
+            project={{ id: 'ui-kit-project', name: 'QuickTeam' }}
+            categoryLabel="У роботі"
+            statuses={[
+              { id: 'development', label: 'Розробка', color: '#6366f1' },
+              { id: 'code-review', label: 'Код-ревʼю', color: '#a855f7' },
+              { id: 'qa', label: 'QA', color: '#f59e0b' },
+            ]}
+            onSelect={() => setStatusPickerOpen(false)}
+            onClose={() => setStatusPickerOpen(false)}
+          />
+        ) : null}
+      </PreviewBlock>
+
       <PreviewBlock
         title="Task Identity — ключ, батьківське завдання, проєкт"
         description="Порядок від завдання назовні: свій ключ → під ким висить → у якому проєкті. Усі три моноширинні: два з них ідентифікатори, а третій шрифт на рядку в 10px читався як шов, а не як різниця. Розрізняються вагою і кольором — вагу має лише власний ключ, решта контекст. Спільний line-height на всі три, інакше кожен рахує свою висоту рядка від свого шрифту і назва проєкту сидить нижче за ключі. Іконка справжня, а не символ «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа."

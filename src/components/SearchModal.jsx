@@ -89,7 +89,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                       {/* Content: ID + Title */}
                       <div className="flex items-baseline gap-2 min-w-0 flex-1">
                         <code className="text-[11px] font-semibold text-muted shrink-0">
-                          {issue.issueKey || `WS-${issue.id.slice(0, 5)}`}
+                          {issue.issueKey || 'Без ID'}
                         </code>
                         <span className="text-[13px] font-semibold text-ink truncate group-hover:underline transition-colors">
                           {issue.title}

@@ -5,6 +5,7 @@ import { Pill, UserAvatar } from '@/components/ui';
 import ChannelInfoPanel from '@/components/ui/Chat/ChannelInfoPanel';
 import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import IssueMentionMenu from '@/components/ui/Chat/IssueMentionMenu';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import FileInput from '@/components/ui/Forms/FileInput';
@@ -37,6 +38,11 @@ const KIT_CHAT_ATTACHMENTS = [
 const KIT_PENDING_FILES = [
   { name: 'onboarding-v2.pdf', size: 482_000, type: 'application/pdf', lastModified: 1 },
   { name: 'нотатки.txt', size: 3_100, type: 'text/plain', lastModified: 2 },
+];
+
+const KIT_ISSUE_MENTIONS = [
+  { id: 'issue-1', issueKey: 'ENG-12', title: 'Підготувати новий онбординг', projectId: 'engineering' },
+  { id: 'issue-2', issueKey: 'DES-45', title: 'Перевірити стани мобільного меню', projectId: 'design' },
 ];
 
 export default function ChatElementsSection() {
@@ -153,6 +159,25 @@ export default function ChatElementsSection() {
             <span className="font-mono text-[10px] font-bold text-ink">density=&quot;timeline&quot;</span>
             <MentionMenu density="timeline" members={KIT_MENTION_MEMBERS} selectedIndex={1} onSelect={() => {}} />
           </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="IssueMentionMenu — згадки задач через #"
+        description="Після # і двох символів композер шукає доступні задачі за ID, назвою та описом. Вибір вставляє стабільний ключ, а не довге посилання; у повідомленні цей ключ стає клікабельною карткою задачі."
+        filePath="src/components/ui/Chat/IssueMentionMenu.jsx"
+        component="IssueMentionMenu"
+        fullWidth
+      >
+        <div className="w-full max-w-[560px]">
+          <IssueMentionMenu
+            issues={KIT_ISSUE_MENTIONS}
+            projects={[
+              { id: 'engineering', name: 'Engineering' },
+              { id: 'design', name: 'Design' },
+            ]}
+            onSelect={() => {}}
+          />
         </div>
       </PreviewBlock>
 

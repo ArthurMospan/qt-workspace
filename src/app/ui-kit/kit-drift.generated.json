@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 212,
+    "usedAndPreviewed": 213,
     "usedWithoutPreview": 0,
-    "declaredUnused": 107
+    "declaredUnused": 106
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -369,12 +369,6 @@
       "prop": "shape",
       "value": "capsule",
       "namespace": "*[data-ui-pill-shape]"
-    },
-    {
-      "component": "Pill",
-      "prop": "tone",
-      "value": "accent",
-      "namespace": "*[data-ui-pill-tone]"
     },
     {
       "component": "Pill",
@@ -1270,7 +1264,7 @@
     "ChatComposerDock.composition": ".chat-composer-dock[data-ui-composition]"
   },
   "usage": {
-    "Pill.tone.neutral": 13,
+    "Pill.tone.neutral": 14,
     "Pill.size.lg": 6,
     "Pill.shape.badge": 14,
     "Button.size.icon-lg": 8,
@@ -1318,7 +1312,7 @@
     "IconAction.shape.compact": 2,
     "IconAction.appearance.quiet-danger": 2,
     "IconAction.composition.chat-micro-action": 4,
-    "Dialog.size.md": 6,
+    "Dialog.size.md": 7,
     "Button.size.md": 56,
     "SidebarLayout.context.chat": 1,
     "Button.size.icon-xs": 14,
@@ -1355,7 +1349,7 @@
     "Surface.preset.card": 1,
     "Surface.padding.none": 2,
     "UserAvatar.size.lg": 2,
-    "Pill.size.sm": 19,
+    "Pill.size.sm": 21,
     "Pill.tone.ink-subtle": 3,
     "Pill.tone.count": 7,
     "Button.composition.settings-row-action": 4,
@@ -1370,7 +1364,7 @@
     "IconAction.appearance.auth-close": 1,
     "IconAction.shape.circle": 7,
     "Dialog.size.lg": 5,
-    "Dialog.bodyPadding.flush": 3,
+    "Dialog.bodyPadding.flush": 4,
     "SelectableChip.shape.person": 1,
     "UserAvatar.size.xs": 7,
     "SelectableChip.shape.label": 1,
@@ -1382,7 +1376,7 @@
     "Counter.status.info": 4,
     "Counter.appearance.inverse-outline": 1,
     "ListRow.density.compact": 1,
-    "Pill.weight.medium": 10,
+    "Pill.weight.medium": 12,
     "UserAvatar.size.xl": 1,
     "Pill.tone.surface": 5,
     "Button.style.outline": 1,
@@ -1472,6 +1466,7 @@
     "EmptyState.context.centered": 1,
     "EmptyState.density.compact": 2,
     "UserAvatar.size.chat-inline": 1,
+    "Pill.tone.accent": 1,
     "UserAvatar.size.chat-message": 2,
     "IconAction.composition.chat-message-action": 1,
     "Button.composition.chat-message-action": 2,
@@ -1480,7 +1475,7 @@
     "Dialog.bodyPadding.horizontal": 1,
     "Counter.size.xs": 1,
     "UserAvatar.size.chat-mention": 1,
-    "Input.composition.project-name": 1,
+    "Input.composition.project-name": 2,
     "Textarea.composition.project-description": 1
   },
   "previewedValues": [

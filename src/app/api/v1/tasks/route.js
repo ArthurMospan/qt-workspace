@@ -10,6 +10,8 @@ import {
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 
 function resolveIntegrationWorkflow({ workflow, project = null, requestedPriority }) {
   const hiddenStatusIds = new Set(
@@ -122,7 +124,7 @@ export async function POST(req) {
     // transaction prevents an admin status/type edit from racing task creation.
     const workflowRef = orgRef.collection('settings').doc('workflow');
     const issueRef = db.collection('issues').doc();
-    const issueKey = `EXT-${randomUUID().slice(0, 8).toUpperCase()}`;
+    let issueKey = projectId ? '' : `EXT-${randomUUID().slice(0, 8).toUpperCase()}`;
     let payload;
     if (projectId) {
       const projectRef = db.collection('projects').doc(projectId);
@@ -148,6 +150,16 @@ export async function POST(req) {
           project: freshProject.data(),
           requestedPriority: priority,
         });
+        const project = freshProject.data();
+        const next = Number(project.issueCounter || 0) + 1;
+        const issuePrefix = await resolveProjectIssuePrefixInTransaction({
+          db,
+          transaction,
+          project,
+          projectId,
+          organizationId,
+        });
+        issueKey = `${issuePrefix}-${next}`;
         const now = admin.firestore.FieldValue.serverTimestamp();
         payload = {
           issueKey,
@@ -166,14 +178,10 @@ export async function POST(req) {
           spentMinutes: 0,
           spentMinutesMirrorVersion: 1,
           timeLogMutationVersion: 0,
-          // Above every task somebody has already positioned, like any other
-          // new task — a bug arriving from an integration is exactly the thing
-          // that must not land at the bottom of a column, which is where a
-          // fixed 0 put it. It reads the project counter without consuming a
-          // number (the key here is not derived from it), so it can tie with
-          // the next task created in the app; a tie is two adjacent cards, and
-          // the first drag through that column renumbers both.
-          order: -((freshProject.data().issueCounter || 0) + 1),
+          // Integrations consume the same project sequence as every other
+          // writer, so the visible key is stable and the initial order stays
+          // unique within the column.
+          order: -next,
           assigneeIds: [],
           reporterName: reporter ? String(reporter).slice(0, 120) : 'Buggy Bag Integration',
           createdAt: now,
@@ -185,12 +193,17 @@ export async function POST(req) {
           ...(resolved.completed ? { completedAt: now } : {}),
         };
         transaction.create(issueRef, payload);
+        transaction.update(projectRef, {
+          issueCounter: next,
+          ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
+          updatedAt: now,
+        });
         transaction.create(issueRef.collection('audit').doc(), {
           userId: null,
           userName: 'Buggy Bag Integration',
           action: 'експортував баг з Buggy Bag',
           from: null,
-          to: null,
+          to: issueKey,
           createdAt: now,
         });
       });

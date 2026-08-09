@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   activeStatusCategoryIds,
+  availableStatusesInCategory,
   backlogStatusIds,
   closedStatusIds,
   deliveredStatusIds,
@@ -224,6 +225,13 @@ test('a drop on a category column resolves a status of the task’s own project'
     null,
   );
   assert.equal(resolveCategoryStatusId('nonsense', workflow), null);
+  assert.deepEqual(
+    availableStatusesInCategory('in-progress', workflow, {
+      hiddenStatusIds: ['code-review'],
+    }).map(status => status.id),
+    ['qa'],
+  );
+  assert.deepEqual(availableStatusesInCategory('nonsense', workflow), []);
 });
 
 test('new work lands in a backlog column, never in a position', () => {

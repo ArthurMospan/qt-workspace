@@ -59,7 +59,8 @@ test('a task nobody has positioned yet sorts above the ones somebody has', async
     assert.doesNotMatch(source, /order: next,/, path);
   }
   const external = await read('../src/app/api/v1/tasks/route.js');
-  assert.match(external, /order: -\(\(freshProject\.data\(\)\.issueCounter \|\| 0\) \+ 1\)/);
+  assert.match(external, /const next = Number\(project\.issueCounter \|\| 0\) \+ 1/);
+  assert.match(external, /order: -next/);
 });
 
 test('browser Firestore writes cannot bypass execution fields', async () => {

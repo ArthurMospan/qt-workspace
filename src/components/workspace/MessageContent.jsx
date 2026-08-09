@@ -58,7 +58,7 @@ export default function MessageContent({ text, members, searchTerm }) {
         const mentionPattern = escapedMemberNames.length
           ? `@(?:${escapedMemberNames.join('|')})`
           : '@[^\\s]+';
-        const tokenRegex = new RegExp(`(\\*\\*.*?\\*\\*|\\*.*?\\*|_.*?_|~.*?~|\\x60[^\\x60]+\\x60|${mentionPattern}|#[a-zA-Z0-9-]+|https?:\\/\\/[^\\s]+)`, 'g');
+        const tokenRegex = new RegExp(`(\\*\\*.*?\\*\\*|\\*.*?\\*|_.*?_|~.*?~|\\x60[^\\x60]+\\x60|${mentionPattern}|#[\\p{L}\\p{N}-]+|https?:\\/\\/[^\\s]+)`, 'gu');
         const parts = line.split(tokenRegex);
 
         return (
@@ -98,9 +98,10 @@ export default function MessageContent({ text, members, searchTerm }) {
                 );
               }
               if (part.startsWith('#')) {
+                const issueKey = part.slice(1).toLocaleUpperCase('uk-UA');
                 return (
-                  <HoverCard key={pIdx} type="issue" value={part.slice(1)} members={members}>
-                    {part}
+                  <HoverCard key={pIdx} type="issue" value={issueKey} members={members}>
+                    #{issueKey}
                   </HoverCard>
                 );
               }

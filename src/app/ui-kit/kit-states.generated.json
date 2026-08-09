@@ -13,12 +13,12 @@
     "long-text"
   ],
   "totals": {
-    "components": 93,
-    "stateful": 87,
-    "hover": 63,
-    "focus": 63,
+    "components": 95,
+    "stateful": 89,
+    "hover": 65,
+    "focus": 65,
     "disabled": 34,
-    "loading": 5,
+    "loading": 6,
     "error": 6,
     "long-text": 62
   },
@@ -211,6 +211,11 @@
       "focus": "global",
       "long-text": "children, label"
     },
+    "IssueMentionMenu": {
+      "loading": "prop",
+      "hover": "own",
+      "focus": "own"
+    },
     "KeyboardShortcutsDialog": {
       "long-text": "children"
     },
@@ -342,6 +347,10 @@
     "StatusPill": {
       "long-text": "label"
     },
+    "StatusTransitionPicker": {
+      "hover": "own",
+      "focus": "own"
+    },
     "StatusVisibilityPicker": {
       "disabled": "prop",
       "hover": "own",
@@ -469,6 +478,7 @@
       "feedback",
       "chat-composer",
       "chat-elements",
+      "task-crm",
       "task-elements",
       "dialogs",
       "page-headers",
@@ -602,6 +612,9 @@
     "IssueLinkRow": [
       "task-elements"
     ],
+    "IssueMentionMenu": [
+      "chat-elements"
+    ],
     "KeyboardShortcutsDialog": [
       "navigation-overlays"
     ],
@@ -720,6 +733,9 @@
       "badges",
       "inner-nav-layout",
       "states"
+    ],
+    "StatusTransitionPicker": [
+      "task-crm"
     ],
     "StatusVisibilityPicker": [
       "inputs",

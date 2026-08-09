@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 93,
-    "used": 93,
+    "components": 95,
+    "used": 95,
     "unused": 0,
-    "covered": 90,
+    "covered": 92,
     "uncovered": 0,
     "routes": 12,
-    "previews": 121,
+    "previews": 123,
     "internal": 3,
     "unlisted": 0
   },
@@ -237,6 +237,7 @@
       "FormGroup",
       "IconAction",
       "Input",
+      "IssueMentionMenu",
       "Label",
       "MentionMenu",
       "MultiSelect",
@@ -263,6 +264,7 @@
       "Pill",
       "Select",
       "SelectableChip",
+      "StatusTransitionPicker",
       "StatusVisibilityPicker",
       "Tabs",
       "Tag",
@@ -875,7 +877,8 @@
         "CommandPalette",
         "ConfirmProvider",
         "KeyboardShortcutsDialog",
-        "PageHeader"
+        "PageHeader",
+        "StatusTransitionPicker"
       ],
       "routes": [
         "/",
@@ -1139,6 +1142,18 @@
       ],
       "usedIn": [
         "src/components/workspace/IssueDetail.jsx"
+      ]
+    },
+    "IssueMentionMenu": {
+      "file": "src/components/ui/Chat/IssueMentionMenu.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/chat"
+      ],
+      "usedIn": [
+        "src/app/(app)/chat/page.js"
       ]
     },
     "KeyboardShortcutsDialog": {
@@ -1464,9 +1479,11 @@
       "usedByKit": [
         "ChatMessageList",
         "IssueLinkRow",
+        "IssueMentionMenu",
         "MemberRail",
         "MessageBubble",
         "StatusPill",
+        "StatusTransitionPicker",
         "TaskRow",
         "TimeLogRow",
         "TypeBadge"
@@ -1667,6 +1684,18 @@
       ],
       "usedIn": [
         "src/app/(app)/sprints/page.js"
+      ]
+    },
+    "StatusTransitionPicker": {
+      "file": "src/components/ui/TaskManagement/StatusTransitionPicker.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/my"
+      ],
+      "usedIn": [
+        "src/app/(app)/my/page.js"
       ]
     },
     "StatusVisibilityPicker": {
@@ -2118,7 +2147,7 @@
           "files": [
             "src/app/(app)/[projectId]/page.js:258",
             "src/app/(app)/analytics/page.js:608",
-            "src/app/(app)/my/page.js:218",
+            "src/app/(app)/my/page.js:268",
             "src/components/workspace/IssueDetail.jsx:1031",
             "src/components/workspace/IssueDetail.jsx:1034",
             "src/components/workspace/calendar/CalendarEventPage.jsx:774",
@@ -2140,8 +2169,8 @@
             "src/app/(app)/[projectId]/page.js:268",
             "src/app/(app)/analytics/page.js:657",
             "src/app/(app)/layout.js:100",
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/page.js:841",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/page.js:890",
             "src/app/(app)/settings/page.js:2832",
             "src/app/(app)/settings/page.js:2836",
             "src/app/(app)/settings/page.js:3006",
@@ -2208,8 +2237,8 @@
           "files": [
             "src/app/(app)/analytics/page.js:654",
             "src/app/(app)/calendar/page.js:554",
-            "src/app/(app)/page.js:540",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/page.js:573",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2070",
@@ -2271,14 +2300,14 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1017",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:520",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:553",
             "src/app/(app)/settings/page.js:2854",
             "src/app/(app)/sprints/page.js:128",
             "src/app/(app)/sprints/page.js:129",
@@ -2297,11 +2326,11 @@
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:448",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:184",
-            "src/components/workspace/BoardConfigModal.jsx:201",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:209",
+            "src/components/workspace/BoardConfigModal.jsx:226",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1370",
@@ -2335,7 +2364,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1037",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/sprints/page.js:562",
             "src/app/(app)/sprints/page.js:667",
             "src/app/(app)/sprints/page.js:692",
@@ -2396,11 +2425,11 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/page.js:258",
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/my/page.js:218",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/my/page.js:268",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2517",
             "src/app/(app)/settings/page.js:2677",
@@ -2423,10 +2452,10 @@
             "src/components/workspace/BillingTab.jsx:1427",
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:184",
-            "src/components/workspace/BoardConfigModal.jsx:201",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:209",
+            "src/components/workspace/BoardConfigModal.jsx:226",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1031",
             "src/components/workspace/IssueDetail.jsx:1034",
@@ -2469,12 +2498,12 @@
             "src/app/(app)/analytics/page.js:608",
             "src/app/(app)/analytics/page.js:657",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:520",
-            "src/app/(app)/page.js:540",
-            "src/app/(app)/page.js:841",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:553",
+            "src/app/(app)/page.js:573",
+            "src/app/(app)/page.js:890",
             "src/app/(app)/settings/page.js:2070",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2836",
@@ -2493,7 +2522,7 @@
             "src/components/workspace/AgileBoard.jsx:44",
             "src/components/workspace/BillingTab.jsx:1413",
             "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1371",
             "src/components/workspace/IssueDetail.jsx:1522",
@@ -2524,7 +2553,7 @@
             "src/app/(app)/calendar/page.js:553",
             "src/app/(app)/calendar/page.js:554",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/chat/page.js:1037",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2645",
             "src/app/(app)/settings/page.js:2699",
@@ -2591,7 +2620,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:537",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1017",
             "src/app/(app)/layout.js:100",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:46",
@@ -2645,21 +2674,21 @@
             "src/app/(app)/calendar/page.js:553",
             "src/app/(app)/calendar/page.js:554",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/chat/page.js:1037",
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1017",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/error.js:24",
             "src/app/(app)/layout.js:100",
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/my/page.js:218",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:520",
-            "src/app/(app)/page.js:540",
-            "src/app/(app)/page.js:841",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/my/page.js:268",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:553",
+            "src/app/(app)/page.js:573",
+            "src/app/(app)/page.js:890",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2070",
@@ -2744,11 +2773,11 @@
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:448",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:184",
-            "src/components/workspace/BoardConfigModal.jsx:201",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:209",
+            "src/components/workspace/BoardConfigModal.jsx:226",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1031",
@@ -2845,21 +2874,21 @@
             "src/app/(app)/calendar/page.js:553",
             "src/app/(app)/calendar/page.js:554",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/chat/page.js:1037",
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1017",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/error.js:24",
             "src/app/(app)/layout.js:100",
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/my/page.js:218",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:520",
-            "src/app/(app)/page.js:540",
-            "src/app/(app)/page.js:841",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/my/page.js:268",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:553",
+            "src/app/(app)/page.js:573",
+            "src/app/(app)/page.js:890",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2070",
@@ -2944,11 +2973,11 @@
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:448",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:184",
-            "src/components/workspace/BoardConfigModal.jsx:201",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:209",
+            "src/components/workspace/BoardConfigModal.jsx:226",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1031",
@@ -3036,18 +3065,18 @@
             "src/app/(app)/calendar/page.js:553",
             "src/app/(app)/calendar/page.js:554",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/chat/page.js:1037",
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1017",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/error.js:24",
             "src/app/(app)/layout.js:100",
-            "src/app/(app)/my/page.js:218",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:520",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/my/page.js:268",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:553",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2517",
@@ -3123,10 +3152,10 @@
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:448",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:201",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:226",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1031",
@@ -3183,8 +3212,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/page.js:841",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/page.js:890",
             "src/app/(app)/settings/page.js:2070"
           ]
         },
@@ -3200,7 +3229,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:540",
+            "src/app/(app)/page.js:573",
             "src/app/(app)/settings/page.js:3104",
             "src/app/(app)/settings/page.js:3116",
             "src/app/(app)/settings/page.js:3145",
@@ -3211,7 +3240,7 @@
             "src/components/UserStatusSetter.jsx:77",
             "src/components/integrations/YouTrackImportCard.jsx:608",
             "src/components/workspace/BillingTab.jsx:1282",
-            "src/components/workspace/BoardConfigModal.jsx:184",
+            "src/components/workspace/BoardConfigModal.jsx:209",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:584"
           ]
         }
@@ -3245,20 +3274,20 @@
             "src/app/(app)/calendar/page.js:553",
             "src/app/(app)/calendar/page.js:554",
             "src/app/(app)/calendar/page.js:555",
-            "src/app/(app)/chat/page.js:1037",
-            "src/app/(app)/chat/page.js:960",
-            "src/app/(app)/chat/page.js:968",
+            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1017",
+            "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:153",
-            "src/app/(app)/my/page.js:218",
-            "src/app/(app)/my/page.js:336",
-            "src/app/(app)/page.js:514",
-            "src/app/(app)/page.js:515",
-            "src/app/(app)/page.js:519",
-            "src/app/(app)/page.js:520",
-            "src/app/(app)/page.js:540",
-            "src/app/(app)/page.js:841",
-            "src/app/(app)/page.js:872",
+            "src/app/(app)/my/page.js:203",
+            "src/app/(app)/my/page.js:268",
+            "src/app/(app)/my/page.js:386",
+            "src/app/(app)/page.js:547",
+            "src/app/(app)/page.js:548",
+            "src/app/(app)/page.js:552",
+            "src/app/(app)/page.js:553",
+            "src/app/(app)/page.js:573",
+            "src/app/(app)/page.js:890",
+            "src/app/(app)/page.js:921",
             "src/app/(app)/settings/page.js:1993",
             "src/app/(app)/settings/page.js:2069",
             "src/app/(app)/settings/page.js:2070",
@@ -3339,11 +3368,11 @@
             "src/components/workspace/BillingTab.jsx:447",
             "src/components/workspace/BillingTab.jsx:448",
             "src/components/workspace/BillingTab.jsx:451",
-            "src/components/workspace/BoardConfigModal.jsx:164",
-            "src/components/workspace/BoardConfigModal.jsx:174",
-            "src/components/workspace/BoardConfigModal.jsx:184",
-            "src/components/workspace/BoardConfigModal.jsx:201",
-            "src/components/workspace/BoardConfigModal.jsx:204",
+            "src/components/workspace/BoardConfigModal.jsx:189",
+            "src/components/workspace/BoardConfigModal.jsx:199",
+            "src/components/workspace/BoardConfigModal.jsx:209",
+            "src/components/workspace/BoardConfigModal.jsx:226",
+            "src/components/workspace/BoardConfigModal.jsx:229",
             "src/components/workspace/IssueDetail.jsx:1026",
             "src/components/workspace/IssueDetail.jsx:1027",
             "src/components/workspace/IssueDetail.jsx:1031",
@@ -3452,7 +3481,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:323",
-            "src/app/(app)/chat/page.js:372",
+            "src/app/(app)/chat/page.js:420",
             "src/app/(app)/settings/page.js:188",
             "src/app/(app)/settings/page.js:189",
             "src/components/WorkspaceHeader.jsx:420",
@@ -3465,9 +3494,9 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:240",
-            "src/app/(app)/chat/page.js:249",
-            "src/app/(app)/chat/page.js:303"
+            "src/app/(app)/chat/page.js:287",
+            "src/app/(app)/chat/page.js:296",
+            "src/app/(app)/chat/page.js:351"
           ]
         },
         "md": {
@@ -3479,7 +3508,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:177",
+            "src/app/(app)/page.js:183",
             "src/components/AudioTaskPanel.jsx:252",
             "src/components/AuthLayout.jsx:56"
           ]
@@ -3564,8 +3593,8 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:323",
-            "src/app/(app)/chat/page.js:303",
-            "src/app/(app)/page.js:177",
+            "src/app/(app)/chat/page.js:351",
+            "src/app/(app)/page.js:183",
             "src/app/(app)/settings/page.js:422",
             "src/components/MobileNav.jsx:271",
             "src/components/MobileNav.jsx:300",
@@ -3581,8 +3610,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:240",
-            "src/app/(app)/chat/page.js:249",
+            "src/app/(app)/chat/page.js:287",
+            "src/app/(app)/chat/page.js:296",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:106"
           ]
@@ -3595,7 +3624,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:372",
+            "src/app/(app)/chat/page.js:420",
             "src/components/workspace/UnifiedTimeline.jsx:514"
           ]
         },
@@ -3707,10 +3736,10 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:323",
-            "src/app/(app)/chat/page.js:240",
-            "src/app/(app)/chat/page.js:249",
-            "src/app/(app)/chat/page.js:303",
-            "src/app/(app)/page.js:177",
+            "src/app/(app)/chat/page.js:287",
+            "src/app/(app)/chat/page.js:296",
+            "src/app/(app)/chat/page.js:351",
+            "src/app/(app)/page.js:183",
             "src/app/(app)/settings/page.js:188",
             "src/app/(app)/settings/page.js:189",
             "src/app/(app)/settings/page.js:215",
@@ -3734,7 +3763,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:372",
+            "src/app/(app)/chat/page.js:420",
             "src/components/MobileNav.jsx:64"
           ]
         },
@@ -3781,7 +3810,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:323",
-            "src/app/(app)/page.js:177",
+            "src/app/(app)/page.js:183",
             "src/app/(app)/settings/page.js:188",
             "src/app/(app)/settings/page.js:189",
             "src/app/(app)/settings/page.js:215",
@@ -3812,8 +3841,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:240",
-            "src/app/(app)/chat/page.js:249"
+            "src/app/(app)/chat/page.js:287",
+            "src/app/(app)/chat/page.js:296"
           ]
         },
         "chat-panel-action": {
@@ -3822,7 +3851,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:303"
+            "src/app/(app)/chat/page.js:351"
           ]
         },
         "chat-micro-action": {
@@ -3833,7 +3862,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:372",
+            "src/app/(app)/chat/page.js:420",
             "src/components/workspace/UnifiedTimeline.jsx:512",
             "src/components/workspace/UnifiedTimeline.jsx:513",
             "src/components/workspace/UnifiedTimeline.jsx:514"
@@ -3875,7 +3904,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:981",
+            "src/app/(app)/chat/page.js:1030",
             "src/app/(app)/settings/page.js:175",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:75",
@@ -3975,7 +4004,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:981",
+            "src/app/(app)/chat/page.js:1030",
             "src/app/(app)/settings/page.js:175",
             "src/app/(app)/settings/page.js:383",
             "src/app/(app)/settings/page.js:494",
@@ -4105,7 +4134,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:981",
+            "src/app/(app)/chat/page.js:1030",
             "src/app/(app)/settings/page.js:175",
             "src/app/(app)/settings/page.js:2500",
             "src/app/(app)/settings/page.js:383",
@@ -4180,7 +4209,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:997",
+            "src/app/(app)/chat/page.js:1046",
             "src/app/(app)/sprints/page.js:144",
             "src/app/(app)/sprints/page.js:83",
             "src/components/AudioTaskPanel.jsx:282",
@@ -4254,12 +4283,12 @@
             "src/app/(app)/analytics/page.js:725",
             "src/app/(app)/calendar/page.js:541",
             "src/app/(app)/calendar/page.js:551",
-            "src/app/(app)/my/page.js:178",
-            "src/app/(app)/my/page.js:192",
-            "src/app/(app)/my/page.js:203",
-            "src/app/(app)/page.js:856",
-            "src/app/(app)/page.js:857",
-            "src/app/(app)/page.js:858",
+            "src/app/(app)/my/page.js:228",
+            "src/app/(app)/my/page.js:242",
+            "src/app/(app)/my/page.js:253",
+            "src/app/(app)/page.js:905",
+            "src/app/(app)/page.js:906",
+            "src/app/(app)/page.js:907",
             "src/app/(app)/settings/page.js:2334",
             "src/app/(app)/settings/page.js:2344",
             "src/app/(app)/settings/page.js:2356",
@@ -4341,12 +4370,12 @@
             "src/app/(app)/analytics/page.js:725",
             "src/app/(app)/calendar/page.js:541",
             "src/app/(app)/calendar/page.js:551",
-            "src/app/(app)/my/page.js:178",
-            "src/app/(app)/my/page.js:192",
-            "src/app/(app)/my/page.js:203",
-            "src/app/(app)/page.js:856",
-            "src/app/(app)/page.js:857",
-            "src/app/(app)/page.js:858",
+            "src/app/(app)/my/page.js:228",
+            "src/app/(app)/my/page.js:242",
+            "src/app/(app)/my/page.js:253",
+            "src/app/(app)/page.js:905",
+            "src/app/(app)/page.js:906",
+            "src/app/(app)/page.js:907",
             "src/app/(app)/sprints/page.js:475",
             "src/app/(app)/sprints/page.js:486",
             "src/app/(app)/sprints/page.js:500"
@@ -4420,7 +4449,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/page.js:285",
-            "src/app/(app)/my/page.js:203"
+            "src/app/(app)/my/page.js:253"
           ]
         },
         "member": {
@@ -4438,7 +4467,7 @@
             "src/app/(app)/analytics/page.js:672",
             "src/app/(app)/analytics/page.js:700",
             "src/app/(app)/calendar/page.js:551",
-            "src/app/(app)/page.js:856",
+            "src/app/(app)/page.js:905",
             "src/app/(app)/sprints/page.js:475"
           ]
         },
@@ -4454,7 +4483,7 @@
             "src/app/(app)/[projectId]/page.js:306",
             "src/app/(app)/[projectId]/page.js:349",
             "src/app/(app)/analytics/page.js:711",
-            "src/app/(app)/my/page.js:178",
+            "src/app/(app)/my/page.js:228",
             "src/app/(app)/sprints/page.js:486"
           ]
         },
@@ -4472,7 +4501,7 @@
             "src/app/(app)/[projectId]/page.js:363",
             "src/app/(app)/analytics/page.js:725",
             "src/app/(app)/calendar/page.js:541",
-            "src/app/(app)/my/page.js:192",
+            "src/app/(app)/my/page.js:242",
             "src/app/(app)/sprints/page.js:500",
             "src/components/workspace/BillingTab.jsx:1198"
           ]
@@ -4492,7 +4521,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:857"
+            "src/app/(app)/page.js:906"
           ]
         },
         "sort": {
@@ -4501,7 +4530,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:858"
+            "src/app/(app)/page.js:907"
           ]
         },
         "(default)": {
@@ -4591,8 +4620,8 @@
             "src/app/(app)/analytics/page.js:691",
             "src/app/(app)/analytics/team/[memberId]/page.js:117",
             "src/app/(app)/calendar/page.js:542",
-            "src/app/(app)/chat/page.js:1009",
-            "src/app/(app)/my/page.js:169",
+            "src/app/(app)/chat/page.js:1058",
+            "src/app/(app)/my/page.js:219",
             "src/app/(app)/sprints/page.js:466",
             "src/components/workspace/IssueDetail.jsx:1111",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:684",
@@ -4627,7 +4656,7 @@
             "src/app/(app)/analytics/page.js:691",
             "src/app/(app)/analytics/team/[memberId]/page.js:117",
             "src/app/(app)/calendar/page.js:542",
-            "src/app/(app)/my/page.js:169",
+            "src/app/(app)/my/page.js:219",
             "src/app/(app)/sprints/page.js:466"
           ]
         },
@@ -4642,7 +4671,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1058",
             "src/components/integrations/YouTrackImportCard.jsx:508",
             "src/components/workspace/IssueDetail.jsx:1111",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:684",
@@ -4668,7 +4697,7 @@
             "src/app/(app)/analytics/page.js:691",
             "src/app/(app)/analytics/team/[memberId]/page.js:117",
             "src/app/(app)/calendar/page.js:542",
-            "src/app/(app)/my/page.js:169",
+            "src/app/(app)/my/page.js:219",
             "src/app/(app)/sprints/page.js:466"
           ]
         },
@@ -4683,7 +4712,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1009",
+            "src/app/(app)/chat/page.js:1058",
             "src/components/integrations/YouTrackImportCard.jsx:508",
             "src/components/workspace/IssueDetail.jsx:1111",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:684",
@@ -4709,9 +4738,9 @@
             "src/app/(app)/analytics/page.js:749",
             "src/app/(app)/analytics/team/[memberId]/page.js:100",
             "src/app/(app)/calendar/page.js:564",
-            "src/app/(app)/page.js:884",
-            "src/app/(app)/page.js:891",
-            "src/app/(app)/page.js:902",
+            "src/app/(app)/page.js:933",
+            "src/app/(app)/page.js:940",
+            "src/app/(app)/page.js:951",
             "src/app/(app)/sprints/page.js:684"
           ]
         },
@@ -4764,8 +4793,8 @@
           "files": [
             "src/app/(app)/analytics/page.js:749",
             "src/app/(app)/analytics/team/[memberId]/page.js:100",
-            "src/app/(app)/page.js:884",
-            "src/app/(app)/page.js:902"
+            "src/app/(app)/page.js:933",
+            "src/app/(app)/page.js:951"
           ]
         },
         "sm": {
@@ -4787,7 +4816,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:891",
+            "src/app/(app)/page.js:940",
             "src/components/workspace/IssueDetail.jsx:1502"
           ]
         },
@@ -4821,7 +4850,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:749",
-            "src/app/(app)/page.js:884"
+            "src/app/(app)/page.js:933"
           ]
         },
         "member-chart-panel": {
@@ -4846,8 +4875,8 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:564",
-            "src/app/(app)/page.js:891",
-            "src/app/(app)/page.js:902",
+            "src/app/(app)/page.js:940",
+            "src/app/(app)/page.js:951",
             "src/app/(app)/settings/page.js:2856",
             "src/app/(app)/team/page.js:113",
             "src/components/workspace/BillingTab.jsx:1126",
@@ -5436,8 +5465,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:316",
-            "src/app/(app)/chat/page.js:347",
+            "src/app/(app)/chat/page.js:364",
+            "src/app/(app)/chat/page.js:395",
             "src/components/workspace/BillingTab.jsx:95",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:317"
           ]
@@ -5450,7 +5479,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/page.js:148",
+            "src/app/(app)/page.js:154",
             "src/components/WorkspaceHeader.jsx:83",
             "src/components/workspace/WorkloadTab.jsx:267"
           ]
@@ -5466,7 +5495,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:379",
+            "src/app/(app)/page.js:385",
             "src/components/workspace/AnalyticsTab.jsx:333",
             "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/TimesheetTab.jsx:220",
@@ -5674,7 +5703,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:192"
+            "src/app/(app)/chat/page.js:230"
           ]
         },
         "timeline": {
@@ -5698,7 +5727,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:300",
+            "src/app/(app)/chat/page.js:348",
             "src/app/(app)/sprints/page.js:681",
             "src/app/(app)/sprints/page.js:702",
             "src/components/MobileNav.jsx:193",
@@ -5717,7 +5746,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:213",
+            "src/app/(app)/page.js:219",
             "src/components/OrgSwitcherScreen.jsx:45",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
@@ -5734,8 +5763,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:300",
-            "src/app/(app)/page.js:213",
+            "src/app/(app)/chat/page.js:348",
+            "src/app/(app)/page.js:219",
             "src/app/(app)/sprints/page.js:681",
             "src/app/(app)/sprints/page.js:702",
             "src/components/MobileNav.jsx:193",
@@ -5765,8 +5794,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:300",
-            "src/app/(app)/page.js:213",
+            "src/app/(app)/chat/page.js:348",
+            "src/app/(app)/page.js:219",
             "src/app/(app)/sprints/page.js:681",
             "src/app/(app)/sprints/page.js:702",
             "src/components/OrgSwitcherScreen.jsx:45",
@@ -5799,7 +5828,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:300",
+            "src/app/(app)/chat/page.js:348",
             "src/app/(app)/sprints/page.js:681",
             "src/app/(app)/sprints/page.js:702"
           ]
@@ -5813,7 +5842,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:213",
+            "src/app/(app)/page.js:219",
             "src/components/MobileNav.jsx:193",
             "src/components/MobileNav.jsx:219",
             "src/components/MobileNav.jsx:267",
@@ -5844,7 +5873,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:953",
+            "src/app/(app)/chat/page.js:1002",
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:439",
             "src/components/workspace/IssueDetail.jsx:1292",
@@ -5862,12 +5891,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:327",
-            "src/app/(app)/page.js:511",
+            "src/app/(app)/my/page.js:377",
+            "src/app/(app)/page.js:544",
             "src/app/(app)/sprints/page.js:121",
             "src/app/(app)/sprints/page.js:170",
             "src/app/(app)/sprints/page.js:61",
-            "src/components/workspace/BoardConfigModal.jsx:194",
+            "src/components/workspace/BoardConfigModal.jsx:219",
             "src/components/workspace/TimesheetTab.jsx:417"
           ]
         },
@@ -5914,14 +5943,14 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:953",
-            "src/app/(app)/page.js:511",
+            "src/app/(app)/chat/page.js:1002",
+            "src/app/(app)/page.js:544",
             "src/app/(app)/sprints/page.js:121",
             "src/app/(app)/sprints/page.js:170",
             "src/app/(app)/sprints/page.js:61",
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:439",
-            "src/components/workspace/BoardConfigModal.jsx:194",
+            "src/components/workspace/BoardConfigModal.jsx:219",
             "src/components/workspace/TimesheetTab.jsx:417",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:546",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616"
@@ -5933,7 +5962,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:327",
+            "src/app/(app)/my/page.js:377",
             "src/components/UserStatusSetter.jsx:68"
           ]
         },
@@ -5990,8 +6019,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:953",
-            "src/app/(app)/page.js:511",
+            "src/app/(app)/chat/page.js:1002",
+            "src/app/(app)/page.js:544",
             "src/app/(app)/sprints/page.js:121",
             "src/app/(app)/sprints/page.js:170",
             "src/app/(app)/sprints/page.js:61",
@@ -6000,7 +6029,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:439",
-            "src/components/workspace/BoardConfigModal.jsx:194",
+            "src/components/workspace/BoardConfigModal.jsx:219",
             "src/components/workspace/TimesheetTab.jsx:417",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:546",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616"
@@ -6015,7 +6044,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:327",
+            "src/app/(app)/my/page.js:377",
             "src/components/workspace/IssueDetail.jsx:1292",
             "src/components/workspace/calendar/CalendarEventPage.jsx:188"
           ]
@@ -6046,8 +6075,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:953",
-            "src/app/(app)/page.js:511",
+            "src/app/(app)/chat/page.js:1002",
+            "src/app/(app)/page.js:544",
             "src/app/(app)/sprints/page.js:121",
             "src/app/(app)/sprints/page.js:61",
             "src/components/CreateTaskModal.jsx:194",
@@ -6055,7 +6084,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:439",
-            "src/components/workspace/BoardConfigModal.jsx:194",
+            "src/components/workspace/BoardConfigModal.jsx:219",
             "src/components/workspace/IssueDetail.jsx:1292",
             "src/components/workspace/TimesheetTab.jsx:417",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:546",
@@ -6069,7 +6098,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:327"
+            "src/app/(app)/my/page.js:377"
           ]
         },
         "dialog": {
@@ -6095,8 +6124,8 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:347",
-            "src/app/(app)/page.js:538",
-            "src/app/(app)/page.js:865",
+            "src/app/(app)/page.js:571",
+            "src/app/(app)/page.js:914",
             "src/components/workspace/AnalyticsTab.jsx:369"
           ]
         },
@@ -6180,7 +6209,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/page.js:892",
+            "src/app/(app)/page.js:941",
             "src/components/workspace/AnalyticsTab.jsx:171"
           ]
         },
@@ -6238,7 +6267,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:86",
             "src/app/(app)/calendar/page.js:371",
             "src/app/(app)/calendar/page.js:569",
-            "src/app/(app)/page.js:892",
+            "src/app/(app)/page.js:941",
             "src/app/(app)/team/page.js:118",
             "src/components/profile/ProfileView.jsx:379",
             "src/components/workspace/AnalyticsTab.jsx:171",
@@ -6285,7 +6314,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:86",
             "src/app/(app)/calendar/page.js:371",
             "src/app/(app)/calendar/page.js:569",
-            "src/app/(app)/page.js:892",
+            "src/app/(app)/page.js:941",
             "src/app/(app)/team/page.js:118",
             "src/components/profile/ProfileView.jsx:379",
             "src/components/workspace/TimesheetTab.jsx:576",
@@ -6333,8 +6362,8 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:78",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/loading.js:28",
-            "src/app/(app)/my/page.js:242",
-            "src/app/(app)/page.js:886",
+            "src/app/(app)/my/page.js:292",
+            "src/app/(app)/page.js:935",
             "src/app/(app)/settings/page.js:2910",
             "src/app/(app)/settings/page.js:2999",
             "src/app/(app)/settings/page.js:3025",
@@ -6828,7 +6857,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:980",
+            "src/app/(app)/chat/page.js:1029",
             "src/app/(app)/sprints/page.js:134",
             "src/app/(app)/sprints/page.js:143",
             "src/app/(app)/sprints/page.js:147",
@@ -6882,7 +6911,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/page.js:337",
-            "src/app/(app)/my/page.js:225",
+            "src/app/(app)/my/page.js:275",
             "src/components/CreateTaskModal.jsx:219",
             "src/components/InviteMemberDialog.jsx:115",
             "src/components/workspace/BillingTab.jsx:1090",
@@ -6926,8 +6955,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1008",
-            "src/app/(app)/chat/page.js:996",
+            "src/app/(app)/chat/page.js:1045",
+            "src/app/(app)/chat/page.js:1057",
             "src/components/CreateTaskModal.jsx:261",
             "src/components/CreateTaskModal.jsx:274",
             "src/components/CreateTaskModal.jsx:287",
@@ -6941,7 +6970,7 @@
             "src/components/workspace/BillingTab.jsx:105",
             "src/components/workspace/BillingTab.jsx:126",
             "src/components/workspace/BillingTab.jsx:73",
-            "src/components/workspace/BoardConfigModal.jsx:157",
+            "src/components/workspace/BoardConfigModal.jsx:182",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:644",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:654",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:667",
@@ -6999,7 +7028,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:223"
+            "src/app/(app)/chat/page.js:270"
           ]
         },
         "timeline": {
@@ -7033,8 +7062,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1158",
-            "src/app/(app)/chat/page.js:392"
+            "src/app/(app)/chat/page.js:1207",
+            "src/app/(app)/chat/page.js:440"
           ]
         },
         "timeline-composer": {
@@ -7082,7 +7111,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1025"
+            "src/app/(app)/chat/page.js:1074"
           ]
         },
         "settings": {
@@ -7125,8 +7154,8 @@
             "src/app/(app)/analytics/page.js:662",
             "src/app/(app)/analytics/page.js:690",
             "src/app/(app)/calendar/page.js:540",
-            "src/app/(app)/my/page.js:168",
-            "src/app/(app)/page.js:855",
+            "src/app/(app)/my/page.js:218",
+            "src/app/(app)/page.js:904",
             "src/app/(app)/sprints/page.js:465"
           ]
         },
@@ -7281,10 +7310,12 @@
     "TextAction — кнопка без коробки": "<div className=\"flex flex-col gap-[14px]\">\n  {[['ink', 'Зберегти', 'ствердна дія в парі'], ['muted', 'Скасувати', 'тиха половина пари'],\n    ['danger', 'Видалити', 'деструктивна й видима'], ['danger-quiet', 'Прибрати', 'червоніє лише під курсором']].map(([tone, label, role]) => (\n    <div key={tone} className=\"flex items-center gap-[12px]\">\n      <span className=\"w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink\">{tone}</span>\n      {['xs', 'sm', 'md'].map(size => (\n        <TextAction key={size} tone={tone} size={size}>{label}</TextAction>\n      ))}\n      <span className=\"text-[10px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n  <div className=\"flex items-center gap-[12px]\">\n    <span className=\"w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink\">з іконкою</span>\n    <TextAction size=\"sm\" icon={UserPlus}>Додати</TextAction>\n    <TextAction size=\"md\" icon={ChatIcon}>3 відповіді</TextAction>\n    <TextAction size=\"xs\" tone=\"danger-quiet\" icon={Trash2} label=\"Видалити повідомлення\" />\n  </div>\n</div>",
     "AvatarButton — аватар як контрол": "<AvatarButton user={demoUser} size=\"chat-message\" label=\"Переглянути профіль\" />\n<AvatarButton user={{ name: 'Олена Коваль' }} size=\"chat-member\" label=\"Переглянути профіль\" />\n<AvatarButton user={{ name: 'Петро Іванчук' }} size=\"chat-inline\" label=\"Переглянути профіль\" />",
     "MentionMenu — дві щільності": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">density=&quot;composer&quot;</span>\n    <MentionMenu density=\"composer\" members={KIT_MENTION_MEMBERS} onSelect={() => {}} />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">density=&quot;timeline&quot;</span>\n    <MentionMenu density=\"timeline\" members={KIT_MENTION_MEMBERS} selectedIndex={1} onSelect={() => {}} />\n  </div>\n</div>",
+    "IssueMentionMenu — згадки задач через #": "<div className=\"w-full max-w-[560px]\">\n  <IssueMentionMenu\n    issues={KIT_ISSUE_MENTIONS}\n    projects={[\n      { id: 'engineering', name: 'Engineering' },\n      { id: 'design', name: 'Design' },\n    ]}\n    onSelect={() => {}}\n  />\n</div>",
     "Вкладення в чаті": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">ChatAttachmentList</span>\n    <ChatAttachmentList attachments={KIT_CHAT_ATTACHMENTS} onOpen={() => {}} />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">PendingChatAttachments</span>\n    <PendingChatAttachments files={KIT_PENDING_FILES} onRemove={() => {}} />\n  </div>\n</div>",
     "FileInput — невидима половина «прикріпити»": "<div className=\"flex items-center gap-[12px]\">\n  <FileInput\n    ref={fileInputRef}\n    multiple\n    onChange={event => setPickedFiles(Array.from(event.target.files || []).map(file => file.name))}\n  />\n  <Button style=\"secondary\" size=\"md\" icon={Paperclip} onClick={() => fileInputRef.current?.click()}>\n    Прикріпити файл\n  </Button>\n  <span className=\"text-[11px] text-muted\">\n    {pickedFiles.length > 0 ? pickedFiles.join(', ') : 'Нічого не вибрано'}\n  </span>\n</div>",
     "ChatSearchBanner": "<div className=\"w-full overflow-hidden rounded-[12px] border border-line\">\n  <ChatSearchBanner query=\"онбординг\" count={3} onClear={() => {}} />\n</div>",
     "ChannelInfoPanel": "{/* md+ only: нижче панель — `fixed inset-0`, бо на телефоні вона\n    повноекранна, а не рейка збоку. */}\n<div className=\"hidden h-[520px] w-full justify-center md:flex\">\n  <ChannelInfoPanel\n    channel={{\n      id: 'general',\n      name: 'general',\n      description: 'Загальний канал для всієї команди',\n      members: ['kit-arthur', 'kit-olena'],\n    }}\n    members={KIT_MENTION_MEMBERS}\n    messages={CHAT_DEMO_MESSAGES}\n    activeTab={panelTab}\n    onTabChange={setPanelTab}\n    isAdminOrOwner\n    onOpenAttachment={() => {}}\n    onJumpToMessage={() => {}}\n    onClose={() => {}}\n    onSaveDescription={async () => true}\n    onAddMember={async () => true}\n    onAddAllMembers={async () => true}\n    onRemoveMember={async () => true}\n  />\n</div>\n<p className=\"text-[11px] text-muted md:hidden\">\n  На вузькому екрані панель займає весь екран — превʼю показане від 768px.\n</p>",
+    "Status Transition Picker — точний статус після drop": "<Button style=\"secondary\" size=\"lg\" onClick={() => setStatusPickerOpen(true)}>\n  Перенести QUI-41 в «У роботі»\n</Button>\n{statusPickerOpen ? (\n  <StatusTransitionPicker\n    isOpen\n    issue={task1}\n    project={{ id: 'ui-kit-project', name: 'QuickTeam' }}\n    categoryLabel=\"У роботі\"\n    statuses={[\n      { id: 'development', label: 'Розробка', color: '#6366f1' },\n      { id: 'code-review', label: 'Код-ревʼю', color: '#a855f7' },\n      { id: 'qa', label: 'QA', color: '#f59e0b' },\n    ]}\n    onSelect={() => setStatusPickerOpen(false)}\n    onClose={() => setStatusPickerOpen(false)}\n  />\n) : null}",
     "Task Identity — ключ, батьківське завдання, проєкт": "<div className=\"flex flex-col gap-3\">\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} />\n  <TaskIdentity issue={{ issueKey: 'QT-142' }} projectName=\"QuickTeam\" showProjectName />\n  <TaskIdentity\n    issue={{ issueKey: 'QT-142' }}\n    projectName=\"QuickTeam\"\n    showProjectName\n    parentIssue={{ issueKey: 'QT-100', title: 'Переробити календар' }}\n  />\n  {/* A legacy `WS-` key keeps its number and takes the project's prefix. */}\n  <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName=\"QuickTeam\" showProjectName />\n  {/* No key at all — the title below it is the task's name. */}\n  <TaskIdentity issue={{}} projectName=\"QuickTeam\" showProjectName />\n</div>",
     "Task Counters — вкладення, згадки, повідомлення, крапка": "<div className=\"flex flex-col gap-3\">\n  <TaskCounters attachments={2} messages={12} />\n  <TaskCounters attachments={1} mentions={3} messages={12} unread />\n  <TaskCounters messages={4} unread size=\"sm\" />\n  <TaskCounters unread />\n</div>",
     "Task Row (List View)": "<div className=\"bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]\">\n  <p className=\"ui-type-eyebrow uppercase tracking-wider text-muted\">Project context — назва проєкту прихована</p>\n  <TaskRow\n    issue={task1}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n  />\n  <p className=\"ui-type-eyebrow mt-2 uppercase tracking-wider text-muted\">Cross-project context — назва проєкту видима</p>\n  <TaskRow\n    issue={task2}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task3}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task4}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task5}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n</div>",
@@ -7307,7 +7338,7 @@
     "Standard Dialog": "<Button style=\"primary\" size=\"lg\" onClick={() => setOpen1(true)}>Відкрити форму</Button>\n<Dialog isOpen={open1} onClose={() => setOpen1(false)} title=\"Редагувати проєкт\" size=\"sm\">\n  <div className=\"flex flex-col gap-[16px]\">\n    <div>\n      <label className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block\">Назва *</label>\n      <Input placeholder=\"Назва проєкту...\" />\n    </div>\n    <div>\n      <label className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block\">Опис</label>\n      <Textarea placeholder=\"Короткий опис...\" rows={3} />\n    </div>\n  </div>\n  <div className=\"flex gap-[8px] mt-[24px]\">\n    <Button style=\"secondary\" size=\"lg\" className=\"flex-1\" onClick={() => setOpen1(false)}>Скасувати</Button>\n    <Button style=\"primary\" size=\"lg\" className=\"flex-1\" onClick={() => setOpen1(false)}>Зберегти</Button>\n  </div>\n</Dialog>",
     "Danger / Confirm Dialog": "<ConfirmDialogPreview />",
     "Dialog — решта оголошених значень": "<div className=\"grid w-full gap-[10px] sm:grid-cols-2 lg:grid-cols-3\">\n  {DIALOG_VARIANTS.map(variant => (\n    <div key={variant.id} className=\"flex flex-col gap-[8px] rounded-[12px] border border-line p-[12px]\">\n      <span className=\"font-mono text-[11px] font-bold text-ink\">{variant.label}</span>\n      <p className=\"text-[11px] leading-relaxed text-muted\">{variant.note}</p>\n      <div className=\"mt-auto flex flex-col gap-[6px] pt-[4px]\">\n        <span className=\"text-[10px] leading-relaxed text-faint\">\n          <span className=\"font-semibold text-muted\">Де на сайті:</span> {variant.where}\n          <br />\n          <span className=\"font-semibold text-muted\">Як відкрити:</span> {variant.open}\n        </span>\n        <Button style=\"secondary\" size=\"sm\" onClick={() => setDialogVariant(variant.id)}>\n          Показати\n        </Button>\n      </div>\n    </div>\n  ))}\n</div>\n{DIALOG_VARIANTS.map(variant => (\n  <Dialog\n    key={variant.id}\n    isOpen={dialogVariant === variant.id}\n    onClose={() => setDialogVariant(null)}\n    title={variant.label}\n    {...variant.props}\n  >\n    <div className=\"flex flex-col gap-3\">\n      <p className=\"text-[12px] leading-relaxed text-muted\">{variant.note}</p>\n      <Surface preset=\"inset\" padding=\"md\">\n        <p className=\"text-[11px] text-muted\">\n          Живе тут: <span className=\"font-semibold text-ink\">{variant.where}</span>\n        </p>\n        <p className=\"mt-1 font-mono text-[11px] text-ink\">\n          {Object.entries(variant.props).map(([key, value]) => `${key}=\"${value}\"`).join(' ')}\n        </p>\n      </Surface>\n      <Button style=\"primary\" size=\"md\" onClick={() => setDialogVariant(null)}>Закрити</Button>\n    </div>\n  </Dialog>\n))}",
-    "Project Settings Dialog": "<Button style=\"secondary\" size=\"lg\" icon={Settings} onClick={() => setProjectSettingsOpen(true)}>\n  Налаштування проєкту\n</Button>\n<Dialog\n  isOpen={projectSettingsOpen}\n  onClose={() => setProjectSettingsOpen(false)}\n  title=\"Налаштування проєкту\"\n  size=\"sm\"\n  footer={(\n    <>\n      <Button style=\"secondary\" size=\"md\" onClick={() => setProjectSettingsOpen(false)}>\n        Скасувати\n      </Button>\n      <Button style=\"primary\" size=\"md\" onClick={() => setProjectSettingsOpen(false)}>\n        Зберегти зміни\n      </Button>\n    </>\n  )}\n>\n  <ProjectSettingsForm\n    name={projectSettingsName}\n    onNameChange={setProjectSettingsName}\n    description={projectSettingsDescription}\n    onDescriptionChange={setProjectSettingsDescription}\n    statuses={DEFAULT_STATUSES}\n    hiddenStatusIds={projectSettingsHidden}\n    onHiddenStatusIdsChange={setProjectSettingsHidden}\n    backlogStatusId=\"backlog\"\n    teamMembers={[\n      { id: 'owner-demo', name: 'Олена Коваль', email: 'olena@example.com' },\n      { id: 'designer-demo', name: 'Іван Петренко', email: 'ivan@example.com' },\n      { id: 'developer-demo', name: 'Марія Бондар', email: 'maria@example.com' },\n    ]}\n    teamMemberIds={projectSettingsTeam}\n    onTeamMemberIdsChange={setProjectSettingsTeam}\n    ownerId=\"owner-demo\"\n    layout=\"stacked\"\n    inviteEmails={projectSettingsInvites}\n    onInviteEmailsChange={setProjectSettingsInvites}\n  />\n</Dialog>",
+    "Project Settings Dialog": "<Button style=\"secondary\" size=\"lg\" icon={Settings} onClick={() => setProjectSettingsOpen(true)}>\n  Налаштування проєкту\n</Button>\n<Dialog\n  isOpen={projectSettingsOpen}\n  onClose={() => setProjectSettingsOpen(false)}\n  title=\"Налаштування проєкту\"\n  size=\"sm\"\n  footer={(\n    <>\n      <Button style=\"secondary\" size=\"md\" onClick={() => setProjectSettingsOpen(false)}>\n        Скасувати\n      </Button>\n      <Button style=\"primary\" size=\"md\" onClick={() => setProjectSettingsOpen(false)}>\n        Зберегти зміни\n      </Button>\n    </>\n  )}\n>\n  <ProjectSettingsForm\n    name={projectSettingsName}\n    onNameChange={setProjectSettingsName}\n    description={projectSettingsDescription}\n    onDescriptionChange={setProjectSettingsDescription}\n    issuePrefix={projectSettingsPrefix}\n    onIssuePrefixChange={setProjectSettingsPrefix}\n    statuses={DEFAULT_STATUSES}\n    hiddenStatusIds={projectSettingsHidden}\n    onHiddenStatusIdsChange={setProjectSettingsHidden}\n    backlogStatusId=\"backlog\"\n    teamMembers={[\n      { id: 'owner-demo', name: 'Олена Коваль', email: 'olena@example.com' },\n      { id: 'designer-demo', name: 'Іван Петренко', email: 'ivan@example.com' },\n      { id: 'developer-demo', name: 'Марія Бондар', email: 'maria@example.com' },\n    ]}\n    teamMemberIds={projectSettingsTeam}\n    onTeamMemberIdsChange={setProjectSettingsTeam}\n    ownerId=\"owner-demo\"\n    layout=\"stacked\"\n    inviteEmails={projectSettingsInvites}\n    onInviteEmailsChange={setProjectSettingsInvites}\n  />\n</Dialog>",
     "CreateTaskModal — large sheet": "<Button style=\"primary\" size=\"lg\" icon={Plus} onClick={() => setCreateTaskOpen(true)}>\n  Створити завдання\n</Button>\n<CreateTaskModal\n  isOpen={createTaskOpen}\n  onClose={() => setCreateTaskOpen(false)}\n  onSubmit={async () => setCreateTaskOpen(false)}\n  stages={[]}\n  teamMembers={[]}\n  projectContext={{ id: 'ui-kit', name: 'UI Kit' }}\n  sprints={[]}\n/>",
     "1) WorkspaceHeader (Живий компонент)": "<div className=\"border border-[#f0f0f0] rounded-[16px] overflow-hidden bg-white\">\n  <WorkspaceHeader />\n</div>",
     "2) Звичайний пошук (Search Mode)": "<div className=\"min-h-[150px] rounded-[16px] border border-[#f0f0f0] bg-white\">\n  <TopHeader \n    mode=\"search\"\n    searchValue=\"ретро\"\n    searchPlaceholder=\"Пошук по моїх завданнях...\"\n    searchLocalResultCount={0}\n    searchOutsideResultCount={4}\n    onSearchEscalate={() => {}}\n    unreadCount={0}\n  />\n</div>",

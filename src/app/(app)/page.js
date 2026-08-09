@@ -39,6 +39,12 @@ import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
+import {
+  isValidIssuePrefix,
+  normalizeIssuePrefix,
+  projectIssuePrefixTaken,
+  suggestAvailableIssuePrefix,
+} from '@/lib/utils/issueKeys.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -426,7 +432,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 }
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
-function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members = [], statuses = [], canInvite = false }) {
+function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, projects = [], members = [], statuses = [], canInvite = false }) {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
@@ -434,6 +440,9 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const [team,        setTeam]        = useState([]);
   const [hiddenColumns, setHiddenColumns] = useState([]);
   const [nameError, setNameError] = useState('');
+  const [issuePrefix, setIssuePrefix] = useState('');
+  const [issuePrefixTouched, setIssuePrefixTouched] = useState(false);
+  const [issuePrefixError, setIssuePrefixError] = useState('');
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteEmailsError, setInviteEmailsError] = useState('');
   const { inviteMember } = useOrganization();
@@ -442,12 +451,23 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const limitReached = isFree && activeProjectsCount >= 3;
 
   const [error, setError] = useState(null);
+  const effectiveIssuePrefix = issuePrefixTouched
+    ? issuePrefix
+    : suggestAvailableIssuePrefix({ name }, projects);
 
   const handleCreate = async () => {
     // A disabled primary button gave no reason why, so the form now says what
     // is missing and marks the field instead of silently refusing the click.
     if (!name.trim()) {
       setNameError('Вкажіть назву проєкту');
+      return;
+    }
+    if (!isValidIssuePrefix(effectiveIssuePrefix)) {
+      setIssuePrefixError('Вкажіть 2–8 літер або цифр без пробілів і дефісів');
+      return;
+    }
+    if (projectIssuePrefixTaken(projects, effectiveIssuePrefix)) {
+      setIssuePrefixError('Такий код завдань уже використовує інший проєкт');
       return;
     }
     const { emails: invitees, malformed } = parseInviteEmails(inviteEmails);
@@ -464,6 +484,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
         description: description.trim(),
         visibility,
         organizationId: orgId,
+        issuePrefix: effectiveIssuePrefix,
         team,
         hiddenColumns,
       };
@@ -480,6 +501,18 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
         body: JSON.stringify(payload),
       });
       const result = await response.json();
+      if (!response.ok && result.code === 'ISSUE_PREFIX_TAKEN') {
+        const suggestedPrefix = normalizeIssuePrefix(result.suggestedPrefix);
+        setIssuePrefixTouched(true);
+        if (isValidIssuePrefix(suggestedPrefix)) setIssuePrefix(suggestedPrefix);
+        setIssuePrefixError(
+          isValidIssuePrefix(suggestedPrefix)
+            ? `Цей код щойно зайняли. Підібрали вільний ${suggestedPrefix} — перевірте та повторіть.`
+            : result.error,
+        );
+        setSaving(false);
+        return;
+      }
       if (!response.ok) throw new Error(result.error || 'Не вдалося створити проєкт');
 
       // Invitations are sent after the project exists so each one can carry its
@@ -553,10 +586,26 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
               hand-written separately and drifted apart field by field. */}
           <ProjectSettingsForm
             name={name}
-            onNameChange={value => { setName(value); if (nameError) setNameError(''); }}
+            onNameChange={value => {
+              setName(value);
+              if (nameError) setNameError('');
+              if (!issuePrefixTouched && issuePrefixError) setIssuePrefixError('');
+            }}
             nameError={nameError}
             description={description}
             onDescriptionChange={setDescription}
+            issuePrefix={effectiveIssuePrefix}
+            onIssuePrefixChange={value => {
+              const normalizedPrefix = normalizeIssuePrefix(value);
+              setIssuePrefixTouched(true);
+              setIssuePrefix(normalizedPrefix);
+              setIssuePrefixError(
+                normalizedPrefix && projectIssuePrefixTaken(projects, normalizedPrefix)
+                  ? 'Такий код завдань уже використовує інший проєкт'
+                  : '',
+              );
+            }}
+            issuePrefixError={issuePrefixError}
             statuses={statuses}
             hiddenStatusIds={hiddenColumns}
             onHiddenStatusIdsChange={setHiddenColumns}
@@ -928,6 +977,7 @@ export default function WorkspacePage() {
         orgId={activeOrgId}
         orgPlan={activeOrg?.plan}
         activeProjectsCount={stats.total}
+        projects={projects}
         members={members}
         statuses={statuses}
         canInvite={can(orgRole, 'manage:team')}

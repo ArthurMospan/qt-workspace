@@ -7,7 +7,13 @@ import {
   issueParticipants,
 } from '../src/lib/utils/issueParticipants.mjs';
 import { issueActivity, isIssueUnread } from '../src/lib/utils/issueReadState.mjs';
-import { projectIssuePrefix, taskDisplayKey } from '../src/lib/utils/issueKeys.mjs';
+import {
+  isValidIssuePrefix,
+  normalizeIssuePrefix,
+  projectIssuePrefix,
+  projectIssuePrefixTaken,
+  taskDisplayKey,
+} from '../src/lib/utils/issueKeys.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -146,6 +152,16 @@ test('a task key is never invented from a document id', async () => {
   assert.equal(taskDisplayKey({ issueKey: 'WS-17' }, { issuePrefix: 'qt' }), 'QT-17');
   assert.equal(projectIssuePrefix({ name: 'Мій Проєкт' }), 'МІЙ');
   assert.equal(projectIssuePrefix(null), 'WS');
+  assert.equal(normalizeIssuePrefix(' eng-team '), 'ENGTEAM');
+  assert.equal(isValidIssuePrefix('ENG'), true);
+  assert.equal(isValidIssuePrefix('E'), false);
+  assert.equal(isValidIssuePrefix('ENG-TEAM'), false);
+  assert.equal(projectIssuePrefixTaken([
+    { id: 'engineering', name: 'Engineering', issuePrefix: 'ENG' },
+  ], 'eng'), true);
+  assert.equal(projectIssuePrefixTaken([
+    { id: 'engineering', name: 'Engineering', issuePrefix: 'ENG' },
+  ], 'eng', 'engineering'), false);
 
   for (const file of [
     '../src/components/workspace/IssueCard.jsx',
@@ -160,7 +176,9 @@ test('a task key is never invented from a document id', async () => {
 test('the prefix rule is written once, not once per writer', async () => {
   for (const file of ['../src/app/api/issues/route.js', '../src/lib/server/telegram.js']) {
     const source = await read(file);
-    assert.match(source, /import \{ projectIssuePrefix \} from '@\/lib\/utils\/issueKeys\.mjs'/, file);
+    assert.match(source, /resolveProjectIssuePrefixInTransaction/, file);
     assert.doesNotMatch(source, /function projectPrefix\(/, file);
   }
+  const resolver = await read('../src/lib/server/issueKeys.js');
+  assert.match(resolver, /suggestAvailableIssuePrefix/);
 });

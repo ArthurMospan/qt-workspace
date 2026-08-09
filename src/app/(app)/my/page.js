@@ -10,7 +10,7 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { PageHeader, StatusVisibilityPicker, TaskListView } from '@/components/ui';
+import { PageHeader, StatusTransitionPicker, StatusVisibilityPicker, TaskListView } from '@/components/ui';
 import { Plus, Settings2, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
@@ -22,6 +22,11 @@ import FilterBar from '@/components/ui/FilterBar';
 import Dialog from '@/components/ui/Dialog';
 import { createIssueViaApi, notifyIssueAssigned } from '@/lib/services/issues';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
+import {
+  availableStatusesInCategory,
+  statusCategoryLabel,
+  statusCategoryOf,
+} from '@/lib/utils/statusCategories.mjs';
 
 
 
@@ -49,9 +54,9 @@ function filterTasks(tasks, filters, sprintMap) {
 export default function MyTasksPage() {
   const { currentUser, projects, activeOrgId } = useAppContext();
   const { members } = useOrganization();
-  const { labels, types, priorities, categoryColumns } = useWorkflowConfig();
+  const { labels, types, priorities, statuses, categoryColumns } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
-  const { tasks, allIssues, issueLinks, loading, moveTaskToCategory } = useAllMyTasks(uid);
+  const { tasks, allIssues, issueLinks, loading, moveTask, moveTaskToCategory } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
@@ -88,6 +93,7 @@ export default function MyTasksPage() {
   };
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [createTaskCategory, setCreateTaskCategory] = useState(null);
+  const [pendingStatusMove, setPendingStatusMove] = useState(null);
   // This board's columns are the five shared status categories, so what a person
   // folds away here is a category too. Kept under its own key: the old value held
   // status ids, which mean nothing to these columns.
@@ -114,17 +120,61 @@ export default function MyTasksPage() {
   // its own project — which is why no column of this board can be "missing" from
   // a project, and why the drop cannot be refused by settings the person
   // dropping the card may not even be able to see.
-  const handleMoveIssue = async (issueId, categoryId, position) => {
+  const commitMove = async ({ issueId, categoryId, position }, statusId = null) => {
     try {
-      await moveTaskToCategory(issueId, categoryId, position, {
+      const actor = {
         userId: uid,
         userName: currentUser?.name || '',
-      });
-      showToast('Статус оновлено ✓');
+      };
+      if (statusId) {
+        await moveTask(issueId, statusId, position, actor);
+      } else {
+        await moveTaskToCategory(issueId, categoryId, position, actor);
+      }
+      const selectedStatus = statusId
+        ? statuses.find(status => status.id === statusId)?.label
+        : null;
+      showToast(selectedStatus ? `Перенесено в «${selectedStatus}» ✓` : 'Статус оновлено ✓');
+      return true;
     } catch (err) {
       console.error(err);
       showToast(err?.message || 'Помилка оновлення статусу', 'error');
+      return false;
     }
+  };
+
+  const handleMoveIssue = async (issueId, categoryId, position) => {
+    const issue = tasks.find(item => item.id === issueId);
+    const project = (projects || []).find(item => item.id === issue?.projectId);
+    const currentStatusId = issue?.columnId || issue?.status || null;
+    const movingAcrossCategories = statusCategoryOf(currentStatusId, statuses) !== categoryId;
+    const candidates = availableStatusesInCategory(categoryId, statuses, {
+      hiddenStatusIds: Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
+    });
+
+    if (issue && project && movingAcrossCategories && candidates.length > 1) {
+      setPendingStatusMove({
+        issueId,
+        categoryId,
+        position,
+        issue,
+        project,
+        candidates,
+        busy: false,
+      });
+      return;
+    }
+
+    await commitMove({ issueId, categoryId, position });
+  };
+
+  const selectPendingStatus = async statusId => {
+    if (!pendingStatusMove || pendingStatusMove.busy) return;
+    const move = pendingStatusMove;
+    setPendingStatusMove(current => current ? { ...current, busy: true } : current);
+    const saved = await commitMove(move, statusId);
+    if (saved) setPendingStatusMove(null);
+    else setPendingStatusMove(current => current ? { ...current, busy: false } : current);
   };
 
   // Group sprints by status
@@ -359,6 +409,19 @@ export default function MyTasksPage() {
           </div>
         </Dialog>
       )}
+
+      {pendingStatusMove ? (
+        <StatusTransitionPicker
+          isOpen
+          issue={pendingStatusMove.issue}
+          project={pendingStatusMove.project}
+          statuses={pendingStatusMove.candidates}
+          categoryLabel={statusCategoryLabel(pendingStatusMove.categoryId)}
+          busy={Boolean(pendingStatusMove.busy)}
+          onSelect={selectPendingStatus}
+          onClose={() => setPendingStatusMove(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, Clock, Hash } from 'lucide-react';
@@ -6,12 +7,19 @@ import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import Pill from '@/components/ui/DataDisplay/Pill';
+import {
+  legacyStoredIssueKey,
+  normalizeIssuePrefix,
+  projectIssuePrefix,
+} from '@/lib/utils/issueKeys.mjs';
 
 export default function HoverCard({ type, value, children, members }) {
-  const { activeOrgId } = useAppContext();
+  const { activeOrgId, projects = [] } = useAppContext();
+  const router = useRouter();
   const [show, setShow] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const openWhenReadyRef = useRef(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -50,24 +58,62 @@ export default function HoverCard({ type, value, children, members }) {
     // For issue, fetch from firestore if not loaded
     if (type === 'issue' && activeOrgId) {
       queueMicrotask(() => { if (!cancelled) setLoading(true); });
-      const q = query(
-        collection(db, 'issues'),
-        where('organizationId', '==', activeOrgId),
-        where('issueKey', '==', value),
-        limit(1),
-      );
-      getDocs(q).then(snap => {
+      const keyPrefix = String(value || '').match(/^([\p{L}\p{N}]+)-\d+$/u)?.[1] || '';
+      const expectedProject = projects.find(project => (
+        projectIssuePrefix(project) === normalizeIssuePrefix(keyPrefix)
+      ));
+      const loadIssue = async issueKey => {
+        if (!issueKey) return null;
+        const snap = await getDocs(query(
+          collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('issueKey', '==', issueKey),
+          limit(10),
+        ));
+        const matchingDocument = expectedProject
+          ? snap.docs.find(document => document.data().projectId === expectedProject.id)
+          : snap.docs[0];
+        return matchingDocument
+          ? { id: matchingDocument.id, ...matchingDocument.data() }
+          : null;
+      };
+      loadIssue(value).then(async exactMatch => {
+        const issue = exactMatch || await loadIssue(
+          legacyStoredIssueKey(value, expectedProject),
+        );
         if (cancelled) return;
-        if (!snap.empty) {
-          setData({ id: snap.docs[0].id, ...snap.docs[0].data() });
+        if (issue) {
+          setData(issue);
         } else {
           setData({ notFound: true });
         }
         setLoading(false);
-      }).catch(() => { if (!cancelled) setLoading(false); });
+      }).catch(() => {
+        if (cancelled) return;
+        setData({ notFound: true });
+        setLoading(false);
+      });
     }
     return () => { cancelled = true; };
-  }, [show, type, value, members, activeOrgId]);
+  }, [show, type, value, members, activeOrgId, projects]);
+
+  useEffect(() => {
+    if (!openWhenReadyRef.current || type !== 'issue' || !data) return;
+    if (!data.notFound && data.id && data.projectId) {
+      router.push(`/${data.projectId}/issue/${data.id}`);
+    }
+    openWhenReadyRef.current = false;
+  }, [data, router, type]);
+
+  const openIssue = () => {
+    if (type !== 'issue') return;
+    if (data && !data.notFound && data.id && data.projectId) {
+      router.push(`/${data.projectId}/issue/${data.id}`);
+      return;
+    }
+    setShow(true);
+    openWhenReadyRef.current = true;
+  };
 
   return (
     <div 
@@ -75,11 +121,20 @@ export default function HoverCard({ type, value, children, members }) {
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
-      <span className={`px-1 rounded-sm font-medium cursor-pointer ${
-        type === 'user' ? 'bg-canvas text-ink' : 'bg-[#fdf4ff] text-[#c026d3]'
-      }`}>
-        {children}
-      </span>
+      {type === 'issue' ? (
+        <button
+          type="button"
+          onClick={openIssue}
+          title={`Відкрити ${value}`}
+          className="rounded-sm bg-[#fdf4ff] px-1 font-medium text-[#c026d3] transition-colors hover:bg-[#fae8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c026d3]/30"
+        >
+          {children}
+        </button>
+      ) : (
+        <span className="cursor-pointer rounded-sm bg-canvas px-1 font-medium text-ink">
+          {children}
+        </span>
+      )}
 
       {show && (
         <div data-ui-surface="local" className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">

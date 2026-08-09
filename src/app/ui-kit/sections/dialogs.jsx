@@ -99,6 +99,7 @@ export default function DialogsSection() {
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [projectSettingsName, setProjectSettingsName] = useState('QuickTeam Website');
   const [projectSettingsDescription, setProjectSettingsDescription] = useState('Основний продукт команди');
+  const [projectSettingsPrefix, setProjectSettingsPrefix] = useState('QUI');
   const [projectSettingsHidden, setProjectSettingsHidden] = useState(['done']);
   const [projectSettingsTeam, setProjectSettingsTeam] = useState(['owner-demo', 'designer-demo']);
   const [projectSettingsInvites, setProjectSettingsInvites] = useState('');
@@ -210,6 +211,8 @@ export default function DialogsSection() {
             onNameChange={setProjectSettingsName}
             description={projectSettingsDescription}
             onDescriptionChange={setProjectSettingsDescription}
+            issuePrefix={projectSettingsPrefix}
+            onIssuePrefixChange={setProjectSettingsPrefix}
             statuses={DEFAULT_STATUSES}
             hiddenStatusIds={projectSettingsHidden}
             onHiddenStatusIdsChange={setProjectSettingsHidden}

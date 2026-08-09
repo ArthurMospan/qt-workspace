@@ -245,6 +245,24 @@ export function categoryStatusIds(categoryId, statuses) {
   return statusesInCategory(categoryId, statuses).map(status => status.id);
 }
 
+/**
+ * Statuses of one category that a particular project actually shows.
+ *
+ * Cross-project boards use category columns, while the final status still
+ * belongs to the task's own project. Keeping this choice here means callers do
+ * not re-derive category meaning or accidentally offer a hidden project
+ * column. Workflow order is preserved so the first item remains the canonical
+ * automatic choice when no picker is needed.
+ */
+export function availableStatusesInCategory(categoryId, statuses, {
+  hiddenStatusIds = [],
+} = {}) {
+  if (!isStatusCategoryId(categoryId)) return [];
+  const hidden = new Set(hiddenStatusIds || []);
+  return statusesInCategory(categoryId, statuses)
+    .filter(status => !hidden.has(status.id));
+}
+
 /** Statuses whose category is `in-progress` — what «в роботі» means, exactly. */
 export function inProgressStatusIds(statuses) {
   return categoryStatusIds('in-progress', statuses);
@@ -322,12 +340,13 @@ export function resolveCategoryStatusId(categoryId, statuses, {
   currentStatusId = null,
   hiddenStatusIds = [],
 } = {}) {
-  if (!isStatusCategoryId(categoryId)) return null;
-  const hidden = new Set(hiddenStatusIds || []);
-  const candidates = categoryStatusIds(categoryId, statuses)
-    .filter(statusId => !hidden.has(statusId));
-  if (currentStatusId && candidates.includes(currentStatusId)) return currentStatusId;
-  return candidates[0] || null;
+  const candidates = availableStatusesInCategory(categoryId, statuses, {
+    hiddenStatusIds,
+  });
+  if (currentStatusId && candidates.some(status => status.id === currentStatusId)) {
+    return currentStatusId;
+  }
+  return candidates[0]?.id || null;
 }
 
 /**

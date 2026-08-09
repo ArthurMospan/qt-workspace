@@ -5,7 +5,8 @@ import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { formatTelegramNotification } from '@/lib/utils/telegramMessage.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
-import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
@@ -223,7 +224,14 @@ export async function createIssueFromTelegram({
     const type = typeSelection.type;
     const completed = resolveClosedStatusIds(workflow.statuses).includes(status);
     const next = (project.issueCounter || 0) + 1;
-    issueKey = `${projectIssuePrefix(project)}-${next}`;
+    const issuePrefix = await resolveProjectIssuePrefixInTransaction({
+      db,
+      transaction,
+      project,
+      projectId,
+      organizationId,
+    });
+    issueKey = `${issuePrefix}-${next}`;
     const now = admin.firestore.FieldValue.serverTimestamp();
     transaction.create(issueRef, {
       issueKey,
@@ -272,7 +280,11 @@ export async function createIssueFromTelegram({
       lastActivityActorId: `telegram:${telegramUser.id || 'unknown'}`,
       ...(completed ? { completedAt: now } : {}),
     });
-    transaction.update(projectRef, { issueCounter: next, updatedAt: now });
+    transaction.update(projectRef, {
+      issueCounter: next,
+      ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
+      updatedAt: now,
+    });
     transaction.create(issueRef.collection('audit').doc(), {
       userId: 'telegram-bot',
       userName: reporterName,

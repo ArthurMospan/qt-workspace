@@ -217,3 +217,19 @@ test('the personal board cannot be folded down to nothing', async () => {
   assert.match(myTasks, /next\.length >= categoryColumns\.length/);
   assert.match(myTasks, /Хоча б одна колонка має лишатися видимою/);
 });
+
+test('the personal board asks for an exact status only when a category has several choices', async () => {
+  const [myTasks, picker] = await Promise.all([
+    read('../src/app/(app)/my/page.js'),
+    read('../src/components/ui/TaskManagement/StatusTransitionPicker.jsx'),
+  ]);
+
+  assert.match(myTasks, /availableStatusesInCategory\(/);
+  assert.match(myTasks, /movingAcrossCategories && candidates\.length > 1/);
+  assert.match(myTasks, /<StatusTransitionPicker/);
+  // The selected exact status still uses the same optimistic/API path as a
+  // direct move on a project board.
+  assert.match(myTasks, /await moveTask\(issueId, statusId, position, actor\)/);
+  assert.match(picker, /layoutId="status-transition-task"/);
+  assert.match(picker, /style=\{\{ backgroundColor: color \}\}/);
+});

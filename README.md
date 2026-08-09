@@ -122,6 +122,26 @@ Primary collections:
 
 `tasks` is a legacy read-only collection. New development must use `issues`.
 
+### Issue IDs
+
+Each project owns a short `issuePrefix` (for example `ENG` or `DES`) and an
+atomic `issueCounter`. Every project-scoped writer — the app, Telegram and the
+public task API — consumes that same sequence, so keys such as `ENG-12` are
+stable and unique inside the organization. A prefix is 2–8 letters or numbers,
+must not collide with another project, and is locked after the first issue so
+chat references, links and commit messages never change underneath people.
+The create form picks the first readable free variant (`ENG`, `ENG2`, `ENG3`,
+...) when similar project names would otherwise generate the same prefix. The
+server repeats the uniqueness check transactionally and returns a fresh
+suggestion if two people race to create projects with the same code.
+Projects created before this field existed claim a free prefix inside their
+next task-creation transaction; displayed legacy `WS-*` keys remain searchable
+and openable as aliases.
+
+Workspace search ranks an exact issue key above titles and descriptions. In
+chat, typing `#` plus at least two characters opens the same authorized search;
+the selected `#ENG-12` reference renders as a task preview and opens the issue.
+
 ### Statuses have two layers
 
 `organizations/{orgId}/settings/workflow` holds the organization's statuses. Each one carries a free label and a `category`, which is one of exactly five fixed values: `backlog`, `todo`, `in-progress`, `done`, `cancelled`. Labels are local — an organization may have as many as it likes, named whatever it likes. Categories are shared, and every surface that spans projects reads them: «Мої завдання» builds its columns from categories, and `done`/`cancelled` are what close a task, so `completedAt`, progress, velocity, overdue and invoices all follow the category and nothing else. `isDone` is still written, derived from the category, for documents and clients that predate it.

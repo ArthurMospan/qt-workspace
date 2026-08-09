@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
 
 // One ladder for every kind, so a project called "Design" and a task called
 // "Design" rank against each other consistently. Fields are weighted by how
@@ -30,6 +31,7 @@ function scoreField(value, term, ladder) {
 function scoreIssue(issue, term) {
   return Math.max(
     scoreField(issue.issueKey, term, WEIGHTS.key),
+    scoreField(issue.storedIssueKey, term, WEIGHTS.key),
     scoreField(issue.title, term, WEIGHTS.name),
     scoreField(issue.description, term, WEIGHTS.body),
     scoreField(issue.projectId, term, [0, 0, 30]),
@@ -91,6 +93,7 @@ export async function GET(request) {
     ]);
 
     const projectRecords = projectsSnapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+    const projectsById = new Map(projectRecords.map(project => [project.id, project]));
     const visibleProjectIds = isPrivileged
       ? null
       : new Set(
@@ -100,7 +103,12 @@ export async function GET(request) {
       );
     const results = issuesSnapshot.docs
       .map(item => {
-        const issue = item.data();
+        const storedIssue = item.data();
+        const issue = {
+          ...storedIssue,
+          storedIssueKey: storedIssue.issueKey,
+          issueKey: taskDisplayKey(storedIssue, projectsById.get(storedIssue.projectId)),
+        };
         return { id: item.id, ...issue, score: scoreIssue(issue, term) };
       })
       .filter(issue => issue.score > 0)

@@ -118,6 +118,24 @@ test('formatChatFileSize produces readable labels', () => {
   assert.equal(formatChatFileSize(undefined), '');
 });
 
+test('chat autocompletes and opens stable issue-key mentions', async () => {
+  const [page, menu, content, hoverCard] = await Promise.all([
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/Chat/IssueMentionMenu.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/MessageContent.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/HoverCard.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(page, /matchIssue = before\.match\(/);
+  assert.match(page, /searchIssues\(queryText, activeOrgId\)/);
+  assert.match(page, /`\$\{before\}#\$\{issue\.issueKey\} \$\{after\}`/);
+  assert.match(page, /<IssueMentionMenu/);
+  assert.match(menu, /issue\.issueKey/);
+  assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
+  assert.match(hoverCard, /router\.push\(`\/\$\{data\.projectId\}\/issue\/\$\{data\.id\}`\)/);
+  assert.match(hoverCard, /legacyStoredIssueKey\(value, expectedProject\)/);
+});
+
 // A conversation opens showing its newest message. It does not scroll to it.
 //
 // Measured on the running app before this change: the list rendered at

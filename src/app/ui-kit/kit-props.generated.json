@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 93,
-    "props": 679,
-    "documentedProps": 679,
+    "components": 95,
+    "props": 696,
+    "documentedProps": 696,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2494,6 +2494,47 @@
         }
       ]
     },
+    "IssueMentionMenu": {
+      "file": "src/components/ui/Chat/IssueMentionMenu.jsx",
+      "summary": "The #issue autocomplete sheet used by workspace-chat composers.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the composer."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Search results with issueKey/title/projectId."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the server search is in flight."
+        },
+        {
+          "name": "onSelect",
+          "default": "",
+          "type": "(issue: object) => void",
+          "values": [],
+          "description": "Inserts the selected key."
+        },
+        {
+          "name": "projects",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Visible projects, used only for their names."
+        }
+      ]
+    },
     "KeyboardShortcutsDialog": {
       "file": "src/components/ui/Navigation/KeyboardShortcutsDialog.jsx",
       "summary": "The keyboard cheat sheet.",
@@ -3787,6 +3828,27 @@
           "description": "Sentence under that list; says when the invitations go out."
         },
         {
+          "name": "issuePrefix",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Short stable prefix used by issue keys."
+        },
+        {
+          "name": "issuePrefixError",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Validation message under the prefix field."
+        },
+        {
+          "name": "issuePrefixLocked",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Existing issue keys make the prefix immutable."
+        },
+        {
           "name": "loading",
           "default": "false",
           "type": "boolean",
@@ -3827,6 +3889,13 @@
           "type": "(value: string) => void",
           "values": [],
           "description": "Fires with the edited list; its presence is what enables inline invites."
+        },
+        {
+          "name": "onIssuePrefixChange",
+          "default": "",
+          "type": "(value: string) => void",
+          "values": [],
+          "description": "Fires with an uppercase letters/numbers-only prefix."
         },
         {
           "name": "onNameChange",
@@ -4315,6 +4384,68 @@
           "type": "string",
           "values": [],
           "description": "Status name as the workspace spells it."
+        }
+      ]
+    },
+    "StatusTransitionPicker": {
+      "file": "src/components/ui/TaskManagement/StatusTransitionPicker.jsx",
+      "summary": "Chooses the exact project status after a card was dropped on a shared category in «Мої завдання».",
+      "props": [
+        {
+          "name": "busy",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "A transition is being saved."
+        },
+        {
+          "name": "categoryLabel",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Shared category the card was dropped on."
+        },
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the picker is visible."
+        },
+        {
+          "name": "issue",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "Task being moved."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Cancels the pending move."
+        },
+        {
+          "name": "onSelect",
+          "default": "",
+          "type": "(statusId: string) => void",
+          "values": [],
+          "description": "Commits the exact status."
+        },
+        {
+          "name": "project",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "Task's project."
+        },
+        {
+          "name": "statuses",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Visible statuses in the destination category."
         }
       ]
     },

@@ -269,7 +269,8 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   assert.doesNotMatch(workspace, /function AddMemberModal/);
   assert.match(workspace, /hiddenColumns,\s*\n/);
   assert.match(workspace, /<BoardConfigModal[\s\S]{0,400}canManageTeam=\{can\(orgRole, 'manage:team'\)\}/);
-  assert.match(workspace, /<ProjectSettingsForm[\s\S]{0,400}onHiddenStatusIdsChange=\{setHiddenColumns\}/);
+  const sharedProjectFormCall = workspace.match(/<ProjectSettingsForm[\s\S]*?\/>/)?.[0] || '';
+  assert.match(sharedProjectFormCall, /onHiddenStatusIdsChange=\{setHiddenColumns\}/);
   assert.match(projectPage, /title="Налаштування проєкту"/);
   assert.ok(
     projectPage.indexOf('title="Налаштування проєкту"')

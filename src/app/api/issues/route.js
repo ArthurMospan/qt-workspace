@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
-import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_LABEL_IDS,
   DEFAULT_PRIORITY_IDS,
@@ -270,7 +271,14 @@ export async function POST(request) {
         if (statusConflict) throw hierarchyTransactionError(statusConflict);
       }
       const next = (project.issueCounter || 0) + 1;
-      issueKey = `${projectIssuePrefix(project)}-${next}`;
+      const issuePrefix = await resolveProjectIssuePrefixInTransaction({
+        db,
+        transaction,
+        project,
+        projectId,
+        organizationId: project.organizationId,
+      });
+      issueKey = `${issuePrefix}-${next}`;
       const now = admin.firestore.FieldValue.serverTimestamp();
       const payload = {
         issueKey,
@@ -311,6 +319,7 @@ export async function POST(request) {
       transaction.create(issueRef, payload);
       transaction.update(projectRef, {
         issueCounter: next,
+        ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
         updatedAt: now,
         ...(parentIssueId
           ? { issueHierarchyVersion: admin.firestore.FieldValue.increment(1) }

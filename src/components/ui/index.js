@@ -68,6 +68,7 @@ export { default as DescriptionPlaceholder } from './TaskManagement/DescriptionP
 export { default as MetaTrigger } from './DataDisplay/MetaTrigger'
 export { default as ProjectSettingsForm } from './TaskManagement/ProjectSettingsForm'
 export { default as StatusVisibilityPicker } from './TaskManagement/StatusVisibilityPicker'
+export { default as StatusTransitionPicker } from './TaskManagement/StatusTransitionPicker'
 
 // ===== NAVIGATION COMPONENTS =====
 export { Popover } from './Navigation/Popover'
@@ -114,6 +115,7 @@ export { default as ChatConversationHeader } from './Chat/ChatConversationHeader
 export { default as ChatSearchBanner } from './Chat/ChatSearchBanner'
 export { default as ChannelInfoPanel } from './Chat/ChannelInfoPanel'
 export { default as MentionMenu } from './Chat/MentionMenu'
+export { default as IssueMentionMenu } from './Chat/IssueMentionMenu'
 export { ChatAttachmentList, PendingChatAttachments } from './Chat/ChatAttachmentList'
 export { default as TextAction } from './TextAction'
 export { default as AvatarButton } from './DataDisplay/AvatarButton'

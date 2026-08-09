@@ -12,7 +12,7 @@ import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import Dialog from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { MultiSelect } from '@/components/ui/Select';
-import { useConfirm, ChannelRail, Counter, FileInput, FormGroup, IconAction, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
+import { useConfirm, ChannelRail, Counter, FileInput, FormGroup, IconAction, IssueMentionMenu, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
@@ -37,6 +37,7 @@ import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchR
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { messageMatchesChatSearch } from '@/lib/utils/chatAttachments.mjs';
+import { useSearch } from '@/lib/hooks/useSearch';
 
 // ─── Message Input ───────────────────────────────────────────────────────────
 function MessageInput({
@@ -45,6 +46,7 @@ function MessageInput({
   onError,
   placeholder = 'Написати повідомлення...',
   members = [],
+  projects = [],
 }) {
   const { activeOrgId } = useAppContext();
   const [text, setText] = useState('');
@@ -67,6 +69,12 @@ function MessageInput({
     align: 'start',
   });
   const sendingRef = useRef(false);
+  const {
+    results: issueResults,
+    loading: issueSearchLoading,
+    search: searchIssues,
+    clear: clearIssueSearch,
+  } = useSearch();
 
   useEffect(() => {
     if (!showEmoji) return;
@@ -79,6 +87,15 @@ function MessageInput({
     return () => document.removeEventListener('mousedown', handler);
   }, [showEmoji]);
 
+  useEffect(() => {
+    const queryText = mentionQuery.trim();
+    if (mentionType !== 'issue' || queryText.length < 2 || !activeOrgId) {
+      clearIssueSearch();
+      return;
+    }
+    searchIssues(queryText, activeOrgId);
+  }, [activeOrgId, clearIssueSearch, mentionQuery, mentionType, searchIssues]);
+
   const handleChange = (e) => {
     const val = e.target.value;
     setText(val);
@@ -90,8 +107,14 @@ function MessageInput({
     // Mention detection
     const cursor = e.target.selectionStart;
     const before = val.slice(0, cursor);
+    const matchIssue = before.match(/(?:^|[\s([{])#([\p{L}\p{N}-]*)$/u);
     const matchUser = before.match(/(?:^|[\s([{])([@"])([^@\n"]*)$/u);
-    if (matchUser) {
+    if (matchIssue) {
+      setMentionType('issue');
+      setMentionQuery(matchIssue[1].toLocaleLowerCase('uk-UA'));
+      setMentionCursor(cursor);
+      setMentionStart(cursor - matchIssue[1].length - 1);
+    } else if (matchUser) {
       setMentionType('user');
       setMentionQuery(matchUser[2].toLowerCase());
       setMentionCursor(cursor);
@@ -106,6 +129,11 @@ function MessageInput({
   };
 
   const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && mentionType === 'issue' && issueResults.length > 0) {
+      e.preventDefault();
+      insertIssue(issueResults[0]);
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey && mentionType === 'user' && filteredMembers.length > 0) {
       e.preventDefault();
       insertMention(filteredMembers[0]);
@@ -179,6 +207,16 @@ function MessageInput({
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
+  const insertIssue = issue => {
+    if (!issue?.issueKey) return;
+    const before = text.slice(0, mentionStart);
+    const after = text.slice(mentionCursor);
+    setText(`${before}#${issue.issueKey} ${after}`);
+    setMentionType(null);
+    clearIssueSearch();
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
   const filteredMembers = mentionType === 'user'
     ? members.filter(m => `${m.name || m.displayName || ''} ${m.email || ''}`.toLowerCase().includes(mentionQuery.trim()))
     : [];
@@ -194,6 +232,15 @@ function MessageInput({
           members={filteredMembers}
           onSelect={insertMention}
           className="absolute bottom-full left-4 right-4 mb-2 z-30"
+        />
+      )}
+      {mentionType === 'issue' && mentionQuery.trim().length >= 2 && (
+        <IssueMentionMenu
+          issues={issueResults}
+          projects={projects}
+          loading={issueSearchLoading}
+          onSelect={insertIssue}
+          className="absolute bottom-full left-4 right-4 z-30 mb-2"
         />
       )}
 
@@ -269,6 +316,7 @@ function ThreadSidebar({
   replies,
   myUid,
   members,
+  projects,
   onSend,
   onDeleteReply,
   onOpenAttachment,
@@ -395,6 +443,7 @@ function ThreadSidebar({
           onError={onError}
           placeholder="Відповісти в гілку..."
           members={members}
+          projects={projects}
         />
       </ChatComposerDock>
     </div>
@@ -1164,6 +1213,7 @@ export default function ChatPage() {
                   ? `Написати в #${channels.find(c => c.id === activeChannel.id)?.name || 'general'}...`
                   : 'Написати повідомлення...'}
                 members={mentionMembers}
+                projects={projects}
               />
             </ChatComposerDock>
           </div>
@@ -1175,6 +1225,7 @@ export default function ChatPage() {
               replies={threadMessages}
               myUid={myUid}
               members={mentionMembers}
+              projects={projects}
               onSend={handleSendThread}
               onDeleteReply={handleDeleteReply}
               onOpenAttachment={setViewerAttachment}

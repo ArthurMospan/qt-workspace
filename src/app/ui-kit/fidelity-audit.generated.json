@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 175,
-    "parsedFiles": 175,
+    "productFiles": 176,
+    "parsedFiles": 176,
     "parseErrors": 0,
     "nativeControls": 17,
     "structures": {
@@ -39,13 +39,13 @@
   },
   "kit": {
     "totals": {
-      "components": 93,
-      "used": 93,
+      "components": 95,
+      "used": 95,
       "unused": 0,
-      "covered": 90,
+      "covered": 92,
       "uncovered": 0,
       "routes": 12,
-      "previews": 121,
+      "previews": 123,
       "internal": 3,
       "unlisted": 0
     },
@@ -396,12 +396,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:141",
+      "location": "src/app/(app)/page.js:147",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:150",
+      "location": "src/app/(app)/page.js:156",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
