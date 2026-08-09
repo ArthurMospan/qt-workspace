@@ -13,6 +13,7 @@ import {
   telegramCommandPayload,
   telegramTaskContent,
 } from '@/lib/utils/telegramTask.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 async function connectPrivateChat(message, payload) {
   if (message.chat?.type !== 'private' || !payload?.startsWith('qt_')) return false;
@@ -123,7 +124,7 @@ async function createGroupTask(message, content) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/+$/, '');
   await sendTelegramMessage(
     message.chat.id,
-    `✅ Створено ${createdIssue.issueKey}: ${title}${appUrl ? `\n${appUrl}/${data.defaultProjectId}/issue/${createdIssue.id}` : ''}`,
+    `✅ Створено ${createdIssue.issueKey}: ${title}${appUrl ? `\n${appUrl}${issuePath(createdIssue, data.defaultProjectId)}` : ''}`,
   ).catch(error => console.warn('[telegram] task confirmation failed:', error.message));
   return true;
 }

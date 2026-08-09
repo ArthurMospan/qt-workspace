@@ -18,6 +18,7 @@ import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 // Stable string form of an audited field, so array values compare by content
 // rather than by identity. Order-insensitive for arrays: reordering assignees
@@ -210,6 +211,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // verified ID token, and passing one was silently discarded.
     notifyIssueAssigned({
       issueId: result.id,
+      issueKey: result.issueKey,
       title: data.title,
       assigneeIds: data.assigneeIds || [],
       actorId: userId,
@@ -451,7 +453,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
           type: 'status_changed',
           title: `${issue.issueKey || 'Задача'}: статус змінено`,
           body: `${issue.title || ''} → ${statusLabel(newColumnId, statuses)}`,
-          link: `/${projectId}/issue/${issueId}`,
+          link: issuePath(issue, projectId),
           issueId,
           projectId,
           organizationId: activeOrgId,

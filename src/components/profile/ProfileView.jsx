@@ -13,6 +13,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -84,7 +85,8 @@ export default function ProfileView({ user, onClose }) {
 
   const handleTaskClick = (task) => {
     if (onClose) onClose();
-    router.push(`/${task.projectId}/issue/${task.id}`);
+    const project = projects.find(candidate => candidate.id === task.projectId);
+    router.push(issuePath(task, project || task.projectId));
   };
 
   const handleEmergencyCall = async () => {

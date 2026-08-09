@@ -15,6 +15,7 @@ import TaskCounters from './TaskCounters';
 import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -71,7 +72,8 @@ export default function TaskRow({
   onClick,
 }) {
   const router = useRouter();
-  const { currentUser } = useAppContext();
+  const { currentUser, projects = [] } = useAppContext();
+  const project = projects.find(candidate => candidate.id === projectId);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
   const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
@@ -136,7 +138,7 @@ export default function TaskRow({
       return;
     }
     if (projectId && task.id) {
-      router.push(`/${projectId}/issue/${task.id}`);
+      router.push(issuePath(task, project || projectId));
     }
   };
 

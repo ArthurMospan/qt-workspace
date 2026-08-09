@@ -231,5 +231,8 @@ test('the personal board asks for an exact status only when a category has sever
   // direct move on a project board.
   assert.match(myTasks, /await moveTask\(issueId, statusId, position, actor\)/);
   assert.match(picker, /layoutId="status-transition-task"/);
-  assert.match(picker, /style=\{\{ backgroundColor: color \}\}/);
+  assert.match(picker, /presentation="dialog"/);
+  assert.match(picker, /rounded-\[16px\] bg-canvas/);
+  assert.match(picker, /ui-type-column-title/);
+  assert.match(picker, /<Pill tone="count"/);
 });

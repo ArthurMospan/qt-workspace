@@ -6,6 +6,8 @@
 // already has a route table, a project list, a permission helper and a search
 // API; this is the layer that lets one keystroke reach all four.
 
+import { issuePath } from './issueKeys.mjs';
+
 export const COMMAND_GROUPS = ['action', 'navigation', 'project', 'issue', 'person', 'event'];
 
 export const GROUP_LABELS = {
@@ -171,7 +173,7 @@ export function issueCommands(results = [], projects = []) {
     label: issue.title || 'Завдання',
     hint: [issue.issueKey, projects.find(item => item.id === issue.projectId)?.name]
       .filter(Boolean).join(' · '),
-    href: `/${issue.projectId}/issue/${issue.id}`,
+    href: issuePath(issue, projects.find(item => item.id === issue.projectId) || issue.projectId),
     icon: 'issue',
   }));
 }

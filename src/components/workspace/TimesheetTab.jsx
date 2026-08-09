@@ -19,6 +19,7 @@ import {
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -141,7 +142,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                 <div key={targetKey} data-ui-surface="local" className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
-                      <Link href={`/${issue.projectId}/issue/${targetKey}`}
+                      <Link href={issuePath(issue)}
                         className="text-[12px] font-bold text-ink hover:underline truncate uppercase">
                         {issue.issueKey || targetKey.slice(0, 6)}
                       </Link>

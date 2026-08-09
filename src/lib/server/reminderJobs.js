@@ -20,6 +20,7 @@ import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/no
 import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
 import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 import { purgeExpiredDeletedIssues } from '@/lib/server/issueTrash';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 const DELIVERY_CONCURRENCY = 10;
 // The sweep's own memory of when it last ran. Server-written only; Firestore
@@ -346,7 +347,7 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
     actorId: 'quickteam-system',
     actorName: 'QuickTeam',
     link: withNotificationOrganization(
-      `/${candidate.projectId}/issue/${candidate.issueId}`,
+      issuePath({ id: candidate.issueId, issueKey: candidate.issueKey }, candidate.projectId),
       candidate.organizationId,
     ),
   }));

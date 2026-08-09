@@ -33,14 +33,14 @@ test('normalizes legacy workspace links', () => {
   assert.equal(withNotificationOrganization('/workspace?new=1', ''), '/?new=1');
 });
 
-test('task metadata wins over a stale notification link', () => {
+test('a safe human-key link wins over legacy structured task metadata', () => {
   assert.equal(
     notificationDestination({
-      link: '/project-1?issue=OLD-1',
+      link: '/project-1/issue/ENG-12',
       projectId: 'project-1',
       issueId: 'issue-1',
     }),
-    '/project-1/issue/issue-1',
+    '/project-1/issue/ENG-12',
   );
 });
 

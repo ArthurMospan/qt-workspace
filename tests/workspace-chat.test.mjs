@@ -132,7 +132,7 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   assert.match(page, /<IssueMentionMenu/);
   assert.match(menu, /issue\.issueKey/);
   assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
-  assert.match(hoverCard, /router\.push\(`\/\$\{data\.projectId\}\/issue\/\$\{data\.id\}`\)/);
+  assert.match(hoverCard, /router\.push\(issuePath\(data\)\)/);
   assert.match(hoverCard, /legacyStoredIssueKey\(value, expectedProject\)/);
 });
 

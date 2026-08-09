@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -395,7 +396,7 @@ function RecentTime({ logs, issues, events, projects }) {
             }
             if (issue) {
               return (
-                <Link key={log.id} href={`/${issue.projectId}/issue/${issue.id}`} className="flex items-center gap-3 py-3 hover:bg-canvas/50">
+                <Link key={log.id} href={issuePath(issue, project || issue.projectId)} className="flex items-center gap-3 py-3 hover:bg-canvas/50">
                   {content}
                 </Link>
               );

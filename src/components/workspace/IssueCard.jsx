@@ -19,6 +19,7 @@ import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { TaskCounters, TaskIdentity } from '@/components/ui';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -46,7 +47,8 @@ function hexToRgba(hex, alpha) {
 // «Код-ревʼю» or in «QA» and the column no longer says which.
 export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, className = '' }) {
   const router   = useRouter();
-  const { currentUser } = useAppContext();
+  const { currentUser, projects = [] } = useAppContext();
+  const project = projects.find(candidate => candidate.id === projectId);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issue.id] || 0);
   const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
@@ -141,7 +143,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         {...provided.dragHandleProps}
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
-        onClick={() => { if (!isDraggingRef.current) router.push(`/${projectId}/issue/${issue.id}`); }}
+        onClick={() => { if (!isDraggingRef.current) router.push(issuePath(issue, project || projectId)); }}
         className={cardClassName}
         style={{
           ...provided.draggableProps?.style,

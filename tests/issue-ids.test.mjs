@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  issueMatchesRouteIdentifier,
+  issuePath,
   legacyStoredIssueKey,
   projectIssuePrefixTaken,
   suggestAvailableIssuePrefix,
@@ -64,6 +66,28 @@ test('similar project names receive the next readable free prefix', () => {
     legacyStoredIssueKey('ENG3-12', { issuePrefix: 'ENG3', name: 'Engineering' }),
     'WS-12',
   );
+});
+
+test('task routes use the human issue key and still recognize old document-id links', () => {
+  const issue = { id: 'firestore-symbols-123', projectId: 'project/one', issueKey: 'eng-12' };
+
+  assert.equal(issuePath(issue), '/project%2Fone/issue/ENG-12');
+  assert.equal(issueMatchesRouteIdentifier(issue, 'ENG-12'), true);
+  assert.equal(issueMatchesRouteIdentifier(issue, 'eng-12'), true);
+  assert.equal(issueMatchesRouteIdentifier(issue, 'firestore-symbols-123'), true);
+  assert.equal(issueMatchesRouteIdentifier(issue, 'ENG-13'), false);
+  assert.equal(issuePath({ id: 'legacy-id', projectId: 'project-1' }), '/project-1/issue/legacy-id');
+
+  const legacyIssue = { id: 'old-doc', projectId: 'project-1', issueKey: 'WS-12' };
+  const project = { id: 'project-1', name: 'Engineering', issuePrefix: 'ENG' };
+  assert.equal(issuePath(legacyIssue, project), '/project-1/issue/ENG-12');
+  assert.equal(issueMatchesRouteIdentifier(legacyIssue, 'ENG-12', project), true);
+});
+
+test('the task detail route resolves a key then canonicalizes legacy URLs', async () => {
+  const detail = await read('../src/components/workspace/IssueDetail.jsx');
+  assert.match(detail, /issueMatchesRouteIdentifier\(candidate, issueLocator, project\)/);
+  assert.match(detail, /router\.replace\(`\$\{canonicalIssuePath\}/);
 });
 
 test('search shows only persisted task IDs and never invents one from a document id', async () => {

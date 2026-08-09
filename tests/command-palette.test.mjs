@@ -85,7 +85,7 @@ test('search results are a separate group, not mixed into the catalogue ranking'
   ];
   const issues = issueCommands(results, projects);
   assert.equal(issues[0].group, 'issue');
-  assert.equal(issues[0].href, '/p1/issue/i1');
+  assert.equal(issues[0].href, '/p1/issue/RM-12');
   assert.equal(issues[0].hint, 'RM-12 · Сайт RetroMagaz');
   assert.ok(issueCommands(new Array(40).fill(results[0]), projects).length <= 8);
 });

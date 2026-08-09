@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/[projectId]/issue/[issueId]/page.js
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAppContext }        from '@/lib/context/AppContext';
@@ -60,6 +60,11 @@ import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { markIssueSeen } from '@/lib/services/issueReadState';
 import { issueActivityCursor } from '@/lib/utils/issueReadState.mjs';
 import { reportLoadError } from '@/lib/utils/errors';
+import {
+  issueMatchesRouteIdentifier,
+  issuePath,
+  issueRouteIdentifier,
+} from '@/lib/utils/issueKeys.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -122,6 +127,16 @@ function makeAttachmentId() {
   return `att_${Date.now().toString(36)}_${_attSeq}`;
 }
 function nowMs() { return Date.now(); }
+
+async function copyIssueUrl(path, showToast) {
+  const issueUrl = `${window.location.origin}${path}`;
+  try {
+    await navigator.clipboard.writeText(issueUrl);
+    showToast('Посилання на завдання скопійовано');
+  } catch {
+    showToast('Не вдалося скопіювати посилання', 'error');
+  }
+}
 
 // ── Circular ring progress ─────────────────────────────────────────
 function Ring({ pct, color, size = 36, stroke = 3.5 }) {
@@ -200,7 +215,7 @@ function MediaViewer({ mat, onClose }) {
 // MAIN PAGE
 // ════════════════════════════════════════════════════════════════════
 
-export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
+export default function IssueDetail({ issueId: issueLocator, projectId, isModal, onClose }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -217,6 +232,10 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     restoreIssue,
     moveIssue,
   } = useIssues(projectId, { includeLinks: false });
+  const project = projects?.find(candidate => candidate.id === projectId);
+  const issue = issues.find(candidate => issueMatchesRouteIdentifier(candidate, issueLocator, project));
+  const issueId = issue?.id || '';
+  const canonicalIssuePath = issuePath(issue, project || projectId);
 
   const showToast      = useWorkspaceStore(s => s.showToast);
   const confirmDialog  = useConfirm();
@@ -227,7 +246,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   const timerElapsed   = useWorkspaceStore(s => s.timerElapsed);
   const formatElapsed  = useWorkspaceStore(s => s.formatElapsed);
 
-  const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   // Resolve author/assignee names from ALL organization members, not just the
   // project team. Scoping this to `project.team` was the "Автор: Невідомо" /
@@ -297,7 +315,6 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   // Local editable fields (draft while in edit mode)
   const [draft, setDraft] = useState({});
 
-  const issue = issues.find(i => i.id === issueId);
   const issueActivityAt = issueActivityCursor(issue);
   const currentUserId = currentUser?.uid || currentUser?.id || null;
 
@@ -330,26 +347,24 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
   }, [activeOrgId, currentUserId, issueActivityAt, issueId]);
 
   useEffect(() => {
+    if (isModal || !canonicalIssuePath || issueLocator === issueRouteIdentifier(issue, project)) return;
+    const query = searchParams.toString();
+    router.replace(`${canonicalIssuePath}${query ? `?${query}` : ''}`, { scroll: false });
+  }, [canonicalIssuePath, isModal, issue, issueLocator, project, router, searchParams]);
+
+  useEffect(() => {
     const logTimeParam = searchParams.get('logTime');
     if (logTimeParam) {
       queueMicrotask(() => setLogForm({ minutes: parseInt(logTimeParam), desc: '' }));
-      router.replace(pathname, { scroll: false });
+      router.replace(canonicalIssuePath || pathname, { scroll: false });
     }
-  }, [searchParams, pathname, router]);
+  }, [canonicalIssuePath, searchParams, pathname, router]);
 
-  const copyIssueLink = useCallback(async () => {
-    const issueUrl = `${window.location.origin}/${projectId}/issue/${issueId}`;
-    try {
-      await navigator.clipboard.writeText(issueUrl);
-      showToast('Посилання на завдання скопійовано');
-    } catch {
-      showToast('Не вдалося скопіювати посилання', 'error');
-    }
-  }, [issueId, projectId, showToast]);
+  const copyIssueLink = () => copyIssueUrl(canonicalIssuePath, showToast);
 
   const copyAiPrompt = async () => {
     if (!issue) return;
-    const taskUrl = `${window.location.origin}/${projectId}/issue/${issueId}`;
+    const taskUrl = `${window.location.origin}${canonicalIssuePath}`;
     const prompt = buildTaskAiPrompt({
       issue,
       projectName: project?.name || '',
@@ -388,11 +403,11 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       breadcrumbs: [
         { label: 'Проєкти', href: '/' },
         { label: project?.name || '...', href: `/${projectId}` },
-        { label: issue?.issueKey || '...', href: null, onClick: copyIssueLink, title: 'Копіювати посилання на завдання' },
+        { label: issue?.issueKey || '...', href: null, onClick: () => copyIssueUrl(canonicalIssuePath, showToast), title: 'Копіювати посилання на завдання' },
       ]
     });
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
-  }, [project?.name, issue?.issueKey, projectId, isModal, copyIssueLink]);
+  }, [canonicalIssuePath, project?.name, issue?.issueKey, projectId, isModal, showToast]);
 
   useEffect(() => {
     const fn = (e) => {
@@ -619,7 +634,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
     if (notifyIds.length > 0) {
       await sendNotification({ userIds: notifyIds, type: 'assigned',
         title: `${currentUser?.name || 'Колега'} призначив вам ${issue.issueKey}`, body: issue.title,
-        link: `/${projectId}/issue/${issueId}`, issueId, projectId,
+        link: canonicalIssuePath, issueId, projectId,
         organizationId: activeOrg?.id || activeOrg?.organizationId || '',
         // `actor` is resolved server-side from the ID token; passing it here
         // was silently dropped by /api/notifications.
@@ -646,7 +661,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
       if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '' });
     } else {
       if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
-      startTimer(issueId, projectId);
+      startTimer(issueId, projectId, { issueKey: issue.issueKey });
     }
   };
 
@@ -837,7 +852,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
           onClick: () => {
             void restoreIssue(issueId, deletion.organizationId).then(() => {
               showToast('Задачу відновлено');
-              router.push(`/${projectId}/issue/${issueId}`);
+              router.push(canonicalIssuePath);
             }).catch(error => {
               showToast(error.message || 'Не вдалося відновити задачу', 'error');
             });
@@ -902,7 +917,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                 <Layers size={12} className="shrink-0" />
                 <span className="shrink-0">Підзадача для</span>
                 <Link
-                  href={`/${projectId}/issue/${parentIssueId}`}
+                  href={issuePath(parentIssue || { id: parentIssueId }, project || projectId)}
                   className="min-w-0 truncate font-semibold text-ink hover:underline"
                 >
                   {parentIssue?.issueKey || parentIssueId}
@@ -1065,7 +1080,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                   icon={Maximize2}
                   onClick={() => {
                     onClose();
-                    router.push(`/${projectId}/issue/${issueId}`);
+                    router.push(canonicalIssuePath);
                   }}
                   aria-label="Відкрити на повній сторінці"
                   title="Відкрити на повній сторінці"
@@ -1585,6 +1600,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                     const otherIssue = issues.find(candidate => candidate.id === perspective.otherIssueId)
                       || perspective.otherIssue;
                     const otherProjectId = otherIssue?.projectId || projectId;
+                    const otherProject = projects?.find(candidate => candidate.id === otherProjectId);
                     const otherKey = otherIssue?.issueKey || perspective.otherIssueId;
                     const otherTitle = otherIssue?.title || 'Пов’язане завдання';
                     const requiresReview = link.requiresReview || link.legacyRelationType === 'subtask-of';
@@ -1605,7 +1621,7 @@ export default function IssueDetail({ issueId, projectId, isModal, onClose }) {
                         }}
                       >
                         <Link
-                          href={`/${otherProjectId}/issue/${perspective.otherIssueId}`}
+                          href={issuePath(otherIssue || { id: perspective.otherIssueId }, otherProject || otherProjectId)}
                           className="text-[13px] font-semibold text-ink hover:underline truncate"
                         >
                           <span className="text-muted font-medium mr-1 uppercase">{otherKey}</span>

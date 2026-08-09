@@ -24,6 +24,7 @@ import MentionText from '@/components/workspace/MentionText';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 const FIELD_LABELS = {
   status: 'статус',
@@ -360,7 +361,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
               type: 'mentioned',
               title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
               body: text.slice(0, 500),
-              link: `/${projectId}/issue/${issueId}`,
+              link: issuePath(issue, project || projectId),
               issueId,
               projectId,
               organizationId: project?.organizationId || org?.id || '',
@@ -387,7 +388,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             type: 'commented',
             title: `${currentUser?.name || 'Колега'} прокоментував завдання`,
             body: text.slice(0, 500) || 'Вкладення',
-            link: `/${projectId}/issue/${issueId}`,
+            link: issuePath(issue, project || projectId),
             issueId,
             projectId,
             organizationId: project?.organizationId || org?.id || '',

@@ -272,6 +272,7 @@ export function deadlineReminderCandidates(
         organizationId: issue.organizationId,
         projectId: issue.projectId,
         issueId: issue.id,
+        issueKey: issue.issueKey || '',
         type: 'deadline',
         title: overdue
           ? `${issue.issueKey || 'Завдання'}: дедлайн прострочено${overdueDays > 0 ? ` на ${overdueDays} дн` : ''}`

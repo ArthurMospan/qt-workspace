@@ -30,6 +30,7 @@ import {
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import ContextMenu from '@/components/ui/ContextMenu';
 import Alert from '@/components/ui/Feedback/Alert';
 import Card from '@/components/ui/Layout/Card';
@@ -397,7 +398,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
             <p className="text-muted leading-tight line-clamp-1">
               {stats.lastAction.action}{' '}
               <Link
-                href={`/${stats.lastAction.projectId}/issue/${stats.lastAction.id}`}
+                href={issuePath(stats.lastAction)}
                 onClick={(e) => e.stopPropagation()}
                 className="text-ink font-semibold cursor-pointer hover:text-ink-hover transition-colors no-nav"
               >

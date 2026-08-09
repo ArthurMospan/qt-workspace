@@ -38,11 +38,14 @@ export function notificationDestination(notification) {
   if (!notification || typeof notification !== 'object') return '';
   const projectId = typeof notification.projectId === 'string' ? notification.projectId.trim() : '';
   const issueId = typeof notification.issueId === 'string' ? notification.issueId.trim() : '';
+  // New notifications carry the human issue key in their safe internal link.
+  // Prefer it over the structured legacy document id, while retaining the
+  // latter as a fallback for notifications created before human URLs existed.
+  const explicitLink = normalizeNotificationLink(notification.link);
+  if (explicitLink) return explicitLink;
   if (projectId && issueId) {
     return `/${encodeURIComponent(projectId)}/issue/${encodeURIComponent(issueId)}`;
   }
-  const explicitLink = normalizeNotificationLink(notification.link);
-  if (explicitLink) return explicitLink;
   if (projectId) return `/${encodeURIComponent(projectId)}`;
   return '';
 }

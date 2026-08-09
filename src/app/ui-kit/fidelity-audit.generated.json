@@ -235,7 +235,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:556",
+      "location": "src/components/workspace/WorkloadTab.jsx:557",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -396,12 +396,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:147",
+      "location": "src/app/(app)/page.js:148",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:156",
+      "location": "src/app/(app)/page.js:157",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -481,22 +481,22 @@
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:143",
+      "location": "src/components/profile/ProfileView.jsx:145",
       "tag": "div",
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:347",
+      "location": "src/components/profile/ProfileView.jsx:349",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
     },
     {
-      "location": "src/components/SearchModal.jsx:42",
+      "location": "src/components/SearchModal.jsx:44",
       "tag": "div",
       "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
     },
     {
-      "location": "src/components/SearchModal.jsx:85",
+      "location": "src/components/SearchModal.jsx:87",
       "tag": "div",
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
@@ -541,7 +541,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1566",
+      "location": "src/components/workspace/IssueDetail.jsx:1581",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
@@ -586,22 +586,22 @@
       "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:141",
+      "location": "src/components/workspace/TimesheetTab.jsx:142",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:559",
+      "location": "src/components/workspace/TimesheetTab.jsx:560",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:571",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:572",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:498",
+      "location": "src/components/workspace/WorkloadTab.jsx:499",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

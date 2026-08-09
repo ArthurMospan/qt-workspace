@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { timerTargetHref } from '../src/lib/utils/timerNavigation.mjs';
 
 test('builds task timer links with optional log-time handoff', () => {
-  const timer = { issueId: 'issue-1', projectId: 'project-1' };
-  assert.equal(timerTargetHref(timer), '/project-1/issue/issue-1');
+  const timer = { issueId: 'issue-1', issueKey: 'ENG-12', projectId: 'project-1' };
+  assert.equal(timerTargetHref(timer), '/project-1/issue/ENG-12');
   assert.equal(
     timerTargetHref(timer, { minutes: 17 }),
-    '/project-1/issue/issue-1?logTime=17',
+    '/project-1/issue/ENG-12?logTime=17',
   );
 });
 

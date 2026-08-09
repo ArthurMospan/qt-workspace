@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/firebase';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 async function authenticatedIssueRequest(url, options, fallbackMessage) {
   const token = await auth.currentUser?.getIdToken();
@@ -46,6 +47,7 @@ export async function createIssueViaApi({ organizationId, projectId, data }) {
  */
 export function notifyIssueAssigned({
   issueId,
+  issueKey,
   title,
   assigneeIds = [],
   actorId,
@@ -60,7 +62,7 @@ export function notifyIssueAssigned({
     type: 'assigned',
     title: `${actorName || 'Колега'} призначив вам нове завдання`,
     body: title || '',
-    link: `/${projectId}/issue/${issueId}`,
+    link: issuePath({ id: issueId, issueKey }, projectId),
     issueId,
     projectId,
     organizationId,

@@ -10,7 +10,7 @@ import {
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
-import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { isValidIssuePrefix, issuePath } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 
 function resolveIntegrationWorkflow({ workflow, project = null, requestedPriority }) {
@@ -260,7 +260,7 @@ export async function POST(req) {
       data: {
         taskId: issueRef.id,
         issueKey: payload.issueKey,
-        taskUrl: payload.projectId ? `/${payload.projectId}/issue/${issueRef.id}` : `/`
+        taskUrl: issuePath({ id: issueRef.id, issueKey: payload.issueKey }, payload.projectId) || `/`
       },
       message: 'Task created successfully in QuickTeam'
     });

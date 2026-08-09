@@ -20,6 +20,7 @@ import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
 import { MINUTES_PER_DAY, layoutDayEvents } from '@/lib/utils/calendarLayout.mjs';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
@@ -579,7 +580,7 @@ export default function CalendarPage() {
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(`/${deadline.projectId}/issue/${deadline.id}`)}
+                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}
                   onSelectDay={day => { setAnchor(day); setView('day'); }}
                 />
@@ -589,7 +590,7 @@ export default function CalendarPage() {
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(`/${deadline.projectId}/issue/${deadline.id}`)}
+                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}
                 />
               ) : (
@@ -599,7 +600,7 @@ export default function CalendarPage() {
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(`/${deadline.projectId}/issue/${deadline.id}`)}
+                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}
                 />
               )}

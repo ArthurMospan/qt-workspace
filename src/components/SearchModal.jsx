@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { ListRow } from '@/components/ui';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 const PRIORITY_CFG = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
 const TYPE_CFG = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
@@ -32,8 +33,9 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
 
   if (!isOpen) return null;
 
-  const handleResultClick = (issueId, projectId) => {
-    router.push(`/${projectId}/issue/${issueId}`);
+  const handleResultClick = issue => {
+    const project = projects?.find(candidate => candidate.id === issue.projectId);
+    router.push(issuePath(issue, project || issue.projectId));
     onClose();
   };
 
@@ -77,7 +79,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                   <ListRow
                     key={issue.id}
                     density="compact"
-                    onClick={() => handleResultClick(issue.id, issue.projectId)}
+                    onClick={() => handleResultClick(issue)}
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">

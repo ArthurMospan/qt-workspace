@@ -4396,21 +4396,21 @@
           "default": "false",
           "type": "boolean",
           "values": [],
-          "description": "A transition is being saved."
+          "description": "Whether the status update is being saved."
         },
         {
           "name": "categoryLabel",
           "default": "''",
           "type": "string",
           "values": [],
-          "description": "Shared category the card was dropped on."
+          "description": "Shared category selected on the personal board."
         },
         {
           "name": "isOpen",
           "default": "",
           "type": "boolean",
           "values": [],
-          "description": "Whether the picker is visible."
+          "description": "Whether the dialog is visible."
         },
         {
           "name": "issue",
@@ -4431,21 +4431,21 @@
           "default": "",
           "type": "(statusId: string) => void",
           "values": [],
-          "description": "Commits the exact status."
+          "description": "Confirms the exact destination status."
         },
         {
           "name": "project",
           "default": "",
           "type": "object",
           "values": [],
-          "description": "Task's project."
+          "description": "Project that owns the task and its statuses."
         },
         {
           "name": "statuses",
           "default": "[]",
           "type": "object[]",
           "values": [],
-          "description": "Visible statuses in the destination category."
+          "description": "Exact status columns available at the destination."
         }
       ]
     },

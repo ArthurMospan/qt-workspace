@@ -9,6 +9,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import {
   legacyStoredIssueKey,
+  issuePath,
   normalizeIssuePrefix,
   projectIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
@@ -100,7 +101,7 @@ export default function HoverCard({ type, value, children, members }) {
   useEffect(() => {
     if (!openWhenReadyRef.current || type !== 'issue' || !data) return;
     if (!data.notFound && data.id && data.projectId) {
-      router.push(`/${data.projectId}/issue/${data.id}`);
+      router.push(issuePath(data));
     }
     openWhenReadyRef.current = false;
   }, [data, router, type]);
@@ -108,7 +109,7 @@ export default function HoverCard({ type, value, children, members }) {
   const openIssue = () => {
     if (type !== 'issue') return;
     if (data && !data.notFound && data.id && data.projectId) {
-      router.push(`/${data.projectId}/issue/${data.id}`);
+      router.push(issuePath(data));
       return;
     }
     setShow(true);

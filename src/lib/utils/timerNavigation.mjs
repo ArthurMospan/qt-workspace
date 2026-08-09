@@ -1,3 +1,5 @@
+import { issuePath } from './issueKeys.mjs';
+
 function positiveMinutes(value) {
   const minutes = Math.round(Number(value));
   return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
@@ -18,5 +20,5 @@ export function timerTargetHref(timer, { minutes } = {}) {
 
   if (!timer.projectId || !timer.issueId) return '';
   const query = loggedMinutes ? `?logTime=${loggedMinutes}` : '';
-  return `/${encodeURIComponent(timer.projectId)}/issue/${encodeURIComponent(timer.issueId)}${query}`;
+  return `${issuePath({ id: timer.issueId, issueKey: timer.issueKey }, timer.projectId)}${query}`;
 }

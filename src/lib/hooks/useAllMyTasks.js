@@ -22,6 +22,7 @@ import {
 } from '@/lib/utils/statusCategories.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 function issueLabel(issue) {
   return issue?.issueKey || issue?.title || issue?.id || 'без назви';
@@ -216,7 +217,7 @@ export function useAllMyTasks(userId) {
           type: 'status_changed',
           title: `${current.issueKey || 'Задача'}: статус змінено`,
           body: `${current.title || ''} → ${statusLabel(columnId, statuses)}`,
-          link: `/${current.projectId}/issue/${taskId}`,
+          link: issuePath(current),
           issueId: taskId,
           projectId: current.projectId,
           organizationId: activeOrgId,

@@ -99,3 +99,38 @@ export function legacyStoredIssueKey(displayKey, project = null) {
   if (!match || normalizeIssuePrefix(match[1]) !== projectIssuePrefix(project)) return '';
   return `WS-${match[2]}`;
 }
+
+/** The human key is canonical in URLs; the document id is only a fallback. */
+export function issueRouteIdentifier(issue, project = null) {
+  const issueKey = taskDisplayKey(issue, project);
+  if (issueKey) return issueKey.toLocaleUpperCase('uk-UA');
+  return typeof issue?.id === 'string' ? issue.id.trim() : '';
+}
+
+/** Build one canonical task-details path everywhere the product links to it. */
+export function issuePath(issue, projectOrId = issue?.projectId) {
+  const projectId = typeof projectOrId === 'string'
+    ? projectOrId.trim()
+    : typeof projectOrId?.id === 'string'
+      ? projectOrId.id.trim()
+      : '';
+  const project = projectOrId && typeof projectOrId === 'object' ? projectOrId : null;
+  const identifier = issueRouteIdentifier(issue, project);
+  if (!projectId || !identifier) return '';
+  return `/${encodeURIComponent(projectId)}/issue/${encodeURIComponent(identifier)}`;
+}
+
+/** Accept both the canonical issue key and old Firestore-id links. */
+export function issueMatchesRouteIdentifier(issue, routeIdentifier, project = null) {
+  let identifier = String(routeIdentifier || '').trim();
+  try {
+    identifier = decodeURIComponent(identifier);
+  } catch {
+    // A malformed escape sequence is simply not a matching issue key.
+  }
+  const normalizedIdentifier = identifier.toLocaleUpperCase('uk-UA');
+  return issue?.id === identifier
+    || issueRouteIdentifier(issue, project) === normalizedIdentifier
+    || issueRouteIdentifier(issue) === normalizedIdentifier
+    || legacyStoredIssueKey(identifier, project) === issue?.issueKey;
+}
