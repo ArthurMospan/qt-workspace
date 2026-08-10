@@ -40,6 +40,50 @@ export function nextAttemptDelayMs(attempts) {
   return Math.min(2 ** step, 32) * 60_000;
 }
 
+export function deliveryAttemptUpdate(row, {
+  nowMs,
+  emailRequested = false,
+  emailSucceeded = false,
+  telegramRequested = false,
+  telegramSucceeded = false,
+  emailError = '',
+  telegramError = '',
+} = {}) {
+  const attempts = Number(row?.attempts || 0) + 1;
+  const errors = [
+    emailRequested && !emailSucceeded ? emailError || 'email delivery failed' : '',
+    telegramRequested && !telegramSucceeded ? telegramError || 'telegram delivery failed' : '',
+  ].filter(Boolean);
+  const channelUpdates = {
+    ...(emailRequested && emailSucceeded ? { emailSentAtMs: nowMs } : {}),
+    ...(telegramRequested && telegramSucceeded ? { telegramSentAtMs: nowMs } : {}),
+  };
+
+  if (errors.length && attempts < MAX_ATTEMPTS) {
+    return {
+      failed: true,
+      update: {
+        ...channelUpdates,
+        attempts,
+        status: 'pending',
+        lastError: errors.join('; ').slice(0, 300),
+        nextAttemptAtMs: nowMs + nextAttemptDelayMs(attempts),
+      },
+    };
+  }
+
+  return {
+    failed: errors.length > 0,
+    update: {
+      ...channelUpdates,
+      attempts,
+      status: errors.length ? 'failed' : 'sent',
+      ...(errors.length ? { failedAtMs: nowMs } : { sentAtMs: nowMs }),
+      lastError: errors.join('; ').slice(0, 300),
+    },
+  };
+}
+
 export function isTerminal(row) {
   return row?.status === 'sent' || row?.status === 'cancelled'
     || (row?.status === 'failed' && (row?.attempts || 0) >= MAX_ATTEMPTS);
@@ -77,6 +121,10 @@ export function outboxRow(candidate, { nowMs = Date.now() } = {}) {
     status: 'pending',
     attempts: 0,
     lastError: '',
+    // The dispatch query orders by retry readiness, not the original delivery
+    // time. Otherwise fifty rows in backoff can sit at the head of the query
+    // and hide every later row that is ready to send.
+    nextAttemptAtMs: Number(candidate.deliverAtMs),
     materialisedAtMs: nowMs,
   };
 }
@@ -91,6 +139,12 @@ export function outboxRowChanges(existing, candidate) {
   const changes = {};
   for (const field of MUTABLE_FIELDS) {
     if (existing?.[field] !== next[field]) changes[field] = next[field];
+  }
+  if (!Number.isFinite(Number(existing?.nextAttemptAtMs))) {
+    changes.nextAttemptAtMs = next.deliverAtMs;
+  } else if (Number(existing?.attempts || 0) === 0
+    && existing?.deliverAtMs !== next.deliverAtMs) {
+    changes.nextAttemptAtMs = next.deliverAtMs;
   }
   return changes;
 }

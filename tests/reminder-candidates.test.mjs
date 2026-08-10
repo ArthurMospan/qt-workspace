@@ -179,9 +179,10 @@ test('a deadline older than the query floor produces nothing at all', () => {
   assert.equal(ancient.length, 0);
 });
 
-test('the sweep remembers when it last ran and never advances that on failure', async () => {
+test('the sweep remembers materialisation separately and never advances it on failure', async () => {
   const source = await read('../src/lib/server/reminderJobs.js');
-  assert.match(source, /clampReminderLookback\(state\.elapsedMs\)/);
+  assert.match(source, /clampReminderLookback\(state\.materialiseElapsedMs\)/);
+  assert.match(source, /nowMs - lastMaterialiseAt/);
   // The watermark write is after the awaited work, so a throw skips it.
   const sweep = source.slice(source.indexOf('export async function runScheduledNotificationSweep'));
   assert.ok(

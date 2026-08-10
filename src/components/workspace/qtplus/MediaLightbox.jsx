@@ -1,26 +1,19 @@
 'use client';
-import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import IconAction from '@/components/ui/IconAction';
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
 /** Повноекранний перегляд. Escape і клік по підкладці закривають. Тільки читання. */
 export default function MediaLightbox({ view, onClose }) {
-  useEffect(() => {
-    if (!view) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = 'unset';
-    };
-  }, [view, onClose]);
+  const dialogRef = useModalFocus({ isOpen: Boolean(view), onClose });
 
   if (!view) return null;
 
   return (
     <div
       data-ui-overlay="media-viewer"
+      ref={dialogRef}
+      tabIndex={-1}
       className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center p-6"
       onClick={onClose}
       role="dialog"

@@ -5,6 +5,7 @@ import {
   DISPATCH_BATCH,
   MAX_ATTEMPTS,
   cancellableRowIds,
+  deliveryAttemptUpdate,
   dueRows,
   groupByRecipient,
   isTerminal,
@@ -72,6 +73,7 @@ test('re-materialising corrects timing and wording but never identity or state',
   assert.deepEqual(outboxRowChanges(stored, moved), {
     deliverAtMs: 5_000 + 30 * MINUTE,
     title: 'Синк (перенесено)',
+    nextAttemptAtMs: 5_000 + 30 * MINUTE,
   });
   // Nothing changed means no write.
   assert.deepEqual(outboxRowChanges(stored, candidate), {});
@@ -97,6 +99,45 @@ test('one dispatch pass groups its rows into one message per person', () => {
   ]);
   assert.equal(grouped.size, 2);
   assert.equal(grouped.get('a').length, 2);
+});
+
+test('channel failures retry only the channel that did not succeed', () => {
+  const nowMs = 1_000_000;
+  const first = deliveryAttemptUpdate({ attempts: 0 }, {
+    nowMs,
+    emailRequested: true,
+    emailSucceeded: true,
+    telegramRequested: true,
+    telegramSucceeded: false,
+    telegramError: 'bot blocked',
+  });
+  assert.equal(first.failed, true);
+  assert.equal(first.update.status, 'pending');
+  assert.equal(first.update.emailSentAtMs, nowMs);
+  assert.equal(first.update.telegramSentAtMs, undefined);
+  assert.match(first.update.lastError, /bot blocked/);
+
+  const retry = deliveryAttemptUpdate({ attempts: 1, emailSentAtMs: nowMs }, {
+    nowMs: nowMs + 2 * MINUTE,
+    telegramRequested: true,
+    telegramSucceeded: true,
+  });
+  assert.equal(retry.failed, false);
+  assert.equal(retry.update.status, 'sent');
+  assert.equal(retry.update.emailSentAtMs, undefined, 'successful email is not sent or rewritten again');
+  assert.equal(retry.update.telegramSentAtMs, nowMs + 2 * MINUTE);
+});
+
+test('a rejected email is not recorded as a successful notification', () => {
+  const outcome = deliveryAttemptUpdate({ attempts: 0 }, {
+    nowMs: 10_000,
+    emailRequested: true,
+    emailSucceeded: false,
+    emailError: 'provider rejected the message',
+  });
+  assert.equal(outcome.failed, true);
+  assert.equal(outcome.update.status, 'pending');
+  assert.match(outcome.update.lastError, /provider rejected/);
 });
 
 test('candidates carry the moment they should arrive, not the moment they were found', () => {
@@ -197,9 +238,10 @@ test('the expensive half and the cheap half are separately drivable', async () =
 
 test('the outbox query has an index to run against', async () => {
   const indexes = JSON.parse(await read('../firestore.indexes.json'));
-  const match = indexes.indexes.find(entry => entry.collectionGroup === 'scheduledNotifications');
+  const match = indexes.indexes.find(entry => entry.collectionGroup === 'scheduledNotifications'
+    && entry.fields.some(field => field.fieldPath === 'nextAttemptAtMs'));
   assert.ok(match, 'scheduledNotifications has no composite index');
-  assert.deepEqual(match.fields.map(field => field.fieldPath), ['status', 'deliverAtMs']);
+  assert.deepEqual(match.fields.map(field => field.fieldPath), ['status', 'nextAttemptAtMs']);
 });
 
 test('the outbox is server-only: no client rule grants it', async () => {
@@ -212,6 +254,9 @@ test('the outbox is server-only: no client rule grants it', async () => {
 test('a dispatch pass is bounded so a backlog drains instead of timing out', async () => {
   const source = await read('../src/lib/server/notificationOutbox.js');
   assert.match(source, /\.limit\(limit\)/);
+  assert.match(source, /\.where\('nextAttemptAtMs', '<=', nowMs\)/);
+  assert.match(source, /error\?\.code !== 9 && error\?\.code !== 'failed-precondition'/);
+  assert.match(source, /batch\.update\(document\.ref, \{ nextAttemptAtMs:/);
   assert.equal(DISPATCH_BATCH, 50);
   // And the record is claimed before the outbound send, so a crash mid-send
   // cannot produce a second bell entry on retry.

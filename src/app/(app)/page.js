@@ -434,6 +434,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 
 // ── New Internal Project Modal ───────────────────────────────────────────────
 function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, projects = [], members = [], statuses = [], canInvite = false }) {
+  const router = useRouter();
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [visibility,  setVisibility]  = useState('internal');
@@ -545,7 +546,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, project
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
-          <Button onClick={() => { onClose(); window.location.href = '/settings#billing'; }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
+          <Button onClick={() => { onClose(); router.push('/settings#billing'); }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
           <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
       ) : (
@@ -576,7 +577,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, project
                   color="red"
                   size="sm"
                   className="mt-1"
-                  onClick={() => { onClose(); window.location.href = '/settings#billing'; }}
+                  onClick={() => { onClose(); router.push('/settings#billing'); }}
                 >
                   Перейти на PRO →
                 </Button>

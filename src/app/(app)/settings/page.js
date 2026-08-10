@@ -71,6 +71,7 @@ import {
   STATUS_CATEGORY_ICONS,
 } from '@/lib/hooks/useWorkflowConfig';
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
+import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
 import {
   flattenStatusGroups,
   groupStatusesByCategory,
@@ -1455,7 +1456,7 @@ export default function SettingsPage() {
       // The server builds the authorize URL: it is the only side that can set
       // the httpOnly nonce cookie the callback checks against.
       const params = new URLSearchParams({ mode: 'link', r: '/settings?section=auth-methods' });
-      window.location.href = `/api/auth/oneb/start?${params.toString()}`;
+      navigateToSameOrigin(`/api/auth/oneb/start?${params.toString()}`);
     } catch (error) {
       console.error('[settings] OneB connect failed:', error);
       showToast('Не вдалося почати підключення OneB', 'error');

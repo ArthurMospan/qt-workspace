@@ -53,9 +53,8 @@ projects no shared vocabulary exists.
 - Implement a verified email-change flow with recent re-authentication.
 - Continue accessibility and mobile-layout checks on the main workspace flows.
 - Work the open items in [docs/PRODUCT_GAPS.md](PRODUCT_GAPS.md): the
-  expected-but-absent pieces (loading states, offline handling, skip link,
-  self-hosted fonts, notification delivery receipts) and the UX proposals behind
-  them.
+  remaining reliability/performance pieces (self-hosted fonts, notification
+  delivery receipts, session-expiry recovery) and the UX proposals behind them.
 
 ### Notification delivery
 
@@ -65,9 +64,9 @@ and the target architecture.
 - Point an external HTTP cron (cron-job.org, one-minute granularity) at
   `/api/cron/notifications`. No code change; fixes latency today. GitHub Actions
   stays wired as a fallback only.
-- Move time-driven notifications onto the scheduled outbox rather than polling
-  two collections for due items. Host-independent, removes the read cost, and
-  makes retries and delivery receipts possible.
+- Finish write-time outbox materialisation in every event/deadline mutation
+  path. Dispatch already uses the scheduled outbox; the bounded twenty-minute
+  source materialiser remains as a safety net until this invariant is complete.
 - Surface sweep health and per-recipient delivery failures in Settings; both are
   recorded and neither is visible.
 - When QuickTeam moves to its own server: run the worker in-process on a real

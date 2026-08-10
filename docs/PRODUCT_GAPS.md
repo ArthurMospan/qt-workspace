@@ -15,18 +15,20 @@ open.
   one roughly every 60–90 minutes by day and every 2–3.5 hours overnight. Against
   a fixed ten-minute look-back that is not a delay, it is a filter: a reminder
   whose trigger fell in a gap was never delivered at all. The sweep now carries a
-  watermark. **The durable fix is still open**: move the trigger to something
-  that honours a schedule — an external free cron (cron-job.org, UptimeRobot) or
-  a Vercel plan whose cron granularity is not one run per day.
+  materialisation watermark. During hosted testing the accepted trigger is an
+  external HTTP cron; after the move to the own server it becomes an in-process
+  interval. The GitHub workflow is only a fallback.
 - **done — overdue tasks renotified every day, forever.** Now: the day it slips,
   the day after, then weekly, and nothing at all past four months.
 - **done — one Telegram message per notification, in plain text.** Now one
   digest per person per sweep, with a glyph per event type and a real button.
 - **done — chat had no switch.** Connecting Telegram meant a push per message in
   every channel; the only remedy was to disconnect.
-- **done — the sweep polled for due items instead of scheduling them.** Rows
-  now carry their own delivery time; a pass costs one indexed query and nothing
-  when nothing is due. See [NOTIFICATION_DELIVERY.md](NOTIFICATION_DELIVERY.md).
+- **done — dispatch polled the source collections for due items.** Rows now
+  carry their own delivery and retry times; a dispatch pass costs one bounded
+  indexed query. A slower bounded materialiser remains until event/deadline
+  writes maintain outbox rows directly. See
+  [NOTIFICATION_DELIVERY.md](NOTIFICATION_DELIVERY.md).
 - **Open: no delivery receipt anywhere.** When a Telegram send fails the warning
   is now recorded on the outbox row and retried with backoff, but nothing shows
   it. A person whose bot was blocked, or whose
@@ -46,12 +48,10 @@ open.
 - **done — every screen's title was "QuickTeam".** Now derived from the
   breadcrumb trail, so a detail screen names the thing you are looking at.
 - **done — no manifest, no home-screen icon beyond a 32px favicon.**
-- **Open: the favicon never changes.** The tab title carries the unread count;
-  the icon does not. A canvas-drawn dot on the favicon is the signal people
-  actually catch out of the corner of their eye.
-- **Open: no Open Graph image or description.** Paste a QuickTeam link into any
-  chat and it renders as a bare URL. An `opengraph-image` route plus a per-issue
-  title would make a shared task read as a task.
+- **done — the favicon never changed.** `FaviconBadge` now draws the unread
+  state without replacing the base icon.
+- **done — no Open Graph/Twitter image.** Both metadata image routes exist and
+  the root metadata carries the product description.
 - **Open: no notification permission flow.** The workspace has in-app, email and
   Telegram, but never asks for the Web Notification permission, which is the one
   channel that works on a laptop with the tab in the background and costs
@@ -83,10 +83,9 @@ open.
   self-hosts both, removes the third-party round trip and eliminates the layout
   shift. Deferred here only because it will move type by a pixel or two and the
   visual baselines need regenerating in the same change.
-- **Open: a third-party script loads on every page including the login screen.**
-  `buggy-bag-standalone.js` is fetched from another origin with its API key in
-  the public HTML, before anyone has authenticated. It belongs behind the
-  authenticated boundary at minimum.
+- **Intentional — Buggy Bag loads globally.** This is the owner's own script and
+  its current placement is deliberate; do not move or remove it during product
+  hardening.
 - **Open: no bundle budget.** Nothing fails when a page's JavaScript doubles.
 
 ## Keyboard, focus and reach
@@ -96,8 +95,9 @@ open.
   a default ring, with its own colour on the dark sidebar and bottom bar where
   the ink ring is invisible.
 - **done — no keyboard shortcut help.** `?` opens the cheat sheet.
-- **Open: no visible focus trap audit on the sheets.** The mobile «Ще» sheet is
-  correctly `role="dialog"`, but nothing stops Tab from walking behind it.
+- **done — custom sheets had no shared focus contract.** Dialogs, media viewers,
+  the issue sheet, organization switcher and mobile «Ще» now share topmost-only
+  Escape, Tab containment, focus restoration and nested scroll locking.
 
 ## Repository and operations
 

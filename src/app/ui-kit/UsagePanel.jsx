@@ -14,8 +14,8 @@
 // their defaults, the values the variant manifest declares for them, and the
 // description from its JSDoc. Nothing here is hand-maintained.
 
-import { useEffect } from 'react';
 import { ExternalLink, X } from 'lucide-react';
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 import usage from './kit-usage.generated.json';
 import propsReport from './kit-props.generated.json';
 
@@ -76,13 +76,7 @@ function PropRow({ prop }) {
 }
 
 export default function UsagePanel({ component, onClose }) {
-  useEffect(() => {
-    const onKey = event => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogRef = useModalFocus({ isOpen: Boolean(component), onClose });
 
   if (!component) return null;
 
@@ -99,6 +93,8 @@ export default function UsagePanel({ component, onClose }) {
         className="fixed inset-0 z-[80] cursor-default bg-black/20"
       />
       <aside
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-label={`Де використовується ${component}`}
         className="fixed right-0 top-0 z-[90] flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl"

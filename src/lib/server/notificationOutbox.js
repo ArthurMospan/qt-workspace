@@ -8,11 +8,10 @@ import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { reminderLabel } from '@/lib/utils/reminderCandidates.mjs';
 import {
   DISPATCH_BATCH,
-  MAX_ATTEMPTS,
   OUTBOX_COLLECTION,
   dueRows,
+  deliveryAttemptUpdate,
   groupByRecipient,
-  nextAttemptDelayMs,
   outboxRow,
   outboxRowChanges,
 } from '@/lib/utils/notificationOutbox.mjs';
@@ -185,16 +184,53 @@ async function claimNotification(row, { inapp, body, nowMs }) {
 }
 
 export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DISPATCH_BATCH } = {}) {
-  const snapshot = await outboxRef()
+  const readyQuery = outboxRef()
+    .where('status', '==', 'pending')
+    .where('nextAttemptAtMs', '<=', nowMs)
+    .orderBy('nextAttemptAtMs')
+    .limit(limit);
+  const legacyQuery = outboxRef()
     .where('status', '==', 'pending')
     .where('deliverAtMs', '<=', nowMs)
     .orderBy('deliverAtMs')
-    .limit(limit)
-    .get();
-  if (snapshot.empty) return { due: 0, sent: 0, failed: 0, telegram: 0, email: 0 };
+    .limit(limit);
+
+  let readySnapshot;
+  let legacySnapshot;
+  try {
+    [readySnapshot, legacySnapshot] = await Promise.all([readyQuery.get(), legacyQuery.get()]);
+  } catch (error) {
+    // Deployments are not atomic with Firestore index creation. Keep delivery
+    // alive on the old index until `status + nextAttemptAtMs` is ready, then
+    // the next pass automatically returns to the retry-aware query.
+    if (error?.code !== 9 && error?.code !== 'failed-precondition') throw error;
+    console.warn('[outbox] Retry-time index is not ready; using delivery-time fallback');
+    readySnapshot = await legacyQuery.get();
+    legacySnapshot = readySnapshot;
+  }
+
+  // Rows written by the previous schema have no retry-time field and are
+  // invisible to the new query. Include and upgrade the bounded legacy slice
+  // in the same pass; this is idempotent and needs no one-off migration.
+  const legacyDocuments = (legacySnapshot?.docs || [])
+    .filter(document => !Number.isFinite(Number(document.data()?.nextAttemptAtMs))
+      && Number.isFinite(Number(document.data()?.deliverAtMs)));
+  if (legacyDocuments.length) {
+    const batch = getAdminDb().batch();
+    for (const document of legacyDocuments) {
+      batch.update(document.ref, { nextAttemptAtMs: Number(document.data().deliverAtMs) });
+    }
+    await batch.commit();
+  }
+
+  const documents = new Map();
+  for (const document of [...readySnapshot.docs, ...legacyDocuments]) {
+    documents.set(document.id, document);
+  }
+  if (!documents.size) return { due: 0, sent: 0, failed: 0, telegram: 0, email: 0 };
 
   const rows = dueRows(
-    snapshot.docs.map(document => ({ id: document.id, ...document.data() })),
+    [...documents.values()].map(document => ({ id: document.id, ...document.data() })),
     nowMs,
     limit,
   );
@@ -218,10 +254,12 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     const profile = context.profiles.get(row.userId) || {};
     const body = rowBody(row, nowMs);
     const inapp = shouldDeliver(preferences, 'inapp', row.type);
-    const wantsEmail = row.allowEmail !== false
+    const wantsEmail = !row.emailSentAtMs
+      && row.allowEmail !== false
       && shouldDeliver(preferences, 'email', row.type)
       && Boolean(profile.email);
-    const wantsTelegram = shouldDeliver(preferences, 'telegram', row.type);
+    const wantsTelegram = !row.telegramSentAtMs
+      && shouldDeliver(preferences, 'telegram', row.type);
 
     if (!inapp && !wantsEmail && !wantsTelegram) {
       await outboxRef().doc(row.id).update({ status: 'cancelled', cancelledAtMs: nowMs });
@@ -231,8 +269,8 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     const isFirstAttempt = Number(row.attempts || 0) === 0;
     const claimedNow = await claimNotification(row, { inapp, body, nowMs });
     // The notification document doubles as the "already told them" marker. On a
-    // first attempt, finding it already there means something else — the old
-    // polling sweep, a manual run — delivered this exact reminder, and sending
+    // first attempt, finding it already there means something else: the old
+    // polling sweep or a manual run delivered this exact reminder, and sending
     // it again is precisely the duplicate everyone complains about. On a retry
     // the document is expected to exist, because we are the ones who wrote it.
     if (!claimedNow && isFirstAttempt) {
@@ -244,7 +282,7 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
       });
       continue;
     }
-    claimed.push({ row, body });
+    claimed.push({ row, body, wantsEmail, wantsTelegram });
 
     if (wantsEmail) emails.push({ row, body, to: profile.email });
     if (wantsTelegram) {
@@ -278,35 +316,43 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
       : Promise.resolve({ delivered: 0 }),
   ]);
 
-  // One message per person covers several rows, so a Telegram failure is
-  // recorded against every row it carried.
-  const telegramFailed = new Set();
-  if (telegramItems.size && !telegramResult.delivered) {
-    for (const userId of telegramItems.keys()) telegramFailed.add(userId);
+  const emailSucceeded = new Set();
+  const emailErrors = new Map();
+  for (const [index, result] of emailResults.entries()) {
+    const rowId = emails[index].row.id;
+    if (result.status === 'fulfilled' && result.value === true) {
+      emailSucceeded.add(rowId);
+    } else {
+      emailErrors.set(
+        rowId,
+        result.status === 'rejected'
+          ? String(result.reason?.message || result.reason || 'email delivery failed')
+          : 'email provider is not configured or rejected the message',
+      );
+    }
   }
+  // A digest is one request per person. The Telegram helper returns failures
+  // per recipient so one successful chat cannot hide another blocked bot.
+  const telegramFailed = new Set(telegramResult.failedUserIds || []);
+  const telegramErrors = telegramResult.errorsByUserId || {};
 
   const batch = db.batch();
   let sent = 0;
   let failed = 0;
-  for (const { row } of claimed) {
-    const attempts = Number(row.attempts || 0) + 1;
-    if (telegramFailed.has(row.userId) && attempts < MAX_ATTEMPTS) {
-      batch.update(outboxRef().doc(row.id), {
-        attempts,
-        status: 'pending',
-        lastError: String(telegramResult.error || 'telegram delivery failed').slice(0, 300),
-        nextAttemptAtMs: nowMs + nextAttemptDelayMs(attempts),
-      });
-      failed += 1;
-      continue;
-    }
-    batch.update(outboxRef().doc(row.id), {
-      attempts,
-      status: telegramFailed.has(row.userId) ? 'failed' : 'sent',
-      sentAtMs: nowMs,
-      lastError: telegramFailed.has(row.userId) ? String(telegramResult.error || '').slice(0, 300) : '',
+  for (const { row, wantsEmail, wantsTelegram } of claimed) {
+    const emailWasSuccessful = wantsEmail && emailSucceeded.has(row.id);
+    const telegramWasSuccessful = wantsTelegram && !telegramFailed.has(row.userId);
+    const outcome = deliveryAttemptUpdate(row, {
+      nowMs,
+      emailRequested: wantsEmail,
+      emailSucceeded: emailWasSuccessful,
+      telegramRequested: wantsTelegram,
+      telegramSucceeded: telegramWasSuccessful,
+      emailError: emailErrors.get(row.id),
+      telegramError: telegramErrors[row.userId],
     });
-    if (telegramFailed.has(row.userId)) failed += 1;
+    batch.update(outboxRef().doc(row.id), outcome.update);
+    if (outcome.failed) failed += 1;
     else sent += 1;
   }
   await batch.commit();
@@ -316,7 +362,7 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     sent,
     failed,
     telegram: telegramResult.delivered || 0,
-    email: emailResults.filter(item => item.status === 'fulfilled').length,
+    email: emailSucceeded.size,
     recipients: groupByRecipient(claimed.map(item => item.row)).size,
   };
 }

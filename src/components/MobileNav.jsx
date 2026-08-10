@@ -21,6 +21,7 @@ import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -80,6 +81,7 @@ export default function MobileNav() {
   const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
+  const moreDialogRef = useModalFocus({ isOpen: moreOpen, onClose: () => setMoreOpen(false) });
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
@@ -117,12 +119,6 @@ export default function MobileNav() {
   useSidebarThemeBoot(theme, Boolean(activeOrg));
 
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
-
-  // Lock body scroll while the sheet is open
-  useEffect(() => {
-    if (moreOpen) document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [moreOpen]);
 
   // The on-screen keyboard is the one piece of browser chrome the layout
   // viewport does not account for. Without this the bar either hides behind the
@@ -230,6 +226,8 @@ export default function MobileNav() {
         <div data-ui-overlay="navigation-sheet" className="fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
+            ref={moreDialogRef}
+            tabIndex={-1}
             onClick={e => e.stopPropagation()}
             // A sheet is a dialog: it covers the page, it traps the reader's
             // attention, and it says so. Without the role it was an anonymous

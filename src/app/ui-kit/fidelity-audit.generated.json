@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 176,
-    "parsedFiles": 176,
+    "productFiles": 178,
+    "parsedFiles": 178,
     "parseErrors": 0,
     "nativeControls": 17,
     "structures": {
@@ -55,7 +55,7 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2461",
+      "location": "src/app/(app)/settings/page.js:2462",
       "className": "flex flex-col items-center gap-[6px] group/theme",
       "text": "",
       "childElements": [
@@ -116,7 +116,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:204",
+      "location": "src/components/MobileNav.jsx:200",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -132,7 +132,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:262",
+      "location": "src/components/MobileNav.jsx:260",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -148,7 +148,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/OrgSwitcherScreen.jsx:27",
+      "location": "src/components/OrgSwitcherScreen.jsx:28",
       "className": "flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100",
       "text": "",
       "childElements": [
@@ -406,17 +406,17 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:338",
+      "location": "src/app/(app)/settings/page.js:339",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:358",
+      "location": "src/app/(app)/settings/page.js:359",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:491",
+      "location": "src/app/(app)/settings/page.js:492",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -546,7 +546,7 @@
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
     {
-      "location": "src/components/workspace/IssueModal.jsx:9",
+      "location": "src/components/workspace/IssueModal.jsx:11",
       "tag": "div",
       "className": "relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
     },
@@ -581,7 +581,7 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:42",
+      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:35",
       "tag": "div",
       "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
     },

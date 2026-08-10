@@ -1,12 +1,8 @@
 'use client';
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
-
-// Every open dialog, innermost last. Escape closes the one on top and nothing
-// else: the project settings dialog opens the invite dialog on top of itself,
-// and one key press must not take both down.
-const openDialogs = [];
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
 // ─── UI Kit: Dialog — the one shared modal shell ─────────────────────────────
 // Every modal in the app should render through this component so header
@@ -60,6 +56,7 @@ export default function Dialog({
   bodyPadding = 'default', // default | spacious | responsive | invite | horizontal | flush
 }) {
   const titleId = useId();
+  const dialogRef = useModalFocus({ isOpen, onClose });
   // A click is only a click-away when the press *started* on the backdrop.
   // Without this, selecting text inside the dialog and releasing the mouse
   // outside it fires `click` on the nearest common ancestor — the backdrop —
@@ -67,38 +64,6 @@ export default function Dialog({
   // in the audio tab: the panel is nothing but long text fields, so dragging a
   // selection past the edge of the sheet is the normal way to use it.
   const pressStartedOnBackdrop = useRef(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  // Escape, on the topmost dialog only.
-  // Held in a ref so a new `onClose` identity each render does not re-order the
-  // stack this dialog's position in depends on.
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; });
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const token = {};
-    openDialogs.push(token);
-    const handleKeyDown = event => {
-      if (event.key !== 'Escape') return;
-      if (openDialogs[openDialogs.length - 1] !== token) return;
-      event.stopPropagation();
-      onCloseRef.current?.();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      const index = openDialogs.indexOf(token);
-      if (index !== -1) openDialogs.splice(index, 1);
-    };
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -146,6 +111,8 @@ export default function Dialog({
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}

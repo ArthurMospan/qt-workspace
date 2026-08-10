@@ -10,13 +10,14 @@
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getPortalAuth } from '@/lib/portal/firebase';
+import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
 
 // The authorize URL is built server-side: only the server can set the httpOnly
 // cookie holding the CSRF nonce that the callback checks. `returnTo` comes back
 // through the callback, so the round-trip ends where it started.
 export function startQtPlusConnect(returnTo = '') {
   const query = returnTo ? `?r=${encodeURIComponent(returnTo)}` : '';
-  window.location.href = `/api/integrations/qtplus/connect${query}`;
+  navigateToSameOrigin(`/api/integrations/qtplus/connect${query}`);
 }
 
 export async function disconnectQtPlusAccount() {

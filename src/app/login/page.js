@@ -7,6 +7,7 @@ import AnimatedLogo from '@/components/AnimatedLogo';
 import AuthLayout from '@/components/AuthLayout';
 import { useAppContext } from '@/lib/context/AppContext';
 import { getSafeAuthRedirect } from '@/lib/utils/authRedirect';
+import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
 
 function GitHubIcon() {
   return (
@@ -110,7 +111,7 @@ export default function LoginPage() {
     // do, just forges a state the callback has to reject anyway.
     const state = params.get('state');
     if (state) callbackParams.set('state', state);
-    window.location.href = `/oauth2/result?${callbackParams.toString()}`;
+    navigateToSameOrigin(`/oauth2/result?${callbackParams.toString()}`, { replace: true });
   }, []);
 
   useEffect(() => {
@@ -172,7 +173,7 @@ export default function LoginPage() {
     // The server builds the authorize URL: it is the only side that can set the
     // httpOnly nonce cookie the callback checks against.
     const params = new URLSearchParams({ r: getRequestedDestination() });
-    window.location.href = `/api/auth/oneb/start?${params.toString()}`;
+    navigateToSameOrigin(`/api/auth/oneb/start?${params.toString()}`);
   };
 
   const anyLoading = githubLoading || googleLoading || onebLoading;

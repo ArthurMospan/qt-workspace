@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, ExternalLink, FileText, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
 function getUrl(attachment) {
   return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
@@ -40,11 +41,11 @@ export default function AttachmentViewer({ attachment, onClose }) {
   const url = getUrl(attachment);
   const kind = useMemo(() => getKind(attachment), [attachment]);
   const name = attachment?.name || 'Вкладення';
+  const dialogRef = useModalFocus({ isOpen: Boolean(attachment && url), onClose });
 
   useEffect(() => {
     if (!attachment) return undefined;
     const handleKeyDown = event => {
-      if (event.key === 'Escape') onClose();
       if (kind === 'image' && (event.key === '+' || event.key === '=')) setScale(value => Math.min(3, value + 0.25));
       if (kind === 'image' && event.key === '-') setScale(value => Math.max(0.5, value - 0.25));
     };
@@ -57,6 +58,8 @@ export default function AttachmentViewer({ attachment, onClose }) {
   return createPortal(
     <div
       data-ui-overlay="media-viewer"
+      ref={dialogRef}
+      tabIndex={-1}
       className="fixed inset-0 z-[200] flex flex-col bg-black/85"
       role="dialog"
       aria-modal="true"

@@ -126,7 +126,19 @@ export async function deliverTelegramNotification({
 }) {
   const status = telegramStatus();
   const recipients = [...new Set((userIds || []).filter(Boolean))];
-  if (!status.configured || !recipients.length) return { delivered: 0 };
+  if (!recipients.length) {
+    return { delivered: 0, attempted: 0, failedUserIds: [], errorsByUserId: {} };
+  }
+  if (!status.configured) {
+    return {
+      delivered: 0,
+      attempted: recipients.length,
+      failedUserIds: recipients,
+      errorsByUserId: Object.fromEntries(
+        recipients.map(uid => [uid, 'Telegram integration is not configured']),
+      ),
+    };
+  }
 
   const db = getAdminDb();
   const [preferenceSnapshots, connectionSnapshots] = await Promise.all([
@@ -137,29 +149,51 @@ export async function deliverTelegramNotification({
     ? null
     : formatTelegramNotification([{ type, title, body, url: telegramAppLink(link) }]);
 
+  const skippedUserIds = [];
+  const immediateFailures = new Map();
   const deliveries = recipients.flatMap((uid, index) => {
     const preferences = preferenceSnapshots[index].exists ? preferenceSnapshots[index].data() : {};
     const connection = connectionSnapshots[index].exists ? connectionSnapshots[index].data() : {};
-    if (!connection.chatId) return [];
+    let message = shared;
     if (itemsByUserId) {
       // Each batched item carries its own type, so the per-event switch is
       // applied per item rather than once for the whole digest.
       const allowed = (itemsByUserId.get(uid) || [])
         .filter(item => shouldDeliver(preferences, 'telegram', item.type));
-      const message = formatTelegramNotification(allowed);
-      return message ? [sendFormattedTelegramMessage(connection.chatId, message)] : [];
+      message = formatTelegramNotification(allowed);
     }
-    return shared && shouldDeliver(preferences, 'telegram', type)
-      ? [sendFormattedTelegramMessage(connection.chatId, shared)]
-      : [];
+    if (!itemsByUserId && !shouldDeliver(preferences, 'telegram', type)) message = null;
+    if (!message) {
+      skippedUserIds.push(uid);
+      return [];
+    }
+    if (!connection.chatId) {
+      immediateFailures.set(uid, 'Telegram connection has no chat id');
+      return [];
+    }
+    return [{ uid, promise: sendFormattedTelegramMessage(connection.chatId, message) }];
   });
-  const results = await Promise.allSettled(deliveries);
-  for (const item of results) {
+  const results = await Promise.allSettled(deliveries.map(delivery => delivery.promise));
+  const failedUserIds = [...immediateFailures.keys()];
+  const errorsByUserId = Object.fromEntries(immediateFailures);
+  let delivered = 0;
+  for (const [index, item] of results.entries()) {
     if (item.status === 'rejected') {
       console.warn('[telegram] Delivery failed:', item.reason?.message || item.reason);
+      const uid = deliveries[index].uid;
+      failedUserIds.push(uid);
+      errorsByUserId[uid] = String(item.reason?.message || item.reason || 'Telegram delivery failed');
+    } else {
+      delivered += 1;
     }
   }
-  return { delivered: results.filter(item => item.status === 'fulfilled').length };
+  return {
+    delivered,
+    attempted: deliveries.length + immediateFailures.size,
+    failedUserIds,
+    errorsByUserId,
+    skippedUserIds,
+  };
 }
 
 export async function createIssueFromTelegram({

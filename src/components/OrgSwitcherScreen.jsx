@@ -8,6 +8,7 @@ import { Plus, X } from 'lucide-react';
 import AuthLayout from '@/components/AuthLayout';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Counter } from '@/components/ui';
+import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
@@ -62,6 +63,7 @@ export default function OrgSwitcherScreen({ onClose }) {
   const { allOrgs, switchOrg, currentUser } = useAppContext();
   const router = useRouter();
   const [expandingOrg, setExpandingOrg] = useState(null);
+  const dialogRef = useModalFocus({ isOpen: Boolean(onClose), onClose });
   const notifications = useWorkspaceStore(state => state.notifications);
   const unreadByOrg = notifications.reduce((counts, item) => {
     if (!item.read && item.organizationId) {
@@ -108,7 +110,15 @@ export default function OrgSwitcherScreen({ onClose }) {
   const isExpanding = !!expandingOrg;
 
   return (
-    <div data-ui-overlay="workspace-mode" className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-[#f5f5f5]'}`}>
+    <div
+      ref={dialogRef}
+      tabIndex={onClose ? -1 : undefined}
+      role={onClose ? 'dialog' : undefined}
+      aria-modal={onClose ? 'true' : undefined}
+      aria-label={onClose ? 'Вибір організації' : undefined}
+      data-ui-overlay="workspace-mode"
+      className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-[#f5f5f5]'}`}
+    >
       <AuthLayout hideCreateOrg={false} onClose={onClose}>
         
         <div className={`flex flex-col items-center w-full max-w-[800px] transition-opacity duration-300 ${isExpanding ? 'opacity-0' : 'opacity-100'} animate-in slide-in-from-bottom-8 duration-500 pb-16`}>

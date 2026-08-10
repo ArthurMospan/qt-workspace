@@ -565,11 +565,19 @@ export async function readSweepState(nowMs) {
   const elapsedMs = Number.isFinite(lastRunAt) && lastRunAt <= nowMs
     ? nowMs - lastRunAt
     : REMINDER_LOOKBACK_MS;
+  // Dispatch may run every minute while materialisation is driven separately.
+  // Its watermark must not shorten the recovery window of the expensive half:
+  // after a three-hour materialiser outage, using `lastRunAt` here silently
+  // loses every reminder that became due during the outage.
+  const materialiseElapsedMs = Number.isFinite(lastMaterialiseAt) && lastMaterialiseAt <= nowMs
+    ? nowMs - lastMaterialiseAt
+    : REMINDER_LOOKBACK_MS;
   return {
     lastRunAtMs: Number.isFinite(lastRunAt) ? lastRunAt : null,
     lastBirthdayScanAtMs: Number.isFinite(lastBirthdayScanAt) ? lastBirthdayScanAt : null,
     lastMaterialiseAtMs: Number.isFinite(lastMaterialiseAt) ? lastMaterialiseAt : null,
     elapsedMs,
+    materialiseElapsedMs,
   };
 }
 
@@ -598,7 +606,7 @@ export async function materialiseScheduledNotifications({ nowMs = Date.now(), lo
 // calls it with `dispatch`, and something slower keeps the outbox stocked.
 export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode = 'full' } = {}) {
   const state = await readSweepState(nowMs);
-  const lookBackMs = clampReminderLookback(state.elapsedMs);
+  const lookBackMs = clampReminderLookback(state.materialiseElapsedMs);
   const wantsMaterialise = mode === 'full' || mode === 'materialise';
   const wantsDispatch = mode === 'full' || mode === 'dispatch';
   const materialiseDue = !Number.isFinite(state.lastMaterialiseAtMs)
