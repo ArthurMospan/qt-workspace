@@ -16,7 +16,7 @@ function walk(dir, found = []) {
 }
 
 const sources = walk(join(ROOT, 'src'))
-  .filter(file => !file.includes('/ui-decisions/') && !file.endsWith('lib/design/icons.js'))
+  .filter(file => !file.endsWith('lib/design/icons.js'))
   .map(file => ({ file: file.slice(file.indexOf('src/')), source: readFileSync(file, 'utf8') }));
 
 // «Мої завдання», «Календар» and «Чат» are named once, in lib/design/icons, and

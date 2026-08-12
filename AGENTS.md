@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # QuickTeam repository instructions
 
-This is a single Next.js 16.2.6 App Router application with React 19 and Firebase. Read [README.md](README.md) before changing the project and consult the relevant document under `docs/` for integration or product-specific work.
+This is a single Next.js 16.3.0 App Router application with React 19 and Firebase. Read [README.md](README.md) before changing the project and consult the relevant document under `docs/` for integration or product-specific work.
 
 ## Framework and commands
 

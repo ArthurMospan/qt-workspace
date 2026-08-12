@@ -11,7 +11,7 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const isDevelopmentReferencePage =
     process.env.NODE_ENV === 'development'
-    && (pathname === '/ui-kit' || pathname === '/ui-decisions');
+    && pathname === '/ui-kit';
 
   // The internal reference page must remain usable while the product auth flow
   // is being developed or repaired. Production still requires a session.
@@ -45,5 +45,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/ui-kit', '/ui-decisions'],
+  matcher: ['/ui-kit'],
 };
