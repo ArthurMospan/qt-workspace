@@ -12,7 +12,6 @@ import {
 } from '@/components/ui';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-import { useAppContext } from '@/lib/context/AppContext';
 import { updateProjectSettings } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
 import {
@@ -21,13 +20,6 @@ import {
   parseInviteEmails,
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
-import {
-  isValidIssuePrefix,
-  normalizeIssuePrefix,
-  projectIssuePrefix,
-  projectIssuePrefixTaken,
-  suggestAvailableIssuePrefix,
-} from '@/lib/utils/issueKeys.mjs';
 
 export default function BoardConfigModal({
   project,
@@ -42,19 +34,11 @@ export default function BoardConfigModal({
 }) {
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirm = useConfirm();
-  const { projects = [] } = useAppContext();
   const { statuses, loading } = useWorkflowConfig();
   const { inviteMember } = useOrganization();
   const [name, setName] = useState(project?.name || '');
   const [nameError, setNameError] = useState('');
   const [description, setDescription] = useState(project?.description || '');
-  const hasPersistedIssuePrefix = isValidIssuePrefix(project?.issuePrefix);
-  const [issuePrefix, setIssuePrefix] = useState(() => (
-    hasPersistedIssuePrefix
-      ? projectIssuePrefix(project)
-      : suggestAvailableIssuePrefix(project, projects, project?.id)
-  ));
-  const [issuePrefixError, setIssuePrefixError] = useState('');
   const [hiddenColumns, setHiddenColumns] = useState(
     (project?.hiddenColumns || []).filter(statusId => statusId !== 'backlog'),
   );
@@ -80,14 +64,6 @@ export default function BoardConfigModal({
   const handleSave = async () => {
     if (!name.trim()) {
       setNameError('Вкажіть назву проєкту');
-      return;
-    }
-    if (!isValidIssuePrefix(issuePrefix)) {
-      setIssuePrefixError('Вкажіть 2–8 літер або цифр без пробілів і дефісів');
-      return;
-    }
-    if (projectIssuePrefixTaken(projects, issuePrefix, project?.id)) {
-      setIssuePrefixError('Такий код завдань уже використовує інший проєкт');
       return;
     }
     if (statuses.length > 0 && statusesToHide.length >= statuses.length) {
@@ -124,7 +100,6 @@ export default function BoardConfigModal({
       const result = await updateProjectSettings(project.id, {
         name: name.trim(),
         description: description.trim(),
-        issuePrefix,
         hiddenColumns: statusesToHide,
         ...(canManageTeam ? { team: teamMemberIds } : {}),
       });
@@ -244,18 +219,6 @@ export default function BoardConfigModal({
           nameError={nameError}
           description={description}
           onDescriptionChange={setDescription}
-          issuePrefix={issuePrefix}
-          onIssuePrefixChange={value => {
-            const normalizedPrefix = normalizeIssuePrefix(value);
-            setIssuePrefix(normalizedPrefix);
-            setIssuePrefixError(
-              normalizedPrefix && projectIssuePrefixTaken(projects, normalizedPrefix, project?.id)
-                ? 'Такий код завдань уже використовує інший проєкт'
-                : '',
-            );
-          }}
-          issuePrefixError={issuePrefixError}
-          issuePrefixLocked={hasPersistedIssuePrefix && Number(project?.issueCounter || 0) > 0}
           statuses={statuses}
           hiddenStatusIds={statusesToHide}
           onHiddenStatusIdsChange={setHiddenColumns}

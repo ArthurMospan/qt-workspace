@@ -30,7 +30,7 @@ test('every project task writer consumes the stable project issue sequence', asy
   assert.match(transactionalResolver, /suggestAvailableIssuePrefix\(project, organizationProjects, projectId\)/);
 });
 
-test('project prefixes are explicit, unique and lock after the first task', async () => {
+test('project prefixes are automatic, unique and absent from project forms', async () => {
   const [createRoute, updateRoute, form, workspace] = await Promise.all([
     read('../src/app/api/projects/route.js'),
     read('../src/app/api/projects/[projectId]/route.js'),
@@ -38,13 +38,12 @@ test('project prefixes are explicit, unique and lock after the first task', asyn
     read('../src/app/(app)/page.js'),
   ]);
 
-  assert.match(createRoute, /issuePrefix: normalizedPrefix/);
-  assert.match(createRoute, /projectIssuePrefixTaken\(organizationProjects, normalizedPrefix\)/);
-  assert.match(updateRoute, /ISSUE_PREFIX_LOCKED/);
-  assert.match(updateRoute, /Number\(currentProject\.issueCounter \|\| 0\) > 0/);
-  assert.match(form, /Після першої задачі код закріпиться/);
-  assert.match(createRoute, /suggestedPrefix/);
-  assert.match(workspace, /suggestAvailableIssuePrefix\(\{ name \}, projects\)/);
+  assert.match(createRoute, /const issuePrefix = suggestAvailableIssuePrefix\(/);
+  assert.match(createRoute, /transaction\.create\(projectRef, \{ \.\.\.payload, issuePrefix \}\)/);
+  assert.match(updateRoute, /let resolvedIssuePrefix = projectIssuePrefix\(currentProject\)/);
+  assert.match(updateRoute, /resolvedIssuePrefix = suggestAvailableIssuePrefix\(/);
+  assert.doesNotMatch(form, /issuePrefix|Код завдань/);
+  assert.doesNotMatch(workspace, /issuePrefix|suggestAvailableIssuePrefix/);
 });
 
 test('similar project names receive the next readable free prefix', () => {
@@ -77,6 +76,10 @@ test('task routes use the human issue key and still recognize old document-id li
   assert.equal(issueMatchesRouteIdentifier(issue, 'firestore-symbols-123'), true);
   assert.equal(issueMatchesRouteIdentifier(issue, 'ENG-13'), false);
   assert.equal(issuePath({ id: 'legacy-id', projectId: 'project-1' }), '/project-1/issue/legacy-id');
+  assert.equal(
+    issuePath({ id: 'safe-doc-id', projectId: 'project-1', issueKey: 'МАЧ-1' }),
+    '/project-1/issue/safe-doc-id',
+  );
 
   const legacyIssue = { id: 'old-doc', projectId: 'project-1', issueKey: 'WS-12' };
   const project = { id: 'project-1', name: 'Engineering', issuePrefix: 'ENG' };

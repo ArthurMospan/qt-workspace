@@ -16,8 +16,9 @@ export async function resolveProjectIssuePrefixInTransaction({
   projectId,
   organizationId,
 }) {
-  const persisted = normalizeIssuePrefix(project?.issuePrefix);
-  if (isValidIssuePrefix(persisted)) return persisted;
+  if (isValidIssuePrefix(project?.issuePrefix)) {
+    return normalizeIssuePrefix(project.issuePrefix);
+  }
 
   const projectsSnapshot = await transaction.get(
     db.collection('projects').where('organizationId', '==', organizationId),

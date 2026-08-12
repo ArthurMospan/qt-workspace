@@ -1,6 +1,6 @@
 'use client';
 
-import { Hash, LockKeyhole, UserPlus, Users } from 'lucide-react';
+import { UserPlus, Users } from 'lucide-react';
 import FormGroup from '@/components/ui/Forms/FormGroup';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import { Input } from '@/components/ui/Input';
@@ -22,10 +22,6 @@ import StatusVisibilityPicker from './StatusVisibilityPicker';
  * @param {string} props.nameError Validation message under the name field.
  * @param {string} props.description Project description.
  * @param {(value: string) => void} props.onDescriptionChange Fires with the new description.
- * @param {string} props.issuePrefix Short stable prefix used by issue keys.
- * @param {(value: string) => void} props.onIssuePrefixChange Fires with an uppercase letters/numbers-only prefix.
- * @param {string} props.issuePrefixError Validation message under the prefix field.
- * @param {boolean} props.issuePrefixLocked Existing issue keys make the prefix immutable.
  * @param {object[]} props.statuses The workflow's statuses.
  * @param {string[]} props.hiddenStatusIds Statuses folded away on the board.
  * @param {(ids: string[]) => void} props.onHiddenStatusIdsChange Fires with the new hidden list.
@@ -49,10 +45,6 @@ export default function ProjectSettingsForm({
   nameError,
   description,
   onDescriptionChange,
-  issuePrefix = '',
-  onIssuePrefixChange,
-  issuePrefixError = '',
-  issuePrefixLocked = false,
   statuses = [],
   hiddenStatusIds = [],
   onHiddenStatusIdsChange,
@@ -120,31 +112,6 @@ export default function ProjectSettingsForm({
           composition="project-description"
         />
       </FormGroup>
-
-      {typeof onIssuePrefixChange === 'function' ? (
-        <FormGroup label="Код завдань" required error={issuePrefixError}>
-          <div className="flex flex-col gap-1.5">
-            <Input
-              value={issuePrefix}
-              onChange={event => onIssuePrefixChange(event.target.value)}
-              placeholder="Наприклад: ENG"
-              composition="project-name"
-              icon={Hash}
-              maxLength={8}
-              autoCapitalize="characters"
-              spellCheck={false}
-              disabled={issuePrefixLocked || loading}
-              error={Boolean(issuePrefixError)}
-            />
-            <p className="flex items-center gap-1.5 text-[11px] leading-relaxed text-muted">
-              {issuePrefixLocked ? <LockKeyhole size={11} className="shrink-0" /> : null}
-              {issuePrefixLocked
-                ? `Код закріплено: на нього вже посилаються задачі ${issuePrefix || 'проєкту'}-…`
-                : `Нові задачі матимуть ID ${issuePrefix || 'ENG'}-1, ${issuePrefix || 'ENG'}-2… Після першої задачі код закріпиться.`}
-            </p>
-          </div>
-        </FormGroup>
-      ) : null}
 
       {showTeamSettings ? (
         <FormGroup label="Команда проєкту">

@@ -73,6 +73,8 @@ export default function AgileBoard({
   showHiddenLane = false,
   issueLinks = [],
   isArchived,
+  cardPageSize = null,
+  compareIssueCards = compareIssues,
 }) {
   const [mounted, setMounted] = useState(dndReady);
   const {
@@ -144,9 +146,17 @@ export default function AgileBoard({
     .filter(issue => (column?.isHiddenContainer
       ? column.colIds.includes(columnIdOf(issue))
       : columnIdOf(issue) === column?.id))
-    .sort(compareIssues);
+    .sort(compareIssueCards);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
+  // Large cross-project boards stay responsive by rendering a bounded first
+  // page per column. The complete ordered column remains available to the drop
+  // planner, so loading is only a rendering concern and never changes where a
+  // card is persisted.
+  const [visibleCardLimits, setVisibleCardLimits] = useState({});
+  const normalizedCardPageSize = Number.isFinite(cardPageSize) && cardPageSize > 0
+    ? Math.trunc(cardPageSize)
+    : null;
   // Which columns are folded, remembered per board *and per grouping*: the two
   // modes have different columns, and one key let a collapsed «У роботі» category
   // fold the unrelated status that happens to share its id.
@@ -384,6 +394,11 @@ export default function AgileBoard({
                   const colIssues = columnCards(lane.issues, col);
 
                   const dropId = swimlanes.length > 1 ? `${lane.id}::${col.id}` : col.id;
+                  const visibleLimit = normalizedCardPageSize
+                    ? visibleCardLimits[dropId] || normalizedCardPageSize
+                    : colIssues.length;
+                  const renderedColIssues = colIssues.slice(0, visibleLimit);
+                  const remainingIssueCount = colIssues.length - renderedColIssues.length;
 
                   const isCollapsed = collapsedCols.includes(col.id);
 
@@ -485,7 +500,7 @@ export default function AgileBoard({
                               snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                             }`}
                           >
-                            {colIssues.map((issue, i) => (
+                            {renderedColIssues.map((issue, i) => (
                               <IssueCard
                                 key={issue.id}
                                 className="mb-[8px]"
@@ -510,6 +525,21 @@ export default function AgileBoard({
                               />
                             ))}
                             {provided.placeholder}
+                            {remainingIssueCount > 0 && (
+                              <div className="shrink-0 pb-[8px]">
+                                <Button
+                                  onClick={() => setVisibleCardLimits(current => ({
+                                    ...current,
+                                    [dropId]: visibleLimit + normalizedCardPageSize,
+                                  }))}
+                                  style="ghost"
+                                  size="sm"
+                                  className="w-full"
+                                >
+                                  Показати ще {Math.min(normalizedCardPageSize, remainingIssueCount)} · лишилося {remainingIssueCount}
+                                </Button>
+                              </div>
+                            )}
                             <div className="shrink-0 h-[4px]" />
                           </div>
                         )}

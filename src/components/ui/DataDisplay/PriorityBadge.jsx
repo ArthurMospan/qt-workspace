@@ -1,6 +1,7 @@
 'use client';
 
 import PriorityIcon from './PriorityIcon';
+import Pill from './Pill';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 
 /**
@@ -13,16 +14,19 @@ import { priorityPresentation } from '@/lib/utils/priorities.mjs';
  */
 export default function PriorityBadge({ priority = 'none', priorities = [], className = '' }) {
   const config = priorityPresentation(priority, priorities);
-  const background = config.isNoPriority ? '#9a9a9a12' : `${config.color}14`;
   const textColor = config.isNoPriority ? '#737373' : config.color;
 
   return (
-    <span
-      className={`inline-flex items-center gap-[6px] rounded-[6px] px-[8px] py-[3px] text-[11px] font-medium backdrop-blur-[2px] ${className}`.trim()}
-      style={{ background, color: textColor }}
+    <Pill
+      color={textColor}
+      colorAlpha={config.isNoPriority ? '12' : '14'}
+      size="lg"
+      shape="badge"
+      weight="medium"
+      className={`backdrop-blur-[2px] ${className}`.trim()}
     >
       <PriorityIcon priority={config} priorities={priorities} />
       {config.label}
-    </span>
+    </Pill>
   );
 }

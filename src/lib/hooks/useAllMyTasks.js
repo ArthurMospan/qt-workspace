@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useAllMyTasks.js — Fetch all tasks assigned to current user across all projects
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
@@ -18,8 +18,14 @@ import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import {
   resolveCategoryStatusId,
+  statusCategoryOf,
   statusCategoryLabel,
 } from '@/lib/utils/statusCategories.mjs';
+import {
+  compareMyTaskIssues,
+  normalizeMyTaskOrders,
+  planMyTaskDrop,
+} from '@/lib/utils/myTaskOrder.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
@@ -41,11 +47,21 @@ export function useAllMyTasks(userId) {
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myTaskOrders, setMyTaskOrders] = useState({});
+  const [myTaskOrderLoading, setMyTaskOrderLoading] = useState(true);
   // Keeps the "My tasks" kanban from springing a dropped card back to its old
   // column while the write is in flight. Sorted by due date here, not by
   // `order`, so the merged list needs no re-sort.
   const [tasks, applyPatch, revertPatch] = useOptimisticPatch(snapshotTasks);
   const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(snapshotAllIssues);
+  const compareTaskCards = useMemo(
+    () => compareMyTaskIssues(myTaskOrders),
+    [myTaskOrders],
+  );
+  const categoryOfIssue = useCallback(
+    issue => statusCategoryOf(issue?.columnId || issue?.status || null, statuses),
+    [statuses],
+  );
   // Only the projects this user can already open. An organization-wide query
   // is rejected in full the moment it touches one project they are not on the
   // team of, which is what used to empty this page for every member.
@@ -142,6 +158,33 @@ export function useAllMyTasks(userId) {
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
   }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading]);
+
+  // Project `order` belongs to project boards. This private settings document
+  // holds the user's own cross-project order for "My tasks".
+  useEffect(() => {
+    if (!userId || !activeOrgId) {
+      queueMicrotask(() => {
+        setMyTaskOrders({});
+        setMyTaskOrderLoading(false);
+      });
+      return;
+    }
+    queueMicrotask(() => setMyTaskOrderLoading(true));
+    const orderRef = doc(db, 'users', userId, 'settings', `my-tasks-${activeOrgId}`);
+    return onSnapshot(
+      orderRef,
+      snapshot => {
+        setMyTaskOrders(normalizeMyTaskOrders(snapshot.data()?.orders));
+        setMyTaskOrderLoading(false);
+      },
+      error => {
+        reportLoadError('[useAllMyTasks] personal order', error);
+        setMyTaskOrders({});
+        setMyTaskOrderLoading(false);
+      },
+    );
+  }, [activeOrgId, userId]);
+
   // Shared by the board and by any other status write: a parent or a blocked
   // task may not be closed while real work under it is still open.
   const assertCompletable = useCallback((taskId, current, nextStatus) => {
@@ -171,43 +214,92 @@ export function useAllMyTasks(userId) {
   }, [allIssues, closedStatusIds, issueLinks]);
 
   /**
-   * A drop on the "Мої завдання" board. Its columns mix projects, but `order`
-   * numbers one project's column, so the card is positioned among its own
-   * project's cards and its neighbours there are renumbered with it — exactly
-   * what the project board does. This used to write the raw index of a
-   * cross-project list as the card's `order` and update nobody else, so the
-   * card landed at whatever row that number meant in its project and the
-   * project's own board inherited the collision.
+   * A drop on "Мої завдання" always updates a private cross-project order.
+   * Project `order` is only touched when the task really enters another status;
+   * a reorder in one category creates no status update or audit event.
    */
-  const moveTask = useCallback(async (taskId, columnId, position, actorUser = {}) => {
+  const moveTask = useCallback(async (
+    taskId,
+    columnId,
+    categoryId,
+    position,
+    actorUser = {},
+  ) => {
     const current = allIssues.find(issue => issue.id === taskId);
     if (!current) throw new Error('Issue not found');
-    assertCompletable(taskId, current, columnId);
-
-    const plan = planDrop(allIssues, taskId, columnId, position, { scopeToProject: true });
-    if (!plan) throw new Error('Issue not found');
     const fromColumnId = current.columnId || current.status || null;
+    const statusChanged = fromColumnId !== columnId;
+    const personalPlan = planMyTaskDrop({
+      issues: tasks,
+      issueId: taskId,
+      targetCategoryId: categoryId,
+      position,
+      orders: myTaskOrders,
+      categoryOf: categoryOfIssue,
+    });
+    if (!personalPlan) throw new Error('Issue not found');
+    const previousOrders = myTaskOrders;
 
-    applyPatch(plan.patches);
-    applyAllPatch(plan.patches);
+    let statusPlan = null;
+    if (statusChanged) {
+      assertCompletable(taskId, current, columnId);
+      statusPlan = planDrop(
+        allIssues,
+        taskId,
+        columnId,
+        { index: 0 },
+        { scopeToProject: true },
+      );
+      if (!statusPlan) {
+        throw new Error('Issue not found');
+      }
+    }
+    setMyTaskOrders(personalPlan.orders);
+    if (statusPlan) {
+      applyPatch(statusPlan.patches);
+      applyAllPatch(statusPlan.patches);
+    }
+
+    let statusPersisted = false;
     try {
-      await transitionIssueStatusViaApi({
-        issueId: taskId,
-        status: columnId,
-        order: plan.patches[taskId]?.order,
-        orderUpdates: Object.entries(plan.patches)
-          .filter(([, patch]) => patch.order !== undefined)
-          .map(([id, patch]) => ({ issueId: id, order: patch.order })),
-      });
+      if (statusPlan) {
+        await transitionIssueStatusViaApi({
+          issueId: taskId,
+          status: columnId,
+          order: statusPlan.patches[taskId]?.order,
+          orderUpdates: Object.entries(statusPlan.patches)
+            .filter(([, patch]) => patch.order !== undefined)
+            .map(([id, patch]) => ({ issueId: id, order: patch.order })),
+        });
+        statusPersisted = true;
+      }
+      await setDoc(
+        doc(db, 'users', userId, 'settings', `my-tasks-${activeOrgId}`),
+        {
+          organizationId: activeOrgId,
+          orders: personalPlan.orders,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
     } catch (error) {
-      revertPatch(Object.keys(plan.patches));
-      revertAllPatch(Object.keys(plan.patches));
+      // If the status request already succeeded, keep its optimistic patch:
+      // reverting here would briefly lie about the server state until the
+      // Firestore snapshot arrives. The personal order may still remain useful
+      // for this session even when its separate settings write failed.
+      if (!statusPersisted) {
+        setMyTaskOrders(previousOrders);
+      }
+      if (statusPlan && !statusPersisted) {
+        revertPatch(Object.keys(statusPlan.patches));
+        revertAllPatch(Object.keys(statusPlan.patches));
+      }
       throw error;
     }
 
-    // The same event as a move on the project board, so it reaches the same
-    // people. Moving a task here used to tell nobody at all.
-    if (fromColumnId !== columnId) {
+    // Only a real status transition reaches participants. Personal sorting is
+    // private UI state and must not look like activity on the task itself.
+    if (statusChanged) {
       const recipients = issueParticipants(current, {
         actorId: actorUser.userId || userId,
       });
@@ -224,15 +316,19 @@ export function useAllMyTasks(userId) {
         }).catch(() => {});
       }
     }
+    return { statusChanged, statusId: columnId };
   }, [
     activeOrgId,
     allIssues,
     applyAllPatch,
     applyPatch,
     assertCompletable,
+    categoryOfIssue,
+    myTaskOrders,
     revertAllPatch,
     revertPatch,
     statuses,
+    tasks,
     userId,
   ]);
 
@@ -259,7 +355,7 @@ export function useAllMyTasks(userId) {
           + 'Увімкніть її в налаштуваннях проєкту або оберіть інший статус',
       );
     }
-    return moveTask(taskId, statusId, position, actorUser);
+    return moveTask(taskId, statusId, categoryId, position, actorUser);
   }, [allIssues, moveTask, projects, statuses]);
 
   const updateTask = useCallback(async (taskId, data) => {
@@ -323,9 +419,10 @@ export function useAllMyTasks(userId) {
     tasks,
     allIssues,
     issueLinks,
-    loading,
+    loading: loading || myTaskOrderLoading,
     moveTask,
     moveTaskToCategory,
+    compareTaskCards,
     updateTask
   };
 }

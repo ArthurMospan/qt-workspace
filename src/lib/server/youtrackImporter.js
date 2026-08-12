@@ -43,6 +43,7 @@ import {
   normalizedIssueBlockEdges,
 } from '@/lib/utils/issueStatusTransition.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
+import { projectIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import {
   resolveClosedStatusIds,
   resolveEntryStatusId,
@@ -204,8 +205,7 @@ async function writeInChunks(entries, writer) {
 }
 
 function cleanProjectPrefix(value) {
-  const cleaned = String(value || '').toUpperCase().replace(/[^A-ZА-ЯІЇЄҐ0-9]/gu, '').slice(0, 8);
-  return cleaned || 'YT';
+  return projectIssuePrefix({ name: value || 'YT' });
 }
 
 function actorFor(user, job) {

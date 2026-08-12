@@ -30,13 +30,15 @@ test('every board writes a position it planned, never a raw index', async () => 
     read('../src/components/workspace/AgileBoard.jsx'),
   ]);
 
-  // Both boards plan the whole column and send the peers they renumbered.
-  for (const [name, source] of [['useIssues', projectIssues], ['useAllMyTasks', myTasks]]) {
-    assert.match(source, /planDrop\(/, name);
-    assert.match(source, /orderUpdates/, name);
-  }
-  // «Мої завдання» mixes projects, so its plan is scoped to one of them.
-  assert.match(myTasks, /planDrop\([\s\S]{0,120}\{ scopeToProject: true \}\)/);
+  // Project boards persist canonical project-column order.
+  assert.match(projectIssues, /planDrop\(/);
+  assert.match(projectIssues, /orderUpdates/);
+  // «Мої завдання» persists a private cross-project order; a real status
+  // transition additionally plans a canonical position inside that project.
+  assert.match(myTasks, /planMyTaskDrop\(\{/);
+  assert.match(myTasks, /if \(statusChanged\) \{[\s\S]{0,500}planDrop\(/);
+  assert.match(myTasks, /\{ scopeToProject: true \}/);
+  assert.match(myTasks, /if \(statusPlan\) \{[\s\S]{0,500}orderUpdates/);
   // The board hands over the column the user saw, not an index into rows it
   // resolved with a sort rule of its own.
   assert.match(board, /\{ visibleColumnIds, visibleIndex: destination\.index \}/);

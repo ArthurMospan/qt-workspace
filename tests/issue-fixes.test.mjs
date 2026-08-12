@@ -103,7 +103,8 @@ test('QUI-73 and QUI-81 show newly created sprint, backlog and board tasks first
   // two different lists and a dropped card landed off by however many they
   // disagreed about.
   assert.match(board, /import \{ columnOf, compareIssues \} from '@\/lib\/utils\/optimistic\.mjs'/);
-  assert.match(board, /const columnCards = \(laneIssues, column\) =>[\s\S]{0,320}\.sort\(compareIssues\)/);
+  assert.match(board, /compareIssueCards = compareIssues/);
+  assert.match(board, /const columnCards = \(laneIssues, column\) =>[\s\S]{0,320}\.sort\(compareIssueCards\)/);
   assert.doesNotMatch(board, /\(a\.order \?\? 0\) - \(b\.order \?\? 0\)/);
 });
 

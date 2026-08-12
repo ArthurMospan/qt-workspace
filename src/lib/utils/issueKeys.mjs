@@ -14,28 +14,43 @@
 export const ISSUE_PREFIX_MIN_LENGTH = 2;
 export const ISSUE_PREFIX_MAX_LENGTH = 8;
 
-/** Uppercase letters/numbers only; the hyphen belongs to the final issue key. */
+const CYRILLIC_TO_LATIN = Object.freeze({
+  а: 'a', б: 'b', в: 'v', г: 'h', ґ: 'g', д: 'd', е: 'e', є: 'ye',
+  ж: 'zh', з: 'z', и: 'y', і: 'i', ї: 'yi', й: 'y', к: 'k', л: 'l',
+  м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u',
+  ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ь: '',
+  ю: 'yu', я: 'ya', ё: 'yo', ы: 'y', э: 'e', ъ: '',
+});
+
+function latinize(value) {
+  return Array.from(String(value || '').toLocaleLowerCase('uk-UA'))
+    .map(character => CYRILLIC_TO_LATIN[character] ?? character)
+    .join('')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/** URL-safe uppercase ASCII only; the hyphen belongs to the final issue key. */
 export function normalizeIssuePrefix(value) {
-  return String(value || '')
+  return latinize(value)
     .trim()
-    .replace(/[^\p{L}\p{N}]/gu, '')
+    .replace(/[^a-z0-9]/gi, '')
     .slice(0, ISSUE_PREFIX_MAX_LENGTH)
-    .toLocaleUpperCase('uk-UA');
+    .toUpperCase();
 }
 
 export function isValidIssuePrefix(value) {
   const raw = String(value || '').trim();
   return raw.length >= ISSUE_PREFIX_MIN_LENGTH
     && raw.length <= ISSUE_PREFIX_MAX_LENGTH
-    && /^[\p{L}\p{N}]+$/u.test(raw);
+    && /^[A-Z0-9]+$/i.test(raw);
 }
 
 export function projectIssuePrefix(project) {
   const explicit = normalizeIssuePrefix(project?.issuePrefix);
   if (isValidIssuePrefix(explicit)) return explicit;
 
-  const letters = String(project?.name || 'WS').match(/\p{L}|\p{N}/gu)?.join('') || 'WS';
-  const generated = normalizeIssuePrefix(letters.slice(0, 3));
+  const generated = normalizeIssuePrefix(project?.name || 'WS').slice(0, 3);
   if (generated.length >= ISSUE_PREFIX_MIN_LENGTH) return generated;
   return normalizeIssuePrefix(`${generated}WS`).slice(0, 3) || 'WS';
 }
@@ -103,7 +118,7 @@ export function legacyStoredIssueKey(displayKey, project = null) {
 /** The human key is canonical in URLs; the document id is only a fallback. */
 export function issueRouteIdentifier(issue, project = null) {
   const issueKey = taskDisplayKey(issue, project);
-  if (issueKey) return issueKey.toLocaleUpperCase('uk-UA');
+  if (/^[A-Z0-9]{2,8}-\d+$/i.test(issueKey)) return issueKey.toUpperCase();
   return typeof issue?.id === 'string' ? issue.id.trim() : '';
 }
 

@@ -20,7 +20,7 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock, MoveRight
+  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -44,11 +44,9 @@ import {
   Pill,
   PriorityBadge,
   PriorityIcon,
-  TypeBadge,
   Surface,
   useConfirm,
-  Popover,
-  ContextMenu
+  Popover
 } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -316,22 +314,7 @@ function LoginMethodItem({
 
 // ── WorkflowItem ─────────────────────────────────────────────────────
 
-function hexToRgba(hex, alpha) {
-  if (!hex) return 'transparent';
-  let r = 0, g = 0, b = 0;
-  if (hex.length === 4) {
-    r = parseInt(hex[1] + hex[1], 16);
-    g = parseInt(hex[2] + hex[2], 16);
-    b = parseInt(hex[3] + hex[3], 16);
-  } else if (hex.length === 7) {
-    r = parseInt(hex.substring(1, 3), 16);
-    g = parseInt(hex.substring(3, 5), 16);
-    b = parseInt(hex.substring(5, 7), 16);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false, readOnly = false, variant = 'status', provided, category = '', onMoveToCategory, priorityItems = [], typeSuggestions = [], onChooseTypeSuggestion = NOOP }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false, readOnly = false, variant = 'status', provided, priorityItems = [], typeSuggestions = [], onChooseTypeSuggestion = NOOP }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -467,49 +450,30 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
 
       {/* Badge preview */}
       {!editing && variant === 'type' && (
-        <TypeBadge label={label} color={color} icon={taskTypeIcon(item)} />
+        <Pill
+          label={label}
+          icon={taskTypeIcon(item)}
+          color={color}
+          colorAlpha="14"
+          size="lg"
+          shape="badge"
+          weight="medium"
+          className="backdrop-blur-[2px]"
+        />
       )}
       {!editing && variant === 'priority' && (
         <PriorityBadge priority={{ ...priorityConfig, label, color }} priorities={priorityItems} />
       )}
       {!editing && variant !== 'type' && variant !== 'priority' && (
-        <span 
-          className={`inline-flex items-center shrink-0 text-[11px] font-medium backdrop-blur-[2px] transition-all ${
-            variant === 'label' ? 'gap-1.5 px-[10px] py-[3px] rounded-[6px]' :
-            'px-[10px] py-[3px] rounded-[6px]'
-          }`}
-          style={{ 
-            background: hexToRgba(color, 0.08), 
-            color: color
-          }}
-        >
-          {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
-          {label}
-        </span>
-      )}
-
-      {/* Move to another category. Dragging the row into another section is the
-          same act and the one most people will reach for; this is how it is done
-          from the keyboard, because the drag library can only move an item
-          between lists that sit side by side, and these are stacked. */}
-      {variant === 'status' && !editing && onMoveToCategory && (
-        <ContextMenu
-          className="shrink-0"
-          trigger={(
-            <IconAction
-              label={`Перемістити «${item.label}» в іншу категорію`}
-              icon={MoveRight}
-              size="sm"
-              appearance="quiet"
-            />
-          )}
-          items={STATUS_CATEGORY_IDS
-            .filter(categoryId => categoryId !== category)
-            .map(categoryId => ({
-              label: STATUS_CATEGORIES[categoryId].label,
-              icon: STATUS_CATEGORY_ICONS[categoryId],
-              onClick: () => onMoveToCategory(categoryId),
-            }))}
+        <Pill
+          label={label}
+          icon={variant === 'label' ? TagIcon : undefined}
+          color={color}
+          colorAlpha="14"
+          size="lg"
+          shape="badge"
+          weight="medium"
+          className="backdrop-blur-[2px]"
         />
       )}
 
@@ -640,8 +604,11 @@ function PositionItem({ item, onSave, onDelete }) {
   );
 }
 
-// Strips the transient `isNew` UI flag before a workflow item is persisted.
-const cleanWorkflowItems = arr => (arr || []).map(({ isNew, ...rest }) => rest);
+// Draft rows exist only in the editor. Persisting one before the person enters
+// a label makes the server correctly reject the entire workflow as malformed.
+const cleanWorkflowItems = arr => (arr || [])
+  .filter(item => !item?.isNew)
+  .map(({ isNew, ...rest }) => rest);
 
 // ── MAIN PAGE ────────────────────────────────────────────────────────
 
@@ -1926,27 +1893,6 @@ export default function SettingsPage() {
     return null;
   };
 
-  const handleStatusMoveToCategory = (id, categoryId) => {
-    const groups = groupStatusesByCategory(statuses);
-    let moved = null;
-    for (const [key, items] of groups) {
-      const at = items.findIndex(status => status.id === id);
-      if (at < 0) continue;
-      if (key === categoryId) return;
-      [moved] = items.splice(at, 1);
-      break;
-    }
-    if (!moved) return;
-    groups.get(categoryId).push(moved);
-    const next = flattenStatusGroups(groups);
-    const problem = statusGroupsBreakInvariant(next);
-    if (problem) {
-      showToast(problem, 'error');
-      return;
-    }
-    setStatuses(next);
-  };
-
   const handleStatusDragEnd = result => {
     const { source, destination } = result;
     if (!destination) return;
@@ -2083,17 +2029,38 @@ export default function SettingsPage() {
   // behaviour as Notifications/Localization). Each section gets a reset-to-
   // defaults footer at the very bottom instead, with a short explanation.
   const workflowResetConfig = {
-    statuses:   { noun: 'статуси',    apply: () => setStatuses(DEFAULT_STATUSES) },
-    types:      { noun: 'типи',       apply: () => setTypes(DEFAULT_TYPES) },
-    priorities: { noun: 'пріоритети', apply: () => setPriorities(DEFAULT_PRIORITIES) },
-    labels:     { noun: 'мітки',      apply: () => setLabels(DEFAULT_LABELS) },
-    positions:  { noun: 'посади',     apply: () => setPositions(DEFAULT_POSITIONS) },
+    statuses: {
+      noun: 'статуси',
+      hint: 'Перетягуйте статуси між категоріями. Категорія визначає поведінку завдання на спільних дошках, у прогресі та звітах.',
+      apply: () => setStatuses(DEFAULT_STATUSES),
+    },
+    types: {
+      noun: 'типи',
+      hint: '«Задача» лишається системним типом. Стандартні типи мають власні іконки, а створені вручну позначаються зіркою.',
+      apply: () => setTypes(DEFAULT_TYPES),
+    },
+    priorities: {
+      noun: 'пріоритети',
+      hint: 'Чотири системні рівні не видаляються. Власні рівні можна додавати між ними — вигляд індикатора визначається позицією.',
+      apply: () => setPriorities(DEFAULT_PRIORITIES),
+    },
+    labels: {
+      noun: 'мітки',
+      hint: 'Мітки доступні в усіх проєктах організації.',
+      apply: () => setLabels(DEFAULT_LABELS),
+    },
+    positions: {
+      noun: 'посади',
+      hint: 'Ставка зберігається як число за годину; валюту обирають під час створення рахунку.',
+      apply: () => setPositions(DEFAULT_POSITIONS),
+    },
   };
   const renderWorkflowResetFooter = () => {
     const cfg = workflowResetConfig[activeSection];
     if (!cfg) return null;
     return (
       <div className="mt-2 flex flex-col items-start gap-1 px-4 py-3">
+        <p className="text-[12px] text-muted leading-relaxed">{cfg.hint}</p>
         <p className="text-[12px] text-muted leading-relaxed">
           Повернути {cfg.noun} до стандартного набору QuickTeam. Ваші поточні зміни в цій секції буде замінено.
         </p>
@@ -2565,23 +2532,21 @@ export default function SettingsPage() {
                       const isCustomUnselected = opt.id === 'custom' && !isActive;
 
                       const buttonNode = (
-                        <button
+                        <label
                           key={opt.id}
-                          onClick={() => {
-                            handleThemeChange(opt.id);
-                          }}
-                          className="flex flex-col items-center gap-[6px] group/theme"
+                          className="flex cursor-pointer flex-col items-center gap-[6px] group/theme"
                         >
                           <ColorSwatch
                             size="theme"
                             selected={isActive}
                             label={opt.label}
+                            onClick={() => handleThemeChange(opt.id)}
                             color={isCustomUnselected
                               ? 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
                               : opt.bg}
                           />
                           <span className={`text-[11px] font-medium transition-colors ${isActive ? 'text-ink' : 'text-muted group-hover/theme:text-ink'}`}>{opt.label}</span>
-                        </button>
+                        </label>
                       );
 
                       if (opt.id === 'custom') {
@@ -3011,7 +2976,7 @@ export default function SettingsPage() {
           && !(!isClosingCategory(status.category) && openStatuses.length === 1)
         );
         return (
-        <Section title="Статуси завдань" desc="Назва статусу — ваша, категорія — спільна. Назв може бути скільки завгодно («Код-ревʼю», «QA», «Погодження»), а категорій рівно пʼять, і саме вони працюють там, де зустрічаються завдання різних проєктів: «Мої завдання» будують колонки з категорій, а «Готово» закриває задачу й дає результат, «Скасовано» — лише закриває. Категорія статусу — це те, у якій секції він лежить: перетягніть його, щоб змінити.">
+        <Section title="Статуси завдань" desc="Налаштуйте етапи, через які проходять завдання.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -3028,23 +2993,15 @@ export default function SettingsPage() {
                       key={categoryId}
                       className={categoryIndex > 0 ? 'mt-5 border-t border-line pt-5' : ''}
                     >
-                      <header className="mb-2 flex items-start gap-[10px]">
+                      <header className="mb-2 flex items-center gap-[10px]">
                         <CategoryIcon
                           size={16}
                           strokeWidth={2}
                           style={{ color: category.color }}
-                          className="mt-[2px] shrink-0"
+                          className="shrink-0"
                           aria-hidden
                         />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="ui-type-card-title text-ink">{category.label}</h3>
-                            <Pill tone="count" size="md">{items.length}</Pill>
-                          </div>
-                          <p className="mt-[2px] text-[12px] leading-snug text-muted">
-                            {category.hint}
-                          </p>
-                        </div>
+                        <h3 className="min-w-0 flex-1 ui-type-card-title text-ink">{category.label}</h3>
                         <Button
                           onClick={() => handleAddStatus(categoryId)}
                           style="ghost"
@@ -3070,8 +3027,6 @@ export default function SettingsPage() {
                                     onSave={stA.onSave} onDelete={handleStatusDeleteClick}
                                     canDelete={canDeleteStatus(s)}
                                     variant="status"
-                                    category={categoryId}
-                                    onMoveToCategory={value => handleStatusMoveToCategory(s.id, value)}
                                     provided={dragProvided}
                                   />
                                 )}
@@ -3111,7 +3066,7 @@ export default function SettingsPage() {
           },
         ]);
         return (
-        <Section title="Типи завдань" desc="«Задача» — системний тип і безпечне значення за замовчуванням. Стандартні типи мають фіксовані іконки, а всі власні типи позначаються зіркою.">
+        <Section title="Типи завдань" desc="Налаштуйте доступні типи завдань.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -3151,7 +3106,7 @@ export default function SettingsPage() {
       }
 
       case 'priorities': return (
-        <Section title="Пріоритети завдань" desc="Критичний, високий, середній і низький — системні рівні: їх можна перейменувати й перефарбувати, але не видалити. Власні рівні перетягуйте між ними — іконка автоматично покаже їхню вагу.">
+        <Section title="Пріоритети завдань" desc="Налаштуйте рівні важливості завдань.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />

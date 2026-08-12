@@ -124,19 +124,17 @@ Primary collections:
 
 ### Issue IDs
 
-Each project owns a short `issuePrefix` (for example `ENG` or `DES`) and an
-atomic `issueCounter`. Every project-scoped writer — the app, Telegram and the
-public task API — consumes that same sequence, so keys such as `ENG-12` are
-stable and unique inside the organization. A prefix is 2–8 letters or numbers,
-must not collide with another project, and is locked after the first issue so
-chat references, links and commit messages never change underneath people.
-The create form picks the first readable free variant (`ENG`, `ENG2`, `ENG3`,
-...) when similar project names would otherwise generate the same prefix. The
-server repeats the uniqueness check transactionally and returns a fresh
-suggestion if two people race to create projects with the same code.
-Projects created before this field existed claim a free prefix inside their
-next task-creation transaction; displayed legacy `WS-*` keys remain searchable
-and openable as aliases.
+Each project owns an internal short `issuePrefix` (for example `ENG` or `DES`)
+and an atomic `issueCounter`. Every project-scoped writer — the app, Telegram
+and the public task API — consumes that same sequence, so keys such as `ENG-12`
+are stable and unique inside the organization. The prefix is generated
+automatically from the project name as 2–8 URL-safe ASCII letters or numbers;
+it is not an editable project setting. The server transaction picks the first
+readable free variant (`ENG`, `ENG2`, `ENG3`, ...) when names would collide.
+Projects created before this field existed claim a free ASCII prefix inside
+their next settings or task-creation transaction. Existing non-ASCII task keys
+remain searchable, but links use the safe document id instead of putting those
+keys into a URL; displayed legacy `WS-*` keys remain openable as aliases.
 
 Workspace search ranks an exact issue key above titles and descriptions. In
 chat, typing `#` plus at least two characters opens the same authorized search;

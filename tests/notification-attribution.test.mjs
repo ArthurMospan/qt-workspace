@@ -150,7 +150,7 @@ test('a task key is never invented from a document id', async () => {
   // prefix in place of the generic one.
   assert.equal(taskDisplayKey({ issueKey: 'WS-17' }, { name: 'QuickTeam' }), 'QUI-17');
   assert.equal(taskDisplayKey({ issueKey: 'WS-17' }, { issuePrefix: 'qt' }), 'QT-17');
-  assert.equal(projectIssuePrefix({ name: 'Мій Проєкт' }), 'МІЙ');
+  assert.equal(projectIssuePrefix({ name: 'Мій Проєкт' }), 'MIY');
   assert.equal(projectIssuePrefix(null), 'WS');
   assert.equal(normalizeIssuePrefix(' eng-team '), 'ENGTEAM');
   assert.equal(isValidIssuePrefix('ENG'), true);

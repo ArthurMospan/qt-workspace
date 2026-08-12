@@ -27,9 +27,9 @@ export const NO_PRIORITY = Object.freeze({
 const SYSTEM_PRIORITY_SET = new Set(SYSTEM_PRIORITY_IDS);
 const DEFAULT_BY_ID = new Map(DEFAULT_SYSTEM_PRIORITIES.map(item => [item.id, item]));
 const SYSTEM_RING_OPACITY = Object.freeze({
-  high: { outer: 1, inner: 1 },
-  medium: { outer: 0.55, inner: 1 },
-  low: { outer: 0.55, inner: 0.55 },
+  high: { outer: 0.88, inner: 0.88 },
+  medium: { outer: 0.52, inner: 0.88 },
+  low: { outer: 0.4, inner: 0.4 },
 });
 
 export function isSystemPriorityId(priorityId) {
@@ -103,16 +103,16 @@ function customRingOpacity(priorityId, priorities) {
     const span = Math.max(1, mediumIndex - highIndex);
     const amount = (index - highIndex) / span;
     return {
-      outer: mix(1, 0.55, amount),
-      inner: 1,
+      outer: mix(0.88, 0.52, amount),
+      inner: 0.88,
     };
   }
   if (index < lowIndex) {
     const span = Math.max(1, lowIndex - mediumIndex);
     const amount = (index - mediumIndex) / span;
     return {
-      outer: 0.55,
-      inner: mix(1, 0.55, amount),
+      outer: 0.52,
+      inner: mix(0.88, 0.4, amount),
     };
   }
   return SYSTEM_RING_OPACITY.low;

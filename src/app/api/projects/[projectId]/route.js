@@ -11,9 +11,8 @@ import {
 } from '@/lib/utils/workflowDefaults.mjs';
 import {
   isValidIssuePrefix,
-  normalizeIssuePrefix,
   projectIssuePrefix,
-  projectIssuePrefixTaken,
+  suggestAvailableIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
 
 const MAX_PROJECT_SETTINGS_TRANSACTION_WRITES = 450;
@@ -64,17 +63,8 @@ export async function PATCH(request, context) {
     if (action === 'update-settings') {
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       const description = typeof body.description === 'string' ? body.description.trim() : '';
-      const requestedIssuePrefix = normalizeIssuePrefix(
-        body.issuePrefix || projectIssuePrefix(project),
-      );
       if (!name || name.length > 160 || description.length > 10_000) {
         return NextResponse.json({ error: 'Некоректна назва або опис проєкту' }, { status: 400 });
-      }
-      if (!isValidIssuePrefix(requestedIssuePrefix)) {
-        return NextResponse.json({
-          error: 'Код завдань має містити 2–8 літер або цифр',
-          code: 'INVALID_ISSUE_PREFIX',
-        }, { status: 400 });
       }
 
       if (body.team !== undefined && !Array.isArray(body.team)) {
@@ -128,20 +118,9 @@ export async function PATCH(request, context) {
           );
         }
         const currentProject = freshProject.data();
-        const currentIssuePrefix = projectIssuePrefix(currentProject);
         const hasPersistedIssuePrefix = isValidIssuePrefix(currentProject.issuePrefix);
-        if (
-          hasPersistedIssuePrefix
-          && Number(currentProject.issueCounter || 0) > 0
-          && requestedIssuePrefix !== currentIssuePrefix
-        ) {
-          throw projectTransactionError(
-            'ISSUE_PREFIX_LOCKED',
-            409,
-            'Код завдань закріплено після створення першої задачі',
-          );
-        }
-        if (!hasPersistedIssuePrefix || requestedIssuePrefix !== currentIssuePrefix) {
+        let resolvedIssuePrefix = projectIssuePrefix(currentProject);
+        if (!hasPersistedIssuePrefix) {
           const projectsSnapshot = await transaction.get(
             db.collection('projects')
               .where('organizationId', '==', project.organizationId),
@@ -150,13 +129,11 @@ export async function PATCH(request, context) {
             id: document.id,
             ...document.data(),
           }));
-          if (projectIssuePrefixTaken(organizationProjects, requestedIssuePrefix, projectId)) {
-            throw projectTransactionError(
-              'ISSUE_PREFIX_TAKEN',
-              409,
-              'Такий код завдань уже використовує інший проєкт',
-            );
-          }
+          resolvedIssuePrefix = suggestAvailableIssuePrefix(
+            { name },
+            organizationProjects,
+            projectId,
+          );
         }
 
         const workflow = workflowSnap.data() || {};
@@ -283,7 +260,7 @@ export async function PATCH(request, context) {
         transaction.update(ref, {
           name,
           description,
-          issuePrefix: requestedIssuePrefix,
+          issuePrefix: resolvedIssuePrefix,
           hiddenColumns: requestedHidden,
           team: nextSettingsTeam,
           issueStatusVersion: FieldValue.increment(1),
@@ -292,7 +269,7 @@ export async function PATCH(request, context) {
         return {
           hiddenColumns: requestedHidden,
           movedIssues: issueIdsToMove.size,
-          issuePrefix: requestedIssuePrefix,
+          issuePrefix: resolvedIssuePrefix,
         };
       });
       return NextResponse.json({

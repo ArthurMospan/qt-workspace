@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 96,
-    "props": 706,
-    "documentedProps": 706,
+    "props": 702,
+    "documentedProps": 702,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3869,27 +3869,6 @@
           "description": "Sentence under that list; says when the invitations go out."
         },
         {
-          "name": "issuePrefix",
-          "default": "''",
-          "type": "string",
-          "values": [],
-          "description": "Short stable prefix used by issue keys."
-        },
-        {
-          "name": "issuePrefixError",
-          "default": "''",
-          "type": "string",
-          "values": [],
-          "description": "Validation message under the prefix field."
-        },
-        {
-          "name": "issuePrefixLocked",
-          "default": "false",
-          "type": "boolean",
-          "values": [],
-          "description": "Existing issue keys make the prefix immutable."
-        },
-        {
           "name": "loading",
           "default": "false",
           "type": "boolean",
@@ -3930,13 +3909,6 @@
           "type": "(value: string) => void",
           "values": [],
           "description": "Fires with the edited list; its presence is what enables inline invites."
-        },
-        {
-          "name": "onIssuePrefixChange",
-          "default": "",
-          "type": "(value: string) => void",
-          "values": [],
-          "description": "Fires with an uppercase letters/numbers-only prefix."
         },
         {
           "name": "onNameChange",

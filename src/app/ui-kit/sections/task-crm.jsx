@@ -308,7 +308,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Agile Board — колонки-категорії"
-        description="groupBy=&quot;category&quot; — режим «Моїх завдань». Колонки не статуси, а пʼять спільних категорій: у категорії з кількох статусів картка додатково називає свій власний статус, бо колонка вже цього не каже. Кидання в колонку ставить задачі статус тієї ж категорії з її власного проєкту, тому приховані колонки проєкту не можуть зробити переміщення нелегальним."
+        description="groupBy=&quot;category&quot; — режим «Моїх завдань». Колонки не статуси, а пʼять спільних категорій. Великі колонки рендеряться сторінками, а повний порядок лишається доступним логіці перенесення."
         filePath="src/components/workspace/AgileBoard.jsx"
         fullWidth
       >
@@ -322,6 +322,7 @@ export default function TaskCRMSection() {
             sprints={demoSprints}
             showProjectName
             groupBy="category"
+            cardPageSize={1}
             hiddenColumns={['cancelled']}
             showHiddenLane
             onAddIssue={() => {}}
