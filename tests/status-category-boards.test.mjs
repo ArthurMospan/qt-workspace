@@ -232,7 +232,11 @@ test('the personal board asks for an exact status only when a category has sever
   assert.match(myTasks, /await moveTask\(issueId, statusId, position, actor\)/);
   assert.match(picker, /layoutId="status-transition-task"/);
   assert.match(picker, /presentation="dialog"/);
-  assert.match(picker, /rounded-\[16px\] bg-canvas/);
+  assert.match(picker, /<IssueCard/);
+  assert.match(picker, /interactive=\{false\}/);
+  assert.match(picker, /border-2 bg-canvas/);
+  assert.match(picker, /type="radio"/);
+  assert.match(picker, /scrollIntoView/);
   assert.match(picker, /ui-type-column-title/);
-  assert.match(picker, /<Pill tone="count"/);
+  assert.doesNotMatch(picker, /<Pill/);
 });

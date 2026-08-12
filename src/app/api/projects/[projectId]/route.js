@@ -1,5 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
@@ -57,7 +58,7 @@ export async function PATCH(request, context) {
           return NextResponse.json({ error: 'У команді може бути лише учасник організації' }, { status: 400 });
         }
       }
-      await ref.update({ team: nextTeam, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      await ref.update({ team: nextTeam, updatedAt: FieldValue.serverTimestamp() });
       return NextResponse.json({ success: true, team: nextTeam });
     }
     if (action === 'update-settings') {
@@ -250,7 +251,7 @@ export async function PATCH(request, context) {
         }
 
         const closedSet = new Set(closedStatusIds);
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const now = FieldValue.serverTimestamp();
         for (const issue of currentIssues.filter(item => issueIdsToMove.has(item.id))) {
           const issueRef = db.collection('issues').doc(issue.id);
           const wasClosed = closedSet.has(issue.columnId || issue.status);
@@ -263,7 +264,7 @@ export async function PATCH(request, context) {
               ? { completedAt: now }
               : {}),
             ...(!willBeClosed && Object.prototype.hasOwnProperty.call(issue, 'completedAt')
-              ? { completedAt: admin.firestore.FieldValue.delete() }
+              ? { completedAt: FieldValue.delete() }
               : {}),
           });
           transaction.create(issueRef.collection('audit').doc(), {
@@ -285,7 +286,7 @@ export async function PATCH(request, context) {
           issuePrefix: requestedIssuePrefix,
           hiddenColumns: requestedHidden,
           team: nextSettingsTeam,
-          issueStatusVersion: admin.firestore.FieldValue.increment(1),
+          issueStatusVersion: FieldValue.increment(1),
           updatedAt: now,
         });
         return {
@@ -316,9 +317,9 @@ export async function PATCH(request, context) {
       }
       transaction.update(ref, {
         status: action === 'archive' ? 'archived' : 'active',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
-      transaction.update(orgRef, { projectMutationVersion: admin.firestore.FieldValue.increment(1) });
+      transaction.update(orgRef, { projectMutationVersion: FieldValue.increment(1) });
     });
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -384,7 +385,7 @@ export async function DELETE(request, context) {
             .where(
               'billedAt',
               '>',
-              admin.firestore.Timestamp.fromMillis(0),
+              Timestamp.fromMillis(0),
             )
             .limit(1),
         ),
@@ -419,7 +420,7 @@ export async function DELETE(request, context) {
       if (current.data().deletionPending !== true) {
         transaction.update(ref, {
           deletionPending: true,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       }
     });
@@ -450,8 +451,8 @@ export async function DELETE(request, context) {
           && current.data().organizationId === project.organizationId
         ) {
           transaction.update(ref, {
-            deletionPending: admin.firestore.FieldValue.delete(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            deletionPending: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         }
       });
@@ -478,7 +479,7 @@ export async function DELETE(request, context) {
     for (const stage of stages.docs) await db.recursiveDelete(stage.ref);
 
     await db.collection('organizations').doc(project.organizationId).update({
-      projectMutationVersion: admin.firestore.FieldValue.increment(1),
+      projectMutationVersion: FieldValue.increment(1),
     });
     await db.recursiveDelete(ref);
     return NextResponse.json({ success: true });

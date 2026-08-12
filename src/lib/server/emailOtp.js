@@ -1,7 +1,8 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { createHash, createHmac, randomInt, timingSafeEqual } from 'node:crypto';
-import { admin, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { deliverEmail, emailConfigured } from '@/lib/server/email';
 
 export const EMAIL_OTP_TTL_SECONDS = 10 * 60;
@@ -104,7 +105,7 @@ export async function upsertEmailAuthUser(email) {
   const baseProfile = {
     id: userRecord.uid,
     email,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
   if (!userSnap.exists) {
     baseProfile.name = userRecord.displayName || email.split('@')[0];

@@ -1,53 +1,27 @@
 'use client';
 
+import PriorityIcon from './PriorityIcon';
+import { priorityPresentation } from '@/lib/utils/priorities.mjs';
+
 /**
- * Issue priority as a dot plus its Ukrainian name. The five levels and their
- * colours are fixed here, not configurable: priority is a shared vocabulary.
+ * Priority mark plus its configured name. Geometry is shared; colour, label and
+ * ring intensity come from the organization's ordered workflow priorities.
  *
- * @param {'blocker'|'high'|'medium'|'low'|'info'} props.priority Which level to draw.
+ * @param {object|string} props.priority Priority item or id.
+ * @param {object[]} props.priorities Ordered workflow priorities.
  * @param {string} props.className Placement in the parent only.
  */
-export default function PriorityBadge({ priority = 'low', className = '' }) {
-  const priorityMap = {
-    blocker: {
-      bg: 'bg-[#ef4444]/8',
-      text: 'text-[#ef4444]',
-      dot: 'bg-[#ef4444]',
-      label: 'Критичний',
-    },
-    high: {
-      bg: 'bg-[#f97316]/8',
-      text: 'text-[#ea580c]',
-      dot: 'bg-[#f97316]',
-      label: 'Високий',
-    },
-    medium: {
-      bg: 'bg-[#eab308]/8',
-      text: 'text-[#b45309]',
-      dot: 'bg-[#eab308]',
-      label: 'Середній',
-    },
-    low: {
-      bg: 'bg-muted/8',
-      text: 'text-[#737373]',
-      dot: 'bg-muted',
-      label: 'Низький',
-    },
-    info: {
-      bg: 'bg-[#6366f1]/8',
-      text: 'text-[#4f46e5]',
-      dot: 'bg-[#6366f1]',
-      label: 'Інфо',
-    },
-  };
-
-  const config = priorityMap[priority] || priorityMap.low;
+export default function PriorityBadge({ priority = 'none', priorities = [], className = '' }) {
+  const config = priorityPresentation(priority, priorities);
+  const background = config.isNoPriority ? '#9a9a9a12' : `${config.color}14`;
+  const textColor = config.isNoPriority ? '#737373' : config.color;
 
   return (
     <span
-      className={`inline-flex items-center gap-[6px] px-[8px] py-[3px] rounded-[6px] text-[11px] font-medium backdrop-blur-[2px] ${config.bg} ${config.text} ${className}`}
+      className={`inline-flex items-center gap-[6px] rounded-[6px] px-[8px] py-[3px] text-[11px] font-medium backdrop-blur-[2px] ${className}`.trim()}
+      style={{ background, color: textColor }}
     >
-      <span className={`w-[6px] h-[6px] rounded-full shrink-0 ${config.dot}`} />
+      <PriorityIcon priority={config} priorities={priorities} />
       {config.label}
     </span>
   );

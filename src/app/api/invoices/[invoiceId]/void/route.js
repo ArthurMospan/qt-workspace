@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -193,7 +193,7 @@ export async function POST(request, context) {
         }
       });
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.update(invoiceRef, {
         status: 'void',
         voidedAt: now,
@@ -201,8 +201,8 @@ export async function POST(request, context) {
       });
       timeLogRefs.forEach(ref => {
         transaction.update(ref, {
-          invoiceId: admin.firestore.FieldValue.delete(),
-          billedAt: admin.firestore.FieldValue.delete(),
+          invoiceId: FieldValue.delete(),
+          billedAt: FieldValue.delete(),
         });
       });
       timeReservationSnapshots.forEach(snapshot => {
@@ -212,7 +212,7 @@ export async function POST(request, context) {
         if (snapshot.exists) transaction.delete(snapshot.ref);
       });
       transaction.update(projectRef, {
-        invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+        invoiceMutationVersion: FieldValue.increment(1),
         updatedAt: now,
       });
       return { changed: true };

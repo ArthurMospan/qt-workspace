@@ -13,21 +13,22 @@
 //   node --env-file=.env.local scripts/factory-reset.mjs            # dry run (counts)
 //   node --env-file=.env.local scripts/factory-reset.mjs --yes      # DELETE EVERYTHING
 //
-import admin from 'firebase-admin';
+import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const EXECUTE = process.argv.includes('--yes');
 
 function initAdmin() {
-  if (admin.apps.length) return admin.app();
+  if (getApps().length) return getApp();
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  return admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }), projectId });
+  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }), projectId });
 }
 
 async function run() {
   const app = initAdmin();
-  const db = app.firestore();
+  const db = getFirestore(app);
   console.log(`\n🧨 FACTORY RESET on "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}"${EXECUTE ? '' : '  (DRY RUN — no deletes)'}\n`);
 
   const collections = await db.listCollections();

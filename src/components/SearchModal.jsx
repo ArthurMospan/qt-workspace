@@ -5,14 +5,13 @@ import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { ListRow } from '@/components/ui';
-import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-
-const PRIORITY_CFG = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
-const TYPE_CFG = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 
 export default function SearchModal({ isOpen, results, loading, query, onClose, projects }) {
   const router = useRouter();
+  const { types } = useWorkflowConfig();
 
   // Add click-outside listener to close the dropdown
   useEffect(() => {
@@ -71,8 +70,10 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
           ) : (
             <div className="divide-y divide-[#f0f0f0]">
               {results.map(issue => {
-                const type = TYPE_CFG[issue.type] || TYPE_CFG.task;
-                const TypeIcon = type.i;
+                const type = types.find(item => item.id === issue.type)
+                  || types.find(item => item.id === 'task')
+                  || { id: issue.type || 'task', color: '#9a9a9a' };
+                const TypeIcon = taskTypeIcon(type);
                 const project = projects?.find(p => p.id === issue.projectId);
 
                 return (
@@ -85,7 +86,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                       {/* Left: Type Icon */}
                       <div data-ui-surface="local" className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm">
-                        <TypeIcon size={12} style={{ color: type.c }} />
+                        <TypeIcon size={12} style={{ color: type.color }} />
                       </div>
 
                       {/* Content: ID + Title */}

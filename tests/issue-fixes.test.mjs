@@ -299,7 +299,7 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   assert.match(picker, /disabled=\{disabled \|\| isBacklog\}/);
   assert.match(projectRoute, /'update-settings'/);
   assert.match(projectRoute, /columnId: backlogStatusId,\s*status: backlogStatusId/);
-  assert.match(projectRoute, /completedAt: admin\.firestore\.FieldValue\.delete\(\)/);
+  assert.match(projectRoute, /completedAt: FieldValue\.delete\(\)/);
   assert.match(createProjectRoute, /hiddenColumns: requestedHidden/);
   assert.match(createIssueRoute, /\(project\.hiddenColumns \|\| \[\]\)\.includes\(statusCandidate\)/);
   // «Мої завдання» folds away a *category*, not a status name — see

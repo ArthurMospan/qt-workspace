@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { deliverEmail, invitationEmailHtml } from '@/lib/server/email';
 
@@ -84,7 +85,7 @@ export async function POST(request) {
         orgId: organizationId,
         userId,
         role: safeRole,
-        joinedAt: admin.firestore.FieldValue.serverTimestamp(),
+        joinedAt: FieldValue.serverTimestamp(),
         hourlyRate: 0,
         invitedBy: authorization.user.uid,
       });
@@ -92,8 +93,8 @@ export async function POST(request) {
       // project scope has to be applied here or it would be dropped silently.
       invitedProjectIds.forEach(projectId => {
         batch.update(db.collection('projects').doc(projectId), {
-          team: admin.firestore.FieldValue.arrayUnion(userId),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          team: FieldValue.arrayUnion(userId),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       });
       await batch.commit();
@@ -123,7 +124,7 @@ export async function POST(request) {
       role: safeRole,
       projectIds: invitedProjectIds,
       status: 'pending',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
     const emailSent = await sendInvitationEmail(db, {
       email: normalizedEmail,

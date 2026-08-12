@@ -1,32 +1,11 @@
 'use client';
 
-import { auth } from '@/lib/firebase';
 import { sendNotification } from '@/lib/hooks/useNotifications';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 async function authenticatedIssueRequest(url, options, fallbackMessage) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Authentication required');
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...options?.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(result.error || fallbackMessage);
-    error.status = response.status;
-    error.code = result.code || null;
-    Object.entries(result).forEach(([key, value]) => {
-      if (!['error', 'code'].includes(key)) error[key] = value;
-    });
-    throw error;
-  }
-  return result;
+  return authenticatedRequest(url, options, fallbackMessage);
 }
 
 export async function createIssueViaApi({ organizationId, projectId, data }) {

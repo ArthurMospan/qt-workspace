@@ -4,11 +4,21 @@ import {
   isClosingCategory,
   withStatusCategories,
 } from './statusCategories.mjs';
+import {
+  hasValidSystemPriorityStructure,
+  NO_PRIORITY_ID,
+  SYSTEM_PRIORITY_IDS,
+} from './priorities.mjs';
+import {
+  hasSystemTaskType,
+  SYSTEM_TASK_TYPE_ID,
+  taskTypeIconKeyForType,
+} from './taskTypes.mjs';
 
 const SECTION_LIMITS = Object.freeze({
   statuses: { min: 1, max: 50 },
   types: { min: 1, max: 100 },
-  priorities: { min: 1, max: 100 },
+  priorities: { min: 4, max: 100 },
   labels: { min: 0, max: 100 },
   positions: { min: 0, max: 100 },
 });
@@ -45,6 +55,28 @@ function owns(object, key) {
 function normalizeWorkflowSection(section, items) {
   const limits = SECTION_LIMITS[section];
   if (
+    section === 'types'
+    && Array.isArray(items)
+    && !hasSystemTaskType(items)
+  ) {
+    return mutationError(
+      'MISSING_SYSTEM_TASK_TYPE',
+      'Системний тип «Задача» не можна видалити',
+      { section, requiredIds: [SYSTEM_TASK_TYPE_ID] },
+    );
+  }
+  if (
+    section === 'priorities'
+    && Array.isArray(items)
+    && items.length < limits.min
+  ) {
+    return mutationError(
+      'MISSING_SYSTEM_PRIORITIES',
+      'Критичний, високий, середній і низький пріоритети є системними та не можуть бути видалені або переставлені',
+      { section, requiredIds: SYSTEM_PRIORITY_IDS },
+    );
+  }
+  if (
     !Array.isArray(items)
     || items.length < limits.min
     || items.length > limits.max
@@ -73,10 +105,18 @@ function normalizeWorkflowSection(section, items) {
       );
     }
     seen.add(id);
+    if (section === 'priorities' && id === NO_PRIORITY_ID) {
+      return mutationError(
+        'RESERVED_PRIORITY_ID',
+        '«Без пріоритету» є системним станом і не зберігається серед налаштовуваних пріоритетів',
+        { section, id },
+      );
+    }
     const next = { id, label };
     if (typeof item.color === 'string' && item.color.trim()) {
       next.color = item.color.trim().slice(0, 32);
     }
+    if (section === 'types') next.icon = taskTypeIconKeyForType(item);
     if (section === 'statuses') {
       // The category is the shared layer of a status and the only thing that
       // decides whether it closes a task. An unknown value is dropped rather
@@ -93,6 +133,13 @@ function normalizeWorkflowSection(section, items) {
         : 0;
     }
     normalized.push(next);
+  }
+  if (section === 'priorities' && !hasValidSystemPriorityStructure(normalized)) {
+    return mutationError(
+      'MISSING_SYSTEM_PRIORITIES',
+      'Критичний, високий, середній і низький пріоритети є системними та не можуть бути видалені або переставлені',
+      { section, requiredIds: SYSTEM_PRIORITY_IDS },
+    );
   }
   if (section !== 'statuses') return { value: normalized };
 

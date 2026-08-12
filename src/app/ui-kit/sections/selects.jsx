@@ -2,19 +2,22 @@
 import { useState } from 'react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
-import { DEFAULT_STATUSES, DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import { PreviewBlock } from '../preview';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 export default function SelectsSection() {
   const [v1, setV1] = useState('');
   const [v2, setV2] = useState('');
   const [v3, setV3] = useState([]);
-  const [v4, setV4] = useState('');
+  const [v4, setV4] = useState('task');
   const [v5, setV5] = useState([]);
   const [v6, setV6] = useState('in-progress');
 
   const statusOpts = DEFAULT_STATUSES.map(s => ({ value: s.id, label: s.label, dotColor: s.color }));
-  const priorityOpts = DEFAULT_PRIORITIES.map(p => ({ value: p.id, label: p.label, dotColor: p.color }));
+  const priorityOpts = prioritySelectOptions(DEFAULT_PRIORITIES);
+  const typeOpts = DEFAULT_TYPES.map(taskTypeSelectOption);
   // `user` on every option so the previews show the avatar treatment the
   // product actually renders, not a bare list of names.
   const memberOpts = [
@@ -38,7 +41,7 @@ export default function SelectsSection() {
       {/* ─── Ghost Select & MultiSelect ─── */}
       <PreviewBlock title="Ghost Select & MultiSelect" description="Безмежові селектори для панелей фільтрів (FilterBar). Висота: 28px (вбудована в FilterBar висотою 36px). Кольори: фон transparent (hover #ebebeb), текст #1f1f1f, маркер #9a9a9a. Скруглення: 8px. Активуються при наведенні, мають уніфікований шрифт (font-medium). Контекст context=&quot;stacked&quot; розтягує кожен контрол на всю ширину — його використовує PageHeader у мобільній модалці фільтрів." fullWidth>
         <FilterBar>
-          <Select filterRole="type" options={statusOpts} value={v4} onChange={setV4} placeholder="Всі статуси" variant="ghost" />
+          <Select filterRole="type" options={typeOpts} value={v4} onChange={setV4} placeholder="Всі типи" variant="ghost" />
           <MultiSelect filterRole="member" options={memberOpts} value={v5} onChange={setV5} placeholder="Всі виконавці" searchPlaceholder="Шукати..." variant="ghost" />
         </FilterBar>
       </PreviewBlock>

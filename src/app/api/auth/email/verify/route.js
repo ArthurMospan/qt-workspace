@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, getAdminAuth } from '@/lib/server/firebaseAdmin';
+import { getAdminAuth } from '@/lib/server/firebaseAdmin';
 import {
   EMAIL_OTP_MAX_ATTEMPTS,
   getEmailOtpRef,
@@ -42,8 +43,8 @@ export async function POST(request) {
     const codeHash = hashEmailOtp(email, token);
     if (!safeCompareHex(codeHash, otp.codeHash)) {
       await otpRef.update({
-        attempts: admin.firestore.FieldValue.increment(1),
-        lastAttemptAt: admin.firestore.FieldValue.serverTimestamp(),
+        attempts: FieldValue.increment(1),
+        lastAttemptAt: FieldValue.serverTimestamp(),
       });
       return NextResponse.json({ error: 'Invalid login code' }, { status: 401 });
     }

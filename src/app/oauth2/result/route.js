@@ -1,6 +1,7 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
-import { admin, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 import {
   getOauthTokenCookieOptions,
   OAUTH_CUSTOM_TOKEN_COOKIE,
@@ -181,7 +182,7 @@ async function updateOneBUser(userRecord, profile, resolvedEmail, displayName, p
     onebWorkspace: profile.workspace ?? null,
     onebWorkspaceId: profile.tenantId ?? null,
     authProvider: 'oneb',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
   if (!userSnap.exists) {
     profileData.role = 'user';

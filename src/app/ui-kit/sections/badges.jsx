@@ -1,8 +1,18 @@
 'use client';
-import { Pill, PriorityBadge, TypeBadge, Tag, Counter, UserAvatar, StatusPill } from '@/components/ui';
-import { DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { Pill, PriorityBadge, PriorityIcon, TypeBadge, Tag, Counter, UserAvatar, StatusPill } from '@/components/ui';
+import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { NO_PRIORITY } from '@/lib/utils/priorities.mjs';
 import { Lock } from 'lucide-react';
 import { PreviewBlock } from '../preview';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
+
+const PREVIEW_PRIORITIES = [
+  DEFAULT_PRIORITIES[0],
+  DEFAULT_PRIORITIES[1],
+  { id: 'important', label: 'Важливий', color: '#8b5cf6' },
+  DEFAULT_PRIORITIES[2],
+  DEFAULT_PRIORITIES[3],
+];
 
 export default function BadgesSection() {
   return (
@@ -69,8 +79,27 @@ export default function BadgesSection() {
         filePath="src/components/ui/DataDisplay/TypeBadge.jsx"
       >
         <div className="flex flex-wrap items-center gap-[8px]">
-          {DEFAULT_TYPES.map(type => (
-            <TypeBadge key={type.id} label={type.label} color={type.color} />
+          {[...DEFAULT_TYPES, {
+            id: 'customer-request',
+            label: 'Власний тип',
+            color: '#8b5cf6',
+          }].map(type => (
+            <TypeBadge key={type.id} label={type.label} color={type.color} icon={taskTypeIcon(type)} />
+          ))}
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PriorityIcon — system and custom priority language"
+        description="Без пріоритету має пунктирне кільце; низький, середній і високий послідовно активують вкладені кільця; критичний має !."
+        component="PriorityIcon"
+      >
+        <div className="flex flex-wrap items-center gap-5">
+          {[NO_PRIORITY, ...[...PREVIEW_PRIORITIES].reverse()].map(priority => (
+            <div key={priority.id} className="flex items-center gap-2 text-[12px] font-medium text-ink">
+              <PriorityIcon priority={priority} priorities={PREVIEW_PRIORITIES} size="md" />
+              <span>{priority.label}</span>
+            </div>
           ))}
         </div>
       </PreviewBlock>
@@ -81,11 +110,11 @@ export default function BadgesSection() {
         filePath="src/components/workspace/BillingTab.jsx"
       >
         <div className="flex items-center gap-[8px]">
-          <PriorityBadge priority="low" />
-          <PriorityBadge priority="medium" />
-          <PriorityBadge priority="high" />
-          <PriorityBadge priority="blocker" />
-          <PriorityBadge priority="info" />
+          <PriorityBadge priority="none" priorities={DEFAULT_PRIORITIES} />
+          <PriorityBadge priority="low" priorities={DEFAULT_PRIORITIES} />
+          <PriorityBadge priority="medium" priorities={DEFAULT_PRIORITIES} />
+          <PriorityBadge priority="high" priorities={DEFAULT_PRIORITIES} />
+          <PriorityBadge priority="blocker" priorities={DEFAULT_PRIORITIES} />
         </div>
       </PreviewBlock>
 

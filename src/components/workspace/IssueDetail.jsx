@@ -39,7 +39,7 @@ import { MultiSelect, Select } from '@/components/ui/Select';
 import { AttributeTrigger, ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
+import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
@@ -48,7 +48,8 @@ import {
   Link2, Copy, Sparkles, Tag as TagIcon,
   Maximize2, ListTree,
 } from 'lucide-react';
-import { TaskIcon } from '@/lib/design/icons';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
@@ -278,15 +279,14 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const activeHiddenCols = project?.hiddenColumns || [];
   const visibleStatuses = STATUSES.filter(s => !activeHiddenCols.includes(s.id));
 
-  // Build TYPES and PRIORITIES with icon mapping preserved
+  // Build type metadata while priority visuals stay in the shared PriorityIcon.
   const TYPES = rawTypes.map(t => ({
     ...t,
-    icon: TYPE_ICONS[t.id] || TaskIcon,
+    icon: taskTypeIcon(t),
     color: t.color || DEFAULT_TYPES.find(d => d.id === t.id)?.color || '#9a9a9a',
   }));
   const PRIORITIES = rawPriorities.map(p => ({
     ...p,
-    icon: PRIORITY_ICONS[p.id] || Minus,
     color: p.color || DEFAULT_PRIORITIES.find(d => d.id === p.id)?.color || '#9a9a9a',
   }));
 
@@ -454,7 +454,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     id: 'epic',
     label: 'Епік (legacy)',
     color: '#8b5cf6',
-    icon: TYPE_ICONS.epic || TaskIcon,
+    icon: taskTypeIcon('epic'),
   };
   const creatableTypes = TYPES.filter(type => type.id !== 'epic');
   const EDITABLE_TYPES = issue.type === 'epic'
@@ -467,12 +467,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     || EDITABLE_TYPES.find(t => t.id === 'task')
     || EDITABLE_TYPES[0]
     || legacyEpicType;
-  const priorityCfg = PRIORITIES.find(p => p.id === (isEditing ? draft.priority : issue.priority))
-    || PRIORITIES.find(p => p.id === 'medium')
-    || PRIORITIES[0];
   const statusCfg   = STATUSES.find(s => s.id === issue.columnId)                             || STATUSES[0];
   const TypeIcon    = typeCfg.icon;
-  const PrioIcon    = priorityCfg.icon;
 
   const due       = parseDueDate(issue.dueDate);
   const isOverdue = due && due < new Date() && !closedStatusIds.includes(issue.columnId || issue.status);
@@ -1258,7 +1254,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                               update({ priority: val });
                               if (isEditing) setDraft(current => ({ ...current, priority: val }));
                             }}
-                            options={PRIORITIES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))}
+                            options={prioritySelectOptions(PRIORITIES)}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -1270,7 +1266,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                               update({ type: val });
                               if (isEditing) setDraft(current => ({ ...current, type: val }));
                             }}
-                            options={EDITABLE_TYPES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))}
+                            options={EDITABLE_TYPES.map(item => ({ value: item.id, label: item.label, icon: item.icon }))}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">

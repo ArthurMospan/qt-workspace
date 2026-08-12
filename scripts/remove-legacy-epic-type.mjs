@@ -8,7 +8,8 @@
 // Without --apply it only reports what it would do.
 
 import { readFileSync } from 'node:fs';
-import admin from 'firebase-admin';
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const apply = process.argv.includes('--apply');
 
@@ -27,16 +28,16 @@ const env = Object.fromEntries(
 const projectId = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 if (!projectId) throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not configured');
 
-admin.initializeApp({
+const app = initializeApp({
   projectId,
-  credential: admin.credential.cert({
+  credential: cert({
     projectId,
     clientEmail: env.FIREBASE_CLIENT_EMAIL,
     privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   }),
 });
 
-const db = admin.firestore();
+const db = getFirestore(app);
 console.log(`Firebase project: ${projectId} — ${apply ? 'APPLY' : 'dry run'}`);
 
 const organizations = await db.collection('organizations').get();

@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
 
@@ -31,7 +32,7 @@ export async function POST(request) {
     const uses = Math.min(Math.max(Number(maxUses) || DEFAULT_USES, 1), MAX_USES);
 
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + days * 24 * 60 * 60 * 1000);
+    const expiresAt = Timestamp.fromMillis(Date.now() + days * 24 * 60 * 60 * 1000);
 
     const db = getAdminDb();
     await db.collection('invitations').add({
@@ -41,7 +42,7 @@ export async function POST(request) {
       role: safeRole,
       status: 'pending',
       invitedBy: authorization.user.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt,
       maxUses: uses,
       usedCount: 0,

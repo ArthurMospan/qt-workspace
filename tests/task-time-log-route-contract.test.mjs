@@ -82,10 +82,10 @@ test('task time-log PATCH and DELETE use live log state and mutation locks', asy
   assert.match(server, /TASK_TIME_MIRROR_RECONCILIATION_REQUIRED/);
   assert.match(
     server,
-    /issueUpdates\.spentMinutes = admin\.firestore\.FieldValue\.increment\(spentMinutesDelta\)/,
+    /issueUpdates\.spentMinutes = FieldValue\.increment\(spentMinutesDelta\)/,
   );
-  assert.match(server, /timeLogMutationVersion: admin\.firestore\.FieldValue\.increment\(1\)/);
-  assert.match(server, /invoiceMutationVersion: admin\.firestore\.FieldValue\.increment\(1\)/);
+  assert.match(server, /timeLogMutationVersion: FieldValue\.increment\(1\)/);
+  assert.match(server, /invoiceMutationVersion: FieldValue\.increment\(1\)/);
 });
 
 test('YouTrack work-log writes share the estimate-reservation lock', async () => {
@@ -161,7 +161,7 @@ test('all trusted issue creators initialize the accounting mirror', async () => 
   assert.match(youtrack, /spentMinutesMirrorVersion:\s*1/);
   assert.match(
     youtrack,
-    /invoiceMutationVersion: admin\.firestore\.FieldValue\.increment\(1\)/,
+    /invoiceMutationVersion: FieldValue\.increment\(1\)/,
   );
 });
 

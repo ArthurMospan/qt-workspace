@@ -16,6 +16,7 @@ import {
 import { CalendarIcon } from '@/lib/design/icons';
 import { getFilterControlWidth } from './FilterBar';
 import UserAvatar from './DataDisplay/UserAvatar';
+import PriorityIcon from './DataDisplay/PriorityIcon';
 
 // UI Kit Select Component
 // Named form-control sizes match Input and Button.
@@ -53,6 +54,11 @@ function OptionIdentity({ option, size = 14 }) {
       />
     </span>
   );
+}
+
+function OptionPriority({ option }) {
+  if (!option?.priorityMark) return null;
+  return <PriorityIcon priority={option.priorityMark} />;
 }
 
 function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
@@ -266,6 +272,7 @@ export function Select({
           {selectedOption?.dotColor && (
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
           )}
+          <OptionPriority option={selectedOption} />
           <OptionIdentity option={selectedOption} />
           {selectedOption?.icon && (
             <selectedOption.icon size={14} className="text-muted shrink-0" />
@@ -313,6 +320,7 @@ export function Select({
                   {opt.dotColor && (
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                   )}
+                  <OptionPriority option={opt} />
                   <OptionIdentity option={opt} />
                   {opt.icon && (
                     <opt.icon size={14} className={value === opt.value ? 'text-ink' : 'text-muted'} />
@@ -345,7 +353,7 @@ export function Select({
  *
  * @param {string[]} props.value Selected option values.
  * @param {(values: string[]) => void} props.onChange Fires with the new selection.
- * @param {{value: string, label: string, icon?, color?, user?}[]} props.options The choices.
+ * @param {{value: string, label: string, icon?, color?, user?, priorityMark?}[]} props.options The choices.
  * @param {'sm'|'md'|'lg'} props.size Control height token.
  * @param {'default'|'ghost'|'inline'} props.variant How much chrome the trigger draws.
  * @param {boolean} props.disabled Unavailable: the trigger is dimmed and will not open.
@@ -558,6 +566,7 @@ export function MultiSelect({
                     {opt.dotColor && (
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
                     )}
+                    <OptionPriority option={opt} />
                     <OptionIdentity option={opt} />
                     {opt.icon && (
                       <opt.icon size={14} className={isSelected ? 'text-ink' : 'text-muted'} />

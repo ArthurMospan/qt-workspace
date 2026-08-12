@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -364,12 +364,12 @@ export async function POST(request, context) {
         projectId: loadedIssue.projectId,
         ...requested,
         createdBy: authorization.user.uid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       };
       transaction.create(canonicalRef, payload);
       transaction.update(projectRef, {
-        issueLinkVersion: admin.firestore.FieldValue.increment(1),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        issueLinkVersion: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return {
         id: canonicalId,
@@ -495,8 +495,8 @@ export async function DELETE(request, context) {
 
       refs.forEach(ref => transaction.delete(ref));
       transaction.update(projectRef, {
-        issueLinkVersion: admin.firestore.FieldValue.increment(1),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        issueLinkVersion: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return refs.length;
     });

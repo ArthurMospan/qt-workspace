@@ -1,5 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
@@ -18,12 +19,13 @@ import {
 } from '@/lib/utils/issueHierarchyModel.mjs';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { issueParentStatusConflict } from '@/lib/utils/issueStatusTransition.mjs';
 
 function normalizedDate(value) {
   if (value == null || value === '') return null;
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? admin.firestore.Timestamp.fromDate(date) : undefined;
+  return Number.isFinite(date.getTime()) ? Timestamp.fromDate(date) : undefined;
 }
 
 function hierarchyTransactionError(details) {
@@ -210,6 +212,7 @@ export async function POST(request) {
         freshWorkflow.priorities,
         DEFAULT_PRIORITY_IDS,
       ));
+      freshPriorityIds.add(NO_PRIORITY_ID);
       const freshTypeSelection = resolveNewIssueType(
         data.type,
         workflowIds(freshWorkflow.types, DEFAULT_TYPE_IDS),
@@ -279,7 +282,7 @@ export async function POST(request) {
         organizationId: project.organizationId,
       });
       issueKey = `${issuePrefix}-${next}`;
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       const payload = {
         issueKey,
         organizationId,
@@ -322,7 +325,7 @@ export async function POST(request) {
         ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
         updatedAt: now,
         ...(parentIssueId
-          ? { issueHierarchyVersion: admin.firestore.FieldValue.increment(1) }
+          ? { issueHierarchyVersion: FieldValue.increment(1) }
           : {}),
       });
       transaction.create(issueRef.collection('audit').doc(), {

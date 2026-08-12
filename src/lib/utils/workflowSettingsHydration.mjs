@@ -1,5 +1,7 @@
 import { localizeBuiltInWorkflowItems } from './workflowDefaults.mjs';
 import { withStatusCategories } from './statusCategories.mjs';
+import { ensureSystemPriorities } from './priorities.mjs';
+import { ensureSystemTaskType } from './taskTypes.mjs';
 
 export const WORKFLOW_SETTINGS_SECTIONS = Object.freeze([
   'statuses',
@@ -30,7 +32,11 @@ export function hydrateWorkflowSettings(storedWorkflow, defaults) {
     // autosave baseline, so opening Settings never writes on its own.
     const resolved = section === 'statuses'
       ? withStatusCategories(localized)
-      : localized;
+      : section === 'priorities'
+        ? ensureSystemPriorities(localized)
+        : section === 'types'
+          ? ensureSystemTaskType(localized)
+          : localized;
 
     // Give each organization its own in-memory objects as well as arrays.
     return [section, resolved.map(item => ({ ...item }))];

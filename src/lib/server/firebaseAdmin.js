@@ -1,10 +1,31 @@
 import 'server-only';
 
-import admin from 'firebase-admin';
+import {
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import {
+  FieldPath,
+  FieldValue,
+  Timestamp,
+  getFirestore,
+} from 'firebase-admin/firestore';
 import { createHash, timingSafeEqual } from 'node:crypto';
 
+const REJECTED_ID_TOKEN_CODES = new Set([
+  'auth/argument-error',
+  'auth/id-token-expired',
+  'auth/id-token-revoked',
+  'auth/invalid-id-token',
+  'auth/user-disabled',
+  'auth/user-not-found',
+]);
+
 function getAdminApp() {
-  if (admin.apps.length) return admin.app();
+  if (getApps().length) return getApp();
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -14,31 +35,65 @@ function getAdminApp() {
 
   const options = { projectId };
   if (clientEmail && privateKey) {
-    options.credential = admin.credential.cert({ projectId, clientEmail, privateKey });
+    options.credential = cert({ projectId, clientEmail, privateKey });
   }
 
-  return admin.initializeApp(options);
+  return initializeApp(options);
 }
 
 export function getAdminAuth() {
-  return getAdminApp().auth();
+  return getAuth(getAdminApp());
 }
 
 export function getAdminDb() {
-  return getAdminApp().firestore();
+  return getFirestore(getAdminApp());
 }
 
 export async function authenticateRequest(request) {
   const authorization = request.headers.get('authorization') || '';
-  if (!authorization.startsWith('Bearer ')) return { error: 'Unauthorized', status: 401 };
+  if (!authorization.startsWith('Bearer ')) {
+    console.error('[auth] Missing bearer token', {
+      hasAuthorizationHeader: Boolean(authorization),
+      scheme: authorization.split(' ', 1)[0] || '',
+    });
+    return { error: 'Unauthorized', status: 401 };
+  }
 
   const token = authorization.slice('Bearer '.length).trim();
-  if (!token) return { error: 'Unauthorized', status: 401 };
+  if (!token) {
+    console.error('[auth] Empty bearer token');
+    return { error: 'Unauthorized', status: 401 };
+  }
 
   try {
     return { user: await getAdminAuth().verifyIdToken(token, true) };
-  } catch {
-    return { error: 'Invalid or expired token', status: 401 };
+  } catch (error) {
+    const firebaseCode = error?.code || '';
+    const tokenWasRejected = REJECTED_ID_TOKEN_CODES.has(firebaseCode);
+    // Never log the bearer token. The Firebase error code is enough to tell an
+    // actually expired/revoked session from an Admin SDK credential or project
+    // mismatch, which otherwise collapses into the same user-facing 401.
+    console.error('[auth] Firebase ID token rejected', {
+      code: firebaseCode || 'unknown',
+      name: error?.name || error?.constructor?.name || 'Error',
+      message: typeof error?.message === 'string'
+        ? error.message.slice(0, 240)
+        : '',
+      causeCode: error?.cause?.code || '',
+      expectedProjectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+    });
+    if (tokenWasRejected) {
+      return {
+        error: 'Invalid or expired token',
+        status: 401,
+        code: firebaseCode,
+      };
+    }
+    return {
+      error: 'Authentication service is temporarily unavailable',
+      status: 503,
+      code: 'AUTH_SERVICE_UNAVAILABLE',
+    };
   }
 }
 
@@ -99,14 +154,14 @@ export async function enforceRateLimit(scope, subject, limit, windowSeconds) {
     if (!data || resetAt <= now) {
       transaction.set(ref, {
         count: 1,
-        resetAt: admin.firestore.Timestamp.fromMillis(now + windowSeconds * 1000),
+        resetAt: Timestamp.fromMillis(now + windowSeconds * 1000),
       });
       return true;
     }
     if ((data.count || 0) >= limit) return false;
-    transaction.update(ref, { count: admin.firestore.FieldValue.increment(1) });
+    transaction.update(ref, { count: FieldValue.increment(1) });
     return true;
   });
 }
 
-export { admin };
+export { FieldPath, FieldValue, Timestamp };

@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { deliverEmail } from '@/lib/server/email';
@@ -117,7 +118,7 @@ export async function POST(request) {
         // The document still has to exist as the dedupe claim below; the bell
         // filters it out.
         inapp,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
 
     // One claim per recipient, covering every channel. The notification document

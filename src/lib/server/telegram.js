@@ -1,7 +1,8 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { formatTelegramNotification } from '@/lib/utils/telegramMessage.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
@@ -266,7 +267,7 @@ export async function createIssueFromTelegram({
       organizationId,
     });
     issueKey = `${issuePrefix}-${next}`;
-    const now = admin.firestore.FieldValue.serverTimestamp();
+    const now = FieldValue.serverTimestamp();
     transaction.create(issueRef, {
       issueKey,
       organizationId,

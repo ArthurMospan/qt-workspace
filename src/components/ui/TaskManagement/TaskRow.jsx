@@ -16,21 +16,9 @@ import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-
-function hexToRgba(hex, alpha) {
-  let r = 0, g = 0, b = 0;
-  if (!hex) return `rgba(154,154,154,${alpha})`;
-  if (hex.length === 4) {
-    r = parseInt(hex[1] + hex[1], 16);
-    g = parseInt(hex[2] + hex[2], 16);
-    b = parseInt(hex[3] + hex[3], 16);
-  } else if (hex.length === 7) {
-    r = parseInt(hex.substring(1, 3), 16);
-    g = parseInt(hex.substring(3, 5), 16);
-    b = parseInt(hex.substring(5, 7), 16);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
-}
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
+import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
+import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 
 function fmtDate(raw) {
   if (!raw) return null;
@@ -93,13 +81,7 @@ export default function TaskRow({
   };
   const typeLabel = typeObj.label;
 
-  const priObj = priorities.find(p => p.id === task.priority) || priorities[0];
-  const pri = {
-    label: priObj ? priObj.label.toUpperCase() : 'СЕРЕДНІЙ',
-    dot: priObj ? priObj.color : '#eab308',
-    glow: priObj ? hexToRgba(priObj.color, 0.05) : 'transparent',
-    bg: priObj ? hexToRgba(priObj.color, 0.08) : '#fefce8'
-  };
+  const priorityConfig = priorityPresentation(task.priority, priorities);
 
   const assignees = (task.assigneeIds || task.assignees || [])
     .map(uid => members.find(m => (m.id || m.uid) === uid))
@@ -159,14 +141,8 @@ export default function TaskRow({
       }}
       className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
-      {/* Priority Left Indicator Bar - Rounded Pill */}
-      <div 
-        className="absolute left-[4px] top-[8px] bottom-[8px] w-[4px] rounded-full transition-all duration-200 group-hover:w-[5px]"
-        style={{ backgroundColor: pri.dot }}
-      />
-
       {/* Main Row Grid/Flex */}
-      <div className="pl-[12px] flex items-center justify-between w-full flex-wrap md:flex-nowrap gap-[16px] min-w-0">
+      <div className="flex items-center justify-between w-full flex-wrap md:flex-nowrap gap-[16px] min-w-0">
         
         {/* Left Section: Title & ID (2 lines) */}
         <div className="flex flex-col gap-[2px] min-w-0 flex-1">
@@ -242,12 +218,14 @@ export default function TaskRow({
 
         {/* Right Section: Metadata, Badges, Assignees */}
         <div className="flex items-center gap-[16px] shrink-0 flex-wrap md:flex-nowrap">
+          <PriorityIcon priority={priorityConfig} size="md" />
           
           {/* Type Badge */}
           {typeObj && (
             <TypeBadge
               label={typeLabel}
               color={typeObj.color || '#9a9a9a'}
+              icon={taskTypeIcon(typeObj)}
             />
           )}
 

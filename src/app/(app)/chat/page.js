@@ -38,6 +38,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { messageMatchesChatSearch } from '@/lib/utils/chatAttachments.mjs';
 import { useSearch } from '@/lib/hooks/useSearch';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 
 // ─── Message Input ───────────────────────────────────────────────────────────
 function MessageInput({
@@ -456,6 +457,7 @@ export default function ChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { members } = useOrganization();
+  const { positions = [] } = useWorkflowConfig();
   const showToast = useWorkspaceStore(s => s.showToast);
   const chatSearch = useWorkspaceStore(s => s.chatSearch);
   const setChatSearch = useWorkspaceStore(s => s.setChatSearch);
@@ -691,19 +693,39 @@ export default function ChatPage() {
     return counts;
   }, [activeOrgId, notifications]);
 
+  // Chat presence is the live organization-scoped source. Membership profiles
+  // are fetched separately and their `lastActive` snapshot can remain stale for
+  // the whole session, which used to make even the signed-in user look offline
+  // inside a mention hover card.
+  const membersWithPresence = useMemo(() => members.map(member => {
+    const id = member.id || member.uid;
+    const hasPresence = Object.prototype.hasOwnProperty.call(presenceMap, id);
+    const lastActive = id === myUid
+      ? now
+      : (hasPresence ? presenceMap[id] : member.lastActive);
+    const positionName = positions.find(position => position.id === member.positionId)?.label;
+
+    return {
+      ...member,
+      lastActive,
+      online: id === myUid || Boolean(
+        lastActive && now - new Date(lastActive).getTime() < 2 * 60 * 1000
+      ),
+      ...(positionName ? { positionName } : {}),
+    };
+  }), [members, myUid, now, positions, presenceMap]);
+
   const dms = useMemo(() => {
     const activeDMSet = new Set(activeDMs);
     if (activeChannel.type === 'dm') activeDMSet.add(activeChannel.id);
-    return members
+    return membersWithPresence
     .filter(m => (m.uid || m.id) !== myUid)
     .map(m => {
       const id = m.uid || m.id;
-      const hasPresence = Object.prototype.hasOwnProperty.call(presenceMap, id);
-      const lastActive = hasPresence ? presenceMap[id] : m.lastActive;
       return {
         id,
         name: m.name || m.email,
-        online: lastActive && (now - new Date(lastActive).getTime() < 15 * 60 * 1000),
+        online: m.online,
         avatar: m.avatar,
         isActive: activeDMSet.has(id),
         statusEmoji: m.statusEmoji,
@@ -723,20 +745,20 @@ export default function ChatPage() {
       if (a.isActive !== b.isActive) return b.isActive ? 1 : -1;
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [activeDMs, activeChannel.id, activeChannel.type, dmChannels, members, myUid, now, presenceMap, readState, unreadDMNotifications]);
+  }, [activeDMs, activeChannel.id, activeChannel.type, dmChannels, membersWithPresence, myUid, readState, unreadDMNotifications]);
 
   const isActive = (id) => activeChannel.id === id;
   const activeThreadParent = activeThreadId ? messages.find(m => m.id === activeThreadId) : null;
   const currentChannel = channels.find(c => c.id === activeChannel.id);
   const mentionMembers = useMemo(() => {
     if (activeChannel.type === 'dm') {
-      return members.filter(member => (member.id || member.uid) === activeChannel.id);
+      return membersWithPresence.filter(member => (member.id || member.uid) === activeChannel.id);
     }
     if (currentChannel?.members?.length) {
-      return members.filter(member => currentChannel.members.includes(member.id || member.uid));
+      return membersWithPresence.filter(member => currentChannel.members.includes(member.id || member.uid));
     }
-    return members;
-  }, [activeChannel.id, activeChannel.type, currentChannel, members]);
+    return membersWithPresence;
+  }, [activeChannel.id, activeChannel.type, currentChannel, membersWithPresence]);
 
   // Sync online users to global header
   const onlineUsersForHeader = useMemo(() => dms
@@ -1194,7 +1216,7 @@ export default function ChatPage() {
                 setUnreadBadge(0);
               }}
               myUid={myUid}
-              members={members}
+              members={membersWithPresence}
               onReact={handleReaction}
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}

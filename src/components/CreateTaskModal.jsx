@@ -19,6 +19,9 @@ import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import { fromDateInput } from '@/lib/utils/date';
 import Tabs from '@/components/ui/Tabs';
 import AudioTaskPanel from '@/components/AudioTaskPanel';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import Alert from '@/components/ui/Feedback/Alert';
 
 
 
@@ -233,6 +236,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           onSubmit={handleSubmit}
           className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:p-7 lg:grid-cols-2"
         >
+          {error && (
+            <div role="alert" className="lg:col-span-2">
+              <Alert
+                variant="error"
+                title="Не вдалося створити завдання"
+                description={error}
+              />
+            </div>
+          )}
+
           {/* Title */}
           <FormGroup label="Назва" required error={fieldErrors.title} className="lg:col-span-2">
             <Input
@@ -275,11 +288,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.type}
                 onChange={val => set('type', val)}
-                options={creatableTypes.map(t => ({
-                  value: t.id,
-                  label: t.label,
-                  dotColor: t.color,
-                }))}
+                options={creatableTypes.map(taskTypeSelectOption)}
                 placeholder={creatableTypes.length > 0 ? 'Оберіть тип' : 'Додайте тип у налаштуваннях'}
               />
             </div>
@@ -288,11 +297,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
               <Select
                 value={form.priority}
                 onChange={val => set('priority', val)}
-                options={priorities.map(p => ({
-                  value: p.id,
-                  label: p.label,
-                  dotColor: p.color,
-                }))}
+                options={prioritySelectOptions(priorities)}
               />
             </div>
             <div className="flex flex-col gap-[6px]">
@@ -395,9 +400,6 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             </div>
           )}
 
-          {error && (
-            <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded-[8px] px-4 py-2 lg:col-span-2">{error}</p>
-          )}
         </form>
         ) : (
           <div className="flex-1 overflow-y-auto p-5 sm:p-7">

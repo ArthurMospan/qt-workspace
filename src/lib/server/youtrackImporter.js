@@ -1,8 +1,9 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { createHash, randomUUID } from 'node:crypto';
 import { v2 as cloudinary } from 'cloudinary';
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { youTrackClientFor } from '@/lib/server/youtrackIntegration';
 import {
   fieldMinutes,
@@ -91,7 +92,7 @@ function externalLinkRef(organizationId, connectionId, entityType, externalId) {
 
 function timestamp(value, fallback = null) {
   const date = value instanceof Date ? value : new Date(value);
-  return Number.isFinite(date.getTime()) ? admin.firestore.Timestamp.fromDate(date) : fallback;
+  return Number.isFinite(date.getTime()) ? Timestamp.fromDate(date) : fallback;
 }
 
 function serializeJob(snapshot) {
@@ -145,8 +146,8 @@ async function claimImportStep(jobRef, organizationId) {
 
     transaction.update(jobRef, {
       stepLeaseId: leaseId,
-      stepLeaseUntil: admin.firestore.Timestamp.fromMillis(now + IMPORT_STEP_LEASE_MS),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      stepLeaseUntil: Timestamp.fromMillis(now + IMPORT_STEP_LEASE_MS),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     claimedJob = { id: snapshot.id, ...data };
   });
@@ -174,8 +175,8 @@ async function commitClaimedStep(jobRef, leaseId, {
 
     transaction.update(jobRef, {
       ...updates,
-      stepLeaseId: admin.firestore.FieldValue.delete(),
-      stepLeaseUntil: admin.firestore.FieldValue.delete(),
+      stepLeaseId: FieldValue.delete(),
+      stepLeaseUntil: FieldValue.delete(),
     });
     if (itemRef && itemUpdates) transaction.set(itemRef, itemUpdates, { merge: true });
   });
@@ -186,9 +187,9 @@ async function releaseImportStep(jobRef, leaseId) {
     const snapshot = await transaction.get(jobRef);
     if (!snapshot.exists || snapshot.data().stepLeaseId !== leaseId) return;
     transaction.update(jobRef, {
-      stepLeaseId: admin.firestore.FieldValue.delete(),
-      stepLeaseUntil: admin.firestore.FieldValue.delete(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      stepLeaseId: FieldValue.delete(),
+      stepLeaseUntil: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 }
@@ -247,7 +248,7 @@ async function saveExternalActors(job, actors) {
       name: actor.name,
       email: actor.email,
       avatar: actor.avatar,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
   });
 }
@@ -305,8 +306,8 @@ async function ensureTargetProject(job, sourceProject) {
       source: 'youtrack',
       externalKey: sourceProject.shortName,
       createdBy: job.createdBy,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.create(linkRef, {
       provider: 'youtrack',
@@ -316,11 +317,11 @@ async function ensureTargetProject(job, sourceProject) {
       externalId: sourceProject.id,
       externalReadableId: sourceProject.shortName,
       quickTeamId: projectRef.id,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.update(db.collection('organizations').doc(job.organizationId), {
-      projectMutationVersion: admin.firestore.FieldValue.increment(1),
+      projectMutationVersion: FieldValue.increment(1),
     });
   });
 
@@ -503,7 +504,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
   const tags = sourceTags(issue);
   const dueDate = fieldTimestamp(youTrackField(issue, 'Due Date'));
   const estimateMinutes = fieldMinutes(youTrackField(issue, 'Estimation'));
-  const sourceCreatedAt = timestamp(issue.created, admin.firestore.Timestamp.now());
+  const sourceCreatedAt = timestamp(issue.created, Timestamp.now());
   const sourceUpdatedAt = timestamp(issue.updated, sourceCreatedAt);
 
   const importedFields = {
@@ -671,7 +672,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
         acceptedWorkflowFields.status = nextStatus;
         acceptedWorkflowFields.completedAt = closedStatusSet.has(nextStatus)
           ? timestamp(issue.resolved || issue.updated, sourceUpdatedAt)
-          : admin.firestore.FieldValue.delete();
+          : FieldValue.delete();
       }
       transaction.set(existingIssue.ref, {
         ...importedFields,
@@ -679,12 +680,12 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       }, { merge: true });
       transaction.set(linkRef, {
         externalUpdatedAt: sourceUpdatedAt,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       if (!transitionError && currentStatus !== nextStatus) {
         transaction.update(projectRef, {
-          issueStatusVersion: admin.firestore.FieldValue.increment(1),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          issueStatusVersion: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       }
       return {
@@ -764,7 +765,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     });
     transaction.update(projectRef, {
       issueCounter: next,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.create(linkRef, {
       provider: 'youtrack',
@@ -775,8 +776,8 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       externalReadableId: String(issue.idReadable || ''),
       quickTeamId: issueRef.id,
       externalUpdatedAt: sourceUpdatedAt,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.create(issueRef.collection('audit').doc(`import_${hashId(job.connectionId, issue.id).slice(0, 24)}`), {
       userId: job.createdBy,
@@ -817,7 +818,7 @@ async function importComments({ job, issueId, projectId, comments }) {
         replyTo: null,
         source: 'youtrack',
         sourceId: String(comment.id),
-        createdAt: timestamp(comment.created, admin.firestore.Timestamp.now()),
+        createdAt: timestamp(comment.created, Timestamp.now()),
         ...(comment.updated && comment.updated !== comment.created
           ? { editedAt: timestamp(comment.updated) }
           : {}),
@@ -897,7 +898,7 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
         organizationId: job.organizationId,
         spentMinutes,
         description: String(item.text || item.type?.name || '').slice(0, 5_000),
-        loggedAt: timestamp(item.date || item.created, admin.firestore.Timestamp.now()),
+        loggedAt: timestamp(item.date || item.created, Timestamp.now()),
         source: 'youtrack',
         sourceId: String(item.id),
         externalActor: actor.external ? actor : null,
@@ -1028,14 +1029,14 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
       transaction.update(issueRef, {
         spentMinutes: initializeSpentMinutesMirror
           ? mirrorTransition.next
-          : admin.firestore.FieldValue.increment(spentMinutesDelta),
+          : FieldValue.increment(spentMinutesDelta),
         spentMinutesMirrorVersion: 1,
-        timeLogMutationVersion: admin.firestore.FieldValue.increment(1),
+        timeLogMutationVersion: FieldValue.increment(1),
       });
       transaction.update(projectRef, {
-        timeLogImportVersion: admin.firestore.FieldValue.increment(1),
-        invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        timeLogImportVersion: FieldValue.increment(1),
+        invoiceMutationVersion: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return skippedIds;
     });
@@ -1099,7 +1100,7 @@ async function enqueueLinks(jobRef, job, sourceIssue, links) {
           transaction.create(snapshot.ref, {
             ...row,
             status: 'pending',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
           });
           return;
         }
@@ -1120,7 +1121,7 @@ async function enqueueLinks(jobRef, job, sourceIssue, links) {
             relationType: strongest.relationType,
             hierarchyHint: strongest.hierarchyHint === true,
             externalRelation: strongest.externalRelation,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         }
       });
@@ -1193,7 +1194,7 @@ async function processPendingLink(jobRef, job) {
     await rowSnapshot.ref.update({
       status: 'skipped',
       reason: 'Пов’язана задача не входить до імпорту',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { skipped: true };
   }
@@ -1216,7 +1217,7 @@ async function processPendingLink(jobRef, job) {
     await rowSnapshot.ref.update({
       status: 'skipped',
       reason: 'Зв’язок між різними проєктами або недоступними задачами не імпортовано',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { skipped: true };
   }
@@ -1235,7 +1236,7 @@ async function processPendingLink(jobRef, job) {
     await rowSnapshot.ref.update({
       status: 'skipped',
       reason: 'Некоректний тип або напрямок зв’язку',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { skipped: true };
   }
@@ -1285,7 +1286,7 @@ async function processPendingLink(jobRef, job) {
             || freshTarget.data()?.deletionPending === true
             ? 'Одну з пов’язаних задач уже видаляють'
           : 'Проєкт або одна з пов’язаних задач змінилися під час імпорту',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { skipped: true };
     }
@@ -1298,7 +1299,7 @@ async function processPendingLink(jobRef, job) {
       transaction.update(rowSnapshot.ref, {
         status: 'skipped',
         reason: 'Для цієї пари задач уже існує інший логічний зв’язок',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { skipped: true };
     }
@@ -1315,7 +1316,7 @@ async function processPendingLink(jobRef, job) {
       transaction.update(rowSnapshot.ref, {
         status: 'skipped',
         reason: 'Для цієї пари вже є старий зв’язок. Спершу виконайте міграцію зв’язків',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { skipped: true };
     }
@@ -1340,7 +1341,7 @@ async function processPendingLink(jobRef, job) {
         transaction.update(rowSnapshot.ref, {
           status: 'skipped',
           reason: statusConflict.message,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         return { skipped: true };
       }
@@ -1365,7 +1366,7 @@ async function processPendingLink(jobRef, job) {
           reason: canonical.relationType === 'blocks'
             ? `Зв’язок створив би циклічну залежність: ${cyclePath.join(' → ')}`
             : `Зв’язок створив би циклічний ланцюг дублікатів: ${cyclePath.join(' → ')}`,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         return { skipped: true };
       }
@@ -1384,17 +1385,17 @@ async function processPendingLink(jobRef, job) {
           legacyRelationType: 'youtrack-hierarchy',
         } : {}),
         createdBy: job.createdBy,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       transaction.update(projectRef, {
-        issueLinkVersion: admin.firestore.FieldValue.increment(1),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        issueLinkVersion: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     }
     transaction.update(rowSnapshot.ref, {
       status: 'completed',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { skipped: false };
   });
@@ -1498,8 +1499,8 @@ export async function prepareYouTrackImport({
     warnings: [],
     adapterVersion: 2,
     mappingVersion: 2,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
   await writeInChunks(queue, (batch, item, index) => {
     batch.create(jobRef.collection('items').doc(String(index).padStart(8, '0')), {
@@ -1529,7 +1530,7 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
           jobUpdates: {
             phase: 'links',
             status: 'running',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           },
         });
         return serializeJob(await jobRef.get());
@@ -1540,9 +1541,9 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
       if (!item.exists) {
         await commitClaimedStep(jobRef, leaseId, {
           jobUpdates: {
-            nextIndex: admin.firestore.FieldValue.increment(1),
-            failedIssues: admin.firestore.FieldValue.increment(1),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            nextIndex: FieldValue.increment(1),
+            failedIssues: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp(),
           },
         });
         return serializeJob(await jobRef.get());
@@ -1550,7 +1551,7 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
 
       await itemRef.set({
         status: 'processing',
-        startedAt: admin.firestore.FieldValue.serverTimestamp(),
+        startedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       try {
         const result = await processIssue(jobRef, job, item.data());
@@ -1561,14 +1562,14 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
             quickTeamIssueId: result.issueId,
             result: result.created ? 'created' : 'updated',
             warnings: result.warnings,
-            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            completedAt: FieldValue.serverTimestamp(),
           },
           jobUpdates: {
             status: 'running',
-            nextIndex: admin.firestore.FieldValue.increment(1),
-            processedIssues: admin.firestore.FieldValue.increment(1),
-            ...(result.warnings.length ? { warnings: admin.firestore.FieldValue.arrayUnion(...result.warnings.slice(0, 10)) } : {}),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            nextIndex: FieldValue.increment(1),
+            processedIssues: FieldValue.increment(1),
+            ...(result.warnings.length ? { warnings: FieldValue.arrayUnion(...result.warnings.slice(0, 10)) } : {}),
+            updatedAt: FieldValue.serverTimestamp(),
           },
         });
       } catch (error) {
@@ -1578,14 +1579,14 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
           itemUpdates: {
             status: 'failed',
             error: message,
-            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            completedAt: FieldValue.serverTimestamp(),
           },
           jobUpdates: {
             status: 'running',
-            nextIndex: admin.firestore.FieldValue.increment(1),
-            failedIssues: admin.firestore.FieldValue.increment(1),
+            nextIndex: FieldValue.increment(1),
+            failedIssues: FieldValue.increment(1),
             lastError: message,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           },
         });
       }
@@ -1598,16 +1599,16 @@ export async function runYouTrackImportStep({ organizationId, jobId }) {
         jobUpdates: {
           status: 'completed',
           phase: 'completed',
-          completedAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          completedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         },
       });
     } else {
       await commitClaimedStep(jobRef, leaseId, {
         jobUpdates: {
-          processedLinks: admin.firestore.FieldValue.increment(linkResult.skipped ? 0 : 1),
-          skippedLinks: admin.firestore.FieldValue.increment(linkResult.skipped ? 1 : 0),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          processedLinks: FieldValue.increment(linkResult.skipped ? 0 : 1),
+          skippedLinks: FieldValue.increment(linkResult.skipped ? 1 : 0),
+          updatedAt: FieldValue.serverTimestamp(),
         },
       });
     }
@@ -1641,7 +1642,7 @@ export async function cancelYouTrackImport({ organizationId, jobId }) {
   if (snapshot.data().status === 'completed') return serializeJob(snapshot);
   await ref.update({
     status: 'cancelled',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
   return serializeJob(await ref.get());
 }

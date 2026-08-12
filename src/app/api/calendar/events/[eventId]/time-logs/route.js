@@ -1,6 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -237,11 +237,11 @@ function ensureLogIsMutable(log) {
 
 function incrementMutationLocks(transaction, eventRef, projectRef) {
   transaction.update(eventRef, {
-    timeLogMutationVersion: admin.firestore.FieldValue.increment(1),
+    timeLogMutationVersion: FieldValue.increment(1),
   });
   if (projectRef) {
     transaction.update(projectRef, {
-      invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+      invoiceMutationVersion: FieldValue.increment(1),
     });
   }
 }
@@ -381,7 +381,7 @@ export async function POST(request, context) {
             : 'Списання часу доступне лише для командних подій',
         );
       }
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.create(logRef, {
         organizationId,
         projectId: event.projectId || '',
@@ -394,7 +394,7 @@ export async function POST(request, context) {
         userId: authResult.authorization.user.uid,
         spentMinutes: minutes,
         description: cleanDescription(body.description),
-        loggedAt: admin.firestore.Timestamp.fromDate(new Date(occurrenceStartAt)),
+        loggedAt: Timestamp.fromDate(new Date(occurrenceStartAt)),
         createdAt: now,
         updatedAt: now,
       });
@@ -493,7 +493,7 @@ export async function PATCH(request, context) {
         description: cleanDescription(body.description),
         eventVisibility: 'team',
         calendarOrganizerId: event.organizerId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       incrementMutationLocks(transaction, eventRef, projectRef);
     });

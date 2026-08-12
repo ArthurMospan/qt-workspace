@@ -18,8 +18,12 @@ import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { TaskCounters, TaskIdentity } from '@/components/ui';
+import TaskCounters from '@/components/ui/TaskManagement/TaskCounters';
+import TaskIdentity from '@/components/ui/TaskManagement/TaskIdentity';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
+import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
+import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -45,7 +49,7 @@ function hexToRgba(hex, alpha) {
 // `showStatusName` is for a column that is not a status: on «Мої завдання» the
 // columns are the five shared categories, so a card in «У роботі» could be in
 // «Код-ревʼю» or in «QA» and the column no longer says which.
-export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, className = '' }) {
+export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, className = '' }) {
   const router   = useRouter();
   const { currentUser, projects = [] } = useAppContext();
   const project = projects.find(candidate => candidate.id === projectId);
@@ -66,12 +70,11 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   };
   const typeLabel = typeObj.label;
   
-  const priObj = priorities.find(p => p.id === issue.priority) || priorities[0];
+  const priorityConfig = priorityPresentation(issue.priority, priorities);
   const pri = {
-    label: priObj ? priObj.label.toUpperCase() : 'СЕРЕДНІЙ',
-    dot: priObj ? priObj.color : '#eab308',
-    glow: priObj ? hexToRgba(priObj.color, 0.05) : 'transparent',
-    bg: priObj ? hexToRgba(priObj.color, 0.01) : '#fefce8'
+    glow: priorityConfig.isNoPriority
+      ? 'transparent'
+      : hexToRgba(priorityConfig.color, 0.05),
   };
 
   const participantRoles = issueDisplayParticipants(issue);
@@ -117,8 +120,8 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     // lift shadow below — and the cursor is by definition over the card being
     // dragged. Dropping the ring while lifted lets the lift actually show, and
     // stops the shadow swapping abruptly the moment the card is released.
-    const hoverRing = lifted ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
-    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white cursor-pointer select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
+    const hoverRing = lifted || !interactive ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
+    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
     // `none` is the library asking for an instant snap and cannot be combined
     // with further entries — appending to it would void the whole declaration.
     const cardTransition = !libraryTransition || libraryTransition === 'none'
@@ -143,7 +146,9 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         {...provided.dragHandleProps}
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
-        onClick={() => { if (!isDraggingRef.current) router.push(issuePath(issue, project || projectId)); }}
+        onClick={interactive
+          ? () => { if (!isDraggingRef.current) router.push(issuePath(issue, project || projectId)); }
+          : undefined}
         className={cardClassName}
         style={{
           ...provided.draggableProps?.style,
@@ -204,10 +209,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
             )}
 
-            <div className="ml-auto flex items-center justify-center w-[18px] h-[18px] rounded-full shrink-0"
-              style={{ background: pri.bg }} title={`Пріоритет: ${pri.label}`}>
-              <span className="w-[8px] h-[8px] rounded-full" style={{ background: pri.dot }} />
-            </div>
+            <PriorityIcon priority={priorityConfig} size="md" className="ml-auto" />
           </div>
 
           {/* Row 2: Title */}
@@ -247,6 +249,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               <TypeBadge
                 label={typeLabel}
                 color={typeObj.color || '#9a9a9a'}
+                icon={taskTypeIcon(typeObj)}
               />
             )}
 

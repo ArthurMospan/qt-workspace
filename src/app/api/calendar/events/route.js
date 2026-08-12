@@ -1,5 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   createCalendarNotifications,
@@ -40,8 +41,8 @@ export async function GET(request) {
       db.collection('calendarEvents').where('organizationId', '==', organizationId).get(),
       db.collection('issues')
         .where('organizationId', '==', organizationId)
-        .where('dueDate', '>=', admin.firestore.Timestamp.fromDate(deadlineFrom))
-        .where('dueDate', '<=', admin.firestore.Timestamp.fromDate(deadlineTo))
+        .where('dueDate', '>=', Timestamp.fromDate(deadlineFrom))
+        .where('dueDate', '<=', Timestamp.fromDate(deadlineTo))
         .select('title', 'issueKey', 'projectId', 'dueDate', 'assigneeIds', 'completedAt')
         .get(),
       db.collection('projects')
@@ -176,7 +177,7 @@ export async function POST(request) {
     }
     const db = getAdminDb();
     const ref = db.collection('calendarEvents').doc();
-    const now = admin.firestore.FieldValue.serverTimestamp();
+    const now = FieldValue.serverTimestamp();
     const participantResponses = Object.fromEntries(
       eventData.participantIds.map(uid => [
         uid,
@@ -252,7 +253,7 @@ export async function POST(request) {
       });
       if (projectRef) {
         transaction.update(projectRef, {
-          invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+          invoiceMutationVersion: FieldValue.increment(1),
         });
       }
     });

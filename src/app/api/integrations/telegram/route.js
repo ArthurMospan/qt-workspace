@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { admin, authenticateRequest, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   ensureTelegramWebhook,
@@ -40,8 +41,8 @@ export async function POST(request) {
       type: 'user',
       userId: authorization.user.uid,
       organizationId,
-      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
+      createdAt: FieldValue.serverTimestamp(),
     });
     return NextResponse.json({
       link: `https://t.me/${status.username}?start=qt_${token}`,

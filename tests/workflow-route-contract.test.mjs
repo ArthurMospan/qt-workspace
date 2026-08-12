@@ -23,7 +23,7 @@ test('workflow mutations are authenticated and transactional', async () => {
   assert.match(route, /updates\.completedAt = now/);
   assert.match(
     route,
-    /updates\.completedAt = admin\.firestore\.FieldValue\.delete\(\)/,
+    /updates\.completedAt = FieldValue\.delete\(\)/,
   );
 });
 
@@ -43,7 +43,7 @@ test('settings use the workflow API and never batch issue status changes directl
   assert.doesNotMatch(settings, /writeBatch\(db\)[\s\S]{0,500}completedAt/);
   assert.match(
     service,
-    /fetch\([\s\S]{0,180}\/api\/organizations\/\$\{encodeURIComponent\(organizationId\)\}\/workflow/,
+    /authenticatedRequest\([\s\S]{0,180}\/api\/organizations\/\$\{encodeURIComponent\(organizationId\)\}\/workflow/,
   );
-  assert.match(service, /Authorization:\s*`Bearer \$\{token\}`/);
+  assert.match(service, /import \{ authenticatedRequest \} from '@\/lib\/services\/authenticatedRequest'/);
 });

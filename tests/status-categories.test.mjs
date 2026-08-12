@@ -26,6 +26,13 @@ import {
 import { normalizeWorkflowMutationInput } from '../src/lib/utils/workflowMutation.mjs';
 import { hydrateWorkflowSettings } from '../src/lib/utils/workflowSettingsHydration.mjs';
 
+const systemPriorities = () => [
+  { id: 'blocker', label: 'Критичний' },
+  { id: 'high', label: 'Високий' },
+  { id: 'medium', label: 'Середній' },
+  { id: 'low', label: 'Низький' },
+];
+
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 // A workflow saved before categories existed: no `category` anywhere, one
@@ -258,7 +265,7 @@ test('saving a workflow persists the category and derives isDone from it', () =>
         { id: 'done', label: 'Готово', color: '#10b981', isDone: true },
       ],
       types: [{ id: 'task', label: 'Задача' }],
-      priorities: [{ id: 'medium', label: 'Середній' }],
+      priorities: systemPriorities(),
       labels: [],
       positions: [{ id: 'dev', label: 'Розробник', hourlyRate: 30 }],
     },
@@ -275,7 +282,7 @@ test('a saved workflow always has somewhere to start and somewhere to finish', (
     workflow: {
       statuses,
       types: [{ id: 'task', label: 'Задача' }],
-      priorities: [{ id: 'medium', label: 'Середній' }],
+      priorities: systemPriorities(),
       labels: [],
       positions: [],
     },

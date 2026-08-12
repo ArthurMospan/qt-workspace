@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
 
@@ -56,14 +57,14 @@ export async function POST(request) {
         orgId: organizationId,
         userId: uid,
         role: invite.role === 'admin' ? 'admin' : 'member',
-        joinedAt: admin.firestore.FieldValue.serverTimestamp(),
+        joinedAt: FieldValue.serverTimestamp(),
         hourlyRate: 0,
         invitedBy: invite.invitedBy || null,
         joinedVia: 'invite-link',
       });
       tx.update(inviteRef, {
-        usedCount: admin.firestore.FieldValue.increment(1),
-        lastUsedAt: admin.firestore.FieldValue.serverTimestamp(),
+        usedCount: FieldValue.increment(1),
+        lastUsedAt: FieldValue.serverTimestamp(),
         lastUsedBy: uid,
       });
       return { organizationId };

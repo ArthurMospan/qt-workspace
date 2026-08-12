@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { deliverEmail } from '@/lib/server/email';
 import { deliverTelegramNotification, telegramAppLink } from '@/lib/server/telegram';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
@@ -77,7 +78,7 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
       batch.set(outboxRef().doc(id), {
         ...outboxRow(candidate, { nowMs }),
         occurrenceStartMs: Number(candidate.occurrenceStart) || null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
       created += 1;
       continue;
@@ -171,7 +172,7 @@ async function claimNotification(row, { inapp, body, nowMs }) {
       actorAvatar: '',
       read: false,
       inapp,
-      createdAt: admin.firestore.Timestamp.fromMillis(nowMs),
+      createdAt: Timestamp.fromMillis(nowMs),
     });
     return true;
   } catch (error) {

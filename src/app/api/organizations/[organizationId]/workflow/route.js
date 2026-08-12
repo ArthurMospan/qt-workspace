@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -153,7 +153,7 @@ export async function PATCH(request, context) {
           ...nextWorkflow,
           schemaVersion: 2,
           updatedBy: authorization.user.uid,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
         return {
           changed: true,
@@ -347,7 +347,7 @@ export async function PATCH(request, context) {
         );
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       for (const change of issueChanges) {
         const issueRef = db.collection('issues').doc(change.currentIssue.id);
         const updates = {
@@ -358,7 +358,7 @@ export async function PATCH(request, context) {
         if (change.completedAtNeedsSet) {
           updates.completedAt = now;
         } else if (change.completedAtNeedsClear) {
-          updates.completedAt = admin.firestore.FieldValue.delete();
+          updates.completedAt = FieldValue.delete();
         }
         transaction.update(issueRef, updates);
         transaction.create(issueRef.collection('audit').doc(), {
@@ -377,7 +377,7 @@ export async function PATCH(request, context) {
           ...(change.hiddenColumns
             ? { hiddenColumns: change.hiddenColumns }
             : {}),
-          issueStatusVersion: admin.firestore.FieldValue.increment(1),
+          issueStatusVersion: FieldValue.increment(1),
           updatedAt: now,
         });
       }

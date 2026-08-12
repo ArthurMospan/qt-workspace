@@ -1,6 +1,7 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
-import { admin, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { seal, open } from '@/lib/server/secretBox.mjs';
 
 export const QTPLUS_CLIENT_ID = 'quickteam-workspace';
@@ -41,7 +42,7 @@ export async function writeLink(uid, { qtUserId, email, refreshToken }) {
     email: email || null,
     clientId: QTPLUS_CLIENT_ID,
     refreshTokenBox: seal(refreshToken),
-    connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+    connectedAt: FieldValue.serverTimestamp(),
   });
 }
 

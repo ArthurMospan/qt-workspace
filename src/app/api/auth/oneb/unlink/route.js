@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authenticateRequest, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 
 export async function DELETE(request) {
   try {
@@ -27,7 +28,7 @@ export async function DELETE(request) {
 
     await getAdminDb().collection('users').doc(userRecord.uid).set({
       onebConnected: false,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
     return NextResponse.json({ success: true });

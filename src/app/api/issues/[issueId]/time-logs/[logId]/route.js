@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   enforceRateLimit,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
@@ -116,7 +116,7 @@ export async function PATCH(request, context) {
       transaction.update(logRef, {
         ...(changesMinutes ? { spentMinutes: nextMinutes } : {}),
         ...(changesDescription ? { description: description.value } : {}),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         updatedBy: authorization.user.uid,
       });
       applyTaskTimeLogMutation({

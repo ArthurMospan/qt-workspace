@@ -118,6 +118,10 @@ export default function TaskCRMSection() {
             issue={task1}
             project={{ id: 'ui-kit-project', name: 'QuickTeam' }}
             categoryLabel="У роботі"
+            issues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
             statuses={[
               { id: 'development', label: 'Розробка', color: '#6366f1' },
               { id: 'code-review', label: 'Код-ревʼю', color: '#a855f7' },

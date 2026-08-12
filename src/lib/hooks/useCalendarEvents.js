@@ -1,24 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { expandOccurrences } from '@/lib/utils/calendarRecurrence.mjs';
 
 async function calendarRequest(path, options = {}) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Потрібно увійти в акаунт');
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Не вдалося оновити календар');
-  return result;
+  return authenticatedRequest(path, options, 'Не вдалося оновити календар');
 }
 
 // How far around today the calendar materialises a repeating series. Anchoring

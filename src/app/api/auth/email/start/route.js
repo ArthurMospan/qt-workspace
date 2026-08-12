@@ -1,5 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, enforceRateLimit } from '@/lib/server/firebaseAdmin';
+import { enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import {
   createEmailOtp,
   EMAIL_OTP_TTL_SECONDS,
@@ -37,8 +38,8 @@ export async function POST(request) {
       email,
       codeHash: hashEmailOtp(email, code),
       attempts: 0,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + EMAIL_OTP_TTL_SECONDS * 1000),
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + EMAIL_OTP_TTL_SECONDS * 1000),
     });
 
     const delivery = await sendEmailOtp(email, code);

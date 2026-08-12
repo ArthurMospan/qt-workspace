@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   canRestoreIssueTombstone,
@@ -76,7 +77,7 @@ export async function POST(request, context) {
         throw restoreError('PROJECT_NOT_AVAILABLE', 409, 'Проєкт задачі більше недоступний');
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       const restoredIssue = { ...issue };
       delete restoredIssue.id;
       transaction.create(issueRef, {
@@ -91,7 +92,7 @@ export async function POST(request, context) {
       });
       transaction.delete(tombstoneRef);
       transaction.update(projectRef, {
-        issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
+        issueHierarchyVersion: FieldValue.increment(1),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

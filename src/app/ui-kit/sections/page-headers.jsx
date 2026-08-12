@@ -7,6 +7,13 @@ import FilterBar from '@/components/ui/FilterBar';
 import { PageHeader } from '@/components/ui';
 import { Plus, Settings2, List, Kanban } from 'lucide-react';
 import { PreviewBlock } from '../preview';
+import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+
+const PRIORITY_FILTER_OPTIONS = [
+  { value: 'all', label: 'Всі пріоритети' },
+  ...prioritySelectOptions(DEFAULT_PRIORITIES),
+];
 
 export default function PageHeadersSection() {
   const [tab1, setTab1] = useState('kanban');
@@ -47,11 +54,7 @@ export default function PageHeadersSection() {
                     variant="ghost"
                     value={priority}
                     onChange={setPriority}
-                    options={[
-                      { value: 'all', label: 'Всі пріоритети' },
-                      { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },
-                      { value: 'high', label: 'Високий', dotColor: '#f97316' }
-                    ]}
+                    options={PRIORITY_FILTER_OPTIONS}
                   />
                 </FilterBar>
                 
@@ -93,11 +96,7 @@ export default function PageHeadersSection() {
                   variant="ghost"
                   value={priority}
                   onChange={setPriority}
-                  options={[
-                    { value: 'all', label: 'Всі пріоритети' },
-                    { value: 'blocker', label: 'Критичний', dotColor: '#ef4444' },
-                    { value: 'high', label: 'Високий', dotColor: '#f97316' }
-                    ]}
+                  options={PRIORITY_FILTER_OPTIONS}
                   />
                 </FilterBar>
               }

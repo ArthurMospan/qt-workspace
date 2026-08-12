@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 import {
@@ -84,8 +85,8 @@ export async function POST(req) {
       status: 'active',
       stagesCount: 4,
       issueCounter: 0,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       createdBy: userId,
     };
     
@@ -123,11 +124,11 @@ export async function POST(req) {
           status: index === 0 ? 'in-progress' : 'todo',
           projectId: projectRef.id,
           order: index,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
         });
       });
       transaction.update(orgRef, {
-        projectMutationVersion: admin.firestore.FieldValue.increment(1),
+        projectMutationVersion: FieldValue.increment(1),
       });
     });
     

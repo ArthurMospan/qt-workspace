@@ -49,15 +49,17 @@ test('QUI-129 and QUI-139 keep the project header free of team avatars', async (
 });
 
 test('QUI-130 drops the epic copy and leads the type list with Задача', async () => {
-  const [settings, workflow] = await Promise.all([
+  const [settings, workflow, taskTypes] = await Promise.all([
     read('../src/app/(app)/settings/page.js'),
     read('../src/lib/hooks/useWorkflowConfig.js'),
+    read('../src/lib/utils/taskTypes.mjs'),
   ]);
   assert.doesNotMatch(settings, /Старі Епіки лишаються видимими/);
   assert.doesNotMatch(settings, /legacy-дані/);
-  const types = workflow.slice(
-    workflow.indexOf('export const DEFAULT_TYPES'),
-    workflow.indexOf('export const DEFAULT_PRIORITIES'),
+  assert.match(workflow, /export const DEFAULT_TYPES = DEFAULT_TASK_TYPES/);
+  const types = taskTypes.slice(
+    taskTypes.indexOf('export const DEFAULT_TASK_TYPES'),
+    taskTypes.indexOf('export const BUILT_IN_TASK_TYPE_ICON_KEYS'),
   );
   assert.ok(types.indexOf("id: 'task'") < types.indexOf("id: 'feature'"), 'Задача leads the list');
 });

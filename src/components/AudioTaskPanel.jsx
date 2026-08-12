@@ -10,13 +10,8 @@ import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Checkbox, FileInput, FormGroup, IconAction, Input, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
-
-const PRIORITIES = [
-  { value: 'blocker', label: 'Критичний' },
-  { value: 'high', label: 'Високий' },
-  { value: 'medium', label: 'Середній' },
-  { value: 'low', label: 'Низький' },
-];
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 // A finished analysis is minutes of a real call plus whatever the user has
 // edited since; it must not depend on this component staying mounted. The panel
@@ -56,6 +51,7 @@ export default function AudioTaskPanel({
   onSubmit,
   onFinished,
 }) {
+  const { priorities } = useWorkflowConfig();
   const { activeOrgId } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
   const availableProjects = useMemo(
@@ -286,7 +282,7 @@ export default function AudioTaskPanel({
                       aria-label="Опис задачі"
                     />
                     <div className="flex flex-wrap gap-2">
-                      <Select value={task.priority || 'medium'} onChange={value => updateTask(index, { priority: value })} options={PRIORITIES} compact />
+                      <Select value={task.priority || 'medium'} onChange={value => updateTask(index, { priority: value })} options={prioritySelectOptions(priorities)} compact />
                       <Select
                         value={task.assigneeId || ''}
                         onChange={value => updateTask(index, { assigneeId: value })}

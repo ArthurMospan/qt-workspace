@@ -12,9 +12,11 @@ import { parseDueDate } from '@/lib/utils/date';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Link from 'next/link';
 import { Alert, Card, TaskListCard } from '@/components/ui';
+import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { NO_PRIORITY_ID, selectablePriorities } from '@/lib/utils/priorities.mjs';
 import {
   backlogStatusIds,
   inProgressStatusIds,
@@ -60,7 +62,7 @@ export default function AnalyticsTab({
 
   const filteredIssues = useMemo(() => {
     return actionableIssues.filter(i => {
-      if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+      if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
@@ -116,12 +118,12 @@ export default function AnalyticsTab({
     })).filter(s => s.count > 0);
 
     // By priority
-    const byPriority = priorities.map(priority => ({
+    const byPriority = selectablePriorities(priorities).map(priority => ({
       p: priority.id,
       label: priority.label,
       color: priority.color,
       count: filteredIssues.filter(i => (
-        i.priority === priority.id
+        (i.priority || NO_PRIORITY_ID) === priority.id
         && !closedSet.has(i.columnId || i.status)
       )).length,
     })).filter(s => s.count > 0);
@@ -275,9 +277,9 @@ export default function AnalyticsTab({
               <div className="flex flex-col gap-3">
                 {stats.byPriority.map(({ p, label, color, count }) => (
                   <div key={p} className="flex items-center gap-3">
-                    <span className="text-[11px] font-semibold px-2 py-[3px] rounded-full w-[82px] text-center shrink-0 truncate"
-                      style={{ background: color + '18', color }}>
-                      {label}
+                    <span className="flex w-[110px] shrink-0 items-center gap-2 text-[11px] font-semibold text-ink">
+                      <PriorityIcon priority={p} priorities={priorities} />
+                      <span className="truncate">{label}</span>
                     </span>
                     <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: color }} />

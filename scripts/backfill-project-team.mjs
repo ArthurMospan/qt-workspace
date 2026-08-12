@@ -21,29 +21,30 @@
 //   node scripts/backfill-project-team.mjs            # apply
 //   node scripts/backfill-project-team.mjs --dry-run  # report only, no writes
 //
-import admin from 'firebase-admin';
+import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
 function initAdmin() {
-  if (admin.apps.length) return admin.app();
+  if (getApps().length) return getApp();
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
   if (clientEmail && privateKey) {
-    return admin.initializeApp({
-      credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+    return initializeApp({
+      credential: cert({ projectId, clientEmail, privateKey }),
       projectId,
     });
   }
   // Falls back to GOOGLE_APPLICATION_CREDENTIALS / ADC.
-  return admin.initializeApp({ projectId });
+  return initializeApp({ projectId });
 }
 
 async function run() {
   const app = initAdmin();
-  const db = app.firestore();
+  const db = getFirestore(app);
   console.log(`🚀 Backfilling project.team${DRY_RUN ? ' (DRY RUN — no writes)' : ''}…`);
 
   const snap = await db.collection('projects').get();

@@ -28,6 +28,8 @@ import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -128,7 +130,7 @@ export default function BoardPage({ params }) {
       if (!i.assigneeIds || !i.assigneeIds.includes(boardAssigneeFilter)) return false;
     }
     // Priority
-    if (boardPriorityFilter !== 'all' && i.priority !== boardPriorityFilter) return false;
+    if (boardPriorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== boardPriorityFilter) return false;
     // Type
     if (boardTypeFilter !== 'all' && i.type !== boardTypeFilter) return false;
 
@@ -309,11 +311,7 @@ export default function BoardPage({ params }) {
                   onChange={setBoardPriorityFilter}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    ...priorities.map(priority => ({
-                      value: priority.id,
-                      label: priority.label,
-                      dotColor: priority.color,
-                    })),
+                    ...prioritySelectOptions(priorities),
                   ]}
                   variant="ghost"
                 />
@@ -323,12 +321,7 @@ export default function BoardPage({ params }) {
                   onChange={setBoardTypeFilter}
                   options={[
                     { value: 'all', label: 'Всі типи' },
-                    ...types
-                      .map(type => ({
-                        value: type.id,
-                        label: type.label,
-                        dotColor: type.color,
-                      })),
+                    ...types.map(taskTypeSelectOption),
                   ]}
                   variant="ghost"
                 />
@@ -353,11 +346,7 @@ export default function BoardPage({ params }) {
                 onChange={setAnalyticsPriorityFilter}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
-                  ...priorities.map(priority => ({
-                    value: priority.id,
-                    label: priority.label,
-                    dotColor: priority.color,
-                  })),
+                  ...prioritySelectOptions(priorities),
                 ]}
               />
               <Select
@@ -367,12 +356,7 @@ export default function BoardPage({ params }) {
                 onChange={setAnalyticsTypeFilter}
                 options={[
                   { value: 'all', label: 'Всі типи' },
-                  ...types
-                    .map(type => ({
-                      value: type.id,
-                      label: type.label,
-                      dotColor: type.color,
-                    })),
+                  ...types.map(taskTypeSelectOption),
                 ]}
               />
             </FilterBar>

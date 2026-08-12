@@ -1,7 +1,8 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest } from '@/lib/server/firebaseAdmin';
 import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
 import {
   exactTaskTimeLogMinutes,
@@ -261,16 +262,16 @@ export function applyTaskTimeLogMutation({
 
   const issueUpdates = {
     spentMinutesMirrorVersion: TASK_TIME_LOG_MIRROR_VERSION,
-    timeLogMutationVersion: admin.firestore.FieldValue.increment(1),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    timeLogMutationVersion: FieldValue.increment(1),
+    updatedAt: FieldValue.serverTimestamp(),
   };
   if (initializeSpentMinutesMirror) {
     issueUpdates.spentMinutes = mirrorTransition.next;
   } else if (spentMinutesDelta !== 0) {
-    issueUpdates.spentMinutes = admin.firestore.FieldValue.increment(spentMinutesDelta);
+    issueUpdates.spentMinutes = FieldValue.increment(spentMinutesDelta);
   }
   transaction.update(issueRef, issueUpdates);
   transaction.update(projectRef, {
-    invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+    invoiceMutationVersion: FieldValue.increment(1),
   });
 }

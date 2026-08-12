@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -394,7 +394,7 @@ export async function PATCH(request, context) {
         };
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       const issueUpdates = {
         columnId: requestedStatus,
         status: requestedStatus,
@@ -411,7 +411,7 @@ export async function PATCH(request, context) {
       if (completedAtNeedsSet) {
         issueUpdates.completedAt = now;
       } else if (completedAtNeedsClear) {
-        issueUpdates.completedAt = admin.firestore.FieldValue.delete();
+        issueUpdates.completedAt = FieldValue.delete();
       }
       transaction.update(issueRef, issueUpdates);
       peerChanges.forEach(change => {
@@ -421,7 +421,7 @@ export async function PATCH(request, context) {
         });
       });
       transaction.update(projectRef, {
-        issueStatusVersion: admin.firestore.FieldValue.increment(1),
+        issueStatusVersion: FieldValue.increment(1),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

@@ -1,6 +1,7 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb, hashApiKey } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb, hashApiKey } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 async function authorize(request) {
@@ -22,8 +23,8 @@ async function loadAndMigrateKeys(db, organizationId) {
     return { ...rest, prefix: token.slice(0, 10), tokenHash: hashApiKey(token) };
   });
   const batch = db.batch();
-  batch.set(keysRef, { keys: legacyKeys, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-  if (orgSnap.data().apiKeys) batch.update(orgRef, { apiKeys: admin.firestore.FieldValue.delete() });
+  batch.set(keysRef, { keys: legacyKeys, updatedAt: FieldValue.serverTimestamp() });
+  if (orgSnap.data().apiKeys) batch.update(orgRef, { apiKeys: FieldValue.delete() });
   await batch.commit();
   return { keysRef, keys: legacyKeys };
 }
@@ -60,7 +61,7 @@ export async function POST(request) {
       createdBy: authorization.user.uid,
       active: true,
     };
-    await keysRef.set({ keys: [...keys, storedKey], updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+    await keysRef.set({ keys: [...keys, storedKey], updatedAt: FieldValue.serverTimestamp() });
     return NextResponse.json({ key: { ...storedKey, token, tokenHash: undefined } }, { status: 201 });
   } catch (error) {
     return routeErrorResponse(error, { context: 'API keys POST', fallbackMessage: 'Internal Server Error' });
@@ -78,7 +79,7 @@ export async function DELETE(request) {
     const { keysRef, keys } = await loadAndMigrateKeys(db, organizationId);
     await keysRef.set({
       keys: keys.filter(key => key.id !== keyId),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return NextResponse.json({ success: true });
   } catch (error) {

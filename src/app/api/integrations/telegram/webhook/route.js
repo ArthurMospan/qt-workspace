@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   createIssueFromTelegram,
@@ -36,7 +37,7 @@ async function connectPrivateChat(message, payload) {
       telegramUserId: String(message.from?.id || ''),
       telegramUsername: message.from?.username || '',
       organizationId: data.organizationId,
-      connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+      connectedAt: FieldValue.serverTimestamp(),
     });
     transaction.delete(tokenRef);
   });
@@ -64,13 +65,13 @@ async function connectGroup(message, payload) {
       chatTitle: message.chat.title || 'Telegram group',
       defaultProjectId: data.projectId,
       connectedByTelegramUserId: String(message.from?.id || ''),
-      connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+      connectedAt: FieldValue.serverTimestamp(),
     });
     transaction.set(chatRef, {
       provider: 'telegram',
       organizationId: data.organizationId,
       defaultProjectId: data.projectId,
-      connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+      connectedAt: FieldValue.serverTimestamp(),
     });
     transaction.delete(tokenRef);
   });
@@ -94,7 +95,7 @@ async function createGroupTask(message, content) {
   try {
     await receiptRef.create({
       status: 'processing',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     if (error.code === 6 || error.code === 'already-exists') return true;

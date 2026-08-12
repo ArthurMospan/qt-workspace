@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { deliverEmail } from '@/lib/server/email';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
@@ -126,7 +127,7 @@ async function claimAndDeliver(candidate, context, { allowEmail = true } = {}) {
       actorAvatar: '',
       read: false,
       inapp,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     if (error.code === 6 || error.code === 'already-exists') {
@@ -232,8 +233,8 @@ async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipient
 
   const [upcoming, recurring] = await Promise.all([
     db.collection('calendarEvents')
-      .where('startAt', '>=', admin.firestore.Timestamp.fromMillis(nowMs - lookBackMs))
-      .where('startAt', '<=', admin.firestore.Timestamp.fromMillis(nowMs + CALENDAR_LEAD_MS))
+      .where('startAt', '>=', Timestamp.fromMillis(nowMs - lookBackMs))
+      .where('startAt', '<=', Timestamp.fromMillis(nowMs + CALENDAR_LEAD_MS))
       .select(...CALENDAR_FIELDS)
       .get(),
     db.collection('calendarEvents')
@@ -307,8 +308,8 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
     // Bounded on both sides. Without the floor this read every issue that had
     // ever slipped its deadline, on every pass, and those issues no longer
     // produce candidates anyway.
-    .where('dueDate', '>=', admin.firestore.Timestamp.fromMillis(nowMs - DEADLINE_FLOOR_MS))
-    .where('dueDate', '<=', admin.firestore.Timestamp.fromMillis(nowMs + DEADLINE_HORIZON_MS + lookAheadMs))
+    .where('dueDate', '>=', Timestamp.fromMillis(nowMs - DEADLINE_FLOOR_MS))
+    .where('dueDate', '<=', Timestamp.fromMillis(nowMs + DEADLINE_HORIZON_MS + lookAheadMs))
     .select(
       'organizationId',
       'projectId',
@@ -404,7 +405,7 @@ async function createBirthdayNotifications({
         actorAvatar: '',
         read: false,
         inapp: true,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       },
     );
   }
@@ -434,7 +435,7 @@ async function runOrganizationBirthdaySweep(
     const claimRef = db.collection('organizations').doc(organizationId)
       .collection('settings').doc(`birthdaySweep_${dayKey}`);
     try {
-      await claimRef.create({ claimedAt: admin.firestore.FieldValue.serverTimestamp() });
+      await claimRef.create({ claimedAt: FieldValue.serverTimestamp() });
     } catch (error) {
       if (error.code === 6 || error.code === 'already-exists') return 0;
       throw error;
@@ -479,17 +480,17 @@ async function runOrganizationBirthdaySweep(
         system: true,
         type: 'birthday',
         birthdayUserId: membership.userId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
         readBy: [],
       });
       await db.collection('organizations').doc(organizationId).collection('channels').doc('general').set({
         name: 'general',
         type: 'public',
-        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageAt: FieldValue.serverTimestamp(),
         lastMessageText: text.slice(0, 80),
         lastMessageSender: 'QuickTeam',
         lastMessageSenderId: 'quickteam-system',
-        messageCount: admin.firestore.FieldValue.increment(1),
+        messageCount: FieldValue.increment(1),
       }, { merge: true });
       created += 1;
     } catch (error) {
@@ -637,7 +638,7 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
   // would fall into the gap the watermark exists to close.
   await sweepStateRef().set({
     lastRunAtMs: nowMs,
-    lastRunAt: admin.firestore.Timestamp.fromMillis(nowMs),
+    lastRunAt: Timestamp.fromMillis(nowMs),
     lookBackMs,
     mode,
     previousRunAtMs: state.lastRunAtMs,

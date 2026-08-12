@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -392,7 +392,7 @@ export async function POST(request) {
         );
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.create(invoiceRef, {
         ...invoice,
         number: serverInvoiceNumber,
@@ -432,7 +432,7 @@ export async function POST(request) {
         });
       });
       transaction.update(projectRef, {
-        invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+        invoiceMutationVersion: FieldValue.increment(1),
       });
       transaction.set(invoiceNumberSequenceRef, {
         organizationId,

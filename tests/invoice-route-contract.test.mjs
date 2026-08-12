@@ -15,7 +15,7 @@ test('invoice creation is owner/admin-only and validates project scope in one tr
   assert.match(route, /transaction\.get\(projectRef\)/);
   assert.match(route, /projectSnapshot\.data\(\)\.organizationId !== organizationId/);
   assert.match(route, /projectSnapshot\.data\(\)\.deletionPending === true/);
-  assert.match(route, /invoiceMutationVersion:\s*admin\.firestore\.FieldValue\.increment\(1\)/);
+  assert.match(route, /invoiceMutationVersion:\s*FieldValue\.increment\(1\)/);
   assert.match(route, /transaction\.get\(invoiceNumberSequenceRef\)/);
   assert.match(
     route,
@@ -110,8 +110,8 @@ test('draft voiding atomically releases immutable sources but preserves invoice 
   assert.match(route, /await db\.runTransaction\(async transaction =>/);
   assert.match(route, /currentInvoice\.status !== 'draft'/);
   assert.match(route, /status:\s*'void'/);
-  assert.match(route, /invoiceId:\s*admin\.firestore\.FieldValue\.delete\(\)/);
-  assert.match(route, /billedAt:\s*admin\.firestore\.FieldValue\.delete\(\)/);
+  assert.match(route, /invoiceId:\s*FieldValue\.delete\(\)/);
+  assert.match(route, /billedAt:\s*FieldValue\.delete\(\)/);
   assert.match(route, /transaction\.delete\(snapshot\.ref\)/);
   assert.doesNotMatch(route, /transaction\.delete\(invoiceRef\)/);
   assert.match(service, /export async function voidInvoiceViaApi/);

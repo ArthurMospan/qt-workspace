@@ -8,6 +8,8 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
+import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
+import { NO_PRIORITY, ensureSystemPriorities } from '@/lib/utils/priorities.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -78,6 +80,7 @@ export default function AgileBoard({
     labels,
     categoryColumns,
     statusCategoryById,
+    priorities,
   } = useWorkflowConfig();
   // A board of one project has that project's statuses as its columns. A board
   // that spans projects cannot: a status one project has switched off is not a
@@ -256,17 +259,22 @@ export default function AgileBoard({
       return lanes.sort((a,b) => a.id === 'assignee-unassigned' ? 1 : -1);
     }
     if (swimlane === 'priority') {
-      const grouped = { blocker:[], high:[], medium:[], low:[] };
+      const lanePriorities = [...ensureSystemPriorities(priorities), NO_PRIORITY];
+      const grouped = Object.fromEntries(lanePriorities.map(priority => [priority.id, []]));
       boardIssues.forEach(i => {
-         const p = i.priority || 'medium';
+         const p = i.priority || NO_PRIORITY.id;
          if(grouped[p]) grouped[p].push(i);
       });
-      return [
-        { id: 'priority-blocker', title: 'Критичний 🔴', issues: grouped.blocker },
-        { id: 'priority-high', title: 'Високий 🟠', issues: grouped.high },
-        { id: 'priority-medium', title: 'Середній 🟡', issues: grouped.medium },
-        { id: 'priority-low', title: 'Низький ⚪', issues: grouped.low },
-      ].filter(l => l.issues.length > 0);
+      return lanePriorities.map(priority => ({
+        id: `priority-${priority.id}`,
+        title: (
+          <span className="flex items-center gap-2">
+            <PriorityIcon priority={priority} priorities={priorities} />
+            <span>{priority.label}</span>
+          </span>
+        ),
+        issues: grouped[priority.id],
+      })).filter(lane => lane.issues.length > 0);
     }
     return [{ id: 'all', title: null, issues: boardIssues }];
   })();

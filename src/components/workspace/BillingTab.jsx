@@ -22,6 +22,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { buildCalendarBillingItems } from '@/lib/utils/calendarBillingItems.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import {
   aggregateIssueTimeLogs,
   buildIssueAccountingIndex,
@@ -157,6 +158,7 @@ function IssueRow({
   onUseManual,
   statusLabel: issueStatusLabel,
   typeMeta,
+  priorities,
   isSummaryParent,
   billingConflictCount = 0,
 }) {
@@ -235,9 +237,9 @@ function IssueRow({
           <TypeBadge
             label={isEvent ? 'Подія' : (typeMeta?.[type]?.label || type)}
             color={typeMeta?.[type]?.color || '#059669'}
-            icon={isEvent ? CalendarIcon : undefined}
+            icon={isEvent ? CalendarIcon : taskTypeIcon(typeMeta?.[type] || type)}
           />
-          {!isEvent && <PriorityBadge priority={issue.priority} />}
+          {!isEvent && <PriorityBadge priority={issue.priority} priorities={priorities} />}
           {issueStatusLabel ? (
             <Pill tone="neutral" size="sm" shape="badge">{issueStatusLabel}</Pill>
           ) : null}
@@ -573,7 +575,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const { logs, loading: logsLoading } = useProjectAllTimeLogs(projectId);
-  const { statuses, deliveredStatusIds, types = [] } = useWorkflowConfig();
+  const { statuses, deliveredStatusIds, types = [], priorities = [] } = useWorkflowConfig();
   const [savedInvoiceState, setSavedInvoiceState] = useState({
     projectKey: '',
     invoices: [],
@@ -1239,6 +1241,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                       onUseManual={() => setUseManualMap(p => ({ ...p, [iss.id]: !p[iss.id] }))}
                       statusLabel={statusLabelOf(iss.columnId || iss.status)}
                       typeMeta={typeMeta}
+                      priorities={priorities}
                       isSummaryParent={hierarchyIndex.summaryIssueIds.has(iss.id)}
                       billingConflictCount={Math.max(
                         invoiceOverlap.byItemId[iss.id]?.length || 0,

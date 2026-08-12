@@ -1,6 +1,6 @@
 'use client';
 
-import { auth } from '@/lib/firebase';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 export class WorkflowRequestError extends Error {
   constructor(message, { code = '', status = 0, details = {} } = {}) {
@@ -23,36 +23,25 @@ export async function updateWorkflowViaApi({
       status: 400,
     });
   }
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) {
-    throw new WorkflowRequestError('Потрібна авторизація', {
-      code: 'AUTH_REQUIRED',
-      status: 401,
-    });
-  }
-
-  const response = await fetch(
-    `/api/organizations/${encodeURIComponent(organizationId)}/workflow`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ workflow, statusMigrations }),
-    },
-  );
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const { error, code, ...details } = result;
-    throw new WorkflowRequestError(
-      error || 'Не вдалося оновити workflow',
+  try {
+    return await authenticatedRequest(
+      `/api/organizations/${encodeURIComponent(organizationId)}/workflow`,
       {
-        code: code || '',
-        status: response.status,
-        details,
+      method: 'PATCH',
+      body: JSON.stringify({ workflow, statusMigrations }),
+      },
+      'Не вдалося оновити workflow',
+    );
+  } catch (error) {
+    throw new WorkflowRequestError(
+      error.message || 'Не вдалося оновити workflow',
+      {
+        code: error.code || '',
+        status: error.status || 0,
+        details: Object.fromEntries(
+          Object.entries(error).filter(([key]) => !['name', 'message', 'code', 'status'].includes(key)),
+        ),
       },
     );
   }
-  return result;
 }

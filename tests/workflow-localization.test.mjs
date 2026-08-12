@@ -22,7 +22,7 @@ test('built-in workflow labels localize by stable id without changing ids', () =
     ],
   );
   assert.equal(STATUS_LABELS.backlog, 'Беклог');
-  assert.deepEqual(DEFAULT_TYPE_IDS, ['feature', 'task', 'bug']);
+  assert.deepEqual(DEFAULT_TYPE_IDS, ['task', 'feature', 'bug']);
 });
 
 test('workflow localization never rewrites a custom id with a familiar label', () => {

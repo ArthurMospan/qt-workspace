@@ -27,6 +27,8 @@ import {
   statusCategoryLabel,
   statusCategoryOf,
 } from '@/lib/utils/statusCategories.mjs';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 
 
@@ -35,7 +37,7 @@ function filterTasks(tasks, filters, sprintMap) {
 
   return tasks.filter(t => {
     if (projects && projects.length > 0 && !projects.includes(t.projectId)) return false;
-    if (priority !== 'all' && t.priority !== priority) return false;
+    if (priority !== 'all' && (t.priority || NO_PRIORITY_ID) !== priority) return false;
     if (type !== 'all' && t.type !== type) return false;
     if (sprint !== 'all') {
       if (sprint === 'none') {
@@ -232,11 +234,7 @@ export default function MyTasksPage() {
                 onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
-                  ...priorities.map(priority => ({
-                    value: priority.id,
-                    label: priority.label,
-                    dotColor: priority.color,
-                  })),
+                  ...prioritySelectOptions(priorities),
                 ]}
               />
               <Select
@@ -246,8 +244,7 @@ export default function MyTasksPage() {
                 onChange={(val) => setFilters(f => ({ ...f, type: val }))}
                 options={[
                   { value: 'all', label: 'Всі типи' },
-                  ...types
-                    .map(type => ({ value: type.id, label: type.label, dotColor: type.color })),
+                  ...types.map(taskTypeSelectOption),
                 ]}
               />
               <Select
@@ -417,6 +414,11 @@ export default function MyTasksPage() {
           project={pendingStatusMove.project}
           statuses={pendingStatusMove.candidates}
           categoryLabel={statusCategoryLabel(pendingStatusMove.categoryId)}
+          issues={allIssues}
+          issueLinks={issueLinks}
+          members={members}
+          labels={labels}
+          sprints={sprints}
           busy={Boolean(pendingStatusMove.busy)}
           onSelect={selectPendingStatus}
           onClose={() => setPendingStatusMove(null)}

@@ -48,6 +48,8 @@ import {
   backlogStatusIds,
   inProgressStatusIds,
 } from '@/lib/utils/statusCategories.mjs';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -489,7 +491,7 @@ export default function WorkspaceAnalyticsPage() {
           if (!i.assigneeIds || !i.assigneeIds.includes(assigneeFilter)) return false;
         }
       }
-      if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+      if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
@@ -714,11 +716,7 @@ export default function WorkspaceAnalyticsPage() {
                   onChange={setPriorityFilter}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
-                    ...priorities.map(priority => ({
-                      value: priority.id,
-                      label: priority.label,
-                      dotColor: priority.color,
-                    })),
+                    ...prioritySelectOptions(priorities),
                   ]}
                   variant="ghost"
                 />
@@ -728,12 +726,7 @@ export default function WorkspaceAnalyticsPage() {
                   onChange={setTypeFilter}
                   options={[
                     { value: 'all', label: 'Всі типи' },
-                    ...types
-                      .map(type => ({
-                        value: type.id,
-                        label: type.label,
-                        dotColor: type.color,
-                      })),
+                    ...types.map(taskTypeSelectOption),
                   ]}
                   variant="ghost"
                 />

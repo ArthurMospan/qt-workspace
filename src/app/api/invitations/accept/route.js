@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function POST(request) {
@@ -47,8 +48,8 @@ export async function POST(request) {
           .filter(snapshot => snapshot.exists && snapshot.data().organizationId === organizationId)
           .forEach(snapshot => {
             batch.update(snapshot.ref, {
-              team: admin.firestore.FieldValue.arrayUnion(uid),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              team: FieldValue.arrayUnion(uid),
+              updatedAt: FieldValue.serverTimestamp(),
             });
           });
       }
@@ -60,13 +61,13 @@ export async function POST(request) {
         orgId: organizationId,
         userId: uid,
         role,
-        joinedAt: admin.firestore.FieldValue.serverTimestamp(),
+        joinedAt: FieldValue.serverTimestamp(),
         hourlyRate: 0,
       }, { merge: false });
       batch.update(invitationDoc.ref, {
         status: 'accepted',
         acceptedBy: uid,
-        acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+        acceptedAt: FieldValue.serverTimestamp(),
       });
       accepted += 1;
     }

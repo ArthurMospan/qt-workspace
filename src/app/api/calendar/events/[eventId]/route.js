@@ -1,5 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   canManageCalendarEvent,
@@ -137,7 +138,7 @@ function incrementProjectLocks(transaction, projectRefs) {
   );
   uniqueRefs.forEach(ref => {
     transaction.update(ref, {
-      invoiceMutationVersion: admin.firestore.FieldValue.increment(1),
+      invoiceMutationVersion: FieldValue.increment(1),
     });
   });
 }
@@ -206,7 +207,7 @@ export async function PATCH(request, context) {
         }
         transaction.update(loaded.ref, {
           [`participantResponses.${authorization.user.uid}`]: body.response,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         return {
           organizationId: current.organizationId,
@@ -328,7 +329,7 @@ export async function PATCH(request, context) {
       transaction.update(loaded.ref, {
         ...eventData,
         participantResponses,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       incrementProjectLocks(transaction, [previousProjectRef, nextProjectRef]);
       return {

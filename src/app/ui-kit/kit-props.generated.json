@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 95,
-    "props": 696,
-    "documentedProps": 696,
+    "components": 96,
+    "props": 706,
+    "documentedProps": 706,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3198,7 +3198,7 @@
         {
           "name": "options",
           "default": "[]",
-          "type": "{value: string, label: string, icon?, color?, user?}[]",
+          "type": "{value: string, label: string, icon?, color?, user?, priorityMark?}[]",
           "values": [],
           "description": "The choices."
         },
@@ -3756,7 +3756,7 @@
     },
     "PriorityBadge": {
       "file": "src/components/ui/DataDisplay/PriorityBadge.jsx",
-      "summary": "Issue priority as a dot plus its Ukrainian name. The five levels and their colours are fixed here, not configurable: priority is a shared vocabulary.",
+      "summary": "Priority mark plus its configured name. Geometry is shared; colour, label and ring intensity come from the organization's ordered workflow priorities.",
       "props": [
         {
           "name": "className",
@@ -3766,11 +3766,52 @@
           "description": "Placement in the parent only."
         },
         {
-          "name": "priority",
-          "default": "'low'",
-          "type": "'blocker'|'high'|'medium'|'low'|'info'",
+          "name": "priorities",
+          "default": "[]",
+          "type": "object[]",
           "values": [],
-          "description": "Which level to draw."
+          "description": "Ordered workflow priorities."
+        },
+        {
+          "name": "priority",
+          "default": "'none'",
+          "type": "object|string",
+          "values": [],
+          "description": "Priority item or id."
+        }
+      ]
+    },
+    "PriorityIcon": {
+      "file": "src/components/ui/DataDisplay/PriorityIcon.jsx",
+      "summary": "Canonical priority mark, using the exact 16px geometry from the supplied SVGs: two concentric rings and a centre circle.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "priorities",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Ordered workflow priorities for custom rank."
+        },
+        {
+          "name": "priority",
+          "default": "",
+          "type": "object|string",
+          "values": [],
+          "description": "Priority item, id, or presentation."
+        },
+        {
+          "name": "size",
+          "default": "'sm'",
+          "type": "'sm'|'md'",
+          "values": [],
+          "description": "Compact metadata or the stronger task-card mark."
         }
       ]
     },
@@ -4420,6 +4461,34 @@
           "description": "Task being moved."
         },
         {
+          "name": "issueLinks",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Links used to show whether the task is blocked."
+        },
+        {
+          "name": "issues",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Tasks available for parent/child context on the card."
+        },
+        {
+          "name": "labels",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Organization labels shown on the task card."
+        },
+        {
+          "name": "members",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Organization members shown on the task card."
+        },
+        {
           "name": "onClose",
           "default": "",
           "type": "() => void",
@@ -4439,6 +4508,13 @@
           "type": "object",
           "values": [],
           "description": "Project that owns the task and its statuses."
+        },
+        {
+          "name": "sprints",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Organization sprints shown on the task card."
         },
         {
           "name": "statuses",

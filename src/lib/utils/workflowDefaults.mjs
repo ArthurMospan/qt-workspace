@@ -13,11 +13,12 @@ import {
   deliveredStatusIds,
   statusCategoryMap,
 } from './statusCategories.mjs';
+import { DEFAULT_TASK_TYPES } from './taskTypes.mjs';
 
 export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'done'];
-export const DEFAULT_TYPE_IDS = ['feature', 'task', 'bug'];
+export const DEFAULT_TYPE_IDS = DEFAULT_TASK_TYPES.map(type => type.id);
 export const DEFAULT_PRIORITY_IDS = ['blocker', 'high', 'medium', 'low'];
-export const DEFAULT_LABEL_IDS = ['bug', 'frontend', 'design'];
+export const DEFAULT_LABEL_IDS = [];
 
 // Human labels for the built-in workflow columns. Custom statuses carry their
 // own label in the org's workflow document; this is the fallback for the

@@ -11,7 +11,14 @@
 //     --project quickteam-prod --report C:\tmp\spent-minutes-dry-run.json
 //   node --env-file=.env.local scripts/reconcile-issue-spent-minutes.mjs \
 //     --project quickteam-prod --apply --confirm-project quickteam-prod
-import admin from 'firebase-admin';
+import {
+  applicationDefault,
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { writeFile } from 'node:fs/promises';
 
 import {
@@ -49,28 +56,28 @@ if (apply && !writesFrozen) {
 }
 
 function initAdmin() {
-  if (admin.apps.length) {
-    const currentProject = admin.app().options.projectId;
+  if (getApps().length) {
+    const currentProject = getApp().options.projectId;
     if (currentProject && currentProject !== firebaseProjectId) {
       throw new Error(
         `Admin SDK already targets "${currentProject}", expected "${firebaseProjectId}"`,
       );
     }
-    return admin.app();
+    return getApp();
   }
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   const options = { projectId: firebaseProjectId };
   if (clientEmail && privateKey) {
-    options.credential = admin.credential.cert({
+    options.credential = cert({
       projectId: firebaseProjectId,
       clientEmail,
       privateKey,
     });
   } else {
-    options.credential = admin.credential.applicationDefault();
+    options.credential = applicationDefault();
   }
-  return admin.initializeApp(options);
+  return initializeApp(options);
 }
 
 function numericMirror(value) {
@@ -125,7 +132,7 @@ async function applyIssueReconciliation(db, issueId) {
     transaction.update(issueRef, {
       spentMinutes: reconciliation.spentMinutes,
       spentMinutesMirrorVersion: 1,
-      spentMinutesReconciledAt: admin.firestore.FieldValue.serverTimestamp(),
+      spentMinutesReconciledAt: FieldValue.serverTimestamp(),
     });
     return {
       status: 'updated',
@@ -137,8 +144,8 @@ async function applyIssueReconciliation(db, issueId) {
 }
 
 async function main() {
-  initAdmin();
-  const db = admin.firestore();
+  const app = initAdmin();
+  const db = getFirestore(app);
   let issuesQuery = db.collection('issues');
   if (organizationId) {
     issuesQuery = issuesQuery.where('organizationId', '==', organizationId);

@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { normalizeCalendarRecurrenceInterval } from '@/lib/utils/calendarTimeLog.mjs';
@@ -36,7 +37,7 @@ export function timestampFromInput(value) {
   if (typeof value.toDate === 'function') return value;
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return undefined;
-  return admin.firestore.Timestamp.fromDate(date);
+  return Timestamp.fromDate(date);
 }
 
 export function serializeTimestamp(value) {
@@ -117,7 +118,7 @@ export function normalizedCalendarEventInput(input, current = null, { ownerId = 
     const spanMs = allDay
       ? 24 * 60 * 60 * 1000
       : POINT_EVENT_DURATION_MINUTES * 60 * 1000;
-    endAt = admin.firestore.Timestamp.fromMillis(startAt.toMillis() + spanMs);
+    endAt = Timestamp.fromMillis(startAt.toMillis() + spanMs);
   }
   if (!endAt) return { error: 'Вкажіть коректні дату й час' };
   if (endAt.toMillis() <= startAt.toMillis()) {
@@ -272,7 +273,7 @@ export async function createCalendarNotifications({
       actorName: actor.name || actor.displayName || '',
       actorAvatar: actor.avatar || actor.photoURL || '',
       read: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   });
   await batch.commit();

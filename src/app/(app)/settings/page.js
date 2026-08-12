@@ -42,6 +42,9 @@ import {
   IconAction,
   Label,
   Pill,
+  PriorityBadge,
+  PriorityIcon,
+  TypeBadge,
   Surface,
   useConfirm,
   Popover,
@@ -79,9 +82,20 @@ import {
   STATUS_CATEGORIES,
   STATUS_CATEGORY_IDS,
 } from '@/lib/utils/statusCategories.mjs';
+import {
+  taskTypeIcon,
+  taskTypeIconKey,
+} from '@/lib/design/taskTypeIcons';
+import {
+  NO_PRIORITY,
+  isSystemPriorityId,
+  priorityPresentation,
+} from '@/lib/utils/priorities.mjs';
+import { isSystemTaskTypeId } from '@/lib/utils/taskTypes.mjs';
 
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
+const NOOP = () => {};
 // Інлайниться на білді, тому зміна цієї змінної потребує redeploy, не просто
 // рестарту.
 const ROLE_LABELS = {
@@ -317,7 +331,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'status', provided, category = '', onMoveToCategory }) {
+function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false, readOnly = false, variant = 'status', provided, category = '', onMoveToCategory, priorityItems = [], typeSuggestions = [], onChooseTypeSuggestion = NOOP }) {
   const [editing,     setEditing]     = useState(item.isNew || false);
   const [label,       setLabel]       = useState(item.label);
   const [color,       setColor]       = useState(item.color);
@@ -326,14 +340,34 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
   const save = () => {
     if (label.trim()) {
       const { isNew, ...rest } = item;
-      onSave({ ...rest, label: label.trim(), color });
+      onSave({
+        ...rest,
+        label: label.trim(),
+        color,
+        ...(variant === 'type' ? { icon: taskTypeIconKey(item) } : {}),
+      });
       setEditing(false);
       setShowPalette(false);
     } else {
       if (item.isNew) onDelete(item.id);
-      else { setEditing(false); setLabel(item.label); }
+      else {
+        setEditing(false);
+        setLabel(item.label);
+        setColor(item.color);
+      }
     }
   };
+
+  const priorityConfig = variant === 'priority'
+    ? priorityPresentation(item, priorityItems)
+    : null;
+  const normalizedTypeQuery = label.trim().toLocaleLowerCase('uk');
+  const visibleTypeSuggestions = variant === 'type' && item.isNew
+    ? typeSuggestions.filter(type => (
+      !normalizedTypeQuery
+      || type.label.toLocaleLowerCase('uk').includes(normalizedTypeQuery)
+    ))
+    : [];
 
   return (
     <div 
@@ -347,15 +381,19 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
         </div>
       )}
       {/* Color */}
-      <div className="relative shrink-0">
-        <ColorSwatch
-          size="trigger"
-          color={color}
-          label="Обрати колір"
-          aria-expanded={showPalette}
-          onClick={() => setShowPalette(v => !v)}
-        />
-        {showPalette && (
+      <div className="relative flex h-[18px] w-[18px] shrink-0 items-center justify-center">
+        {readOnly && variant === 'priority' ? (
+          <PriorityIcon priority={priorityConfig} priorities={priorityItems} />
+        ) : (
+          <ColorSwatch
+            size="trigger"
+            color={color}
+            label="Обрати колір"
+            aria-expanded={showPalette}
+            onClick={() => setShowPalette(v => !v)}
+          />
+        )}
+        {!readOnly && showPalette && (
           <div data-ui-surface="local" className="absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
             {COLOR_PALETTE.map(c => (
               <ColorSwatch
@@ -380,24 +418,63 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
 
       {/* Label */}
       {editing ? (
-        <div className="flex-1">
+        <div className="relative flex-1">
           <Input
             autoFocus
             size="sm"
             value={label}
             onChange={e => setLabel(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { if (item.isNew) onDelete(item.id); else { setEditing(false); setLabel(item.label); } } }}
+            placeholder={variant === 'type' && item.isNew ? 'Назва типу' : undefined}
+            onKeyDown={e => {
+              if (e.key === 'Enter') save();
+              if (e.key === 'Escape') {
+                if (item.isNew) onDelete(item.id);
+                else {
+                  setEditing(false);
+                  setLabel(item.label);
+                  setColor(item.color);
+                }
+              }
+            }}
           />
+          {visibleTypeSuggestions.length > 0 && (
+            <div
+              data-ui-surface="local"
+              className="absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
+            >
+              <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-faint">
+                Стандартні типи
+              </p>
+              {visibleTypeSuggestions.map(type => (
+                <Button
+                  key={type.id}
+                  onMouseDown={event => event.preventDefault()}
+                  onClick={() => onChooseTypeSuggestion(type)}
+                  style="ghost"
+                  size="sm"
+                  icon={taskTypeIcon(type)}
+                  className="w-full justify-start"
+                >
+                  {type.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <span className="flex-1 text-[13px] font-semibold text-ink">{item.label}</span>
       )}
 
       {/* Badge preview */}
-      {!editing && (
+      {!editing && variant === 'type' && (
+        <TypeBadge label={label} color={color} icon={taskTypeIcon(item)} />
+      )}
+      {!editing && variant === 'priority' && (
+        <PriorityBadge priority={{ ...priorityConfig, label, color }} priorities={priorityItems} />
+      )}
+      {!editing && variant !== 'type' && variant !== 'priority' && (
         <span 
           className={`inline-flex items-center shrink-0 text-[11px] font-medium backdrop-blur-[2px] transition-all ${
-            variant === 'priority' ? 'gap-[6px] px-[8px] py-[3px] rounded-[6px]' :
             variant === 'label' ? 'gap-1.5 px-[10px] py-[3px] rounded-[6px]' :
             'px-[10px] py-[3px] rounded-[6px]'
           }`}
@@ -406,7 +483,6 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
             color: color
           }}
         >
-          {variant === 'priority' && <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: color }} />}
           {variant === 'label' && <TagIcon size={10} className="shrink-0 opacity-70" />}
           {label}
         </span>
@@ -453,11 +529,22 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, variant = 'sta
           </>
         ) : (
           <>
-            <Button onClick={() => setEditing(true)}
-              aria-label="Редагувати"
-              style="ghost" size="icon" icon={Edit2}
-            />
-            {canDelete ? (
+            {readOnly ? (
+              <div className="w-[32px]" />
+            ) : (
+              <Button onClick={() => setEditing(true)}
+                aria-label="Редагувати"
+                style="ghost" size="icon" icon={Edit2}
+              />
+            )}
+            {locked ? (
+              <Button
+                disabled
+                aria-label={variant === 'type' ? 'Системний тип' : 'Системний пріоритет'}
+                title={variant === 'type' ? 'Системний тип не можна видалити' : 'Системний пріоритет не можна видалити'}
+                style="ghost" size="icon" icon={Lock}
+              />
+            ) : canDelete ? (
               <Button onClick={() => onDelete(item.id)}
                 aria-label="Видалити"
                 style="ghost" color="red" size="icon" icon={Trash2}
@@ -1796,6 +1883,25 @@ export default function SettingsPage() {
   const lbA = makeUpdater(setLabels);
   const posA = makeUpdater(setPositions);
 
+  const handlePriorityDragEnd = result => {
+    if (!result.destination) return;
+    setPriorities(current => {
+      const moved = current[result.source.index];
+      if (!moved || isSystemPriorityId(moved.id)) return current;
+
+      const next = [...current];
+      next.splice(result.source.index, 1);
+      const blockerIndex = next.findIndex(item => item.id === 'blocker');
+      const lowIndex = next.findIndex(item => item.id === 'low');
+      const destinationIndex = Math.min(
+        Math.max(result.destination.index, blockerIndex + 1),
+        Math.max(blockerIndex + 1, lowIndex),
+      );
+      next.splice(destinationIndex, 0, moved);
+      return next;
+    });
+  };
+
   // ── The workflow editor is a list per category ─────────────────────────────
   // A status's category is where it sits, not a dropdown on its row: you move a
   // status between «У роботі» and «Готово» by dragging it there, the way Linear
@@ -2993,8 +3099,19 @@ export default function SettingsPage() {
 
       // QUI-130. The epic sentence outlived the epics: the type was removed and
       // migrated away, so the only thing it still explained was itself.
-      case 'types': return (
-        <Section title="Типи завдань" desc="Задача, Фіча й Баг — стандартний набір. Тип показується на картці й у списках і не впливає на статус чи прогрес.">
+      case 'types': {
+        const addType = () => setTypes(current => [
+          ...current,
+          {
+            id: `t-${Date.now()}`,
+            label: '',
+            color: '#8b5cf6',
+            icon: 'star',
+            isNew: true,
+          },
+        ]);
+        return (
+        <Section title="Типи завдань" desc="«Задача» — системний тип і безпечне значення за замовчуванням. Стандартні типи мають фіксовані іконки, а всі власні типи позначаються зіркою.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
@@ -3002,11 +3119,24 @@ export default function SettingsPage() {
           ) : (
             <Card preset="borderless">
               {types.map(t => (
-                <WorkflowItem key={t.id} item={t} onSave={tpA.onSave} onDelete={tpA.onDelete} variant="type" />
+                <WorkflowItem
+                  key={t.id}
+                  item={t}
+                  onSave={tpA.onSave}
+                  onDelete={tpA.onDelete}
+                  canDelete={!isSystemTaskTypeId(t.id)}
+                  locked={isSystemTaskTypeId(t.id)}
+                  variant="type"
+                  typeSuggestions={DEFAULT_TYPES.filter(type => !types.some(current => current.id === type.id))}
+                  onChooseTypeSuggestion={preset => setTypes(current => current.map(type => (
+                    type.id === t.id ? { ...preset } : type
+                  )))}
+                />
               ))}
               <Button
-                onClick={() => setTypes(p => [...p, { id: `t-${Date.now()}`, label: 'Новий тип', color: '#059669', isNew: true }])}
-                style="ghost" size="lg"
+                onClick={addType}
+                style="ghost"
+                size="lg"
                 icon={Plus}
                 composition="settings-row-action"
                 className="mt-2"
@@ -3017,21 +3147,67 @@ export default function SettingsPage() {
           )}
           {!wfLoading && renderWorkflowResetFooter()}
         </Section>
-      );
+        );
+      }
 
       case 'priorities': return (
-        <Section title="Пріоритети завдань" desc="Пріоритети завдань — застосовуються до всіх проєктів">
+        <Section title="Пріоритети завдань" desc="Критичний, високий, середній і низький — системні рівні: їх можна перейменувати й перефарбувати, але не видалити. Власні рівні перетягуйте між ними — іконка автоматично покаже їхню вагу.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
               <LoadingSpinner size="md" />
             </div>
           ) : (
             <Card preset="borderless">
-              {priorities.map(pItem => (
-                <WorkflowItem key={pItem.id} item={pItem} onSave={prA.onSave} onDelete={prA.onDelete} variant="priority" />
-              ))}
+              <WorkflowItem
+                item={NO_PRIORITY}
+                onSave={NOOP}
+                onDelete={NOOP}
+                canDelete={false}
+                locked
+                readOnly
+                variant="priority"
+                priorityItems={priorities}
+              />
+              <DragDropContext onDragEnd={handlePriorityDragEnd}>
+                <Droppable droppableId="workflow-priorities">
+                  {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {priorities.map((pItem, index) => {
+                        const locked = isSystemPriorityId(pItem.id);
+                        return (
+                          <Draggable key={pItem.id} draggableId={pItem.id} index={index} isDragDisabled={locked}>
+                            {dragProvided => (
+                              <WorkflowItem
+                                item={pItem}
+                                onSave={prA.onSave}
+                                onDelete={prA.onDelete}
+                                canDelete={!locked}
+                                locked={locked}
+                                variant="priority"
+                                provided={dragProvided}
+                                priorityItems={priorities}
+                              />
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
               <Button
-                onClick={() => setPriorities(p => [...p, { id: `p-${Date.now()}`, label: 'Новий пріоритет', color: '#eab308', isNew: true }])}
+                onClick={() => setPriorities(current => {
+                  const lowIndex = current.findIndex(item => item.id === 'low');
+                  const next = [...current];
+                  next.splice(lowIndex < 0 ? current.length : lowIndex, 0, {
+                    id: `p-${Date.now()}`,
+                    label: 'Новий пріоритет',
+                    color: '#eab308',
+                    isNew: true,
+                  });
+                  return next;
+                })}
                 style="ghost" size="lg"
                 icon={Plus}
                 composition="settings-row-action"

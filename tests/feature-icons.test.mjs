@@ -50,8 +50,23 @@ test('no file draws a feature glyph past the names that own it', () => {
 // select and every filter in the product.
 test('the task type reads the shared task icon', () => {
   const workflow = readFileSync(join(ROOT, 'src/lib/hooks/useWorkflowConfig.js'), 'utf8');
-  assert.match(workflow, /TYPE_ICONS = \{ epic: Zap, feature: Star, task: TaskIcon, bug: Bug \}/);
-  assert.match(workflow, /from '@\/lib\/design\/icons'/);
+  const taskTypes = readFileSync(join(ROOT, 'src/lib/design/taskTypeIcons.js'), 'utf8');
+  assert.match(workflow, /import \{ TASK_TYPE_ICONS \} from '@\/lib\/design\/taskTypeIcons'/);
+  assert.match(workflow, /export const TYPE_ICONS = TASK_TYPE_ICONS/);
+  assert.match(taskTypes, /task:\s*TaskIcon/);
+  assert.match(taskTypes, /star:\s*Star/);
+  assert.match(taskTypes, /return taskTypeIconKeyForType\(type\)/);
+  assert.match(taskTypes, /from '@\/lib\/design\/icons'/);
+});
+
+test('type settings lock Task, offer presets, and never expose an icon picker', () => {
+  const settings = readFileSync(join(ROOT, 'src/app/(app)/settings/page.js'), 'utf8');
+  assert.match(settings, /locked=\{isSystemTaskTypeId\(t\.id\)\}/);
+  assert.match(settings, /label: '',\s*color: '#8b5cf6'/);
+  assert.match(settings, /typeSuggestions=\{DEFAULT_TYPES\.filter/);
+  assert.match(settings, /onChooseTypeSuggestion=/);
+  assert.match(settings, /Стандартні типи/);
+  assert.doesNotMatch(settings, /TASK_TYPE_ICON_OPTIONS|chooseTypeIcon|Обрати іконку/);
 });
 
 // The two lists a task appears in, which is where the miss was visible.

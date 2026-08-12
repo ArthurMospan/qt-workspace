@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-import { useWorkflowConfig, DEFAULT_PRIORITIES, DEFAULT_TYPES, PRIORITY_ICONS, TYPE_ICONS } from '@/lib/hooks/useWorkflowConfig';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
@@ -31,9 +31,8 @@ import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
-
-const PRIORITY_CFG  = Object.fromEntries(DEFAULT_PRIORITIES.map(p => [p.id, { c: p.color, i: PRIORITY_ICONS[p.id] }]));
-const TYPE_CFG      = Object.fromEntries(DEFAULT_TYPES.map(t => [t.id, { c: t.color, i: TYPE_ICONS[t.id] }]));
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -206,6 +205,8 @@ export default function GlobalSprintsPage() {
   const { members } = useOrganization();
   const { labels, statuses, priorities, types, closedStatusIds } = useWorkflowConfig();
   const statusOrder = statuses.map(s => s.id);
+  const priorityOrder = Object.fromEntries(priorities.map((priority, index) => [priority.id, index]));
+  priorityOrder[NO_PRIORITY_ID] = priorities.length;
   const isClosedCol = (id) => closedStatusIds.includes(id);
   const { formatDate } = useLocalization();
   const showToast = useWorkspaceStore(s => s.showToast);
@@ -309,7 +310,7 @@ export default function GlobalSprintsPage() {
         if (!i.assigneeIds || !i.assigneeIds.includes(assigneeFilter)) return false;
       }
     }
-    if (priorityFilter !== 'all' && i.priority !== priorityFilter) return false;
+    if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
     if (typeFilter !== 'all' && i.type !== typeFilter) return false;
     return true;
   });
@@ -319,9 +320,8 @@ export default function GlobalSprintsPage() {
     return [...issueList].sort((a, b) => {
       let av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
       if (sortKey === 'priority') { 
-        const O = { blocker: 0, high: 1, medium: 2, low: 3 }; 
-        av = O[a.priority] ?? 3; 
-        bv = O[b.priority] ?? 3; 
+        av = priorityOrder[a.priority || NO_PRIORITY_ID] ?? priorities.length + 1;
+        bv = priorityOrder[b.priority || NO_PRIORITY_ID] ?? priorities.length + 1;
       }
       if (sortKey === 'columnId') {
         av = statusOrder.indexOf(a.columnId);
@@ -489,11 +489,7 @@ export default function GlobalSprintsPage() {
                 onChange={setPriorityFilter}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
-                  ...priorities.map(priority => ({
-                    value: priority.id,
-                    label: priority.label,
-                    dotColor: priority.color,
-                  })),
+                  ...prioritySelectOptions(priorities),
                 ]}
                 variant="ghost"
               />
@@ -503,12 +499,7 @@ export default function GlobalSprintsPage() {
                 onChange={setTypeFilter}
                 options={[
                   { value: 'all', label: 'Всі типи' },
-                  ...types
-                    .map(type => ({
-                      value: type.id,
-                      label: type.label,
-                      dotColor: type.color,
-                    })),
+                  ...types.map(taskTypeSelectOption),
                 ]}
                 variant="ghost"
               />

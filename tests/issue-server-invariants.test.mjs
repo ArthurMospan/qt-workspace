@@ -13,7 +13,7 @@ test('YouTrack issue updates share workflow, hierarchy and deletion invariants',
   assert.match(importer, /freshSource\.data\(\)\.deletionPending === true/);
   assert.match(importer, /freshTarget\.data\(\)\.deletionPending === true/);
   assert.match(importer, /issueBlockLinkStatusConflict\(\{/);
-  assert.match(importer, /issueStatusVersion:\s*admin\.firestore\.FieldValue\.increment\(1\)/);
+  assert.match(importer, /issueStatusVersion:\s*FieldValue\.increment\(1\)/);
 });
 
 test('YouTrack work-log import preserves billed evidence and its issue mirror', async () => {
@@ -28,12 +28,12 @@ test('YouTrack work-log import preserves billed evidence and its issue mirror', 
   assert.match(importer, /invalidWorkItemCount/);
   assert.match(
     importer,
-    /spentMinutes:\s*initializeSpentMinutesMirror[\s\S]*?admin\.firestore\.FieldValue\.increment\(spentMinutesDelta\)/,
+    /spentMinutes:\s*initializeSpentMinutesMirror[\s\S]*?FieldValue\.increment\(spentMinutesDelta\)/,
   );
   assert.match(importer, /spentMinutesMirrorVersion:\s*1/);
-  assert.match(importer, /timeLogMutationVersion:\s*admin\.firestore\.FieldValue\.increment\(1\)/);
-  assert.match(importer, /timeLogImportVersion:\s*admin\.firestore\.FieldValue\.increment\(1\)/);
-  assert.match(importer, /invoiceMutationVersion:\s*admin\.firestore\.FieldValue\.increment\(1\)/);
+  assert.match(importer, /timeLogMutationVersion:\s*FieldValue\.increment\(1\)/);
+  assert.match(importer, /timeLogImportVersion:\s*FieldValue\.increment\(1\)/);
+  assert.match(importer, /invoiceMutationVersion:\s*FieldValue\.increment\(1\)/);
   assert.match(importer, /workItemResult\.warnings/);
 });
 

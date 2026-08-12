@@ -1,28 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 async function calendarTimeLogRequest(path, options = {}) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Потрібно увійти в акаунт');
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    const error = new Error(result.error || 'Не вдалося оновити списаний час');
-    error.code = result.code;
-    throw error;
-  }
-  return result;
+  return authenticatedRequest(path, options, 'Не вдалося оновити списаний час');
 }
 
 function requestPath({

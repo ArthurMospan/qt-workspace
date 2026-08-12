@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -146,10 +146,10 @@ export async function POST(request, context) {
         current.description,
         current.subtasks,
       );
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.update(issueRef, {
         description,
-        subtasks: admin.firestore.FieldValue.delete(),
+        subtasks: FieldValue.delete(),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

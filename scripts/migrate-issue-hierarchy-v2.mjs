@@ -12,7 +12,14 @@
 //   node --env-file=.env.local scripts/migrate-issue-hierarchy-v2.mjs \
 //     --project quickteam-prod --apply --confirm-project quickteam-prod \
 //     --report ./issue-hierarchy-migration.json
-import admin from 'firebase-admin';
+import {
+  applicationDefault,
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { writeFile } from 'node:fs/promises';
 
 import {
@@ -51,26 +58,26 @@ if (APPLY && CONFIRMED_PROJECT_ID !== FIREBASE_PROJECT_ID) {
 }
 
 function initAdmin() {
-  if (admin.apps.length) {
-    const currentProject = admin.app().options.projectId;
+  if (getApps().length) {
+    const currentProject = getApp().options.projectId;
     if (currentProject && currentProject !== FIREBASE_PROJECT_ID) {
       throw new Error(`Admin SDK already targets "${currentProject}", expected "${FIREBASE_PROJECT_ID}"`);
     }
-    return admin.app();
+    return getApp();
   }
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   const options = { projectId: FIREBASE_PROJECT_ID };
   if (clientEmail && privateKey) {
-    options.credential = admin.credential.cert({
+    options.credential = cert({
       projectId: FIREBASE_PROJECT_ID,
       clientEmail,
       privateKey,
     });
   } else {
-    options.credential = admin.credential.applicationDefault();
+    options.credential = applicationDefault();
   }
-  return admin.initializeApp(options);
+  return initializeApp(options);
 }
 
 function owns(object, key) {
@@ -309,8 +316,8 @@ async function applyIssueUpdates(db, updates, report) {
 
       transaction.update(issueRef, update.fields);
       transaction.update(projectRef, {
-        issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        issueHierarchyVersion: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { applied: true };
     });
@@ -457,7 +464,7 @@ async function planIssueMigration(db, report) {
         });
       } else {
         fields.parentIssueId = legacyParent;
-        fields.parentEpicId = admin.firestore.FieldValue.delete();
+        fields.parentEpicId = FieldValue.delete();
         reasons.push('parentEpicId->parentIssueId');
         report.summary.parentsConverted += 1;
         report.summary.legacyParentFieldsRemoved += 1;
@@ -467,12 +474,12 @@ async function planIssueMigration(db, report) {
       reasons.push('initialize-parentIssueId');
       report.summary.canonicalParentsInitialized += 1;
       if (hasLegacyParent) {
-        fields.parentEpicId = admin.firestore.FieldValue.delete();
+        fields.parentEpicId = FieldValue.delete();
         report.summary.legacyParentFieldsRemoved += 1;
       }
     } else if (hasLegacyParent) {
       if (!legacyParent || legacyParent === canonicalParent || canonicalParent === null) {
-        fields.parentEpicId = admin.firestore.FieldValue.delete();
+        fields.parentEpicId = FieldValue.delete();
         reasons.push('remove-stale-parentEpicId');
         report.summary.legacyParentFieldsRemoved += 1;
       } else {
@@ -541,14 +548,14 @@ async function planIssueMigration(db, report) {
             report.summary.checklistsConverted += 1;
             reasons.push('subtasks->markdown-checklist');
           }
-          fields.subtasks = admin.firestore.FieldValue.delete();
+          fields.subtasks = FieldValue.delete();
           reasons.push('remove-legacy-subtasks');
         }
       }
     }
 
     if (Object.keys(fields).length > 0) {
-      fields.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+      fields.updatedAt = FieldValue.serverTimestamp();
       updates.push({
         id: document.id,
         organizationId: data.organizationId,
@@ -687,15 +694,15 @@ async function applyLinkPlan(db, plan) {
       projectId: plan.projectId,
       ...plan.link,
       createdBy: plan.createdBy,
-      createdAt: plan.createdAt || admin.firestore.FieldValue.serverTimestamp(),
-      migratedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: plan.createdAt || FieldValue.serverTimestamp(),
+      migratedAt: FieldValue.serverTimestamp(),
     });
     currentLegacy
       .filter(document => document.exists && document.id !== canonicalRef.id)
       .forEach(document => transaction.delete(document.ref));
     transaction.update(projectRef, {
-      issueLinkVersion: admin.firestore.FieldValue.increment(1),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      issueLinkVersion: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { applied: true };
   });
@@ -901,7 +908,7 @@ async function migrateWorkflowLabels(db, report) {
         if (!currentPlan.changed) return currentPlan;
         transaction.update(workflowRef, {
           ...currentPlan.update,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         return currentPlan;
       });
@@ -920,7 +927,7 @@ async function migrateWorkflowLabels(db, report) {
 
 async function run() {
   const app = initAdmin();
-  const db = app.firestore();
+  const db = getFirestore(app);
   const report = makeReport();
   console.log(
     `${APPLY ? 'APPLY' : 'DRY RUN'} issue hierarchy v2 on Firebase project "${FIREBASE_PROJECT_ID}"`,

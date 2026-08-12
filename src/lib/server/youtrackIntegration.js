@@ -1,7 +1,8 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { open, seal } from '@/lib/server/secretBox.mjs';
 import { YouTrackClient } from '@/lib/server/youtrackClient';
 import { normalizeYouTrackBaseUrl } from '@/lib/utils/youtrackImport.mjs';
@@ -53,8 +54,8 @@ export async function connectYouTrack({ organizationId, baseUrl, token, userId }
       email: String(account?.email || ''),
     },
     connectedBy: userId,
-    connectedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    connectedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
   await connectionRef(organizationId).set(payload);
   return { ...publicConnection({ exists: true, data: () => payload }), connectedAt: new Date().toISOString() };

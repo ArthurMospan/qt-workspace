@@ -10,10 +10,9 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import {
-  AlertOctagon, ArrowUp, Minus, ArrowDown, Zap, Star, Bug,
   Circle, CircleCheck, CircleDashed, CircleDotDashed, CircleX,
 } from 'lucide-react';
-import { TaskIcon } from '@/lib/design/icons';
+import { TASK_TYPE_ICONS } from '@/lib/design/taskTypeIcons';
 import {
   localizeBuiltInWorkflowItems,
   resolveClosedStatusIds,
@@ -23,12 +22,16 @@ import {
   statusCategoryColumns,
   statusCategoryMap,
 } from '@/lib/utils/statusCategories.mjs';
+import {
+  DEFAULT_SYSTEM_PRIORITIES,
+  ensureSystemPriorities,
+} from '@/lib/utils/priorities.mjs';
+import {
+  DEFAULT_TASK_TYPES,
+  ensureSystemTaskType,
+} from '@/lib/utils/taskTypes.mjs';
 
-// Single source of truth for priority/type icons — every place that renders
-// a priority or type (sprints, SearchModal, IssueDetail, analytics…) reads
-// from here instead of keeping its own copy, so the icon set can't drift.
-export const PRIORITY_ICONS = { blocker: AlertOctagon, high: ArrowUp, medium: Minus, low: ArrowDown };
-export const TYPE_ICONS = { epic: Zap, feature: Star, task: TaskIcon, bug: Bug };
+export const TYPE_ICONS = TASK_TYPE_ICONS;
 // One glyph per status category, for the places where a category stands on its
 // own: the workflow editor and the columns of a cross-project board. A ring that
 // fills in as work moves right — dashed while it is only collected, empty once
@@ -116,49 +119,11 @@ export function getCompletedAtMillis(issue) {
 // QUI-130. «Задача» leads because it is the default: most issues are tasks, and
 // the list should open on the one you reach for. («Завдання» is the entity —
 // what the whole product calls an issue; «Задача» is one of its three types.)
-export const DEFAULT_TYPES = [{
-  id: 'task',
-  label: 'Задача',
-  color: '#059669'
-}, {
-  id: 'feature',
-  label: 'Фіча',
-  color: '#f59e0b'
-}, {
-  id: 'bug',
-  label: 'Баг',
-  color: '#dc2626'
-}];
-export const DEFAULT_PRIORITIES = [{
-  id: 'blocker',
-  label: 'Критичний',
-  color: '#ef4444'
-}, {
-  id: 'high',
-  label: 'Високий',
-  color: '#f97316'
-}, {
-  id: 'medium',
-  label: 'Середній',
-  color: '#eab308'
-}, {
-  id: 'low',
-  label: 'Низький',
-  color: '#9a9a9a'
-}];
-export const DEFAULT_LABELS = [{
-  id: 'bug',
-  label: 'Баг',
-  color: '#ef4444'
-}, {
-  id: 'frontend',
-  label: 'Фронтенд',
-  color: '#3b82f6'
-}, {
-  id: 'design',
-  label: 'Дизайн',
-  color: '#db2777'
-}];
+export const DEFAULT_TYPES = DEFAULT_TASK_TYPES.map(type => ({ ...type }));
+export const DEFAULT_PRIORITIES = DEFAULT_SYSTEM_PRIORITIES;
+// Labels are organization taxonomy, not universal workflow. Existing saved
+// labels stay untouched; a new organization starts clean.
+export const DEFAULT_LABELS = [];
 export const DEFAULT_POSITIONS = [{
   id: 'dev',
   label: 'Розробник',
@@ -214,12 +179,12 @@ function createWorkflowStore(organizationId) {
         statuses: Array.isArray(data.statuses)
           ? localizeBuiltInWorkflowItems('statuses', data.statuses)
           : DEFAULT_STATUSES,
-        types: Array.isArray(data.types)
+        types: ensureSystemTaskType(Array.isArray(data.types)
           ? localizeBuiltInWorkflowItems('types', data.types)
-          : DEFAULT_TYPES,
-        priorities: Array.isArray(data.priorities)
+          : DEFAULT_TYPES),
+        priorities: ensureSystemPriorities(Array.isArray(data.priorities)
           ? localizeBuiltInWorkflowItems('priorities', data.priorities)
-          : DEFAULT_PRIORITIES,
+          : DEFAULT_PRIORITIES),
         labels: Array.isArray(data.labels)
           ? localizeBuiltInWorkflowItems('labels', data.labels)
           : DEFAULT_LABELS,

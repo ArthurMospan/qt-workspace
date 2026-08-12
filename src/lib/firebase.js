@@ -1,5 +1,5 @@
 // src/lib/firebase.js
-import { initializeApp, getApps } from 'firebase/app';
+import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, GithubAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import {
   getFirestore,
@@ -20,7 +20,23 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// QuickTeam+ uses a named secondary Firebase app. `getApps()[0]` is therefore
+// not a safe substitute for the main app: module evaluation order can put the
+// portal app first and make every workspace ID token target the wrong Firebase
+// project. Resolve the SDK's explicit [DEFAULT] app or create that exact app.
+const app = getApps().some(candidate => candidate.name === '[DEFAULT]')
+  ? getApp()
+  : initializeApp(firebaseConfig);
+
+if (
+  process.env.NODE_ENV === 'development'
+  && app.options.projectId !== firebaseConfig.projectId
+) {
+  console.error('[firebase] Default app project mismatch', {
+    actualProjectId: app.options.projectId || '',
+    expectedProjectId: firebaseConfig.projectId || '',
+  });
+}
 
 function createFirestore() {
   if (typeof window === 'undefined') return getFirestore(app);

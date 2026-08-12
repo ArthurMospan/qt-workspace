@@ -1,5 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import {
@@ -186,7 +187,7 @@ export async function DELETE(request, context) {
         );
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.create(tombstoneRef, {
         schemaVersion: 1,
         issueId,
@@ -197,11 +198,11 @@ export async function DELETE(request, context) {
         childCount: children.length,
         deletedBy: authorization.user.uid,
         deletedAt: now,
-        purgeAfter: admin.firestore.Timestamp.fromMillis(undoExpiresAtMs),
+        purgeAfter: Timestamp.fromMillis(undoExpiresAtMs),
       });
       transaction.delete(issueRef);
       transaction.update(projectRef, {
-        issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
+        issueHierarchyVersion: FieldValue.increment(1),
         updatedAt: now,
       });
       return { childCount: children.length };

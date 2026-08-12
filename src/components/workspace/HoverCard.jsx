@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, Clock, Hash } from 'lucide-react';
@@ -14,9 +14,38 @@ import {
   projectIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
 
+const ORGANIZATION_ROLE_LABELS = {
+  owner: 'Власник',
+  admin: 'Адміністратор',
+  member: 'Учасник',
+};
+
+function findMember(members, value) {
+  const normalizedValue = decodeURIComponent(String(value || ''))
+    .replace(/^@/, '')
+    .replace(/_/g, ' ')
+    .trim()
+    .toLocaleLowerCase('uk-UA');
+
+  return (members || []).find(member => {
+    const candidates = [
+      member.id,
+      member.uid,
+      member.name,
+      member.displayName,
+      member.email,
+    ].filter(Boolean);
+    return candidates.some(candidate =>
+      String(candidate).replace(/_/g, ' ').trim().toLocaleLowerCase('uk-UA') === normalizedValue
+    );
+  });
+}
+
 export default function HoverCard({ type, value, children, members }) {
-  const { activeOrgId, projects = [] } = useAppContext();
+  const { activeOrgId, currentUser, projects = [] } = useAppContext();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [show, setShow] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,23 +62,7 @@ export default function HoverCard({ type, value, children, members }) {
     
     // For user, data is usually already in members array
     if (type === 'user') {
-      const normalizedValue = decodeURIComponent(String(value || ''))
-        .replace(/^@/, '')
-        .replace(/_/g, ' ')
-        .trim()
-        .toLocaleLowerCase('uk-UA');
-      const u = (members || []).find(member => {
-        const candidates = [
-          member.id,
-          member.uid,
-          member.name,
-          member.displayName,
-          member.email,
-        ].filter(Boolean);
-        return candidates.some(candidate =>
-          String(candidate).replace(/_/g, ' ').trim().toLocaleLowerCase('uk-UA') === normalizedValue
-        );
-      });
+      const u = findMember(members, value);
       queueMicrotask(() => {
         if (!cancelled) setData(u || { notFound: true });
       });
@@ -116,6 +129,37 @@ export default function HoverCard({ type, value, children, members }) {
     openWhenReadyRef.current = true;
   };
 
+  const openUser = () => {
+    if (type !== 'user') return;
+    const user = data && !data.notFound ? data : findMember(members, value);
+    const userId = user?.id || user?.uid;
+    if (!userId) {
+      setShow(true);
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('member', userId);
+    setShow(false);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const currentUserId = currentUser?.id || currentUser?.uid;
+  const hoveredUserId = data?.id || data?.uid;
+  const isOnline = Boolean(
+    data
+    && !data.notFound
+    && (
+      hoveredUserId === currentUserId
+      || data.online === true
+      || (data.lastActive && now - new Date(data.lastActive).getTime() < 2 * 60 * 1000)
+    )
+  );
+  const userSubtitle = data?.positionName
+    || data?.title
+    || ORGANIZATION_ROLE_LABELS[data?.role]
+    || 'Учасник';
+
   return (
     <div 
       className="relative inline-block"
@@ -132,9 +176,14 @@ export default function HoverCard({ type, value, children, members }) {
           {children}
         </button>
       ) : (
-        <span className="cursor-pointer rounded-sm bg-canvas px-1 font-medium text-ink">
+        <button
+          type="button"
+          onClick={openUser}
+          title={`Відкрити профіль ${data?.name || value}`}
+          className="cursor-pointer rounded-sm bg-canvas px-1 font-medium text-ink transition-colors hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
+        >
           {children}
-        </span>
+        </button>
       )}
 
       {show && (
@@ -146,12 +195,12 @@ export default function HoverCard({ type, value, children, members }) {
                   <UserAvatar user={data} size="lg" />
                   <div>
                     <p className="text-[14px] font-bold text-ink leading-tight">{data.name || data.email}</p>
-                    <p className="text-[11px] text-muted">{data.role || 'Учасник'}</p>
+                    <p className="text-[11px] text-muted">{userSubtitle}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-1">
-                  <span className={`w-2 h-2 rounded-full ${data.lastActive && (now - new Date(data.lastActive).getTime() < 15 * 60 * 1000) ? 'bg-[#10b981]' : 'bg-faint'}`} />
-                  {data.lastActive && (now - new Date(data.lastActive).getTime() < 15 * 60 * 1000) ? 'Онлайн' : 'Не в мережі'}
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#10b981]' : 'bg-faint'}`} />
+                  {isOnline ? 'Онлайн' : 'Не в мережі'}
                 </div>
               </div>
             ) : (

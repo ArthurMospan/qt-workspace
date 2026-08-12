@@ -10,7 +10,12 @@ import {
 const defaults = {
   statuses: [{ id: 'backlog', label: 'Backlog' }],
   types: [{ id: 'task', label: 'Task' }],
-  priorities: [{ id: 'medium', label: 'Medium' }],
+  priorities: [
+    { id: 'blocker', label: 'Blocker' },
+    { id: 'high', label: 'High' },
+    { id: 'medium', label: 'Medium' },
+    { id: 'low', label: 'Low' },
+  ],
   labels: [{ id: 'bug', label: 'Bug' }],
   positions: [{ id: 'dev', label: 'Developer', hourlyRate: 30 }],
 };
@@ -43,7 +48,12 @@ test('missing workflow replaces every section from the previous organization wit
   );
   assert.deepEqual(
     organizationB.priorities,
-    [{ id: 'medium', label: 'Середній' }],
+    [
+      { id: 'blocker', label: 'Критичний' },
+      { id: 'high', label: 'Високий' },
+      { id: 'medium', label: 'Середній' },
+      { id: 'low', label: 'Низький' },
+    ],
   );
   assert.deepEqual(
     organizationB.labels,
@@ -69,10 +79,22 @@ test('partial legacy workflow fills all missing sections without replacing store
   );
   assert.deepEqual(hydrated.labels, []);
   assert.equal(hydrated.types[0].id, 'task');
-  assert.equal(hydrated.priorities[0].id, 'medium');
+  assert.deepEqual(hydrated.priorities.map(priority => priority.id), ['blocker', 'high', 'medium', 'low']);
   assert.equal(hydrated.positions[0].id, 'dev');
   assert.notStrictEqual(hydrated.types, defaults.types);
   assert.notStrictEqual(hydrated.types[0], defaults.types[0]);
+});
+
+test('a legacy workflow without Task is repaired before the editor can save it', () => {
+  const hydrated = hydrateWorkflowSettings({
+    types: [{ id: 'customer-request', label: 'Customer request' }],
+  }, defaults);
+
+  assert.deepEqual(
+    hydrated.types.map(type => type.id),
+    ['task', 'customer-request'],
+  );
+  assert.equal(hydrated.types[0].icon, 'task');
 });
 
 test('settings workflow load is generation-guarded and applies one complete payload', async () => {

@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
-import { admin, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
 
 const PURGE_BATCH_SIZE = 25;
@@ -50,7 +51,7 @@ async function purgeIssueTombstone(tombstoneDocument, nowMs) {
   ) {
     await tombstoneDocument.ref.set({
       purgeError: 'INVALID_TOMBSTONE_SCOPE',
-      purgeFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+      purgeFailedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     return { purged: 0, failed: 1, related: 0 };
   }
@@ -62,7 +63,7 @@ async function purgeIssueTombstone(tombstoneDocument, nowMs) {
   if (related.billedLogs.length > 0) {
     await tombstoneDocument.ref.set({
       purgeError: 'ISSUE_HAS_BILLED_TIME',
-      purgeFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+      purgeFailedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     return { purged: 0, failed: 1, related: 0 };
   }
@@ -97,16 +98,16 @@ async function purgeIssueTombstone(tombstoneDocument, nowMs) {
         })
         .map(child => [child.id, child]),
     ).values()];
-    const now = admin.firestore.FieldValue.serverTimestamp();
+    const now = FieldValue.serverTimestamp();
     children.forEach(child => transaction.update(child.ref, {
       parentIssueId: null,
-      parentEpicId: admin.firestore.FieldValue.delete(),
+      parentEpicId: FieldValue.delete(),
       updatedAt: now,
     }));
     transaction.update(tombstoneDocument.ref, { purgingAt: now });
     if (project.exists && project.data().organizationId === issue.organizationId) {
       transaction.update(projectRef, {
-        issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
+        issueHierarchyVersion: FieldValue.increment(1),
         updatedAt: now,
       });
     }
@@ -125,7 +126,7 @@ async function purgeIssueTombstone(tombstoneDocument, nowMs) {
 export async function purgeExpiredDeletedIssues({ nowMs = Date.now() } = {}) {
   const db = getAdminDb();
   const snapshot = await db.collection('deletedIssues')
-    .where('purgeAfter', '<=', admin.firestore.Timestamp.fromMillis(nowMs))
+    .where('purgeAfter', '<=', Timestamp.fromMillis(nowMs))
     .limit(PURGE_BATCH_SIZE)
     .get();
   const totals = { scanned: snapshot.size, purged: 0, failed: 0, related: 0 };

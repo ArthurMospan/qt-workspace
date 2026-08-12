@@ -1,6 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -201,14 +201,14 @@ export async function PATCH(request, context) {
         return { changed: false, previousParentIssueId, parentIssueId };
       }
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.update(issueRef, {
         parentIssueId,
-        parentEpicId: admin.firestore.FieldValue.delete(),
+        parentEpicId: FieldValue.delete(),
         updatedAt: now,
       });
       transaction.update(projectRef, {
-        issueHierarchyVersion: admin.firestore.FieldValue.increment(1),
+        issueHierarchyVersion: FieldValue.increment(1),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

@@ -1,6 +1,7 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { admin, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   ensureTelegramWebhook,
@@ -53,8 +54,8 @@ export async function POST(request) {
       organizationId,
       projectId,
       createdBy: authorization.user.uid,
-      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+      createdAt: FieldValue.serverTimestamp(),
     });
     return NextResponse.json({
       addGroupLink: `https://t.me/${status.username}?startgroup=${payload}`,

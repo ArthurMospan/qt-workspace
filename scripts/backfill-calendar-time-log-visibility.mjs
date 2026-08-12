@@ -13,7 +13,14 @@
 //   node --env-file=.env.local scripts/backfill-calendar-time-log-visibility.mjs \
 //     --project quickteam-prod --organization org-id --apply \
 //     --confirm-project quickteam-prod --confirm-organization org-id
-import admin from 'firebase-admin';
+import {
+  applicationDefault,
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { FieldPath, FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { writeFile } from 'node:fs/promises';
 
 import {
@@ -76,28 +83,28 @@ if (APPLY && !WRITES_FROZEN) {
 }
 
 function initAdmin() {
-  if (admin.apps.length) {
-    const currentProject = admin.app().options.projectId;
+  if (getApps().length) {
+    const currentProject = getApp().options.projectId;
     if (currentProject && currentProject !== FIREBASE_PROJECT_ID) {
       throw new Error(
         `Admin SDK already targets "${currentProject}", expected "${FIREBASE_PROJECT_ID}"`,
       );
     }
-    return admin.app();
+    return getApp();
   }
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   const options = { projectId: FIREBASE_PROJECT_ID };
   if (clientEmail && privateKey) {
-    options.credential = admin.credential.cert({
+    options.credential = cert({
       projectId: FIREBASE_PROJECT_ID,
       clientEmail,
       privateKey,
     });
   } else {
-    options.credential = admin.credential.applicationDefault();
+    options.credential = applicationDefault();
   }
-  return admin.initializeApp(options);
+  return initializeApp(options);
 }
 
 function cleanEventDocumentId(value) {
@@ -178,8 +185,8 @@ function classifyCalendarLog(logSnapshot, eventSnapshot) {
   };
 }
 
-initAdmin();
-const db = admin.firestore();
+const app = initAdmin();
+const db = getFirestore(app);
 const report = {
   firebaseProjectId: FIREBASE_PROJECT_ID,
   organizationId: ORGANIZATION_ID,
@@ -197,7 +204,7 @@ for (;;) {
   let query = db.collection('timeLogs')
     .where('organizationId', '==', ORGANIZATION_ID)
     .where('sourceType', '==', 'calendar_event')
-    .orderBy(admin.firestore.FieldPath.documentId())
+    .orderBy(FieldPath.documentId())
     .limit(250);
   if (cursor) query = query.startAfter(cursor);
   const page = await query.get();
@@ -267,7 +274,7 @@ for (;;) {
       }
       transaction.update(currentLogSnapshot.ref, {
         ...classification.desired,
-        visibilityBackfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+        visibilityBackfilledAt: FieldValue.serverTimestamp(),
       });
     });
     report.applied += 1;

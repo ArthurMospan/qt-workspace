@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { Select } from '@/components/ui/Select';
 import { DatePicker, Popover, TaskAttributesPanel, getTaskAttributeChrome } from '@/components/ui';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
 import { Settings2, Play, Users } from 'lucide-react';
 import { PreviewBlock } from '../preview';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 
 export default function TaskAttributesSection() {
   const [statusVal, setStatusVal] = useState('todo');
@@ -121,11 +123,11 @@ export default function TaskAttributesSection() {
                   <div className="flex w-[248px] max-w-full flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Пріоритет</span>
-                      <Select value={priority} onChange={setPriority} options={DEFAULT_PRIORITIES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
+                      <Select value={priority} onChange={setPriority} options={prioritySelectOptions(DEFAULT_PRIORITIES)} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Тип</span>
-                      <Select value={type} onChange={setType} options={DEFAULT_TYPES.map(item => ({ value: item.id, label: item.label, dotColor: item.color }))} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
+                      <Select value={type} onChange={setType} options={DEFAULT_TYPES.map(taskTypeSelectOption)} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
                     </div>
                   </div>
                 </Popover>

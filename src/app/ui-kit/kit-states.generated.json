@@ -13,7 +13,7 @@
     "long-text"
   ],
   "totals": {
-    "components": 95,
+    "components": 96,
     "stateful": 89,
     "hover": 65,
     "focus": 65,
@@ -315,6 +315,7 @@
       "long-text": "children"
     },
     "PriorityBadge": {},
+    "PriorityIcon": {},
     "ProjectSettingsForm": {
       "loading": "prop",
       "long-text": "description"
@@ -694,6 +695,9 @@
       "variant-matrix"
     ],
     "PriorityBadge": [
+      "badges"
+    ],
+    "PriorityIcon": [
       "badges"
     ],
     "ProjectSettingsForm": [

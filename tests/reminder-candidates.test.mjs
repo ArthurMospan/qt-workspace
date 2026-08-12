@@ -191,8 +191,8 @@ test('the sweep remembers materialisation separately and never advances it on fa
   );
 
   // Both scheduled queries are bounded on both sides.
-  assert.match(source, /\.where\('dueDate', '>=', admin\.firestore\.Timestamp\.fromMillis\(nowMs - DEADLINE_FLOOR_MS\)\)/);
-  assert.match(source, /\.where\('startAt', '<=', admin\.firestore\.Timestamp\.fromMillis\(nowMs \+ CALENDAR_LEAD_MS\)\)/);
+  assert.match(source, /\.where\('dueDate', '>=', Timestamp\.fromMillis\(nowMs - DEADLINE_FLOOR_MS\)\)/);
+  assert.match(source, /\.where\('startAt', '<=', Timestamp\.fromMillis\(nowMs \+ CALENDAR_LEAD_MS\)\)/);
 });
 
 test('one sweep sends one Telegram digest per person', async () => {

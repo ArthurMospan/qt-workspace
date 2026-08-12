@@ -1,7 +1,8 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { randomUUID } from 'node:crypto';
-import { admin, enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
+import { enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
@@ -10,6 +11,7 @@ import {
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
+import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { isValidIssuePrefix, issuePath } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 
@@ -28,7 +30,7 @@ function resolveIntegrationWorkflow({ workflow, project = null, requestedPriorit
     throw error;
   }
 
-  const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
+  const priorityIds = [NO_PRIORITY_ID, ...workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS)];
   const typeSelection = resolveNewIssueType(
     'bug',
     workflowIds(workflow.types, DEFAULT_TYPE_IDS),
@@ -160,7 +162,7 @@ export async function POST(req) {
           organizationId,
         });
         issueKey = `${issuePrefix}-${next}`;
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const now = FieldValue.serverTimestamp();
         payload = {
           issueKey,
           title: title.trim(),
@@ -214,7 +216,7 @@ export async function POST(req) {
           workflow: workflowSnapshot.data() || {},
           requestedPriority: priority,
         });
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const now = FieldValue.serverTimestamp();
         payload = {
           issueKey,
           title: title.trim(),

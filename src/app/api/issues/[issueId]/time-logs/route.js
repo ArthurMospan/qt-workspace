@@ -1,6 +1,6 @@
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
-  admin,
   enforceRateLimit,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
@@ -118,7 +118,7 @@ export async function POST(request, context) {
           },
         );
       }
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       transaction.create(logRef, {
         organizationId,
         projectId,
@@ -128,7 +128,7 @@ export async function POST(request, context) {
         description: description.value,
         loggedAt: loggedAt.millis === null
           ? now
-          : admin.firestore.Timestamp.fromMillis(loggedAt.millis),
+          : Timestamp.fromMillis(loggedAt.millis),
         createdAt: now,
         updatedAt: now,
       });
