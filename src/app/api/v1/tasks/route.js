@@ -58,7 +58,15 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unauthorized. Missing API Key.' }, { status: 401 });
     }
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be an object' }, { status: 400 });
+    }
     const { title, description, attachments, organizationId, projectId, metadata, reporter, priority } = body;
 
     if (!title || !organizationId || title.trim().length > 240) {

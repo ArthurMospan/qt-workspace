@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { createResponseError, reportLoadError } from '@/lib/utils/errors';
+import { reportLoadError } from '@/lib/utils/errors';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { issueLinkRequestFromPerspective } from '@/lib/utils/issueLinkPresentation.mjs';
 export {
   ISSUE_LINK_OPTIONS,
@@ -37,20 +37,11 @@ async function requestLinks(issueId, method = 'GET', body = null) {
 }
 
 async function performRequest(issueId, method, body) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Authentication required');
-  const response = await fetch(`/api/issues/${encodeURIComponent(issueId)}/links`, {
+  return authenticatedRequest(`/api/issues/${encodeURIComponent(issueId)}/links`, {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
     ...(body ? { body: JSON.stringify(body) } : {}),
     cache: 'no-store',
-  });
-  const result = await response.json();
-  if (!response.ok) throw createResponseError(response, result, 'Issue links request failed');
-  return result;
+  }, 'Не вдалося завантажити зв’язки завдання');
 }
 
 export function useIssueLinks(issueId) {

@@ -8,6 +8,7 @@ import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { fetchOrganizationMembers } from '@/lib/services/members';
 import { reportLoadError } from '@/lib/utils/errors';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 const ORGANIZATION_SERVER_SNAPSHOT = Object.freeze({
   org: null,
@@ -224,16 +225,14 @@ export function useOrganization() {
 export async function acceptPendingInvitation(uid, email) {
   try {
     if (!uid || !email || !auth.currentUser) return false;
-    const token = await auth.currentUser.getIdToken();
-    const response = await fetch('/api/invitations/accept', {
+    const result = await authenticatedRequest('/api/invitations/accept', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) throw new Error(`Invitation acceptance failed (${response.status})`);
-    const result = await response.json();
+    }, 'Не вдалося прийняти запрошення');
     return result.accepted > 0;
   } catch (err) {
-    console.error('[acceptPendingInvitation]', err);
+    // This is a best-effort check after sign-in. A missing/expired session is
+    // already handled by the auth flow and must not surface as a console error.
+    if (err?.status !== 401) reportLoadError('[acceptPendingInvitation]', err);
     return false;
   }
 }

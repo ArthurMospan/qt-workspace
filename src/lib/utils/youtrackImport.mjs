@@ -195,6 +195,32 @@ export function mapYouTrackStatus(sourceName, statuses = []) {
   );
 }
 
+/**
+ * Resolves a YouTrack state to an organization status. A saved manual choice
+ * wins only while that status still exists; otherwise the same deterministic
+ * suggestion used by discovery is applied. This keeps old import jobs safe
+ * when an administrator edits the workflow between discovery and commit.
+ */
+export function resolveYouTrackStatus(sourceName, statuses = [], explicitStatusId = '') {
+  const available = new Set((statuses || []).map(status => status?.id).filter(Boolean));
+  const explicit = String(explicitStatusId || '').trim();
+  if (explicit && available.has(explicit)) return explicit;
+  return mapYouTrackStatus(sourceName, statuses);
+}
+
+export function suggestYouTrackStatusMappings(projects = [], statuses = []) {
+  return Object.fromEntries((projects || []).flatMap(project => {
+    const projectId = String(project?.id || '').trim();
+    if (!projectId) return [];
+    return [[projectId, Object.fromEntries((project.statuses || []).flatMap(status => {
+      const sourceName = String(status?.name || '').trim();
+      if (!sourceName) return [];
+      const targetId = mapYouTrackStatus(sourceName, statuses);
+      return targetId ? [[sourceName, targetId]] : [];
+    }))]];
+  }));
+}
+
 export function filterYouTrackIssuesByStatuses(issues = [], allowedStatusNames) {
   if (!Array.isArray(allowedStatusNames)) return issues;
   const allowed = new Set(allowedStatusNames.map(normalizeMappingKey).filter(Boolean));

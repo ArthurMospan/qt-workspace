@@ -6,6 +6,11 @@ import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { open, seal } from '@/lib/server/secretBox.mjs';
 import { YouTrackClient } from '@/lib/server/youtrackClient';
 import { normalizeYouTrackBaseUrl } from '@/lib/utils/youtrackImport.mjs';
+import {
+  DEFAULT_STATUS_IDS,
+  statusLabel,
+} from '@/lib/utils/workflowDefaults.mjs';
+import { statusCategoryMap } from '@/lib/utils/statusCategories.mjs';
 
 function connectionRef(organizationId) {
   return getAdminDb().collection('organizations').doc(organizationId)
@@ -78,7 +83,17 @@ export async function youTrackClientFor(organizationId) {
 
 export async function discoverYouTrack(organizationId) {
   const { client, connection } = await youTrackClientFor(organizationId);
-  const [projects, users] = await Promise.all([client.projects(), client.users()]);
+  const [projects, users, workflowSnapshot] = await Promise.all([
+    client.projects(),
+    client.users(),
+    getAdminDb().collection('organizations').doc(organizationId)
+      .collection('settings').doc('workflow').get(),
+  ]);
+  const savedStatuses = workflowSnapshot.data()?.statuses;
+  const workflowStatuses = Array.isArray(savedStatuses) && savedStatuses.length
+    ? savedStatuses.filter(status => status?.id)
+    : DEFAULT_STATUS_IDS.map(id => ({ id, label: statusLabel(id) }));
+  const targetStatusCategories = statusCategoryMap(workflowStatuses);
   const stateBundleIds = [...new Set(projects.flatMap(project => (
     (project.customFields || [])
       .filter(field => (
@@ -98,6 +113,11 @@ export async function discoverYouTrack(organizationId) {
   }
   return {
     connectionId: connection.connectionId,
+    targetStatuses: workflowStatuses.map(status => ({
+      id: String(status.id),
+      label: String(status.label || status.id),
+      category: targetStatusCategories.get(status.id) || '',
+    })),
     projects: projects
       .filter(project => project?.id && !project.archived)
       .map(project => ({

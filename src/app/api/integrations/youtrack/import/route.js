@@ -56,6 +56,7 @@ export async function POST(request) {
         projectMappings: body.projectMappings,
         userMappings: body.userMappings,
         statusFilters: body.statusFilters,
+        statusMappings: body.statusMappings,
       });
       return NextResponse.json({ job }, { status: 201 });
     }

@@ -2,11 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
-import { auth } from '@/lib/firebase';
 import { Alert, Button, Checkbox, Input, Select, useConfirm } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/Select';
 import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
-import { sourceUserId, suggestUserMappings } from '@/lib/utils/youtrackImport.mjs';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
+import {
+  sourceUserId,
+  suggestUserMappings,
+  suggestYouTrackStatusMappings,
+} from '@/lib/utils/youtrackImport.mjs';
+import { statusCategoryLabel } from '@/lib/utils/statusCategories.mjs';
 
 const ACTIVE_JOB_STATUSES = new Set(['prepared', 'running']);
 
@@ -42,6 +47,7 @@ export default function YouTrackImportCard({
   const [selectedProjectIds, setSelectedProjectIds] = useState([]);
   const [projectMappings, setProjectMappings] = useState({});
   const [statusFilters, setStatusFilters] = useState({});
+  const [statusMappings, setStatusMappings] = useState({});
   const [userMappings, setUserMappings] = useState({});
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,21 +57,10 @@ export default function YouTrackImportCard({
   const confirmDialog = useConfirm();
 
   const request = useCallback(async (path, options = {}) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('Увійдіть у QuickTeam ще раз');
-    const idToken = await currentUser.getIdToken();
-    const response = await fetch(path, {
+    return authenticatedRequest(path, {
       ...options,
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...options.headers,
-      },
       cache: 'no-store',
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || `Помилка сервера (${response.status})`);
-    return result;
+    }, 'Не вдалося виконати запит до інтеграції YouTrack');
   }, []);
 
   const refresh = useCallback(async () => {
@@ -114,6 +109,33 @@ export default function YouTrackImportCard({
     }),
   ], [members]);
 
+  const targetStatusesFor = useCallback((sourceProjectId, targetOverride) => {
+    const targetProjectId = targetOverride ?? projectMappings[sourceProjectId] ?? 'create';
+    const hiddenStatusIds = new Set(
+      targetProjectId === 'create'
+        ? []
+        : activeProjects.find(project => project.id === targetProjectId)?.hiddenColumns || [],
+    );
+    return (discovery?.targetStatuses || []).filter(status => !hiddenStatusIds.has(status.id));
+  }, [activeProjects, discovery, projectMappings]);
+
+  const updateProjectMapping = (sourceProject, targetProjectId) => {
+    const availableStatuses = targetStatusesFor(sourceProject.id, targetProjectId);
+    const availableIds = new Set(availableStatuses.map(status => status.id));
+    const suggestions = suggestYouTrackStatusMappings([sourceProject], availableStatuses)[sourceProject.id] || {};
+    setProjectMappings(current => ({ ...current, [sourceProject.id]: targetProjectId }));
+    setStatusMappings(current => ({
+      ...current,
+      [sourceProject.id]: Object.fromEntries((sourceProject.statuses || []).flatMap(status => {
+        const currentTarget = current[sourceProject.id]?.[status.name];
+        const targetStatusId = availableIds.has(currentTarget)
+          ? currentTarget
+          : suggestions[status.name];
+        return targetStatusId ? [[status.name, targetStatusId]] : [];
+      })),
+    }));
+  };
+
   const connect = async () => {
     if (!baseUrl.trim() || !token.trim()) {
       showToast('Вкажіть адресу та постійний токен YouTrack', 'error');
@@ -160,6 +182,7 @@ export default function YouTrackImportCard({
       setSelectedProjectIds([]);
       setProjectMappings({});
       setStatusFilters({});
+      setStatusMappings({});
       setUserMappings({});
       setJob(null);
       setSetupOpen(false);
@@ -205,6 +228,7 @@ export default function YouTrackImportCard({
           ? [[project.id, project.statuses.map(status => status.name)]]
           : []
       ))));
+      setStatusMappings(suggestYouTrackStatusMappings(result.projects, result.targetStatuses));
       setUserMappings(suggestUserMappings(result.users, members));
       showToast(`Знайдено ${result.projects.length} проєктів YouTrack`);
     } catch (error) {
@@ -247,6 +271,7 @@ export default function YouTrackImportCard({
           projectMappings,
           userMappings,
           statusFilters,
+          statusMappings,
         }),
       });
       setJob(result.job);
@@ -460,6 +485,10 @@ export default function YouTrackImportCard({
                       Оберіть проєкти й статуси задач, які переносимо. Повторний запуск оновлює вже
                       імпортовані записи без дублів.
                     </p>
+                    <p className="mt-1 text-[11px] text-muted">
+                      Разом із задачами переносяться коментарі, вкладення, зв’язки та work items:
+                      затреканий час з’явиться у списаннях і в сумі витраченого часу задачі.
+                    </p>
                   </div>
                   {/* The import is driven step by step from this tab, so the tab has to
                       stay open. Warning only once a job exists came too late — by then
@@ -491,7 +520,7 @@ export default function YouTrackImportCard({
                             </div>
                             <Select
                               value={projectMappings[project.id] || 'create'}
-                              onChange={value => setProjectMappings(current => ({ ...current, [project.id]: value }))}
+                              onChange={value => updateProjectMapping(project, value)}
                               disabled={!checked}
                               options={[
                                 { value: 'create', label: 'Створити новий проєкт' },
@@ -500,25 +529,64 @@ export default function YouTrackImportCard({
                             />
                           </div>
                           {(project.statuses || []).length > 0 && (
-                            <div className="mt-2 grid items-center gap-2 border-t border-line pt-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                              <div>
-                                <p className="text-[11px] font-semibold text-ink">Статуси задач</p>
-                                <p className="text-[10px] text-muted">Імпортуються лише обрані</p>
+                            <div className="mt-2 space-y-3 border-t border-line pt-2">
+                              <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                                <div>
+                                  <p className="text-[11px] font-semibold text-ink">Які статуси імпортувати</p>
+                                  <p className="text-[10px] text-muted">Імпортуються лише обрані</p>
+                                </div>
+                                <MultiSelect
+                                  value={statusFilters[project.id] || []}
+                                  onChange={value => setStatusFilters(current => ({ ...current, [project.id]: value }))}
+                                  disabled={!checked}
+                                  options={project.statuses.map(status => ({
+                                    value: status.name,
+                                    label: status.archived ? `${status.name} · архівний` : status.name,
+                                  }))}
+                                  selectAllLabel="Усі статуси"
+                                  placeholder="Оберіть статуси"
+                                  size="md"
+                                  className="w-full"
+                                  dropdownClassName="w-[280px]"
+                                />
                               </div>
-                              <MultiSelect
-                                value={statusFilters[project.id] || []}
-                                onChange={value => setStatusFilters(current => ({ ...current, [project.id]: value }))}
-                                disabled={!checked}
-                                options={project.statuses.map(status => ({
-                                  value: status.name,
-                                  label: status.archived ? `${status.name} · архівний` : status.name,
-                                }))}
-                                selectAllLabel="Усі статуси"
-                                placeholder="Оберіть статуси"
-                                size="md"
-                                className="w-full"
-                                dropdownClassName="w-[280px]"
-                              />
+                              <div>
+                                <p className="text-[11px] font-semibold text-ink">Куди зіставити статуси</p>
+                                <p className="text-[10px] text-muted">
+                                  QuickTeam підставив варіанти автоматично. Кожен із них можна змінити вручну.
+                                </p>
+                              </div>
+                              <div className="space-y-2">
+                                {project.statuses.map(sourceStatus => {
+                                  const targetStatuses = targetStatusesFor(project.id);
+                                  return (
+                                    <div
+                                      key={sourceStatus.id || sourceStatus.name}
+                                      className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
+                                    >
+                                      <p className="truncate text-[11px] text-ink">
+                                        {sourceStatus.name}
+                                        {sourceStatus.archived ? <span className="text-muted"> · архівний</span> : null}
+                                      </p>
+                                      <Select
+                                        value={statusMappings[project.id]?.[sourceStatus.name] || ''}
+                                        onChange={value => setStatusMappings(current => ({
+                                          ...current,
+                                          [project.id]: {
+                                            ...current[project.id],
+                                            [sourceStatus.name]: value,
+                                          },
+                                        }))}
+                                        disabled={!checked}
+                                        options={targetStatuses.map(status => ({
+                                          value: status.id,
+                                          label: `${status.label} · ${statusCategoryLabel(status.category)}`,
+                                        }))}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

@@ -9,7 +9,9 @@ import {
   normalizeYouTrackRelation,
   normalizeYouTrackBaseUrl,
   relationTypeFromYouTrack,
+  resolveYouTrackStatus,
   strongestYouTrackRelationRow,
+  suggestYouTrackStatusMappings,
   suggestUserMappings,
   youTrackImportedWorkLogMatches,
   youTrackField,
@@ -70,6 +72,26 @@ test('maps common YouTrack workflow values', () => {
     ...workflow.types,
   ]), 'feature');
   assert.equal(mapYouTrackType('Epic', [{ id: 'epic', label: 'Epic' }]), null);
+});
+
+test('suggests status mappings per source project and honors a valid manual override', () => {
+  const projects = [{
+    id: 'yt-project',
+    statuses: [
+      { id: 'open', name: 'Open' },
+      { id: 'working', name: 'In Progress' },
+      { id: 'fixed', name: 'Fixed', archived: true },
+    ],
+  }];
+  assert.deepEqual(suggestYouTrackStatusMappings(projects, workflow.statuses), {
+    'yt-project': {
+      Open: 'todo',
+      'In Progress': 'in-progress',
+      Fixed: 'done',
+    },
+  });
+  assert.equal(resolveYouTrackStatus('Fixed', workflow.statuses, 'in-progress'), 'in-progress');
+  assert.equal(resolveYouTrackStatus('Fixed', workflow.statuses, 'removed-status'), 'done');
 });
 
 test('reads custom fields and YouTrack durations', () => {

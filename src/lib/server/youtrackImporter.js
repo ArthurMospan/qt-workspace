@@ -12,10 +12,10 @@ import {
   filterYouTrackIssuesByStatuses,
   firstFieldValue,
   mapYouTrackPriority,
-  mapYouTrackStatus,
   mapYouTrackType,
   normalizeYouTrackRelation,
   normalizeMappingKey,
+  resolveYouTrackStatus,
   serializeCustomFields,
   sourceUserId,
   sourceUserName,
@@ -369,16 +369,25 @@ function importedWorkflowFields({
   project,
   workflow,
   stateName,
+  explicitStatusId,
   priorityName,
   typeName,
   tags,
 }) {
   const statusIds = workflow.statuses.map(item => item.id);
-  const mappedStatus = mapYouTrackStatus(stateName, workflow.statuses)
+  if (explicitStatusId && !statusIds.includes(explicitStatusId)) {
+    throw new Error(`Обраний статус QuickTeam для ${stateName || 'YouTrack'} більше не існує`);
+  }
+  const mappedStatus = resolveYouTrackStatus(stateName, workflow.statuses, explicitStatusId)
     || statusIds[0];
   const hiddenStatusIds = new Set(
     Array.isArray(project?.hiddenColumns) ? project.hiddenColumns : [],
   );
+  if (explicitStatusId && hiddenStatusIds.has(explicitStatusId)) {
+    throw new Error(
+      `Обраний статус для ${stateName || 'YouTrack'} приховано у проєкті-призначенні`,
+    );
+  }
   const fallbackStatus = resolveEntryStatusId(workflow.statuses, [...hiddenStatusIds])
     || statusIds[0];
   const status = hiddenStatusIds.has(mappedStatus)
@@ -496,6 +505,10 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     : null;
 
   const stateName = youTrackStateName(issue);
+  const explicitStatusId = (job.statusMappings || []).find(mapping => (
+    mapping?.sourceProjectId === sourceProject.id
+    && normalizeMappingKey(mapping?.sourceStatus) === normalizeMappingKey(stateName)
+  ))?.targetStatusId || '';
   const priorityName = fieldPresentation(youTrackField(issue, 'Priority'));
   const typeName = fieldPresentation(youTrackField(issue, 'Type'));
   const reporter = actorFor(issue.reporter, job);
@@ -533,7 +546,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       tags,
       customFields: serializeCustomFields(issue.customFields),
       adapterVersion: 2,
-      mappingVersion: 2,
+      mappingVersion: 3,
     },
     createdAt: sourceCreatedAt,
     updatedAt: sourceUpdatedAt,
@@ -579,6 +592,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
         project,
         workflow: freshWorkflow,
         stateName,
+        explicitStatusId,
         priorityName,
         typeName,
         tags,
@@ -735,6 +749,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       project,
       workflow: freshWorkflow,
       stateName,
+      explicitStatusId,
       priorityName,
       typeName,
       tags,
@@ -1408,6 +1423,7 @@ export async function prepareYouTrackImport({
   projectMappings = {},
   userMappings = {},
   statusFilters = {},
+  statusMappings = {},
 }) {
   const selected = [...new Set((selectedProjectIds || []).filter(Boolean))].slice(0, 20);
   if (!selected.length) throw new Error('Оберіть хоча б один проєкт YouTrack');
@@ -1438,14 +1454,43 @@ export async function prepareYouTrackImport({
   const targetIds = [...new Set(
     Object.values(projectMappings).filter(value => value && value !== 'create'),
   )];
+  let targetSnapshots = [];
   if (targetIds.length) {
-    const targets = await getAdminDb().getAll(
+    targetSnapshots = await getAdminDb().getAll(
       ...targetIds.map(id => getAdminDb().collection('projects').doc(id)),
     );
-    if (targets.some(snapshot => !snapshot.exists || snapshot.data().organizationId !== organizationId)) {
+    if (targetSnapshots.some(snapshot => !snapshot.exists || snapshot.data().organizationId !== organizationId)) {
       throw new Error('Один із проєктів-призначень недоступний');
     }
   }
+
+  const workflowSnapshot = await getAdminDb().collection('organizations').doc(organizationId)
+    .collection('settings').doc('workflow').get();
+  const workflow = workflowValues(workflowSnapshot);
+  const availableStatusIds = new Set(workflow.statuses.map(status => status?.id).filter(Boolean));
+  const targetById = new Map(targetSnapshots.map(snapshot => [snapshot.id, snapshot.data()]));
+  const sanitizedStatusMappings = sourceProjects.flatMap(sourceProject => {
+    const rawProjectMappings = statusMappings?.[sourceProject.id];
+    if (!rawProjectMappings || typeof rawProjectMappings !== 'object' || Array.isArray(rawProjectMappings)) {
+      return [];
+    }
+    const targetProject = targetById.get(projectMappings[sourceProject.id]);
+    const hiddenStatusIds = new Set(
+      Array.isArray(targetProject?.hiddenColumns) ? targetProject.hiddenColumns : [],
+    );
+    return Object.entries(rawProjectMappings).slice(0, 200).flatMap(([rawSource, rawTarget]) => {
+      const sourceStatus = String(rawSource || '').trim().slice(0, 200);
+      const targetStatusId = String(rawTarget || '').trim().slice(0, 200);
+      if (!sourceStatus || !targetStatusId) return [];
+      if (!availableStatusIds.has(targetStatusId)) {
+        throw new Error(`Статус QuickTeam для «${sourceStatus}» більше не існує`);
+      }
+      if (hiddenStatusIds.has(targetStatusId)) {
+        throw new Error(`Обраний статус для «${sourceStatus}» приховано у проєкті-призначенні`);
+      }
+      return [{ sourceProjectId: sourceProject.id, sourceStatus, targetStatusId }];
+    });
+  });
 
   const queue = [];
   for (const sourceProject of sourceProjects) {
@@ -1483,6 +1528,7 @@ export async function prepareYouTrackImport({
       projectMappings[project.id] || 'create',
     ])),
     userMappings,
+    statusMappings: sanitizedStatusMappings,
     statusFilters: Object.fromEntries(sourceProjects.flatMap(project => (
       Object.prototype.hasOwnProperty.call(statusFilters || {}, project.id)
         ? [[project.id, [...new Set((statusFilters[project.id] || [])
@@ -1498,7 +1544,7 @@ export async function prepareYouTrackImport({
     nextIndex: 0,
     warnings: [],
     adapterVersion: 2,
-    mappingVersion: 2,
+    mappingVersion: 3,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });

@@ -8,8 +8,8 @@
 // only tell people to go elsewhere. The flow is here so the project can own it.
 
 import { signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { getPortalAuth } from '@/lib/portal/firebase';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
 
 // The authorize URL is built server-side: only the server can set the httpOnly
@@ -21,15 +21,9 @@ export function startQtPlusConnect(returnTo = '') {
 }
 
 export async function disconnectQtPlusAccount() {
-  const firebaseUser = auth.currentUser;
-  if (!firebaseUser) throw new Error('NOT_SIGNED_IN');
-
-  const idToken = await firebaseUser.getIdToken(true);
-  const response = await fetch('/api/integrations/qtplus', {
+  await authenticatedRequest('/api/integrations/qtplus', {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${idToken}` },
-  });
-  if (!response.ok) throw new Error('DISCONNECT_FAILED');
+  }, 'Не вдалося відключити QuickTeam+');
 
   // Best effort: drop the named portal Firebase session too, so the browser is
   // not left auto-refreshing a live portal login after the link is gone. Must

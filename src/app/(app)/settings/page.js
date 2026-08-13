@@ -10,6 +10,7 @@ import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { updateWorkflowViaApi } from '@/lib/services/workflow';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -802,6 +803,7 @@ export default function SettingsPage() {
 
   // ── API Keys ──
   const [apiKeys, setApiKeys] = useState([]);
+  const [buggyBagLoading, setBuggyBagLoading] = useState(false);
   const [telegramBotStatus, setTelegramBotStatus] = useState({ configured: false, connected: false, chatTitle: '' });
   const [telegramBotLoading, setTelegramBotLoading] = useState(false);
   // True between opening the bot deep link and the webhook confirming it.
@@ -813,35 +815,18 @@ export default function SettingsPage() {
   const [telegramGroupSetupOpen, setTelegramGroupSetupOpen] = useState(false);
 
   const apiKeysRequest = async (method = 'GET', body = null) => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token || !activeOrgId) throw new Error('Authentication required');
-    const response = await fetch(`/api/integrations/api-keys?organizationId=${encodeURIComponent(activeOrgId)}`, {
+    if (!activeOrgId) throw new Error('Не вказано організацію');
+    return authenticatedRequest(`/api/integrations/api-keys?organizationId=${encodeURIComponent(activeOrgId)}`, {
       method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
       ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'API key request failed');
-    return result;
+    }, 'Не вдалося оновити інтеграцію BuggyBag');
   };
 
   const telegramRequest = useCallback(async (path, method = 'GET', body = null) => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) throw new Error('Authentication required');
-    const response = await fetch(path, {
+    return authenticatedRequest(path, {
       method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
       ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Telegram request failed');
-    return result;
+    }, 'Не вдалося виконати запит до Telegram');
   }, []);
 
   const refreshTelegram = useCallback(async () => {
@@ -1249,7 +1234,11 @@ export default function SettingsPage() {
             });
           }
         }
-      } catch {}
+      } catch (error) {
+        if (isCurrentWorkflowLoad()) {
+          showToast(error?.message || 'Не вдалося завантажити налаштування', 'error');
+        }
+      }
       if (isCurrentWorkflowLoad()) setWfLoading(false);
     };
     load();
@@ -2672,18 +2661,25 @@ export default function SettingsPage() {
 
         const toggleBuggyBag = async (enabled) => {
           if (!activeOrgId) return;
-          if (enabled) {
-            const { key } = await apiKeysRequest('POST', { name: 'BuggyBag Integration' });
-            const updatedKeys = [...apiKeys, key];
-            setApiKeys(updatedKeys);
-            showToast('Інтеграцію з BuggyBag увімкнено!');
-          } else {
-            if (buggyBagKey) {
+          setBuggyBagLoading(true);
+          try {
+            if (enabled) {
+              const { key } = await apiKeysRequest('POST', { name: 'BuggyBag Integration' });
+              const updatedKeys = [...apiKeys, key];
+              setApiKeys(updatedKeys);
+              showToast('Інтеграцію з BuggyBag увімкнено!');
+            } else if (buggyBagKey) {
               const updatedKeys = apiKeys.filter(k => k.id !== buggyBagKey.id);
               await apiKeysRequest('DELETE', { keyId: buggyBagKey.id });
               setApiKeys(updatedKeys);
               showToast('Інтеграцію з BuggyBag вимкнено');
             }
+            return true;
+          } catch (error) {
+            showToast(error?.message || 'Не вдалося оновити інтеграцію BuggyBag', 'error');
+            return false;
+          } finally {
+            setBuggyBagLoading(false);
           }
         };
 
@@ -2845,6 +2841,7 @@ export default function SettingsPage() {
               logoAlt="BuggyBag"
               enabled={buggyBagEnabled}
               onToggle={toggleBuggyBag}
+              toggleDisabled={buggyBagLoading}
               status={buggyBagEnabled ? 'connected' : 'off'}
               statusLabel={buggyBagEnabled ? 'Підключено' : 'Вимкнено'}
               statusMeta={(
