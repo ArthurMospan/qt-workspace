@@ -5,7 +5,11 @@ import { createHash } from 'node:crypto';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { open, seal } from '@/lib/server/secretBox.mjs';
 import { YouTrackClient } from '@/lib/server/youtrackClient';
-import { normalizeYouTrackBaseUrl } from '@/lib/utils/youtrackImport.mjs';
+import {
+  isYouTrackStateField,
+  mergeYouTrackStatuses,
+  normalizeYouTrackBaseUrl,
+} from '@/lib/utils/youtrackImport.mjs';
 import {
   DEFAULT_STATUS_IDS,
   statusLabel,
@@ -96,10 +100,7 @@ export async function discoverYouTrack(organizationId) {
   const targetStatusCategories = statusCategoryMap(workflowStatuses);
   const stateBundleIds = [...new Set(projects.flatMap(project => (
     (project.customFields || [])
-      .filter(field => (
-        String(field?.$type || '').includes('StateProjectCustomField')
-        || String(field?.field?.name || '').toLowerCase() === 'state'
-      ))
+      .filter(isYouTrackStateField)
       .map(field => String(field?.bundle?.id || ''))
       .filter(Boolean)
   )))];
@@ -109,6 +110,28 @@ export async function discoverYouTrack(organizationId) {
     const values = await Promise.all(batch.map(bundleId => client.stateBundle(bundleId)));
     batch.forEach((bundleId, bundleIndex) => {
       if (values[bundleIndex]) stateBundles.set(bundleId, values[bundleIndex]);
+    });
+  }
+  const bundleStatusesByProject = new Map(projects.map(project => [
+    String(project.id),
+    (project.customFields || [])
+      .filter(isYouTrackStateField)
+      .flatMap(field => stateBundles.get(String(field?.bundle?.id || ''))?.values || []),
+  ]));
+  const observedIssuesByProject = new Map();
+  const projectsNeedingFallback = projects.filter(project => (
+    project?.id
+    && !project.archived
+    && (bundleStatusesByProject.get(String(project.id)) || []).length === 0
+  ));
+  // Tokens that can read/import issues do not necessarily have permission to
+  // read admin bundles. Fall back to the state values on the issues themselves
+  // in small batches so the picker never disappears merely because of 403/404.
+  for (let index = 0; index < projectsNeedingFallback.length; index += 4) {
+    const batch = projectsNeedingFallback.slice(index, index + 4);
+    const issueLists = await Promise.all(batch.map(project => client.issueStubs(project.shortName)));
+    batch.forEach((project, projectIndex) => {
+      observedIssuesByProject.set(String(project.id), issueLists[projectIndex] || []);
     });
   }
   return {
@@ -126,19 +149,10 @@ export async function discoverYouTrack(organizationId) {
         shortName: String(project.shortName || project.id),
         description: String(project.description || ''),
         archived: project.archived === true,
-        statuses: (project.customFields || [])
-          .filter(field => (
-            String(field?.$type || '').includes('StateProjectCustomField')
-            || String(field?.field?.name || '').toLowerCase() === 'state'
-          ))
-          .flatMap(field => stateBundles.get(String(field?.bundle?.id || ''))?.values || [])
-          .filter(status => status?.name)
-          .sort((a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0))
-          .map(status => ({
-            id: String(status.id || status.name),
-            name: String(status.name),
-            archived: status.archived === true,
-          })),
+        statuses: mergeYouTrackStatuses(
+          bundleStatusesByProject.get(String(project.id)),
+          observedIssuesByProject.get(String(project.id)),
+        ),
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'uk')),
     users: users

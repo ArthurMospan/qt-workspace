@@ -546,7 +546,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       tags,
       customFields: serializeCustomFields(issue.customFields),
       adapterVersion: 2,
-      mappingVersion: 3,
+      mappingVersion: 4,
     },
     createdAt: sourceCreatedAt,
     updatedAt: sourceUpdatedAt,
@@ -1493,15 +1493,33 @@ export async function prepareYouTrackImport({
   });
 
   const queue = [];
+  const normalizedStatusFilters = {};
+  const selectedStatusKeys = new Set();
   for (const sourceProject of sourceProjects) {
     const stubs = await client.issueStubs(sourceProject.shortName);
     const hasStatusFilter = Object.prototype.hasOwnProperty.call(statusFilters || {}, sourceProject.id);
-    const selectedStatuses = hasStatusFilter
-      ? [...new Set((statusFilters[sourceProject.id] || [])
-        .map(value => String(value || '').trim())
-        .filter(Boolean))]
-        .slice(0, 200)
-      : undefined;
+    if (!hasStatusFilter) {
+      throw new Error(`Оберіть статуси задач для проєкту ${sourceProject.name}`);
+    }
+    const selectedStatuses = [...new Set((statusFilters[sourceProject.id] || [])
+      .map(value => String(value || '').trim())
+      .filter(Boolean))]
+      .slice(0, 200);
+    if (!selectedStatuses.length) {
+      throw new Error(`Оберіть хоча б один статус для проєкту ${sourceProject.name}`);
+    }
+    normalizedStatusFilters[sourceProject.id] = selectedStatuses;
+    selectedStatuses.forEach(sourceStatus => {
+      const mappingKey = `${sourceProject.id}\u0000${normalizeMappingKey(sourceStatus)}`;
+      selectedStatusKeys.add(mappingKey);
+      const hasMapping = sanitizedStatusMappings.some(mapping => (
+        mapping.sourceProjectId === sourceProject.id
+        && normalizeMappingKey(mapping.sourceStatus) === normalizeMappingKey(sourceStatus)
+      ));
+      if (!hasMapping) {
+        throw new Error(`Оберіть статус QuickTeam для «${sourceStatus}»`);
+      }
+    });
     const filteredStubs = filterYouTrackIssuesByStatuses(stubs, selectedStatuses);
     filteredStubs.forEach(issue => queue.push({
       sourceProjectId: sourceProject.id,
@@ -1528,14 +1546,10 @@ export async function prepareYouTrackImport({
       projectMappings[project.id] || 'create',
     ])),
     userMappings,
-    statusMappings: sanitizedStatusMappings,
-    statusFilters: Object.fromEntries(sourceProjects.flatMap(project => (
-      Object.prototype.hasOwnProperty.call(statusFilters || {}, project.id)
-        ? [[project.id, [...new Set((statusFilters[project.id] || [])
-          .map(value => String(value || '').trim())
-          .filter(Boolean))].slice(0, 200)]]
-        : []
-    ))),
+    statusMappings: sanitizedStatusMappings.filter(mapping => selectedStatusKeys.has(
+      `${mapping.sourceProjectId}\u0000${normalizeMappingKey(mapping.sourceStatus)}`,
+    )),
+    statusFilters: normalizedStatusFilters,
     totalIssues: queue.length,
     processedIssues: 0,
     failedIssues: 0,
@@ -1544,7 +1558,7 @@ export async function prepareYouTrackImport({
     nextIndex: 0,
     warnings: [],
     adapterVersion: 2,
-    mappingVersion: 3,
+    mappingVersion: 4,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });

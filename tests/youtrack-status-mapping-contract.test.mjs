@@ -13,14 +13,20 @@ test('YouTrack discovery, UI and importer preserve manual status mappings', asyn
   ]);
 
   assert.match(discovery, /targetStatuses:\s*workflowStatuses\.map/);
+  assert.match(discovery, /client\.issueStubs\(project\.shortName\)/);
+  assert.match(discovery, /mergeYouTrackStatuses/);
   assert.match(card, /suggestYouTrackStatusMappings\(result\.projects, result\.targetStatuses\)/);
-  assert.match(card, /Кожен із них можна змінити вручну/);
+  assert.match(card, /Необрані залишаться в YouTrack/);
+  assert.match(card, /toggleSourceStatus\(project\.id, sourceStatus\.name\)/);
   assert.match(card, /statusMappings,/);
   assert.match(route, /statusMappings:\s*body\.statusMappings/);
   assert.match(importer, /statusMappings:\s*sanitizedStatusMappings/);
   assert.match(importer, /resolveYouTrackStatus\(stateName, workflow\.statuses, explicitStatusId\)/);
   assert.match(importer, /hiddenStatusIds\.has\(explicitStatusId\)/);
-  assert.match(importer, /mappingVersion:\s*3/);
+  assert.match(importer, /if \(!hasStatusFilter\)/);
+  assert.match(importer, /if \(!selectedStatuses\.length\)/);
+  assert.match(importer, /statusFilters:\s*normalizedStatusFilters/);
+  assert.match(importer, /mappingVersion:\s*4/);
 });
 
 test('YouTrack work items remain imported as time logs and update the issue mirror', async () => {

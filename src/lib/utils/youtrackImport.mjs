@@ -68,6 +68,13 @@ export function youTrackField(issue, fieldName) {
   return (issue?.customFields || []).find(field => normalizeMappingKey(field?.name) === wanted)?.value ?? null;
 }
 
+export function isYouTrackStateField(field) {
+  const type = String(field?.$type || '');
+  const name = normalizeMappingKey(field?.field?.name || field?.name);
+  return /State(?:Project|Issue)CustomField/u.test(type)
+    || ['state', 'status', 'стан', 'статус'].includes(name);
+}
+
 /**
  * Reads an issue's workflow state.
  *
@@ -80,9 +87,50 @@ export function youTrackField(issue, fieldName) {
  */
 export function youTrackStateName(issue) {
   const fields = issue?.customFields || [];
-  const byType = fields.find(field => /State\w*IssueCustomField/u.test(String(field?.$type || '')));
-  const field = byType || fields.find(candidate => normalizeMappingKey(candidate?.name) === 'state');
+  const field = fields.find(isYouTrackStateField);
   return fieldPresentation(field?.value ?? null);
+}
+
+/**
+ * Builds the source-status catalogue used by the import picker. Admin bundle
+ * values are the preferred inventory, but ordinary issue reads are the
+ * permission-safe fallback: a token that can import an issue can still reveal
+ * that issue's current state even when YouTrack refuses the bundle endpoint.
+ */
+export function mergeYouTrackStatuses(bundleStatuses = [], issues = []) {
+  const byName = new Map();
+  (bundleStatuses || []).forEach((status, index) => {
+    const name = String(status?.name || '').trim();
+    const key = normalizeMappingKey(name);
+    if (!key) return;
+    byName.set(key, {
+      id: String(status?.id || name),
+      name,
+      archived: status?.archived === true,
+      ordinal: Number.isFinite(status?.ordinal) ? status.ordinal : index,
+      issueCount: 0,
+    });
+  });
+  (issues || []).forEach(issue => {
+    const name = youTrackStateName(issue);
+    const key = normalizeMappingKey(name);
+    if (!key) return;
+    const current = byName.get(key);
+    if (current) {
+      current.issueCount += 1;
+      return;
+    }
+    byName.set(key, {
+      id: name,
+      name,
+      archived: false,
+      ordinal: Number.MAX_SAFE_INTEGER,
+      issueCount: 1,
+    });
+  });
+  return [...byName.values()]
+    .sort((a, b) => a.ordinal - b.ordinal || a.name.localeCompare(b.name, 'uk'))
+    .map(({ ordinal, ...status }) => status);
 }
 
 export function firstFieldValue(value) {
@@ -224,13 +272,10 @@ export function suggestYouTrackStatusMappings(projects = [], statuses = []) {
 export function filterYouTrackIssuesByStatuses(issues = [], allowedStatusNames) {
   if (!Array.isArray(allowedStatusNames)) return issues;
   const allowed = new Set(allowedStatusNames.map(normalizeMappingKey).filter(Boolean));
-  // An empty selection is never a user asking to import nothing — the picker
-  // cannot even be emptied for a project whose statuses were discovered. It
-  // only ever arrives when the state bundle could not be read at all (a token
-  // without admin rights on bundles returns none), and treating that as "match
-  // nothing" is what reported "Перевірено · 0 / 0 задач" for projects that are
-  // full of issues. No statuses to choose from means no status filter.
-  if (allowed.size === 0) return issues;
+  // Never turn an explicit empty choice into a full import. The API rejects
+  // this state for a selected project; the helper still fails closed on its
+  // own so a malformed client cannot enqueue every issue by accident.
+  if (allowed.size === 0) return [];
   return issues.filter(issue => allowed.has(normalizeMappingKey(youTrackStateName(issue))));
 }
 

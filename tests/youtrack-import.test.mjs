@@ -6,6 +6,7 @@ import {
   mapYouTrackPriority,
   mapYouTrackStatus,
   mapYouTrackType,
+  mergeYouTrackStatuses,
   normalizeYouTrackRelation,
   normalizeYouTrackBaseUrl,
   relationTypeFromYouTrack,
@@ -169,16 +170,25 @@ test('filters import stubs by the selected YouTrack statuses', () => {
   assert.equal(filterYouTrackIssuesByStatuses(issues, undefined), issues);
 });
 
-// The prepared job reported "0 / 0 задач" for projects that were full of
-// issues: a token without admin rights on bundles discovers no statuses, the
-// picker sent back an empty list, and an empty list excluded everything.
-test('an empty status selection imports everything instead of nothing', () => {
+test('an empty status selection never turns into an accidental full import', () => {
   const issues = [
     { id: 'open', customFields: [{ name: 'State', value: { name: 'Open' } }] },
     { id: 'done', customFields: [{ name: 'State', value: { name: 'Done' } }] },
   ];
-  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, []).map(issue => issue.id), ['open', 'done']);
-  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, ['', '  ']).map(issue => issue.id), ['open', 'done']);
+  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, []), []);
+  assert.deepEqual(filterYouTrackIssuesByStatuses(issues, ['', '  ']), []);
+});
+
+test('status discovery falls back to states observed on readable issues', () => {
+  const statuses = mergeYouTrackStatuses([], [
+    { customFields: [{ name: 'Статус', value: { name: 'In Progress' } }] },
+    { customFields: [{ name: 'State', value: { name: 'Done' } }] },
+    { customFields: [{ name: 'State', value: { name: 'In Progress' } }] },
+  ]);
+  assert.deepEqual(statuses, [
+    { id: 'Done', name: 'Done', archived: false, issueCount: 1 },
+    { id: 'In Progress', name: 'In Progress', archived: false, issueCount: 2 },
+  ]);
 });
 
 // Discovery recognises the state field by `$type`, so a renamed or localized
@@ -198,6 +208,7 @@ test('the workflow state is read from a renamed or localized state field', () =>
   );
   // Responses without `$type` still resolve through the field name.
   assert.equal(youTrackStateName({ customFields: [{ name: 'State', value: { name: 'Open' } }] }), 'Open');
+  assert.equal(youTrackStateName({ customFields: [{ name: 'Статус', value: { name: 'В роботі' } }] }), 'В роботі');
   assert.equal(youTrackStateName({ customFields: [] }), '');
 });
 

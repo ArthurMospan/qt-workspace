@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
 import { Alert, Button, Checkbox, Input, Select, useConfirm } from '@/components/ui';
-import { MultiSelect } from '@/components/ui/Select';
 import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import {
@@ -216,7 +215,9 @@ export default function YouTrackImportCard({
         method: 'POST',
         body: JSON.stringify({ organizationId }),
       });
-      const projectIds = result.projects.map(project => project.id);
+      const projectIds = result.projects
+        .filter(project => (project.statuses || []).length > 0)
+        .map(project => project.id);
       setDiscovery(result);
       setSelectedProjectIds(projectIds);
       setProjectMappings(Object.fromEntries(projectIds.map(id => [id, 'create'])));
@@ -246,6 +247,18 @@ export default function YouTrackImportCard({
     ));
   };
 
+  const toggleSourceStatus = (projectId, sourceStatus) => {
+    setStatusFilters(current => {
+      const selected = current[projectId] || [];
+      return {
+        ...current,
+        [projectId]: selected.includes(sourceStatus)
+          ? selected.filter(status => status !== sourceStatus)
+          : [...selected, sourceStatus],
+      };
+    });
+  };
+
   const prepare = async () => {
     if (!selectedProjectIds.length) {
       showToast('Оберіть хоча б один проєкт YouTrack', 'error');
@@ -258,6 +271,19 @@ export default function YouTrackImportCard({
     ));
     if (projectWithoutStatuses) {
       showToast(`Оберіть хоча б один статус для проєкту ${projectWithoutStatuses.name}`, 'error');
+      return;
+    }
+    const unmappedStatus = discovery?.projects?.flatMap(project => (
+      selectedProjectIds.includes(project.id)
+        ? (statusFilters[project.id] || []).flatMap(sourceStatus => (
+          statusMappings[project.id]?.[sourceStatus]
+            ? []
+            : [{ project, sourceStatus }]
+        ))
+        : []
+    ))[0];
+    if (unmappedStatus) {
+      showToast(`Оберіть статус QuickTeam для ${unmappedStatus.sourceStatus}`, 'error');
       return;
     }
     setAction('prepare');
@@ -512,6 +538,7 @@ export default function YouTrackImportCard({
                                 size="sm"
                                 checked={checked}
                                 onChange={() => toggleProject(project.id)}
+                                disabled={(project.statuses || []).length === 0}
                                 ariaLabel={project.name}
                               />
                               <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
@@ -528,66 +555,59 @@ export default function YouTrackImportCard({
                               ]}
                             />
                           </div>
-                          {(project.statuses || []).length > 0 && (
-                            <div className="mt-2 space-y-3 border-t border-line pt-2">
-                              <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                                <div>
-                                  <p className="text-[11px] font-semibold text-ink">Які статуси імпортувати</p>
-                                  <p className="text-[10px] text-muted">Імпортуються лише обрані</p>
-                                </div>
-                                <MultiSelect
-                                  value={statusFilters[project.id] || []}
-                                  onChange={value => setStatusFilters(current => ({ ...current, [project.id]: value }))}
-                                  disabled={!checked}
-                                  options={project.statuses.map(status => ({
-                                    value: status.name,
-                                    label: status.archived ? `${status.name} · архівний` : status.name,
-                                  }))}
-                                  selectAllLabel="Усі статуси"
-                                  placeholder="Оберіть статуси"
-                                  size="md"
-                                  className="w-full"
-                                  dropdownClassName="w-[280px]"
-                                />
-                              </div>
+                          {(project.statuses || []).length > 0 ? (
+                            <div className="mt-2 space-y-2 border-t border-line pt-2">
                               <div>
-                                <p className="text-[11px] font-semibold text-ink">Куди зіставити статуси</p>
+                                <p className="text-[11px] font-semibold text-ink">Статуси YouTrack → QuickTeam</p>
                                 <p className="text-[10px] text-muted">
-                                  QuickTeam підставив варіанти автоматично. Кожен із них можна змінити вручну.
+                                  Відмітьте, які задачі імпортувати, і оберіть їхній статус у QuickTeam. Необрані залишаться в YouTrack.
                                 </p>
                               </div>
-                              <div className="space-y-2">
-                                {project.statuses.map(sourceStatus => {
-                                  const targetStatuses = targetStatusesFor(project.id);
-                                  return (
-                                    <div
-                                      key={sourceStatus.id || sourceStatus.name}
-                                      className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
-                                    >
-                                      <p className="truncate text-[11px] text-ink">
+                              {project.statuses.map(sourceStatus => {
+                                const selected = (statusFilters[project.id] || []).includes(sourceStatus.name);
+                                const targetStatuses = targetStatusesFor(project.id);
+                                return (
+                                  <div
+                                    key={sourceStatus.id || sourceStatus.name}
+                                    className="grid items-center gap-2 rounded-[8px] border border-line p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <Checkbox
+                                        size="sm"
+                                        checked={selected}
+                                        onChange={() => toggleSourceStatus(project.id, sourceStatus.name)}
+                                        disabled={!checked}
+                                        ariaLabel={`Імпортувати ${sourceStatus.name}`}
+                                      />
+                                      <p className="min-w-0 truncate text-[11px] text-ink">
                                         {sourceStatus.name}
+                                        {sourceStatus.issueCount > 0 ? <span className="text-muted"> · {sourceStatus.issueCount}</span> : null}
                                         {sourceStatus.archived ? <span className="text-muted"> · архівний</span> : null}
                                       </p>
-                                      <Select
-                                        value={statusMappings[project.id]?.[sourceStatus.name] || ''}
-                                        onChange={value => setStatusMappings(current => ({
-                                          ...current,
-                                          [project.id]: {
-                                            ...current[project.id],
-                                            [sourceStatus.name]: value,
-                                          },
-                                        }))}
-                                        disabled={!checked}
-                                        options={targetStatuses.map(status => ({
-                                          value: status.id,
-                                          label: `${status.label} · ${statusCategoryLabel(status.category)}`,
-                                        }))}
-                                      />
                                     </div>
-                                  );
-                                })}
-                              </div>
+                                    <Select
+                                      value={statusMappings[project.id]?.[sourceStatus.name] || ''}
+                                      onChange={value => setStatusMappings(current => ({
+                                        ...current,
+                                        [project.id]: {
+                                          ...current[project.id],
+                                          [sourceStatus.name]: value,
+                                        },
+                                      }))}
+                                      disabled={!checked || !selected}
+                                      options={targetStatuses.map(status => ({
+                                        value: status.id,
+                                        label: `${status.label} · ${statusCategoryLabel(status.category)}`,
+                                      }))}
+                                    />
+                                  </div>
+                                );
+                              })}
                             </div>
+                          ) : (
+                            <Alert className="mt-2" variant="warning">
+                              У доступних задачах цього проєкту не знайдено жодного статусу, тому імпорт для нього вимкнено.
+                            </Alert>
                           )}
                         </div>
                       );

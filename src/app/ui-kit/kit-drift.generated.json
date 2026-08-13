@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 213,
+    "usedAndPreviewed": 212,
     "usedWithoutPreview": 0,
-    "declaredUnused": 106
+    "declaredUnused": 107
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -344,6 +344,12 @@
       "component": "MultiSelect",
       "prop": "size",
       "value": "lg",
+      "namespace": null
+    },
+    {
+      "component": "MultiSelect",
+      "prop": "size",
+      "value": "md",
       "namespace": null
     },
     {
@@ -1280,7 +1286,7 @@
     "Card.preset.borderless": 22,
     "Card.padding.lg": 17,
     "Alert.variant.error": 5,
-    "Alert.variant.warning": 11,
+    "Alert.variant.warning": 12,
     "Alert.variant.info": 4,
     "Alert.variant.success": 2,
     "Select.filterRole.project": 1,
@@ -1397,7 +1403,6 @@
     "Skeleton.width.wide": 1,
     "Skeleton.width.half": 1,
     "Counter.variant.dot": 2,
-    "MultiSelect.size.md": 1,
     "IconAction.size.lg": 3,
     "IconAction.appearance.surface-plain": 2,
     "UserAvatar.size.hero": 1,
