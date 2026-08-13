@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next externalizes firebase-admin by default. With Firebase Admin 14's
+  // required subpath exports (`firebase-admin/app`, `/auth`, `/firestore`), the
+  // Vercel function trace can omit those runtime modules even though `next
+  // build` succeeds. Bundle the package into every server function that uses
+  // it so deployed APIs cannot fail during module evaluation.
+  transpilePackages: ['firebase-admin'],
   async headers() {
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },

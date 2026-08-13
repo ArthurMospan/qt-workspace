@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 
 const SERVER_ADMIN_PATH = new URL('../src/lib/server/firebaseAdmin.js', import.meta.url);
+const NEXT_CONFIG_PATH = new URL('../next.config.mjs', import.meta.url);
 const SOURCE_PATH = new URL('../src/', import.meta.url);
 const SCRIPTS_PATH = new URL('../scripts/', import.meta.url);
 
@@ -17,7 +18,7 @@ async function sourceFiles(directory) {
   return files.flat();
 }
 
-test('Firebase Admin 14 call sites do not use the removed namespace import', async () => {
+test('the shared Firebase Admin bootstrap uses v14 subpaths bundled for Vercel', async () => {
   const files = [
     ...await sourceFiles(SOURCE_PATH),
     ...await sourceFiles(SCRIPTS_PATH),
@@ -37,7 +38,9 @@ test('Firebase Admin 14 call sites do not use the removed namespace import', asy
   }
 
   const serverAdmin = await readFile(SERVER_ADMIN_PATH, 'utf8');
+  const nextConfig = await readFile(NEXT_CONFIG_PATH, 'utf8');
   assert.match(serverAdmin, /from 'firebase-admin\/app'/);
   assert.match(serverAdmin, /from 'firebase-admin\/auth'/);
   assert.match(serverAdmin, /from 'firebase-admin\/firestore'/);
+  assert.match(nextConfig, /transpilePackages:\s*\[['"]firebase-admin['"]\]/);
 });
