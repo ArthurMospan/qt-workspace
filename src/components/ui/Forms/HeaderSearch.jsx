@@ -45,7 +45,7 @@ export const HeaderSearch = forwardRef(({
     outsideLoading,
   });
 
-  const openEverywhere = () => onEscalate?.(escalation.term);
+  const openWorkspaceSearch = () => onEscalate?.(escalation.term);
 
   const handleKeyDown = event => {
     if (event.key === 'ArrowDown' && escalation.active) {
@@ -55,7 +55,7 @@ export const HeaderSearch = forwardRef(({
     }
     if (event.key === 'Enter' && escalationActive && escalation.active) {
       event.preventDefault();
-      openEverywhere();
+      openWorkspaceSearch();
       return;
     }
     if (event.key === 'Escape') setEscalationActive(false);
@@ -92,8 +92,8 @@ export const HeaderSearch = forwardRef(({
       )}
       <button
         type="button"
-        onClick={openEverywhere}
-        aria-label="Відкрити пошук всюди"
+        onClick={openWorkspaceSearch}
+        aria-label="Відкрити пошук у задачах і проєктах"
         aria-haspopup="dialog"
         // A hint, not a control: the field beside it is the thing to use. Boxed
         // in a bordered canvas chip it was the loudest element in the header,
@@ -110,7 +110,7 @@ export const HeaderSearch = forwardRef(({
             <button
               type="button"
               onMouseDown={event => event.preventDefault()}
-              onClick={openEverywhere}
+              onClick={openWorkspaceSearch}
               className="w-full px-[12px] py-[9px] text-left text-[12px] text-muted transition-colors hover:bg-canvas"
             >
               {escalation.outsideLoading
@@ -122,12 +122,12 @@ export const HeaderSearch = forwardRef(({
             type="button"
             onMouseDown={event => event.preventDefault()}
             onMouseEnter={() => setEscalationActive(true)}
-            onClick={openEverywhere}
+            onClick={openWorkspaceSearch}
             className={`flex w-full items-center justify-between border-t border-line px-[12px] py-[9px] text-left text-[12px] font-medium transition-colors ${
               escalationActive ? 'bg-canvas text-ink' : 'bg-white text-muted hover:bg-canvas hover:text-ink'
             }`}
           >
-            <span className="min-w-0 truncate">Шукати «{escalation.term}» всюди</span>
+            <span className="min-w-0 truncate">Шукати «{escalation.term}» у задачах і проєктах</span>
             <span className="ml-2 shrink-0 text-[10px] text-faint">{paletteKeys}</span>
           </button>
         </div>

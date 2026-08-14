@@ -45,7 +45,7 @@ export function searchEscalationState({
     : 0;
 
   return {
-    active: Boolean(term),
+    active: Boolean(term) && localCount === 0,
     term,
     localEmpty: localCount === 0,
     localCount,
@@ -59,4 +59,3 @@ export function shouldRemoveSearchScope({ key, query, scope } = {}) {
     && String(query || '').length === 0
     && Boolean(normalizeSearchScope(scope));
 }
-

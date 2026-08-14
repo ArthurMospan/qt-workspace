@@ -63,11 +63,26 @@ test('the local field and palette are wired through one launch request', async (
     read('../src/components/WorkspaceCommandPalette.jsx'),
     read('../src/components/ui/Navigation/CommandPalette.jsx'),
   ]);
-  assert.match(field, /Шукати «\{escalation\.term\}» всюди/);
+  assert.match(field, /Шукати «\{escalation\.term\}» у задачах і проєктах/);
   assert.match(field, /event\.key === 'ArrowDown'/);
   assert.match(header, /openCommandPalette\(\{ query, scope: searchScope \}\)/);
   assert.match(host, /initialQuery=\{paletteRequest\.query\}/);
   assert.match(palette, /shouldRemoveSearchScope/);
+});
+
+test('broader search is offered only after the local scope returns no matches', () => {
+  assert.equal(searchEscalationState({
+    query: 'дизайн',
+    localResultCount: 2,
+  }).active, false);
+  assert.equal(searchEscalationState({
+    query: 'дизайн',
+    localResultCount: null,
+  }).active, false);
+  assert.equal(searchEscalationState({
+    query: 'дизайн',
+    localResultCount: 0,
+  }).active, true);
 });
 
 test('project scope is applied by the server before issue and event reads', async () => {
