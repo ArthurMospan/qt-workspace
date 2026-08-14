@@ -3,6 +3,7 @@
 import { AtSign, Paperclip } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import Counter from '@/components/ui/DataDisplay/Counter';
+import { plural } from '@/lib/utils/plural.mjs';
 
 const SIZES = {
   sm: { gap: 'gap-[8px]', text: 'text-[10px]', icon: 11 },
@@ -44,7 +45,7 @@ export default function TaskCounters({
   return (
     <div className={`flex items-center ${scale.gap} shrink-0 ${scale.text} font-bold select-none ${className}`}>
       {attachments > 0 && (
-        <span className="flex items-center gap-[4px] text-muted" title={`${attachments} вкладень`}>
+        <span className="flex items-center gap-[4px] text-muted" title={`${attachments} ${plural(attachments, ['вкладення', 'вкладення', 'вкладень'])}`}>
           <Paperclip size={scale.icon} strokeWidth={2} />
           <span>{attachments}</span>
         </span>
@@ -56,7 +57,7 @@ export default function TaskCounters({
         </span>
       )}
       {messages > 0 && (
-        <span className="flex items-center gap-[4px] text-muted" title={`${messages} повідомлень в чаті`}>
+        <span className="flex items-center gap-[4px] text-muted" title={`${messages} ${plural(messages, ['повідомлення', 'повідомлення', 'повідомлень'])} в чаті`}>
           <ChatIcon size={scale.icon + 1} />
           <span>{messages}</span>
         </span>

@@ -27,6 +27,7 @@ sourceSystem: "youtrack"
 sourceConnectionId: "<connection>"
 externalId: "<YouTrack entity id>"
 externalUpdatedAt: "<source timestamp>"
+importedAt: "<first QuickTeam import timestamp>"
 ```
 
 Унікальність визначається набором `organizationId + provider + connectionId + entityType + externalId`. Його SHA-256 hash є ID документа в `externalObjectLinks`. Повторний запуск оновлює той самий об’єкт. Така таблиця дозволяє згодом додати Jira, Linear та інші адаптери без зміни основної схеми.
@@ -47,7 +48,7 @@ externalUpdatedAt: "<source timestamp>"
 | YouTrack | QuickTeam | Примітка |
 |---|---|---|
 | Project | Project | key зберігається як alias/external key |
-| Issue | Issue | original readable ID показується в metadata |
+| Issue | Issue | original readable ID і дата першого імпорту зберігаються в metadata |
 | Description | Description | Розмітка зберігається як текст YouTrack |
 | State/Type/Priority | Workflow values | мапінг перед commit |
 | Assignee/Reporter | Member або external actor | без автоматичного злиття за ім’ям |
@@ -80,6 +81,7 @@ externalUpdatedAt: "<source timestamp>"
 - Commit працює чанками з checkpoint і може продовжитися після падіння.
 - Зовнішні API викликаються з timeout, pagination і bounded limits.
 - Вкладення перевіряються за розміром і MIME.
+- Cycle time імпортованої задачі починається не раніше дати її першого імпорту; суперечливі історичні дати позначаються як помилка даних і не потрапляють у середнє.
 - Видалення в YouTrack ніколи автоматично не видаляє дані QuickTeam.
 - Перший реліз — тільки one-way import. Двостороння синхронізація є окремим продуктом із конфліктами та ownership rules.
 

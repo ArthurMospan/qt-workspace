@@ -38,6 +38,7 @@ import {
   createUkrainianDndAnnouncements,
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
 } from '@/lib/utils/dndAnnouncements.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -185,7 +186,7 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
       }
     >
         <p className="text-[13px] text-muted mb-4">
-          У цьому спринті залишилось <strong className="text-ink">{incompleteIssues.length} незавершених завдань</strong>. Куди їх перенести?
+          У цьому спринті залишилося <strong className="text-ink">{incompleteIssues.length} {plural(incompleteIssues.length, ['завдання', 'завдання', 'завдань'])}</strong>. Куди їх перенести?
         </p>
         <form id="sprint-complete-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormGroup label="Перенести завдання в">
@@ -467,7 +468,9 @@ export default function GlobalSprintsPage() {
             })}
             {issueList.length === 0 && (
               <div className="py-8 text-center text-[12px] text-faint">
-                Задач не знайдено в цьому списку
+                {isBacklogCol
+                  ? 'Завдань без спринта не знайдено'
+                  : 'У цьому спринті ще немає задач — перетягніть їх зі списку нижче'}
               </div>
             )}
             {provided.placeholder}
@@ -641,7 +644,9 @@ export default function GlobalSprintsPage() {
                               is closed, so it takes the ink tone: definitive, and
                               distinct from active green and planned grey. */}
                           {sprint.status === 'completed' && <StatusPill label="Завершено" color="#1f1f1f" />}
-                          <span className="text-[11px] text-muted shrink-0">{sprintIssues.length} завдань</span>
+                          <span className="text-[11px] text-muted shrink-0">
+                            {sprintIssues.length} {plural(sprintIssues.length, ['завдання', 'завдання', 'завдань'])}
+                          </span>
                           {sprint.startDate && (
                             <span className="text-[11px] text-muted hidden sm:inline ml-2">
                               {formatSprintDates(sprint.startDate, sprint.endDate)}
@@ -708,7 +713,9 @@ export default function GlobalSprintsPage() {
                 })}
                 {sprints.length === 0 && (
                   <div data-ui-surface="local" className="py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]">
-                    Немає запланованих або активних спринтів. Створіть новий спринт, щоб розпочати планування.
+                    {isManager
+                      ? 'Немає запланованих або активних спринтів. Створіть новий спринт, щоб розпочати планування.'
+                      : 'Немає запланованих або активних спринтів. Попросіть адміністратора створити спринт для планування роботи.'}
                   </div>
                 )}
               </div>
@@ -741,7 +748,7 @@ export default function GlobalSprintsPage() {
                     className="ui-type-column-title whitespace-nowrap text-ink"
                     style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                   >
-                    Завдання
+                    Без спринта
                   </h3>
                   <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="mt-4" />
                 </div>
@@ -752,7 +759,7 @@ export default function GlobalSprintsPage() {
                   composition="scroll-pane"
                   className="flex w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none"
                 >
-                  <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4">
+                  <div className="flex shrink-0 items-center justify-between border-b border-line bg-canvas px-4 pb-3 pt-4">
                     <div className="flex items-center gap-[6px]">
                       <Button
                         onClick={() => setBacklogCollapsed(true)}
@@ -763,7 +770,7 @@ export default function GlobalSprintsPage() {
                         title="Згорнути колонку завдань"
                       />
                       <span className="h-[8px] w-[8px] rounded-full bg-muted" />
-                      <h3 className="ui-type-column-title text-ink">Завдання</h3>
+                      <h3 className="ui-type-column-title text-ink">Без спринта</h3>
                       <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="ml-1" />
                     </div>
                     <Button

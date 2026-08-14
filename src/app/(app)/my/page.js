@@ -276,7 +276,7 @@ export default function MyTasksPage() {
                 options={[
                   { value: 'all', label: 'Всі спринти' },
                   { value: 'active', label: 'Тільки активні' },
-                  { value: 'none', label: 'Без спринта (Беклог)' },
+                  { value: 'none', label: 'Без спринта' },
                   ...(sprints || []).map(s => ({ value: s.id, label: s.name }))
                 ]}
               />

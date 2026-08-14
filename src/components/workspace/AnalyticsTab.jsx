@@ -23,6 +23,7 @@ import {
   backlogStatusIds,
   inProgressStatusIds,
 } from '@/lib/utils/statusCategories.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
@@ -375,27 +376,27 @@ export default function AnalyticsTab({
               {stats.dependencyBlocked > 0 && (
                 <Alert
                   variant="error"
-                  title={`${stats.dependencyBlocked} завдань заблоковано`}
+                  title={`${stats.dependencyBlocked} ${plural(stats.dependencyBlocked, ['завдання', 'завдання', 'завдань'])} заблоковано`}
                   description="Їх стримують незавершені залежності"
                 />
               )}
               {stats.blockerPriority > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.blockerPriority} завдань із пріоритетом «Критичний»`}
+                  title={`${stats.blockerPriority} ${plural(stats.blockerPriority, ['завдання', 'завдання', 'завдань'])} із пріоритетом «Критичний»`}
                   description="Потребують негайної уваги"
                 />
               )}
               {stats.noAssignee.length > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.noAssignee.length} завдань без виконавця`}
+                  title={`${stats.noAssignee.length} ${plural(stats.noAssignee.length, ['завдання', 'завдання', 'завдань'])} без виконавця`}
                 />
               )}
               {stats.unestimated.length > 0 && (
                 <Alert
                   variant="info"
-                  title={`${stats.unestimated.length} завдань без оцінки`}
+                  title={`${stats.unestimated.length} ${plural(stats.unestimated.length, ['завдання', 'завдання', 'завдань'])} без оцінки`}
                 />
               )}
             </div>

@@ -28,6 +28,18 @@ const WIDTHS = {
     sprint: 'w-[148px]',
     status: 'w-[148px]',
   },
+  // Project cards already set the horizontal rhythm. Their filters size to the
+  // selected label instead of reserving three unrelated fixed columns.
+  projects: {
+    type: 'w-max max-w-full',
+    date: 'w-max max-w-full',
+    member: 'w-max max-w-full',
+    project: 'w-max max-w-full',
+    sort: 'w-max max-w-full',
+    priority: 'w-max max-w-full',
+    sprint: 'w-max max-w-full',
+    status: 'w-max max-w-full',
+  },
   // Stacked inside the mobile dialog: every control spans the full width.
   stacked: {
     type: 'w-full',
@@ -74,7 +86,7 @@ export function countActiveFilters(node) {
  * the same filter is the same width on every screen.
  *
  * @param {React.ReactNode} props.children The filter controls.
- * @param {'default'|'detail'} props.context Width scale: a list page, or a detail pane.
+ * @param {'default'|'detail'|'projects'|'stacked'} props.context Width scale for the host layout.
  * @param {string} props.className Placement in the parent only.
  */
 export default function FilterBar({ children, context = 'default', className = '' }) {

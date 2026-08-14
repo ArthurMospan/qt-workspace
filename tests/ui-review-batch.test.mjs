@@ -95,7 +95,7 @@ test('the workflow editor groups statuses by category and moves them by dragging
 
   assert.match(settings, /STATUS_CATEGORY_IDS\.map\(\(categoryId, categoryIndex\) => \{/);
   assert.match(settings, /<Droppable droppableId=\{categoryId\}>/);
-  assert.match(settings, /onDragEnd=\{handleStatusDragEnd\}/);
+  assert.match(settings, /statusAnnouncements\.onDragEnd\(result, provided\);\s*handleStatusDragEnd\(result\)/);
   assert.match(settings, /handleAddStatus\(categoryId\)/);
   // The row carries no category control of its own any more — where it sits is
   // the answer, and two ways to say one thing is how they drift apart.
@@ -314,7 +314,7 @@ test('a member profile offers four icon actions, with the emergency call in the 
   // Both new actions land somewhere that knows what to do with them.
   assert.match(profile, /\/my\?new=1&assignee=/);
   assert.match(myTasks, /searchParams\.get\('assignee'\)/);
-  assert.match(composer, /initialAssignees\?\.length \? initialAssignees : f\.assignees/);
+  assert.match(composer, /assignees: initialAssignees\?\.length \? initialAssignees : \[\]/);
   assert.match(profile, /\/calendar\?new=1&with=/);
   assert.match(calendar, /searchParams\.get\('with'\)/);
   assert.match(eventDialog, /initialParticipantIds/);

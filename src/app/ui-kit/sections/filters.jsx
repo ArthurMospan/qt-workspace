@@ -39,7 +39,7 @@ export default function FiltersSection() {
           title="Проєкти"
           actions={<Button style="primary" color="dark" size="lg" icon={Plus}>Новий проєкт</Button>}
           filters={(
-            <FilterBar>
+            <FilterBar context="projects">
               <Select filterRole="member" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant="ghost" />
               <Select filterRole="date" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant="ghost" />
               <Select filterRole="sort" options={sortOptions} value={sortOption} onChange={setSortOption} variant="ghost" />

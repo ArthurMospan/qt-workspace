@@ -53,8 +53,7 @@ export function Toast({
       style={{ zIndex: GLOBAL_NOTIFICATION_Z_INDEX }}
     >
       <div 
-        className="flex items-center gap-3 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
-        style={{ animation: 'toastSlideUp 0.2s ease-out' }}
+        className="ui-toast flex items-center gap-3 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
       >
         {isSuccess && <CheckCircle size={15} className="text-green-400 shrink-0" />}
         {isError && <AlertCircle size={15} className="text-red-400 shrink-0" />}
@@ -88,13 +87,6 @@ export function Toast({
           <X size={13} />
         </button>
       </div>
-
-      <style>{`
-        @keyframes toastSlideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>,
     document.body,
   );

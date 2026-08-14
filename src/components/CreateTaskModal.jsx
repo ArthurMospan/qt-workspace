@@ -358,7 +358,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   value={form.sprintId}
                   onChange={val => set('sprintId', val)}
                   options={[
-                    { value: '', label: 'Без спринта (Беклог)' },
+                    { value: '', label: 'Без спринта' },
                     ...availableSprints.map(s => ({ value: s.id, label: s.name }))
                   ]}
                   placeholder="Оберіть спринт..."

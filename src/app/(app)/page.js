@@ -872,7 +872,7 @@ export default function WorkspacePage() {
             )
           }
           filters={
-            <FilterBar>
+            <FilterBar context="projects">
               <Select filterRole="member" options={memberOptions} value={selectedMember} onChange={setSelectedMember} variant="ghost" />
               <Select filterRole="date" options={dateOptions} value={dateFilter} onChange={setDateFilter} variant="ghost" />
               <Select filterRole="sort" options={sortOptions} value={sortOption} onChange={setSortOption} variant="ghost" />
@@ -918,7 +918,11 @@ export default function WorkspacePage() {
               <EmptyState
                 icon={Folder}
                 title={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Ще немає проєктів' : 'Проєкти не знайдені'}
-                description={(projects || []).filter(project => project.status !== 'archived').length === 0 ? 'Створіть перший проєкт, щоб організувати завдання та роботу команди.' : 'Спробуйте змінити параметри фільтрації.'}
+                description={(projects || []).filter(project => project.status !== 'archived').length === 0
+                  ? can(orgRole, 'create:project')
+                    ? 'Створіть перший проєкт, щоб організувати завдання та роботу команди.'
+                    : 'Попросіть адміністратора створити перший проєкт для команди.'
+                  : 'Спробуйте змінити параметри фільтрації.'}
                 action={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? 'Створити проєкт' : null}
                 onAction={(projects || []).filter(project => project.status !== 'archived').length === 0 && can(orgRole, 'create:project') ? () => setShowNewProject(true) : null}
                 context="page"

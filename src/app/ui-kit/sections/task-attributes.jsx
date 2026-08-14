@@ -68,7 +68,7 @@ export default function TaskAttributesSection() {
                     value={sprintVal}
                     onChange={setSprintVal}
                     options={[
-                      { value: '', label: 'Беклог (без спринта)' },
+                      { value: '', label: 'Без спринта' },
                       { value: 'sprint-12', label: 'Спринт 12' },
                     ]}
                     buttonClassName={compactSelectClass}

@@ -52,6 +52,7 @@ import {
 } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 function fmtH(minutes) {
   if (!minutes) return '0г';
@@ -435,7 +436,7 @@ function MemberOverview({ stat, projects, members, events, period }) {
         />
         <ProjectDistribution stat={stat} projects={projects} />
         <IssueList
-          title={`Завершено за ${period} днів`}
+          title={`Завершено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
           issues={stat.doneItems}
           projects={projects}
           members={members}

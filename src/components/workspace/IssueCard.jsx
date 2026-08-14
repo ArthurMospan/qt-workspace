@@ -25,6 +25,7 @@ import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 function hexToRgba(hex, alpha) {
   let r = 0, g = 0, b = 0;
@@ -356,7 +357,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
                   tone="neutral"
                   size="md"
                   preset="avatar-counter"
-                  title={`Ще ${participants.length - 5} учасників`}
+                  title={`Ще ${participants.length - 5} ${plural(participants.length - 5, ['учасник', 'учасники', 'учасників'])}`}
                 >
                   +{participants.length - 5}
                 </Pill>

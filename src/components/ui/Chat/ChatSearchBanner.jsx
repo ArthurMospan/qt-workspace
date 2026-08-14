@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { plural } from '@/lib/utils/plural.mjs';
 
 // ─── UI Kit: Chat Search Banner ──────────────────────────────────────────────
 // The amber strip that says how many messages matched, with the way to drop the
@@ -10,11 +11,6 @@ import React from 'react';
 // give the shared `TextAction` a one-off amber tone that nothing else would
 // ever ask for, the colour stays here, where it belongs to the banner it sits
 // on — a tone with one caller is a hardcode wearing a variant's name.
-function matchWord(count) {
-  if (count === 1) return 'повідомлення';
-  return count < 5 ? 'повідомлення' : 'повідомлень';
-}
-
 /**
  * The amber strip above a filtered conversation: how many messages matched, and
  * the way to drop the filter.
@@ -27,7 +23,7 @@ export default function ChatSearchBanner({ query, count = 0, onClear }) {
   return (
     <div className="bg-[#fffbe6] border-b border-[#ffe58f] px-6 py-2 flex items-center justify-between shrink-0">
       <p className="text-[13px] text-[#876800]">
-        Знайдено <strong>{count}</strong> {matchWord(count)} за запитом <strong>«{query}»</strong>
+        Знайдено <strong>{count}</strong> {plural(count, ['повідомлення', 'повідомлення', 'повідомлень'])} за запитом <strong>«{query}»</strong>
       </p>
       <button
         type="button"

@@ -1,3 +1,5 @@
+import { plural } from './plural.mjs';
+
 export const MAX_ISSUE_ESTIMATE_HOURS = 10_000;
 export const MAX_ISSUE_ESTIMATE_MINUTES = MAX_ISSUE_ESTIMATE_HOURS * 60;
 
@@ -7,7 +9,7 @@ export function issueEstimateHoursError(value) {
   if (!Number.isFinite(hours)) return 'Вкажіть оцінку числом';
   if (hours < 0) return 'Оцінка не може бути відʼємною';
   if (hours > MAX_ISSUE_ESTIMATE_HOURS) {
-    return `Максимальна оцінка — ${MAX_ISSUE_ESTIMATE_HOURS.toLocaleString('uk-UA')} годин`;
+    return `Максимальна оцінка — ${MAX_ISSUE_ESTIMATE_HOURS.toLocaleString('uk-UA')} ${plural(MAX_ISSUE_ESTIMATE_HOURS, ['година', 'години', 'годин'])}`;
   }
   if (!Number.isInteger(hours * 2)) return 'Використовуйте крок 0,5 години';
   return '';
@@ -23,7 +25,7 @@ export function clampIssueEstimateHours(value) {
   if (hours > MAX_ISSUE_ESTIMATE_HOURS) {
     return {
       value: String(MAX_ISSUE_ESTIMATE_HOURS),
-      error: `Максимальна оцінка — ${MAX_ISSUE_ESTIMATE_HOURS.toLocaleString('uk-UA')} годин`,
+      error: `Максимальна оцінка — ${MAX_ISSUE_ESTIMATE_HOURS.toLocaleString('uk-UA')} ${plural(MAX_ISSUE_ESTIMATE_HOURS, ['година', 'години', 'годин'])}`,
     };
   }
   return { value, error: issueEstimateHoursError(value) };

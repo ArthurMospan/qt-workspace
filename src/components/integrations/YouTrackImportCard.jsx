@@ -11,6 +11,7 @@ import {
   suggestYouTrackStatusMappings,
 } from '@/lib/utils/youtrackImport.mjs';
 import { statusCategoryLabel } from '@/lib/utils/statusCategories.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 const ACTIVE_JOB_STATUSES = new Set(['prepared', 'running']);
 
@@ -231,7 +232,7 @@ export default function YouTrackImportCard({
       ))));
       setStatusMappings(suggestYouTrackStatusMappings(result.projects, result.targetStatuses));
       setUserMappings(suggestUserMappings(result.users, members));
-      showToast(`Знайдено ${result.projects.length} проєктів YouTrack`);
+      showToast(`Знайдено ${result.projects.length} ${plural(result.projects.length, ['проєкт', 'проєкти', 'проєктів'])} YouTrack`);
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -303,7 +304,7 @@ export default function YouTrackImportCard({
       setJob(result.job);
       showToast(
         result.job.totalIssues
-          ? `Перевірено: до імпорту готово ${result.job.totalIssues} задач`
+          ? `Перевірено: до імпорту готово ${result.job.totalIssues} ${plural(result.job.totalIssues, ['задача', 'задачі', 'задач'])}`
           : 'Перевірено, але жодна задача не підпала під вибір. Перевірте обрані статуси.',
         result.job.totalIssues ? 'success' : 'error',
       );
@@ -336,7 +337,7 @@ export default function YouTrackImportCard({
         }
       }
       if (current.status === 'completed') {
-        showToast(`Імпорт завершено: ${current.processedIssues} задач`);
+        showToast(`Імпорт завершено: ${current.processedIssues} ${plural(current.processedIssues, ['задача', 'задачі', 'задач'])}`);
       }
     } catch (error) {
       showToast(`${error.message}. Імпорт можна продовжити тією ж кнопкою.`, 'error');
@@ -673,7 +674,7 @@ export default function YouTrackImportCard({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="text-[12px] font-semibold text-ink">
-                        {statusLabel(job.status)} · {job.processedIssues + job.failedIssues} / {job.totalIssues} задач
+                        {statusLabel(job.status)} · {job.processedIssues + job.failedIssues} / {job.totalIssues} {plural(job.totalIssues, ['задача', 'задачі', 'задач'])}
                       </p>
                       <p className="mt-1 text-[11px] text-muted">
                         Успішно: {job.processedIssues} · Помилок: {job.failedIssues} · Зв’язків: {job.processedLinks}
@@ -686,7 +687,9 @@ export default function YouTrackImportCard({
                   </div>
                   {job.lastError && <p className="mt-2 break-words text-[11px] text-red-500">{job.lastError}</p>}
                   {job.warnings?.length > 0 && (
-                    <p className="mt-2 text-[11px] text-amber-600">Попереджень: {job.warnings.length}. Дані без помилок продовжують імпортуватися.</p>
+                    <p className="mt-2 text-[11px] text-amber-600">
+                      {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
+                    </p>
                   )}
                   {ACTIVE_JOB_STATUSES.has(job.status) && (
                     <div className="mt-3 flex flex-wrap gap-2">

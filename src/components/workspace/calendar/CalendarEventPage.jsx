@@ -79,6 +79,7 @@ import {
 } from '@/lib/utils/calendarEventTypes.mjs';
 import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -123,7 +124,7 @@ function relativeTime(value) {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} хв тому`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} год тому`;
   const days = Math.floor(diff / 86_400_000);
-  return days === 1 ? 'вчора' : `${days} днів тому`;
+  return days === 1 ? 'вчора' : `${days} ${plural(days, ['день', 'дні', 'днів'])} тому`;
 }
 
 function formatTime(value) {
@@ -269,7 +270,9 @@ function CalendarEventTimeSheet({
           <div>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h4 className="ui-type-card-title text-ink">Журнал часу</h4>
-              <span className="text-[11px] font-medium text-muted">{logs.length} записів</span>
+              <span className="text-[11px] font-medium text-muted">
+                {logs.length} {plural(logs.length, ['запис', 'записи', 'записів'])}
+              </span>
             </div>
 
             {loading ? (
@@ -1079,7 +1082,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       trigger={(
                         <AttributeTrigger variant="cell" condensed={isHeaderScrolled}>
                           <span className={attributeLabelClass}>Учасники</span>
-                          <AttributeValue><Users size={13} className="mr-1.5 shrink-0 text-muted" />{event.participantIds?.length || 0} учасників</AttributeValue>
+                          <AttributeValue>
+                            <Users size={13} className="mr-1.5 shrink-0 text-muted" />
+                            {event.participantIds?.length || 0} {plural(event.participantIds?.length || 0, ['учасник', 'учасники', 'учасників'])}
+                          </AttributeValue>
                         </AttributeTrigger>
                       )}
                     >

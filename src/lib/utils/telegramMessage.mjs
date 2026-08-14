@@ -10,6 +10,7 @@
 // is, and a sweep that produces several for one person sends one digest.
 
 import { safeExternalUrl } from './externalUrls.mjs';
+import { plural } from './plural.mjs';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -82,7 +83,7 @@ export function formatTelegramNotification(items) {
     };
   }
 
-  const heading = `🔔 <b>QuickTeam · ${list.length} ${pluralNotifications(list.length)}</b>`;
+  const heading = `🔔 <b>QuickTeam · ${list.length} ${plural(list.length, ['сповіщення', 'сповіщення', 'сповіщень'])}</b>`;
   const text = [heading, ...list.map(item => renderItem(item, { linkTitle: true }))].join('\n\n');
   return {
     text: truncate(text, MAX_MESSAGE_LENGTH),
@@ -92,16 +93,4 @@ export function formatTelegramNotification(items) {
       .map(item => [item.title, item.body, safeExternalUrl(item.url)].filter(Boolean).join('\n'))
       .join('\n\n'),
   };
-}
-
-export function pluralNotifications(count) {
-  const tail = count % 100;
-  if (tail >= 11 && tail <= 14) return 'сповіщень';
-  switch (count % 10) {
-    case 1: return 'сповіщення';
-    case 2:
-    case 3:
-    case 4: return 'сповіщення';
-    default: return 'сповіщень';
-  }
 }

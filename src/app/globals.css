@@ -138,6 +138,14 @@
 }
 
 @layer components {
+  @keyframes qt-toast-slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ui-toast {
+    animation: qt-toast-slide-up 200ms ease-out;
+  }
+
   /* Named geometry: the same contract is used by Button/Input/Select and by
      exceptional compositions. Avoid anonymous h-[Npx] control overrides. */
   /* One variable drives the box and the line box. A control states its height

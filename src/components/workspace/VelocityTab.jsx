@@ -3,9 +3,11 @@
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar } from 'lucide-react';
-import { EmptyState, KpiCard, Pill, TaskListCard } from '@/components/ui';
+import { Alert, EmptyState, KpiCard, Pill, TaskListCard } from '@/components/ui';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
+import { summarizeCycleTimes } from '@/lib/utils/velocityMetrics.mjs';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtShortDate(date) {
@@ -201,17 +203,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
       ? Math.round(((donePeriod.length - donePrev.length) / donePrev.length) * 100)
       : null;
 
-    // Avg cycle time (created → done) for closed issues in period
-    const cycleTimes = donePeriod
-      .map(i => {
-        const created = i.createdAt?.toMillis?.() ?? 0;
-        const closed = getCompletedAtMillis(i);
-        return created > 0 ? (closed - created) / 86400000 : null;
-      })
-      .filter(v => v !== null && v >= 0);
-    const avgCycleTime = cycleTimes.length > 0
-      ? Math.round(cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length)
-      : null;
+    const cycleSummary = summarizeCycleTimes(donePeriod, getCompletedAtMillis);
 
     // Daily activity
     const dayCount = Math.min(period, 30);
@@ -249,7 +241,8 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
       completionPct: actionableIssues.length > 0
         ? Math.round((doneAll.length / actionableIssues.length) * 100)
         : 0,
-      avgCycleTime,
+      avgCycleTime: cycleSummary.averageDays,
+      invalidCycleCount: cycleSummary.invalidIssueIds.length,
       days,
       byType,
       byProject,
@@ -300,12 +293,18 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
                 : 'Баланс'} />
         </div>
 
+        {stats.invalidCycleCount > 0 && (
+          <Alert variant="error" title="Помилка даних cycle time" className="mb-6">
+            Виявлено {stats.invalidCycleCount} {plural(stats.invalidCycleCount, ['завдання', 'завдання', 'завдань'])} з датою закриття раніше за початок циклу. Некоректні значення не включено в середнє.
+          </Alert>
+        )}
+
         {/* Charts row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Daily Activity */}
           <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface md:col-span-2">
             <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
-              Активність ({period} днів)
+              Активність ({period} {plural(period, ['день', 'дні', 'днів'])})
             </h3>
             <BarChart data={stats.days} colorA="#1f1f1f" colorB="#10b981" labelA="Відкрито" labelB="Закрито" height={120} />
           </div>
@@ -339,7 +338,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
         {/* Burndown */}
         <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface mb-6">
           <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-4">
-            Burndown Chart ({period} днів)
+            Burndown Chart ({period} {plural(period, ['день', 'дні', 'днів'])})
           </h3>
           <BurndownChart issues={actionableIssues} days={period} closedSet={closedSet} now={now} />
         </div>

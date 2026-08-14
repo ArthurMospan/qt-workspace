@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { plural } from '../utils/plural.mjs';
 
 export const MAX_INVOICE_ITEMS = 350;
 export const MAX_INVOICE_SOURCE_LOGS = 350;
@@ -100,7 +101,7 @@ function sourceIds(value, label) {
   if (value.length > MAX_INVOICE_SOURCE_LOGS) {
     reject(
       'INVOICE_TOO_LARGE',
-      `Рахунок може містити не більше ${MAX_INVOICE_SOURCE_LOGS} записів часу`,
+      `Рахунок може містити не більше ${MAX_INVOICE_SOURCE_LOGS} ${plural(MAX_INVOICE_SOURCE_LOGS, ['запису', 'записів', 'записів'])} часу`,
       413,
     );
   }
@@ -201,7 +202,7 @@ export function normalizeInvoiceRequest(body) {
   if (invoice.items.length > MAX_INVOICE_ITEMS) {
     reject(
       'INVOICE_TOO_LARGE',
-      `Рахунок може містити не більше ${MAX_INVOICE_ITEMS} позицій`,
+      `Рахунок може містити не більше ${MAX_INVOICE_ITEMS} ${plural(MAX_INVOICE_ITEMS, ['позиції', 'позицій', 'позицій'])}`,
       413,
     );
   }
@@ -231,7 +232,7 @@ export function normalizeInvoiceRequest(body) {
   if (itemSourceIds.length > MAX_INVOICE_SOURCE_LOGS) {
     reject(
       'INVOICE_TOO_LARGE',
-      `Рахунок може містити не більше ${MAX_INVOICE_SOURCE_LOGS} записів часу`,
+      `Рахунок може містити не більше ${MAX_INVOICE_SOURCE_LOGS} ${plural(MAX_INVOICE_SOURCE_LOGS, ['запису', 'записів', 'записів'])} часу`,
       413,
     );
   }

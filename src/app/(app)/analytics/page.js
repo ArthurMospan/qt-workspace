@@ -51,6 +51,7 @@ import {
 } from '@/lib/utils/statusCategories.mjs';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
@@ -244,14 +245,14 @@ function AnalyticsContent({
             value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'все вчасно'} />
         </div>
 
-        <SectionTitle>Календар · {period} днів</SectionTitle>
+        <SectionTitle>Календар · {period} {plural(period, ['день', 'дні', 'днів'])}</SectionTitle>
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard icon={CalendarIcon} label="Заплановано"
-            value={calendarStats.upcoming} sub={`наступні ${period} днів`} />
+            value={calendarStats.upcoming} sub={`період: ${period} ${plural(period, ['день', 'дні', 'днів'])}`} />
           <KpiCard icon={Video} label="Мітинги"
             value={calendarStats.meetings} sub={`${fmtH(Math.round(calendarStats.meetingMinutes))} за період`} />
           <KpiCard icon={Clock} label="Фокус-час"
-            value={fmtH(Math.round(calendarStats.focusMinutes))} sub={`за останні ${period} днів`} />
+            value={fmtH(Math.round(calendarStats.focusMinutes))} sub={`період: ${period} ${plural(period, ['день', 'дні', 'днів'])}`} />
           <KpiCard icon={StickyNote} label="Нотатки"
             value={calendarStats.notes} sub="у видимому календарі" />
         </div>
@@ -355,33 +356,33 @@ function AnalyticsContent({
               {stats.dependencyBlocked > 0 && (
                 <Alert
                   variant="error"
-                  title={`${stats.dependencyBlocked} завдань заблоковано`}
+                  title={`${stats.dependencyBlocked} ${plural(stats.dependencyBlocked, ['завдання', 'завдання', 'завдань'])} заблоковано`}
                   description="Їх стримують незавершені залежності"
                 />
               )}
               {stats.blockerPriority > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.blockerPriority} завдань із пріоритетом «Критичний»`}
+                  title={`${stats.blockerPriority} ${plural(stats.blockerPriority, ['завдання', 'завдання', 'завдань'])} із пріоритетом «Критичний»`}
                   description="Потребують негайної уваги"
                 />
               )}
               {stats.noAssignee > 0 && (
                 <Alert
                   variant="warning"
-                  title={`${stats.noAssignee} завдань без виконавця`}
+                  title={`${stats.noAssignee} ${plural(stats.noAssignee, ['завдання', 'завдання', 'завдань'])} без виконавця`}
                 />
               )}
               {stats.unestimated > 0 && (
                 <Alert
                   variant="info"
-                  title={`${stats.unestimated} завдань без оцінки`}
+                  title={`${stats.unestimated} ${plural(stats.unestimated, ['завдання', 'завдання', 'завдань'])} без оцінки`}
                 />
               )}
               {stats.inProgress > 0 && (
                 <Alert
                   variant="success"
-                  title={`${stats.inProgress} завдань в роботі`}
+                  title={`${stats.inProgress} ${plural(stats.inProgress, ['завдання', 'завдання', 'завдань'])} в роботі`}
                 />
               )}
               {stats.dependencyBlocked === 0

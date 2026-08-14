@@ -1,5 +1,6 @@
 import { existingParentIssueId } from './issueHierarchyModel.mjs';
 import { issueStatusId } from './issueExecution.mjs';
+import { plural } from './plural.mjs';
 
 export const MAX_ISSUE_STATUS_ORDER_UPDATES = 350;
 
@@ -76,7 +77,7 @@ export function normalizeIssueStatusTransitionInput(body, issueId) {
   if (rawOrderUpdates.length > MAX_ISSUE_STATUS_ORDER_UPDATES) {
     return inputError(
       'TOO_MANY_ORDER_UPDATES',
-      `За один запит можна змінити не більше ${MAX_ISSUE_STATUS_ORDER_UPDATES} позицій`,
+      `За один запит можна змінити не більше ${MAX_ISSUE_STATUS_ORDER_UPDATES} ${plural(MAX_ISSUE_STATUS_ORDER_UPDATES, ['позиції', 'позицій', 'позицій'])}`,
       { maxOrderUpdates: MAX_ISSUE_STATUS_ORDER_UPDATES },
     );
   }

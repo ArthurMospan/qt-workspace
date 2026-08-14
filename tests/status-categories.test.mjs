@@ -402,7 +402,7 @@ test('what measures output reads delivered; what asks "is there work left" reads
 
   // And the ones that must stay closed: a cancelled task is not overdue, does not
   // block anything, and is not work remaining on a burndown.
-  assert.match(analytics, /due\.getTime\(\) < now && !closedSet\.has/);
+  assert.match(analytics, /isDueDateOverdue\(i\.dueDate, \{ now, timeZone \}\)[\s\S]{0,80}&& !closedSet\.has/);
   assert.match(velocity, /function BurndownChart\([^)]*closedSet/);
   assert.match(workload, /const openItems = memberIssues\.filter\(issue => !closedSet\.has/);
 });

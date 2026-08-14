@@ -52,6 +52,7 @@ import {
   resolveClosedStatusIds,
   resolveEntryStatusId,
 } from '@/lib/utils/workflowDefaults.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 const DEFAULT_WORKFLOW = {
   statuses: [
@@ -96,6 +97,7 @@ function externalLinkRef(organizationId, connectionId, entityType, externalId) {
 }
 
 function timestamp(value, fallback = null) {
+  if (typeof value?.toDate === 'function') return Timestamp.fromDate(value.toDate());
   const date = value instanceof Date ? value : new Date(value);
   return Number.isFinite(date.getTime()) ? Timestamp.fromDate(date) : fallback;
 }
@@ -528,6 +530,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
   const estimateMinutes = fieldMinutes(youTrackField(issue, 'Estimation'));
   const sourceCreatedAt = timestamp(issue.created, Timestamp.now());
   const sourceUpdatedAt = timestamp(issue.updated, sourceCreatedAt);
+  const currentImportAt = timestamp(job.createdAt, Timestamp.now());
 
   const importedFields = {
     title: String(issue.summary || issue.idReadable || 'Без назви').trim().slice(0, 240),
@@ -697,8 +700,17 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
           ? timestamp(issue.resolved || issue.updated, sourceUpdatedAt)
           : FieldValue.delete();
       }
+      const firstImportedAt = timestamp(
+        currentIssue.importedAt || currentIssue.importMetadata?.importedAt,
+        currentImportAt,
+      );
       transaction.set(existingIssue.ref, {
         ...importedFields,
+        importedAt: firstImportedAt,
+        importMetadata: {
+          ...importedFields.importMetadata,
+          importedAt: firstImportedAt,
+        },
         ...acceptedWorkflowFields,
       }, { merge: true });
       transaction.set(linkRef, {
@@ -775,6 +787,11 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     const issueKey = `${issuePrefix}-${next}`;
     transaction.create(issueRef, {
       ...importedFields,
+      importedAt: currentImportAt,
+      importMetadata: {
+        ...importedFields.importMetadata,
+        importedAt: currentImportAt,
+      },
       ...persistedWorkflowFields,
       ...(closedStatusIds.includes(workflowFields.status)
         ? { completedAt: timestamp(issue.resolved || issue.updated, sourceUpdatedAt) }
@@ -903,7 +920,7 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
   const invalidWorkItemCount = normalizedItems.length - validItems.length;
   const invalidWarnings = invalidWorkItemCount > 0
     ? [
-      `Пропущено ${invalidWorkItemCount} записів часу YouTrack з некоректною тривалістю або ID`,
+      `Пропущено ${invalidWorkItemCount} ${plural(invalidWorkItemCount, ['запис', 'записи', 'записів'])} часу YouTrack з некоректною тривалістю або ID`,
     ]
     : [];
   if (!validItems.length) {

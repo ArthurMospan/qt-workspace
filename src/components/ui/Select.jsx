@@ -137,7 +137,7 @@ function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
  * @param {boolean} props.compact Denser trigger, for attribute strips.
  * @param {React.ComponentType} props.triggerIcon Leading glyph on the trigger.
  * @param {string} props.filterRole Which filter this is; `FilterBar` decides the width from it.
- * @param {'default'|'detail'} props.filterContext Which width scale that lookup uses.
+ * @param {'default'|'detail'|'projects'|'stacked'} props.filterContext Which width scale that lookup uses.
  * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
  * @param {string} props.ariaLabel Accessible name when no visible label sits above.
  * @param {string} props.buttonClassName Placement of the trigger only.
@@ -367,7 +367,7 @@ export function Select({
  * @param {boolean} props.compact Denser trigger, for attribute strips.
  * @param {React.ComponentType} props.triggerIcon Leading glyph on the trigger.
  * @param {string} props.filterRole Which filter this is; `FilterBar` decides the width from it.
- * @param {'default'|'detail'} props.filterContext Which width scale that lookup uses.
+ * @param {'default'|'detail'|'projects'|'stacked'} props.filterContext Which width scale that lookup uses.
  * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
  * @param {string} props.ariaLabel Accessible name when no visible label sits above.
  * @param {string} props.buttonClassName Placement of the trigger only.

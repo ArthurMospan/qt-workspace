@@ -2358,13 +2358,13 @@ export default function SettingsPage() {
                   ? 'Натисніть «Старт» у Telegram — підключиться саме'
                   : telegramBotStatus.configured
                     ? 'Не підключено'
-                    : 'Бот не налаштований на сервері',
+                    : 'Інтеграцію не налаштовано в цьому середовищі',
               available: telegramBotStatus.connected && notif.telegramEnabled === true,
               offNote: telegramBotStatus.configured
                 ? 'Увімкни канал — відкриється бот. Після «Старт» тут зʼявиться список подій.'
                 : telegramBotStatus.connected
                   ? 'Акаунт уже підключений у production. Його можна відключити і з localhost.'
-                  : 'На localhost немає секретів бота. Нове підключення виконується у production.',
+                  : 'Інтеграцію не налаштовано в цьому середовищі.',
               master: (
                 <ToggleSwitch
                   checked={telegramBotStatus.connected && notif.telegramEnabled === true}
@@ -2458,10 +2458,11 @@ export default function SettingsPage() {
         return (
         <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону" rightAction={saveButton}>
           <Card preset="borderless" padding="lg">
-            <Row label="Мова інтерфейсу" desc="Виберіть мову відображення">
+            <Row label="Мова інтерфейсу" desc="Наразі інтерфейс доступний лише українською">
               <Select
                 value={language}
                 onChange={setLanguage}
+                disabled
                 options={[
                   { value: 'ua', label: 'Українська' }
                 ]}
@@ -2779,7 +2780,7 @@ export default function SettingsPage() {
                     : ''}
                 </span>
               ) : !telegramGroupStatus.configured ? (
-                <span className="text-[11px] text-muted">Бота ще не налаштовано на сервері QuickTeam.</span>
+                <span className="text-[11px] text-muted">Інтеграцію не налаштовано в цьому середовищі.</span>
               ) : null}
             >
               {telegramGroupStatus.connected ? (

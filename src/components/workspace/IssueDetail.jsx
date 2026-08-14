@@ -38,6 +38,7 @@ import {
   toLocalDateInput,
 } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
@@ -123,8 +124,7 @@ function timeAgo(ts) {
   if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
   const days = Math.floor(diff / 86400000);
   if (days === 1) return 'вчора';
-  if (days < 5) return `${days} дні тому`;
-  return `${days} днів тому`;
+  return `${days} ${plural(days, ['день', 'дні', 'днів'])} тому`;
 }
 
 // Module-level id factory — keeps the impure Date.now()/Math.random() calls out
@@ -1169,7 +1169,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       value={issue.sprintId || ''} 
                       onChange={val => update({ sprintId: val || null })} 
                       options={[
-                        { value: '', label: 'Беклог (без спринта)' },
+                        { value: '', label: 'Без спринта' },
                         ...sprints.map(s => ({ value: s.id, label: s.name }))
                       ]} 
                       buttonClassName={compactSelectClass}
@@ -1258,7 +1258,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                             disabled={isArchived}
                             value={issue.sprintId || ''}
                             onChange={val => update({ sprintId: val || null })}
-                            options={[{ value: '', label: 'Беклог (без спринта)' }, ...sprints.map(item => ({ value: item.id, label: item.name }))]}
+                            options={[{ value: '', label: 'Без спринта' }, ...sprints.map(item => ({ value: item.id, label: item.name }))]}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5 sm:hidden">
@@ -1421,7 +1421,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       <h4 className="ui-type-item-title text-ink">Журнал часу</h4>
                       {timeLogs.length > 0 && (
                         <span className="text-[11px] font-semibold text-muted">
-                          {timeLogs.length} {timeLogs.length === 1 ? 'запис' : timeLogs.length < 5 ? 'записи' : 'записів'}
+                          {timeLogs.length} {plural(timeLogs.length, ['запис', 'записи', 'записів'])}
                         </span>
                       )}
                     </div>

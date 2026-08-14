@@ -45,6 +45,7 @@ import {
   setBillingMemberPreset,
   setBillingMemberRate,
 } from '@/lib/utils/billingProjectState.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 // ── Defaults ─────────────────────────────────────────────────────────
 
@@ -1272,7 +1273,9 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                           <Pill tone="neutral">Анульовано</Pill>
                         )}
                       </div>
-                      <p className="text-[11px] text-muted font-medium mt-1">{inv.date} · {inv.items?.length} позицій</p>
+                      <p className="text-[11px] text-muted font-medium mt-1">
+                        {inv.date} · {inv.items?.length || 0} {plural(inv.items?.length || 0, ['позиція', 'позиції', 'позицій'])}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -1408,7 +1411,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           {selectedConflictCount > 0 ? (
             <Alert
               variant="warning"
-              title={`${selectedConflictCount} позицій уже є в рахунках`}
+              title={`${selectedConflictCount} ${plural(selectedConflictCount, ['позиція', 'позиції', 'позицій'])} уже є в рахунках`}
               description="Зніміть їх з вибору перед збереженням, щоб не виставити той самий списаний час двічі."
             />
           ) : null}
