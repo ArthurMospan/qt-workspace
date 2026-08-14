@@ -19,3 +19,11 @@ test('the call-to-tasks screen exists once, as a tab in the task composer', () =
   assert.match(modal, /import AudioTaskPanel from '@\/components\/AudioTaskPanel'/);
   assert.match(modal, /<AudioTaskPanel/);
 });
+
+test('the call analysis shows every decision returned by AI', () => {
+  const panel = readFileSync(join(ROOT, 'src/components/AudioTaskPanel.jsx'), 'utf8');
+
+  assert.match(panel, /Array\.isArray\(result\.decisions\)/);
+  assert.match(panel, />Рішення<\/p>/);
+  assert.match(panel, /result\.decisions\.map\(\(decision, index\) =>/);
+});

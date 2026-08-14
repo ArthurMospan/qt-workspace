@@ -239,6 +239,16 @@ export default function AudioTaskPanel({
               <p className="whitespace-pre-wrap text-[13px] leading-5 text-ink">{result.summary}</p>
             </div>
           )}
+          {Array.isArray(result.decisions) && result.decisions.length > 0 && (
+            <div data-ui-surface="local" className="rounded-[14px] bg-canvas p-4">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">Рішення</p>
+              <ul className="list-disc space-y-1 pl-5 text-[13px] leading-5 text-ink">
+                {result.decisions.map((decision, index) => (
+                  <li key={`${index}-${decision}`}>{decision}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <h3 className="ui-type-card-title flex items-center gap-2 text-ink"><ListChecks size={16} /> Запропоновані завдання</h3>
             <div className="flex shrink-0 items-center gap-2">
