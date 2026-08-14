@@ -980,6 +980,7 @@ export default function WorkspacePage() {
               assigneeIds: formData.assignees || [],
               labelIds: formData.labelIds || [],
               dueDate: formData.dueDate || null,
+              estimateMinutes: formData.estimateMinutes || 0,
               sprintId: formData.sprintId || null,
             },
           });

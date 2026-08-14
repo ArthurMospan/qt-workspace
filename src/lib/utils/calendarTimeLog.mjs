@@ -59,6 +59,7 @@ export function isCalendarEventOccurrence(event, occurrenceStartAt) {
   const occurrenceIso = normalizeCalendarOccurrence(occurrenceStartAt);
   const seriesStartMs = timestampMillis(event?.startAt);
   if (!occurrenceIso || seriesStartMs == null) return false;
+  if ((event?.excludedOccurrenceStarts || []).includes(occurrenceIso)) return false;
   const occurrence = new Date(occurrenceIso);
   const seriesStart = new Date(seriesStartMs);
   const recurrence = normalizedRecurrence(event?.recurrence);

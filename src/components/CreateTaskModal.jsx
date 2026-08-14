@@ -23,6 +23,12 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import Alert from '@/components/ui/Feedback/Alert';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
+import {
+  MAX_ISSUE_ESTIMATE_HOURS,
+  clampIssueEstimateHours,
+  issueEstimateHoursError,
+} from '@/lib/utils/issueEstimate.mjs';
 
 
 
@@ -83,6 +89,34 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     || 'todo'
   );
 
+  const initialForm = () => ({
+    title: '',
+    description: '',
+    status: defaultStatusId(),
+    priority: 'medium',
+    type: 'task',
+    assignees: initialAssignees?.length ? initialAssignees : [],
+    labelIds: [],
+    dueDate: '',
+    estimateHours: '',
+    projectId: projects?.[0]?.id || projectContext?.id || '',
+    sprintId: '',
+  });
+
+  const resetDraft = () => {
+    setMode('task');
+    setForm(initialForm());
+    setError('');
+    setFieldErrors({});
+    setDraftTouched(false);
+  };
+
+  const closeAndReset = () => {
+    if (loading) return;
+    resetDraft();
+    onClose();
+  };
+
   // Reset when the dialog *opens*, not whenever the values the reset reads
   // happen to change identity. `visibleStatuses` is a useMemo over
   // `activeHiddenCols`, which comes off `projectContext` — and the project page
@@ -101,16 +135,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     if (hasOpened.current) return;
     hasOpened.current = true;
     queueMicrotask(() => {
-      setMode('task');
-      setForm(f => ({
-        ...f,
-        projectId: f.projectId || projects?.[0]?.id || '',
-        // Opened from a colleague's profile, the composer arrives with that
-        // colleague already on it — otherwise "create a task for them" means
-        // finding them again in a chip list.
-        assignees: initialAssignees?.length ? initialAssignees : f.assignees,
-        status: defaultStatusId(),
-      }));
+      resetDraft();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialAssignees, initialStatus, categoryStatusId, visibleStatuses, projects]);
@@ -172,6 +197,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     e.preventDefault();
     const nextErrors = {};
     if (!form.title.trim()) nextErrors.title = 'Вкажіть назву завдання';
+    const estimateError = issueEstimateHoursError(form.estimateHours);
+    if (estimateError) nextErrors.estimateHours = estimateError;
     if (projects && projects.length > 0 && !form.projectId) {
       nextErrors.projectId = 'Оберіть проєкт';
     }
@@ -192,12 +219,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
         sprintId: form.sprintId || null
       });
-      setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], estimateHours: '', projectId: '', sprintId: '' });
-      setDraftTouched(false);
+      resetDraft();
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
-      setError(err?.message || 'Помилка створення завдання. Перевір консоль.');
+      setError(userFacingErrorMessage(err, 'Не вдалося створити завдання'));
     } finally {
       setLoading(false);
     }
@@ -206,15 +232,15 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   return (
     <Dialog
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={closeAndReset}
       title="Нове завдання"
       size="lg"
       bodyPadding="flush"
       isDirty={mode === 'task' && draftTouched}
-      closeConfirmation="Закрити форму й залишити незбережену чернетку?"
+      closeConfirmation="Закрити форму й втратити незбережені зміни?"
       footer={mode === 'task' ? (
         <>
-          <Button style="secondary" size="md" onClick={onClose} type="button">
+          <Button style="secondary" size="md" onClick={closeAndReset} type="button">
             Скасувати
           </Button>
           <Button
@@ -246,6 +272,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         <form
           id="create-task-form"
           onSubmit={handleSubmit}
+          noValidate
           className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:p-7 lg:grid-cols-2"
         >
           {error && (
@@ -346,15 +373,23 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 placeholder="Без дедлайну"
               />
             </div>
-            <div className="flex flex-col gap-[6px]">
-              <Label>Оцінка (год)</Label>
+            <FormGroup label="Оцінка (год)" error={fieldErrors.estimateHours}>
               <Input
-                type="number" min="0" step="0.5"
+                type="number"
+                min="0"
+                max={MAX_ISSUE_ESTIMATE_HOURS}
+                step="0.5"
                 value={form.estimateHours}
-                onChange={e => set('estimateHours', e.target.value)}
+                onChange={event => {
+                  const next = clampIssueEstimateHours(event.target.value);
+                  setForm(current => ({ ...current, estimateHours: next.value }));
+                  setDraftTouched(true);
+                  setFieldErrors(current => ({ ...current, estimateHours: next.error }));
+                }}
                 placeholder="0"
+                error={Boolean(fieldErrors.estimateHours)}
               />
-            </div>
+            </FormGroup>
           </div>
 
           {/* Assignees */}

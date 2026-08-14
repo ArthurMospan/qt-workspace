@@ -13,6 +13,7 @@ const TYPING_IDLE_MS = 3000;
 export default function ChatComposer({ onSend, onTyping, disabled, scrollRef }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const typingRef = useRef(false);
   const idleTimer = useRef(null);
 
@@ -37,7 +38,8 @@ export default function ChatComposer({ onSend, onTyping, disabled, scrollRef }) 
 
   const submit = async () => {
     const body = text.trim();
-    if (!body || sending || disabled) return;
+    if (!body || sendingRef.current || disabled) return;
+    sendingRef.current = true;
     setSending(true);
     stopTyping();
     try {
@@ -46,6 +48,7 @@ export default function ChatComposer({ onSend, onTyping, disabled, scrollRef }) 
     } catch (e) {
       console.error('[qtplus] send failed:', e?.message);
     }
+    sendingRef.current = false;
     setSending(false);
   };
 

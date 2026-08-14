@@ -135,8 +135,10 @@ export function calendarReminderCandidates(
       windowEnd: new Date(nowMs + maxReminderMs + lookAheadMs + 5 * 60 * 1000),
       maxOccurrences: 64,
     });
+    const excludedOccurrences = new Set(event.excludedOccurrenceStarts || []);
 
     for (const occurrence of occurrences) {
+      if (excludedOccurrences.has(occurrence.toISOString())) continue;
       for (const minutes of reminders) {
         const triggerAt = occurrence.getTime() - minutes * 60 * 1000;
         if (triggerAt > nowMs + lookAheadMs || triggerAt < nowMs - lookBackMs) continue;

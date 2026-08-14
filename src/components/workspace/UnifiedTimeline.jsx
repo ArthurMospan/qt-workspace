@@ -187,6 +187,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
 
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
@@ -349,7 +350,8 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
 
   const handleSend = async () => {
     const text = input.trim();
-    if ((!text && pendingFiles.length === 0) || sending) return;
+    if ((!text && pendingFiles.length === 0) || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     try {
       if (editingComment) {
@@ -405,6 +407,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
     } catch (error) {
       showToast(`Помилка надсилання: ${error.message}`, 'error');
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };

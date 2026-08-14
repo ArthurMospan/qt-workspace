@@ -21,6 +21,7 @@ import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages
 import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { issueParentStatusConflict } from '@/lib/utils/issueStatusTransition.mjs';
+import { MAX_ISSUE_ESTIMATE_MINUTES } from '@/lib/utils/issueEstimate.mjs';
 
 function normalizedDate(value) {
   if (value == null || value === '') return null;
@@ -74,9 +75,6 @@ export async function POST(request) {
         error: localizedIssueAuthorizationMessage(authorization.error),
       }, { status: authorization.status });
     }
-    if (!(await enforceRateLimit('issue-create', authorization.user.uid, 60, 60))) {
-      return NextResponse.json({ error: 'Забагато запитів на створення завдань' }, { status: 429 });
-    }
     if (!projectId || typeof data.title !== 'string' || !data.title.trim() || data.title.trim().length > 240) {
       return NextResponse.json({ error: 'Потрібні коректний проєкт і назва завдання' }, { status: 400 });
     }
@@ -99,11 +97,51 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    const parentIssueId = normalizeParentIssueId(data.parentIssueId);
+    if (parentIssueId === undefined) {
+      return NextResponse.json({
+        error: 'Некоректний ідентифікатор батьківського завдання',
+        code: 'INVALID_PARENT_ID',
+      }, { status: 400 });
+    }
+
+    const dueDate = normalizedDate(data.dueDate);
+    if (dueDate === undefined) {
+      return NextResponse.json({ error: 'Некоректний дедлайн' }, { status: 400 });
+    }
+    const estimateMinutes = data.estimateMinutes == null
+      ? null
+      : Number(data.estimateMinutes);
+    if (
+      estimateMinutes != null
+      && (!Number.isFinite(estimateMinutes)
+        || estimateMinutes < 0
+        || estimateMinutes > MAX_ISSUE_ESTIMATE_MINUTES)
+    ) {
+      return NextResponse.json({
+        error: 'Оцінка завдання виходить за допустимі межі',
+        code: 'INVALID_ESTIMATE',
+      }, { status: 400 });
+    }
+
+    // Invalid form submissions do not consume the creation budget. The limit
+    // still protects every request that has a valid body and could reach the
+    // project/workflow reads below: 60 attempts per user per 60 seconds.
+    if (!(await enforceRateLimit('issue-create', authorization.user.uid, 60, 60))) {
+      return NextResponse.json({
+        error: 'Забагато запитів на створення завдань',
+        code: 'RATE_LIMITED',
+      }, { status: 429 });
+    }
+
     const db = getAdminDb();
     const projectRef = db.collection('projects').doc(projectId);
     const projectSnap = await projectRef.get();
     if (!projectSnap.exists || projectSnap.data().organizationId !== organizationId) {
-      return NextResponse.json({ error: 'Проєкт не належить цій організації' }, { status: 400 });
+      return NextResponse.json({
+        error: 'Проєкт не належить цій організації',
+        code: 'INVALID_PROJECT_SCOPE',
+      }, { status: 400 });
     }
     const projectData = projectSnap.data();
 
@@ -136,19 +174,6 @@ export async function POST(request) {
       ) {
         return NextResponse.json({ error: 'Некоректний або вже завершений спринт' }, { status: 400 });
       }
-    }
-
-    const parentIssueId = normalizeParentIssueId(data.parentIssueId);
-    if (parentIssueId === undefined) {
-      return NextResponse.json({
-        error: 'Некоректний ідентифікатор батьківського завдання',
-        code: 'INVALID_PARENT_ID',
-      }, { status: 400 });
-    }
-
-    const dueDate = normalizedDate(data.dueDate);
-    if (dueDate === undefined) {
-      return NextResponse.json({ error: 'Некоректний дедлайн' }, { status: 400 });
     }
 
     const workflowRef = db.collection('organizations').doc(organizationId)
@@ -302,7 +327,7 @@ export async function POST(request) {
         dueDate,
         sprintId: data.sprintId || null,
         reporterId: authorization.user.uid,
-        estimateMinutes: Number.isFinite(data.estimateMinutes) ? Math.max(0, data.estimateMinutes) : null,
+        estimateMinutes,
         spentMinutes: 0,
         spentMinutesMirrorVersion: 1,
         timeLogMutationVersion: 0,

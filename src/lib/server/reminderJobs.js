@@ -210,6 +210,7 @@ const CALENDAR_FIELDS = [
   'participantResponses',
   'reminderMinutes',
   'recurrence',
+  'excludedOccurrenceStarts',
   'organizerId',
 ];
 

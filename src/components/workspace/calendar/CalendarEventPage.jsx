@@ -28,6 +28,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { useCalendarEventTimeLogs } from '@/lib/hooks/useCalendarEventTimeLogs';
 import {
+  calendarEventHref,
   calendarEventSourceId,
   findCalendarEvent,
 } from '@/lib/utils/calendarEventNavigation.mjs';
@@ -83,6 +84,11 @@ const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
   { value: 'participants', label: 'Лише учасники' },
   { value: 'private', label: 'Лише я', icon: LockKeyhole },
+];
+
+const EVENT_MUTATION_SCOPE_OPTIONS = [
+  { value: 'occurrence', label: 'Лише це входження' },
+  { value: 'series', label: 'Уся серія' },
 ];
 
 function memberLabel(member) {
@@ -331,8 +337,21 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     [eventId, events, occurrenceStartAt],
   );
   const sourceEventId = calendarEventSourceId(event) || eventId;
+  const [mutationScope, setMutationScope] = useState(
+    occurrenceStartAt ? 'occurrence' : 'series',
+  );
+  const occurrenceIdentity = event?.sourceEventId
+    ? (occurrenceStartAt || event.startAt)
+    : '';
+  const occurrenceMutation = event?.sourceEventId && mutationScope === 'occurrence'
+    ? { scope: 'occurrence', occurrenceStartAt: occurrenceIdentity }
+    : {};
+  const seriesOccurrenceCount = events.filter(candidate => (
+    calendarEventSourceId(candidate) === sourceEventId
+  )).length;
   const eventFormKey = event ? JSON.stringify([
     sourceEventId,
+    mutationScope,
     event.startAt,
     event.endAt,
     event.title,
@@ -391,7 +410,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const timerKey = event ? `calendar-event:${sourceEventId}:${event.startAt}` : '';
   const isTimerMine = activeTimer?.issueId === timerKey;
   const eventForm = event
-    ? calendarEventFormInitialValue(event, event.startAt, currentUserId)
+    ? calendarEventFormInitialValue(event, event.startAt, currentUserId, [], {
+      scope: mutationScope,
+    })
     : null;
   const quickForm = quickState.eventKey === eventFormKey ? quickState.form : eventForm;
   const logTimeParam = searchParams.get('logTime');
@@ -488,15 +509,18 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     setSaving(true);
     setActionError('');
     try {
-      await updateEvent(sourceEventId, {
+      const updated = await updateEvent(sourceEventId, {
         title,
         description: draft.description,
         location: draft.location,
         meetingUrl,
-      });
+      }, occurrenceMutation);
       showToast('Подію оновлено', 'success');
       setIsEditing(false);
       setDraft(null);
+      if (occurrenceMutation.scope === 'occurrence' && updated?.id) {
+        router.replace(calendarEventHref(updated));
+      }
     } catch (saveError) {
       setActionError(saveError.message || 'Не вдалося зберегти подію');
     } finally {
@@ -511,7 +535,14 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     setAttributeSaving(true);
     setActionError('');
     try {
-      await updateEvent(sourceEventId, calendarEventFormPayload(nextForm, currentUserId));
+      const updated = await updateEvent(
+        sourceEventId,
+        calendarEventFormPayload(nextForm, currentUserId),
+        occurrenceMutation,
+      );
+      if (occurrenceMutation.scope === 'occurrence' && updated?.id) {
+        router.replace(calendarEventHref(updated));
+      }
       return true;
     } catch (saveError) {
       setQuickState({ eventKey: eventFormKey, form: previous });
@@ -524,7 +555,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   };
 
   const updateQuickField = (key, value) => {
-    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
+    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId, [], {
+      scope: mutationScope,
+    });
     // Changing the type rewrites everything the new type cannot hold, so the
     // attribute row cannot leave a project attached to a note.
     return persistQuickForm(key === 'type'
@@ -533,7 +566,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   };
 
   const updateEventDate = value => {
-    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
+    const base = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId, [], {
+      scope: mutationScope,
+    });
     const oldStart = Date.parse(`${base.startDate}T00:00:00Z`);
     const nextStart = Date.parse(`${value}T00:00:00Z`);
     const dayDelta = Number.isFinite(oldStart) && Number.isFinite(nextStart)
@@ -548,16 +583,19 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
 
   const handleDelete = async () => {
     if (!canManage) return;
+    const deletesOccurrence = event.sourceEventId && mutationScope === 'occurrence';
     const approved = await confirm({
-      title: 'Видалити подію?',
-      message: 'Усі запрошені отримають сповіщення про скасування.',
+      title: deletesOccurrence ? 'Видалити це входження?' : 'Видалити всю серію?',
+      message: deletesOccurrence
+        ? 'З календаря зникне тільки ця подія. Кількість входжень: 1.'
+        : `З календаря зникне вся серія. Кількість видимих входжень: ${Math.max(1, seriesOccurrenceCount)}.`,
       confirmText: 'Видалити',
       danger: true,
     });
     if (!approved) return;
     try {
-      await removeEvent(sourceEventId);
-      showToast('Подію скасовано', 'success');
+      await removeEvent(sourceEventId, deletesOccurrence ? occurrenceMutation : {});
+      showToast(deletesOccurrence ? 'Входження скасовано' : 'Серію скасовано', 'success');
       router.push('/calendar');
     } catch (deleteError) {
       setActionError(deleteError.message || 'Не вдалося видалити подію');
@@ -665,7 +703,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     );
   }
 
-  const view = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId);
+  const view = quickForm || calendarEventFormInitialValue(event, event.startAt, currentUserId, [], {
+    scope: mutationScope,
+  });
   const typeOption = CALENDAR_EVENT_TYPE_OPTIONS.find(option => option.value === view.type);
   const projectOption = projectOptions.find(option => option.value === view.projectId);
   const recurrenceOption = CALENDAR_EVENT_RECURRENCE_OPTIONS.find(option => option.value === view.recurrenceFrequency);
@@ -838,6 +878,31 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 }}
                 primaryChildren={(
                   <>
+                    {event.sourceEventId && canManage && (
+                      <div
+                        className={attributeItemClass}
+                        onClick={clickEvent => {
+                          if (clickEvent.target.closest('button')) return;
+                          clickEvent.currentTarget.querySelector('button')?.click();
+                        }}
+                      >
+                        <span className={attributeLabelClass}>Обсяг змін</span>
+                        <Select
+                          compact
+                          disabled={attributeSaving || saving}
+                          value={mutationScope}
+                          onChange={value => {
+                            setMutationScope(value);
+                            setQuickState({ eventKey: '', form: null });
+                            setScheduleDraft(null);
+                            setDetailsDraft(null);
+                            setActionError('');
+                          }}
+                          options={EVENT_MUTATION_SCOPE_OPTIONS}
+                          buttonClassName={compactSelectClass}
+                        />
+                      </div>
+                    )}
                     <div
                       className={attributeItemClass}
                       onClick={clickEvent => {

@@ -1,4 +1,4 @@
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
@@ -10,6 +10,8 @@ import {
 } from '@/lib/server/calendarEvents';
 import {
   calendarEventSourceIdentityChanged,
+  isCalendarEventOccurrence,
+  normalizeCalendarOccurrence,
 } from '@/lib/utils/calendarTimeLog.mjs';
 
 function eventMutationError(code, status, message, details = {}) {
@@ -57,6 +59,22 @@ function ensureEventScope(snapshot, organizationId) {
     );
   }
   return snapshot.data();
+}
+
+function eventAtOccurrence(event, occurrenceStartAt) {
+  const sourceStart = event.startAt.toMillis();
+  const sourceEnd = event.endAt.toMillis();
+  const occurrenceStart = new Date(occurrenceStartAt).getTime();
+  return {
+    ...event,
+    startAt: Timestamp.fromMillis(occurrenceStart),
+    endAt: Timestamp.fromMillis(occurrenceStart + (sourceEnd - sourceStart)),
+    recurrence: { frequency: 'none', interval: 1, until: '' },
+  };
+}
+
+function detachedOccurrenceId(eventId, occurrenceStartAt) {
+  return `${eventId}__occurrence_${new Date(occurrenceStartAt).getTime()}`;
 }
 
 async function validateReferencesInTransaction({
@@ -247,6 +265,140 @@ export async function PATCH(request, context) {
         );
       }
 
+      if (body.scope === 'occurrence') {
+        const occurrenceStartAt = normalizeCalendarOccurrence(body.occurrenceStartAt);
+        if (
+          !occurrenceStartAt
+          || occurrenceStartAt !== body.occurrenceStartAt
+          || !isCalendarEventOccurrence(current, occurrenceStartAt)
+        ) {
+          throw eventMutationError(
+            'CALENDAR_OCCURRENCE_INVALID',
+            400,
+            'Входження не належить до цієї серії',
+          );
+        }
+
+        const detachedRef = db.collection('calendarEvents').doc(
+          detachedOccurrenceId(eventId, occurrenceStartAt),
+        );
+        const detachedSnapshot = await transaction.get(detachedRef);
+        if (detachedSnapshot.exists) {
+          return {
+            organizationId: current.organizationId,
+            addedParticipants: [],
+            retainedParticipants: [],
+            title: detachedSnapshot.data().title,
+            eventId: detachedRef.id,
+            eventRef: detachedRef,
+          };
+        }
+        if ((current.excludedOccurrenceStarts || []).includes(occurrenceStartAt)) {
+          throw eventMutationError(
+            'CALENDAR_OCCURRENCE_EXCLUDED',
+            409,
+            'Це входження вже змінено або видалено',
+          );
+        }
+
+        // An occurrence edit becomes a standalone exception while the source
+        // series records exactly one excluded instant. The recurrence engine
+        // itself remains untouched and continues to generate the same dates.
+        const occurrenceCurrent = eventAtOccurrence(current, occurrenceStartAt);
+        const normalized = normalizedCalendarEventInput({
+          ...body,
+          recurrence: { frequency: 'none', interval: 1, until: '' },
+        }, occurrenceCurrent, { ownerId: current.organizerId });
+        if (normalized.error) {
+          throw eventMutationError(
+            'CALENDAR_EVENT_INVALID',
+            400,
+            normalized.error,
+          );
+        }
+        const eventData = normalized.value;
+        if (eventData.visibility === 'private') {
+          eventData.participantIds = [current.organizerId];
+        } else if (!eventData.participantIds.includes(current.organizerId)) {
+          eventData.participantIds.unshift(current.organizerId);
+        }
+
+        const { projectRef: nextProjectRef } = await validateReferencesInTransaction({
+          transaction,
+          db,
+          organizationId: current.organizationId,
+          eventData,
+          authorization,
+        });
+        let previousProjectRef = null;
+        if (current.projectId && current.projectId !== eventData.projectId) {
+          previousProjectRef = db.collection('projects').doc(current.projectId);
+          const previousProjectSnapshot = await transaction.get(previousProjectRef);
+          if (
+            !previousProjectSnapshot.exists
+            || previousProjectSnapshot.data().organizationId !== current.organizationId
+          ) previousProjectRef = null;
+        }
+        const logsSnapshot = await transaction.get(
+          db.collection('timeLogs')
+            .where('organizationId', '==', current.organizationId)
+            .where('sourceType', '==', 'calendar_event')
+            .where('eventId', '==', eventId)
+            .where('occurrenceStartAt', '==', occurrenceStartAt)
+            .limit(1),
+        );
+        if (!logsSnapshot.empty) {
+          throw eventMutationError(
+            'CALENDAR_OCCURRENCE_HAS_TIME_LOGS',
+            409,
+            'Спочатку видаліть записи часу цього входження',
+            { hasTimeLogs: true },
+          );
+        }
+
+        const previousParticipants = new Set(current.participantIds || []);
+        const nextParticipants = new Set(eventData.participantIds);
+        const addedParticipants = eventData.participantIds.filter(
+          uid => !previousParticipants.has(uid),
+        );
+        const retainedParticipants = eventData.participantIds.filter(
+          uid => previousParticipants.has(uid),
+        );
+        const participantResponses = Object.fromEntries(
+          Object.entries(current.participantResponses || {})
+            .filter(([uid]) => nextParticipants.has(uid)),
+        );
+        participantResponses[current.organizerId] = 'accepted';
+        addedParticipants.forEach(uid => {
+          participantResponses[uid] = 'pending';
+        });
+
+        const now = FieldValue.serverTimestamp();
+        transaction.update(loaded.ref, {
+          excludedOccurrenceStarts: FieldValue.arrayUnion(occurrenceStartAt),
+          updatedAt: now,
+        });
+        transaction.create(detachedRef, {
+          ...eventData,
+          organizationId: current.organizationId,
+          organizerId: current.organizerId,
+          participantResponses,
+          seriesSourceId: eventId,
+          seriesOccurrenceStartAt: occurrenceStartAt,
+          createdAt: now,
+          updatedAt: now,
+        });
+        incrementProjectLocks(transaction, [previousProjectRef, nextProjectRef]);
+        return {
+          organizationId: current.organizationId,
+          addedParticipants,
+          retainedParticipants,
+          title: eventData.title,
+          eventId: detachedRef.id,
+          eventRef: detachedRef,
+        };
+      }
+
       const normalized = normalizedCalendarEventInput(body, current, {
         ownerId: current.organizerId,
       });
@@ -343,7 +495,7 @@ export async function PATCH(request, context) {
     await deliverNotificationsSafely(Promise.all([
       createCalendarNotifications({
         organizationId: mutationResult.organizationId,
-        eventId,
+        eventId: mutationResult.eventId || eventId,
         recipientIds: mutationResult.addedParticipants,
         actorId: authorization.user.uid,
         type: 'calendar_invite',
@@ -352,7 +504,7 @@ export async function PATCH(request, context) {
       }),
       createCalendarNotifications({
         organizationId: mutationResult.organizationId,
-        eventId,
+        eventId: mutationResult.eventId || eventId,
         recipientIds: mutationResult.retainedParticipants,
         actorId: authorization.user.uid,
         type: 'calendar_changed',
@@ -361,7 +513,7 @@ export async function PATCH(request, context) {
       }),
     ]), 'update');
 
-    const updated = await loaded.ref.get();
+    const updated = await (mutationResult.eventRef || loaded.ref).get();
     return NextResponse.json({ event: serializeCalendarEvent(updated) });
   } catch (error) {
     if (error?.calendarEventMutation) {
@@ -381,6 +533,20 @@ export async function DELETE(request, context) {
       return NextResponse.json({
         error: 'Некоректна подія',
         code: 'CALENDAR_EVENT_ID_INVALID',
+      }, { status: 400 });
+    }
+    const url = new URL(request.url);
+    const deletesOccurrence = url.searchParams.get('scope') === 'occurrence';
+    const requestedOccurrence = deletesOccurrence
+      ? url.searchParams.get('occurrence') || ''
+      : '';
+    const occurrenceStartAt = deletesOccurrence
+      ? normalizeCalendarOccurrence(requestedOccurrence)
+      : null;
+    if (deletesOccurrence && occurrenceStartAt !== requestedOccurrence) {
+      return NextResponse.json({
+        error: 'Некоректне входження серії',
+        code: 'CALENDAR_OCCURRENCE_INVALID',
       }, { status: 400 });
     }
     const loaded = await loadEvent(eventId);
@@ -414,6 +580,14 @@ export async function DELETE(request, context) {
         );
       }
 
+      if (deletesOccurrence && !isCalendarEventOccurrence(current, occurrenceStartAt)) {
+        throw eventMutationError(
+          'CALENDAR_OCCURRENCE_INVALID',
+          400,
+          'Входження не належить до цієї серії',
+        );
+      }
+
       let projectRef = null;
       if (current.projectId) {
         projectRef = db.collection('projects').doc(current.projectId);
@@ -428,13 +602,14 @@ export async function DELETE(request, context) {
           projectRef = null;
         }
       }
-      const logsSnapshot = await transaction.get(
-        db.collection('timeLogs')
-          .where('organizationId', '==', current.organizationId)
-          .where('sourceType', '==', 'calendar_event')
-          .where('eventId', '==', eventId)
-          .limit(1),
-      );
+      let logsQuery = db.collection('timeLogs')
+        .where('organizationId', '==', current.organizationId)
+        .where('sourceType', '==', 'calendar_event')
+        .where('eventId', '==', eventId);
+      if (deletesOccurrence) {
+        logsQuery = logsQuery.where('occurrenceStartAt', '==', occurrenceStartAt);
+      }
+      const logsSnapshot = await transaction.get(logsQuery.limit(1));
       if (!logsSnapshot.empty) {
         throw eventMutationError(
           'CALENDAR_EVENT_HAS_TIME_LOGS',
@@ -444,9 +619,16 @@ export async function DELETE(request, context) {
         );
       }
 
-      transaction.delete(loaded.ref);
+      if (deletesOccurrence) {
+        transaction.update(loaded.ref, {
+          excludedOccurrenceStarts: FieldValue.arrayUnion(occurrenceStartAt),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        transaction.delete(loaded.ref);
+      }
       incrementProjectLocks(transaction, [projectRef]);
-      return current;
+      return { ...current, deletedOccurrence: deletesOccurrence };
     });
 
     await deliverNotificationsSafely(createCalendarNotifications({
@@ -455,11 +637,18 @@ export async function DELETE(request, context) {
       recipientIds: deletedEvent.participantIds || [],
       actorId: authorization.user.uid,
       type: 'calendar_changed',
-      title: `Подію скасовано: ${deletedEvent.title}`,
-      body: 'Організатор скасував командну подію',
+      title: deletedEvent.deletedOccurrence
+        ? `Входження скасовано: ${deletedEvent.title}`
+        : `Подію скасовано: ${deletedEvent.title}`,
+      body: deletedEvent.deletedOccurrence
+        ? 'Організатор скасував одне входження серії'
+        : 'Організатор скасував командну подію',
       link: '/calendar',
     }), 'delete');
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      scope: deletedEvent.deletedOccurrence ? 'occurrence' : 'series',
+    });
   } catch (error) {
     if (error?.calendarEventMutation) {
       return eventMutationErrorResponse(error);

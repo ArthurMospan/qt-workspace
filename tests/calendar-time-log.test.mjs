@@ -54,6 +54,10 @@ test('validates one-off, interval and clamped monthly occurrences', () => {
   const once = { ...event, recurrence: { frequency: 'none' } };
   assert.equal(isCalendarEventOccurrence(once, event.startAt), true);
   assert.equal(isCalendarEventOccurrence(once, '2026-02-01T09:00:00.000Z'), false);
+  assert.equal(isCalendarEventOccurrence({
+    ...event,
+    excludedOccurrenceStarts: ['2026-02-28T09:00:00.000Z'],
+  }, '2026-02-28T09:00:00.000Z'), false);
 });
 
 test('validates an exact monthly billing occurrence after a decades-long gap', () => {

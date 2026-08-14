@@ -201,24 +201,19 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   }, [router, showToast]);
 
   const handleCreateFullIssue = useCallback(async (formData) => {
-    try {
-      await createIssue({
-        title: formData.title,
-        description: formData.description || '',
-        columnId: formData.status || 'todo',
-        priority: formData.priority || 'medium',
-        type: formData.type || 'task',
-        assigneeIds: formData.assignees || [],
-        labelIds: formData.labelIds || [],
-        dueDate: formData.dueDate,
-        estimateMinutes: formData.estimateMinutes || 0,
-        sprintId: formData.sprintId || null,
-      }, actor);
-      showToast('Задачу створено ✓');
-    } catch (err) {
-      showToast('Помилка: ' + err.message, 'error');
-      throw err;
-    }
+    await createIssue({
+      title: formData.title,
+      description: formData.description || '',
+      columnId: formData.status || 'todo',
+      priority: formData.priority || 'medium',
+      type: formData.type || 'task',
+      assigneeIds: formData.assignees || [],
+      labelIds: formData.labelIds || [],
+      dueDate: formData.dueDate,
+      estimateMinutes: formData.estimateMinutes || 0,
+      sprintId: formData.sprintId || null,
+    }, actor);
+    showToast('Задачу створено ✓');
   }, [createIssue, showToast]); // eslint-disable-line
 
   const handleMoveIssue = useCallback(async (issueId, newColumnId, position, updateFields = null) => {

@@ -105,9 +105,10 @@ function localTimeValue(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function calendarEventFormInitialValue(event, initialStart, currentUserId, initialParticipantIds = []) {
-  const editableStart = event?.sourceEventId ? event.seriesStartAt : event?.startAt;
-  const editableEnd = event?.sourceEventId ? event.seriesEndAt : event?.endAt;
+export function calendarEventFormInitialValue(event, initialStart, currentUserId, initialParticipantIds = [], { scope = 'series' } = {}) {
+  const editSeries = event?.sourceEventId && scope !== 'occurrence';
+  const editableStart = editSeries ? event.seriesStartAt : event?.startAt;
+  const editableEnd = editSeries ? event.seriesEndAt : event?.endAt;
   const start = editableStart ? new Date(editableStart) : new Date(initialStart || Date.now());
   if (!event?.startAt) {
     start.setMinutes(start.getMinutes() < 30 ? 30 : 0, 0, 0);
@@ -473,11 +474,20 @@ export default function CalendarEventDialog({
       setTitleError('Вкажіть назву події');
       return;
     }
+    let payload;
+    try {
+      // Validate before onSave starts the request. With noValidate enabled this
+      // is the single, localized client-side error path for an inverted range.
+      payload = calendarEventFormPayload(form, currentUserId);
+    } catch (validationError) {
+      setError(validationError.message || 'Перевірте дату й час події');
+      return;
+    }
     setTitleError('');
     setSaving(true);
     setError('');
     try {
-      await onSave(calendarEventFormPayload(form, currentUserId));
+      await onSave(payload);
     } catch (saveError) {
       setError(saveError.message || 'Не вдалося зберегти подію');
     } finally {

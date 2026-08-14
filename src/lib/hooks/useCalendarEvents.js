@@ -36,7 +36,10 @@ function expandRecurringEvents(sourceEvents) {
       windowStart,
       windowEnd,
     });
-    return occurrences.map((occurrenceStart, index) => {
+    const excludedOccurrences = new Set(event.excludedOccurrenceStarts || []);
+    return occurrences.filter(occurrenceStart => (
+      !excludedOccurrences.has(occurrenceStart.toISOString())
+    )).map((occurrenceStart, index) => {
       const startAt = occurrenceStart.toISOString();
       return {
         ...event,
@@ -102,17 +105,21 @@ export function useCalendarEvents() {
     return result.event;
   }, [activeOrgId, refresh]);
 
-  const updateEvent = useCallback(async (eventId, data) => {
+  const updateEvent = useCallback(async (eventId, data, mutation = {}) => {
     const result = await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, ...mutation }),
     });
     await refresh({ silent: true });
     return result.event;
   }, [refresh]);
 
-  const removeEvent = useCallback(async eventId => {
-    await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
+  const removeEvent = useCallback(async (eventId, mutation = {}) => {
+    const search = new URLSearchParams();
+    if (mutation.scope) search.set('scope', mutation.scope);
+    if (mutation.occurrenceStartAt) search.set('occurrence', mutation.occurrenceStartAt);
+    const query = search.toString();
+    await calendarRequest(`/api/calendar/events/${encodeURIComponent(eventId)}${query ? `?${query}` : ''}`, {
       method: 'DELETE',
     });
     await refresh({ silent: true });

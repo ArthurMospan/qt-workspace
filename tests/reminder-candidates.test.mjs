@@ -39,6 +39,23 @@ test('calendar reminders are produced server-side for accepted participants only
   assert.equal(candidates[0].body, 'До початку 15 хв');
 });
 
+test('a removed recurring occurrence does not produce a reminder', () => {
+  const occurrence = '2026-07-29T09:00:00.000Z';
+  const candidates = calendarReminderCandidates([{
+    id: 'event-series',
+    organizationId: 'org-1',
+    organizerId: 'owner-1',
+    title: 'Щоденний синк',
+    startAt: occurrence,
+    participantIds: ['member-1'],
+    reminderMinutes: [15],
+    recurrence: { frequency: 'daily', interval: 1, until: '' },
+    excludedOccurrenceStarts: [occurrence],
+  }], { nowMs: Date.parse('2026-07-29T08:45:00.000Z') });
+
+  assert.equal(candidates.length, 0);
+});
+
 test('calendar reminder look-back catches a missed scheduler tick without duplicates', () => {
   const candidates = calendarReminderCandidates([{
     id: 'event-2',
