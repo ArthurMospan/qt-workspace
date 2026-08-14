@@ -140,6 +140,23 @@ export function fuzzyScore(text, query) {
   return score + Math.max(0, 20 - haystack.length / 4);
 }
 
+function keywordScore(text, query) {
+  const haystack = String(text || '').trim().toLowerCase();
+  const needle = String(query || '').trim().toLowerCase();
+  if (!haystack || !needle) return null;
+
+  // A keyword field is a bag of aliases, not one giant word. Scoring a fuzzy
+  // subsequence across all aliases let three letters hop through a 50-character
+  // string and manufacture a match. Exact phrases still work ("my tasks"),
+  // while fuzzy matching is constrained to one actual alias.
+  if (haystack.includes(needle)) return fuzzyScore(haystack, needle);
+  const scores = haystack
+    .split(/\s+/)
+    .map(keyword => fuzzyScore(keyword, needle))
+    .filter(score => score !== null);
+  return scores.length ? Math.max(...scores) : null;
+}
+
 export function rankCommands(commands, query, { limit = 12 } = {}) {
   const term = String(query || '').trim();
   if (!term) {
@@ -153,7 +170,7 @@ export function rankCommands(commands, query, { limit = 12 } = {}) {
   return (commands || [])
     .map(command => {
       const label = fuzzyScore(command.label, term);
-      const keywords = fuzzyScore(command.keywords, term);
+      const keywords = keywordScore(command.keywords, term);
       const best = Math.max(label ?? -Infinity, (keywords ?? -Infinity) - 6);
       return Number.isFinite(best) ? { command, score: best } : null;
     })
@@ -220,16 +237,26 @@ export function searchCommands({ people = [], projects = [], events = [] } = {})
 
 export { dedupe as dedupeCommands };
 
-// Grouped for rendering, in the catalogue's own order, with the flat index each
-// row needs for keyboard selection.
+// Grouped for rendering, in relevance order, with the flat index each row needs
+// for keyboard selection. rankCommands already puts the best result first, so
+// each group's first input position is its highest-ranked member.
 export function groupCommands(commands) {
-  const groups = [];
   const unique = dedupe(commands || []);
-  for (const group of COMMAND_GROUPS) {
+  const groups = [];
+  for (const [catalogueIndex, group] of COMMAND_GROUPS.entries()) {
     const items = unique.filter(command => command.group === group);
-    if (items.length) groups.push({ group, label: GROUP_LABELS[group], items });
+    if (!items.length) continue;
+    groups.push({
+      group,
+      label: GROUP_LABELS[group],
+      items,
+      firstRank: unique.indexOf(items[0]),
+      catalogueIndex,
+    });
   }
-  return groups;
+  return groups
+    .sort((a, b) => a.firstRank - b.firstRank || a.catalogueIndex - b.catalogueIndex)
+    .map(({ firstRank: _firstRank, catalogueIndex: _catalogueIndex, ...group }) => group);
 }
 
 export function flattenGroups(groups) {

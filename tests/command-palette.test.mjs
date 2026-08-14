@@ -111,6 +111,35 @@ test('grouping keeps the catalogue order and flattens to the keyboard order', ()
   assert.equal(flat[flat.length - 1].group, 'event');
 });
 
+test('search grouping preserves relevance for the active row and Enter', () => {
+  const relevantProject = {
+    id: 'project-machete',
+    group: 'project',
+    label: 'Мачете',
+  };
+  const weakAction = {
+    id: 'action-switch-org',
+    group: 'action',
+    label: 'Змінити організацію',
+  };
+  const groups = groupCommands([relevantProject, weakAction]);
+
+  assert.deepEqual(groups.map(group => group.group), ['project', 'action']);
+  assert.equal(flattenGroups(groups)[0].id, 'project-machete');
+});
+
+test('keyword aliases cannot match by hopping across unrelated words', () => {
+  const commands = buildCommands({
+    projects: [{ id: 'machete', name: 'Мачете', issuePrefix: 'MAC' }],
+    organizationCount: 2,
+  });
+  const ranked = rankCommands(commands, 'MAC');
+
+  assert.equal(ranked[0].id, 'project-machete');
+  assert.equal(ranked.some(command => command.id === 'action-switch-org'), false);
+  assert.equal(rankCommands(commands, 'my tasks')[0].id, 'nav-my');
+});
+
 // QUI-104. Typing a colleague's name found nothing at all, because search read
 // one collection and that collection was `issues`.
 test('search answers with people, projects and events, not only tasks', () => {
