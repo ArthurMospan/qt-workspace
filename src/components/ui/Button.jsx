@@ -201,7 +201,7 @@ export function Button({
   // two pixels above the middle of its button.
   const baseClasses =
     'inline-flex items-center justify-center gap-[6px] font-bold transition-colors ' +
-    'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0';
+    'disabled:opacity-50 disabled:cursor-not-allowed shrink-0';
 
   const sizeClass  = SIZES[size] ?? SIZES.lg;
   const collapseClass = collapseAt ? (COLLAPSE_BTN[collapseAt]?.[size] ?? '') : '';

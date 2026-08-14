@@ -72,13 +72,21 @@ test('the keyboard reaches the content without walking the sidebar', async () =>
 });
 
 test('focus is visible by default rather than per component', async () => {
-  const css = await read('../src/app/globals.css');
+  const [css, button] = await Promise.all([
+    read('../src/app/globals.css'),
+    read('../src/components/ui/Button.jsx'),
+  ]);
   assert.match(css, /:focus-visible \{\s*\n\s*outline: 2px solid var\(--color-ink\);/);
   // The dark sidebar and bottom bar need their own colour or the ring vanishes.
   assert.match(css, /\[data-app-sb\] :where\(a, button, \[tabindex\]\):focus-visible \{\s*\n\s*outline-color/);
   // The skip link is only visible while focused.
   assert.match(css, /\.qt-skip-link \{[\s\S]*?transform: translateY\(-200%\);/);
   assert.match(css, /\.qt-skip-link:focus-visible \{\s*\n\s*transform: translateY\(0\);/);
+  assert.doesNotMatch(button, /focus:outline-none/);
+  assert.doesNotMatch(
+    css,
+    /:where\(input, textarea, select, \[contenteditable='true'\]\):focus-visible\s*\{\s*outline: none/,
+  );
 });
 
 test('a materialisation larger than one Firestore batch still commits', async () => {

@@ -733,10 +733,6 @@
     outline: 2px solid rgb(31 31 31 / 35%);
     outline-offset: 2px;
   }
-  :where(input, textarea, select, [contenteditable='true']):focus-visible {
-    outline: none;
-  }
-
   /* Named workspace typography contexts. These intentionally win over legacy
      utility fragments while call sites are migrated, so one token change
      updates both the product and /ui-kit. */

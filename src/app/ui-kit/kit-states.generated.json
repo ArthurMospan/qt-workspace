@@ -56,7 +56,7 @@
       "disabled": "prop",
       "loading": "prop",
       "hover": "own",
-      "focus": "own",
+      "focus": "global",
       "long-text": "children"
     },
     "CalendarDayCell": {
