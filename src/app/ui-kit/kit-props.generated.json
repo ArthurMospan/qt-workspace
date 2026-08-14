@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 96,
-    "props": 702,
-    "documentedProps": 702,
+    "props": 704,
+    "documentedProps": 704,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1879,6 +1879,13 @@
           "description": "Placement of the shell only."
         },
         {
+          "name": "closeConfirmation",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Confirmation shown for an unsaved draft."
+        },
+        {
           "name": "description",
           "default": "",
           "type": "string",
@@ -1898,6 +1905,13 @@
           "type": "React.ReactNode",
           "values": [],
           "description": "A control in the top-right, beside the close button."
+        },
+        {
+          "name": "isDirty",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether closing should confirm unsaved changes."
         },
         {
           "name": "isOpen",

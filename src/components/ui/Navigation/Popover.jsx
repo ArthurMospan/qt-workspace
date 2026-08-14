@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { colors, spacing, sizing, shadows, transitions } from '@/lib/design/tokens';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
+import { useFloatingOverlayEscape } from '@/lib/hooks/useFloatingOverlayEscape';
 
 /**
  * Popover Component
@@ -83,6 +84,7 @@ export function Popover({
     align,
     gap,
   });
+  useFloatingOverlayEscape({ open: isOpen, onClose: () => setIsOpen(false) });
 
   useEffect(() => {
     const handleClickOutside = (event) => {

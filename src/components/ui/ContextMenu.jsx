@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check } from 'lucide-react';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
+import { useFloatingOverlayEscape } from '@/lib/hooks/useFloatingOverlayEscape';
 
 // UI Kit: ContextMenu Component (Atom)
 // Features standard rounded-[12px] corners, soft shadow, and unified font-medium labels
@@ -40,6 +41,7 @@ export default function ContextMenu({
     align: 'end',
     gap: 4,
   });
+  useFloatingOverlayEscape({ open: isOpen, onClose: () => setIsOpen(false) });
 
   useEffect(() => {
     onOpenChange?.(isOpen);

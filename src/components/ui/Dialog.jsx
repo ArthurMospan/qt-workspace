@@ -3,6 +3,7 @@ import { useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
+import { useOverlayHistory } from '@/lib/hooks/useOverlayHistory';
 
 // ─── UI Kit: Dialog — the one shared modal shell ─────────────────────────────
 // Every modal in the app should render through this component so header
@@ -38,6 +39,8 @@ import { useModalFocus } from '@/lib/hooks/useModalFocus';
  * @param {boolean} props.showCloseButton Whether the × is drawn.
  * @param {string} props.bodyClassName Placement of the body only.
  * @param {string} props.className Placement of the shell only.
+ * @param {boolean} props.isDirty Whether closing should confirm unsaved changes.
+ * @param {string} props.closeConfirmation Confirmation shown for an unsaved draft.
  */
 export default function Dialog({
   isOpen,
@@ -54,9 +57,12 @@ export default function Dialog({
   presentation = 'sheet', // sheet | dialog
   titleContext = 'section', // section | dialog
   bodyPadding = 'default', // default | spacious | responsive | invite | horizontal | flush
+  isDirty = false,
+  closeConfirmation,
 }) {
   const titleId = useId();
-  const dialogRef = useModalFocus({ isOpen, onClose });
+  const requestClose = useOverlayHistory({ isOpen, onClose, isDirty, closeConfirmation });
+  const dialogRef = useModalFocus({ isOpen, onClose: requestClose });
   // A click is only a click-away when the press *started* on the backdrop.
   // Without this, selecting text inside the dialog and releasing the mouse
   // outside it fires `click` on the nearest common ancestor — the backdrop —
@@ -107,7 +113,7 @@ export default function Dialog({
       onClick={event => {
         const startedOutside = pressStartedOnBackdrop.current;
         pressStartedOnBackdrop.current = false;
-        if (startedOutside && event.target === event.currentTarget) onClose?.();
+        if (startedOutside && event.target === event.currentTarget) requestClose();
       }}
     >
       <div
@@ -140,7 +146,7 @@ export default function Dialog({
             <div className="flex shrink-0 items-center gap-2">
               {headerAction}
               {showCloseButton && (
-                <Button style="secondary" size="icon-sm" icon={X} onClick={onClose} aria-label="Закрити" />
+                <Button style="secondary" size="icon-sm" icon={X} onClick={requestClose} aria-label="Закрити" />
               )}
             </div>
           </div>

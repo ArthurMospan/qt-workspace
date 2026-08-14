@@ -414,16 +414,19 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
   useEffect(() => {
     const fn = (e) => {
+      if (e.key !== 'Escape') return;
+      if (document.querySelector('[data-qt-floating-overlay]')) return;
+      if (showLinkInput) { setShowLinkInput(false); return; }
+      if (showSubInput) { setShowSubInput(false); return; }
+      if (isEditing) { setIsEditing(false); return; }
+
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === 'Escape') {
-        if (isEditing) { setIsEditing(false); return; }
-        router.push(`/${projectId}`);
-      }
+      router.push(`/${projectId}`);
     };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
-  }, [router, projectId, isEditing]);
+  }, [router, projectId, isEditing, showLinkInput, showSubInput]);
 
   if (!issue) {
     return (

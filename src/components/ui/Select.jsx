@@ -229,6 +229,7 @@ export function Select({
     }
     if (key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       close();
     } else if (key === 'ArrowDown') {
       event.preventDefault();
@@ -468,6 +469,7 @@ export function MultiSelect({
         onKeyDown={event => {
           if (event.key === 'Escape' && isOpen) {
             event.preventDefault();
+            event.stopPropagation();
             setIsOpen(false);
             setSearch('');
           }
@@ -520,6 +522,7 @@ export function MultiSelect({
                 onKeyDown={event => {
                   if (event.key !== 'Escape') return;
                   event.preventDefault();
+                  event.stopPropagation();
                   setIsOpen(false);
                   setSearch('');
                 }}

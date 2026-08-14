@@ -77,6 +77,10 @@ export function useModalFocus({ isOpen, onClose }) {
       if (modalStack[modalStack.length - 1] !== token) return;
 
       if (event.key === 'Escape') {
+        // A Select, Popover or ContextMenu owns the first Escape while it is
+        // open. Its portal is outside the dialog DOM, so target containment
+        // alone cannot express this layer relationship.
+        if (document.querySelector('[data-qt-floating-overlay]')) return;
         event.preventDefault();
         event.stopPropagation();
         onCloseRef.current?.();

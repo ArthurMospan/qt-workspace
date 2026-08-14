@@ -44,6 +44,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [draftTouched, setDraftTouched] = useState(false);
   // Missing required fields are reported under the field that is missing, the
   // same way the project dialog does it. The submit button used to be disabled
   // instead, which says "you cannot do this" without ever saying why.
@@ -144,16 +145,20 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   const set = (key, val) => {
     setForm(f => ({ ...f, [key]: val }));
+    setDraftTouched(true);
     // The message goes as soon as the reason for it does.
     setFieldErrors(current => (current[key] ? { ...current, [key]: '' } : current));
   };
 
-  const toggleAssignee = (uid) => setForm(current => ({
-    ...current,
-    assignees: current.assignees.includes(uid)
-      ? current.assignees.filter(assignee => assignee !== uid)
-      : [...current.assignees, uid],
-  }));
+  const toggleAssignee = (uid) => {
+    setDraftTouched(true);
+    setForm(current => ({
+      ...current,
+      assignees: current.assignees.includes(uid)
+        ? current.assignees.filter(assignee => assignee !== uid)
+        : [...current.assignees, uid],
+    }));
+  };
 
   const toggleLabel = (labelId) => {
     set('labelIds', form.labelIds.includes(labelId)
@@ -184,6 +189,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
         sprintId: form.sprintId || null
       });
       setForm({ title: '', description: '', status: 'todo', priority: 'medium', type: 'task', assignees: [], dueDate: '', labelIds: [], estimateHours: '', projectId: '', sprintId: '' });
+      setDraftTouched(false);
       onClose();
     } catch (err) {
       console.error('[CreateTask]', err);
@@ -200,6 +206,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       title="Нове завдання"
       size="lg"
       bodyPadding="flush"
+      isDirty={mode === 'task' && draftTouched}
+      closeConfirmation="Закрити форму й залишити незбережену чернетку?"
       footer={mode === 'task' ? (
         <>
           <Button style="secondary" size="md" onClick={onClose} type="button">
