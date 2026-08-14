@@ -68,6 +68,8 @@ export const HeaderSearch = forwardRef(({
       <input
         ref={ref}
         type="text"
+        name="workspace-search"
+        aria-label="Пошук у робочому просторі"
         value={value}
         onChange={(e) => {
           setEscalationActive(false);
