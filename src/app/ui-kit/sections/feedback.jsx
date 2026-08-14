@@ -135,7 +135,7 @@ export default function FeedbackSection() {
       <PreviewBlock
         title="Звʼязок"
         component="ConnectionBanner"
-        description="Постійна смуга, поки браузер каже, що мережі немає. Firestore тихо чергує записи, тому без неї нічого не виглядає зламаним."
+        description="Постійна смуга чесно попереджає, що без мережі зміни зараз не зберігаються."
         fullWidth
       >
         <Button style="secondary" onClick={() => setOffline(value => !value)}>

@@ -56,11 +56,24 @@ test('losing the connection is visible, persistently', async () => {
   const banner = await read('../src/components/ui/Feedback/ConnectionBanner.jsx');
   assert.match(banner, /role="status"/);
   assert.match(banner, /aria-live="polite"/);
+  assert.match(banner, /зміни зараз не зберігаються/);
+  assert.doesNotMatch(banner, /Зміни збережуться, щойно зʼявиться інтернет/);
   // Always mounted, so the change is announced rather than merely rendered.
   assert.doesNotMatch(banner, /if \(!offline\) return null/);
 
   const layout = await read('../src/app/(app)/layout.js');
   assert.match(layout, /<ConnectionBanner offline=\{!online\} \/>/);
+});
+
+test('failed drag writes explain that the optimistic move did not persist', async () => {
+  const projectBoard = await read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx');
+  const myTasks = await read('../src/app/(app)/my/page.js');
+  const sprints = await read('../src/app/(app)/sprints/page.js');
+
+  assert.match(projectBoard, /Відновлено попередній стан/);
+  assert.match(myTasks, /зміни не збережено/);
+  assert.match(sprints, /відновлено попередній стан/);
+  assert.match(sprints, /'error'/);
 });
 
 test('the keyboard reaches the content without walking the sidebar', async () => {

@@ -5,11 +5,9 @@ import { CloudOff } from 'lucide-react';
 // ─── UI Kit: ConnectionBanner ────────────────────────────────────────────────
 // The one place the app admits it is offline.
 //
-// Firestore queues writes while the connection is gone, so nothing visibly
-// fails: the board still moves, the comment still appears, and the person keeps
-// working on the assumption that it landed. This says otherwise, and says it
-// persistently — a toast that disappears after four seconds is exactly the wrong
-// shape for a condition that lasts.
+// Some direct Firestore writes may wait for a connection, but status changes,
+// comments and other authenticated server requests cannot. A workspace-wide
+// banner therefore never promises a queue the product does not own.
 
 /**
  * A persistent strip shown while the browser reports no connection.
@@ -19,7 +17,7 @@ import { CloudOff } from 'lucide-react';
  */
 export default function ConnectionBanner({
   offline,
-  message = 'Немає звʼязку. Зміни збережуться, щойно зʼявиться інтернет.',
+  message = 'Немає звʼязку — зміни зараз не зберігаються.',
 }) {
   return (
     <div

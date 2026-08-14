@@ -149,7 +149,10 @@ export default function MyTasksPage() {
       return true;
     } catch (err) {
       console.error(err);
-      showToast(err?.message || 'Не вдалося перемістити завдання', 'error');
+      showToast(
+        `Не вдалося перемістити завдання — зміни не збережено${err?.message ? `: ${err.message}` : ''}`,
+        'error',
+      );
       return false;
     }
   };

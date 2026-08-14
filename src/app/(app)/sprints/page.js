@@ -263,7 +263,7 @@ export default function GlobalSprintsPage() {
     } catch (err) {
       revertPatch([issueId]);
       console.error(err);
-      showToast('Помилка оновлення спринта');
+      showToast('Не вдалося перемістити завдання — відновлено попередній стан', 'error');
     }
   };
 
