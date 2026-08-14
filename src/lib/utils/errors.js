@@ -22,3 +22,9 @@ export function createResponseError(response, result, fallbackMessage) {
   error.code = result?.code || null;
   return error;
 }
+
+/** Prefer the server's actionable message without ever rendering an empty toast. */
+export function userFacingErrorMessage(error, fallbackMessage) {
+  const message = typeof error?.message === 'string' ? error.message.trim() : '';
+  return message || fallbackMessage;
+}

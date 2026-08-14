@@ -11,6 +11,7 @@ import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { fetchWorkflowViaApi, updateWorkflowViaApi } from '@/lib/services/workflow';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -1806,7 +1807,7 @@ export default function SettingsPage() {
       setApiKeys(updatedKeys);
       showToast('Новий API ключ згенеровано');
     } catch (e) {
-      showToast('Помилка генерації ключа', 'error');
+      showToast(userFacingErrorMessage(e, 'Не вдалося згенерувати API ключ'), 'error');
     }
     setGeneratingKey(false);
   };
@@ -1824,18 +1825,18 @@ export default function SettingsPage() {
       setApiKeys(updatedKeys);
       showToast('API ключ видалено');
     } catch (e) {
-      showToast('Помилка видалення ключа', 'error');
+      showToast(userFacingErrorMessage(e, 'Не вдалося видалити API ключ'), 'error');
     }
   };
 
   const handleRoleChange = async (uid, role) => {
     try { await changeMemberRole(uid, role); showToast('Роль змінено'); }
-    catch { showToast('Помилка', 'error'); }
+    catch (error) { showToast(userFacingErrorMessage(error, 'Не вдалося змінити роль'), 'error'); }
   };
 
   const handlePositionChange = async (uid, positionId) => {
     try { await setMemberPosition(uid, positionId); showToast('Посаду змінено'); }
-    catch { showToast('Помилка', 'error'); }
+    catch (error) { showToast(userFacingErrorMessage(error, 'Не вдалося змінити посаду'), 'error'); }
   };
 
   const handleTransferOwnership = async (targetUid) => {
@@ -1848,7 +1849,7 @@ export default function SettingsPage() {
       await transferOrganizationOwnership(activeOrgId, targetUid);
       showToast('Права власника успішно передано');
     } catch (e) {
-      showToast('Помилка передачі прав', 'error');
+      showToast(userFacingErrorMessage(e, 'Не вдалося передати права власника'), 'error');
     }
   };
 
@@ -1856,8 +1857,8 @@ export default function SettingsPage() {
     let impact;
     try {
       impact = await getMemberRemovalImpact(uid);
-    } catch {
-      showToast('Не вдалося перевірити доступ учасника', 'error');
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося перевірити доступ учасника'), 'error');
       return;
     }
     if (!(await confirmDialog({
@@ -1866,7 +1867,7 @@ export default function SettingsPage() {
       confirmText: 'Видалити', danger: true,
     }))) return;
     try { await removeMember(uid); showToast('Учасника видалено'); }
-    catch { showToast('Помилка', 'error'); }
+    catch (error) { showToast(userFacingErrorMessage(error, 'Не вдалося видалити учасника'), 'error'); }
   };
 
   const handleUpgradePlan = async (newPlan = 'pro') => {
@@ -1878,8 +1879,10 @@ export default function SettingsPage() {
       await restoreProject(id);
       showToast('Проєкт розархівовано');
     } catch (err) {
-      showToast('Помилка розархівування', 'error');
+      showToast(userFacingErrorMessage(err, 'Не вдалося розархівувати проєкт'), 'error');
+      return false;
     }
+    return true;
   };
 
   // ── Workflow helpers ─────────────────────────────────────────────

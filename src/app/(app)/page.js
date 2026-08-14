@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { reportLoadError } from '@/lib/utils/errors';
+import { reportLoadError, userFacingErrorMessage } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
@@ -56,6 +56,7 @@ import {
 const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
   const router = useRouter();
   const { currentUser, activeOrgId, orgRole } = useAppContext();
+  const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
@@ -196,7 +197,12 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
                     message: `Ви видаляєте «${project.name}». Цю дію неможливо скасувати.`,
                     confirmText: 'Видалити', danger: true,
                   })) {
-                    await deleteProject(project.id);
+                    try {
+                      await deleteProject(project.id);
+                      showToast('Проєкт видалено');
+                    } catch (error) {
+                      showToast(userFacingErrorMessage(error, 'Не вдалося видалити проєкт'), 'error');
+                    }
                   }
                 } },
               ]}
@@ -763,8 +769,10 @@ export default function WorkspacePage() {
         }
       });
     } catch (err) {
-      showToast('Помилка архівування', 'error');
+      showToast(userFacingErrorMessage(err, 'Не вдалося архівувати проєкт'), 'error');
+      return false;
     }
+    return true;
   };
 
   const unarchive = async (id) => {
@@ -772,8 +780,10 @@ export default function WorkspacePage() {
       await restoreProject(id);
       showToast('Проєкт розархівовано');
     } catch (err) {
-      showToast('Помилка розархівування', 'error');
+      showToast(userFacingErrorMessage(err, 'Не вдалося розархівувати проєкт'), 'error');
+      return false;
     }
+    return true;
   };
 
   const stats = useMemo(() => {

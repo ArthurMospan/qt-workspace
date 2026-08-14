@@ -308,7 +308,9 @@ export async function PATCH(request, context) {
       }, { status });
     }
     if (error.message === 'PROJECT_LIMIT_REACHED') {
-      return NextResponse.json({ error: 'Ліміт активних проєктів вичерпано' }, { status: 403 });
+      return NextResponse.json({
+        error: 'Ліміт активних проєктів вичерпано. Перейдіть на Pro план.',
+      }, { status: 403 });
     }
     return routeErrorResponse(error, { context: 'Project PATCH', fallbackMessage: 'Internal Server Error' });
   }

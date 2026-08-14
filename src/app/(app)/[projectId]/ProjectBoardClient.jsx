@@ -27,6 +27,7 @@ import { can } from '@/lib/utils/can';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
@@ -171,14 +172,26 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   // Archiving or deleting the project you are standing in has to leave it —
   // the projects list does not, because it stays on the list either way.
   const handleArchiveProject = useCallback(async (id) => {
-    await archiveProject(id);
-    showToast('Проєкт архівовано', 'success');
-    router.push('/');
+    try {
+      await archiveProject(id);
+      showToast('Проєкт архівовано', 'success');
+      router.push('/');
+      return true;
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося архівувати проєкт'), 'error');
+      return false;
+    }
   }, [router, showToast]);
 
   const handleRestoreProject = useCallback(async (id) => {
-    await restoreProject(id);
-    showToast('Проєкт розархівовано');
+    try {
+      await restoreProject(id);
+      showToast('Проєкт розархівовано');
+      return true;
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося розархівувати проєкт'), 'error');
+      return false;
+    }
   }, [showToast]);
 
   const handleDeleteProject = useCallback(async (id) => {

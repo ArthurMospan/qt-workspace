@@ -20,6 +20,7 @@ import {
   parseInviteEmails,
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
 
 export default function BoardConfigModal({
   project,
@@ -127,7 +128,7 @@ export default function BoardConfigModal({
       onClose();
     } catch (error) {
       console.error(error);
-      showToast(error.message || 'Помилка збереження', 'error');
+      showToast(userFacingErrorMessage(error, 'Помилка збереження'), 'error');
     } finally {
       setSaving(false);
     }
@@ -145,7 +146,7 @@ export default function BoardConfigModal({
       await onDelete(project.id);
       onClose();
     } catch (error) {
-      showToast(error.message || 'Не вдалося видалити проєкт', 'error');
+      showToast(userFacingErrorMessage(error, 'Не вдалося видалити проєкт'), 'error');
     }
   };
 
@@ -165,7 +166,9 @@ export default function BoardConfigModal({
             style="secondary"
             size="md"
             icon={Archive}
-            onClick={async () => { await onArchive(project.id); onClose(); }}
+            onClick={async () => {
+              if (await onArchive(project.id) !== false) onClose();
+            }}
           >
             Архівувати
           </Button>
@@ -175,7 +178,9 @@ export default function BoardConfigModal({
             style="secondary"
             size="md"
             icon={ArchiveRestore}
-            onClick={async () => { await onUnarchive(project.id); onClose(); }}
+            onClick={async () => {
+              if (await onUnarchive(project.id) !== false) onClose();
+            }}
           >
             Розархівувати
           </Button>
