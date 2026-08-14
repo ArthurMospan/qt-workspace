@@ -6,7 +6,7 @@ import Tabs from '../Tabs';
 import Button from '../Button';
 import Dialog from '../Dialog';
 import Counter from '../DataDisplay/Counter';
-import { countActiveFilters } from '../FilterBar';
+import FilterBar, { countActiveFilters } from '../FilterBar';
 
 // ─── UI Kit: PageHeader Component ────────────────────────────────────────────
 // Standard page header used across ALL workspace pages.
@@ -54,7 +54,7 @@ export function PageHeader({
   // wrapper, …), so find the bar wherever it sits.
   const stackFilters = node => Children.map(node, child => {
     if (!isValidElement(child)) return child;
-    if (child.type?.isFilterBar) return cloneElement(child, { context: 'stacked' });
+    if (child.type?.isFilterBar) return <FilterBar {...child.props} context="stacked" />;
     if (child.props?.children) {
       return cloneElement(child, { children: stackFilters(child.props.children) });
     }

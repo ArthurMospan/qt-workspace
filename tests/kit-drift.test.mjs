@@ -166,6 +166,12 @@ test('the variant manifest is still derived from the implementation', () => {
       `the ${context} layout should be declared by SidebarLayout.CONTEXTS`,
     );
   }
+  for (const context of ['default', 'detail', 'projects', 'stacked']) {
+    assert.ok(
+      manifest.FilterBar.context.includes(context),
+      `the ${context} filter layout should be declared by FilterBar.WIDTHS`,
+    );
+  }
   assert.deepEqual(manifest, committed.manifest, 'the committed manifest is stale — run `npm run kit:drift`');
 });
 

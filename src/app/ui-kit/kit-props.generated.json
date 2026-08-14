@@ -1567,7 +1567,7 @@
       "props": [
         {
           "name": "message",
-          "default": "'Немає звʼязку. Зміни збережуться, щойно зʼяв…",
+          "default": "'Немає звʼязку — зміни зараз не зберігаються.'",
           "type": "string",
           "values": [],
           "description": "What it says."
@@ -2083,12 +2083,14 @@
         {
           "name": "context",
           "default": "'default'",
-          "type": "'default'|'detail'",
+          "type": "'default'|'detail'|'projects'|'stacked'",
           "values": [
             "default",
-            "detail"
+            "detail",
+            "projects",
+            "stacked"
           ],
-          "description": "Width scale: a list page, or a detail pane."
+          "description": "Width scale for the host layout."
         }
       ]
     },
@@ -3203,7 +3205,7 @@
         {
           "name": "filterContext",
           "default": "'default'",
-          "type": "'default'|'detail'",
+          "type": "'default'|'detail'|'projects'|'stacked'",
           "values": [],
           "description": "Which width scale that lookup uses."
         },
@@ -4182,7 +4184,7 @@
         {
           "name": "filterContext",
           "default": "'default'",
-          "type": "'default'|'detail'",
+          "type": "'default'|'detail'|'projects'|'stacked'",
           "values": [],
           "description": "Which width scale that lookup uses."
         },
@@ -4685,7 +4687,7 @@
         {
           "name": "tabs",
           "default": "[]",
-          "type": "{id: string, label: string, href?: string, icon?, count?: number, disabled?: boolean, title?: string}[]",
+          "type": "{id: string, label: string, href?: string, icon?, count?: number, disabled?: boolean, title?: string, ariaLabel?: string}[]",
           "values": [],
           "description": "The tabs; `href` turns one into a link."
         },

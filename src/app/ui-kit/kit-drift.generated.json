@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 40,
-    "declaredValues": 352,
+    "declaredValues": 354,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 212,
+    "usedAndPreviewed": 214,
     "usedWithoutPreview": 0,
     "declaredUnused": 107
   },
@@ -1236,7 +1236,9 @@
     "FilterBar": {
       "context": [
         "default",
-        "detail"
+        "detail",
+        "projects",
+        "stacked"
       ]
     },
     "Popover": {
@@ -1276,8 +1278,9 @@
     "Pill.tone.neutral": 13,
     "Pill.size.lg": 9,
     "Pill.shape.badge": 17,
+    "Button.style.secondary": 65,
+    "Button.size.md": 62,
     "Button.size.icon-lg": 8,
-    "Button.style.secondary": 59,
     "Button.style.primary": 39,
     "Select.filterRole.sprint": 2,
     "Select.variant.ghost": 23,
@@ -1286,16 +1289,16 @@
     "Select.filterRole.type": 7,
     "Card.preset.borderless": 22,
     "Card.padding.lg": 17,
-    "Alert.variant.error": 5,
+    "Alert.variant.error": 6,
     "Alert.variant.warning": 12,
     "Alert.variant.info": 4,
     "Alert.variant.success": 2,
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 71,
+    "Button.style.ghost": 72,
     "Button.size.icon-sm": 20,
-    "Button.size.sm": 40,
+    "Button.size.sm": 43,
     "Surface.preset.panel": 9,
     "Surface.padding.lg": 5,
     "Surface.composition.chart-panel": 2,
@@ -1320,7 +1323,6 @@
     "IconAction.appearance.quiet-danger": 2,
     "IconAction.composition.chat-micro-action": 4,
     "Dialog.size.md": 6,
-    "Button.size.md": 58,
     "SidebarLayout.context.chat": 1,
     "Button.size.icon-xs": 14,
     "Dialog.titleContext.dialog": 4,
@@ -1330,6 +1332,7 @@
     "IconAction.size.md": 4,
     "Counter.size.md": 3,
     "UserAvatar.size.sm": 10,
+    "FilterBar.context.projects": 1,
     "Select.filterRole.date": 1,
     "Select.filterRole.sort": 1,
     "Surface.padding.md": 3,
@@ -1479,6 +1482,7 @@
     "Dialog.bodyPadding.default": 1,
     "Dialog.bodyPadding.horizontal": 1,
     "Counter.size.xs": 1,
+    "FilterBar.context.stacked": 1,
     "UserAvatar.size.chat-mention": 1,
     "Input.composition.project-name": 1,
     "Textarea.composition.project-description": 1
@@ -1608,6 +1612,8 @@
     "EmptyState.surface.transparent",
     "FilterBar.context.default",
     "FilterBar.context.detail",
+    "FilterBar.context.projects",
+    "FilterBar.context.stacked",
     "FormGroup.gap.md",
     "FormGroup.gap.sm",
     "IconAction.appearance.auth-close",

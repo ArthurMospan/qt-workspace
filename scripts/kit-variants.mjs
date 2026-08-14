@@ -153,7 +153,7 @@ const SOURCES = {
   ChatComposerDock: { composition: { css: ['.chat-composer-dock', 'data-ui-composition'] } },
   TaskAttributesPanel: { context: { literal: ['calendar', 'task'] } },
   SidebarLayout: { context: { map: ['Layout/SidebarLayout.jsx', 'CONTEXTS'] } },
-  FilterBar: { context: { literal: ['default', 'detail'] } },
+  FilterBar: { context: { map: ['FilterBar.jsx', 'WIDTHS'] } },
   Popover: {
     align: { literal: ['start', 'center', 'end'] },
     padding: { map: ['Navigation/Popover.jsx', 'PADDINGS'] },
