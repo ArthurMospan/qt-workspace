@@ -40,8 +40,10 @@ export async function POST(req) {
     // write into another tenant's namespace, which the delete route then
     // treats as owned by that other tenant.
     const organizationId = organizationIdFromPath(folder);
-    if (organizationId &&
-        !(await callerBelongsToPathOrganization(authorization.user.uid, organizationId))) {
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Upload folder is not organization-scoped' }, { status: 403 });
+    }
+    if (!(await callerBelongsToPathOrganization(authorization.user.uid, organizationId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

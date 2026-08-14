@@ -33,6 +33,7 @@
     "migrate:issue-hierarchy": "node scripts/migrate-issue-hierarchy-v2.mjs",
     "migrate:calendar-time-visibility": "node scripts/backfill-calendar-time-log-visibility.mjs",
     "migrate:member-access": "node scripts/migrate-member-access.mjs",
+    "migrate:image-assets": "node scripts/migrate-image-assets.mjs",
     "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs"
   },
   "dependencies": {

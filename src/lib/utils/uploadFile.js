@@ -9,9 +9,10 @@ import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
  */
 export async function uploadFile(file, path, onProgress = null) {
   if (!file) throw new Error('No file provided');
+  if (!path) throw new Error('An organization-scoped upload path is required');
 
   // Convert the storage path/prefix to a Cloudinary folder structure
-  const folder = path ? `quickteam/${path.replace(/^\/+|\/+$/g, '')}` : 'quickteam/attachments';
+  const folder = `quickteam/${path.replace(/^\/+|\/+$/g, '')}`;
 
   try {
     // Real byte-level progress from the upload itself, not a fabricated 20→100.

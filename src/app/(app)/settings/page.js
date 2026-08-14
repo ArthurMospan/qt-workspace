@@ -711,6 +711,8 @@ export default function SettingsPage() {
   // ── Profile ──
   const [displayName,   setDisplayName]   = useState('');
   const [customAvatar,  setCustomAvatar]  = useState('');
+  const [customAvatarStoragePath, setCustomAvatarStoragePath] = useState('');
+  const [customAvatarResourceType, setCustomAvatarResourceType] = useState('image');
   const [bio,           setBio]           = useState('');
   const [telegram,      setTelegram]      = useState('');
   const [phone,         setPhone]         = useState('');
@@ -736,6 +738,8 @@ export default function SettingsPage() {
   const revertProfile = useCallback(() => {
     setDisplayName(currentUser?.name || '');
     setCustomAvatar(currentUser?.customAvatar || '');
+    setCustomAvatarStoragePath(currentUser?.customAvatarStoragePath || '');
+    setCustomAvatarResourceType(currentUser?.customAvatarResourceType || 'image');
     setBio(currentUser?.bio || '');
     setTelegram(currentUser?.telegram || '');
     setPhone(currentUser?.phone || '');
@@ -747,6 +751,8 @@ export default function SettingsPage() {
   // ── Workspace ──
   const [orgName,         setOrgName]         = useState('');
   const [orgLogo,         setOrgLogo]         = useState('');
+  const [orgLogoStoragePath, setOrgLogoStoragePath] = useState('');
+  const [orgLogoResourceType, setOrgLogoResourceType] = useState('image');
   const [orgCustomBranding, setOrgCustomBranding] = useState(false);
   const [sidebarTheme,    setSidebarTheme]    = useState('dark');     // 'dark' | 'light' | 'custom'
   const [sidebarColor,    setSidebarColor]    = useState('#1f1f1f');  // HEX for custom theme
@@ -1070,6 +1076,8 @@ export default function SettingsPage() {
       queueMicrotask(() => {
         if (currentUser.name && !displayName) setDisplayName(currentUser.name);
         if (currentUser.customAvatar && !customAvatar) setCustomAvatar(currentUser.customAvatar);
+        setCustomAvatarStoragePath(currentUser.customAvatarStoragePath || '');
+        setCustomAvatarResourceType(currentUser.customAvatarResourceType || 'image');
         setBio(currentUser.bio || '');
         setTelegram(currentUser.telegram || '');
         setPhone(currentUser.phone || '');
@@ -1100,11 +1108,13 @@ export default function SettingsPage() {
       if (currentUser?.name && !displayName) setDisplayName(currentUser.name);
       if (org?.name && !orgName) setOrgName(org.name);
       if (org?.logo && !orgLogo) setOrgLogo(org.logo);
+      setOrgLogoStoragePath(org?.logoStoragePath || '');
+      setOrgLogoResourceType(org?.logoResourceType || 'image');
       if (org?.customBranding !== undefined) setOrgCustomBranding(Boolean(org.customBranding));
       if (org?.sidebarTheme) setSidebarTheme(org.sidebarTheme);
       if (org?.sidebarColor) setSidebarColor(org.sidebarColor);
     });
-  }, [currentUser?.name, org?.name, org?.logo, org?.customBranding, org?.sidebarTheme, org?.sidebarColor]); // eslint-disable-line
+  }, [currentUser?.name, org?.name, org?.logo, org?.logoStoragePath, org?.logoResourceType, org?.customBranding, org?.sidebarTheme, org?.sidebarColor]); // eslint-disable-line
 
   useEffect(() => {
     queueMicrotask(() => refreshAuthProviders());
@@ -1328,6 +1338,21 @@ export default function SettingsPage() {
       showToast('Збережено');
       if (field === 'birthday') await announceBirthdayIfToday(value);
     } catch { showToast('Помилка збереження', 'error'); }
+  };
+
+  const saveProfileImage = async (url, asset) => {
+    const uid = currentUser?.uid || currentUser?.id;
+    if (!uid) throw new Error('Не вдалося визначити користувача');
+    await updateDoc(doc(db, 'users', uid), {
+      customAvatar: url,
+      customAvatarStoragePath: asset?.storagePath || '',
+      customAvatarResourceType: asset?.resourceType || '',
+      updatedAt: serverTimestamp(),
+    });
+    setCustomAvatar(url);
+    setCustomAvatarStoragePath(asset?.storagePath || '');
+    setCustomAvatarResourceType(asset?.resourceType || 'image');
+    showToast(url ? 'Аватар збережено' : 'Аватар видалено');
   };
 
   // The scheduled sweep claims each day once, and by the time anyone opens
@@ -1558,19 +1583,32 @@ export default function SettingsPage() {
   // there is no spurious save on load. Takes current state + the just-changed
   // value and writes the derived document. The colour picker is debounced by
   // its caller because it fires continuously while dragging.
-  const persistBranding = async (patch = {}) => {
+  const persistBranding = async (patch = {}, { rethrow = false } = {}) => {
     if (!activeOrgId) return;
-    const next = { orgCustomBranding, orgLogo, sidebarTheme, sidebarColor, ...patch };
+    const next = {
+      orgCustomBranding,
+      orgLogo,
+      orgLogoStoragePath,
+      orgLogoResourceType,
+      sidebarTheme,
+      sidebarColor,
+      ...patch,
+    };
     const brandingValue = next.orgCustomBranding && (next.orgLogo || '').trim() ? true : false;
     try {
       await updateDoc(doc(db, 'organizations', activeOrgId), {
         logo: (next.orgLogo || '').trim(),
+        logoStoragePath: next.orgLogoStoragePath || '',
+        logoResourceType: next.orgLogoResourceType || '',
         customBranding: brandingValue,
         sidebarTheme: brandingValue ? next.sidebarTheme : 'dark',
         sidebarColor: brandingValue && next.sidebarTheme === 'custom' ? next.sidebarColor : '#1f1f1f',
         updatedAt: serverTimestamp(),
       });
-    } catch { showToast('Помилка збереження', 'error'); }
+    } catch (error) {
+      showToast('Помилка збереження', 'error');
+      if (rethrow) throw error;
+    }
   };
 
   // Full workflow documents are serialized through one client queue. This
@@ -2104,7 +2142,11 @@ export default function SettingsPage() {
             <Row label="Аватар" desc="Завантажте власне фото (рекомендовано 1:1)">
               <ImageUpload
                 value={customAvatar || currentUser?.avatar || ''}
-                onChange={v => { setCustomAvatar(v); saveProfileField('customAvatar', v); }}
+                storagePath={customAvatarStoragePath}
+                resourceType={customAvatarResourceType}
+                organizationId={activeOrgId}
+                kind="avatars"
+                onChange={saveProfileImage}
                 theme="light"
                 showLabel={false}
                 showHint={false}
@@ -2491,7 +2533,26 @@ export default function SettingsPage() {
               <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
             </Row>
             <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
-              <ImageUpload value={orgLogo} onChange={v => { setOrgLogo(v); persistBranding({ orgLogo: v }); }} theme="light" showLabel={false} showHint={false} />
+              <ImageUpload
+                value={orgLogo}
+                storagePath={orgLogoStoragePath}
+                resourceType={orgLogoResourceType}
+                organizationId={activeOrgId}
+                kind="logos"
+                onChange={async (url, asset) => {
+                  await persistBranding({
+                    orgLogo: url,
+                    orgLogoStoragePath: asset?.storagePath || '',
+                    orgLogoResourceType: asset?.resourceType || '',
+                  }, { rethrow: true });
+                  setOrgLogo(url);
+                  setOrgLogoStoragePath(asset?.storagePath || '');
+                  setOrgLogoResourceType(asset?.resourceType || 'image');
+                }}
+                theme="light"
+                showLabel={false}
+                showHint={false}
+              />
             </Row>
             {/* The organisation ID used to sit here, under "Загальні". Nothing
                 on this screen asks for it: it is an argument to an API call,

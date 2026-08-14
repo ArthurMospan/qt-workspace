@@ -5,9 +5,10 @@ import { auth } from '@/lib/firebase';
 /**
  * Direct Cloudinary Upload 
  */
-export async function uploadFileToCloudinary(file, folder = 'quickteam/avatars', onProgress = null) {
+export async function uploadFileToCloudinary(file, folder, onProgress = null) {
   try {
     if (file.size > 25 * 1024 * 1024) throw new Error('File exceeds the 25 MB limit');
+    if (!folder) throw new Error('An organization-scoped upload folder is required');
     const ext = file.name.split('.').pop()?.toLowerCase();
     const baseName = file.name.substring(0, file.name.lastIndexOf('.')).replace(/[^a-zA-Z0-9]/g, '_');
     const public_id = `${Date.now()}_${baseName}`;

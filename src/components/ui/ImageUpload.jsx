@@ -1,23 +1,48 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Upload, X, Loader2 } from 'lucide-react';
-import { uploadFileToCloudinary } from '@/lib/services/fileUpload';
+import { Upload, Loader2 } from 'lucide-react';
+import {
+  deleteFileFromCloudinary,
+  uploadFileToCloudinary,
+} from '@/lib/services/fileUpload';
+import {
+  organizationImageFolder,
+  organizationOwnedImageAsset,
+} from '@/lib/utils/cloudinaryAssets.mjs';
 
 /**
  * Picks an image, uploads it, and shows what is currently set — the workspace
  * logo and the project avatar both go through here.
  *
  * @param {string} props.value URL of the image already stored.
- * @param {(url: string) => void} props.onChange Fires with the uploaded image's URL.
+ * @param {(url: string, asset: object) => void} props.onChange Persists the URL and its storage metadata.
  * @param {(message: string) => void} props.onError Fires when the upload fails, with a message to show.
+ * @param {string} props.organizationId Organization that owns the Cloudinary folder.
+ * @param {'avatars'|'logos'} props.kind Which organization image folder receives the upload.
+ * @param {string} props.storagePath Cloudinary public id saved beside the URL.
+ * @param {'image'|'video'|'raw'} props.resourceType Cloudinary resource type saved beside the URL.
  * @param {string} props.label Caption above the control.
  * @param {boolean} props.showLabel Whether that caption is drawn.
  * @param {boolean} props.showHint Whether the size and format hint is drawn.
  * @param {'dark'|'light'} props.theme Which surface it sits on; onboarding is dark, settings is light.
  * @param {string} props.className Placement in the parent only.
  */
-export default function ImageUpload({ value, onChange, onError, className = '', label = 'Завантажити логотип', showLabel = true, showHint = true, theme = 'dark' }) {
+export default function ImageUpload({
+  value,
+  onChange,
+  onError,
+  organizationId,
+  kind = 'avatars',
+  storagePath = '',
+  resourceType = 'image',
+  className = '',
+  label = 'Завантажити логотип',
+  showLabel = true,
+  showHint = true,
+  theme = 'dark',
+}) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
@@ -35,14 +60,48 @@ export default function ImageUpload({ value, onChange, onError, className = '', 
     setIsUploading(true);
     setUploadError('');
     try {
-      const { downloadUrl } = await uploadFileToCloudinary(file);
-      onChange(downloadUrl);
+      const upload = await uploadFileToCloudinary(
+        file,
+        organizationImageFolder(organizationId, kind),
+      );
+      try {
+        await onChange(upload.downloadUrl, {
+          storagePath: upload.storagePath,
+          resourceType: upload.resourceType,
+        });
+      } catch (error) {
+        // The new file has no durable reference when persistence fails.
+        await deleteFileFromCloudinary(upload.storagePath, upload.resourceType).catch(() => {});
+        throw error;
+      }
     } catch (err) {
       console.error(err);
-      const message = 'Помилка завантаження файлу.';
+      const message = err.message || 'Помилка завантаження файлу.';
       if (onError) onError(message); else setUploadError(message);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    const asset = organizationOwnedImageAsset({ value, storagePath, resourceType }, organizationId);
+    if (!asset) {
+      const message = 'Старе зображення ще не перенесено до сховища організації.';
+      if (onError) onError(message); else setUploadError(message);
+      return;
+    }
+
+    setIsRemoving(true);
+    setUploadError('');
+    try {
+      await deleteFileFromCloudinary(asset.storagePath, asset.resourceType);
+      await onChange('', { storagePath: '', resourceType: '' });
+    } catch (err) {
+      console.error(err);
+      const message = err.message || 'Не вдалося видалити зображення.';
+      if (onError) onError(message); else setUploadError(message);
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -51,10 +110,11 @@ export default function ImageUpload({ value, onChange, onError, className = '', 
       <button
         type="button"
         aria-label={label}
+        disabled={isUploading || isRemoving}
         className={`relative w-[64px] h-[64px] rounded-full overflow-hidden border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${bgClass}`}
         onClick={() => fileInputRef.current?.click()}
       >
-        {isUploading ? (
+        {isUploading || isRemoving ? (
           <Loader2 className={`w-6 h-6 animate-spin ${iconColor}`} />
         ) : value ? (
           <>
@@ -72,14 +132,16 @@ export default function ImageUpload({ value, onChange, onError, className = '', 
       <div className="flex flex-col gap-1 justify-center">
         {showLabel && <span className={`text-[14px] font-medium ${textColor}`}>{label}</span>}
         {value ? (
-          <button 
-            onClick={() => onChange('')}
+          <button
+            type="button"
+            disabled={isRemoving || isUploading}
+            onClick={handleRemove}
             className={`text-[12px] transition-colors text-left font-medium ${removeColor}`}
           >
             Видалити
           </button>
         ) : showHint ? (
-          <span className={`text-[12px] ${subTextColor}`}>Рекомендовано 1:1 (PNG, JPG)</span>
+          <span className={`text-[12px] ${subTextColor}`}>Зображення 1:1, до 25 МБ</span>
         ) : null}
         {uploadError && (
           <span className="text-[12px] font-medium text-red-500">{uploadError}</span>

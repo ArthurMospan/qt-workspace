@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 96,
-    "props": 704,
-    "documentedProps": 704,
+    "props": 708,
+    "documentedProps": 708,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2313,6 +2313,13 @@
           "description": "Placement in the parent only."
         },
         {
+          "name": "kind",
+          "default": "'avatars'",
+          "type": "'avatars'|'logos'",
+          "values": [],
+          "description": "Which organization image folder receives the upload."
+        },
+        {
           "name": "label",
           "default": "'Завантажити логотип'",
           "type": "string",
@@ -2322,9 +2329,9 @@
         {
           "name": "onChange",
           "default": "",
-          "type": "(url: string) => void",
+          "type": "(url: string, asset: object) => void",
           "values": [],
-          "description": "Fires with the uploaded image's URL."
+          "description": "Persists the URL and its storage metadata."
         },
         {
           "name": "onError",
@@ -2332,6 +2339,20 @@
           "type": "(message: string) => void",
           "values": [],
           "description": "Fires when the upload fails, with a message to show."
+        },
+        {
+          "name": "organizationId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Organization that owns the Cloudinary folder."
+        },
+        {
+          "name": "resourceType",
+          "default": "'image'",
+          "type": "'image'|'video'|'raw'",
+          "values": [],
+          "description": "Cloudinary resource type saved beside the URL."
         },
         {
           "name": "showHint",
@@ -2346,6 +2367,13 @@
           "type": "boolean",
           "values": [],
           "description": "Whether that caption is drawn."
+        },
+        {
+          "name": "storagePath",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Cloudinary public id saved beside the URL."
         },
         {
           "name": "theme",
