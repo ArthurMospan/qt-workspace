@@ -19,6 +19,10 @@ import {
   isKnownCalendarEventType,
   normalizeCalendarEventVisibility,
 } from '../src/lib/utils/calendarEventTypes.mjs';
+import {
+  MAX_CALENDAR_REMINDERS,
+  normalizeCalendarReminderMinutes,
+} from '../src/lib/utils/calendarReminders.mjs';
 
 const read = path => readFile(fileURLToPath(new URL(path, import.meta.url)), 'utf8');
 
@@ -145,6 +149,31 @@ test('the write route refuses `birthday`, which is generated on read only', asyn
   // And it derives the end of a point-in-time event instead of trusting one.
   assert.match(source, /if \(!calendarEventHasDuration\(type\)\) \{/);
   assert.match(source, /applyCalendarEventTypeRules\(\{/);
+});
+
+test('calendar reminder selection has one explicit five-item limit', async () => {
+  const [server, dialog, page, select] = await Promise.all([
+    read('../src/lib/server/calendarEvents.js'),
+    read('../src/components/workspace/calendar/CalendarEventDialog.jsx'),
+    read('../src/components/workspace/calendar/CalendarEventPage.jsx'),
+    read('../src/components/ui/Select.jsx'),
+  ]);
+
+  assert.equal(MAX_CALENDAR_REMINDERS, 5);
+  assert.deepEqual(
+    normalizeCalendarReminderMinutes([60, 5, 10, 15, 30, 5]).value,
+    [5, 10, 15, 30, 60],
+  );
+  assert.equal(
+    normalizeCalendarReminderMinutes([5, 10, 15, 30, 60, 120]).error,
+    'Можна вибрати не більше п’яти нагадувань',
+  );
+  assert.doesNotMatch(server, /sort\(\(a, b\) => a - b\)\.slice\(0, 5\)/);
+  assert.match(server, /normalizeCalendarReminderMinutes\(/);
+  assert.match(dialog, /maxSelected=\{MAX_CALENDAR_REMINDERS\}/);
+  assert.match(page, /maxSelected=\{MAX_CALENDAR_REMINDERS\}/);
+  assert.match(select, /!isSelected && atSelectionLimit/);
+  assert.match(select, /disabled=\{optionDisabled\}/);
 });
 
 test('time logging is refused for types that cannot hold hours', async () => {

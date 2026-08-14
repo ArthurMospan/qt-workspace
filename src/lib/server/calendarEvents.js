@@ -6,6 +6,10 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { normalizeCalendarRecurrenceInterval } from '@/lib/utils/calendarTimeLog.mjs';
 import {
+  CALENDAR_REMINDER_MINUTES,
+  normalizeCalendarReminderMinutes,
+} from '@/lib/utils/calendarReminders.mjs';
+import {
   POINT_EVENT_DURATION_MINUTES,
   applyCalendarEventTypeRules,
   calendarEventHasDuration,
@@ -27,7 +31,7 @@ export const CALENDAR_EVENT_TYPES = new Set([
 
 export const CALENDAR_VISIBILITIES = new Set(['team', 'participants', 'private']);
 export const CALENDAR_RECURRENCES = new Set(['none', 'daily', 'weekly', 'monthly']);
-export const CALENDAR_REMINDERS = new Set([0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080]);
+export const CALENDAR_REMINDERS = new Set(CALENDAR_REMINDER_MINUTES);
 
 const cleanText = (value, maxLength) =>
   typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -85,13 +89,14 @@ export function normalizedCalendarEventInput(input, current = null, { ownerId = 
     interval: recurrenceInterval,
     until: recurrenceUntil,
   };
-  const rawReminderMinutes = [...new Set(
-    (Array.isArray(input.reminderMinutes) ? input.reminderMinutes : current?.reminderMinutes || [15])
-      .map(value => Number(value))
-      .filter(value => CALENDAR_REMINDERS.has(value)),
-  )].sort((a, b) => a - b).slice(0, 5);
+  const reminders = normalizeCalendarReminderMinutes(
+    input.reminderMinutes,
+    current?.reminderMinutes || [15],
+  );
+  const rawReminderMinutes = reminders.value || [];
 
   if (!title) return { error: 'Вкажіть назву події' };
+  if (reminders.error) return reminders;
   // `birthday` is generated from member profiles on read and is never stored, so
   // it is not an acceptable type on write even though it is a known one.
   if (type === 'birthday' || !isKnownCalendarEventType(type)) {

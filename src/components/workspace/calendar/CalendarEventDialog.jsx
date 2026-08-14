@@ -53,6 +53,7 @@ import {
   isKnownCalendarEventType,
   normalizeCalendarEventVisibility,
 } from '@/lib/utils/calendarEventTypes.mjs';
+import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 
 // Only the presentation lives here — what each type *is* (and therefore which
 // fields it may carry) is decided once in calendarEventTypes.mjs, which the
@@ -687,6 +688,7 @@ export default function CalendarEventDialog({
                 options={CALENDAR_EVENT_REMINDER_OPTIONS}
                 placeholder="Додати нагадування"
                 searchPlaceholder="Знайти інтервал..."
+                maxSelected={MAX_CALENDAR_REMINDERS}
                 className="w-full"
                 dropdownClassName="w-full"
               />

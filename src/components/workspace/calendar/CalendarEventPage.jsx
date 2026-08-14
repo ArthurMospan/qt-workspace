@@ -76,6 +76,7 @@ import {
   calendarEventTypeLabel,
   calendarEventVisibilityOptionsFor,
 } from '@/lib/utils/calendarEventTypes.mjs';
+import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -1136,6 +1137,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                                   options={CALENDAR_EVENT_REMINDER_OPTIONS}
                                   placeholder="Додати нагадування"
                                   searchPlaceholder="Знайти інтервал…"
+                                  maxSelected={MAX_CALENDAR_REMINDERS}
                                   disabled={!canManage || attributeSaving}
                                   className="w-full"
                                   dropdownClassName="w-[280px]"

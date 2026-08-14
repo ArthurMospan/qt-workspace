@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 96,
-    "props": 708,
-    "documentedProps": 708,
+    "props": 709,
+    "documentedProps": 709,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3229,6 +3229,13 @@
           "type": "React.ReactNode",
           "values": [],
           "description": "Content pinned under the list — a hint, or a create action."
+        },
+        {
+          "name": "maxSelected",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Maximum choices that may be selected at once."
         },
         {
           "name": "onChange",

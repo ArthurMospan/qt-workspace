@@ -361,6 +361,7 @@ export function Select({
  * @param {string} props.placeholder Trigger text while nothing is selected.
  * @param {string} props.searchPlaceholder Placeholder inside the search box.
  * @param {string} props.selectAllLabel Label of the select-all row.
+ * @param {number} props.maxSelected Maximum choices that may be selected at once.
  * @param {boolean} props.showSelectedAvatars Draws the chosen people as a stack of faces on the trigger.
  * @param {React.ReactNode} props.footer Content pinned under the list — a hint, or a create action.
  * @param {boolean} props.compact Denser trigger, for attribute strips.
@@ -386,6 +387,7 @@ export function MultiSelect({
   variant = 'default',
   triggerIcon: TriggerIcon,
   selectAllLabel = '',
+  maxSelected,
   size = 'lg',
   composition,
   filterRole,
@@ -429,12 +431,20 @@ export function MultiSelect({
   const filteredOptions = options.filter(o =>
     String(o.label ?? '').toLowerCase().includes(search.toLowerCase()));
   const allValues = options.map(option => option.value);
-  const allSelected = allValues.length > 0 && allValues.every(optionValue => value.includes(optionValue));
+  const selectionLimit = Number.isInteger(maxSelected) && maxSelected >= 0
+    ? maxSelected
+    : null;
+  const allSelectionValues = selectionLimit === null
+    ? allValues
+    : allValues.slice(0, selectionLimit);
+  const allSelected = allSelectionValues.length > 0
+    && allSelectionValues.every(optionValue => value.includes(optionValue));
+  const atSelectionLimit = selectionLimit !== null && value.length >= selectionLimit;
 
   const handleSelect = (val) => {
     if (value.includes(val)) {
       onChange(value.filter(v => v !== val));
-    } else {
+    } else if (!atSelectionLimit) {
       onChange([...value, val]);
     }
   };
@@ -537,9 +547,14 @@ export function MultiSelect({
                 type="button"
                 aria-pressed={allSelected}
                 onClick={() => {
-                  onChange(allSelected
-                    ? value.filter(selectedValue => !allValues.includes(selectedValue))
-                    : [...new Set([...value, ...allValues])]);
+                  if (allSelected) {
+                    onChange(value.filter(selectedValue => !allValues.includes(selectedValue)));
+                    return;
+                  }
+                  const nextValues = [...new Set([...value, ...allValues])];
+                  onChange(selectionLimit === null
+                    ? nextValues
+                    : nextValues.slice(0, selectionLimit));
                 }}
                 className="mb-1 flex h-[34px] w-full items-center gap-[10px] rounded-[8px] border-b border-line px-[8px] text-left transition-colors hover:bg-canvas"
               >
@@ -556,12 +571,14 @@ export function MultiSelect({
             ) : (
               filteredOptions.map((opt) => {
                 const isSelected = value.includes(opt.value);
+                const optionDisabled = !isSelected && atSelectionLimit;
                 return (
                   <button
                     key={opt.value}
                     type="button"
+                    disabled={optionDisabled}
                     onClick={() => handleSelect(opt.value)}
-                    className="w-full flex items-center gap-[10px] px-[8px] h-[32px] rounded-[8px] hover:bg-canvas transition-colors text-left"
+                    className="w-full flex items-center gap-[10px] px-[8px] h-[32px] rounded-[8px] hover:bg-canvas transition-colors text-left disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
                   >
                     <div className={`w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-ink border-ink' : 'border-[#d9d9d9] bg-white'}`}>
                       {isSelected && <Check size={12} className="text-white" />}
