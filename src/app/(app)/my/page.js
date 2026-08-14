@@ -306,8 +306,8 @@ export default function MyTasksPage() {
               />
               <Tabs
                 tabs={[
-                  { id: 'kanban', icon: Kanban },
-                  { id: 'list', icon: List },
+                  { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+                  { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
                 ]}
                 activeTab={viewMode}
                 onTabChange={setViewMode}

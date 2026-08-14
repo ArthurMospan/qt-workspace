@@ -34,6 +34,10 @@ import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchR
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
+import {
+  createUkrainianDndAnnouncements,
+  UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
+} from '@/lib/utils/dndAnnouncements.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -261,6 +265,17 @@ export default function GlobalSprintsPage() {
   } = useSprints();
 
   const loading = issuesLoading || sprintsLoading;
+  const dndAnnouncements = createUkrainianDndAnnouncements({
+    itemLabel: draggableId => {
+      const issue = issues.find(candidate => candidate.id === draggableId);
+      return issue?.issueKey || issue?.title || 'Завдання';
+    },
+    listLabel: droppableId => (
+      droppableId === 'backlog'
+        ? 'Без спринта'
+        : sprints.find(sprint => sprint.id === droppableId)?.name || 'Спринт'
+    ),
+  });
 
   const onDragEnd = async ({ draggableId, source, destination }) => {
     if (!destination) return;
@@ -567,7 +582,15 @@ export default function GlobalSprintsPage() {
         /* PLANNING TAB */
         <div className="flex-1 flex flex-col min-h-[600px]">
           
-          <DragDropContext onDragEnd={onDragEnd}>
+          <DragDropContext
+            dragHandleUsageInstructions={UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS}
+            onDragStart={dndAnnouncements.onDragStart}
+            onDragUpdate={dndAnnouncements.onDragUpdate}
+            onDragEnd={(result, provided) => {
+              dndAnnouncements.onDragEnd(result, provided);
+              onDragEnd(result);
+            }}
+          >
             <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 items-stretch">
 
               {/* Left Column: Sprints (65%) */}

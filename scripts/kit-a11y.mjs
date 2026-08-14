@@ -6,8 +6,9 @@
 // the difference between a screen somebody can use with a keyboard or a screen
 // reader and one they cannot.
 //
-// Four categories, all contract zeros, over the authenticated workspace and the
-// kit that serves it:
+// Five categories, all contract zeros, over the authenticated workspace and the
+// kit that serves it, plus a runtime-verification queue for names whose value
+// source analysis cannot prove:
 //
 //   • namelessControls  — an icon-only control with nothing to announce.
 //   • imagesWithoutAlt  — an <img> with no `alt`, not even an empty one.
@@ -15,6 +16,9 @@
 //                         the visual order and strands whatever it forgot.
 //   • fakeButtons       — an onClick on a <div>/<span>: not focusable, not
 //                         reachable by keyboard, and silent to a screen reader.
+//   • contrastFailures  — shared quiet-text tokens below WCAG AA on a surface.
+//   • runtimeNameVerification — a dynamic name exists, but only a browser can
+//                         prove that its runtime value is non-empty.
 //
 // The rules are deliberately narrow. Automated a11y checking is full of tests
 // that are right in general and wrong here — this file only reports what can be
@@ -26,11 +30,14 @@ import { fileURLToPath } from 'node:url';
 import { parse } from '@babel/parser';
 import traverseModule from '@babel/traverse';
 import { collectWorkspaceUiFiles } from './workspace-ui-files.mjs';
+import { computeSidebarTheme, SIDEBAR_PRESETS } from '../src/lib/utils/sidebarTheme.js';
 
 const traverse = traverseModule.default || traverseModule;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'a11y-audit.generated.json');
+const GLOBAL_STYLES = join(ROOT, 'src', 'app', 'globals.css');
+const MIN_TEXT_CONTRAST = 4.5;
 
 // Controls whose whole content can be a single icon. A `<button>` is one by
 // definition; the kit's two icon wrappers take their name as a prop.
@@ -90,6 +97,97 @@ function hasVisibleText(element) {
   };
   (element.children || []).forEach(visit);
   return found;
+}
+
+function hasStaticVisibleText(element) {
+  let found = false;
+  const visit = node => {
+    if (found || !node || typeof node !== 'object') return;
+    if (node.type === 'JSXText' && node.value.trim()) { found = true; return; }
+    if (node.type === 'JSXExpressionContainer') {
+      const expression = node.expression;
+      if (expression?.type === 'StringLiteral' && expression.value.trim()) found = true;
+      if (expression?.type === 'NumericLiteral') found = true;
+      return;
+    }
+    (node.children || []).forEach(visit);
+  };
+  (element.children || []).forEach(visit);
+  return found;
+}
+
+function nameEvidence(opening) {
+  const staticAttributes = [];
+  const dynamicAttributes = [];
+  for (const item of opening.attributes || []) {
+    if (item.type !== 'JSXAttribute' || !NAME_ATTRIBUTES.has(item.name.name)) continue;
+    if (item.value?.type === 'StringLiteral' && item.value.value.trim()) {
+      staticAttributes.push(item.name.name);
+      continue;
+    }
+    if (item.value?.type === 'JSXExpressionContainer') {
+      dynamicAttributes.push(item.name.name);
+    }
+  }
+  return { staticAttributes, dynamicAttributes };
+}
+
+function parseHexColor(value) {
+  const normalized = String(value || '').trim();
+  if (!/^#[0-9a-f]{6}$/i.test(normalized)) return null;
+  return normalized.slice(1).match(/../g).map(channel => Number.parseInt(channel, 16));
+}
+
+function relativeLuminance(color) {
+  const channels = color.map(channel => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+}
+
+export function textContrastRatio(foreground, background) {
+  const foregroundRgb = parseHexColor(foreground);
+  const backgroundRgb = parseHexColor(background);
+  if (!foregroundRgb || !backgroundRgb) return null;
+  const foregroundLum = relativeLuminance(foregroundRgb);
+  const backgroundLum = relativeLuminance(backgroundRgb);
+  return (Math.max(foregroundLum, backgroundLum) + 0.05)
+    / (Math.min(foregroundLum, backgroundLum) + 0.05);
+}
+
+function cssToken(source, name) {
+  return source.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6})`, 'i'))?.[1] || null;
+}
+
+function auditContrast() {
+  const styles = readFileSync(GLOBAL_STYLES, 'utf8');
+  const tokenPairs = [
+    ['muted', 'surface'],
+    ['muted', 'canvas'],
+    ['faint', 'surface'],
+    ['faint', 'canvas'],
+  ].map(([foreground, background]) => ({
+    name: `--color-${foreground} on --color-${background}`,
+    foreground: cssToken(styles, foreground),
+    background: cssToken(styles, background),
+  }));
+  const sidebar = computeSidebarTheme(SIDEBAR_PRESETS.dark);
+  const sidebarPairs = ['text', 'muted', 'mutedProject', 'mutedHeader'].map(foreground => ({
+    name: `default sidebar ${foreground}`,
+    foreground: sidebar[foreground],
+    background: sidebar.bg,
+  }));
+
+  return [...tokenPairs, ...sidebarPairs].flatMap(pair => {
+    const ratio = textContrastRatio(pair.foreground, pair.background);
+    if (ratio !== null && ratio >= MIN_TEXT_CONTRAST) return [];
+    return [{
+      ...pair,
+      ratio: ratio === null ? null : Number(ratio.toFixed(2)),
+      minimum: MIN_TEXT_CONTRAST,
+    }];
+  });
 }
 
 // The click-away layer around an overlay. It is the same element that centres
@@ -179,6 +277,8 @@ export function auditA11y() {
   const imagesWithoutAlt = [];
   const positiveTabIndex = [];
   const fakeButtons = [];
+  const runtimeNameVerification = [];
+  const contrastFailures = auditContrast();
   let elements = 0;
 
   for (const file of files) {
@@ -231,10 +331,17 @@ export function auditA11y() {
         // A control that is only ever rendered by another kit component takes
         // its name from that component; the spread is where it arrives.
         if (hasSpread(opening)) return;
-        const named = (opening.attributes || []).some(
-          item => item.type === 'JSXAttribute' && NAME_ATTRIBUTES.has(item.name.name),
-        );
-        if (named) return;
+        const evidence = nameEvidence(opening);
+        if (evidence.staticAttributes.length > 0) return;
+        if (hasStaticVisibleText(path.node)) return;
+        if (evidence.dynamicAttributes.length > 0) {
+          runtimeNameVerification.push({
+            element: name,
+            location: where,
+            attributes: evidence.dynamicAttributes,
+          });
+          return;
+        }
         if (hasVisibleText(path.node)) return;
         namelessControls.push({ element: name, location: where });
       },
@@ -250,6 +357,8 @@ export function auditA11y() {
       imagesWithoutAlt: 'Every <img> declares alt, empty when the image is decoration.',
       positiveTabIndex: 'Tab order is the document order. A positive tabIndex overrides it and strands whatever it forgot.',
       fakeButtons: 'A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button.',
+      contrastFailures: 'Muted and faint text tokens keep at least 4.5:1 contrast on shared light surfaces and the default sidebar.',
+      runtimeNameVerification: 'Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name.',
     },
     totals: {
       files: files.length,
@@ -258,11 +367,15 @@ export function auditA11y() {
       imagesWithoutAlt: imagesWithoutAlt.length,
       positiveTabIndex: positiveTabIndex.length,
       fakeButtons: fakeButtons.length,
+      contrastFailures: contrastFailures.length,
+      runtimeNameVerification: runtimeNameVerification.length,
     },
     namelessControls: namelessControls.sort(byLocation),
     imagesWithoutAlt: imagesWithoutAlt.sort(byLocation),
     positiveTabIndex: positiveTabIndex.sort(byLocation),
     fakeButtons: fakeButtons.sort(byLocation),
+    contrastFailures: contrastFailures.sort((a, b) => a.name.localeCompare(b.name)),
+    runtimeNameVerification: runtimeNameVerification.sort(byLocation),
   };
 }
 
@@ -279,9 +392,17 @@ const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].
 if (isDirectRun) {
   const result = auditA11y();
   writeFileSync(OUTPUT, `${JSON.stringify(result, null, 2)}\n`);
-  const { namelessControls, imagesWithoutAlt, positiveTabIndex, fakeButtons } = result.totals;
+  const {
+    namelessControls,
+    imagesWithoutAlt,
+    positiveTabIndex,
+    fakeButtons,
+    contrastFailures,
+    runtimeNameVerification,
+  } = result.totals;
   console.log(
     `a11y: ${namelessControls} nameless controls, ${imagesWithoutAlt} images without alt, `
-    + `${positiveTabIndex} positive tabindex, ${fakeButtons} fake buttons → ${toPosix(OUTPUT)}`,
+    + `${positiveTabIndex} positive tabindex, ${fakeButtons} fake buttons, `
+    + `${contrastFailures} contrast failures; ${runtimeNameVerification} runtime name checks → ${toPosix(OUTPUT)}`,
   );
 }

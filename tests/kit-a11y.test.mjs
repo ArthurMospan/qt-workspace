@@ -15,7 +15,7 @@ test('the committed a11y audit matches the code', () => {
   );
 });
 
-// Four contract zeros. None of them is visible in a screenshot, which is why
+// Five contract zeros. None of them is visible in a screenshot, which is why
 // the visual suite cannot be the thing that guards them.
 test('the accessibility contract holds', () => {
   assert.deepEqual(
@@ -30,6 +30,7 @@ test('the accessibility contract holds', () => {
     [],
     'A click handler belongs on a button or a link; a div needs role, tabIndex and a key handler',
   );
+  assert.deepEqual(committed.contrastFailures, [], 'Muted and faint text tokens must keep 4.5:1 contrast');
 });
 
 // The audit is only worth a zero if it is still looking. Each of these was a
@@ -48,6 +49,14 @@ test('the audit still sees what it is supposed to see', () => {
   // alone walked past every forwarding row in the product.
   assert.match(kit, /OptionalCallExpression/);
   assert.match(kit, /OptionalMemberExpression/);
+
+  // A dynamic attribute can become an empty string at runtime. It belongs in
+  // an explicit browser-verification queue, never in the proven-name bucket.
+  assert.match(kit, /function nameEvidence/);
+  assert.ok(
+    committed.runtimeNameVerification.some(item => item.location.includes('src/components/ui/Tabs.jsx')),
+    'Tabs dynamic title/aria-label values remain visible to runtime verification',
+  );
 });
 
 // The three exemptions, each of which is a real pattern rather than an excuse.

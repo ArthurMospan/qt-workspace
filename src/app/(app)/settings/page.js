@@ -76,6 +76,10 @@ import {
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
 import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
 import {
+  createUkrainianDndAnnouncements,
+  UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
+} from '@/lib/utils/dndAnnouncements.mjs';
+import {
   flattenStatusGroups,
   groupStatusesByCategory,
   isClosingCategory,
@@ -3044,6 +3048,10 @@ export default function SettingsPage() {
       case 'statuses': {
         const closingStatuses = statuses.filter(s => isClosingCategory(s.category));
         const openStatuses = statuses.filter(s => !isClosingCategory(s.category));
+        const statusAnnouncements = createUkrainianDndAnnouncements({
+          itemLabel: draggableId => statuses.find(status => status.id === draggableId)?.label || 'Статус',
+          listLabel: categoryId => STATUS_CATEGORIES[categoryId]?.label || 'Категорія статусів',
+        });
         // The last status that closes a task and the last one that stays open
         // cannot be deleted — the same two invariants the drag guard enforces,
         // shown as a disabled control rather than a refusal after the click.
@@ -3060,7 +3068,15 @@ export default function SettingsPage() {
             </div>
           ) : (
             <Card preset="borderless">
-              <DragDropContext onDragEnd={handleStatusDragEnd}>
+              <DragDropContext
+                dragHandleUsageInstructions={UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS}
+                onDragStart={statusAnnouncements.onDragStart}
+                onDragUpdate={statusAnnouncements.onDragUpdate}
+                onDragEnd={(result, provided) => {
+                  statusAnnouncements.onDragEnd(result, provided);
+                  handleStatusDragEnd(result);
+                }}
+              >
                 {STATUS_CATEGORY_IDS.map((categoryId, categoryIndex) => {
                   const category = STATUS_CATEGORIES[categoryId];
                   const CategoryIcon = STATUS_CATEGORY_ICONS[categoryId];
@@ -3182,7 +3198,12 @@ export default function SettingsPage() {
         );
       }
 
-      case 'priorities': return (
+      case 'priorities': {
+        const priorityAnnouncements = createUkrainianDndAnnouncements({
+          itemLabel: draggableId => priorities.find(priority => priority.id === draggableId)?.label || 'Пріоритет',
+          listLabel: () => 'Пріоритети',
+        });
+        return (
         <Section title="Пріоритети завдань" desc="Налаштуйте рівні важливості завдань.">
           {wfLoading ? (
             <div className="py-12 flex items-center justify-center">
@@ -3200,7 +3221,15 @@ export default function SettingsPage() {
                 variant="priority"
                 priorityItems={priorities}
               />
-              <DragDropContext onDragEnd={handlePriorityDragEnd}>
+              <DragDropContext
+                dragHandleUsageInstructions={UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS}
+                onDragStart={priorityAnnouncements.onDragStart}
+                onDragUpdate={priorityAnnouncements.onDragUpdate}
+                onDragEnd={(result, provided) => {
+                  priorityAnnouncements.onDragEnd(result, provided);
+                  handlePriorityDragEnd(result);
+                }}
+              >
                 <Droppable droppableId="workflow-priorities">
                   {provided => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
@@ -3251,7 +3280,8 @@ export default function SettingsPage() {
           )}
           {!wfLoading && renderWorkflowResetFooter()}
         </Section>
-      );
+        );
+      }
 
       case 'labels': return (
         <Section title="Мітки завдань" desc="Глобальні мітки для маркування завдань">

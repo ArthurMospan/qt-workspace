@@ -1,4 +1,3 @@
-import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, Copy, Search } from 'lucide-react';
 import { HeaderSearch } from '../Forms/HeaderSearch';
@@ -70,14 +69,16 @@ export function Breadcrumb({
           const isAction = typeof item.onClick === 'function';
 
           return (
-            <React.Fragment key={index}>
+            <li key={index} className="flex items-center gap-[6px] min-w-0">
               {index > 0 && (
-                <ChevronRight size={13} className="text-faint shrink-0" />
+                <ChevronRight size={13} className="text-faint shrink-0" aria-hidden="true" />
               )}
               
               {showSearchButton && isLast && (
                 <button
+                  type="button"
                   onClick={onSearchToggle}
+                  aria-label="Пошук"
                   className="p-[4px] text-muted hover:bg-canvas hover:text-ink rounded-[6px] transition-all shrink-0 mr-[2px]"
                   title="Пошук"
                 >
@@ -85,7 +86,7 @@ export function Breadcrumb({
                 </button>
               )}
 
-              <li className="flex items-center min-w-0">
+              <span className="flex items-center min-w-0">
                 {isClickable ? (
                   <Link
                     href={item.href}
@@ -113,8 +114,8 @@ export function Breadcrumb({
                     {item.label}
                   </span>
                 )}
-              </li>
-            </React.Fragment>
+              </span>
+            </li>
           );
         })}
       </ol>

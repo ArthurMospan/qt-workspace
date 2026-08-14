@@ -11,6 +11,10 @@ import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { NO_PRIORITY, ensureSystemPriorities } from '@/lib/utils/priorities.mjs';
 import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
+import {
+  createUkrainianDndAnnouncements,
+  UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
+} from '@/lib/utils/dndAnnouncements.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -311,6 +315,16 @@ export default function AgileBoard({
   const normalizedCardPageSize = Number.isFinite(cardPageSize) && cardPageSize > 0
     ? Math.trunc(cardPageSize)
     : null;
+  const dndAnnouncements = useMemo(() => createUkrainianDndAnnouncements({
+    itemLabel: draggableId => {
+      const issue = boardIssues.find(candidate => candidate.id === draggableId);
+      return issue?.issueKey || issue?.title || 'Завдання';
+    },
+    listLabel: droppableId => {
+      const columnId = String(droppableId || '').split('::').at(-1);
+      return columns.find(column => column.id === columnId)?.label || 'Колонка';
+    },
+  }), [boardIssues, columns]);
   // Which columns are folded, remembered per board *and per grouping*: the two
   // modes have different columns, and one key let a collapsed «У роботі» category
   // fold the unrelated status that happens to share its id.
@@ -448,7 +462,15 @@ export default function AgileBoard({
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext
+      dragHandleUsageInstructions={UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS}
+      onDragStart={dndAnnouncements.onDragStart}
+      onDragUpdate={dndAnnouncements.onDragUpdate}
+      onDragEnd={(result, provided) => {
+        dndAnnouncements.onDragEnd(result, provided);
+        onDragEnd(result);
+      }}
+    >
       <div className="flex flex-col h-full overflow-hidden">
         
         {/* Column Headers (fixed at top only for swimlanes) */}
@@ -491,7 +513,7 @@ export default function AgileBoard({
                       title="Розгорнути колонку"
                     />
                     <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                    <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                    <h2 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h2>
                     <Pill tone="count" size="md" className="mt-4">{colTotalIssues.length}</Pill>
                   </div>
                 );
@@ -508,7 +530,7 @@ export default function AgileBoard({
                       title="Згорнути колонку"
                     />
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                    <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
+                    <h2 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h2>
                     <Pill tone="count" size="md" className="ml-1">{colTotalIssues.length}</Pill>
                   </div>
                   <div className="flex items-center gap-1">
@@ -538,7 +560,7 @@ export default function AgileBoard({
               
               {swimlanes.length > 1 && (
                 <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
-                  <h4 className="ui-type-item-title text-ink">{lane.title}</h4>
+                  <h3 className="ui-type-item-title text-ink">{lane.title}</h3>
                   <Pill tone="count" size="md" className="ml-2">{lane.issues.length}</Pill>
                 </div>
               )}
@@ -587,7 +609,7 @@ export default function AgileBoard({
                               title="Розгорнути колонку"
                             />
                             <span className="w-[8px] h-[8px] rounded-full shrink-0 mb-4" style={{ background: col.color }} />
-                            <h3 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h3>
+                            <h2 className="ui-type-column-title text-ink uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{col.label}</h2>
                             <Pill tone="count" size="md" className="mt-4">{colIssues.length}</Pill>
                           </>
                         )}
@@ -614,7 +636,7 @@ export default function AgileBoard({
                               title="Згорнути колонку"
                             />
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h3 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h3>
+                            <h2 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h2>
                             <Pill tone="count" size="md" className="ml-1">{colIssues.length}</Pill>
                           </div>
                           <div className="flex items-center gap-1">

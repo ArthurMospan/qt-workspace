@@ -34,6 +34,12 @@ function luminance({ r, g, b }) {
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
+export function contrastRatio(first, second) {
+  const firstLum = luminance(typeof first === 'string' ? hexToRgb(first) : first);
+  const secondLum = luminance(typeof second === 'string' ? hexToRgb(second) : second);
+  return (Math.max(firstLum, secondLum) + 0.05) / (Math.min(firstLum, secondLum) + 0.05);
+}
+
 /**
  * Clamp a value between 0 and 255.
  */
@@ -50,6 +56,16 @@ function blendColors(bg, fg, ratio) {
     g: Math.round(bg.g + (fg.g - bg.g) * ratio),
     b: Math.round(bg.b + (fg.b - bg.b) * ratio)
   };
+}
+
+function accessibleBlend(bg, fg, preferredRatio, minimumContrast = 4.5) {
+  let ratio = preferredRatio;
+  let blended = blendColors(bg, fg, ratio);
+  while (ratio < 1 && contrastRatio(bg, blended) < minimumContrast) {
+    ratio = Math.min(1, ratio + 0.01);
+    blended = blendColors(bg, fg, ratio);
+  }
+  return blended;
 }
 
 function rgbToHex({ r, g, b }) {
@@ -69,17 +85,27 @@ export function computeSidebarTheme(bgHex) {
 
   const rgb = hexToRgb(fallback);
   const lum = luminance(rgb);
-  const isDark = lum < 0.4; // Threshold: below 0.4 = dark background
+  let isDark = lum < 0.4; // Preserve the established dark/light preference.
+  let textRgb = isDark ? { r: 255, g: 255, b: 255 } : { r: 31, g: 31, b: 31 };
+
+  // A middle custom colour can make the preferred foreground fail AA. In that
+  // narrow band, choose the stronger black/white candidate before deriving the
+  // quieter tokens; no organization colour can create unreadable navigation.
+  if (contrastRatio(rgb, textRgb) < 4.5) {
+    const black = { r: 0, g: 0, b: 0 };
+    const white = { r: 255, g: 255, b: 255 };
+    textRgb = contrastRatio(rgb, white) >= contrastRatio(rgb, black) ? white : black;
+    isDark = textRgb === white;
+  }
 
   if (isDark) {
     // Dark background → light text
-    const textRgb = { r: 255, g: 255, b: 255 };
     return {
       bg: fallback,
-      text: '#ffffff',
-      muted: rgbToHex(blendColors(rgb, textRgb, 0.50)),
-      mutedProject: rgbToHex(blendColors(rgb, textRgb, 0.38)),
-      mutedHeader: rgbToHex(blendColors(rgb, textRgb, 0.30)),
+      text: rgbToHex(textRgb),
+      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
+      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.38)),
+      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30)),
       hover: 'rgba(255,255,255,0.04)',
       active: 'rgba(255,255,255,0.08)',
       border: 'rgba(255,255,255,0.06)',
@@ -88,13 +114,12 @@ export function computeSidebarTheme(bgHex) {
   }
 
   // Light background → dark text
-  const textRgb = { r: 31, g: 31, b: 31 }; // #1f1f1f
   return {
     bg: fallback,
-    text: '#1f1f1f',
-    muted: rgbToHex(blendColors(rgb, textRgb, 0.50)),
-    mutedProject: rgbToHex(blendColors(rgb, textRgb, 0.38)),
-    mutedHeader: rgbToHex(blendColors(rgb, textRgb, 0.30)),
+    text: rgbToHex(textRgb),
+    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
+    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.38)),
+    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30)),
     hover: 'rgba(0,0,0,0.04)',
     active: 'rgba(0,0,0,0.06)',
     border: 'rgba(31,31,31,0.08)',

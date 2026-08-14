@@ -35,7 +35,7 @@ const SHAPES = {
  * inputs and buttons in the same row; the `underline` shape spans its container
  * as a stepper. Arrow keys move between tabs, as the ARIA tab pattern requires.
  *
- * @param {{id: string, label: string, href?: string, icon?, count?: number, disabled?: boolean, title?: string}[]} props.tabs The tabs; `href` turns one into a link.
+ * @param {{id: string, label: string, href?: string, icon?, count?: number, disabled?: boolean, title?: string, ariaLabel?: string}[]} props.tabs The tabs; `href` turns one into a link.
  * @param {string} props.activeTab Id of the selected tab.
  * @param {(id: string) => void} props.onTabChange Fires with the newly selected tab id.
  * @param {'raised'|'underline'} props.variant Which of the two strips to draw.
@@ -111,6 +111,8 @@ export default function Tabs({
               className={classes}
               role="tab"
               aria-selected={active}
+              aria-label={tab.ariaLabel || tab.title || undefined}
+              title={tab.title}
               tabIndex={active ? 0 : -1}
             >
               {content}
@@ -125,6 +127,7 @@ export default function Tabs({
             onClick={() => !tab.disabled && onTabChange?.(tab.id)}
             disabled={tab.disabled}
             title={tab.title}
+            aria-label={tab.ariaLabel || tab.title || undefined}
             className={classes}
             role="tab"
             aria-selected={active}

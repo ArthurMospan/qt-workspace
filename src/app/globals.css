@@ -15,8 +15,8 @@
   --color-canvas:     #f4f4f5;  /* app canvas / element grey */
   --color-surface:    #ffffff;  /* cards, modals, content bg */
   --color-line:       #e9e9e9;  /* borders */
-  --color-muted:      #9a9a9a;  /* secondary text, placeholders */
-  --color-faint:      #cfcfcf;  /* disabled / very light text */
+  --color-muted:      #666666;  /* secondary text; 5.22:1 on canvas */
+  --color-faint:      #6f6f6f;  /* quiet text; 4.57:1 on canvas */
 }
 
 @layer base {

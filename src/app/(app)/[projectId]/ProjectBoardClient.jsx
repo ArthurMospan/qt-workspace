@@ -365,6 +365,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               <FilterBar>
                 <Select
                   filterRole="sprint"
+                  ariaLabel="Фільтр за спринтом"
                   value={boardSprintFilter}
                   onChange={setBoardSprintFilter}
                   options={[
@@ -376,6 +377,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                 />
                 <Select
                   filterRole="member"
+                  ariaLabel="Фільтр за виконавцем"
                   value={boardAssigneeFilter}
                   onChange={setBoardAssigneeFilter}
                   options={[
@@ -386,6 +388,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                 />
                 <Select
                   filterRole="priority"
+                  ariaLabel="Фільтр за пріоритетом"
                   value={boardPriorityFilter}
                   onChange={setBoardPriorityFilter}
                   options={[
@@ -396,6 +399,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                 />
                 <Select
                   filterRole="type"
+                  ariaLabel="Фільтр за типом завдання"
                   value={boardTypeFilter}
                   onChange={setBoardTypeFilter}
                   options={[
@@ -408,8 +412,8 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               <div className="ml-auto flex items-center gap-2">
                 <Tabs
                   tabs={[
-                    { id: 'kanban', icon: Kanban },
-                    { id: 'list', icon: List },
+                    { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+                    { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
                   ]}
                   activeTab={boardView}
                   onTabChange={setBoardView}

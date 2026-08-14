@@ -323,7 +323,7 @@ function AnalyticsContent({
                       <td className="py-3 pr-4 text-[12px] text-muted">{fmtH(minutes)}</td>
                       <td className="py-3">
                         <Link href={`/${p.id}`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-faint hover:text-ink flex items-center gap-1 text-[11px] font-medium">
+                          className="inline-flex min-h-[24px] items-center gap-1 py-[3px] text-[11px] font-medium text-faint opacity-100 transition-opacity hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           Відкрити <ArrowRight size={11} />
                         </Link>
                       </td>

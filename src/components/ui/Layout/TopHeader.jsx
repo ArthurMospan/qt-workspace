@@ -176,7 +176,10 @@ export default function TopHeader({
         <div className="flex items-center gap-[6px] shrink-0 ml-4 z-50">
           {showNotifications && (
             <button
+              type="button"
               onClick={onBellClick}
+              aria-label={unreadCount > 0 ? `Сповіщення: ${unreadCount} непрочитаних` : 'Сповіщення'}
+              title="Сповіщення"
               className={`relative w-[36px] h-[36px] flex items-center justify-center rounded-[10px] transition-all text-muted hover:bg-canvas hover:text-ink`}
             >
               <Bell size={18} />
@@ -196,7 +199,10 @@ export default function TopHeader({
           )}
 
           <button
+            type="button"
             onClick={onUserClick}
+            aria-label="Відкрити меню користувача"
+            title="Меню користувача"
             className="flex items-center justify-center w-[36px] h-[36px] rounded-[10px] hover:bg-canvas transition-all overflow-hidden"
           >
             {currentUser ? (
