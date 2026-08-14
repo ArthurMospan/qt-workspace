@@ -11,6 +11,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import FilterBar from '@/components/ui/FilterBar';
 import {
+  Button,
   EmptyState,
   LoadingSpinner,
   Segmented,
@@ -37,7 +38,14 @@ export default function MemberAnalyticsPage() {
     [projects],
   );
   const { members = [], loading: membersLoading } = useOrganization();
-  const { issues, timeLogs, loading } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
+  const {
+    issues,
+    timeLogs,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+  } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
   const { events, loading: calendarLoading } = useCalendarEvents();
   const [projectFilters, setProjectFilters] = useState([]);
   const [period, setPeriod] = useState(30);
@@ -133,6 +141,16 @@ export default function MemberAnalyticsPage() {
                   onChange={setPeriod}
                   options={PERIOD_OPTIONS}
                 />
+                {hasMore && (
+                  <Button
+                    style="secondary"
+                    size="sm"
+                    loading={loadingMore}
+                    onClick={loadMore}
+                  >
+                    Довантажити дані
+                  </Button>
+                )}
               </FilterBar>
             )}
           />

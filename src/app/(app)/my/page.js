@@ -63,11 +63,20 @@ export default function MyTasksPage() {
     allIssues,
     issueLinks,
     loading,
+    loadingMore: tasksLoadingMore,
+    hasMore: hasMoreTasks,
+    loadMore: loadMoreTasks,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
   } = useAllMyTasks(uid);
-  const { sprints, loading: sprintsLoading } = useSprints();
+  const {
+    sprints,
+    loading: sprintsLoading,
+    loadingMore: sprintsLoadingMore,
+    hasMore: hasMoreSprints,
+    loadMore: loadMoreSprints,
+  } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
   
@@ -274,6 +283,20 @@ export default function MyTasksPage() {
             </FilterBar>
             
             <div className="flex items-center gap-2 ml-auto">
+              {(hasMoreTasks || hasMoreSprints) && (
+                <Button
+                  onClick={() => {
+                    if (hasMoreTasks) loadMoreTasks();
+                    if (hasMoreSprints) loadMoreSprints();
+                  }}
+                  style="secondary"
+                  size="md"
+                  loading={tasksLoadingMore || sprintsLoadingMore}
+                  title="Завантажити наступну порцію призначених завдань і спринтів"
+                >
+                  Завантажити ще
+                </Button>
+              )}
               <Button
                 onClick={() => setShowSettingsModal(true)}
                 icon={Settings2}

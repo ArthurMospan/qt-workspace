@@ -49,8 +49,26 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   } = useAppContext();
   const resourceContextReady = !resourceOrganizationId || activeOrgId === resourceOrganizationId;
   const scopedProjectId = resourceContextReady ? projectId : null;
-  const { issues, issueLinks, loading: issuesLoading, createIssue, updateIssue, moveIssue } = useIssues(scopedProjectId);
-  const { sprints, loading: sprintsLoading, startSprint, completeSprint } = useSprints(projectId);
+  const {
+    issues,
+    issueLinks,
+    loading: issuesLoading,
+    loadingMore: issuesLoadingMore,
+    hasMore: hasMoreIssues,
+    loadMore: loadMoreIssues,
+    createIssue,
+    updateIssue,
+    moveIssue,
+  } = useIssues(scopedProjectId);
+  const {
+    sprints,
+    loading: sprintsLoading,
+    loadingMore: sprintsLoadingMore,
+    hasMore: hasMoreSprints,
+    loadMore: loadMoreSprints,
+    startSprint,
+    completeSprint,
+  } = useSprints(projectId);
   const loading = issuesLoading || sprintsLoading;
   const router      = useRouter();
   const showToast   = useWorkspaceStore(s => s.showToast);
@@ -290,6 +308,20 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
         onTabChange={setActiveTab}
         actions={
           <>
+            {(hasMoreIssues || hasMoreSprints) && (
+              <Button
+                onClick={() => {
+                  if (hasMoreIssues) loadMoreIssues();
+                  if (hasMoreSprints) loadMoreSprints();
+                }}
+                style="secondary"
+                size="md"
+                loading={issuesLoadingMore || sprintsLoadingMore}
+                title="Завантажити наступну порцію завдань, звʼязків і спринтів"
+              >
+                Завантажити ще
+              </Button>
+            )}
             {isShared && (
               <Link
                 href={`/${projectId}/portal`}

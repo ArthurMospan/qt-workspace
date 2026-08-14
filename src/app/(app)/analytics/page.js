@@ -424,6 +424,9 @@ export default function WorkspaceAnalyticsPage() {
     timeLogs,
     issueLinks,
     loading,
+    loadingMore,
+    hasMore,
+    loadMore,
   } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
 
@@ -613,6 +616,17 @@ export default function WorkspaceAnalyticsPage() {
 
         <PageHeader
           title="Аналітика"
+          actions={hasMore ? (
+            <Button
+              style="secondary"
+              size="md"
+              loading={loadingMore}
+              onClick={loadMore}
+              title="Довантажити наступну порцію даних аналітики"
+            >
+              Довантажити дані
+            </Button>
+          ) : null}
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}

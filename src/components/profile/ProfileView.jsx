@@ -48,7 +48,12 @@ export default function ProfileView({ user, onClose }) {
   }, []);
   const router = useRouter();
   const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
-  const { tasks } = useAllMyTasks(user?.id || user?.uid);
+  const {
+    tasks,
+    loadingMore: tasksLoadingMore,
+    hasMore: hasMoreTasks,
+    loadMore: loadMoreTasks,
+  } = useAllMyTasks(user?.id || user?.uid);
   const { positions = [], closedStatusIds } = useWorkflowConfig();
   const { members: orgMembers } = useOrganization();
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
@@ -350,19 +355,32 @@ export default function ProfileView({ user, onClose }) {
                 <p className="text-[14px] text-muted">Немає активних задач</p>
               </div>
             ) : (
-              allActiveTasks.map(task => {
-                const projectName = projects.find(p => p.id === task.projectId)?.name || 'Проєкт';
-                return (
-                  <TaskRow
-                    key={task.id}
-                    issue={task}
-                    projectId={task.projectId}
-                    projectName={projectName}
-                    showProjectName
-                    onClick={() => handleTaskClick(task)}
-                  />
-                );
-              })
+              <>
+                {allActiveTasks.map(task => {
+                  const projectName = projects.find(p => p.id === task.projectId)?.name || 'Проєкт';
+                  return (
+                    <TaskRow
+                      key={task.id}
+                      issue={task}
+                      projectId={task.projectId}
+                      projectName={projectName}
+                      showProjectName
+                      onClick={() => handleTaskClick(task)}
+                    />
+                  );
+                })}
+                {hasMoreTasks && (
+                  <Button
+                    style="secondary"
+                    size="sm"
+                    loading={tasksLoadingMore}
+                    onClick={loadMoreTasks}
+                    className="mt-2 self-center"
+                  >
+                    Завантажити ще
+                  </Button>
+                )}
+              </>
             )}
           </div>
         )}

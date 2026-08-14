@@ -50,7 +50,7 @@ function hexToRgba(hex, alpha) {
 // `showStatusName` is for a column that is not a status: on «Мої завдання» the
 // columns are the five shared categories, so a card in «У роботі» could be in
 // «Код-ревʼю» or in «QA» and the column no longer says which.
-export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, className = '' }) {
+export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, className = '', cardRef, virtualStyle, dragProvided, dragSnapshot }) {
   const router   = useRouter();
   const { currentUser, projects = [], activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
@@ -147,7 +147,11 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
 
     return (
       <div
-        ref={provided.innerRef}
+        ref={node => {
+          provided.innerRef?.(node);
+          if (typeof cardRef === 'function') cardRef(node);
+          else if (cardRef) cardRef.current = node;
+        }}
         {...provided.draggableProps}
         {...provided.dragHandleProps}
         onDragStart={() => { isDraggingRef.current = true; }}
@@ -157,6 +161,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           : undefined}
         className={cardClassName}
         style={{
+          ...virtualStyle,
           ...provided.draggableProps?.style,
           borderWidth: '1px',
           borderStyle: 'solid',
@@ -370,6 +375,10 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
       </div>
     );
   };
+
+  if (dragProvided) {
+    return renderCardContent(dragProvided, dragSnapshot);
+  }
 
   if (isDraggable) {
     return (

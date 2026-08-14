@@ -3,13 +3,14 @@
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from './IssueCard';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { NO_PRIORITY, ensureSystemPriorities } from '@/lib/utils/priorities.mjs';
+import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
 
 // The drag context cannot render during SSR/hydration, so the first board of a
 // session waits a tick before painting. Every later mount — a tab switch, a
@@ -17,6 +18,159 @@ import { NO_PRIORITY, ensureSystemPriorities } from '@/lib/utils/priorities.mjs'
 // returning null for a paint there reads as the board blinking out and back.
 // One module-level flag means only the very first mount pays that frame.
 let dndReady = false;
+
+const ESTIMATED_CARD_HEIGHT = 178;
+const CARD_GUTTER = 8;
+const VIRTUAL_OVERSCAN = 2;
+
+function MeasuredVirtualCard({ issue, index, top, onMeasure, renderCard }) {
+  const [cardNode, setCardNode] = useState(null);
+
+  useLayoutEffect(() => {
+    if (!cardNode) return undefined;
+    const report = () => onMeasure(
+      issue.id,
+      Math.ceil(cardNode.getBoundingClientRect().height) + CARD_GUTTER,
+    );
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(cardNode);
+    return () => observer.disconnect();
+  }, [cardNode, issue.id, onMeasure]);
+
+  return renderCard(issue, index, {
+    cardRef: setCardNode,
+    virtualStyle: {
+      position: 'absolute',
+      insetInline: 0,
+      top,
+    },
+  });
+}
+
+// @hello-pangea/dnd's virtual mode expects the list to own its scroll height,
+// render an overscanned window and provide a clone for the lifted card. Card
+// heights are measured because task metadata makes them intentionally variable.
+function VirtualDroppableColumn({
+  dropId,
+  issues,
+  isDropDisabled,
+  className,
+  renderCard,
+}) {
+  const scrollRef = useRef(null);
+  const [measuredHeights, setMeasuredHeights] = useState(() => new Map());
+  const [viewport, setViewport] = useState({ scrollTop: 0, height: 600 });
+
+  const measureViewport = useCallback(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    setViewport(current => {
+      const next = { scrollTop: node.scrollTop, height: node.clientHeight || 600 };
+      return current.scrollTop === next.scrollTop && current.height === next.height
+        ? current
+        : next;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    measureViewport();
+    const node = scrollRef.current;
+    if (!node) return undefined;
+    const observer = new ResizeObserver(measureViewport);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [measureViewport]);
+
+  const handleMeasure = useCallback((issueId, height) => {
+    setMeasuredHeights(current => {
+      if (current.get(issueId) === height) return current;
+      const next = new Map(current);
+      next.set(issueId, height);
+      return next;
+    });
+  }, []);
+
+  const layout = useMemo(() => {
+    const rows = [];
+    for (const issue of issues) {
+      const height = measuredHeights.get(issue.id) || ESTIMATED_CARD_HEIGHT;
+      const previous = rows.at(-1);
+      rows.push({
+        top: previous ? previous.top + previous.height : 0,
+        height,
+      });
+    }
+    const last = rows.at(-1);
+    return { rows, totalHeight: last ? last.top + last.height : 0 };
+  }, [issues, measuredHeights]);
+
+  const visibleRange = useMemo(() => {
+    if (issues.length === 0) return { start: 0, end: 0 };
+    const viewportStart = viewport.scrollTop;
+    const viewportEnd = viewportStart + viewport.height;
+    let start = 0;
+    while (
+      start < layout.rows.length
+      && layout.rows[start].top + layout.rows[start].height < viewportStart
+    ) start += 1;
+    let end = start;
+    while (end < layout.rows.length && layout.rows[end].top < viewportEnd) end += 1;
+    return {
+      start: Math.max(0, start - VIRTUAL_OVERSCAN),
+      end: Math.min(issues.length, end + VIRTUAL_OVERSCAN),
+    };
+  }, [issues.length, layout.rows, viewport.height, viewport.scrollTop]);
+
+  return (
+    <Droppable
+      droppableId={dropId}
+      isDropDisabled={isDropDisabled}
+      mode="virtual"
+      renderClone={(provided, snapshot, rubric) => {
+        const issue = issues[rubric.source.index];
+        return issue ? renderCard(issue, undefined, {
+          dragProvided: provided,
+          dragSnapshot: snapshot,
+        }) : null;
+      }}
+    >
+      {(provided, snapshot) => (
+        <div
+          ref={node => {
+            scrollRef.current = node;
+            provided.innerRef(node);
+          }}
+          {...provided.droppableProps}
+          onScroll={measureViewport}
+          className={`${className} ${snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''}`}
+        >
+          <div
+            className="relative shrink-0"
+            style={{
+              height: layout.totalHeight + (snapshot.isUsingPlaceholder ? ESTIMATED_CARD_HEIGHT : 0),
+              minHeight: '4px',
+            }}
+          >
+            {issues.slice(visibleRange.start, visibleRange.end).map((issue, offset) => {
+              const index = visibleRange.start + offset;
+              return (
+                <MeasuredVirtualCard
+                  key={issue.id}
+                  issue={issue}
+                  index={index}
+                  top={layout.rows[index].top}
+                  onMeasure={handleMeasure}
+                  renderCard={renderCard}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </Droppable>
+  );
+}
 
 function InlineAddForm({ onAdd, onCancel }) {
   const [title, setTitle] = useState('');
@@ -73,7 +227,7 @@ export default function AgileBoard({
   showHiddenLane = false,
   issueLinks = [],
   isArchived,
-  cardPageSize = null,
+  cardPageSize = COLUMN_RENDER_PAGE_SIZE,
   compareIssueCards = compareIssues,
 }) {
   const [mounted, setMounted] = useState(dndReady);
@@ -399,6 +553,8 @@ export default function AgileBoard({
                     : colIssues.length;
                   const renderedColIssues = colIssues.slice(0, visibleLimit);
                   const remainingIssueCount = colIssues.length - renderedColIssues.length;
+                  const shouldVirtualize = swimlanes.length === 1
+                    && colIssues.length > COLUMN_RENDER_PAGE_SIZE;
 
                   const isCollapsed = collapsedCols.includes(col.id);
 
@@ -491,59 +647,78 @@ export default function AgileBoard({
                           gap the slot freed by lifting a card was 8px taller
                           than the placeholder replacing it, so the whole column
                           hopped on every lift and again on every drop. */}
-                      <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
-                              snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
-                            }`}
-                          >
-                            {renderedColIssues.map((issue, i) => (
-                              <IssueCard
-                                key={issue.id}
-                                className="mb-[8px]"
-                                issue={issue}
-                                issues={issues}
-                                allIssues={contextIssues}
-                                members={members}
-                                labels={labels}
-                                index={i}
-                                projectId={issue.projectId || projectId}
-                                projectName={showProjectName
-                                  ? projects.find(item => item.id === issue.projectId)?.name || project?.name
-                                  : project?.name}
-                                showProjectName={showProjectName}
-                                sprints={sprints}
-                                isTimerActive={activeTimerIssueId === issue.id}
-                                issueLinks={issueLinks}
-                                isArchived={isArchived}
-                                showStatusName={byCategory && (
-                                  col.isHiddenContainer || multiStatusColumnIds.has(col.id)
+                      {(() => {
+                        const renderIssueCard = (issue, index, virtualProps = {}) => (
+                          <IssueCard
+                            key={issue.id}
+                            className="mb-[8px]"
+                            issue={issue}
+                            issues={issues}
+                            allIssues={contextIssues}
+                            members={members}
+                            labels={labels}
+                            index={index}
+                            projectId={issue.projectId || projectId}
+                            projectName={showProjectName
+                              ? projects.find(item => item.id === issue.projectId)?.name || project?.name
+                              : project?.name}
+                            showProjectName={showProjectName}
+                            sprints={sprints}
+                            isTimerActive={activeTimerIssueId === issue.id}
+                            issueLinks={issueLinks}
+                            isArchived={isArchived}
+                            showStatusName={byCategory && (
+                              col.isHiddenContainer || multiStatusColumnIds.has(col.id)
+                            )}
+                            {...virtualProps}
+                          />
+                        );
+
+                        if (shouldVirtualize) {
+                          return (
+                            <VirtualDroppableColumn
+                              dropId={dropId}
+                              issues={colIssues}
+                              isDropDisabled={col.isHiddenContainer || isArchived}
+                              className="flex-1 p-[8px] transition-colors hide-scrollbar rounded-b-[16px] overflow-y-auto"
+                              renderCard={renderIssueCard}
+                            />
+                          );
+                        }
+
+                        return (
+                          <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className={`flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
+                                  snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
+                                }`}
+                              >
+                                {renderedColIssues.map((issue, index) => renderIssueCard(issue, index))}
+                                {provided.placeholder}
+                                {remainingIssueCount > 0 && (
+                                  <div className="shrink-0 pb-[8px]">
+                                    <Button
+                                      onClick={() => setVisibleCardLimits(current => ({
+                                        ...current,
+                                        [dropId]: visibleLimit + normalizedCardPageSize,
+                                      }))}
+                                      style="ghost"
+                                      size="sm"
+                                      className="w-full"
+                                    >
+                                      Показати ще {Math.min(normalizedCardPageSize, remainingIssueCount)} · лишилося {remainingIssueCount}
+                                    </Button>
+                                  </div>
                                 )}
-                              />
-                            ))}
-                            {provided.placeholder}
-                            {remainingIssueCount > 0 && (
-                              <div className="shrink-0 pb-[8px]">
-                                <Button
-                                  onClick={() => setVisibleCardLimits(current => ({
-                                    ...current,
-                                    [dropId]: visibleLimit + normalizedCardPageSize,
-                                  }))}
-                                  style="ghost"
-                                  size="sm"
-                                  className="w-full"
-                                >
-                                  Показати ще {Math.min(normalizedCardPageSize, remainingIssueCount)} · лишилося {remainingIssueCount}
-                                </Button>
+                                <div className="shrink-0 h-[4px]" />
                               </div>
                             )}
-                            <div className="shrink-0 h-[4px]" />
-                          </div>
-                        )}
-                      </Droppable>
+                          </Droppable>
+                        );
+                      })()}
                     </div>
                   );
                 })}

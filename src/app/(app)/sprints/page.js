@@ -33,6 +33,7 @@ import { db } from '@/lib/firebase';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -231,14 +232,33 @@ export default function GlobalSprintsPage() {
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
+  const [visibleIssueLimits, setVisibleIssueLimits] = useState({});
 
   const isManager = can(orgRole, 'manage:sprints');
   const projectIds = (projects || []).map(p => p.id);
-  const { issues: snapshotIssues, issueLinks, loading: issuesLoading } = useWorkspaceAnalytics(projectIds);
+  const {
+    issues: snapshotIssues,
+    issueLinks,
+    loading: issuesLoading,
+    loadingMore: issuesLoadingMore,
+    hasMore: hasMoreIssues,
+    loadMore: loadMoreIssues,
+  } = useWorkspaceAnalytics(projectIds, { includeTimeLogs: false });
   // Sprint reassignment is painted locally first; without it the dropped card
   // animates back into its old sprint and only then hops to the new one.
   const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues);
-  const { sprints, loading: sprintsLoading, createSprint, updateSprint, deleteSprint, startSprint, completeSprint } = useSprints();
+  const {
+    sprints,
+    loading: sprintsLoading,
+    loadingMore: sprintsLoadingMore,
+    hasMore: hasMoreSprints,
+    loadMore: loadMoreSprints,
+    createSprint,
+    updateSprint,
+    deleteSprint,
+    startSprint,
+    completeSprint,
+  } = useSprints();
 
   const loading = issuesLoading || sprintsLoading;
 
@@ -371,6 +391,9 @@ export default function GlobalSprintsPage() {
 
   const renderIssueTable = (issueList, droppableId, isBacklogCol = false) => {
     const sorted = getSortedIssues(issueList);
+    const visibleLimit = visibleIssueLimits[droppableId] || COLUMN_RENDER_PAGE_SIZE;
+    const renderedIssues = sorted.slice(0, visibleLimit);
+    const remainingIssueCount = sorted.length - renderedIssues.length;
     return (
       <Droppable droppableId={droppableId}>
         {(provided, snapshot) => (
@@ -379,7 +402,7 @@ export default function GlobalSprintsPage() {
             ref={provided.innerRef} 
             {...provided.droppableProps}
           >
-            {sorted.map((issue, index) => {
+            {renderedIssues.map((issue, index) => {
               const pName = projects.find(p => p.id === issue.projectId)?.name || '';
               if (isBacklogCol) {
                 return (
@@ -433,6 +456,20 @@ export default function GlobalSprintsPage() {
               </div>
             )}
             {provided.placeholder}
+            {remainingIssueCount > 0 && (
+              <Button
+                type="button"
+                style="ghost"
+                size="sm"
+                className="mx-2 mt-2"
+                onClick={() => setVisibleIssueLimits(current => ({
+                  ...current,
+                  [droppableId]: visibleLimit + COLUMN_RENDER_PAGE_SIZE,
+                }))}
+              >
+                Показати ще {Math.min(COLUMN_RENDER_PAGE_SIZE, remainingIssueCount)} · лишилося {remainingIssueCount}
+              </Button>
+            )}
           </div>
         )}
       </Droppable>
@@ -447,6 +484,20 @@ export default function GlobalSprintsPage() {
         title="Спринти"
         actions={
           <>
+            {(hasMoreIssues || hasMoreSprints) && (
+              <Button
+                style="secondary"
+                size="md"
+                loading={issuesLoadingMore || sprintsLoadingMore}
+                onClick={() => {
+                  if (hasMoreIssues) loadMoreIssues();
+                  if (hasMoreSprints) loadMoreSprints();
+                }}
+                title="Завантажити наступну порцію завдань і спринтів"
+              >
+                Завантажити ще
+              </Button>
+            )}
             {isManager && (
               <Button
                 style="primary"

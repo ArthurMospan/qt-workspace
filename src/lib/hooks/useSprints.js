@@ -2,11 +2,12 @@
 
 // src/lib/hooks/useSprints.js — CRUD for sprints
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
+import { SPRINT_QUERY_PAGE_SIZE, nextQueryLimit } from '@/lib/utils/queryPagination.mjs';
 export function useSprints() {
   const {
     activeOrgId, currentUser
@@ -17,16 +18,39 @@ export function useSprints() {
   const currentUserId = currentUser?.id || currentUser?.uid || null;
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const queryTarget = `${activeOrgId || ''}/${currentUserId || ''}`;
+  const [pagination, setPagination] = useState({ target: '', limit: SPRINT_QUERY_PAGE_SIZE });
+  const queryLimit = pagination.target === queryTarget
+    ? pagination.limit
+    : SPRINT_QUERY_PAGE_SIZE;
+  const loadMore = useCallback(() => {
+    if (!activeOrgId || loadingMore) return;
+    setLoadingMore(true);
+    setPagination(current => ({
+      target: queryTarget,
+      limit: nextQueryLimit(
+        current.target === queryTarget ? current.limit : SPRINT_QUERY_PAGE_SIZE,
+        SPRINT_QUERY_PAGE_SIZE,
+      ),
+    }));
+  }, [activeOrgId, loadingMore, queryTarget]);
   useEffect(() => {
     if (!activeOrgId || !currentUserId) {
       queueMicrotask(() => setLoading(false));
       return;
     }
-    const q = query(collection(db, 'sprints'), where('organizationId', '==', activeOrgId));
+    const q = query(
+      collection(db, 'sprints'),
+      where('organizationId', '==', activeOrgId),
+      orderBy('createdAt', 'desc'),
+      limit(queryLimit + 1),
+    );
     const unsub = onSnapshot(q, {
       serverTimestamps: 'estimate'
     }, snap => {
-      const docs = snap.docs.map(d => ({
+      const docs = snap.docs.slice(0, queryLimit).map(d => ({
         id: d.id,
         ...d.data()
       }));
@@ -37,13 +61,16 @@ export function useSprints() {
         return aTime - bTime;
       });
       setSprints(docs);
+      setHasMore(snap.docs.length > queryLimit);
       setLoading(false);
+      setLoadingMore(false);
     }, err => {
       reportLoadError('[useSprints]', err);
       setLoading(false);
+      setLoadingMore(false);
     });
     return () => unsub();
-  }, [activeOrgId, currentUserId]);
+  }, [activeOrgId, currentUserId, queryLimit]);
   const createSprint = useCallback(async data => {
     if (!activeOrgId) return;
 
@@ -134,6 +161,9 @@ export function useSprints() {
   return {
     sprints,
     loading,
+    loadingMore,
+    hasMore,
+    loadMore,
     createSprint,
     updateSprint,
     deleteSprint,

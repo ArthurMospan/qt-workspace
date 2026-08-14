@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -19,6 +19,7 @@ import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { ISSUE_QUERY_PAGE_SIZE, nextQueryLimit } from '@/lib/utils/queryPagination.mjs';
 
 // Stable string form of an audited field, so array values compare by content
 // rather than by identity. Order-insensitive for arrays: reordering assignees
@@ -65,6 +66,10 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   const [linksReady, setLinksReady] = useState(!includeLinks);
   const [linksError, setLinksError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [issueHasMore, setIssueHasMore] = useState(false);
+  const [linkHasMore, setLinkHasMore] = useState(false);
+  const [pagination, setPagination] = useState({ target: '', limit: ISSUE_QUERY_PAGE_SIZE });
   const [error, setError] = useState(null);
   // A drag & drop is painted from this overlay until Firestore echoes it back.
   const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues, compareIssues);
@@ -73,6 +78,21 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
   // hands back a fresh object whenever anything on the user document changes,
   // and that identity churn used to tear down and rebuild this subscription.
   const currentUserId = currentUser?.uid || currentUser?.id || null;
+  const queryTarget = `${activeOrgId || ''}/${projectId || ''}`;
+  const queryLimit = pagination.target === queryTarget
+    ? pagination.limit
+    : ISSUE_QUERY_PAGE_SIZE;
+  const loadMore = useCallback(() => {
+    if (!projectId || !activeOrgId || loadingMore) return;
+    setLoadingMore(true);
+    setPagination(current => ({
+      target: queryTarget,
+      limit: nextQueryLimit(
+        current.target === queryTarget ? current.limit : ISSUE_QUERY_PAGE_SIZE,
+        ISSUE_QUERY_PAGE_SIZE,
+      ),
+    }));
+  }, [activeOrgId, loadingMore, projectId, queryTarget]);
   // Which query the rows on screen belong to. Re-running the effect for the
   // same project must not blank them — the board renders a spinner while
   // `loading` is true, so clearing on every re-subscribe is exactly the
@@ -102,6 +122,9 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         setIssueLinks([]);
         setLinksReady(!includeLinks);
         setLinksError(null);
+        setIssueHasMore(false);
+        setLinkHasMore(false);
+        setLoadingMore(false);
         setError(null);
         setLoading(Boolean(projectId) && stillResolving);
       });
@@ -120,7 +143,18 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     // No orderBy — sorted client-side to avoid composite index
-    const q = query(collection(db, 'issues'), where('organizationId', '==', activeOrgId), where('projectId', '==', projectId));
+    const readyPageStreams = new Set();
+    const expectedPageStreams = includeLinks ? 2 : 1;
+    const markPageReady = key => {
+      readyPageStreams.add(key);
+      if (readyPageStreams.size >= expectedPageStreams) setLoadingMore(false);
+    };
+    const q = query(
+      collection(db, 'issues'),
+      where('organizationId', '==', activeOrgId),
+      where('projectId', '==', projectId),
+      limit(queryLimit + 1),
+    );
     const unsub = onSnapshot(q, {
       // Needed so an empty project still leaves the loading state once the
       // server confirms it really is empty (a metadata-only transition).
@@ -143,7 +177,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         setLoading(false);
         return;
       }
-      const docs = snap.docs.map(d => ({
+      const docs = snap.docs.slice(0, queryLimit).map(d => ({
         id: d.id,
         ...d.data({ serverTimestamps: 'estimate' })
       }));
@@ -151,12 +185,16 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       docs.sort(compareIssues);
       deliveredRef.current = true;
       setSnapshotIssues(docs);
+      setIssueHasMore(snap.docs.length > queryLimit);
       setError(null);
       setLoading(false);
+      markPageReady('issues');
     }, err => {
       reportLoadError('[useIssues]', err);
+      setIssueHasMore(false);
       setError(err);
       setLoading(false);
+      markPageReady('issues');
     });
 
     let unsubLinks = () => {};
@@ -169,20 +207,26 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         collection(db, 'issueLinks'),
         where('organizationId', '==', activeOrgId),
         where('projectId', '==', projectId),
+        limit(queryLimit + 1),
       );
       unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
-        setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setIssueLinks(snap.docs.slice(0, queryLimit).map(d => ({ id: d.id, ...d.data() })));
+        setLinkHasMore(snap.docs.length > queryLimit);
         setLinksReady(true);
         setLinksError(null);
+        markPageReady('links');
       }, err => {
         reportLoadError('[useIssues] links', err);
         setLinksReady(false);
         setLinksError(err);
+        markPageReady('links');
       });
+    } else {
+      queueMicrotask(() => setLinkHasMore(false));
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading]);
+  }, [projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading, queryLimit]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit
@@ -479,6 +523,9 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     linksLoading: includeLinks && !linksReady && !linksError,
     linksError,
     loading,
+    loadingMore,
+    hasMore: issueHasMore || linkHasMore,
+    loadMore,
     error,
     createIssue,
     updateIssue,
