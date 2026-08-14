@@ -7,7 +7,8 @@ import Tag from '@/components/ui/DataDisplay/Tag';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { parseDueDate } from '@/lib/utils/date';
+import { isDueDateOverdue, parseDueDate } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useAppContext } from '@/lib/context/AppContext';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
 import Pill from '@/components/ui/DataDisplay/Pill';
@@ -20,10 +21,10 @@ import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 
-function fmtDate(raw) {
+function fmtDate(raw, timeZone) {
   if (!raw) return null;
   const d = raw?.toDate ? raw.toDate() : new Date(raw);
-  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', timeZone });
 }
 
 /**
@@ -60,7 +61,8 @@ export default function TaskRow({
   onClick,
 }) {
   const router = useRouter();
-  const { currentUser, projects = [] } = useAppContext();
+  const { currentUser, projects = [], activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const project = projects.find(candidate => candidate.id === projectId);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
@@ -87,8 +89,10 @@ export default function TaskRow({
     .map(uid => members.find(m => (m.id || m.uid) === uid))
     .filter(Boolean);
 
-  const due = parseDueDate(task.dueDate);
-  const isOverdue = due && due < new Date() && !closedStatusIds.includes(task.columnId) && !closedStatusIds.includes(task.status);
+  const due = parseDueDate(task.dueDate, { timeZone });
+  const isOverdue = isDueDateOverdue(task.dueDate, { timeZone })
+    && !closedStatusIds.includes(task.columnId)
+    && !closedStatusIds.includes(task.status);
 
   const contextIssues = allIssues || issues;
   const parentIssueId = existingParentIssueId(task);
@@ -162,7 +166,7 @@ export default function TaskRow({
                 isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
               }`}>
                 <CalendarIcon size={10} strokeWidth={2} className="shrink-0" />
-                <span>{fmtDate(due)}</span>
+                <span>{fmtDate(due, timeZone)}</span>
                 {isOverdue && <span className="font-bold uppercase text-[8px] ml-0.5">• Прострочено</span>}
               </div>
             )}

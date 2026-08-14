@@ -1,6 +1,8 @@
 'use client';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const DEFAULT_LOCALIZATION = {
   dateFormat: 'DD.MM.YYYY',
   firstDayOfWeek: 'Monday',
@@ -20,14 +22,41 @@ export function useLocalization() {
   } = settings;
 
   // Format Date object or YYYY-MM-DD string to localized format
-  const formatLocalDate = (date) => {
+  const formatLocalDate = (date, { timeZone: timeZoneOverride = timezone } = {}) => {
     if (!date) return '';
+    const dateOnly = typeof date === 'string' ? DATE_ONLY.exec(date) : null;
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly;
+      switch (dateFormat) {
+        case 'DD.MM.YYYY': return `${day}.${month}.${year}`;
+        case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+        case 'YYYY-MM-DD':
+        default: return `${year}-${month}-${day}`;
+      }
+    }
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '';
 
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    let year = String(d.getFullYear());
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    if (timeZoneOverride) {
+      try {
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+          timeZone: timeZoneOverride,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).formatToParts(d)
+          .filter(part => part.type !== 'literal')
+          .map(part => [part.type, part.value]));
+        year = parts.year;
+        month = parts.month;
+        day = parts.day;
+      } catch {
+        // Invalid legacy preference: preserve the browser-local fallback.
+      }
+    }
 
     switch (dateFormat) {
       case 'DD.MM.YYYY':

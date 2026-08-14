@@ -21,6 +21,8 @@ import { isCalendarEventOnDay } from '@/lib/utils/calendarEventDates.mjs';
 import { MINUTES_PER_DAY, layoutDayEvents } from '@/lib/utils/calendarLayout.mjs';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
@@ -91,6 +93,14 @@ function dateKey(value) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
+function deadlineDayKey(deadline, timeZone) {
+  return toLocalDateInput(deadline?.dueDate, { timeZone });
+}
+
+function deadlineLocalDate(deadline, timeZone) {
+  return fromDateInput(deadlineDayKey(deadline, timeZone));
+}
+
 function shortTime(value) {
   return new Date(value).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 }
@@ -158,13 +168,15 @@ function DeadlineCard({ deadline, compact = false, onClick }) {
   );
 }
 
-function AllDayRow({ days, events, deadlines, onEventClick, onDeadlineClick }) {
+function AllDayRow({ days, events, deadlines, timeZone, onEventClick, onDeadlineClick }) {
   return (
     <div className="grid border-b border-line bg-[#fafafa]" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
       <div className="px-2 py-2 text-[10px] font-semibold text-muted border-r border-line">Весь день</div>
       {days.map(day => {
         const dayEvents = events.filter(event => event.allDay && isCalendarEventOnDay(event, day));
-        const dayDeadlines = deadlines.filter(deadline => sameDay(deadline.dueDate, day));
+        const dayDeadlines = deadlines.filter(deadline => (
+          deadlineDayKey(deadline, timeZone) === toLocalDateInput(day)
+        ));
         return (
           <div key={dateKey(day)} className="min-h-[48px] p-[5px] border-r last:border-r-0 border-line space-y-[4px]">
             {dayEvents.map(event => <EventCard key={event.id} event={event} compact onClick={onEventClick} />)}
@@ -176,7 +188,7 @@ function AllDayRow({ days, events, deadlines, onEventClick, onDeadlineClick }) {
   );
 }
 
-function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlineClick, onCreate }) {
+function ScheduleView({ anchor, view, events, deadlines, timeZone, onEventClick, onDeadlineClick, onCreate }) {
   const days = view === 'day'
     ? [startOfDay(anchor)]
     : Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(anchor), index));
@@ -215,6 +227,7 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
         days={days}
         events={events}
         deadlines={deadlines}
+        timeZone={timeZone}
         onEventClick={onEventClick}
         onDeadlineClick={onDeadlineClick}
       />
@@ -281,7 +294,7 @@ function ScheduleView({ anchor, view, events, deadlines, onEventClick, onDeadlin
   );
 }
 
-function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, onCreate, onSelectDay }) {
+function MonthView({ anchor, events, deadlines, timeZone, onEventClick, onDeadlineClick, onCreate, onSelectDay }) {
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const gridStart = startOfWeek(monthStart);
   const days = Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
@@ -296,10 +309,16 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
       <div className="grid grid-cols-7">
         {days.map(day => {
           const dayEvents = events.filter(event => isCalendarEventOnDay(event, day));
-          const dayDeadlines = deadlines.filter(deadline => sameDay(deadline.dueDate, day));
+          const dayDeadlines = deadlines.filter(deadline => (
+            deadlineDayKey(deadline, timeZone) === toLocalDateInput(day)
+          ));
           const items = [
             ...dayEvents.map(item => ({ kind: 'event', item, time: new Date(item.startAt).getTime() })),
-            ...dayDeadlines.map(item => ({ kind: 'deadline', item, time: new Date(item.dueDate).getTime() })),
+            ...dayDeadlines.map(item => ({
+              kind: 'deadline',
+              item,
+              time: deadlineLocalDate(item, timeZone)?.getTime() || 0,
+            })),
           ].sort((a, b) => a.time - b.time);
           return (
             <div
@@ -348,7 +367,7 @@ function MonthView({ anchor, events, deadlines, onEventClick, onDeadlineClick, o
   );
 }
 
-function AgendaView({ anchor, events, deadlines, onEventClick, onDeadlineClick, onCreate }) {
+function AgendaView({ anchor, events, deadlines, timeZone, onEventClick, onDeadlineClick, onCreate }) {
   const start = startOfDay(anchor);
   const end = addDays(start, 60);
   const grouped = new Map();
@@ -362,8 +381,10 @@ function AgendaView({ anchor, events, deadlines, onEventClick, onDeadlineClick, 
     if (startDate >= start && startDate < end) addItem(startDate, { kind: 'event', item: event, time: startDate.getTime() });
   });
   deadlines.forEach(deadline => {
-    const dueDate = new Date(deadline.dueDate);
-    if (dueDate >= start && dueDate < end) addItem(dueDate, { kind: 'deadline', item: deadline, time: dueDate.getTime() });
+    const dueDate = deadlineLocalDate(deadline, timeZone);
+    if (dueDate && dueDate >= start && dueDate < end) {
+      addItem(dueDate, { kind: 'deadline', item: deadline, time: dueDate.getTime() });
+    }
   });
   const groups = [...grouped.values()].sort((a, b) => a.date - b.date);
 
@@ -412,7 +433,8 @@ function AgendaView({ anchor, events, deadlines, onEventClick, onDeadlineClick, 
 
 export default function CalendarPage() {
   const router = useRouter();
-  const { currentUser, projects } = useAppContext();
+  const { currentUser, projects, activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const { members } = useOrganization();
   const {
     events,
@@ -579,6 +601,7 @@ export default function CalendarPage() {
                   anchor={anchor}
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
+                  timeZone={timeZone}
                   onEventClick={openEvent}
                   onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}
@@ -589,6 +612,7 @@ export default function CalendarPage() {
                   anchor={anchor}
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
+                  timeZone={timeZone}
                   onEventClick={openEvent}
                   onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}
@@ -599,6 +623,7 @@ export default function CalendarPage() {
                   view={view}
                   events={filteredEvents}
                   deadlines={filteredDeadlines}
+                  timeZone={timeZone}
                   onEventClick={openEvent}
                   onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
                   onCreate={openCreate}

@@ -31,7 +31,13 @@ import TitleInput from '@/components/ui/Forms/TitleInput';
 import TextAction from '@/components/ui/TextAction';
 import { getMatFileUrl } from '@/lib/utils/issueAttachments.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
-import { fromDateInput, parseDueDate, toLocalDateInput } from '@/lib/utils/date';
+import {
+  fromDateInput,
+  isDueDateOverdue,
+  parseDueDate,
+  toLocalDateInput,
+} from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
@@ -224,6 +230,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const pathname = usePathname();
   const { formatDate } = useLocalization();
   const { projects, currentUser, activeOrg, activeOrgId, orgRole } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const {
     issues,
     loading: issuesLoading,
@@ -485,9 +492,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const statusCfg   = STATUSES.find(s => s.id === issue.columnId)                             || STATUSES[0];
   const TypeIcon    = typeCfg.icon;
 
-  const due       = parseDueDate(issue.dueDate);
-  const isOverdue = due && due < new Date() && !closedStatusIds.includes(issue.columnId || issue.status);
-  const dueStr    = due ? formatDate(due) : null;
+  const due       = parseDueDate(issue.dueDate, { timeZone });
+  const isOverdue = isDueDateOverdue(issue.dueDate, { timeZone })
+    && !closedStatusIds.includes(issue.columnId || issue.status);
+  const dueStr    = due ? formatDate(due, { timeZone }) : null;
   const {
     attributeItemClass,
     attributeLabelClass,
@@ -558,7 +566,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       type:            issue.type     || 'task',
       priority:        issue.priority || 'medium',
       estimateMinutes: issue.estimateMinutes || 0,
-      dueDate:         toLocalDateInput(due),
+      dueDate:         toLocalDateInput(due, { timeZone }),
       description:     issue.description || '',
     });
     setIsEditing(true);
@@ -574,10 +582,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     if (draft.estimateMinutes !== issue.estimateMinutes)  patch.estimateMinutes = draft.estimateMinutes;
     if (draft.description     !== (issue.description||''))patch.description = draft.description;
     // dueDate
-    const originalDueInput = toLocalDateInput(due);
+    const originalDueInput = toLocalDateInput(due, { timeZone });
     if ((draft.dueDate || '') !== originalDueInput) {
       patch.dueDate = draft.dueDate
-        ? fromDateInput(draft.dueDate, { endOfDay: true })
+        ? fromDateInput(draft.dueDate, { endOfDay: true, timeZone })
         : null;
     }
     if (Object.keys(patch).length > 0) {
@@ -1179,7 +1187,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                       onChange={(val) => {
                         if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
-                        else update({ dueDate: val ? fromDateInput(val, { endOfDay: true }) : null });
+                        else update({
+                          dueDate: val
+                            ? fromDateInput(val, { endOfDay: true, timeZone })
+                            : null,
+                        });
                       }}
                       placeholder="Без дедлайну"
                     />
@@ -1258,7 +1270,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                             value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                             onChange={val => {
                               if (isEditing) setDraft(current => ({ ...current, dueDate: val }));
-                              else update({ dueDate: val ? fromDateInput(val, { endOfDay: true }) : null });
+                              else update({
+                                dueDate: val
+                                  ? fromDateInput(val, { endOfDay: true, timeZone })
+                                  : null,
+                              });
                             }}
                             placeholder="Без дедлайну"
                           />

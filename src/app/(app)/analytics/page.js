@@ -25,7 +25,8 @@ import {
 } from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
-import { parseDueDate } from '@/lib/utils/date';
+import { isDueDateOverdue } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventOccurrenceKey } from '@/lib/utils/calendarEventNavigation.mjs';
@@ -81,6 +82,8 @@ function AnalyticsContent({
   period,
   onTabChange,
 }) {
+  const { activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const { statuses, closedStatusIds, deliveredStatusIds } = useWorkflowConfig();
   // Closed answers "is there work left" — overdue, blockers, open counts.
   // Delivered answers "was anything produced" — completion, velocity. Counting a
@@ -149,10 +152,10 @@ function AnalyticsContent({
       ).length > 0
     )).length;
 
-    const overdue = issues.filter(i => {
-      const due = parseDueDate(i.dueDate);
-      return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
-    });
+    const overdue = issues.filter(i => (
+      isDueDateOverdue(i.dueDate, { now, timeZone })
+      && !closedSet.has(i.columnId || i.status)
+    ));
 
     const recentDone = issues.filter(i => {
       if (!deliveredSet.has(i.columnId || i.status)) return false;
@@ -167,10 +170,10 @@ function AnalyticsContent({
       const pIssues  = issues.filter(i => i.projectId === p.id);
       const pDone    = pIssues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
       const pOpen    = pIssues.filter(i => !closedSet.has(i.columnId || i.status)).length;
-      const pOverdue = pIssues.filter(i => {
-        const due = parseDueDate(i.dueDate);
-        return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
-      }).length;
+      const pOverdue = pIssues.filter(i => (
+        isDueDateOverdue(i.dueDate, { now, timeZone })
+        && !closedSet.has(i.columnId || i.status)
+      )).length;
       const pMin = sumRawTimeLogMinutes(periodLogs.filter(l => l.projectId === p.id));
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
@@ -198,6 +201,7 @@ function AnalyticsContent({
     issueReferenceIssues,
     issues,
     now,
+    timeZone,
     period,
     projects,
     statuses,

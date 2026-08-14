@@ -7,7 +7,8 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Lock } from 'lucide-react';
 import { CalendarIcon, TaskIcon } from '@/lib/design/icons';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { parseDueDate } from '@/lib/utils/date';
+import { isDueDateOverdue, parseDueDate } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import Tag from '@/components/ui/DataDisplay/Tag';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -51,7 +52,8 @@ function hexToRgba(hex, alpha) {
 // «Код-ревʼю» or in «QA» and the column no longer says which.
 export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, className = '' }) {
   const router   = useRouter();
-  const { currentUser, projects = [] } = useAppContext();
+  const { currentUser, projects = [], activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const project = projects.find(candidate => candidate.id === projectId);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issue.id] || 0);
@@ -88,8 +90,9 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     })
     .filter(Boolean);
 
-  const due       = parseDueDate(issue.dueDate);
-  const isOverdue = due && due < new Date() && !closedStatusIds.includes(issue.columnId || issue.status);
+  const due       = parseDueDate(issue.dueDate, { timeZone });
+  const isOverdue = isDueDateOverdue(issue.dueDate, { timeZone })
+    && !closedStatusIds.includes(issue.columnId || issue.status);
 
   const contextIssues = allIssues || issues;
   const parentIssueId = existingParentIssueId(issue);
@@ -315,7 +318,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
             }`}>
               <CalendarIcon size={11} strokeWidth={1.8} className="shrink-0" />
-              <span>{formatDate(due)}</span>
+              <span>{formatDate(due, { timeZone })}</span>
               {isOverdue && <span className="font-semibold">• Прострочено</span>}
             </div>
           )}

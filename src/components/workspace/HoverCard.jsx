@@ -13,6 +13,9 @@ import {
   normalizeIssuePrefix,
   projectIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
+import { toLocalDateInput } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',
@@ -42,7 +45,9 @@ function findMember(members, value) {
 }
 
 export default function HoverCard({ type, value, children, members }) {
-  const { activeOrgId, currentUser, projects = [] } = useAppContext();
+  const { activeOrgId, activeOrg, currentUser, projects = [] } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
+  const { formatDate } = useLocalization();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -227,7 +232,7 @@ export default function HoverCard({ type, value, children, members }) {
                   {data.dueDate && (
                     <div className="flex items-center gap-1 text-[11px] text-muted">
                       <Clock size={12} />
-                      {data.dueDate.toDate ? data.dueDate.toDate().toLocaleDateString() : new Date(data.dueDate).toLocaleDateString()}
+                      {formatDate(toLocalDateInput(data.dueDate, { timeZone }))}
                     </div>
                   )}
                 </div>

@@ -32,7 +32,9 @@ import {
   getCompletedAtMillis,
   useWorkflowConfig,
 } from '@/lib/hooks/useWorkflowConfig';
-import { parseDueDate } from '@/lib/utils/date';
+import { isDueDateOverdue } from '@/lib/utils/date';
+import { useAppContext } from '@/lib/context/AppContext';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import {
   effectiveTimeLogDate,
   effectiveTimeLogMillis,
@@ -610,6 +612,8 @@ export default function WorkloadTab({
   // controls but has no header row of its own to put them in.
   detailFilters,
 }) {
+  const { activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const [now, setNow] = useState(() => Date.now());
   const { closedStatusIds, deliveredStatusIds, positions = [], statuses } = useWorkflowConfig();
   // What is left to do reads the closed set; what a person actually finished in
@@ -639,10 +643,9 @@ export default function WorkloadTab({
       const doneItems = memberIssues
         .filter(issue => deliveredSet.has(issue.columnId || issue.status) && getCompletedAtMillis(issue) >= periodAgo)
         .sort((a, b) => getCompletedAtMillis(b) - getCompletedAtMillis(a));
-      const overdueItems = openItems.filter(issue => {
-        const due = parseDueDate(issue.dueDate);
-        return due && due.getTime() < now;
-      });
+      const overdueItems = openItems.filter(issue => (
+        isDueDateOverdue(issue.dueDate, { now, timeZone })
+      ));
       const inProgressItems = openItems.filter(issue => inProgressSet.has(issue.columnId || issue.status));
       const allLogs = timeLogs
         .filter(log => log.userId === uid)
@@ -673,7 +676,7 @@ export default function WorkloadTab({
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [actionableIssues, closedSet, deliveredSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs]);
+  }, [actionableIssues, closedSet, deliveredSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs, timeZone]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)
@@ -690,12 +693,11 @@ export default function WorkloadTab({
         && getCompletedAtMillis(issue) >= periodAgo
       )).length,
       open: openItems.length,
-      overdue: openItems.filter(issue => {
-        const due = parseDueDate(issue.dueDate);
-        return due && due.getTime() < now;
-      }).length,
+      overdue: openItems.filter(issue => (
+        isDueDateOverdue(issue.dueDate, { now, timeZone })
+      )).length,
     };
-  }, [actionableIssues, closedSet, deliveredSet, now, period, timeLogs]);
+  }, [actionableIssues, closedSet, deliveredSet, now, period, timeLogs, timeZone]);
 
   if (members.length === 0) {
     return (

@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { ArrowRight, Check } from 'lucide-react';
+import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -74,6 +75,9 @@ function OnboardingPageContent() {
     setSaving(true);
     const uid = currentUser?.id || currentUser?.uid;
     const orgId = (isNewOrg || !activeOrgId) ? `org_${uid?.slice(0, 8)}_${Date.now()}` : activeOrgId;
+    const detectedTimeZone = normalizeTimeZone(
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
     
     try {
       // Upsert the org doc
@@ -85,6 +89,7 @@ function OnboardingPageContent() {
         memberUids: [uid],
         members: [{ uid, role: 'owner', email: currentUser?.email || '' }],
         plan: selectedPlan,
+        timezone: activeOrg?.timezone || detectedTimeZone,
         limits: selectedPlan === 'free' ? { maxProjects: 3, maxMembers: null } : { maxProjects: null, maxMembers: null },
         onboarded: true,
         onboardedAt: serverTimestamp(),

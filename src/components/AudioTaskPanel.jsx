@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Checkbox, FileInput, FormGroup, IconAction, Input, Textarea } from '@/components/ui';
 import { fromDateInput } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { AUDIO_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
@@ -53,7 +54,8 @@ export default function AudioTaskPanel({
   onFinished,
 }) {
   const { priorities } = useWorkflowConfig();
-  const { activeOrgId } = useAppContext();
+  const { activeOrgId, activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const showToast = useWorkspaceStore(state => state.showToast);
   const availableProjects = useMemo(
     () => (projects?.length ? projects : projectContext ? [projectContext] : []).filter(Boolean),
@@ -164,7 +166,9 @@ export default function AudioTaskPanel({
           type: 'task',
           status: 'todo',
           assignees: task.assigneeId ? [task.assigneeId] : [],
-          dueDate: task.dueDate ? fromDateInput(task.dueDate, { endOfDay: true }) : null,
+          dueDate: task.dueDate
+            ? fromDateInput(task.dueDate, { endOfDay: true, timeZone })
+            : null,
           labelIds: [],
         });
         created += 1;

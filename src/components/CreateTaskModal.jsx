@@ -17,6 +17,7 @@ import SelectableChip from '@/components/ui/Forms/SelectableChip';
 import { Input } from '@/components/ui/Input';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import { fromDateInput } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import Tabs from '@/components/ui/Tabs';
 import AudioTaskPanel from '@/components/AudioTaskPanel';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
@@ -30,7 +31,8 @@ import Alert from '@/components/ui/Feedback/Alert';
 // status in every project, so the status can only be resolved once a project is
 // chosen — and again if it is changed.
 export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null }) {
-  const { currentUser } = useAppContext();
+  const { currentUser, activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
 
@@ -184,7 +186,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       await onSubmit({
         ...form,
         createdBy: currentUser?.id || currentUser?.uid,
-        dueDate: form.dueDate ? fromDateInput(form.dueDate, { endOfDay: true }) : null,
+        dueDate: form.dueDate
+          ? fromDateInput(form.dueDate, { endOfDay: true, timeZone })
+          : null,
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
         sprintId: form.sprintId || null
       });

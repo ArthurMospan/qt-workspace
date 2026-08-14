@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
-import { parseDueDate } from '@/lib/utils/date';
+import { isDueDateOverdue } from '@/lib/utils/date';
+import { useAppContext } from '@/lib/context/AppContext';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Link from 'next/link';
 import { Alert, Card, TaskListCard } from '@/components/ui';
@@ -39,6 +41,8 @@ export default function AnalyticsTab({
   priorityFilter = 'all',
   typeFilter = 'all',
 }) {
+  const { activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
   const { statuses, closedStatusIds, deliveredStatusIds, priorities } = useWorkflowConfig();
   const [now, setNow] = useState(() => Date.now());
@@ -81,8 +85,8 @@ export default function AnalyticsTab({
       && openBlockerIssues(i.id, issues, issueLinks, closedSet).length > 0
     )).length;
     const overdue = filteredIssues.filter(i => {
-      const due = parseDueDate(i.dueDate);
-      return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
+      return isDueDateOverdue(i.dueDate, { now, timeZone })
+        && !closedSet.has(i.columnId || i.status);
     });
     const noAssignee = filteredIssues.filter(i => !i.assigneeIds?.length && !closedSet.has(i.columnId || i.status));
     const unestimated = filteredIssues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !closedSet.has(i.columnId || i.status));
@@ -135,8 +139,8 @@ export default function AnalyticsTab({
       const mDone  = mine.filter(i => deliveredSet.has(i.columnId || i.status)).length;
       const mOpen  = mine.filter(i => !closedSet.has(i.columnId || i.status)).length;
       const mOverdue = mine.filter(i => {
-        const due = parseDueDate(i.dueDate);
-        return due && due.getTime() < now && !closedSet.has(i.columnId || i.status);
+        return isDueDateOverdue(i.dueDate, { now, timeZone })
+          && !closedSet.has(i.columnId || i.status);
       }).length;
       const mMin  = byUser[uid] || 0;
       return { m, uid, total: mine.length, done: mDone, open: mOpen, overdue: mOverdue, minutes: mMin };
@@ -162,6 +166,7 @@ export default function AnalyticsTab({
     issueLinks,
     issues,
     now,
+    timeZone,
   ]);
 
   const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);

@@ -1,5 +1,12 @@
 import { expandOccurrences } from './calendarRecurrence.mjs';
 import { DAILY_REMINDER_HOUR } from './notificationOutbox.mjs';
+import {
+  DEFAULT_ORGANIZATION_TIME_ZONE,
+  dayKeyInTimeZone,
+  zonedDateTimeToUtcMs,
+} from './timeZone.mjs';
+
+export { dayKeyInTimeZone } from './timeZone.mjs';
 
 // The floor for one sweep's look-back. The sweep is *supposed* to run every few
 // minutes; when it does, this is the whole window.
@@ -33,60 +40,18 @@ function asDate(value) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-export function dayKeyInTimeZone(value, timeZone = 'Europe/Kyiv') {
-  const date = asDate(value);
-  if (!date) return '';
-  try {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).formatToParts(date);
-    const values = Object.fromEntries(
-      parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]),
-    );
-    return `${values.year}-${values.month}-${values.day}`;
-  } catch {
-    return date.toISOString().slice(0, 10);
-  }
-}
-
 // The instant of a wall-clock hour on a given day in a given timezone.
 //
 // Day-scale reminders have to land at a civilised hour rather than whenever the
 // scheduler happens to notice them, and "09:00" means 09:00 where the
-// organization is. One correction pass is enough everywhere except the hour a
-// DST transition crosses the target, where it can be an hour off twice a year —
-// acceptable for a reminder, and cheaper than carrying a timezone library.
-export function zonedHourToUtcMs(dayKey, hour, timeZone = 'Europe/Kyiv') {
-  const guess = Date.parse(`${dayKey}T${String(hour).padStart(2, '0')}:00:00.000Z`);
-  if (!Number.isFinite(guess)) return NaN;
-  try {
-    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }).formatToParts(new Date(guess))
-      .filter(part => part.type !== 'literal')
-      .map(part => [part.type, part.value]));
-    const asIfUtc = Date.UTC(
-      Number(parts.year),
-      Number(parts.month) - 1,
-      Number(parts.day),
-      Number(parts.hour) % 24,
-      Number(parts.minute),
-      Number(parts.second),
-    );
-    return guess - (asIfUtc - guess);
-  } catch {
-    return guess;
-  }
+// organization is. Deadline inputs use this same wall-clock converter, so the
+// UI and the scheduler cannot drift onto different timezone arithmetic.
+export function zonedHourToUtcMs(
+  dayKey,
+  hour,
+  timeZone = DEFAULT_ORGANIZATION_TIME_ZONE,
+) {
+  return zonedDateTimeToUtcMs(dayKey, { hour }, timeZone);
 }
 
 export function addDaysToDayKey(dayKey, days) {
@@ -231,16 +196,19 @@ export function deadlineReminderCandidates(
     const closedStatusIds = closedStatusIdsByOrganization.get(issue.organizationId) || new Set(['done']);
     if (closedStatusIds.has(issue.columnId || issue.status)) continue;
 
-    const timeZone = timeZonesByOrganization.get(issue.organizationId) || 'Europe/Kyiv';
-    const overdue = dueDate.getTime() < nowMs;
+    const timeZone = timeZonesByOrganization.get(issue.organizationId)
+      || DEFAULT_ORGANIZATION_TIME_ZONE;
+    const dueDayKey = dayKeyInTimeZone(dueDate, timeZone);
+    const currentDayKey = dayKeyInTimeZone(nowMs, timeZone);
+    const overdue = dueDayKey < currentDayKey;
     const dayKey = overdue
-      ? dayKeyInTimeZone(nowMs, timeZone)
-      : dayKeyInTimeZone(dueDate, timeZone);
+      ? currentDayKey
+      : dueDayKey;
     // How long it has been overdue, counted in the organization's calendar days
     // rather than in raw milliseconds: "прострочено вчора" has to mean yesterday
     // in Kyiv, not 24 hours ago.
     const overdueDays = overdue
-      ? dayOffsetBetweenKeys(dayKeyInTimeZone(dueDate, timeZone), dayKey)
+      ? dayOffsetBetweenKeys(dueDayKey, dayKey)
       : 0;
     if (overdue && !overdueNagDue(overdueDays)) continue;
     let dueLabel = '';
