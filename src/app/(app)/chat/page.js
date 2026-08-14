@@ -109,7 +109,7 @@ function MessageInput({
     const cursor = e.target.selectionStart;
     const before = val.slice(0, cursor);
     const matchIssue = before.match(/(?:^|[\s([{])#([\p{L}\p{N}-]*)$/u);
-    const matchUser = before.match(/(?:^|[\s([{])([@"])([^@\n"]*)$/u);
+    const matchUser = before.match(/(?:^|[\s([{])([@])([^@\n"]*)$/u);
     if (matchIssue) {
       setMentionType('issue');
       setMentionQuery(matchIssue[1].toLocaleLowerCase('uk-UA'));

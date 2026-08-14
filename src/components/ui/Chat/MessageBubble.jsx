@@ -96,8 +96,15 @@ export default function MessageBubble({
   return (
     <div
       className={`relative flex gap-3 px-4 py-1 group hover:bg-black/[0.02] transition-colors rounded-xl -mx-2 ${showHeader ? 'mt-4' : 'mt-0.5'}`}
+      tabIndex={0}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => { if (!showEmoji) setShowActions(false); }}
+      onFocusCapture={() => setShowActions(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget) && !showEmoji) {
+          setShowActions(false);
+        }
+      }}
     >
       {/* Avatar or time gutter */}
       <div className="w-9 shrink-0 flex justify-end items-start pt-0.5">

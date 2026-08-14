@@ -136,6 +136,19 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   assert.match(hoverCard, /legacyStoredIssueKey\(value, expectedProject\)/);
 });
 
+test('chat user suggestions require an at sign and message actions are keyboard reachable', async () => {
+  const [page, bubble] = await Promise.all([
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/Chat/MessageBubble.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.ok(page.includes('const matchUser = before.match(/(?:^|[\\s([{])([@])([^@\\n"]*)$/u);'));
+  assert.doesNotMatch(page, /\(\[@"\]\)/);
+  assert.match(bubble, /tabIndex=\{0\}/);
+  assert.match(bubble, /onFocusCapture=\{\(\) => setShowActions\(true\)\}/);
+  assert.match(bubble, /event\.currentTarget\.contains\(event\.relatedTarget\)/);
+});
+
 // A conversation opens showing its newest message. It does not scroll to it.
 //
 // Measured on the running app before this change: the list rendered at
