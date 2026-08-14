@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft size={16} className="transform group-hover:-translate-x-1 transition-transform" />
             Назад до входу
           </Link>
-          <Image src="/logo.svg" alt="QuickTeam" width={110} height={26} className="object-contain" />
+          <Image src="/logo.svg" alt="QuickTeam" width={166} height={40} className="h-auto w-[110px] object-contain" />
         </div>
 
         {/* Card wrapper */}

@@ -36,7 +36,7 @@ test('useIssues only finishes empty when there is genuinely no project', async (
   // re-runs when they flip.
   assert.match(
     source,
-    /\}, \[projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading\]\);/,
+    /\}, \[projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading, queryLimit\]\);/,
   );
 });
 
