@@ -4,24 +4,16 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 import {
-  isValidIssuePrefix,
-  normalizeIssuePrefix,
-  projectIssuePrefix,
-  projectIssuePrefixTaken,
   suggestAvailableIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
 
 export async function POST(req) {
-  let suggestedPrefix = '';
   try {
     const body = await req.json();
     const { name, description, visibility, organizationId, team = [], hiddenColumns = [] } = body;
 
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     const normalizedDescription = typeof description === 'string' ? description.trim() : '';
-    const normalizedPrefix = normalizeIssuePrefix(
-      body.issuePrefix || projectIssuePrefix({ name: normalizedName }),
-    );
     if (
       !normalizedName
       || normalizedName.length > 160
@@ -29,12 +21,6 @@ export async function POST(req) {
       || !organizationId
     ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-    if (!isValidIssuePrefix(normalizedPrefix)) {
-      return NextResponse.json({
-        error: 'Код завдань має містити 2–8 літер або цифр',
-        code: 'INVALID_ISSUE_PREFIX',
-      }, { status: 400 });
     }
 
     const authorization = await authorizeOrgRequest(req, organizationId, ['owner', 'admin']);
@@ -77,7 +63,6 @@ export async function POST(req) {
     const payload = {
       name: normalizedName,
       description: normalizedDescription,
-      issuePrefix: normalizedPrefix,
       visibility: visibility === 'shared' ? 'shared' : 'internal',
       organizationId,
       team: [...new Set([userId, ...validTeam])],
@@ -104,20 +89,17 @@ export async function POST(req) {
         id: document.id,
         ...document.data(),
       }));
-      if (projectIssuePrefixTaken(organizationProjects, normalizedPrefix)) {
-        suggestedPrefix = suggestAvailableIssuePrefix(
-          { issuePrefix: normalizedPrefix },
-          organizationProjects,
-        );
-        throw new Error('ISSUE_PREFIX_TAKEN');
-      }
+      const issuePrefix = suggestAvailableIssuePrefix(
+        { name: normalizedName },
+        organizationProjects,
+      );
       const activeProjectsCount = organizationProjects
         .filter(project => project.status === 'active').length;
       if ((orgSnap.data().plan || 'free') !== 'pro' && activeProjectsCount >= 3) {
         throw new Error('PROJECT_LIMIT_REACHED');
       }
 
-      transaction.create(projectRef, payload);
+      transaction.create(projectRef, { ...payload, issuePrefix });
       stageNames.forEach((stageName, index) => {
         transaction.create(db.collection('stages').doc(), {
           label: `${String(index + 1).padStart(2, '0')}. ${stageName}`,
@@ -139,13 +121,6 @@ export async function POST(req) {
     }
     if (error.message === 'ORGANIZATION_NOT_FOUND') {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-    }
-    if (error.message === 'ISSUE_PREFIX_TAKEN') {
-      return NextResponse.json({
-        error: 'Такий код завдань уже використовує інший проєкт',
-        code: 'ISSUE_PREFIX_TAKEN',
-        suggestedPrefix,
-      }, { status: 409 });
     }
     return routeErrorResponse(error, { context: 'API Projects Create', fallbackMessage: 'Internal Server Error' });
   }

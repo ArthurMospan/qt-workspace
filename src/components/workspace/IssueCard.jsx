@@ -72,9 +72,12 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   
   const priorityConfig = priorityPresentation(issue.priority, priorities);
   const pri = {
-    glow: priorityConfig.isNoPriority
+    restGlow: priorityConfig.isNoPriority
       ? 'transparent'
-      : hexToRgba(priorityConfig.color, 0.05),
+      : hexToRgba(priorityConfig.color, 0.10),
+    hoverGlow: priorityConfig.isNoPriority
+      ? 'transparent'
+      : hexToRgba(priorityConfig.color, 0.15),
   };
 
   const participantRoles = issueDisplayParticipants(issue);
@@ -163,6 +166,10 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           boxShadow: lifted
             ? '0 18px 26px -12px rgba(0, 0, 0, 0.22), 0 6px 8px -4px rgba(0, 0, 0, 0.10)'
             : 'none',
+          // The DnD library injects `cursor: grab` on every resting drag
+          // handle. The whole card is also a link-like control, so at rest it
+          // uses the standard pointer and only the active drag uses grabbing.
+          cursor: lifted ? 'grabbing' : (interactive ? 'pointer' : 'default'),
           transform: libraryTransform,
           // Hand the transition straight back to the library while it owns the
           // card. The previous version appended `ring 0.2s ease` — not an
@@ -173,14 +180,14 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         }}
       >
         {/* ── Priority glow blob ─────────────────────────── */}
-        {pri.glow !== 'transparent' && (
+        {pri.restGlow !== 'transparent' && (
           <>
             {/* Resting state: bottom-right */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-[16px] transition-opacity duration-300 opacity-100 group-hover:opacity-0"
               style={{
-                background: `radial-gradient(ellipse at 90% 100%, ${pri.glow} 0%, transparent 45%)`,
+                background: `radial-gradient(ellipse at 90% 100%, ${pri.restGlow} 0%, transparent 45%)`,
               }}
             />
             {/* Hover state: top-right */}
@@ -188,7 +195,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-[16px] transition-opacity duration-300 opacity-0 group-hover:opacity-100"
               style={{
-                background: `radial-gradient(ellipse at 88% 5%, ${pri.glow} 0%, transparent 45%)`,
+                background: `radial-gradient(ellipse at 88% 5%, ${pri.hoverGlow} 0%, transparent 45%)`,
               }}
             />
           </>

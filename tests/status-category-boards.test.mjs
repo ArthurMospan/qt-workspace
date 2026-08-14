@@ -17,7 +17,11 @@ import {
   statusCategoryColumns,
   statusCategoryMap,
 } from '../src/lib/utils/statusCategories.mjs';
-import { planDrop, columnOf } from '../src/lib/utils/optimistic.mjs';
+import { columnOf } from '../src/lib/utils/optimistic.mjs';
+import {
+  compareMyTaskIssues,
+  planMyTaskDrop,
+} from '../src/lib/utils/myTaskOrder.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -95,35 +99,32 @@ test('the editor cannot produce a workflow with nothing open or nothing closing'
 
 // ── A drop on a category column ───────────────────────────────────────────────
 
-test('a card dropped on a category column lands among its own project’s cards', () => {
-  // Two projects share the workflow. `order` numbers one project's column, so a
-  // cross-project board can only position a card among its own project's cards.
+test('a card dropped on My tasks lands exactly among cross-project neighbours', () => {
   const issues = [
-    { id: 'a1', projectId: 'alpha', columnId: 'done', order: 0 },
-    { id: 'a2', projectId: 'alpha', columnId: 'done', order: 1 },
-    { id: 'b1', projectId: 'beta', columnId: 'done', order: 0 },
-    { id: 'm1', projectId: 'alpha', columnId: 'qa', order: 7 },
+    { id: 'a1', projectId: 'alpha', category: 'done', order: 0 },
+    { id: 'a2', projectId: 'alpha', category: 'done', order: 1 },
+    { id: 'b1', projectId: 'beta', category: 'done', order: 0 },
+    { id: 'm1', projectId: 'alpha', category: 'in-progress', order: 7 },
   ];
-  const statusId = resolveCategoryStatusId('done', workflow, {
-    currentStatusId: 'qa',
-    hiddenStatusIds: [],
+  const orders = { a1: 0, b1: 1, a2: 2, m1: 0 };
+  const plan = planMyTaskDrop({
+    issues,
+    issueId: 'm1',
+    targetCategoryId: 'done',
+    position: {
+      visibleColumnIds: ['a1', 'b1', 'a2'],
+      visibleIndex: 1,
+    },
+    orders,
+    categoryOf: issue => issue.category,
   });
-  assert.equal(statusId, 'done');
 
-  // The column the user saw mixes both projects; the plan must not.
-  const plan = planDrop(issues, 'm1', statusId, {
-    visibleColumnIds: ['a1', 'b1', 'a2'],
-    visibleIndex: 1,
-  }, { scopeToProject: true });
-
-  assert.equal(plan.patches.m1.status, 'done');
-  assert.equal(plan.patches.m1.columnId, 'done');
-  // Dropped above «a2», so it takes its slot and «a2» moves down. «b1» belongs to
-  // another project and is not renumbered at all.
-  assert.deepEqual(plan.ordered.map(i => i.id), ['a1', 'm1', 'a2']);
-  assert.equal(plan.patches.m1.order, 1);
-  assert.equal(plan.patches.a2.order, 2);
-  assert.equal(plan.patches.b1, undefined);
+  assert.deepEqual(plan.ordered.map(issue => issue.id), ['a1', 'm1', 'b1', 'a2']);
+  assert.deepEqual(plan.ordered.toSorted(compareMyTaskIssues(plan.orders)).map(issue => issue.id), [
+    'a1', 'm1', 'b1', 'a2',
+  ]);
+  assert.equal(plan.orders.m1, 1);
+  assert.equal(plan.orders.b1, 2);
 });
 
 test('moving inside one category is a reorder, never a status change', () => {
@@ -141,6 +142,17 @@ test('moving inside one category is a reorder, never a status change', () => {
     }),
     'in-progress',
   );
+});
+
+test('My tasks persists same-category drops without calling the status API or showing a status toast', async () => {
+  const [hook, page] = await Promise.all([
+    read('../src/lib/hooks/useAllMyTasks.js'),
+    read('../src/app/(app)/my/page.js'),
+  ]);
+  assert.match(hook, /const statusChanged = fromColumnId !== columnId/);
+  assert.match(hook, /if \(statusPlan\) \{\s*await transitionIssueStatusViaApi/);
+  assert.match(hook, /doc\(db, 'users', userId, 'settings', `my-tasks-\$\{activeOrgId\}`\)/);
+  assert.match(page, /if \(result\?\.statusChanged\)/);
 });
 
 test('a project’s hidden columns can never make a category drop illegal', () => {
@@ -216,6 +228,15 @@ test('the personal board cannot be folded down to nothing', async () => {
   const myTasks = await read('../src/app/(app)/my/page.js');
   assert.match(myTasks, /next\.length >= categoryColumns\.length/);
   assert.match(myTasks, /Хоча б одна колонка має лишатися видимою/);
+  assert.match(myTasks, /cardPageSize=\{30\}/);
+});
+
+test('the personal board renders large columns in pages inside fixed-height columns', async () => {
+  const board = await read('../src/components/workspace/AgileBoard.jsx');
+  assert.match(board, /const renderedColIssues = colIssues\.slice\(0, visibleLimit\)/);
+  assert.match(board, /Показати ще \{Math\.min\(normalizedCardPageSize, remainingIssueCount\)\}/);
+  assert.match(board, /overflow-y-hidden pb-2 flex flex-col/);
+  assert.match(board, /rounded-b-\[16px\] overflow-y-auto/);
 });
 
 test('the personal board asks for an exact status only when a category has several choices', async () => {
@@ -229,7 +250,7 @@ test('the personal board asks for an exact status only when a category has sever
   assert.match(myTasks, /<StatusTransitionPicker/);
   // The selected exact status still uses the same optimistic/API path as a
   // direct move on a project board.
-  assert.match(myTasks, /await moveTask\(issueId, statusId, position, actor\)/);
+  assert.match(myTasks, /moveTask\(issueId, statusId, categoryId, position, actor\)/);
   assert.match(picker, /layoutId="status-transition-task"/);
   assert.match(picker, /presentation="dialog"/);
   assert.match(picker, /<IssueCard/);

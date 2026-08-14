@@ -47,7 +47,6 @@ export const STATUS_CATEGORIES = Object.freeze({
     color: '#9a9a9a',
     closes: false,
     delivers: false,
-    hint: 'Зібрано, але ще не заплановано. Сюди потрапляють нові завдання.',
   }),
   todo: Object.freeze({
     id: 'todo',
@@ -55,7 +54,6 @@ export const STATUS_CATEGORIES = Object.freeze({
     color: '#6366f1',
     closes: false,
     delivers: false,
-    hint: 'Заплановано й готове до роботи.',
   }),
   'in-progress': Object.freeze({
     id: 'in-progress',
@@ -63,7 +61,6 @@ export const STATUS_CATEGORIES = Object.freeze({
     color: '#f59e0b',
     closes: false,
     delivers: false,
-    hint: 'Робота триває — разом із ревʼю, QA та погодженнями.',
   }),
   done: Object.freeze({
     id: 'done',
@@ -71,7 +68,6 @@ export const STATUS_CATEGORIES = Object.freeze({
     color: '#10b981',
     closes: true,
     delivers: true,
-    hint: 'Роботу завершено. Саме за цією категорією рахуються прогрес, швидкість і рахунок.',
   }),
   cancelled: Object.freeze({
     id: 'cancelled',
@@ -79,8 +75,6 @@ export const STATUS_CATEGORIES = Object.freeze({
     color: '#71717a',
     closes: true,
     delivers: false,
-    hint: 'Закрито без виконання: скасовано, дубль, не актуально. Задача більше '
-      + 'нікого не блокує й не прострочена, але у прогрес і швидкість не йде.',
   }),
 });
 

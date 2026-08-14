@@ -40,7 +40,7 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
         title={title}
         className={`${sizeClass} shrink-0 ${className}`.trim()}
       >
-        <circle cx="8" cy="8" r="5.5" fill="none" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeDasharray="1.8 2.1" strokeLinecap="round" opacity="0.82" />
+        <circle cx="8" cy="8" r="5.5" fill="none" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeDasharray="1.8 2.1" strokeLinecap="round" opacity="0.65" />
       </svg>
     );
   }
@@ -54,7 +54,7 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
         title={title}
         className={`${sizeClass} shrink-0 ${className}`.trim()}
       >
-        <circle cx="8" cy="8" r="5.5" fill={config.color} fillOpacity="0.16" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} />
+        <circle cx="8" cy="8" r="5.5" fill={config.color} fillOpacity="0.2" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity="0.88" />
         <path d="M8 10.5H8.0075V10.5075H8V10.5Z" stroke={config.color} strokeWidth="1.2" strokeLinejoin="round" />
         <path d="M8 8.33333V5.5" stroke={config.color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -69,7 +69,7 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
       title={title}
       className={`${sizeClass} shrink-0 ${className}`.trim()}
     >
-      <circle cx="8" cy="8" r="5.5" fill="none" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity={config.outerOpacity} />
+      <circle cx="8" cy="8" r="5.5" fill={config.color} fillOpacity="0.2" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity={config.outerOpacity} />
       <circle cx="8" cy="8" r="3.5" fill="none" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity={config.innerOpacity} />
       <circle cx="8" cy="8" r="0.7" fill={config.color} />
     </svg>

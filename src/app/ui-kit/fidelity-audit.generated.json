@@ -8,15 +8,15 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 183,
-    "parsedFiles": 183,
+    "productFiles": 184,
+    "parsedFiles": 184,
     "parseErrors": 0,
-    "nativeControls": 17,
+    "nativeControls": 16,
     "structures": {
       "analytics": 1,
       "qtplus": 1,
       "board": 1,
-      "settings": 2,
+      "settings": 1,
       "shell": 12
     },
     "styledNativeControls": 10,
@@ -32,7 +32,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 16,
+    "button": 15,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -53,24 +53,6 @@
   },
   "parseErrors": [],
   "nativeControls": [
-    {
-      "tag": "button",
-      "location": "src/app/(app)/settings/page.js:2557",
-      "className": "flex flex-col items-center gap-[6px] group/theme",
-      "text": "",
-      "childElements": [
-        "ColorSwatch",
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "settings",
-      "routes": [
-        "/settings"
-      ]
-    },
     {
       "tag": "button",
       "location": "src/components/AuthLayout.jsx:46",
@@ -342,10 +324,6 @@
       "count": 2
     },
     {
-      "file": "src/app/(app)/settings/page.js",
-      "count": 1
-    },
-    {
       "file": "src/components/OrgSwitcherScreen.jsx",
       "count": 1
     },
@@ -396,32 +374,32 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:148",
+      "location": "src/app/(app)/page.js:142",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:157",
+      "location": "src/app/(app)/page.js:151",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:374",
+      "location": "src/app/(app)/settings/page.js:357",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:398",
+      "location": "src/app/(app)/settings/page.js:381",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:442",
+      "location": "src/app/(app)/settings/page.js:425",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:580",
+      "location": "src/app/(app)/settings/page.js:544",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -506,7 +484,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:299",
+      "location": "src/components/workspace/AgileBoard.jsx:309",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },

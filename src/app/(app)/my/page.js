@@ -58,7 +58,15 @@ export default function MyTasksPage() {
   const { members } = useOrganization();
   const { labels, types, priorities, statuses, categoryColumns } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
-  const { tasks, allIssues, issueLinks, loading, moveTask, moveTaskToCategory } = useAllMyTasks(uid);
+  const {
+    tasks,
+    allIssues,
+    issueLinks,
+    loading,
+    moveTask,
+    moveTaskToCategory,
+    compareTaskCards,
+  } = useAllMyTasks(uid);
   const { sprints, loading: sprintsLoading } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
@@ -128,19 +136,20 @@ export default function MyTasksPage() {
         userId: uid,
         userName: currentUser?.name || '',
       };
+      let result;
       if (statusId) {
-        await moveTask(issueId, statusId, position, actor);
+        result = await moveTask(issueId, statusId, categoryId, position, actor);
       } else {
-        await moveTaskToCategory(issueId, categoryId, position, actor);
+        result = await moveTaskToCategory(issueId, categoryId, position, actor);
       }
-      const selectedStatus = statusId
-        ? statuses.find(status => status.id === statusId)?.label
-        : null;
-      showToast(selectedStatus ? `Перенесено в «${selectedStatus}» ✓` : 'Статус оновлено ✓');
+      if (result?.statusChanged) {
+        const selectedStatus = statuses.find(status => status.id === result.statusId)?.label;
+        showToast(selectedStatus ? `Перенесено в «${selectedStatus}» ✓` : 'Статус оновлено ✓');
+      }
       return true;
     } catch (err) {
       console.error(err);
-      showToast(err?.message || 'Помилка оновлення статусу', 'error');
+      showToast(err?.message || 'Не вдалося перемістити завдання', 'error');
       return false;
     }
   };
@@ -300,6 +309,8 @@ export default function MyTasksPage() {
               sprints={sprints}
               showProjectName
               groupBy="category"
+              cardPageSize={30}
+              compareIssueCards={compareTaskCards}
               hiddenColumns={hiddenCategories}
               showHiddenLane
               onRequestAddIssue={categoryId => {

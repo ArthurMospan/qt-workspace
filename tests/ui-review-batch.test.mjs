@@ -84,7 +84,7 @@ test('QUI-131 allows several closing statuses but never a workflow without an op
   assert.match(settings, /const problem = statusGroupsBreakInvariant\(statuses\.filter\(s => s\.id !== id\)\);/);
   // And the delete control is disabled rather than refusing after the click.
   assert.match(settings, /const canDeleteStatus = status => \(/);
-  assert.match(settings, /Назва статусу — ваша, категорія — спільна/);
+  assert.match(settings, /Налаштуйте етапи, через які проходять завдання/);
 });
 
 // The editor is a list per category, the way Linear and Shortcut do it: a status
@@ -104,11 +104,9 @@ test('the workflow editor groups statuses by category and moves them by dragging
   // Saved in canonical category order, so a project board's columns follow the
   // flow of work rather than the order somebody happened to add them in.
   assert.match(settings, /flattenStatusGroups\(groups\)/);
-  // The drag library moves an item between lists that sit side by side, and
-  // these are stacked — so without this menu a category could only be changed
-  // with a mouse. Both paths ask the same guard.
-  assert.match(settings, /onMoveToCategory=\{value => handleStatusMoveToCategory\(s\.id, value\)\}/);
-  assert.match(settings, /const handleStatusMoveToCategory = \(id, categoryId\) => \{/);
+  // Dragging is the only category-changing action; a second arrow/menu beside
+  // every row duplicated the gesture and consumed the action space.
+  assert.doesNotMatch(settings, /onMoveToCategory|handleStatusMoveToCategory|MoveRight/);
   // No id is special any more: what may be deleted is decided by the invariants.
   assert.doesNotMatch(settings, /!\['backlog', 'done'\]\.includes/);
 });
@@ -422,4 +420,15 @@ test('every collapse control that folds a group of tasks is the same button', as
   // the other two at 20px.
   assert.doesNotMatch(sprints, /size="icon"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
   assert.match(sprints, /size="icon-xs"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
+});
+
+test('the sidebar theme picker never nests a ColorSwatch button in another button', async () => {
+  const settings = await read('../src/app/(app)/settings/page.js');
+  const themePicker = settings.slice(
+    settings.indexOf('const buttonNode = ('),
+    settings.indexOf("if (opt.id === 'custom')"),
+  );
+  assert.match(themePicker, /<label[\s\S]*group\/theme/);
+  assert.doesNotMatch(themePicker, /<button[\s\S]*group\/theme/);
+  assert.match(themePicker, /<ColorSwatch/);
 });

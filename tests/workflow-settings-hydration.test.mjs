@@ -126,3 +126,11 @@ test('settings workflow load is generation-guarded and applies one complete payl
     /const resetOrganizationId = activeOrgId;[\s\S]{0,500}wfOrgId\.current !== resetOrganizationId/,
   );
 });
+
+test('unfinished workflow rows stay local until the editor saves them', async () => {
+  const settings = await readFile(
+    new URL('../src/app/(app)/settings/page.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(settings, /const cleanWorkflowItems = arr => \(arr \|\| \[\]\)\s*\.filter\(item => !item\?\.isNew\)/);
+});
