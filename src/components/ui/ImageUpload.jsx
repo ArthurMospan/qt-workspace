@@ -9,6 +9,7 @@ import {
   organizationImageFolder,
   organizationOwnedImageAsset,
 } from '@/lib/utils/cloudinaryAssets.mjs';
+import { IMAGE_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
 
 /**
  * Picks an image, uploads it, and shows what is currently set — the workspace
@@ -150,7 +151,7 @@ export default function ImageUpload({
 
       <input 
         type="file" 
-        accept="image/*" 
+        accept={IMAGE_UPLOAD_ACCEPT}
         className="hidden" 
         ref={fileInputRef}
         onChange={handleFileChange}

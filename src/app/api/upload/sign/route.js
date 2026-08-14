@@ -9,6 +9,7 @@ import {
   isSafeUploadFolder,
   organizationIdFromPath,
 } from '@/lib/server/uploadPaths';
+import { uploadFilePolicy } from '@/lib/utils/uploadPolicy.mjs';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -29,12 +30,16 @@ export async function POST(req) {
     const { params } = await readJsonBody(req);
     const folder = params?.folder;
     const publicId = params?.public_id;
+    const filePolicy = uploadFilePolicy(params?.file);
     if (
       !isSafeUploadFolder(folder) ||
       typeof publicId !== 'string' ||
-      !/^[a-zA-Z0-9_-]{1,160}$/.test(publicId)
+      !/^[a-zA-Z0-9_-]{1,160}$/.test(publicId) ||
+      filePolicy.error
     ) {
-      return NextResponse.json({ error: 'Invalid upload parameters' }, { status: 400 });
+      return NextResponse.json({
+        error: filePolicy.error || 'Invalid upload parameters',
+      }, { status: 400 });
     }
 
     // Signing an organization folder for a non-member would let one tenant
@@ -61,6 +66,7 @@ export async function POST(req) {
       public_id: publicId,
       overwrite: false,
       timestamp,
+      allowed_formats: filePolicy.value.allowedFormats.join(','),
       ...(deliveryType === 'authenticated' ? { type: deliveryType } : {}),
     };
     const signature = cloudinary.utils.api_sign_request(
@@ -73,6 +79,8 @@ export async function POST(req) {
       timestamp,
       overwrite: false,
       deliveryType,
+      resourceType: filePolicy.value.resourceType,
+      allowedFormats: filePolicy.value.allowedFormats,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });

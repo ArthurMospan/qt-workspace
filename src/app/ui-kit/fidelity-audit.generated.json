@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 190,
-    "parsedFiles": 190,
+    "productFiles": 192,
+    "parsedFiles": 192,
     "parseErrors": 0,
     "nativeControls": 16,
     "structures": {
@@ -424,22 +424,22 @@
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:195",
+      "location": "src/components/AudioTaskPanel.jsx:196",
       "tag": "div",
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:237",
+      "location": "src/components/AudioTaskPanel.jsx:238",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:243",
+      "location": "src/components/AudioTaskPanel.jsx:244",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:272",
+      "location": "src/components/AudioTaskPanel.jsx:273",
       "tag": "div",
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
@@ -504,37 +504,37 @@
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:266",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:272",
       "tag": "div",
       "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:283",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:282",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:288",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:317",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:323",
       "tag": "div",
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:710",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:271",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:272",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1591",
+      "location": "src/components/workspace/IssueDetail.jsx:1595",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
@@ -559,7 +559,7 @@
       "className": "rounded-[12px] border border-line bg-surface overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow"
     },
     {
-      "location": "src/components/workspace/qtplus/cards/LinkCard.jsx:16",
+      "location": "src/components/workspace/qtplus/cards/LinkCard.jsx:19",
       "tag": "div",
       "className": "rounded-[12px] border border-line bg-surface px-3 py-2"
     },
@@ -589,7 +589,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:572",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:578",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

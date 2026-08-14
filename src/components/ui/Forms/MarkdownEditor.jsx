@@ -38,6 +38,7 @@ import {
   Table2,
   Undo2,
 } from 'lucide-react';
+import { ATTACHMENT_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
 
 const MAX_HISTORY = 120;
 
@@ -339,6 +340,7 @@ export default function MarkdownEditor({
               <input
                 ref={fileInputRef}
                 type="file"
+                accept={ATTACHMENT_UPLOAD_ACCEPT}
                 multiple
                 className="hidden"
                 onChange={event => {

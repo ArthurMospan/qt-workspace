@@ -25,6 +25,10 @@ import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import {
+  ATTACHMENT_UPLOAD_ACCEPT,
+  uploadFilePolicy,
+} from '@/lib/utils/uploadPolicy.mjs';
 
 const FIELD_LABELS = {
   status: 'статус',
@@ -336,7 +340,9 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
-    const accepted = files.filter(file => file.size <= 20 * 1024 * 1024).slice(0, Math.max(0, 5 - pendingFiles.length));
+    const accepted = files
+      .filter(file => !uploadFilePolicy(file, { maxBytes: 20 * 1024 * 1024 }).error)
+      .slice(0, Math.max(0, 5 - pendingFiles.length));
     if (accepted.length !== files.length) showToast('До 5 файлів, максимум 20 МБ кожен', 'error');
     setPendingFiles(previous => [...previous, ...accepted]);
   };
@@ -578,7 +584,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             </div>
           )}
 
-          <FileInput ref={fileInputRef} multiple onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
+          <FileInput accept={ATTACHMENT_UPLOAD_ACCEPT} ref={fileInputRef} multiple onChange={event => { addPendingFiles(event.target.files); event.target.value = ''; }} />
           <ChatComposerCore
             variant="timeline"
             textareaRef={inputRef}

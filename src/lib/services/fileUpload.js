@@ -1,5 +1,9 @@
 'use client';
 import { auth } from '@/lib/firebase';
+import {
+  MAX_UPLOAD_BYTES,
+  requireUploadFilePolicy,
+} from '@/lib/utils/uploadPolicy.mjs';
 // src/lib/services/fileUpload.js
 
 /**
@@ -7,24 +11,13 @@ import { auth } from '@/lib/firebase';
  */
 export async function uploadFileToCloudinary(file, folder, onProgress = null) {
   try {
-    if (file.size > 25 * 1024 * 1024) throw new Error('File exceeds the 25 MB limit');
+    const policy = requireUploadFilePolicy(file);
     if (!folder) throw new Error('An organization-scoped upload folder is required');
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const baseName = file.name.substring(0, file.name.lastIndexOf('.')).replace(/[^a-zA-Z0-9]/g, '_');
+    const ext = policy.extension;
+    const baseName = file.name
+      .slice(0, -(ext.length + 1))
+      .replace(/[^a-zA-Z0-9]/g, '_') || 'file';
     const public_id = `${Date.now()}_${baseName}`;
-    
-    let resource_type = 'raw';
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'heif', 'tiff', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
-      resource_type = 'image';
-    } else if (
-      ['mp4', 'mov', 'avi', 'mkv', 'webm', 'mp3', 'm4a', 'wav', 'ogg', 'oga', 'aac', 'flac'].includes(ext)
-      || file.type.startsWith('video/')
-      || file.type.startsWith('audio/')
-    ) {
-      // Cloudinary serves audio through the `video` resource type. Uploading
-      // OGG as `raw` loses the useful audio content-type and Gemini rejects it.
-      resource_type = 'video';
-    }
 
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Authentication is required for uploads');
@@ -36,12 +29,26 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ 
-        params: { folder, public_id } 
+        params: {
+          folder,
+          public_id,
+          file: { name: file.name, size: file.size, type: file.type },
+        },
       }),
     });
 
-    if (!signRes.ok) throw new Error('Failed to get upload signature');
-    const { signature, timestamp, apiKey, cloudName, overwrite, deliveryType = 'upload' } = await signRes.json();
+    const signing = await signRes.json().catch(() => ({}));
+    if (!signRes.ok) throw new Error(signing.error || 'Failed to get upload signature');
+    const {
+      signature,
+      timestamp,
+      apiKey,
+      cloudName,
+      overwrite,
+      deliveryType = 'upload',
+      resourceType,
+      allowedFormats = [],
+    } = signing;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -51,6 +58,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
     formData.append('folder', folder);
     formData.append('public_id', public_id);
     formData.append('overwrite', String(overwrite));
+    formData.append('allowed_formats', allowedFormats.join(','));
     if (deliveryType === 'authenticated') formData.append('type', deliveryType);
 
     // XHR rather than fetch: it is the only way to observe real upload
@@ -58,7 +66,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
     // progress bar in the app was decorative.
     const data = await new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
-      request.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resource_type}/upload`);
+      request.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
       if (onProgress) {
         request.upload.onprogress = progressEvent => {
           if (!progressEvent.lengthComputable) return;
@@ -80,6 +88,22 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
       request.onabort = () => reject(new Error('Cloudinary upload aborted'));
       request.send(formData);
     });
+    const uploadedBytes = Number(data.bytes);
+    const uploadedFormat = String(data.format || '').toLowerCase();
+    if (
+      !Number.isSafeInteger(uploadedBytes)
+      || uploadedBytes <= 0
+      || uploadedBytes > MAX_UPLOAD_BYTES
+      || data.resource_type !== resourceType
+      || (uploadedFormat && !allowedFormats.includes(uploadedFormat))
+    ) {
+      await deleteFileFromCloudinary(
+        data.public_id,
+        data.resource_type || resourceType,
+        deliveryType,
+      ).catch(() => {});
+      throw new Error('Завантажений файл не відповідає дозволеним параметрам');
+    }
     let downloadUrl = data.secure_url;
     if (data.resource_type === 'image') {
       downloadUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');

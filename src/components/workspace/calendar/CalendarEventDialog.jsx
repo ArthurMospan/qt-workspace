@@ -54,6 +54,7 @@ import {
   normalizeCalendarEventVisibility,
 } from '@/lib/utils/calendarEventTypes.mjs';
 import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
+import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 
 // Only the presentation lives here — what each type *is* (and therefore which
 // fields it may carry) is decided once in calendarEventTypes.mjs, which the
@@ -176,13 +177,17 @@ export function calendarEventFormPayload(form, currentUserId) {
       : form.participantIds,
     reminderMinutes: form.reminderMinutes,
   }, { ownerId: currentUserId });
+  const meetingUrl = safeExternalUrl(typed.meetingUrl);
+  if (typed.meetingUrl && !meetingUrl) {
+    throw new Error('Посилання має починатися з http:// або https://');
+  }
 
   return {
     title,
     type: form.type,
     description: form.description,
     location: typed.location,
-    meetingUrl: typed.meetingUrl,
+    meetingUrl,
     projectId: typed.projectId,
     visibility: normalizeCalendarEventVisibility(form.type, form.visibility),
     participantIds: typed.participantIds,
@@ -259,6 +264,7 @@ export function CalendarEventDetails({
   const reminderLabels = (event.reminderMinutes || [])
     .map(minutes => CALENDAR_EVENT_REMINDER_OPTIONS.find(option => option.value === minutes)?.label)
     .filter(Boolean);
+  const safeMeetingUrl = safeExternalUrl(event.meetingUrl);
   return (
     <div className="space-y-[18px]">
       {showOverview && (
@@ -278,9 +284,9 @@ export function CalendarEventDetails({
               <CalendarIcon size={15} className="mt-0.5 shrink-0 text-ink" />
               <span>{event.allDay ? start.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' }) : `${start.toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'long' })}, ${start.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`}</span>
             </div>
-            {(event.location || event.meetingUrl) && (
+            {(event.location || safeMeetingUrl) && (
               <div data-ui-surface="local" className="flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]">
-                {event.meetingUrl ? <Link2 size={15} className="mt-0.5 shrink-0 text-ink" /> : <MapPin size={15} className="mt-0.5 shrink-0 text-ink" />}
+                {safeMeetingUrl ? <Link2 size={15} className="mt-0.5 shrink-0 text-ink" /> : <MapPin size={15} className="mt-0.5 shrink-0 text-ink" />}
                 <span className="truncate">{event.location || 'Онлайн-мітинг'}</span>
               </div>
             )}
@@ -337,8 +343,8 @@ export function CalendarEventDetails({
         </div>
       )}
 
-      {event.meetingUrl && (
-        <a href={event.meetingUrl} target="_blank" rel="noreferrer" className="flex h-[42px] w-full items-center justify-center gap-2 rounded-[12px] bg-ink px-4 text-[13px] font-bold text-white hover:bg-ink-hover">
+      {safeMeetingUrl && (
+        <a href={safeMeetingUrl} target="_blank" rel="noopener noreferrer" className="flex h-[42px] w-full items-center justify-center gap-2 rounded-[12px] bg-ink px-4 text-[13px] font-bold text-white hover:bg-ink-hover">
           <ExternalLink size={15} /> Приєднатися до мітингу
         </a>
       )}

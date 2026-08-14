@@ -12,6 +12,7 @@ import { Checkbox, FileInput, FormGroup, IconAction, Input, Textarea } from '@/c
 import { fromDateInput } from '@/lib/utils/date';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { AUDIO_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
 
 // A finished analysis is minutes of a real call plus whatever the user has
 // edited since; it must not depend on this component staying mounted. The panel
@@ -205,7 +206,7 @@ export default function AudioTaskPanel({
             <span className="text-[13px] font-bold text-ink">Оберіть аудіофайл</span>
             <span className="text-[11px] text-muted">MP3, M4A, WAV, WEBM або OGG · до 14 МБ</span>
             <FileInput
-              accept=".mp3,.m4a,.wav,.webm,.ogg,.oga,audio/*,video/webm"
+              accept={AUDIO_UPLOAD_ACCEPT}
               onChange={event => {
                 const file = event.target.files?.[0];
                 if (file?.size > 14 * 1024 * 1024) showToast('Файл завеликий — ліміт 14 МБ', 'error');

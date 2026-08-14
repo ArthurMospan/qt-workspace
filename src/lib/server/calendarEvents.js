@@ -17,6 +17,7 @@ import {
   isKnownCalendarEventType,
   normalizeCalendarEventVisibility,
 } from '@/lib/utils/calendarEventTypes.mjs';
+import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 
 export const CALENDAR_EVENT_TYPES = new Set([
   'meeting',
@@ -144,13 +145,17 @@ export function normalizedCalendarEventInput(input, current = null, { ownerId = 
     participantIds: rawParticipantIds,
     reminderMinutes: rawReminderMinutes,
   }, { ownerId });
+  const meetingUrl = safeExternalUrl(typed.meetingUrl);
+  if (typed.meetingUrl && !meetingUrl) {
+    return { error: 'Посилання має починатися з http:// або https://' };
+  }
 
   return {
     value: {
       title,
       description,
       location: typed.location,
-      meetingUrl: typed.meetingUrl,
+      meetingUrl,
       projectId: typed.projectId,
       type,
       visibility: normalizeCalendarEventVisibility(

@@ -67,6 +67,7 @@ import {
   issuePath,
   issueRouteIdentifier,
 } from '@/lib/utils/issueKeys.mjs';
+import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -515,6 +516,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       : issue.source === 'buggybag'
         ? 'Цю задачу створено через інтеграцію BuggyBag.'
         : 'Цю задачу створено зовнішньою інтеграцією.';
+  const youTrackSourceUrl = issue.source === 'youtrack'
+    ? safeExternalUrl(issue.importMetadata?.sourceUrl)
+    : '';
   const checklistDone = (issue.subtasks || []).filter(s => s.done).length;
   const checklistAll = (issue.subtasks || []).length;
   const parentIssueId = existingParentIssueId(issue);
@@ -975,9 +979,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     <p className="mt-2 text-[11px] leading-relaxed text-faint">
                       Це не учасник організації, тому профіль та особистий чат недоступні.
                     </p>
-                    {issue.source === 'youtrack' && issue.importMetadata?.sourceUrl && (
+                    {youTrackSourceUrl && (
                       <a
-                        href={issue.importMetadata.sourceUrl}
+                        href={youTrackSourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"

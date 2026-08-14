@@ -9,6 +9,8 @@
 // why nobody believed they were real. A message now says what kind of event it
 // is, and a sweep that produces several for one person sends one digest.
 
+import { safeExternalUrl } from './externalUrls.mjs';
+
 const MAX_MESSAGE_LENGTH = 4096;
 
 // Telegram's HTML parse mode only needs these three escaped, and escaping more
@@ -42,11 +44,6 @@ export function telegramTypeIcon(type) {
   return TYPE_ICONS[type] || '🔔';
 }
 
-function safeUrl(value) {
-  const url = String(value || '').trim();
-  return /^https?:\/\/[^\s<>"]+$/i.test(url) ? url : '';
-}
-
 function truncate(value, limit) {
   const text = String(value ?? '').trim();
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
@@ -55,7 +52,7 @@ function truncate(value, limit) {
 function renderItem(item, { linkTitle }) {
   const icon = telegramTypeIcon(item.type);
   const title = escapeTelegramHtml(truncate(item.title, 200));
-  const url = safeUrl(item.url);
+  const url = safeExternalUrl(item.url);
   const head = linkTitle && url
     ? `${icon} <a href="${escapeTelegramHtml(url)}"><b>${title}</b></a>`
     : `${icon} <b>${title}</b>`;
@@ -71,7 +68,7 @@ export function formatTelegramNotification(items) {
 
   if (list.length === 1) {
     const [item] = list;
-    const url = safeUrl(item.url);
+    const url = safeExternalUrl(item.url);
     return {
       text: truncate(renderItem(item, { linkTitle: false }), MAX_MESSAGE_LENGTH),
       parseMode: 'HTML',
@@ -92,7 +89,7 @@ export function formatTelegramNotification(items) {
     parseMode: 'HTML',
     button: null,
     fallbackText: list
-      .map(item => [item.title, item.body, safeUrl(item.url)].filter(Boolean).join('\n'))
+      .map(item => [item.title, item.body, safeExternalUrl(item.url)].filter(Boolean).join('\n'))
       .join('\n\n'),
   };
 }

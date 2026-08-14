@@ -39,6 +39,10 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { messageMatchesChatSearch } from '@/lib/utils/chatAttachments.mjs';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import {
+  ATTACHMENT_UPLOAD_ACCEPT,
+  uploadFilePolicy,
+} from '@/lib/utils/uploadPolicy.mjs';
 
 // ─── Message Input ───────────────────────────────────────────────────────────
 function MessageInput({
@@ -189,7 +193,7 @@ function MessageInput({
     if (!files.length) return;
     const roomLeft = Math.max(0, 5 - attachments.length);
     const accepted = files
-      .filter(file => file.size <= 20 * 1024 * 1024)
+      .filter(file => !uploadFilePolicy(file, { maxBytes: 20 * 1024 * 1024 }).error)
       .slice(0, roomLeft);
     if (accepted.length !== files.length) {
       onError?.('До 5 файлів, максимум 20 МБ кожен');
@@ -293,7 +297,7 @@ function MessageInput({
               appearance={showEmoji ? 'soft' : 'quiet'}
               composition="chat-composer-action"
             />
-            <FileInput multiple ref={fileRef} onChange={handleFiles} />
+            <FileInput accept={ATTACHMENT_UPLOAD_ACCEPT} multiple ref={fileRef} onChange={handleFiles} />
             <IconAction
               onClick={() => fileRef.current?.click()}
               disabled={uploading}

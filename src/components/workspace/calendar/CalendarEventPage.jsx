@@ -77,6 +77,7 @@ import {
   calendarEventVisibilityOptionsFor,
 } from '@/lib/utils/calendarEventTypes.mjs';
 import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
+import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -478,6 +479,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       setActionError('Вкажіть назву події');
       return;
     }
+    const rawMeetingUrl = typeof draft.meetingUrl === 'string' ? draft.meetingUrl.trim() : '';
+    const meetingUrl = safeExternalUrl(rawMeetingUrl);
+    if (rawMeetingUrl && !meetingUrl) {
+      setActionError('Посилання має починатися з http:// або https://');
+      return;
+    }
     setSaving(true);
     setActionError('');
     try {
@@ -485,7 +492,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
         title,
         description: draft.description,
         location: draft.location,
-        meetingUrl: draft.meetingUrl,
+        meetingUrl,
       });
       showToast('Подію оновлено', 'success');
       setIsEditing(false);
@@ -672,6 +679,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   const showsParticipants = calendarEventInvitesOthers(view.type);
   const showsTracking = calendarEventSupportsTracking(view.type);
   const showsPlace = calendarEventSupportsPlace(view.type);
+  const safeMeetingUrl = safeExternalUrl(event.meetingUrl);
   const showsReminders = calendarEventSupportsReminders(view.type);
   const showsRsvp = calendarEventSupportsRsvp(view.type);
   const showsDuration = calendarEventHasDuration(view.type);
@@ -1237,11 +1245,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 />
               ) : (
                 <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface w-full">
-                  {event.meetingUrl ? (
+                  {safeMeetingUrl ? (
                     <a
-                      href={event.meetingUrl}
+                      href={safeMeetingUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink hover:underline"
                     >
                       Приєднатися до мітингу <ExternalLink size={12} />
