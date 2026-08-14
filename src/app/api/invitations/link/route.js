@@ -2,7 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
 
 // Invite links: the raw token leaves the server exactly once (in this
@@ -18,7 +18,7 @@ const DEFAULT_USES = 25;
 
 export async function POST(request) {
   try {
-    const { organizationId, role, expiresInDays, maxUses } = await request.json();
+    const { organizationId, role, expiresInDays, maxUses } = await readJsonBody(request);
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });

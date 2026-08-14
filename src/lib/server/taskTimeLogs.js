@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { NextResponse } from 'next/server';
+import { readJsonBody } from '@/lib/server/apiErrors';
 import { authorizeOrgRequest } from '@/lib/server/firebaseAdmin';
 import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
 import {
@@ -41,7 +42,10 @@ export async function readTaskTimeLogJson(request) {
     );
   }
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, {
+      code: 'TASK_TIME_INVALID_JSON',
+      message: 'Некоректний JSON для списання часу',
+    });
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       throw new Error('INVALID_BODY');
     }

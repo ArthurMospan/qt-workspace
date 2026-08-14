@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
 
 // Accepting an invite link. The token is looked up by hash; the joiner gets
@@ -22,7 +22,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
     }
 
-    const { token } = await request.json();
+    const { token } = await readJsonBody(request);
     if (typeof token !== 'string' || token.length < 20 || token.length > 128) return INVALID();
 
     const db = getAdminDb();

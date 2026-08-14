@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   runBirthdaySweep,
   runCalendarReminderSweep,
@@ -11,7 +11,7 @@ import {
 // tab being open.
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const organizationId = typeof body.organizationId === 'string' ? body.organizationId.trim() : '';
     const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) {

@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 import {
   suggestAvailableIssuePrefix,
@@ -9,7 +9,7 @@ import {
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { name, description, visibility, organizationId, team = [], hiddenColumns = [] } = body;
 
     const normalizedName = typeof name === 'string' ? name.trim() : '';

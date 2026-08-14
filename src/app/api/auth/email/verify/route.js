@@ -1,5 +1,10 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
+import {
+  InvalidJsonBodyError,
+  readJsonBody,
+  routeErrorResponse,
+} from '@/lib/server/apiErrors';
 import { getAdminAuth } from '@/lib/server/firebaseAdmin';
 import {
   EMAIL_OTP_MAX_ATTEMPTS,
@@ -18,7 +23,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email login is temporarily disabled' }, { status: 503 });
     }
 
-    const { email: rawEmail, token: rawToken } = await request.json();
+    const { email: rawEmail, token: rawToken } = await readJsonBody(request);
     const email = normalizeEmail(rawEmail);
     const token = typeof rawToken === 'string' ? rawToken.replace(/\D/g, '') : '';
     if (!email || token.length !== 6) {
@@ -58,6 +63,12 @@ export async function POST(request) {
 
     return NextResponse.json({ customToken });
   } catch (error) {
+    if (error instanceof InvalidJsonBodyError) {
+      return routeErrorResponse(error, {
+        context: 'auth-email-verify',
+        fallbackMessage: 'Failed to verify login code',
+      });
+    }
     console.error('[auth-email-verify] Failed:', error);
     const status = error.status || 500;
     return NextResponse.json({ error: status === 403 ? error.message : 'Failed to verify login code' }, { status });

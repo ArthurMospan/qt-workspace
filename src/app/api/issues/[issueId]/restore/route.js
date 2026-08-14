@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   canRestoreIssueTombstone,
   issueTombstoneId,
@@ -16,7 +16,7 @@ function restoreError(code, status, message) {
 export async function POST(request, context) {
   try {
     const { issueId } = await context.params;
-    const body = await request.json().catch(() => ({}));
+    const body = await readJsonBody(request);
     const organizationId = typeof body.organizationId === 'string'
       ? body.organizationId.trim().slice(0, 200)
       : '';

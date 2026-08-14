@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deliverEmail, invitationEmailHtml } from '@/lib/server/email';
 
 // The invitation must be created even when the email provider is down or not
@@ -54,7 +54,7 @@ async function resolveInvitedProjectIds(db, requested, organizationId) {
 
 export async function POST(request) {
   try {
-    const { organizationId, email, role, projectIds } = await request.json();
+    const { organizationId, email, role, projectIds } = await readJsonBody(request);
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });

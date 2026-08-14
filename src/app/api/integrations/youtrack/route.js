@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readJsonBody } from '@/lib/server/apiErrors';
 import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import { youTrackRouteErrorResponse } from '@/lib/server/youtrackRouteErrors';
 import {
@@ -31,7 +32,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { organizationId, baseUrl, token } = await request.json();
+    const { organizationId, baseUrl, token } = await readJsonBody(request);
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });

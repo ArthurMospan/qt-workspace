@@ -4,7 +4,7 @@ import {
   FieldValue,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 
 function memberMutationError(code, status, message) {
   const error = new Error(code);
@@ -95,9 +95,12 @@ export async function PATCH(request, context) {
 
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+      return NextResponse.json({
+        error: 'Invalid JSON body',
+        code: 'INVALID_JSON',
+      }, { status: 400 });
     }
     const action = body?.action;
     if (!['role', 'position', 'rate'].includes(action)) {

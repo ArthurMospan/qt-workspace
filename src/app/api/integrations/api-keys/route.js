@@ -2,7 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb, hashApiKey } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 
 async function authorize(request) {
   const organizationId = new URL(request.url).searchParams.get('organizationId');
@@ -45,7 +45,7 @@ export async function POST(request) {
   try {
     const { organizationId, authorization } = await authorize(request);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    const { name } = await request.json();
+    const { name } = await readJsonBody(request);
     const safeName = typeof name === 'string' ? name.trim().slice(0, 80) : '';
     if (!safeName) return NextResponse.json({ error: 'Key name is required' }, { status: 400 });
 
@@ -72,7 +72,7 @@ export async function DELETE(request) {
   try {
     const { organizationId, authorization } = await authorize(request);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    const { keyId } = await request.json();
+    const { keyId } = await readJsonBody(request);
     if (!keyId) return NextResponse.json({ error: 'Key id is required' }, { status: 400 });
 
     const db = getAdminDb();

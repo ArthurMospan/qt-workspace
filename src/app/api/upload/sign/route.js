@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   callerBelongsToPathOrganization,
   isSafeUploadFolder,
@@ -25,7 +25,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Too many upload requests' }, { status: 429 });
     }
 
-    const { params } = await req.json();
+    const { params } = await readJsonBody(req);
     const folder = params?.folder;
     const publicId = params?.public_id;
     if (

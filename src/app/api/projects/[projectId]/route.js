@@ -1,7 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
@@ -39,7 +39,7 @@ export async function PATCH(request, context) {
     const { projectId } = await context.params;
     const loaded = await loadAuthorizedProject(request, projectId);
     if (loaded.error) return NextResponse.json({ error: loaded.error }, { status: loaded.status });
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const { action, team } = body;
     if (!['archive', 'restore', 'update-team', 'update-settings'].includes(action)) {
       return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });

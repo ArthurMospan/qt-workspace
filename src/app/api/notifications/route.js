@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { deliverEmail } from '@/lib/server/email';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
@@ -23,7 +23,7 @@ async function sendEmail({ email, type, title, body, link }) {
 
 export async function POST(request) {
   try {
-    const payload = await request.json();
+    const payload = await readJsonBody(request);
     const rawUserIds = Array.isArray(payload.userIds) ? payload.userIds : [];
     if (rawUserIds.length > 50) return NextResponse.json({ error: 'Too many recipients' }, { status: 400 });
     const userIds = [...new Set(rawUserIds)].filter(uid => typeof uid === 'string' && uid.length > 0);

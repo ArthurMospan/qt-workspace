@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, FieldValue, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function PATCH(request, context) {
   try {
@@ -8,7 +8,7 @@ export async function PATCH(request, context) {
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner']);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
 
-    const { action, targetUserId } = await request.json();
+    const { action, targetUserId } = await readJsonBody(request);
     if (action !== 'transfer-ownership' || typeof targetUserId !== 'string' || !targetUserId) {
       return NextResponse.json({ error: 'Invalid ownership transfer' }, { status: 400 });
     }

@@ -16,7 +16,7 @@
 // платний, без жодного рішення з чийогось боку.
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   classifyGeminiFailure,
   geminiFailureMessage,
@@ -195,7 +195,7 @@ async function analyzeWithGemini({ prompt, transcript, audio, apiKeys }) {
 
 export async function POST(request) {
   try {
-    const { organizationId, transcript, audioUrl, audioMimeType, memberNames = [], projectName } = await request.json();
+    const { organizationId, transcript, audioUrl, audioMimeType, memberNames = [], projectName } = await readJsonBody(request);
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });

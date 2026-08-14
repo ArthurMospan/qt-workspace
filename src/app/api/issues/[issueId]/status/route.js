@@ -5,7 +5,7 @@ import {
   enforceRateLimit,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import {
@@ -110,7 +110,7 @@ export async function PATCH(request, context) {
 
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
       return jsonError(
         'Тіло запиту має бути коректним JSON',

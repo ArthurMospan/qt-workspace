@@ -2,7 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   ensureTelegramWebhook,
   telegramStatus,
@@ -34,7 +34,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const organizationId = typeof body.organizationId === 'string' ? body.organizationId.trim() : '';
     const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);

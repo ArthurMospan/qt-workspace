@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { runBirthdaySweep } from '@/lib/server/reminderJobs';
 
 // Announces the caller's birthday now, if it is today.
@@ -15,9 +15,12 @@ export async function POST(request) {
   try {
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
-      return NextResponse.json({ error: 'Некоректний JSON' }, { status: 400 });
+      return NextResponse.json({
+        error: 'Некоректний JSON',
+        code: 'INVALID_JSON',
+      }, { status: 400 });
     }
     const organizationId = typeof body?.organizationId === 'string' ? body.organizationId.trim() : '';
     const authorization = await authorizeOrgRequest(request, organizationId);

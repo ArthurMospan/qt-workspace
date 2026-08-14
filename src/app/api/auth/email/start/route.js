@@ -1,5 +1,10 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
+import {
+  InvalidJsonBodyError,
+  readJsonBody,
+  routeErrorResponse,
+} from '@/lib/server/apiErrors';
 import { enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import {
   createEmailOtp,
@@ -18,7 +23,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email login is temporarily disabled' }, { status: 503 });
     }
 
-    const { email: rawEmail } = await request.json();
+    const { email: rawEmail } = await readJsonBody(request);
     const email = normalizeEmail(rawEmail);
     if (!email) {
       return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
@@ -49,6 +54,12 @@ export async function POST(request) {
       ...delivery,
     });
   } catch (error) {
+    if (error instanceof InvalidJsonBodyError) {
+      return routeErrorResponse(error, {
+        context: 'auth-email-start',
+        fallbackMessage: 'Failed to send login code',
+      });
+    }
     console.error('[auth-email-start] Failed:', error);
     return NextResponse.json({ error: 'Failed to send login code' }, { status: 500 });
   }

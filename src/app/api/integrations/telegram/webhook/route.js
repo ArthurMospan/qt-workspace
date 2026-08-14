@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   createIssueFromTelegram,
   sendTelegramMessage,
@@ -136,7 +136,7 @@ export async function POST(request) {
     if (!validTelegramWebhookSecret(secret)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const update = await request.json();
+    const update = await readJsonBody(request);
     const message = update.message;
     if (!message?.text || !message.chat?.id) return NextResponse.json({ ok: true });
 

@@ -5,7 +5,7 @@ import {
   enforceRateLimit,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   InvoicePayloadError,
   MAX_INVOICE_JSON_BYTES,
@@ -70,7 +70,7 @@ export async function POST(request) {
 
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
       return errorResponse(invoiceError(
         'INVALID_INVOICE_PAYLOAD',

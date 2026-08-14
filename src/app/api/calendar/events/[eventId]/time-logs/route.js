@@ -5,7 +5,7 @@ import {
   enforceRateLimit,
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   canAccessCalendarEventProject,
   canViewCalendarEvent,
@@ -314,7 +314,7 @@ export async function POST(request, context) {
     const eventId = cleanId(rawEventId);
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
       return NextResponse.json({
         error: 'Некоректний JSON',
@@ -418,7 +418,7 @@ export async function PATCH(request, context) {
     const eventId = cleanId(rawEventId);
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
       return NextResponse.json({
         error: 'Некоректний JSON',

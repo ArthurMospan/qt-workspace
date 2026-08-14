@@ -1,7 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   createCalendarNotifications,
   normalizedCalendarEventInput,
@@ -143,7 +143,7 @@ export async function POST(request) {
   try {
     let body;
     try {
-      body = await request.json();
+      body = await readJsonBody(request);
     } catch {
       return NextResponse.json({
         error: 'Некоректний JSON',

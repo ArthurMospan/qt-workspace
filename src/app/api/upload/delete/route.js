@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   callerBelongsToPathOrganization,
   isSafeStoragePath,
@@ -35,7 +35,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Too many delete requests' }, { status: 429 });
     }
 
-    const { storagePath, resourceType } = await req.json();
+    const { storagePath, resourceType } = await readJsonBody(req);
     if (!isSafeStoragePath(storagePath)) {
       return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 });
     }

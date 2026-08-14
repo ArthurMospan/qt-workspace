@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { randomUUID } from 'node:crypto';
 import { enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
 import {
@@ -60,9 +60,12 @@ export async function POST(req) {
 
     let body;
     try {
-      body = await req.json();
+      body = await readJsonBody(req);
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+      return NextResponse.json({
+        error: 'Invalid JSON body',
+        code: 'INVALID_JSON',
+      }, { status: 400 });
     }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ error: 'Request body must be an object' }, { status: 400 });
