@@ -34,6 +34,7 @@
     "migrate:calendar-time-visibility": "node scripts/backfill-calendar-time-log-visibility.mjs",
     "migrate:member-access": "node scripts/migrate-member-access.mjs",
     "migrate:image-assets": "node scripts/migrate-image-assets.mjs",
+    "migrate:issue-keys": "node scripts/migrate-issue-keys.mjs",
     "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs"
   },
   "dependencies": {

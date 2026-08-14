@@ -43,7 +43,8 @@ export function isValidIssuePrefix(value) {
   const raw = String(value || '').trim();
   return raw.length >= ISSUE_PREFIX_MIN_LENGTH
     && raw.length <= ISSUE_PREFIX_MAX_LENGTH
-    && /^[A-Z0-9]+$/i.test(raw);
+    && /^[A-Z0-9]+$/i.test(raw)
+    && /[A-Z]/i.test(raw);
 }
 
 export function projectIssuePrefix(project) {
@@ -51,8 +52,10 @@ export function projectIssuePrefix(project) {
   if (isValidIssuePrefix(explicit)) return explicit;
 
   const generated = normalizeIssuePrefix(project?.name || 'WS').slice(0, 3);
-  if (generated.length >= ISSUE_PREFIX_MIN_LENGTH) return generated;
-  return normalizeIssuePrefix(`${generated}WS`).slice(0, 3) || 'WS';
+  if (isValidIssuePrefix(generated)) return generated;
+
+  const repaired = normalizeIssuePrefix(`WS${generated}`);
+  return isValidIssuePrefix(repaired) ? repaired : 'WS';
 }
 
 /** Whether another project in the same organization already owns this prefix. */
@@ -108,6 +111,28 @@ export function taskDisplayKey(issue, project = null) {
   return `${projectIssuePrefix(project)}-${legacy[1]}`;
 }
 
+/**
+ * Turn a historical Unicode or numeric task key into its URL-safe successor.
+ * Existing valid ASCII keys are stable; only prefixes the current writers can
+ * no longer create are repaired. The migration uses this same function, so a
+ * legacy URL resolves to exactly the key that will be persisted.
+ */
+export function canonicalHistoricalIssueKey(value, project = null) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^([\p{L}\p{N}]+)-(\d+)$/u);
+  if (!match) return '';
+
+  const [, rawPrefix, sequence] = match;
+  if (isValidIssuePrefix(rawPrefix)) return `${rawPrefix.toUpperCase()}-${sequence}`;
+
+  const normalizedPrefix = normalizeIssuePrefix(rawPrefix);
+  const projectPrefix = project ? projectIssuePrefix(project) : '';
+  const prefix = isValidIssuePrefix(projectPrefix)
+    ? projectPrefix
+    : normalizedPrefix;
+  return isValidIssuePrefix(prefix) ? `${prefix}-${sequence}` : '';
+}
+
 /** Raw pre-prefix key to try when somebody opens a displayed legacy key. */
 export function legacyStoredIssueKey(displayKey, project = null) {
   const match = String(displayKey || '').trim().match(/^([\p{L}\p{N}]+)-(\d+)$/u);
@@ -118,7 +143,8 @@ export function legacyStoredIssueKey(displayKey, project = null) {
 /** The human key is canonical in URLs; the document id is only a fallback. */
 export function issueRouteIdentifier(issue, project = null) {
   const issueKey = taskDisplayKey(issue, project);
-  if (/^[A-Z0-9]{2,8}-\d+$/i.test(issueKey)) return issueKey.toUpperCase();
+  const canonicalKey = canonicalHistoricalIssueKey(issueKey, project);
+  if (canonicalKey) return canonicalKey;
   return typeof issue?.id === 'string' ? issue.id.trim() : '';
 }
 
@@ -144,7 +170,17 @@ export function issueMatchesRouteIdentifier(issue, routeIdentifier, project = nu
     // A malformed escape sequence is simply not a matching issue key.
   }
   const normalizedIdentifier = identifier.toLocaleUpperCase('uk-UA');
+  const storedKey = typeof issue?.issueKey === 'string'
+    ? issue.issueKey.trim().toLocaleUpperCase('uk-UA')
+    : '';
+  const legacyKeys = Array.isArray(issue?.legacyIssueKeys)
+    ? issue.legacyIssueKeys
+      .filter(value => typeof value === 'string')
+      .map(value => value.trim().toLocaleUpperCase('uk-UA'))
+    : [];
   return issue?.id === identifier
+    || storedKey === normalizedIdentifier
+    || legacyKeys.includes(normalizedIdentifier)
     || issueRouteIdentifier(issue, project) === normalizedIdentifier
     || issueRouteIdentifier(issue) === normalizedIdentifier
     || legacyStoredIssueKey(identifier, project) === issue?.issueKey;

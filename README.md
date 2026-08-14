@@ -128,7 +128,8 @@ Each project owns an internal short `issuePrefix` (for example `ENG` or `DES`)
 and an atomic `issueCounter`. Every project-scoped writer — the app, Telegram
 and the public task API — consumes that same sequence, so keys such as `ENG-12`
 are stable and unique inside the organization. The prefix is generated
-automatically from the project name as 2–8 URL-safe ASCII letters or numbers;
+automatically from the project name as 2–8 URL-safe ASCII letters or numbers,
+with at least one letter;
 it is not an editable project setting. The server transaction picks the first
 readable free variant (`ENG`, `ENG2`, `ENG3`, ...) when names would collide.
 Projects created before this field existed claim a free ASCII prefix inside
@@ -161,6 +162,7 @@ A project board's columns are that project's statuses, and `projects/{id}.hidden
 - [UI Kit contract](docs/UI_KIT_CONTRACT.md)
 - [Task hierarchy, logical links and accounting](docs/TASK_HIERARCHY_AND_LINKS.md)
 - [Issue hierarchy v2 migration](docs/migrations/ISSUE_HIERARCHY_V2.md)
+- [Historical issue-key migration](docs/migrations/ISSUE_KEYS_ASCII.md)
 - [Issue spent-time reconciliation](docs/migrations/ISSUE_SPENT_MINUTES.md)
 - [Calendar time-log visibility backfill](docs/migrations/CALENDAR_TIME_LOG_VISIBILITY.md)
 - [Member access and protected-rate migration](docs/migrations/MEMBER_ACCESS_AND_RATES.md)

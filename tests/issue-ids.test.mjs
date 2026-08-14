@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  canonicalHistoricalIssueKey,
   issueMatchesRouteIdentifier,
   issuePath,
+  isValidIssuePrefix,
   legacyStoredIssueKey,
+  projectIssuePrefix,
   projectIssuePrefixTaken,
   suggestAvailableIssuePrefix,
 } from '../src/lib/utils/issueKeys.mjs';
@@ -17,6 +20,7 @@ test('every project task writer consumes the stable project issue sequence', asy
     read('../src/app/api/issues/route.js'),
     read('../src/lib/server/telegram.js'),
     read('../src/app/api/v1/tasks/route.js'),
+    read('../src/lib/server/youtrackImporter.js'),
     ]),
     read('../src/lib/server/issueKeys.js'),
   ]);
@@ -67,6 +71,23 @@ test('similar project names receive the next readable free prefix', () => {
   );
 });
 
+test('project prefixes contain a letter and historical keys have deterministic ASCII successors', () => {
+  assert.equal(isValidIssuePrefix('111'), false);
+  assert.equal(isValidIssuePrefix('A111'), true);
+  assert.equal(isValidIssuePrefix('МАЧ'), false);
+  assert.equal(projectIssuePrefix({ name: '111', issuePrefix: '111' }), 'WS111');
+  assert.equal(canonicalHistoricalIssueKey('МАЧ-1'), 'MACH-1');
+  assert.equal(
+    canonicalHistoricalIssueKey('МАЧ-1', { name: 'Мачете', issuePrefix: 'MAC' }),
+    'MAC-1',
+  );
+  assert.equal(
+    canonicalHistoricalIssueKey('111-2', { name: '111', issuePrefix: '111' }),
+    'WS111-2',
+  );
+  assert.equal(canonicalHistoricalIssueKey('eng-12'), 'ENG-12');
+});
+
 test('task routes use the human issue key and still recognize old document-id links', () => {
   const issue = { id: 'firestore-symbols-123', projectId: 'project/one', issueKey: 'eng-12' };
 
@@ -78,8 +99,25 @@ test('task routes use the human issue key and still recognize old document-id li
   assert.equal(issuePath({ id: 'legacy-id', projectId: 'project-1' }), '/project-1/issue/legacy-id');
   assert.equal(
     issuePath({ id: 'safe-doc-id', projectId: 'project-1', issueKey: 'МАЧ-1' }),
-    '/project-1/issue/safe-doc-id',
+    '/project-1/issue/MACH-1',
   );
+  assert.equal(
+    issueMatchesRouteIdentifier(
+      { id: 'safe-doc-id', projectId: 'project-1', issueKey: 'МАЧ-1' },
+      'МАЧ-1',
+    ),
+    true,
+  );
+
+  const migratedIssue = {
+    id: 'migrated-id',
+    projectId: 'project-1',
+    issueKey: 'MACH-1',
+    legacyIssueKeys: ['МАЧ-1'],
+  };
+  assert.equal(issuePath(migratedIssue), '/project-1/issue/MACH-1');
+  assert.equal(issueMatchesRouteIdentifier(migratedIssue, 'МАЧ-1'), true);
+  assert.equal(issueMatchesRouteIdentifier(migratedIssue, 'MACH-1'), true);
 
   const legacyIssue = { id: 'old-doc', projectId: 'project-1', issueKey: 'WS-12' };
   const project = { id: 'project-1', name: 'Engineering', issuePrefix: 'ENG' };
@@ -91,6 +129,34 @@ test('the task detail route resolves a key then canonicalizes legacy URLs', asyn
   const detail = await read('../src/components/workspace/IssueDetail.jsx');
   assert.match(detail, /issueMatchesRouteIdentifier\(candidate, issueLocator, project\)/);
   assert.match(detail, /router\.replace\(`\$\{canonicalIssuePath\}/);
+});
+
+test('the historical key migration is explicit, dry-run-first and retry-safe', async () => {
+  const [migration, documentation, packageJson] = await Promise.all([
+    read('../scripts/migrate-issue-keys.mjs'),
+    read('../docs/migrations/ISSUE_KEYS_ASCII.md'),
+    read('../package.json'),
+  ]);
+
+  assert.match(migration, /const APPLY = process\.argv\.includes\('--apply'\)/);
+  assert.match(migration, /--confirm-project/);
+  assert.match(migration, /--confirm-organization/);
+  assert.match(migration, /--confirm-writes-frozen/);
+  assert.match(migration, /collisions\.length > 0/);
+  assert.match(migration, /legacyIssueKeys: operation\.targetAliases/);
+  assert.match(migration, /liveKey !== operation\.sourceKey/);
+  assert.doesNotMatch(migration, /onAuthStateChanged|signInWith/);
+  assert.match(documentation, /dry-run/i);
+  assert.match(packageJson, /"migrate:issue-keys"/);
+});
+
+test('YouTrack imports use the same ASCII prefix rules as every other writer', async () => {
+  const importer = await read('../src/lib/server/youtrackImporter.js');
+
+  assert.match(importer, /suggestAvailableIssuePrefix\(/);
+  assert.match(importer, /resolveProjectIssuePrefixInTransaction\(/);
+  assert.doesNotMatch(importer, /cleanProjectPrefix/);
+  assert.doesNotMatch(importer, /А-ЯІЇЄҐ/);
 });
 
 test('search shows only persisted task IDs and never invents one from a document id', async () => {

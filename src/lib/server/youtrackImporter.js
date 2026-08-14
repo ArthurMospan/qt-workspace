@@ -4,7 +4,12 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { v2 as cloudinary } from 'cloudinary';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
+import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import { youTrackClientFor } from '@/lib/server/youtrackIntegration';
+import {
+  isValidIssuePrefix,
+  suggestAvailableIssuePrefix,
+} from '@/lib/utils/issueKeys.mjs';
 import {
   fieldMinutes,
   fieldPresentation,
@@ -203,11 +208,6 @@ async function writeInChunks(entries, writer) {
   }
 }
 
-function cleanProjectPrefix(value) {
-  const cleaned = String(value || '').toUpperCase().replace(/[^A-ZА-ЯІЇЄҐ0-9]/gu, '').slice(0, 8);
-  return cleaned || 'YT';
-}
-
 function actorFor(user, job) {
   if (!user) return {
     id: 'external:youtrack:unknown',
@@ -277,26 +277,35 @@ async function ensureTargetProject(job, sourceProject) {
     ...Object.values(job.userMappings || {}).filter(value => value && value !== 'external'),
   ])].slice(0, 100);
   await db.runTransaction(async transaction => {
-    const [freshLink, organization] = await Promise.all([
+    const [freshLink, organization, organizationProjects] = await Promise.all([
       transaction.get(linkRef),
       transaction.get(db.collection('organizations').doc(job.organizationId)),
+      transaction.get(
+        db.collection('projects').where('organizationId', '==', job.organizationId),
+      ),
     ]);
     if (freshLink.exists) return;
     if (!organization.exists) throw new Error('Організацію не знайдено');
     if ((organization.data().plan || 'free') !== 'pro') {
-      const activeProjects = await transaction.get(
-        db.collection('projects')
-          .where('organizationId', '==', job.organizationId)
-          .where('status', '==', 'active'),
-      );
-      if (activeProjects.size >= 3) {
+      const activeProjectCount = organizationProjects.docs
+        .filter(document => document.data().status === 'active')
+        .length;
+      if (activeProjectCount >= 3) {
         throw new Error('Ліміт проєктів вичерпано. Зіставте імпорт з наявним проєктом або перейдіть на Pro.');
       }
     }
+    const organizationProjectValues = organizationProjects.docs.map(document => ({
+      id: document.id,
+      ...document.data(),
+    }));
+    const issuePrefix = suggestAvailableIssuePrefix(
+      { name: sourceProject.name, issuePrefix: sourceProject.shortName },
+      organizationProjectValues,
+    );
     transaction.create(projectRef, {
       name: sourceProject.name,
       description: sourceProject.description || `Імпортовано з YouTrack · ${sourceProject.shortName}`,
-      issuePrefix: cleanProjectPrefix(sourceProject.shortName),
+      issuePrefix,
       visibility: 'internal',
       organizationId: job.organizationId,
       team: mappedTeam,
@@ -756,7 +765,14 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     });
     const { closedStatusIds, ...persistedWorkflowFields } = workflowFields;
     const next = (project.issueCounter || 0) + 1;
-    const issueKey = `${cleanProjectPrefix(project.issuePrefix || project.name)}-${next}`;
+    const issuePrefix = await resolveProjectIssuePrefixInTransaction({
+      db,
+      transaction,
+      project,
+      projectId: targetProjectId,
+      organizationId: job.organizationId,
+    });
+    const issueKey = `${issuePrefix}-${next}`;
     transaction.create(issueRef, {
       ...importedFields,
       ...persistedWorkflowFields,
@@ -780,6 +796,7 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     });
     transaction.update(projectRef, {
       issueCounter: next,
+      ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.create(linkRef, {
