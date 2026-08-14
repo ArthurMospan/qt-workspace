@@ -32,18 +32,22 @@ export default function MemberAnalyticsPage() {
   const { memberId } = useParams();
   const router = useRouter();
   const { projects = [] } = useAppContext();
+  const activeProjects = useMemo(
+    () => projects.filter(project => project.status !== 'archived'),
+    [projects],
+  );
   const { members = [], loading: membersLoading } = useOrganization();
-  const { issues, timeLogs, loading } = useWorkspaceAnalytics(projects.map(project => project.id));
+  const { issues, timeLogs, loading } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
   const { events, loading: calendarLoading } = useCalendarEvents();
   const [projectFilters, setProjectFilters] = useState([]);
   const [period, setPeriod] = useState(30);
 
   const member = members.find(item => (item.id || item.uid) === memberId);
   const visibleProjects = useMemo(
-    () => projects.filter(project => (
+    () => activeProjects.filter(project => (
       projectFilters.length === 0 || projectFilters.includes(project.id)
     )),
-    [projectFilters, projects],
+    [activeProjects, projectFilters],
   );
   const hierarchyIssues = useMemo(
     () => issues.filter(issue => (
@@ -117,7 +121,7 @@ export default function MemberAnalyticsPage() {
                 <MultiSelect
                   value={projectFilters}
                   onChange={setProjectFilters}
-                  options={projects.map(project => ({ value: project.id, label: project.name }))}
+                  options={activeProjects.map(project => ({ value: project.id, label: project.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту…"
                   filterRole="project"

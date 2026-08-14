@@ -230,7 +230,7 @@ function AnalyticsContent({
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiCard icon={Target} label="Всі завдання"
+          <KpiCard icon={Target} label="Робочі задачі"
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
           <KpiCard icon={Zap} label={`Закрито за ${period}д`} onClick={() => onTabChange('velocity')}
             value={stats.recentDone} sub="тренди — у Продуктивності" />
@@ -278,11 +278,14 @@ function AnalyticsContent({
 
           <Card preset="borderless" padding="lg" className="md:col-span-2">
             <SectionTitle>По проєктах</SectionTitle>
+            <p className="mb-3 text-[11px] leading-relaxed text-muted">
+              Батьківські задачі не рахуються окремо: їхня робота представлена підзадачами.
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-[#f0f0f0]">
-                    {['Проєкт', 'Всього', 'Прогрес', 'Відкрито', 'Прострочено', `Час · ${period}д`, ''].map(h => (
+                    {['Проєкт', 'Робочих задач', 'Прогрес', 'Відкрито', 'Прострочено', `Час · ${period}д`, ''].map(h => (
                       <th key={h} className="pb-2 text-[10px] font-bold text-muted uppercase tracking-wide pr-4 last:pr-0">{h}</th>
                     ))}
                   </tr>
@@ -398,6 +401,10 @@ function AnalyticsContent({
 export default function WorkspaceAnalyticsPage() {
   const router = useRouter();
   const { projects = [], orgRole, currentUser } = useAppContext();
+  const activeProjects = useMemo(
+    () => projects.filter(project => project.status !== 'archived'),
+    [projects],
+  );
   const analyticsSearch = useWorkspaceStore(state => state.analyticsSearch);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -413,7 +420,7 @@ export default function WorkspaceAnalyticsPage() {
     timeLogs,
     issueLinks,
     loading,
-  } = useWorkspaceAnalytics(projects.map(p => p.id));
+  } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
 
   // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
@@ -472,10 +479,10 @@ export default function WorkspaceAnalyticsPage() {
 
   const searchQuery = analyticsSearch.trim().toLocaleLowerCase('uk-UA');
   const searchMatchedProjectIds = useMemo(() => new Set(
-    projects
+    activeProjects
       .filter(project => `${project.name || ''} ${project.description || ''}`.toLocaleLowerCase('uk-UA').includes(searchQuery))
       .map(project => project.id)
-  ), [projects, searchQuery]);
+  ), [activeProjects, searchQuery]);
 
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
@@ -507,10 +514,10 @@ export default function WorkspaceAnalyticsPage() {
   );
 
   const visibleProjects = useMemo(() => {
-    if (!searchQuery) return projects;
+    if (!searchQuery) return activeProjects;
     const issueProjectIds = new Set(filteredIssues.map(issue => issue.projectId));
-    return projects.filter(project => searchMatchedProjectIds.has(project.id) || issueProjectIds.has(project.id));
-  }, [projects, filteredIssues, searchMatchedProjectIds, searchQuery]);
+    return activeProjects.filter(project => searchMatchedProjectIds.has(project.id) || issueProjectIds.has(project.id));
+  }, [activeProjects, filteredIssues, searchMatchedProjectIds, searchQuery]);
 
   const filteredIssueIds = useMemo(() => new Set(filteredIssues.map(i => i.id)), [filteredIssues]);
   const calendarEventsByKey = useMemo(() => {
@@ -535,7 +542,7 @@ export default function WorkspaceAnalyticsPage() {
           const event = calendarEventsByKey.get(
             calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt),
           );
-          const project = projects.find(item => item.id === log.projectId);
+          const project = activeProjects.find(item => item.id === log.projectId);
           const eventText = `${event?.title || ''} ${event?.description || ''} ${event?.location || ''} ${project?.name || ''}`
             .toLocaleLowerCase('uk-UA');
           if (!eventText.includes(searchQuery)) return false;
@@ -553,7 +560,7 @@ export default function WorkspaceAnalyticsPage() {
     filteredIssueIds,
     priorityFilter,
     projectFilters,
-    projects,
+    activeProjects,
     searchQuery,
     timeLogs,
     typeFilter,
@@ -591,7 +598,7 @@ export default function WorkspaceAnalyticsPage() {
 
   // Рахунок — один конкретний проєкт
   const [billingProjectId, setBillingProjectId] = useState('');
-  const billingProject = projects.find(p => p.id === billingProjectId) || projects[0];
+  const billingProject = activeProjects.find(project => project.id === billingProjectId) || activeProjects[0];
   const billingIssues = issues.filter(i => i.projectId === billingProject?.id);
 
   const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
@@ -617,7 +624,7 @@ export default function WorkspaceAnalyticsPage() {
                   filterRole="project"
                   value={billingProject?.id || ''}
                   onChange={setBillingProjectId}
-                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  options={activeProjects.map(project => ({ value: project.id, label: project.name }))}
                   variant="ghost"
                 />
               </FilterBar>
@@ -639,7 +646,7 @@ export default function WorkspaceAnalyticsPage() {
                   <MultiSelect
                     value={projectFilters}
                     onChange={setProjectFilters}
-                    options={projects.map(p => ({ value: p.id, label: p.name }))}
+                    options={activeProjects.map(project => ({ value: project.id, label: project.name }))}
                     placeholder="Всі проєкти"
                     searchPlaceholder="Пошук проєкту..."
                     filterRole="project"
@@ -665,7 +672,7 @@ export default function WorkspaceAnalyticsPage() {
                 <MultiSelect
                   value={projectFilters}
                   onChange={setProjectFilters}
-                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  options={activeProjects.map(project => ({ value: project.id, label: project.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту..."
                   filterRole="project"
@@ -693,7 +700,7 @@ export default function WorkspaceAnalyticsPage() {
                 <MultiSelect
                   value={projectFilters}
                   onChange={setProjectFilters}
-                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  options={activeProjects.map(project => ({ value: project.id, label: project.name }))}
                   placeholder="Всі проєкти"
                   searchPlaceholder="Пошук проєкту..."
                   filterRole="project"
@@ -783,7 +790,7 @@ export default function WorkspaceAnalyticsPage() {
             hierarchyIssues={teamHierarchyIssues}
             timeLogs={teamTimeLogs}
             events={calendarEvents}
-            projects={projects}
+            projects={activeProjects}
             period={period}
             selectedMemberId={teamMemberFilter}
             onSelectMember={selectTeamMember}
