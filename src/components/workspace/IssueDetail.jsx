@@ -61,6 +61,7 @@ import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { markIssueSeen } from '@/lib/services/issueReadState';
 import { issueActivityCursor } from '@/lib/utils/issueReadState.mjs';
 import { reportLoadError } from '@/lib/utils/errors';
+import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import {
   issueMatchesRouteIdentifier,
   issuePath,
@@ -237,6 +238,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const issue = issues.find(candidate => issueMatchesRouteIdentifier(candidate, issueLocator, project));
   const issueId = issue?.id || '';
   const canonicalIssuePath = issuePath(issue, project || projectId);
+  const issueLoadErrorKind = organizationLoadErrorKind(issuesError);
+  const issueAccessFailure = issueLoadErrorKind === 'permission-denied' || issueLoadErrorKind === 'not-found';
 
   const showToast      = useWorkspaceStore(s => s.showToast);
   const confirmDialog  = useConfirm();
@@ -429,9 +432,17 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
         ) : issuesError ? (
           <div className="max-w-[360px] px-6 text-center">
-            <p className="text-[16px] font-bold text-ink mb-2">Не вдалося завантажити задачу</p>
-            <p className="text-[13px] text-muted mb-4">Дані не видалені. Сервіс бази тимчасово недоступний.</p>
-            <TextAction size="lg" onClick={() => window.location.reload()}>Спробувати ще раз</TextAction>
+            <p className="text-[16px] font-bold text-ink mb-2">
+              {issueAccessFailure ? 'Немає доступу до задачі' : 'Не вдалося завантажити задачу'}
+            </p>
+            <p className={`text-[13px] text-muted ${issueAccessFailure ? '' : 'mb-4'}`}>
+              {issueAccessFailure
+                ? 'Задачу видалено або у вас більше немає доступу до її проєкту.'
+                : 'Дані не видалені. Сервіс бази тимчасово недоступний.'}
+            </p>
+            {!issueAccessFailure && (
+              <TextAction size="lg" onClick={() => window.location.reload()}>Спробувати ще раз</TextAction>
+            )}
           </div>
         ) : (
           <div className="text-center">

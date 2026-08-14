@@ -203,7 +203,7 @@ test('the incoming column survives a project switching the backlog off', () => {
 test('only the cross-project board groups by category', async () => {
   const [myTasks, projectPage, board] = await Promise.all([
     read('../src/lib/hooks/useAllMyTasks.js'),
-    read('../src/app/(app)/[projectId]/page.js'),
+    read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),
     read('../src/components/workspace/AgileBoard.jsx'),
   ]);
 

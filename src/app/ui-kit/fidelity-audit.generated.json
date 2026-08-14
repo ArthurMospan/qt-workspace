@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 185,
-    "parsedFiles": 185,
+    "productFiles": 189,
+    "parsedFiles": 189,
     "parseErrors": 0,
     "nativeControls": 16,
     "structures": {
@@ -25,7 +25,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 48,
+    "localSurfaceExceptions": 49,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -364,22 +364,27 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:243",
+      "tag": "div",
+      "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
+    },
+    {
       "location": "src/app/(app)/error.js:16",
       "tag": "div",
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:97",
+      "location": "src/app/(app)/layout.js:100",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:142",
+      "location": "src/app/(app)/page.js:143",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:151",
+      "location": "src/app/(app)/page.js:152",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -529,7 +534,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1577",
+      "location": "src/components/workspace/IssueDetail.jsx:1588",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
@@ -599,7 +604,7 @@
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },
     {
-      "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:41",
+      "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:50",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     }

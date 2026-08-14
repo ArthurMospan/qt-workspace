@@ -111,7 +111,7 @@ test('QUI-73 and QUI-81 show newly created sprint, backlog and board tasks first
 test('QUI-80 gives every FilterBar selector a semantic icon role', async () => {
   const [select, project, my, sprints, analytics] = await Promise.all([
     read('../src/components/ui/Select.jsx'),
-    read('../src/app/(app)/[projectId]/page.js'),
+    read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),
     read('../src/app/(app)/my/page.js'),
     read('../src/app/(app)/sprints/page.js'),
     read('../src/app/(app)/analytics/page.js'),
@@ -252,7 +252,7 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
     kit,
   ] = await Promise.all([
     read('../src/app/(app)/page.js'),
-    read('../src/app/(app)/[projectId]/page.js'),
+    read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),
     read('../src/components/workspace/BoardConfigModal.jsx'),
     read('../src/components/ui/TaskManagement/ProjectSettingsForm.jsx'),
     read('../src/components/ui/TaskManagement/StatusVisibilityPicker.jsx'),

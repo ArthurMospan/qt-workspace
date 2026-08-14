@@ -4,6 +4,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
   chunkProjectIds,
@@ -834,6 +835,11 @@ export default function WorkspacePage() {
     return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
   };
 
+  const workspaceLoadError = projectsError || issuesError;
+  const workspaceLoadErrorKind = organizationLoadErrorKind(workspaceLoadError);
+  const workspaceAccessFailure = workspaceLoadErrorKind === 'permission-denied'
+    || workspaceLoadErrorKind === 'not-found';
+
   return (<>
     <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
       <div className="workspace-page-layout min-h-full">
@@ -864,18 +870,24 @@ export default function WorkspacePage() {
           }
         />
 
-        {(projectsError || issuesError) && (
+        {workspaceLoadError && (
           <div className="flex flex-col items-start gap-2">
             <Alert
               variant="error"
-              title={projectsError
-                ? 'Не вдалося завантажити проєкти'
-                : 'Не вдалося завантажити завдання'}
-              description="Перевірте підключення до інтернету та спробуйте ще раз."
+              title={workspaceAccessFailure
+                ? 'Немає доступу до даних організації'
+                : projectsError
+                  ? 'Не вдалося завантажити проєкти'
+                  : 'Не вдалося завантажити завдання'}
+              description={workspaceAccessFailure
+                ? 'Доступ відкликано або організацію видалено.'
+                : 'Перевірте підключення до інтернету та спробуйте ще раз.'}
             />
-            <Button onClick={() => window.location.reload()} style="secondary" size="sm">
-              Спробувати ще раз
-            </Button>
+            {!workspaceAccessFailure && (
+              <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+                Спробувати ще раз
+              </Button>
+            )}
           </div>
         )}
 

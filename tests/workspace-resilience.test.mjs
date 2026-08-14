@@ -34,7 +34,7 @@ test('the workspace has exactly one route loader and no page skeletons', async (
 
   // A screen waiting on its own data uses the same spinner, not a portrait of
   // itself. `PageSkeleton` is gone; nothing may reach for it again.
-  for (const path of ['../src/app/(app)/[projectId]/page.js', '../src/app/(app)/my/page.js', '../src/app/(app)/page.js']) {
+  for (const path of ['../src/app/(app)/[projectId]/ProjectBoardClient.jsx', '../src/app/(app)/my/page.js', '../src/app/(app)/page.js']) {
     const source = await read(path);
     assert.doesNotMatch(source, /PageSkeleton/, `${path} must not use PageSkeleton`);
     assert.match(source, /<LoadingSpinner size="md" \/>/, `${path} must show the shared loader`);

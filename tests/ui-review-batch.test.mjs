@@ -266,7 +266,7 @@ test('the chat and team rails exist once, and the pages and catalogue all render
 
 test('both entry points to project settings offer the same capabilities', async () => {
   const [projectPage, list] = await Promise.all([
-    read('../src/app/(app)/[projectId]/page.js'),
+    read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),
     read('../src/app/(app)/page.js'),
   ]);
   // Opening "Налаштування проєкту" from the kebab included archive, delete and

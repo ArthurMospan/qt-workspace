@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Button from '@/components/ui/Button';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 function LoadingScreen() {
   return (
@@ -27,6 +28,14 @@ export default function WorkspaceOrganizationRouteGuard({ children }) {
       switchOrg(requestedOrg.id);
     }
   }, [activeOrgId, requestedOrg, switchOrg]);
+
+  useEffect(() => {
+    if (!requestedOrgId && activeOrgId) {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const scoped = withNotificationOrganization(current, activeOrgId);
+      if (scoped && scoped !== current) window.history.replaceState(null, '', scoped);
+    }
+  }, [activeOrgId, requestedOrgId]);
 
   if (!requestedOrgId || requestedOrgId === activeOrgId) return children;
   if (requestedOrg) return <LoadingScreen />;

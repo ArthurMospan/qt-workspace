@@ -21,6 +21,7 @@ import { ConnectionBanner } from '@/components/ui';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
+import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
@@ -92,12 +93,28 @@ export default function WorkspaceLayout({ children }) {
   if (!currentUser) return null;
 
   if (orgError) {
+    const errorKind = organizationLoadErrorKind(orgError);
+    const accessFailure = errorKind === 'permission-denied' || errorKind === 'not-found';
     return (
       <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
         <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
-          <h1 className="ui-type-section-title text-ink mb-2">QuickTeam тимчасово недоступний</h1>
-          <p className="text-[13px] text-muted mb-5">Не вдалося прочитати дані організації. Ваші дані не видалені.</p>
-          <Button onClick={() => window.location.reload()} size="lg" composition="workspace-guard">Спробувати ще раз</Button>
+          <h1 className="ui-type-section-title text-ink mb-2">
+            {errorKind === 'permission-denied'
+              ? 'Немає доступу до організації'
+              : errorKind === 'not-found'
+                ? 'Організацію не знайдено'
+                : 'QuickTeam тимчасово недоступний'}
+          </h1>
+          <p className={`text-[13px] text-muted ${accessFailure ? '' : 'mb-5'}`}>
+            {errorKind === 'permission-denied'
+              ? 'Ваш обліковий запис більше не має доступу до цієї організації.'
+              : errorKind === 'not-found'
+                ? 'Організацію видалено або посилання застаріло.'
+                : 'Не вдалося прочитати дані організації. Ваші дані не видалені.'}
+          </p>
+          {!accessFailure && (
+            <Button onClick={() => window.location.reload()} size="lg" composition="workspace-guard">Спробувати ще раз</Button>
+          )}
         </div>
       </div>
     );

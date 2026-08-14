@@ -140,7 +140,7 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   const agileBoard = readFileSync(new URL('../src/components/workspace/AgileBoard.jsx', import.meta.url), 'utf8');
   const issueCard = readFileSync(new URL('../src/components/workspace/IssueCard.jsx', import.meta.url), 'utf8');
   const myTasks = readFileSync(new URL('../src/app/(app)/my/page.js', import.meta.url), 'utf8');
-  const project = readFileSync(new URL('../src/app/(app)/[projectId]/page.js', import.meta.url), 'utf8');
+  const project = readFileSync(new URL('../src/app/(app)/[projectId]/ProjectBoardClient.jsx', import.meta.url), 'utf8');
   assert.match(taskList, /hiddenGroupIds = \[\]/);
   // A section is a status, or a status category on a list that spans projects.
   assert.match(taskList, /const groups = byCategory \? categoryColumns : statuses;/);

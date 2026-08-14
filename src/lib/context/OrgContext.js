@@ -1,7 +1,7 @@
 'use client';
 // src/lib/context/OrgContext.js
 // Multi-org context: loads ALL organizations the current user belongs to,
-// persists the active org choice to localStorage, and provides switchOrg().
+// keeps the active org choice inside this tab, and provides switchOrg().
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   collection, query, where, getDocs,
@@ -9,9 +9,25 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import {
+  organizationLoadRetryDelay,
+  shouldRetryOrganizationLoad,
+} from '@/lib/utils/organizationLoadErrors.mjs';
 
-const LS_KEY = 'qt_active_org_id';
+const TAB_STORAGE_KEY = 'qt_active_org_id';
+const ORG_LOAD_RETRY_LIMIT = 3;
 const OrgContext = createContext(null);
+
+function persistTabOrganization(orgId) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(TAB_STORAGE_KEY, orgId);
+  // Stop legacy versions in another tab from reviving the shared selection.
+  localStorage.removeItem(TAB_STORAGE_KEY);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const scoped = withNotificationOrganization(current, orgId);
+  if (scoped && scoped !== current) window.history.replaceState(null, '', scoped);
+}
 
 export function OrgProvider({ user, children }) {
   const [allOrgs,     setAllOrgs]     = useState([]);    // all orgs user belongs to
@@ -25,9 +41,9 @@ export function OrgProvider({ user, children }) {
   // ── Apply an org as active (Internal helper) ─────────────────────────
   const applyOrg = useCallback(async (orgData, uid) => {
     // Persisted BEFORE the await below. The membership listener re-derives the
-    // active org from localStorage on every snapshot, so writing it late let a
+    // active org from this tab's storage on every snapshot, so writing it late let a
     // snapshot arriving mid-await revert the switch the user just made.
-    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, orgData.id);
+    persistTabOrganization(orgData.id);
     setActiveOrgId(orgData.id);
     setActiveOrg(orgData);
 
@@ -65,6 +81,9 @@ export function OrgProvider({ user, children }) {
     const uid = user.id || user.uid;
 
     let cancelled = false;
+    let retryAttempt = 0;
+    let retryTimer = null;
+    let unsubscribe = () => {};
     const membershipsQuery = query(
       collection(db, 'orgMemberships'),
       where('userId', '==', uid)
@@ -100,8 +119,8 @@ export function OrgProvider({ user, children }) {
           return;
         }
 
-        // Pick active org: prefer localStorage, fallback to first
-        const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
+        // Pick active org: prefer this tab's choice, fallback to first.
+        const stored = typeof window !== 'undefined' ? sessionStorage.getItem(TAB_STORAGE_KEY) : null;
         const preferred = stored && orgs.find(o => o.id === stored);
         const chosen = preferred || orgs[0];
 
@@ -118,21 +137,43 @@ export function OrgProvider({ user, children }) {
         setOrgRole(chosenRole);
         setNoOrg(false);
         setOrgLoading(false);
-        if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, chosen.id);
+        persistTabOrganization(chosen.id);
+        retryAttempt = 0;
       } catch (err) {
-        reportLoadError('[OrgContext] organizations', err);
-        setOrgError(err);
-        setOrgLoading(false);
+        handleLoadError('[OrgContext] organizations', err);
       }
     };
 
-    const unsubscribe = onSnapshot(membershipsQuery, applyMembershipSnapshot, err => {
-      reportLoadError('[OrgContext] memberships', err);
+    const handleLoadError = (scope, err) => {
+      reportLoadError(scope, err);
+      unsubscribe();
+      unsubscribe = () => {};
+      if (retryTimer) window.clearTimeout(retryTimer);
+      if (!cancelled && shouldRetryOrganizationLoad(err) && retryAttempt < ORG_LOAD_RETRY_LIMIT) {
+        retryAttempt += 1;
+        setOrgError(null);
+        setOrgLoading(true);
+        retryTimer = window.setTimeout(subscribe, organizationLoadRetryDelay(retryAttempt));
+        return;
+      }
       setOrgError(err);
       setOrgLoading(false);
-    });
+    };
+
+    const subscribe = () => {
+      if (cancelled) return;
+      unsubscribe();
+      unsubscribe = onSnapshot(
+        membershipsQuery,
+        applyMembershipSnapshot,
+        err => handleLoadError('[OrgContext] memberships', err),
+      );
+    };
+
+    subscribe();
     return () => {
       cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
       unsubscribe();
     };
   }, [user?.id, applyOrg]); // eslint-disable-line

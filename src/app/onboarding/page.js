@@ -105,7 +105,8 @@ function OnboardingPageContent() {
       if (setActiveOrgId) {
         setActiveOrgId(orgId);
       }
-      localStorage.setItem('qt_active_org_id', orgId);
+      sessionStorage.setItem('qt_active_org_id', orgId);
+      localStorage.removeItem('qt_active_org_id');
       sessionStorage.setItem('qt_org_selected_this_session', '1');
       
       setTimeout(() => {
