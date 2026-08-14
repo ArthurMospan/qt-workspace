@@ -62,7 +62,7 @@ export default function TeamMemberSettingsDialog({
               />
             ))}
           </div>
-          {isOwner && !isMe && member.role === 'admin' && (
+          {isOwner && !isMe && member.role !== 'owner' && (
             <Button
               style="secondary"
               size="md"

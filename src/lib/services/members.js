@@ -2,10 +2,15 @@
 
 import { auth } from '@/lib/firebase';
 import { createResponseError } from '@/lib/utils/errors';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 const memberCache = new Map();
 const CACHE_MS = 10_000;
 const STALE_CACHE_MS = 24 * 60 * 60 * 1000;
+
+function memberUrl(organizationId, memberId) {
+  return `/api/organizations/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(memberId)}`;
+}
 
 function persistentCacheKey(cacheKey) {
   return `quickteam:members:${cacheKey}`;
@@ -25,7 +30,11 @@ function readPersistentMembers(cacheKey) {
 function writePersistentMembers(cacheKey, members) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(persistentCacheKey(cacheKey), JSON.stringify({ createdAt: Date.now(), members }));
+    const publicMembers = members.map(({ hourlyRate, ...member }) => member);
+    window.localStorage.setItem(persistentCacheKey(cacheKey), JSON.stringify({
+      createdAt: Date.now(),
+      members: publicMembers,
+    }));
   } catch {
     // Storage can be unavailable in privacy mode; the in-memory cache still works.
   }
@@ -65,4 +74,38 @@ export async function fetchOrganizationMembers(organizationId, { force = false }
     });
   memberCache.set(cacheKey, { createdAt: Date.now(), promise });
   return promise;
+}
+
+export function invalidateOrganizationMembers(organizationId) {
+  for (const key of memberCache.keys()) {
+    if (key.startsWith(`${organizationId}_`)) memberCache.delete(key);
+  }
+}
+
+export async function fetchMemberRemovalImpact(organizationId, memberId) {
+  return authenticatedRequest(
+    memberUrl(organizationId, memberId),
+    { cache: 'no-store' },
+    'Не вдалося перевірити доступ учасника',
+  );
+}
+
+export async function updateOrganizationMember(organizationId, memberId, update) {
+  const result = await authenticatedRequest(
+    memberUrl(organizationId, memberId),
+    { method: 'PATCH', body: JSON.stringify(update) },
+    'Не вдалося оновити учасника',
+  );
+  invalidateOrganizationMembers(organizationId);
+  return result;
+}
+
+export async function removeOrganizationMember(organizationId, memberId) {
+  const result = await authenticatedRequest(
+    memberUrl(organizationId, memberId),
+    { method: 'DELETE' },
+    'Не вдалося видалити учасника',
+  );
+  invalidateOrganizationMembers(organizationId);
+  return result;
 }

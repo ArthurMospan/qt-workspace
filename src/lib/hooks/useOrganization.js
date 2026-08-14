@@ -3,10 +3,15 @@
 // src/lib/hooks/useOrganization.js
 // Organization = one workspace in the multi-organization membership model.
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import { doc, onSnapshot, updateDoc, deleteDoc, setDoc, getDoc, collection, query, where, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-import { fetchOrganizationMembers } from '@/lib/services/members';
+import {
+  fetchMemberRemovalImpact,
+  fetchOrganizationMembers,
+  removeOrganizationMember,
+  updateOrganizationMember,
+} from '@/lib/services/members';
 import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
@@ -30,6 +35,8 @@ function createOrganizationStore(organizationId) {
   let unsubscribeMembers = null;
   let stopTimer = null;
   let requestVersion = 0;
+  let memberDirectoryVersion;
+  let focusListener = null;
   const listeners = new Set();
 
   const emit = next => {
@@ -37,42 +44,50 @@ function createOrganizationStore(organizationId) {
     listeners.forEach(listener => listener());
   };
 
+  const refresh = async () => {
+    const version = ++requestVersion;
+    try {
+      const members = await fetchOrganizationMembers(organizationId, { force: true });
+      if (version === requestVersion) {
+        emit({ ...snapshot, members, loading: false, error: null });
+      }
+    } catch (error) {
+      if (version !== requestVersion) return;
+      reportLoadError('[useOrganization] member profiles', error);
+      emit({ ...snapshot, members: [], loading: false, error });
+    }
+  };
+
   const start = () => {
     if (unsubscribeOrg || unsubscribeMembers) return;
+    refresh();
 
     unsubscribeOrg = onSnapshot(doc(db, 'organizations', organizationId), orgSnap => {
       if (!orgSnap.exists()) {
         emit({ org: null, members: [], loading: false, error: null });
         return;
       }
-      emit({ ...snapshot, org: { id: orgSnap.id, ...orgSnap.data() }, error: null });
+      const nextOrg = { id: orgSnap.id, ...orgSnap.data() };
+      const nextDirectoryVersion = Number(nextOrg.memberDirectoryVersion) || 0;
+      if (
+        memberDirectoryVersion !== undefined
+        && memberDirectoryVersion !== nextDirectoryVersion
+      ) refresh();
+      memberDirectoryVersion = nextDirectoryVersion;
+      emit({ ...snapshot, org: nextOrg, error: null });
     }, error => {
       reportLoadError('[useOrganization] organization', error);
       emit({ ...snapshot, loading: false, error });
     });
 
-    const membershipsQuery = query(collection(db, 'orgMemberships'), where('orgId', '==', organizationId));
-    unsubscribeMembers = onSnapshot(membershipsQuery, async membershipsSnap => {
-      const version = ++requestVersion;
-      if (membershipsSnap.empty) {
-        emit({ ...snapshot, members: [], loading: false, error: null });
-        return;
-      }
-
-      try {
-        const members = await fetchOrganizationMembers(organizationId, { force: true });
-        if (version === requestVersion) {
-          emit({ ...snapshot, members, loading: false, error: null });
-        }
-      } catch (error) {
-        if (version !== requestVersion) return;
-        reportLoadError('[useOrganization] member profiles', error);
-        emit({ ...snapshot, members: [], loading: false, error });
-      }
-    }, error => {
-      reportLoadError('[useOrganization] memberships', error);
-      emit({ ...snapshot, loading: false, error });
-    });
+    const uid = auth.currentUser?.uid;
+    unsubscribeMembers = uid
+      ? onSnapshot(doc(db, 'orgMemberships', `${organizationId}_${uid}`), refresh, error => {
+        reportLoadError('[useOrganization] own membership', error);
+      })
+      : () => {};
+    focusListener = () => refresh();
+    window.addEventListener('focus', focusListener);
   };
 
   const subscribe = listener => {
@@ -89,8 +104,11 @@ function createOrganizationStore(organizationId) {
           requestVersion += 1;
           unsubscribeOrg?.();
           unsubscribeMembers?.();
+          if (focusListener) window.removeEventListener('focus', focusListener);
           unsubscribeOrg = null;
           unsubscribeMembers = null;
+          focusListener = null;
+          memberDirectoryVersion = undefined;
           stopTimer = null;
         }, 1000);
       }
@@ -101,6 +119,7 @@ function createOrganizationStore(organizationId) {
     subscribe,
     getSnapshot: () => snapshot,
     getServerSnapshot: () => ORGANIZATION_SERVER_SNAPSHOT,
+    refresh,
   };
 }
 
@@ -150,8 +169,7 @@ export function useOrganization() {
         orgId: activeOrgId,
         userId: ownerId,
         role: 'owner',
-        joinedAt: new Date().toISOString(),
-        hourlyRate: 0
+        joinedAt: new Date().toISOString()
       });
     }
   }, [activeOrgId]);
@@ -176,35 +194,41 @@ export function useOrganization() {
   // Change role
   const changeMemberRole = useCallback(async (uid, newRole) => {
     if (!activeOrgId) return;
-    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await updateDoc(membershipRef, {
-      role: newRole
-    });
+    await updateOrganizationMember(activeOrgId, uid, { action: 'role', role: newRole });
+    await getOrganizationStore(activeOrgId).refresh();
   }, [activeOrgId]);
 
   // Change hourly rate
   const setMemberRate = useCallback(async (uid, rate) => {
     if (!activeOrgId) return;
-    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await updateDoc(membershipRef, {
-      hourlyRate: Number(rate)
+    await updateOrganizationMember(activeOrgId, uid, {
+      action: 'rate',
+      hourlyRate: Number(rate),
     });
+    await getOrganizationStore(activeOrgId).refresh();
   }, [activeOrgId]);
 
   // Change position
   const setMemberPosition = useCallback(async (uid, positionId) => {
     if (!activeOrgId) return;
-    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await updateDoc(membershipRef, {
-      positionId: positionId || ''
+    await updateOrganizationMember(activeOrgId, uid, {
+      action: 'position',
+      positionId: positionId || '',
     });
+    await getOrganizationStore(activeOrgId).refresh();
+  }, [activeOrgId]);
+
+  const getMemberRemovalImpact = useCallback(async uid => {
+    if (!activeOrgId) return { projectCount: 0, assignedIssueCount: 0, watchedIssueCount: 0 };
+    return fetchMemberRemovalImpact(activeOrgId, uid);
   }, [activeOrgId]);
 
   // Remove member
   const removeMember = useCallback(async uid => {
     if (!activeOrgId) return;
-    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${uid}`);
-    await deleteDoc(membershipRef);
+    const result = await removeOrganizationMember(activeOrgId, uid);
+    await getOrganizationStore(activeOrgId).refresh();
+    return result;
   }, [activeOrgId]);
   return {
     org,
@@ -216,6 +240,7 @@ export function useOrganization() {
     changeMemberRole,
     setMemberRate,
     setMemberPosition,
+    getMemberRemovalImpact,
     removeMember
   };
 }

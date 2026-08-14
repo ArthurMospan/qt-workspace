@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, FieldValue, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 export async function PATCH(request, context) {
@@ -27,16 +27,22 @@ export async function PATCH(request, context) {
       if (!orgSnap.exists || !currentSnap.exists || !targetSnap.exists) throw new Error('NOT_FOUND');
       if (orgSnap.data().ownerId !== authorization.user.uid || currentSnap.data().role !== 'owner') throw new Error('FORBIDDEN');
       if (targetSnap.data().orgId !== organizationId || targetSnap.data().userId !== targetUserId) throw new Error('FORBIDDEN');
+      if (targetSnap.data().removalPending === true) throw new Error('MEMBER_REMOVAL_PENDING');
 
-      transaction.update(currentRef, { role: 'admin' });
-      transaction.update(targetRef, { role: 'owner' });
-      transaction.update(orgRef, { ownerId: targetUserId });
+      const now = FieldValue.serverTimestamp();
+      transaction.update(currentRef, { role: 'admin', updatedAt: now });
+      transaction.update(targetRef, { role: 'owner', updatedAt: now });
+      transaction.update(orgRef, {
+        ownerId: targetUserId,
+        memberDirectoryVersion: FieldValue.increment(1),
+      });
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Organization member not found' }, { status: 404 });
     if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Ownership changed; reload and try again' }, { status: 409 });
+    if (error.message === 'MEMBER_REMOVAL_PENDING') return NextResponse.json({ error: 'This member is being removed' }, { status: 409 });
     return routeErrorResponse(error, { context: 'organization-transfer', fallbackMessage: 'Failed to transfer ownership' });
   }
 }

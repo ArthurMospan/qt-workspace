@@ -117,6 +117,39 @@ test('an authenticated outsider cannot self-join an organization', async () => {
   }));
 });
 
+test('a regular member can read only their own membership while admins can list the directory', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const memberships = db => query(
+    collection(db, 'orgMemberships'),
+    where('orgId', '==', 'org-a'),
+  );
+
+  await assertSucceeds(getDoc(doc(memberDb, 'orgMemberships', 'org-a_member-a')));
+  await assertFails(getDoc(doc(memberDb, 'orgMemberships', 'org-a_owner-a')));
+  await assertFails(getDocs(memberships(memberDb)));
+  await assertSucceeds(getDocs(memberships(adminDb)));
+  await assertSucceeds(getDocs(memberships(ownerDb)));
+});
+
+test('member and workflow rates are unreadable from browser Firestore clients', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'organizations', 'org-a', 'memberRates', 'member-a'), {
+      userId: 'member-a', hourlyRate: 75,
+    });
+    await setDoc(doc(db, 'organizations', 'org-a', 'private', 'workflowRates'), {
+      positionRates: { dev: 100 },
+    });
+  });
+  for (const uid of ['member-a', 'admin-a', 'owner-a']) {
+    const db = environment.authenticatedContext(uid).firestore();
+    await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'memberRates', 'member-a')));
+    await assertFails(getDoc(doc(db, 'organizations', 'org-a', 'private', 'workflowRates')));
+  }
+});
+
 test('issue read cursors are private, identity-bound and timestamp-only', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
   const ownerDb = environment.authenticatedContext('owner-a').firestore();
@@ -184,6 +217,20 @@ test('issue deletion cannot bypass the hierarchy-aware server route', async () =
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   await assertFails(deleteDoc(doc(memberDb, 'issues', 'issue-a')));
   await assertFails(deleteDoc(doc(adminDb, 'issues', 'issue-a')));
+});
+
+test('the membership bootstrap cannot put a rate in the public membership document', async () => {
+  const db = environment.authenticatedContext('founder-with-rate').firestore();
+  await assertSucceeds(setDoc(doc(db, 'organizations', 'org-rate'), {
+    ownerId: 'founder-with-rate', name: 'Rate Org',
+  }));
+  await assertFails(setDoc(doc(db, 'orgMemberships', 'org-rate_founder-with-rate'), {
+    id: 'org-rate_founder-with-rate',
+    orgId: 'org-rate',
+    userId: 'founder-with-rate',
+    role: 'owner',
+    hourlyRate: 100,
+  }));
 });
 
 test('the issue trash is server-only, including for organization admins', async () => {
@@ -1217,7 +1264,7 @@ test('an org admin can flip the QuickTeam+ org flag', async () => {
   }));
 });
 
-test('workflow settings are readable by members but writable only through the server API', async () => {
+test('workflow settings are readable and writable only through the role-filtered server API', async () => {
   await environment.withSecurityRulesDisabled(async context => {
     await setDoc(
       doc(context.firestore(), 'organizations', 'org-a', 'settings', 'workflow'),
@@ -1228,8 +1275,8 @@ test('workflow settings are readable by members but writable only through the se
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   const workflowPath = ['organizations', 'org-a', 'settings', 'workflow'];
 
-  await assertSucceeds(getDoc(doc(memberDb, ...workflowPath)));
-  await assertSucceeds(getDoc(doc(adminDb, ...workflowPath)));
+  await assertFails(getDoc(doc(memberDb, ...workflowPath)));
+  await assertFails(getDoc(doc(adminDb, ...workflowPath)));
   await assertFails(setDoc(doc(memberDb, ...workflowPath), {
     statuses: [{ id: 'done', label: 'Готово', isDone: true }],
   }));

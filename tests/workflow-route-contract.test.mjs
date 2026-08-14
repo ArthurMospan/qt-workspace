@@ -27,6 +27,21 @@ test('workflow mutations are authenticated and transactional', async () => {
   );
 });
 
+test('workflow reads are role-filtered and position rates are stored outside the public workflow', async () => {
+  const [route, hook] = await Promise.all([
+    read('../src/app/api/organizations/[organizationId]/workflow/route.js'),
+    read('../src/lib/hooks/useWorkflowConfig.js'),
+  ]);
+
+  assert.match(route, /export async function GET\(request, context\)/);
+  assert.match(route, /workflowWithProtectedRates\(workflow, ratesSnap\.data\(\)\)/);
+  assert.match(route, /: publicWorkflow\(workflow\)/);
+  assert.match(route, /positionRates: resolvedNextPositionRates/);
+  assert.match(route, /workflowVersion: FieldValue\.increment\(1\)/);
+  assert.match(hook, /fetchWorkflowViaApi\(organizationId\)/);
+  assert.doesNotMatch(hook, /settings', 'workflow'/);
+});
+
 test('settings use the workflow API and never batch issue status changes directly', async () => {
   const [settings, service] = await Promise.all([
     read('../src/app/(app)/settings/page.js'),

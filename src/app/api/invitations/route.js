@@ -86,8 +86,17 @@ export async function POST(request) {
         userId,
         role: safeRole,
         joinedAt: FieldValue.serverTimestamp(),
-        hourlyRate: 0,
         invitedBy: authorization.user.uid,
+      });
+      batch.set(db.collection('organizations').doc(organizationId)
+        .collection('memberRates').doc(userId), {
+        userId,
+        hourlyRate: 0,
+        updatedBy: authorization.user.uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      batch.update(db.collection('organizations').doc(organizationId), {
+        memberDirectoryVersion: FieldValue.increment(1),
       });
       // An existing QuickTeam account never sees a pending invitation, so the
       // project scope has to be applied here or it would be dropped silently.

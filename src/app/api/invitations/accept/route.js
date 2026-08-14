@@ -25,6 +25,7 @@ export async function POST(request) {
 
     const batch = db.batch();
     let accepted = 0;
+    const acceptedOrganizationIds = new Set();
 
     for (const invitationDoc of invitationsSnap.docs) {
       const invitation = invitationDoc.data();
@@ -62,16 +63,28 @@ export async function POST(request) {
         userId: uid,
         role,
         joinedAt: FieldValue.serverTimestamp(),
-        hourlyRate: 0,
       }, { merge: false });
+      batch.set(db.collection('organizations').doc(organizationId)
+        .collection('memberRates').doc(uid), {
+        userId: uid,
+        hourlyRate: 0,
+        updatedBy: uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
       batch.update(invitationDoc.ref, {
         status: 'accepted',
         acceptedBy: uid,
         acceptedAt: FieldValue.serverTimestamp(),
       });
+      acceptedOrganizationIds.add(organizationId);
       accepted += 1;
     }
 
+    acceptedOrganizationIds.forEach(organizationId => {
+      batch.update(db.collection('organizations').doc(organizationId), {
+        memberDirectoryVersion: FieldValue.increment(1),
+      });
+    });
     if (accepted > 0) await batch.commit();
     return NextResponse.json({ accepted });
   } catch (error) {

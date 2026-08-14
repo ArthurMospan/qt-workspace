@@ -29,11 +29,19 @@ export async function GET(request, context) {
     const membershipsSnap = await db.collection('orgMemberships')
       .where('orgId', '==', organizationId)
       .get();
-    const memberships = membershipsSnap.docs.map(item => item.data());
+    const memberships = membershipsSnap.docs
+      .map(item => item.data())
+      .filter(membership => membership.removalPending !== true);
     const profileSnaps = memberships.length
       ? await db.getAll(...memberships.map(item => db.collection('users').doc(item.userId)))
       : [];
     const canViewBilling = ['owner', 'admin'].includes(authorization.membership.role);
+    const rateSnaps = canViewBilling && memberships.length
+      ? await db.getAll(...memberships.map(item => db.collection('organizations')
+        .doc(organizationId)
+        .collection('memberRates')
+        .doc(item.userId)))
+      : [];
 
     const members = memberships.map((membership, index) => {
       const profile = profileSnaps[index]?.exists ? profileSnaps[index].data() : {};
@@ -53,7 +61,13 @@ export async function GET(request, context) {
         role: membership.role,
         joinedAt: serializeValue(membership.joinedAt) || null,
         positionId: membership.positionId || '',
-        ...(canViewBilling ? { hourlyRate: Number(membership.hourlyRate) || 0 } : {}),
+        ...(canViewBilling ? {
+          hourlyRate: Number(
+            rateSnaps[index]?.exists
+              ? rateSnaps[index].data().hourlyRate
+              : membership.hourlyRate,
+          ) || 0,
+        } : {}),
       };
     });
 

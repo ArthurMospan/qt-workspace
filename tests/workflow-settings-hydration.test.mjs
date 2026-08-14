@@ -107,7 +107,7 @@ test('settings workflow load is generation-guarded and applies one complete payl
   assert.match(settings, /const isCurrentWorkflowLoad = \(\) =>/);
   assert.match(
     settings,
-    /const wfSnap = await getDoc[\s\S]{0,240}if \(!isCurrentWorkflowLoad\(\)\) return;[\s\S]{0,180}applyHydratedWorkflow/,
+    /const storedWorkflow = await fetchWorkflowViaApi[\s\S]{0,180}if \(!isCurrentWorkflowLoad\(\)\) return;[\s\S]{0,120}applyHydratedWorkflow\(storedWorkflow\)/,
   );
   assert.match(
     settings,

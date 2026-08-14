@@ -59,7 +59,7 @@ export default function ProfileView({ user, onClose }) {
   const uid = user.id || user.uid;
   const isMe = uid === (currentUser?.id || currentUser?.uid);
   const isAdminOrOwner = orgRole === 'admin' || orgRole === 'owner';
-  // Live membership record — hourlyRate lives in orgMemberships, not the user doc
+  // Live membership record from the role-filtered organization members API.
   const memberRecord = orgMembers.find(m => (m.id || m.uid) === uid);
   
   const isOnline = user.lastActive && (now - new Date(user.lastActive).getTime() < 120000);

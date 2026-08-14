@@ -1,7 +1,8 @@
 'use client';
 
 // src/lib/hooks/useWorkflowConfig.js
-// Reads workflow config (statuses, types, priorities) from Firestore.
+// Reads role-filtered workflow config (statuses, types, priorities) through the
+// authenticated API; salary rates never enter the member-readable document.
 // Falls back to sensible defaults so the app works out of the box before
 // an admin customises anything in Settings.
 import { useMemo, useSyncExternalStore } from 'react';
@@ -9,6 +10,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { fetchWorkflowViaApi } from '@/lib/services/workflow';
 import {
   Circle, CircleCheck, CircleDashed, CircleDotDashed, CircleX,
 } from 'lucide-react';
@@ -30,6 +32,7 @@ import {
   DEFAULT_TASK_TYPES,
   ensureSystemTaskType,
 } from '@/lib/utils/taskTypes.mjs';
+import { DEFAULT_WORKFLOW_POSITIONS } from '@/lib/utils/workflowPositions.mjs';
 
 export const TYPE_ICONS = TASK_TYPE_ICONS;
 // One glyph per status category, for the places where a category stands on its
@@ -124,23 +127,7 @@ export const DEFAULT_PRIORITIES = DEFAULT_SYSTEM_PRIORITIES;
 // Labels are organization taxonomy, not universal workflow. Existing saved
 // labels stay untouched; a new organization starts clean.
 export const DEFAULT_LABELS = [];
-export const DEFAULT_POSITIONS = [{
-  id: 'dev',
-  label: 'Розробник',
-  hourlyRate: 30
-}, {
-  id: 'designer',
-  label: 'Дизайнер',
-  hourlyRate: 35
-}, {
-  id: 'pm',
-  label: 'PM',
-  hourlyRate: 40
-}, {
-  id: 'qa',
-  label: 'QA',
-  hourlyRate: 25
-}];
+export const DEFAULT_POSITIONS = DEFAULT_WORKFLOW_POSITIONS;
 
 const WORKFLOW_SERVER_SNAPSHOT = Object.freeze({
   statuses: DEFAULT_STATUSES,
@@ -163,6 +150,9 @@ function createWorkflowStore(organizationId) {
   let snapshot = WORKFLOW_SERVER_SNAPSHOT;
   let unsubscribe = null;
   let stopTimer = null;
+  let focusListener = null;
+  let requestVersion = 0;
+  let workflowVersion;
   const listeners = new Set();
 
   const emit = next => {
@@ -170,11 +160,11 @@ function createWorkflowStore(organizationId) {
     listeners.forEach(listener => listener());
   };
 
-  const start = () => {
-    if (unsubscribe) return;
-    const ref = doc(db, 'organizations', organizationId, 'settings', 'workflow');
-    unsubscribe = onSnapshot(ref, workflowSnap => {
-      const data = workflowSnap.exists() ? workflowSnap.data() : {};
+  const refresh = async () => {
+    const version = ++requestVersion;
+    try {
+      const data = await fetchWorkflowViaApi(organizationId) || {};
+      if (version !== requestVersion) return;
       emit({
         statuses: Array.isArray(data.statuses)
           ? localizeBuiltInWorkflowItems('statuses', data.statuses)
@@ -194,10 +184,26 @@ function createWorkflowStore(organizationId) {
         loading: false,
         error: null,
       });
-    }, error => {
+    } catch (error) {
+      if (version !== requestVersion) return;
       reportLoadError('[useWorkflowConfig]', error);
       emit({ ...EMPTY_WORKFLOW_SNAPSHOT, error });
+    }
+  };
+
+  const start = () => {
+    if (unsubscribe) return;
+    refresh();
+    const ref = doc(db, 'organizations', organizationId);
+    unsubscribe = onSnapshot(ref, organizationSnap => {
+      const nextVersion = organizationSnap.data()?.workflowVersion || 0;
+      if (workflowVersion !== undefined && workflowVersion !== nextVersion) refresh();
+      workflowVersion = nextVersion;
+    }, error => {
+      reportLoadError('[useWorkflowConfig] organization version', error);
     });
+    focusListener = () => refresh();
+    window.addEventListener('focus', focusListener);
   };
 
   const subscribe = listener => {
@@ -211,8 +217,12 @@ function createWorkflowStore(organizationId) {
       listeners.delete(listener);
       if (listeners.size === 0) {
         stopTimer = setTimeout(() => {
+          requestVersion += 1;
           unsubscribe?.();
+          if (focusListener) window.removeEventListener('focus', focusListener);
           unsubscribe = null;
+          focusListener = null;
+          workflowVersion = undefined;
           stopTimer = null;
         }, 1000);
       }
@@ -223,6 +233,7 @@ function createWorkflowStore(organizationId) {
     subscribe,
     getSnapshot: () => snapshot,
     getServerSnapshot: () => WORKFLOW_SERVER_SNAPSHOT,
+    refresh,
   };
 }
 

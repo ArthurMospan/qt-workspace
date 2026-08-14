@@ -7,7 +7,7 @@ import { useProjectAllTimeLogs } from '@/lib/hooks/useProjectAllTimeLogs';
 import { useAppContext } from '@/lib/context/AppContext';
 import { db } from '@/lib/firebase';
 import {
-  collection, query, where, onSnapshot, doc, getDoc,
+  collection, query, where, onSnapshot,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Ban, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
@@ -37,6 +37,7 @@ import {
   createInvoiceViaApi,
   voidInvoiceViaApi,
 } from '@/lib/services/invoices';
+import { fetchWorkflowViaApi } from '@/lib/services/workflow';
 import {
   convertBillingMemberRates,
   emptyBillingMemberState,
@@ -723,12 +724,15 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   // Load positions
   useEffect(() => {
     if (!activeOrgId) return;
-    const ref = doc(db, 'organizations', activeOrgId, 'settings', 'workflow');
-    getDoc(ref).then(snap => {
-      if (snap.exists() && snap.data().positions) {
-        setPositions(snap.data().positions);
+    let cancelled = false;
+    fetchWorkflowViaApi(activeOrgId).then(workflow => {
+      if (!cancelled && Array.isArray(workflow?.positions)) {
+        setPositions(workflow.positions);
       }
     }).catch(console.error);
+    return () => {
+      cancelled = true;
+    };
   }, [activeOrgId]);
 
   // Collect unique member uids from tasks and calendar events.

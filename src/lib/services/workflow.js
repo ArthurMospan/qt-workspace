@@ -12,6 +12,15 @@ export class WorkflowRequestError extends Error {
   }
 }
 
+export async function fetchWorkflowViaApi(organizationId) {
+  if (!organizationId) return null;
+  return authenticatedRequest(
+    `/api/organizations/${encodeURIComponent(organizationId)}/workflow`,
+    { cache: 'no-store' },
+    'Не вдалося завантажити workflow',
+  ).then(result => result.workflow || null);
+}
+
 export async function updateWorkflowViaApi({
   organizationId,
   workflow,

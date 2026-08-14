@@ -9,7 +9,7 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
-import { updateWorkflowViaApi } from '@/lib/services/workflow';
+import { fetchWorkflowViaApi, updateWorkflowViaApi } from '@/lib/services/workflow';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -618,7 +618,15 @@ export default function SettingsPage() {
   const { currentUser, signOut, activeOrgId, projects, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const confirmDialog = useConfirm();
-  const { org, members, inviteMember, changeMemberRole, removeMember, setMemberPosition } = useOrganization();
+  const {
+    org,
+    members,
+    inviteMember,
+    changeMemberRole,
+    removeMember,
+    setMemberPosition,
+    getMemberRemovalImpact,
+  } = useOrganization();
 
   // Role resolution
   const myMemberInfo = members.find(m => m.id === (currentUser?.uid || currentUser?.id));
@@ -1011,7 +1019,7 @@ export default function SettingsPage() {
   const locBaseline = useRef(null);
   // Debounces the branding colour picker, which fires continuously while dragging.
   const brandColorTimer = useRef(null);
-  // Last workflow value known to match Firestore — process settings auto-save
+  // Last workflow value known to match the server — process settings auto-save
   // (no manual button), so this guards against re-writing freshly hydrated data.
   const wfBaseline = useRef(null);
   const wfPersistedPayload = useRef(null);
@@ -1151,9 +1159,9 @@ export default function SettingsPage() {
 
     const load = async () => {
       try {
-        const wfSnap = await getDoc(doc(db, 'organizations', organizationId, 'settings', 'workflow'));
+        const storedWorkflow = await fetchWorkflowViaApi(organizationId);
         if (!isCurrentWorkflowLoad()) return;
-        applyHydratedWorkflow(wfSnap.exists() ? wfSnap.data() : null);
+        applyHydratedWorkflow(storedWorkflow);
 
         const intSnap = await getDoc(doc(db, 'organizations', organizationId, 'settings', 'integrations'));
         if (!isCurrentWorkflowLoad()) return;
@@ -1807,8 +1815,16 @@ export default function SettingsPage() {
   };
 
   const handleRemoveMember = async (uid) => {
+    let impact;
+    try {
+      impact = await getMemberRemovalImpact(uid);
+    } catch {
+      showToast('Не вдалося перевірити доступ учасника', 'error');
+      return;
+    }
     if (!(await confirmDialog({
       title: 'Видалити учасника з команди?',
+      message: `Кількість проєктів, з яких його буде прибрано: ${impact.projectCount}. Призначення та підписки на завдання також буде очищено.`,
       confirmText: 'Видалити', danger: true,
     }))) return;
     try { await removeMember(uid); showToast('Учасника видалено'); }

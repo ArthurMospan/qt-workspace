@@ -20,6 +20,13 @@ import {
   sameStringSet,
   WORKFLOW_MUTATION_SECTIONS,
 } from '@/lib/utils/workflowMutation.mjs';
+import {
+  effectivePositionRates,
+  positionRatesFromWorkflow,
+  publicWorkflow,
+  samePositionRates,
+  workflowWithProtectedRates,
+} from '@/lib/server/workflowBilling';
 
 const MAX_TRANSACTION_WRITES = 450;
 
@@ -50,6 +57,43 @@ function workflowSectionsEqual(current, next) {
 function sameIssueScope(left, right) {
   return left?.organizationId === right?.organizationId
     && left?.projectId === right?.projectId;
+}
+
+export async function GET(request, context) {
+  try {
+    const { organizationId } = await context.params;
+    const authorization = await authorizeOrgRequest(request, organizationId);
+    if (authorization.error) {
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+    }
+
+    const db = getAdminDb();
+    const workflowRef = db.collection('organizations')
+      .doc(organizationId)
+      .collection('settings')
+      .doc('workflow');
+    const ratesRef = db.collection('organizations')
+      .doc(organizationId)
+      .collection('private')
+      .doc('workflowRates');
+    const [workflowSnap, ratesSnap] = await Promise.all([
+      workflowRef.get(),
+      ratesRef.get(),
+    ]);
+    const workflow = workflowSnap.data() || {};
+    const canViewBilling = ['owner', 'admin'].includes(authorization.membership.role);
+
+    return NextResponse.json({
+      workflow: canViewBilling
+        ? workflowWithProtectedRates(workflow, ratesSnap.data())
+        : publicWorkflow(workflow),
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    return routeErrorResponse(error, {
+      context: 'Workflow GET',
+      fallbackMessage: 'Не вдалося завантажити workflow',
+    });
+  }
 }
 
 export async function PATCH(request, context) {
@@ -97,7 +141,17 @@ export async function PATCH(request, context) {
       }, { status });
     }
 
-    const { workflow: nextWorkflow, statusMigrations } = normalized.value;
+    const { workflow: requestedWorkflow, statusMigrations } = normalized.value;
+    const nextWorkflow = publicWorkflow(requestedWorkflow);
+    const nextPositionRates = positionRatesFromWorkflow(requestedWorkflow);
+    const suppliedPositionRateIds = new Set((Array.isArray(body.workflow?.positions)
+      ? body.workflow.positions
+      : [])
+      .filter(position => (
+        position?.id
+        && Object.prototype.hasOwnProperty.call(position, 'hourlyRate')
+      ))
+      .map(position => position.id));
     const nextStatusIds = nextWorkflow.statuses.map(status => status.id);
     const nextClosedStatusIds = resolveClosedStatusIds(nextWorkflow.statuses);
     const migrationTargetIds = new Set(
@@ -118,6 +172,8 @@ export async function PATCH(request, context) {
       .doc(organizationId)
       .collection('settings')
       .doc('workflow');
+    const orgRef = db.collection('organizations').doc(organizationId);
+    const ratesRef = orgRef.collection('private').doc('workflowRates');
     const migrationBySource = new Map(
       statusMigrations.map(migration => [
         migration.fromStatusId,
@@ -125,8 +181,24 @@ export async function PATCH(request, context) {
       ]),
     );
     const result = await db.runTransaction(async transaction => {
-      const currentWorkflowSnap = await transaction.get(workflowRef);
-      const currentWorkflow = currentWorkflowSnap.data() || {};
+      const [currentWorkflowSnap, currentRatesSnap] = await Promise.all([
+        transaction.get(workflowRef),
+        transaction.get(ratesRef),
+      ]);
+      const storedWorkflow = currentWorkflowSnap.data() || {};
+      const currentWorkflow = publicWorkflow(storedWorkflow);
+      const currentPositionRates = effectivePositionRates(
+        storedWorkflow,
+        currentRatesSnap.data(),
+      );
+      const resolvedNextPositionRates = Object.fromEntries(
+        nextWorkflow.positions.map(position => [
+          position.id,
+          suppliedPositionRateIds.has(position.id)
+            ? nextPositionRates[position.id]
+            : currentPositionRates[position.id] || 0,
+        ]),
+      );
       const currentStatusIds = workflowIds(
         currentWorkflow.statuses,
         DEFAULT_STATUS_IDS,
@@ -141,7 +213,10 @@ export async function PATCH(request, context) {
       );
 
       if (!executionSemanticsChanged) {
-        if (workflowSectionsEqual(currentWorkflow, nextWorkflow)) {
+        if (
+          workflowSectionsEqual(currentWorkflow, nextWorkflow)
+          && samePositionRates(currentPositionRates, resolvedNextPositionRates)
+        ) {
           return {
             changed: false,
             migratedIssues: 0,
@@ -155,6 +230,14 @@ export async function PATCH(request, context) {
           updatedBy: authorization.user.uid,
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
+        transaction.set(ratesRef, {
+          positionRates: resolvedNextPositionRates,
+          updatedBy: authorization.user.uid,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        transaction.update(orgRef, {
+          workflowVersion: FieldValue.increment(1),
+        });
         return {
           changed: true,
           migratedIssues: 0,
@@ -332,7 +415,7 @@ export async function PATCH(request, context) {
       const plannedWrites = (
         issueChanges.length * 2
         + projectChanges.size
-        + 1
+        + 3
       );
       if (plannedWrites > MAX_TRANSACTION_WRITES) {
         throw workflowError(
@@ -387,6 +470,14 @@ export async function PATCH(request, context) {
         updatedBy: authorization.user.uid,
         updatedAt: now,
       }, { merge: true });
+      transaction.set(ratesRef, {
+        positionRates: resolvedNextPositionRates,
+        updatedBy: authorization.user.uid,
+        updatedAt: now,
+      });
+      transaction.update(orgRef, {
+        workflowVersion: FieldValue.increment(1),
+      });
       return {
         changed: true,
         migratedIssues: issueChanges.length,

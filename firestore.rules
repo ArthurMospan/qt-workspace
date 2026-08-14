@@ -149,10 +149,11 @@ service cloud.firestore {
     // ── orgMemberships/{orgId}_{uid} — RBAC source of truth ────────────
     match /orgMemberships/{membershipId} {
       allow read: if signedIn() &&
-        (resource.data.userId == request.auth.uid || isOrgMember(resource.data.orgId));
+        (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.orgId));
 
       allow create: if signedIn() &&
         request.resource.data.id == membershipId &&
+        !request.resource.data.keys().hasAny(['hourlyRate']) &&
         membershipId == request.resource.data.orgId + '_' + request.resource.data.userId && (
         // Bootstrap: first owner of a freshly created org (org doc already
         // carries ownerId == you, written by the same onboarding flow).
@@ -161,23 +162,10 @@ service cloud.firestore {
          get(/databases/$(database)/documents/organizations/$(request.resource.data.orgId)).data.ownerId == request.auth.uid)
       );
 
-      allow update: if signedIn() &&
-        membershipId == resource.data.orgId + '_' + resource.data.userId &&
-        request.resource.data.orgId == resource.data.orgId &&
-        request.resource.data.userId == resource.data.userId &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['role', 'hourlyRate', 'positionId', 'updatedAt']) && (
-        request.resource.data.role in ['owner', 'admin', 'member'] &&
-        (request.resource.data.role != 'owner' || resource.data.role == 'owner') &&
-        (resource.data.role == 'owner' || request.resource.data.role == 'owner'
-          ? isOrgOwner(resource.data.orgId)
-          : isOrgAdminOrOwner(resource.data.orgId)) &&
-        (resource.data.role != 'owner' || request.resource.data.role == 'owner')
-      );
-
-      allow delete: if signedIn() &&
-        resource.data.role != 'owner' &&
-        (isOrgAdminOrOwner(resource.data.orgId) || request.auth.uid == resource.data.userId);
+      // Roles, positions, rates and removals are privileged multi-document
+      // mutations. The Admin SDK routes validate them and perform their
+      // cascades; no browser write may bypass those routes.
+      allow update, delete: if false;
     }
 
     // ── users/{uid} — private self profile. Organization-visible profile
@@ -582,7 +570,9 @@ service cloud.firestore {
     }
 
     match /organizations/{orgId}/settings/{settingsDoc} {
-      allow read: if isOrgMember(orgId);
+      // Workflow positions used to contain salary rates. The authenticated API
+      // now returns a role-filtered view and is the only reader of this document.
+      allow read: if settingsDoc != 'workflow' && isOrgMember(orgId);
       // Workflow changes can alter completion semantics for every issue and
       // therefore always go through the transactional workflow API.
       allow write: if settingsDoc != 'workflow' && isOrgAdminOrOwner(orgId);
@@ -591,6 +581,12 @@ service cloud.firestore {
     // Secrets are never stored on the member-readable organization document.
     // They are managed by authenticated Admin SDK routes only.
     match /organizations/{orgId}/private/{privateDoc} {
+      allow read, write: if false;
+    }
+
+    // Per-member rates are server-only. Keeping them out of orgMemberships
+    // lets members list their colleagues without exposing payroll data.
+    match /organizations/{orgId}/memberRates/{uid} {
       allow read, write: if false;
     }
   }

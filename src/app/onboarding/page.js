@@ -99,7 +99,6 @@ function OnboardingPageContent() {
         userId: uid,
         role: 'owner',
         joinedAt: new Date().toISOString(),
-        hourlyRate: 0,
       }, { merge: true });
 
       // Force local state update immediately, bypassing switchOrg's allOrgs check

@@ -8,7 +8,7 @@
     "fakeButtons": "A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button."
   },
   "totals": {
-    "files": 278,
+    "files": 279,
     "elements": 3919,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,

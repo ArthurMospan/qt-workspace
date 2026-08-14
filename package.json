@@ -32,6 +32,7 @@
     "test:rules:emulator": "firebase --project demo-quickteam emulators:exec --only firestore \"npm run test:rules\"",
     "migrate:issue-hierarchy": "node scripts/migrate-issue-hierarchy-v2.mjs",
     "migrate:calendar-time-visibility": "node scripts/backfill-calendar-time-log-visibility.mjs",
+    "migrate:member-access": "node scripts/migrate-member-access.mjs",
     "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs"
   },
   "dependencies": {

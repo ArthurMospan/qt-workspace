@@ -58,9 +58,18 @@ export async function POST(request) {
         userId: uid,
         role: invite.role === 'admin' ? 'admin' : 'member',
         joinedAt: FieldValue.serverTimestamp(),
-        hourlyRate: 0,
         invitedBy: invite.invitedBy || null,
         joinedVia: 'invite-link',
+      });
+      tx.set(db.collection('organizations').doc(organizationId)
+        .collection('memberRates').doc(uid), {
+        userId: uid,
+        hourlyRate: 0,
+        updatedBy: uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      tx.update(db.collection('organizations').doc(organizationId), {
+        memberDirectoryVersion: FieldValue.increment(1),
       });
       tx.update(inviteRef, {
         usedCount: FieldValue.increment(1),
