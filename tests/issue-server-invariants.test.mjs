@@ -73,6 +73,7 @@ test('issue deletion is reversible until the retention purge', async () => {
   assert.match(trashServer, /purgeExpiredDeletedIssues/);
   assert.match(trashServer, /recursiveDelete\(issueRef\)/);
   assert.match(detail, /label: 'Скасувати'/);
+  assert.match(detail, /duration: 30000/);
   assert.match(detail, /restoreIssue\(issueId, deletion\.organizationId\)/);
 });
 

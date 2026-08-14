@@ -856,7 +856,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       const deletion = await deleteIssue(issueId, childIssues.length > 0 ? { childPolicy: 'promote' } : undefined);
       router.push(`/${projectId}`);
       showToast('Задачу видалено', 'success', {
-        duration: 8000,
+        duration: 30000,
         action: {
           label: 'Скасувати',
           onClick: () => {
