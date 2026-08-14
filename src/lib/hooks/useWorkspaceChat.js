@@ -29,16 +29,31 @@ async function releaseChatAttachments(attachments) {
   const targets = (Array.isArray(attachments) ? attachments : []).filter(item => item?.storagePath);
   if (!targets.length) return;
   await Promise.allSettled(
-    targets.map(item => deleteFileFromCloudinary(item.storagePath, item.resourceType)),
+    targets.map(item => deleteFileFromCloudinary(
+      item.storagePath,
+      item.resourceType,
+      item.deliveryType,
+    )),
   );
 }
 
-function toChatMessage(document) {
+function toChatMessage(document, accessContext = {}) {
   const item = document.data();
   const createdAt = typeof item.createdAt?.toDate === 'function' ? item.createdAt.toDate() : new Date();
   return {
     id: document.id,
     ...item,
+    attachments: (item.attachments || []).map((attachment, attachmentIndex) => (
+      attachment?.deliveryType === 'authenticated'
+        ? {
+          ...attachment,
+          access: {
+            ...accessContext,
+            attachmentIndex,
+          },
+        }
+        : attachment
+    )),
     time: createdAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
   };
 }
@@ -181,7 +196,11 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     const unsub = onSnapshot(q, snap => {
       // Newest-first on the wire so the limit keeps the *latest* window;
       // reversed here because the UI renders oldest-first.
-      const data = snap.docs.map(toChatMessage).reverse();
+      const data = snap.docs.map(message => toChatMessage(message, {
+        organizationId: activeOrgId,
+        channelId,
+        messageId: message.id,
+      })).reverse();
       setMessages(data);
       setHasMoreMessages(snap.size >= messageLimit);
       setLoading(false);
@@ -200,7 +219,12 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     }
     const q = query(collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId, 'replies'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => {
-      setThreadMessages(snap.docs.map(toChatMessage));
+      setThreadMessages(snap.docs.map(reply => toChatMessage(reply, {
+        organizationId: activeOrgId,
+        channelId,
+        messageId: activeThreadId,
+        replyId: reply.id,
+      })));
     }, err => {
       reportLoadError('[useWorkspaceChat] thread replies', err);
     });

@@ -41,7 +41,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
     });
 
     if (!signRes.ok) throw new Error('Failed to get upload signature');
-    const { signature, timestamp, apiKey, cloudName, overwrite } = await signRes.json();
+    const { signature, timestamp, apiKey, cloudName, overwrite, deliveryType = 'upload' } = await signRes.json();
 
     const formData = new FormData();
     formData.append('file', file);
@@ -51,6 +51,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
     formData.append('folder', folder);
     formData.append('public_id', public_id);
     formData.append('overwrite', String(overwrite));
+    if (deliveryType === 'authenticated') formData.append('type', deliveryType);
 
     // XHR rather than fetch: it is the only way to observe real upload
     // progress. The previous helper jumped straight from 20% to 100%, so every
@@ -84,7 +85,13 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
       downloadUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');
     }
 
-    return { downloadUrl, storagePath: data.public_id, resourceType: data.resource_type };
+    return {
+      downloadUrl,
+      storagePath: data.public_id,
+      resourceType: data.resource_type,
+      deliveryType,
+      format: data.format || ext || '',
+    };
   } catch (err) {
     console.error('Upload Error:', err);
     throw err;
@@ -97,7 +104,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
  * callers may swallow the rejection. Needs the attachment's storagePath
  * (Cloudinary public_id) and resourceType captured at upload time.
  */
-export async function deleteFileFromCloudinary(storagePath, resourceType = 'image') {
+export async function deleteFileFromCloudinary(storagePath, resourceType = 'image', deliveryType = 'upload') {
   if (!storagePath) return false;
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new Error('Authentication is required to delete files');
@@ -108,7 +115,7 @@ export async function deleteFileFromCloudinary(storagePath, resourceType = 'imag
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ storagePath, resourceType }),
+    body: JSON.stringify({ storagePath, resourceType, deliveryType }),
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));

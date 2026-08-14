@@ -87,7 +87,7 @@ export default function AttachmentViewer({ attachment, onClose }) {
             <button data-ui-control="media-action" type="button" onClick={() => setScale(value => Math.min(3, value + 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Збільшити"><ZoomIn size={17} /></button>
           </div>
         )}
-        <a href={downloadUrlFor(url)} download={name} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Завантажити" title="Завантажити"><Download size={17} /></a>
+        <a href={attachment.secureDownloadUrl || downloadUrlFor(url)} download={name} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Завантажити" title="Завантажити"><Download size={17} /></a>
         <a href={url} target="_blank" rel="noopener noreferrer" className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Відкрити оригінал" title="Відкрити оригінал"><ExternalLink size={17} /></a>
         <button data-ui-control="media-action" type="button" onClick={onClose} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Закрити"><X size={19} /></button>
       </header>

@@ -13,6 +13,7 @@ import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmi
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   callerBelongsToPathOrganization,
+  isOrganizationChatStoragePath,
   isSafeStoragePath,
   organizationIdFromPath,
 } from '@/lib/server/uploadPaths';
@@ -24,6 +25,7 @@ cloudinary.config({
 });
 
 const ALLOWED_RESOURCE_TYPES = new Set(['image', 'video', 'raw']);
+const ALLOWED_DELIVERY_TYPES = new Set(['upload', 'authenticated']);
 
 export async function POST(req) {
   try {
@@ -35,7 +37,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Too many delete requests' }, { status: 429 });
     }
 
-    const { storagePath, resourceType } = await readJsonBody(req);
+    const { storagePath, resourceType, deliveryType } = await readJsonBody(req);
     if (!isSafeStoragePath(storagePath)) {
       return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 });
     }
@@ -51,7 +53,18 @@ export async function POST(req) {
     }
 
     const type = ALLOWED_RESOURCE_TYPES.has(resourceType) ? resourceType : 'image';
-    const result = await cloudinary.uploader.destroy(storagePath, { resource_type: type, invalidate: true });
+    const assetDeliveryType = ALLOWED_DELIVERY_TYPES.has(deliveryType) ? deliveryType : 'upload';
+    if (
+      assetDeliveryType === 'authenticated'
+      && !isOrganizationChatStoragePath(storagePath, organizationId)
+    ) {
+      return NextResponse.json({ error: 'Invalid authenticated asset path' }, { status: 400 });
+    }
+    const result = await cloudinary.uploader.destroy(storagePath, {
+      resource_type: type,
+      type: assetDeliveryType,
+      invalidate: true,
+    });
     // Cloudinary returns { result: 'ok' } or 'not found'. Treat a missing
     // asset as success — the goal (it's gone) is already met.
     if (result.result !== 'ok' && result.result !== 'not found') {

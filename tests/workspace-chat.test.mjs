@@ -9,6 +9,7 @@ import {
 } from '../src/lib/utils/chatAttachments.mjs';
 import {
   activeTypingUserIds,
+  canAccessChatChannel,
   channelIdFromName,
   channelUnreadCount,
   directMessageRoomId,
@@ -116,6 +117,15 @@ test('formatChatFileSize produces readable labels', () => {
   assert.equal(formatChatFileSize(1024), '1.0 КБ');
   assert.equal(formatChatFileSize(5 * 1024 * 1024), '5.0 МБ');
   assert.equal(formatChatFileSize(undefined), '');
+});
+
+test('private attachment delivery uses the same channel membership boundary', () => {
+  const directId = directMessageRoomId(UID_A, UID_B);
+  assert.equal(canAccessChatChannel({ id: directId, type: 'dm' }, UID_A), true);
+  assert.equal(canAccessChatChannel({ id: directId, type: 'dm' }, UID_C), false);
+  assert.equal(canAccessChatChannel({ id: 'general', type: 'public' }, UID_C), true);
+  assert.equal(canAccessChatChannel({ id: 'design', members: [UID_A] }, UID_A), true);
+  assert.equal(canAccessChatChannel({ id: 'design', members: [UID_A] }, UID_C), false);
 });
 
 test('chat autocompletes and opens stable issue-key mentions', async () => {

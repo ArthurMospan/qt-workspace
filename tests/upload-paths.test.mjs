@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 // /api/upload/delete derives the owning organization from the path alone, so a
 // caller can never widen their own scope by naming a different organizationId.
 import {
+  isOrganizationChatStoragePath,
+  isOrganizationChatUploadFolder,
   isSafeStoragePath,
   isSafeUploadFolder,
   organizationIdFromPath,
@@ -60,4 +62,27 @@ test('storage paths are validated before reaching the delete API', () => {
   assert.equal(isSafeStoragePath('../../secrets'), false);
   assert.equal(isSafeStoragePath('quickteam/a b'), false);
   assert.equal(isSafeStoragePath(42), false);
+});
+
+test('private chat paths are exact and organization-scoped', () => {
+  assert.equal(
+    isOrganizationChatUploadFolder('quickteam/organizations/org-a/chat', 'org-a'),
+    true,
+  );
+  assert.equal(
+    isOrganizationChatUploadFolder('quickteam/organizations/org-a/chat/files', 'org-a'),
+    false,
+  );
+  assert.equal(
+    isOrganizationChatStoragePath('quickteam/organizations/org-a/chat/1699_file', 'org-a'),
+    true,
+  );
+  assert.equal(
+    isOrganizationChatStoragePath('quickteam/organizations/org-a/chat/1699_file', 'org-b'),
+    false,
+  );
+  assert.equal(
+    isOrganizationChatStoragePath('quickteam/chat/attachments/1699_file', 'org-a'),
+    false,
+  );
 });

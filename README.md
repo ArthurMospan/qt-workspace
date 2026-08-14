@@ -166,6 +166,8 @@ A project board's columns are that project's statuses, and `projects/{id}.hidden
 - [Issue spent-time reconciliation](docs/migrations/ISSUE_SPENT_MINUTES.md)
 - [Calendar time-log visibility backfill](docs/migrations/CALENDAR_TIME_LOG_VISIBILITY.md)
 - [Member access and protected-rate migration](docs/migrations/MEMBER_ACCESS_AND_RATES.md)
+- [Organization-scoped image asset migration](docs/migrations/IMAGE_ASSETS.md)
+- [Private chat attachment migration](docs/migrations/CHAT_ATTACHMENTS.md)
 - [QuickTeam+ integration](docs/integrations/QUICKTEAM_PLUS.md)
 - [Telegram integration](docs/integrations/TELEGRAM.md)
 - [YouTrack migration](docs/integrations/YOUTRACK_MIGRATION.md)

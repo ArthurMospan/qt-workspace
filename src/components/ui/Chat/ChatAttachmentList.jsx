@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { Eye, FileText, Film, Image as ImageIcon, Music2, X } from 'lucide-react';
 import {
   chatAttachmentKind,
-  chatAttachmentUrl,
   formatChatFileSize,
 } from '@/lib/utils/chatAttachments.mjs';
+import { useChatAttachmentAccess } from '@/lib/hooks/useChatAttachmentAccess';
 
 const KIND_ICON = {
   image: ImageIcon,
@@ -24,7 +24,8 @@ function AttachmentTile({
   compact = false,
   dark = false,
 }) {
-  const url = previewUrl || chatAttachmentUrl(attachment);
+  const privateAccess = useChatAttachmentAccess(attachment);
+  const url = previewUrl || privateAccess.url;
   const kind = chatAttachmentKind({ ...attachment, previewUrl: url });
   const name = attachment?.name || 'Файл';
   const sizeLabel = formatChatFileSize(attachment?.size);
@@ -78,7 +79,11 @@ function AttachmentTile({
       : (
         <button
           type="button"
-          onClick={() => onOpen?.({ ...attachment, previewUrl: url })}
+          onClick={() => onOpen?.({
+            ...attachment,
+            previewUrl: url,
+            secureDownloadUrl: privateAccess.downloadUrl,
+          })}
           className={className}
           aria-label={`Переглянути ${name}`}
         >
@@ -120,7 +125,11 @@ function AttachmentTile({
     ? (
       <button
         type="button"
-        onClick={() => onOpen?.({ ...attachment, previewUrl: url })}
+        onClick={() => onOpen?.({
+          ...attachment,
+          previewUrl: url,
+          secureDownloadUrl: privateAccess.downloadUrl,
+        })}
         className={className}
         aria-label={`Переглянути ${name}`}
       >

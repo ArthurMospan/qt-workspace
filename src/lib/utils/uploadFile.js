@@ -16,17 +16,21 @@ export async function uploadFile(file, path, onProgress = null) {
 
   try {
     // Real byte-level progress from the upload itself, not a fabricated 20→100.
-    const { downloadUrl, storagePath, resourceType } =
+    const { downloadUrl, storagePath, resourceType, deliveryType, format } =
       await uploadFileToCloudinary(file, folder, onProgress);
     if (onProgress) onProgress(100);
 
     return {
       name: file.name,
-      url: downloadUrl,
+      // Authenticated Cloudinary URLs are deliberately not persisted. Chat
+      // reads obtain a short-lived signed URL only after channel authorization.
+      url: deliveryType === 'authenticated' ? '' : downloadUrl,
       size: file.size,
       type: file.type,
       storagePath,
       resourceType,
+      deliveryType,
+      format,
     };
   } catch (error) {
     console.error('Error in uploadFile helper via Cloudinary:', error);

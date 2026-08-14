@@ -5,6 +5,7 @@ import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmi
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   callerBelongsToPathOrganization,
+  isOrganizationChatUploadFolder,
   isSafeUploadFolder,
   organizationIdFromPath,
 } from '@/lib/server/uploadPaths';
@@ -49,8 +50,21 @@ export async function POST(req) {
 
     const timestamp = Math.round(new Date().getTime() / 1000);
     
+    // Chat material is confidential workspace content. Cloudinary's
+    // authenticated delivery type keeps both originals and derivations closed
+    // until our channel-authorized access route issues a short-lived URL.
+    const deliveryType = isOrganizationChatUploadFolder(folder, organizationId)
+      ? 'authenticated'
+      : 'upload';
+    const signedParams = {
+      folder,
+      public_id: publicId,
+      overwrite: false,
+      timestamp,
+      ...(deliveryType === 'authenticated' ? { type: deliveryType } : {}),
+    };
     const signature = cloudinary.utils.api_sign_request(
-      { folder, public_id: publicId, overwrite: false, timestamp },
+      signedParams,
       process.env.CLOUDINARY_API_SECRET
     );
 
@@ -58,6 +72,7 @@ export async function POST(req) {
       signature,
       timestamp,
       overwrite: false,
+      deliveryType,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });

@@ -66,12 +66,22 @@ function toMillis(value) {
 export function isVisibleChatChannel(channel, userId) {
   if (!channel?.id || channel.id === 'DM' || channel.id.startsWith('project_') || /^\d+$/.test(channel.id)) return false;
   if (channel.type === 'dm' || isDirectRoomId(channel.id)) {
-    // The room id is authoritative: `participants` is a queryable mirror that
-    // legacy rooms may still be missing, so it can only narrow, never widen.
-    return Boolean(userId) && directRoomParticipants(channel.id).includes(userId);
+    return canAccessChatChannel(channel, userId);
   }
   if (!channel.name) return false;
-  return !Array.isArray(channel.members) || channel.members.length === 0 || channel.members.includes(userId);
+  return canAccessChatChannel(channel, userId);
+}
+
+export function canAccessChatChannel(channel, userId) {
+  if (!channel?.id || !userId) return false;
+  if (channel.type === 'dm' || isDirectRoomId(channel.id)) {
+    // The room id is authoritative: a forged participants field can never
+    // widen access to a direct conversation.
+    return directRoomParticipants(channel.id).includes(userId);
+  }
+  return !Array.isArray(channel.members)
+    || channel.members.length === 0
+    || channel.members.includes(userId);
 }
 
 export function channelUnreadCount(channel, readCursor, userId) {
