@@ -93,6 +93,18 @@ test('the root layout declares a title template and the app is not indexable', a
   assert.match(layout, /manifest: '\/manifest\.webmanifest'/);
 });
 
+test('product fonts are self-hosted instead of blocking first paint on Google', async () => {
+  const [layout, globals] = await Promise.all([
+    read('../src/app/layout.js'),
+    read('../src/app/globals.css'),
+  ]);
+
+  assert.match(layout, /from 'next\/font\/google'/);
+  assert.match(layout, /Inter\(\{/);
+  assert.match(layout, /Roboto_Condensed\(\{/);
+  assert.doesNotMatch(globals, /fonts\.googleapis\.com/);
+});
+
 test('every unauthenticated screen carries its own metadata', async () => {
   for (const segment of ['login', 'onboarding', 'privacy-policy', 'invite', 'ui-kit']) {
     const layout = await read(`../src/app/${segment}/layout.js`);

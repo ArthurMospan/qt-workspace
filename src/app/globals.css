@@ -1,10 +1,9 @@
 /* src/app/globals.css — QuickTeam Workspace: light theme, same tokens as qt/ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Condensed:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-inter: 'Inter', sans-serif;
-  --font-roboto: 'Roboto Condensed', sans-serif;
+  --font-inter: var(--font-inter-loaded), sans-serif;
+  --font-roboto: var(--font-roboto-loaded), sans-serif;
 
   /* ── Brand tokens — single source of truth for the workspace palette.
      Utilities: bg-ink / text-ink / bg-canvas / bg-surface / border-line /

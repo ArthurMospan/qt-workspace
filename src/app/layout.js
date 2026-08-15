@@ -3,6 +3,22 @@ import './globals.css';
 import { AppProvider } from '@/lib/context/AppContext';
 import AutoFix from '@/components/AutoFix';
 import Script from 'next/script';
+import { Inter, Roboto_Condensed } from 'next/font/google';
+
+// Keep both product typefaces on our own origin. The old CSS @import made the
+// first paint wait on two browser-side Google requests and occasionally left
+// the UI Kit (and a real user) on fallback metrics when either request failed.
+const inter = Inter({
+  subsets: ['cyrillic', 'latin'],
+  display: 'swap',
+  variable: '--font-inter-loaded',
+});
+
+const robotoCondensed = Roboto_Condensed({
+  subsets: ['cyrillic', 'latin'],
+  display: 'swap',
+  variable: '--font-roboto-loaded',
+});
 
 // `opengraph-image.js` renders the card; Next only turns it into an absolute
 // URL if it knows where the app lives. The same variable the invite links and
@@ -84,7 +100,7 @@ const SIDEBAR_BOOT_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getIt
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="uk">
+    <html lang="uk" className={`${inter.variable} ${robotoCondensed.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: SIDEBAR_BOOT_SCRIPT }} />
         <AppProvider>

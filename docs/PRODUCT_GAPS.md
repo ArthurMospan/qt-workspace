@@ -75,14 +75,11 @@ open.
 
 ## Performance
 
-- **Open: fonts load from Google over a render-blocking `@import`.**
-  `globals.css` line 2 pulls Inter and Roboto Condensed from
-  `fonts.googleapis.com` inside a CSS import, which is the slowest form: the
-  browser must fetch and parse the stylesheet before it can even start the font
-  request, and text is invisible or reflows until it lands. `next/font/google`
-  self-hosts both, removes the third-party round trip and eliminates the layout
-  shift. Deferred here only because it will move type by a pixel or two and the
-  visual baselines need regenerating in the same change.
+- **done — fonts loaded from Google over a render-blocking `@import`.** Inter
+  and Roboto Condensed now use `next/font/google`: Next.js self-hosts both on
+  the app origin, so first paint no longer waits on browser-side Google requests
+  and the UI does not fall back to different font metrics when that request
+  fails.
 - **Intentional — Buggy Bag loads globally.** This is the owner's own script and
   its current placement is deliberate; do not move or remove it during product
   hardening.
