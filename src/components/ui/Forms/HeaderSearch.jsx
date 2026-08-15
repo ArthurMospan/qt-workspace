@@ -101,7 +101,7 @@ export const HeaderSearch = forwardRef(({
         // in a bordered canvas chip it was the loudest element in the header,
         // so it loses the box and sits back to the faint tier, and only comes
         // forward under the cursor.
-        className="absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-faint transition-colors hover:text-muted"
+        className="absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#cfcfcf] transition-colors hover:text-[#9a9a9a]"
       >
         {paletteKeys}
       </button>

@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/my/page.js — My Tasks: Global Kanban Board & Sprints
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
@@ -30,6 +30,8 @@ import {
 } from '@/lib/utils/statusCategories.mjs';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
+import { can } from '@/lib/utils/can';
 
 
 
@@ -55,31 +57,38 @@ function filterTasks(tasks, filters, sprintMap) {
 }
 
 export default function MyTasksPage() {
-  const { currentUser, projects, activeOrgId } = useAppContext();
+  const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
   const { labels, types, priorities, statuses, categoryColumns } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
   const {
-    tasks,
+    tasks: sourceTasks,
     allIssues,
     issueLinks,
     loading,
-    loadingMore: tasksLoadingMore,
-    hasMore: hasMoreTasks,
-    loadMore: loadMoreTasks,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
-    updateTask,
   } = useAllMyTasks(uid);
   const {
     sprints,
     loading: sprintsLoading,
-    loadingMore: sprintsLoadingMore,
-    hasMore: hasMoreSprints,
-    loadMore: loadMoreSprints,
   } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
+  const resolveBulkStatusId = useCallback((issue, value) => {
+    if (value?.mode !== 'category') return value?.id || null;
+    const issueProject = (projects || []).find(project => project.id === issue.projectId);
+    return resolveCategoryStatusId(value.id, statuses, {
+      currentStatusId: issue.columnId || issue.status,
+      hiddenStatusIds: issueProject?.hiddenColumns || [],
+    });
+  }, [projects, statuses]);
+  const { issues: tasks, applyBulkAction } = useBulkIssueActions({
+    issues: sourceTasks,
+    organizationId: activeOrgId,
+    showToast,
+    resolveStatusId: resolveBulkStatusId,
+  });
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
   
   const [viewMode, setViewMode] = useState('kanban'); // kanban | list
@@ -203,27 +212,7 @@ export default function MyTasksPage() {
   };
 
   const handleBulkUpdate = async (action, value, selectedIssues) => {
-    const results = await Promise.allSettled(selectedIssues.map(issue => {
-      if (action === 'status') {
-        const issueProject = (projects || []).find(project => project.id === issue.projectId);
-        const statusId = resolveCategoryStatusId(value, statuses, {
-          currentStatusId: issue.columnId || issue.status,
-          hiddenStatusIds: issueProject?.hiddenColumns || [],
-        });
-        if (!statusId) throw new Error(`У проєкті «${issueProject?.name || issue.projectId}» немає такого статусу`);
-        return updateTask(issue.id, { status: statusId, columnId: statusId });
-      }
-      if (action === 'assignee') {
-        return updateTask(issue.id, {
-          assigneeIds: value === '__unassigned__' ? [] : [value],
-        });
-      }
-      return updateTask(issue.id, { priority: value });
-    }));
-    const failed = results.filter(result => result.status === 'rejected');
-    const saved = results.length - failed.length;
-    if (saved > 0) showToast(`Оновлено завдань: ${saved}`);
-    if (failed.length > 0) showToast(`Не вдалося оновити завдань: ${failed.length}`, 'error');
+    await applyBulkAction(action, value, selectedIssues);
   };
 
   // Group sprints by status
@@ -240,6 +229,15 @@ export default function MyTasksPage() {
     return [t.issueKey, t.title, t.description, p.name]
       .some(value => String(value || '').toLowerCase().includes(normalizedSearch));
   });
+  const selectionScopeKey = [
+    activeOrgId,
+    myTaskSearch,
+    filters.projects.join(','),
+    filters.priority,
+    filters.type,
+    filters.sprint,
+    hiddenCategories.join(','),
+  ].join('|');
   usePublishLocalSearchResults(myTaskSearch, filtered.length);
 
   return (
@@ -309,20 +307,6 @@ export default function MyTasksPage() {
             </FilterBar>
             
             <div className="flex items-center gap-2 ml-auto">
-              {(hasMoreTasks || hasMoreSprints) && (
-                <Button
-                  onClick={() => {
-                    if (hasMoreTasks) loadMoreTasks();
-                    if (hasMoreSprints) loadMoreSprints();
-                  }}
-                  style="secondary"
-                  size="md"
-                  loading={tasksLoadingMore || sprintsLoadingMore}
-                  title="Завантажити наступну порцію призначених завдань і спринтів"
-                >
-                  Завантажити ще
-                </Button>
-              )}
               <Button
                 onClick={() => setShowSettingsModal(true)}
                 icon={Settings2}
@@ -361,7 +345,6 @@ export default function MyTasksPage() {
               sprints={sprints}
               showProjectName
               groupBy="category"
-              cardPageSize={30}
               compareIssueCards={compareTaskCards}
               hiddenColumns={hiddenCategories}
               showHiddenLane
@@ -371,7 +354,9 @@ export default function MyTasksPage() {
               }}
               onMoveIssue={handleMoveIssue}
               onBulkUpdate={handleBulkUpdate}
+              canArchive={can(orgRole, 'delete:issue')}
               issueLinks={issueLinks}
+              selectionScopeKey={selectionScopeKey}
             />
           </div>
         ) : (
@@ -386,6 +371,9 @@ export default function MyTasksPage() {
             showProjectName
             groupBy="category"
             hiddenGroupIds={hiddenCategories}
+            onBulkUpdate={handleBulkUpdate}
+            canArchive={can(orgRole, 'delete:issue')}
+            selectionScopeKey={selectionScopeKey}
           />
         )}
         </div>

@@ -96,11 +96,6 @@ export default function MemberRail({
                   <span className="text-[11px] font-normal text-muted truncate">
                     {member.positionName}
                   </span>
-                  {member.presenceLabel && (
-                    <span className={`truncate text-[10px] font-medium ${member.online ? 'text-[#10b981]' : 'text-faint'}`}>
-                      {member.presenceLabel}
-                    </span>
-                  )}
                 </div>
               </button>
             );

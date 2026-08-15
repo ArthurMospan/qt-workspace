@@ -13,7 +13,7 @@ import { useFloatingOverlayEscape } from '@/lib/hooks/useFloatingOverlayEscape';
  * row with `overflow: hidden` cannot cut it off.
  *
  * @param {React.ReactElement} props.trigger The element that opens the menu.
- * @param {{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label.
+ * @param {{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label.
  * @param {(open: boolean) => void} props.onOpenChange Fires when the menu opens or closes.
  * @param {boolean} props.closeOnSelect Whether a click closes it; toggle menus keep it open while ticking.
  * @param {string} props.dropdownClassName Placement of the panel only.
@@ -99,14 +99,17 @@ export default function ContextMenu({
                 <button
                   key={item.label || idx}
                   type="button"
+                  disabled={item.disabled}
+                  title={item.disabled ? item.disabledReason : undefined}
                   role={isToggle ? 'menuitemcheckbox' : 'menuitem'}
                   aria-checked={isToggle ? Boolean(item.selected) : undefined}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (item.disabled) return;
                     item.onClick?.(e);
                     if (closeOnSelect) setIsOpen(false);
                   }}
-                  className={`w-full text-left px-[14px] py-[9px] text-[13px] flex items-center gap-[8px] transition-colors ${
+                  className={`w-full text-left px-[14px] py-[9px] text-[13px] flex items-center gap-[8px] transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                     item.selected ? 'font-bold' : 'font-medium'
                   } ${
                     isDanger

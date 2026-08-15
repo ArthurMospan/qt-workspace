@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/sprints/page.js — Global Sprints & Planning styled like Project page
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -14,14 +14,14 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { Counter, DatePicker, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
+import { BulkActionBar, ContextMenu, Counter, DatePicker, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
-  AlertCircle, Filter
+  AlertCircle, CheckSquare, Filter, MoreHorizontal
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -33,12 +33,14 @@ import { db } from '@/lib/firebase';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
-import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
 import {
   createUkrainianDndAnnouncements,
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
 } from '@/lib/utils/dndAnnouncements.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
+import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
+import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -209,7 +211,7 @@ export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
   const { members } = useOrganization();
-  const { labels, statuses, priorities, types, closedStatusIds } = useWorkflowConfig();
+  const { labels, statuses, priorities, types, closedStatusIds, categoryColumns } = useWorkflowConfig();
   const statusOrder = statuses.map(s => s.id);
   const priorityOrder = Object.fromEntries(priorities.map((priority, index) => [priority.id, index]));
   priorityOrder[NO_PRIORITY_ID] = priorities.length;
@@ -237,7 +239,6 @@ export default function GlobalSprintsPage() {
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
-  const [visibleIssueLimits, setVisibleIssueLimits] = useState({});
 
   const isManager = can(orgRole, 'manage:sprints');
   const projectIds = (projects || []).map(p => p.id);
@@ -245,19 +246,27 @@ export default function GlobalSprintsPage() {
     issues: snapshotIssues,
     issueLinks,
     loading: issuesLoading,
-    loadingMore: issuesLoadingMore,
-    hasMore: hasMoreIssues,
-    loadMore: loadMoreIssues,
   } = useWorkspaceAnalytics(projectIds, { includeTimeLogs: false });
   // Sprint reassignment is painted locally first; without it the dropped card
   // animates back into its old sprint and only then hops to the new one.
-  const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues);
+  const [dndIssues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues);
+  const resolveBulkStatusId = useCallback((issue, value) => {
+    if (value?.mode !== 'category') return value?.id || null;
+    const project = (projects || []).find(item => item.id === issue.projectId);
+    return resolveCategoryStatusId(value.id, statuses, {
+      currentStatusId: issue.columnId || issue.status,
+      hiddenStatusIds: project?.hiddenColumns || [],
+    });
+  }, [projects, statuses]);
+  const { issues, applyBulkAction } = useBulkIssueActions({
+    issues: dndIssues,
+    organizationId: activeOrgId,
+    showToast,
+    resolveStatusId: resolveBulkStatusId,
+  });
   const {
     sprints,
     loading: sprintsLoading,
-    loadingMore: sprintsLoadingMore,
-    hasMore: hasMoreSprints,
-    loadMore: loadMoreSprints,
     createSprint,
     updateSprint,
     deleteSprint,
@@ -279,6 +288,7 @@ export default function GlobalSprintsPage() {
   });
 
   const onDragEnd = async ({ draggableId, source, destination }) => {
+    if (selectionActive) return;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
@@ -368,6 +378,38 @@ export default function GlobalSprintsPage() {
     });
   };
 
+  const selectionOrder = getSortedIssues(filteredIssues).map(issue => issue.id);
+  const selectionScopeKey = [
+    activeOrgId,
+    sprintSearch,
+    projectFilters.join(','),
+    assigneeFilter,
+    priorityFilter,
+    typeFilter,
+    sortKey,
+    sortDir,
+  ].join('|');
+  const {
+    active: selectionActive,
+    activeSelectedIds: activeSelectedIssueIds,
+    selectedIssues,
+    toggle: toggleIssueSelection,
+    toggleScope: toggleIssueScope,
+    clear: clearSelection,
+  } = useIssueSelection({
+    issues: filteredIssues,
+    order: selectionOrder,
+    scopeKey: selectionScopeKey || 'sprints',
+  });
+  const toggleSectionSelection = sectionIssues => toggleIssueScope(
+    sectionIssues.map(issue => issue.id),
+  );
+  const handleBulkUpdate = (action, value) => applyBulkAction(
+    action,
+    action === 'status' ? { mode: 'category', id: value } : value,
+    selectedIssues,
+  );
+
   const activeSprintList = (sprints || []).filter(s => s.status === 'active');
   const plannedSprintList = (sprints || []).filter(s => s.status === 'planned');
   const completedSprintList = (sprints || []).filter(s => s.status === 'completed');
@@ -407,18 +449,15 @@ export default function GlobalSprintsPage() {
 
   const renderIssueTable = (issueList, droppableId, isBacklogCol = false) => {
     const sorted = getSortedIssues(issueList);
-    const visibleLimit = visibleIssueLimits[droppableId] || COLUMN_RENDER_PAGE_SIZE;
-    const renderedIssues = sorted.slice(0, visibleLimit);
-    const remainingIssueCount = sorted.length - renderedIssues.length;
     return (
-      <Droppable droppableId={droppableId}>
+      <Droppable droppableId={droppableId} isDropDisabled={selectionActive}>
         {(provided, snapshot) => (
           <div 
             className={`flex min-h-[60px] flex-col pb-4 pt-1 ${isBacklogCol ? 'px-[8px]' : 'px-4'}`}
             ref={provided.innerRef} 
             {...provided.droppableProps}
           >
-            {renderedIssues.map((issue, index) => {
+            {sorted.map((issue, index) => {
               const pName = projects.find(p => p.id === issue.projectId)?.name || '';
               if (isBacklogCol) {
                 return (
@@ -435,11 +474,14 @@ export default function GlobalSprintsPage() {
                     projectName={pName}
                     showProjectName
                     issueLinks={issueLinks}
+                    selected={activeSelectedIssueIds.has(issue.id)}
+                    selectionActive={selectionActive}
+                    onSelect={toggleIssueSelection}
                   />
                 );
               }
               return (
-                <Draggable key={issue.id} draggableId={issue.id} index={index}>
+                <Draggable key={issue.id} draggableId={issue.id} index={index} isDragDisabled={selectionActive}>
                   {(draggableProvided, draggableSnapshot) => (
                     <div
                       ref={draggableProvided.innerRef}
@@ -460,6 +502,9 @@ export default function GlobalSprintsPage() {
                         projectName={pName}
                         showProjectName
                         onClick={() => setActiveIssue(issue)}
+                        selected={activeSelectedIssueIds.has(issue.id)}
+                        selectionActive={selectionActive}
+                        onSelect={toggleIssueSelection}
                       />
                     </div>
                   )}
@@ -474,20 +519,6 @@ export default function GlobalSprintsPage() {
               </div>
             )}
             {provided.placeholder}
-            {remainingIssueCount > 0 && (
-              <Button
-                type="button"
-                style="ghost"
-                size="sm"
-                className="mx-2 mt-2"
-                onClick={() => setVisibleIssueLimits(current => ({
-                  ...current,
-                  [droppableId]: visibleLimit + COLUMN_RENDER_PAGE_SIZE,
-                }))}
-              >
-                Показати ще {Math.min(COLUMN_RENDER_PAGE_SIZE, remainingIssueCount)} · лишилося {remainingIssueCount}
-              </Button>
-            )}
           </div>
         )}
       </Droppable>
@@ -502,20 +533,6 @@ export default function GlobalSprintsPage() {
         title="Спринти"
         actions={
           <>
-            {(hasMoreIssues || hasMoreSprints) && (
-              <Button
-                style="secondary"
-                size="md"
-                loading={issuesLoadingMore || sprintsLoadingMore}
-                onClick={() => {
-                  if (hasMoreIssues) loadMoreIssues();
-                  if (hasMoreSprints) loadMoreSprints();
-                }}
-                title="Завантажити наступну порцію завдань і спринтів"
-              >
-                Завантажити ще
-              </Button>
-            )}
             {isManager && (
               <Button
                 style="primary"
@@ -654,8 +671,27 @@ export default function GlobalSprintsPage() {
                           )}
                         </div>
 
-                        {isManager && (
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <ContextMenu
+                            trigger={(
+                              <Button
+                                style="ghost"
+                                size="icon-xs"
+                                icon={MoreHorizontal}
+                                className="hover:!bg-white"
+                                aria-label={`Дії зі списком ${sprint.name}`}
+                                title="Дії зі списком"
+                              />
+                            )}
+                            items={[{
+                              label: sprintIssues.length > 0 && sprintIssues.every(issue => activeSelectedIssueIds.has(issue.id))
+                                ? 'Зняти вибір у списку'
+                                : 'Вибрати всі у списку',
+                              icon: CheckSquare,
+                              onClick: () => toggleSectionSelection(sprintIssues),
+                            }]}
+                          />
+                          {isManager && (<>
                             {sprint.status === 'planned' && (
                               <Button
                                 style="primary"
@@ -697,8 +733,8 @@ export default function GlobalSprintsPage() {
                                 Видалити
                               </Button>
                             )}
-                          </div>
-                        )}
+                          </>)}
+                        </div>
                       </div>
 
                       {isExpanded && sprint.goal && (
@@ -773,14 +809,35 @@ export default function GlobalSprintsPage() {
                       <h3 className="ui-type-column-title text-ink">Без спринта</h3>
                       <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="ml-1" />
                     </div>
-                    <Button
-                      onClick={() => setShowCreateTaskModal(true)}
-                      style="ghost"
-                      size="icon-xs"
-                      icon={Plus}
-                      className="hover:!bg-white"
-                      title="Додати завдання без спринту"
-                    />
+                    <div className="flex items-center gap-1">
+                      <ContextMenu
+                        trigger={(
+                          <Button
+                            style="ghost"
+                            size="icon-xs"
+                            icon={MoreHorizontal}
+                            className="hover:!bg-white"
+                            aria-label="Дії зі списком без спринта"
+                            title="Дії зі списком"
+                          />
+                        )}
+                        items={[{
+                          label: backlogIssues.length > 0 && backlogIssues.every(issue => activeSelectedIssueIds.has(issue.id))
+                            ? 'Зняти вибір у списку'
+                            : 'Вибрати всі у списку',
+                          icon: CheckSquare,
+                          onClick: () => toggleSectionSelection(backlogIssues),
+                        }]}
+                      />
+                      <Button
+                        onClick={() => setShowCreateTaskModal(true)}
+                        style="ghost"
+                        size="icon-xs"
+                        icon={Plus}
+                        className="hover:!bg-white"
+                        title="Додати завдання без спринту"
+                      />
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto hide-scrollbar">
                     {renderIssueTable(backlogIssues, 'backlog', true)}
@@ -792,6 +849,30 @@ export default function GlobalSprintsPage() {
           </DragDropContext>
         </div>
       )}
+
+      <BulkActionBar
+        count={activeSelectedIssueIds.size}
+        statusOptions={categoryColumns.map(category => ({
+          value: category.id,
+          label: category.label,
+          dotColor: category.color,
+        }))}
+        memberOptions={members.map(member => ({
+          value: member.id || member.uid,
+          label: member.name || member.email || 'Учасник',
+          user: member,
+        }))}
+        priorityOptions={prioritySelectOptions(priorities)}
+        labelOptions={labels.map(label => ({ value: label.id, label: label.label, dotColor: label.color }))}
+        typeOptions={types.filter(type => type.id !== 'epic').map(taskTypeSelectOption)}
+        sprintOptions={sprints.filter(sprint => sprint.status !== 'completed').map(sprint => ({
+          value: sprint.id,
+          label: sprint.name,
+        }))}
+        canArchive={can(orgRole, 'delete:issue')}
+        onApply={handleBulkUpdate}
+        onClear={clearSelection}
+      />
 
       {/* Edit Sprint Modal */}
       {editingSprint && (

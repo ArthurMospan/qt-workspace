@@ -243,9 +243,10 @@ export default function WorkspaceSidebar() {
               <button
                 onClick={() => setCollapsed(true)}
                 data-ui-control="branding-action"
-                className="mt-1 transition-colors shrink-0 ml-[8px]"
+                className="relative mt-1 shrink-0 ml-[8px] transition-colors after:absolute after:-inset-[8px] after:content-['']"
                 style={{ color: 'var(--sb-muted)' }}
                 title="Сховати панель"
+                aria-label="Згорнути бічну панель"
               >
                 <PanelLeftClose size={20} />
               </button>
@@ -257,7 +258,7 @@ export default function WorkspaceSidebar() {
                   onClick={() => setCollapsed(false)}
                   aria-label="Розгорнути бічну панель"
                   data-ui-control="branding-action"
-                  className="transition-colors"
+                  className="flex h-full w-full items-center justify-center transition-colors"
                   style={{ color: 'var(--sb-muted)' }}
                 >
                   <PanelLeftOpen size={20} />

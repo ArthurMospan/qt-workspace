@@ -34,8 +34,9 @@ export function ConfirmProvider({ children }) {
   const confirm = useCallback(opts => {
     return new Promise(resolve => {
       resolverRef.current = resolve;
-      setInputValue('');
-      setRequest(typeof opts === 'string' ? { title: opts } : opts);
+      const nextRequest = typeof opts === 'string' ? { title: opts } : opts;
+      setInputValue(nextRequest?.input?.defaultValue ?? '');
+      setRequest(nextRequest);
     });
   }, []);
 
@@ -104,6 +105,11 @@ export function ConfirmProvider({ children }) {
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               placeholder={input.placeholder || ''}
+              type={input.type || 'text'}
+              min={input.min}
+              max={input.max}
+              step={input.step}
+              suffix={input.suffix}
             />
           )}
         </form>

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 98,
-    "props": 718,
-    "documentedProps": 718,
+    "props": 728,
+    "documentedProps": 728,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -323,49 +323,84 @@
     },
     "BulkActionBar": {
       "file": "src/components/ui/TaskManagement/BulkActionBar.jsx",
-      "summary": "Fixed toolbar for actions that apply to a board selection.",
+      "summary": "Fixed toolbar for an active task selection. Common attributes stay visible; less frequent and destructive operations live in its overflow menu.",
       "props": [
+        {
+          "name": "archiveDisabledReason",
+          "default": "'Архівування доступне owner або admin'",
+          "type": "string",
+          "values": [],
+          "description": "Explanation shown when archive is unavailable."
+        },
+        {
+          "name": "canArchive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the current role may archive tasks."
+        },
         {
           "name": "count",
           "default": "",
           "type": "number",
           "values": [],
-          "description": "Number of currently selected issues."
+          "description": "Number of currently selected visible tasks."
+        },
+        {
+          "name": "labelOptions",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Configured task labels."
         },
         {
           "name": "memberOptions",
           "default": "[]",
-          "type": "Array<{value: string, label: string}>",
+          "type": "object[]",
           "values": [],
-          "description": "Assignee actions available for the selection."
+          "description": "Organization members available for assignment."
         },
         {
           "name": "onApply",
           "default": "",
-          "type": "(action: string, value: string) => Promise<void>|void",
+          "type": "(action: string, value?: unknown) => Promise<unknown>",
           "values": [],
-          "description": "Applies one field change to the selection."
+          "description": "Runs one registry action for the selection."
         },
         {
           "name": "onClear",
           "default": "",
           "type": "() => void",
           "values": [],
-          "description": "Clears the current board selection."
+          "description": "Leaves selection mode."
         },
         {
           "name": "priorityOptions",
           "default": "[]",
-          "type": "Array<{value: string, label: string}>",
+          "type": "object[]",
           "values": [],
-          "description": "Priority actions available for the selection."
+          "description": "Configured priorities, including the explicit none option."
+        },
+        {
+          "name": "sprintOptions",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Active or planned sprint destinations."
         },
         {
           "name": "statusOptions",
           "default": "[]",
-          "type": "Array<{value: string, label: string}>",
+          "type": "object[]",
           "values": [],
-          "description": "Status actions available for the selection."
+          "description": "Status or category destinations."
+        },
+        {
+          "name": "typeOptions",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "Creatable task types."
         }
       ]
     },
@@ -427,6 +462,7 @@
             "metric-text",
             "project-name",
             "settings-row-action",
+            "sidebar-help-action",
             "status-entry",
             "status-submit",
             "workspace-guard"
@@ -1657,7 +1693,7 @@
         {
           "name": "items",
           "default": "[]",
-          "type": "{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean}[]",
+          "type": "{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]",
           "values": [],
           "description": "The rows; `selected` gives one a trailing tick instead of a \"✓ \" in its label."
         },
@@ -5059,13 +5095,6 @@
           "description": "Label definitions, for the chips."
         },
         {
-          "name": "limit",
-          "default": "8",
-          "type": "number",
-          "values": [],
-          "description": "How many rows to draw."
-        },
-        {
           "name": "members",
           "default": "[]",
           "type": "object[]",
@@ -5119,6 +5148,13 @@
           "type": "object[]",
           "values": [],
           "description": "Every task in scope, for resolving parents and links."
+        },
+        {
+          "name": "canArchive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the current role may archive selected tasks."
         },
         {
           "name": "emptyDescription",
@@ -5177,6 +5213,13 @@
           "description": "Workspace members, for avatars."
         },
         {
+          "name": "onBulkUpdate",
+          "default": "",
+          "type": "(action: string, value: unknown, issues: object[]) => Promise<unknown>",
+          "values": [],
+          "description": "Applies one bulk action to the selected rows."
+        },
+        {
           "name": "projectId",
           "default": "",
           "type": "string",
@@ -5196,6 +5239,13 @@
           "type": "object[]",
           "values": [],
           "description": "Projects, needed when the list spans more than one."
+        },
+        {
+          "name": "selectionScopeKey",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Clears selection when a route or filter scope changes."
         },
         {
           "name": "showProjectName",
@@ -5274,6 +5324,13 @@
           "description": "Opens the task."
         },
         {
+          "name": "onSelect",
+          "default": "",
+          "type": "(issueId: string, options?: {shiftKey?: boolean}) => void",
+          "values": [],
+          "description": "Toggles this task in the active selection."
+        },
+        {
           "name": "projectId",
           "default": "",
           "type": "string",
@@ -5286,6 +5343,20 @@
           "type": "string",
           "values": [],
           "description": "Its name."
+        },
+        {
+          "name": "selected",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether this task is part of the active bulk selection."
+        },
+        {
+          "name": "selectionActive",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the row is showing its selection control instead of priority."
         },
         {
           "name": "showProjectName",

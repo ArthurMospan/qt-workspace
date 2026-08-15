@@ -308,7 +308,6 @@ export default function AnalyticsTab({
             allIssues={issues}
             members={members}
             projects={project ? [project] : []}
-            limit={8}
           />
         )}
 

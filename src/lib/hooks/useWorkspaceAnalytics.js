@@ -1,8 +1,8 @@
 'use client';
 
 // Loads issues and time logs only for the already-authorized project list.
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, limit, onSnapshot } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -10,7 +10,6 @@ import {
   chunkProjectIds,
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
-import { ANALYTICS_QUERY_PAGE_SIZE, nextQueryLimit } from '@/lib/utils/queryPagination.mjs';
 
 export function useWorkspaceAnalytics(projectIds = [], {
   includeLinks = true,
@@ -21,26 +20,9 @@ export function useWorkspaceAnalytics(projectIds = [], {
   const [timeLogs, setTimeLogs] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
   const queryTarget = `${activeOrgId || ''}/${projectScope}/${includeLinks ? 'links' : 'no-links'}/${includeTimeLogs ? 'time' : 'no-time'}`;
-  const [pagination, setPagination] = useState({ target: '', limit: ANALYTICS_QUERY_PAGE_SIZE });
   const targetRef = useRef('');
-  const queryLimit = pagination.target === queryTarget
-    ? pagination.limit
-    : ANALYTICS_QUERY_PAGE_SIZE;
-  const loadMore = useCallback(() => {
-    if (!activeOrgId || loadingMore) return;
-    setLoadingMore(true);
-    setPagination(current => ({
-      target: queryTarget,
-      limit: nextQueryLimit(
-        current.target === queryTarget ? current.limit : ANALYTICS_QUERY_PAGE_SIZE,
-        ANALYTICS_QUERY_PAGE_SIZE,
-      ),
-    }));
-  }, [activeOrgId, loadingMore, queryTarget]);
 
   useEffect(() => {
     if (!activeOrgId) {
@@ -49,8 +31,6 @@ export function useWorkspaceAnalytics(projectIds = [], {
         setIssues([]);
         setTimeLogs([]);
         setIssueLinks([]);
-        setHasMore(false);
-        setLoadingMore(false);
         // Still resolving the organization is not the same as having read it
         // and found nothing — the difference is a spinner versus an empty
         // state that says the workspace has no data.
@@ -67,7 +47,6 @@ export function useWorkspaceAnalytics(projectIds = [], {
         setIssues([]);
         setTimeLogs([]);
         setIssueLinks([]);
-        setHasMore(false);
       });
     }
 
@@ -76,7 +55,6 @@ export function useWorkspaceAnalytics(projectIds = [], {
     const timeLogBuckets = new Map();
     const linkBuckets = new Map();
     const readyStreams = new Set();
-    const moreByStream = new Map();
     const expectedStreamCount = chunks.length * (
       1 + (includeLinks ? 1 : 0) + (includeTimeLogs ? 2 : 0)
     ) + (includeTimeLogs ? 1 : 0);
@@ -84,18 +62,14 @@ export function useWorkspaceAnalytics(projectIds = [], {
     if (expectedStreamCount === 0) {
       queueMicrotask(() => {
         setLoading(false);
-        setLoadingMore(false);
-        setHasMore(false);
       });
     }
     const markReady = key => {
       readyStreams.add(key);
       if (readyStreams.size >= expectedStreamCount) {
         setLoading(false);
-        setLoadingMore(false);
       }
     };
-    const publishHasMore = () => setHasMore([...moreByStream.values()].some(Boolean));
     const subscribe = ({
       key,
       sourceQuery,
@@ -103,23 +77,19 @@ export function useWorkspaceAnalytics(projectIds = [], {
       publish,
     }) => {
       const unsubscribe = onSnapshot(
-        query(sourceQuery, limit(queryLimit + 1)),
+        sourceQuery,
         { serverTimestamps: 'estimate' },
         snapshot => {
-          buckets.set(key, snapshot.docs.slice(0, queryLimit).map(document => ({
+          buckets.set(key, snapshot.docs.map(document => ({
             id: document.id,
             ...document.data(),
           })));
-          moreByStream.set(key, snapshot.docs.length > queryLimit);
-          publishHasMore();
           publish(flattenDocumentBuckets(buckets));
           markReady(key);
         },
         error => {
           reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
           buckets.set(key, []);
-          moreByStream.set(key, false);
-          publishHasMore();
           publish(flattenDocumentBuckets(buckets));
           markReady(key);
         },
@@ -202,7 +172,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, authLoading, orgLoading, projectScope, queryLimit, queryTarget, includeLinks, includeTimeLogs]);
+  }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs]);
 
-  return { issues, timeLogs, issueLinks, loading, loadingMore, hasMore, loadMore };
+  return { issues, timeLogs, issueLinks, loading };
 }

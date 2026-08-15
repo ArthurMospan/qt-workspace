@@ -162,17 +162,21 @@ export default function TaskElementsSection() {
 
       <PreviewBlock
         title="Масові дії із завданнями"
-        description="Плаваюча панель зʼявляється після вибору карток і тримає статус, відповідального та пріоритет в одному передбачуваному місці. На реальній дошці вона закріплена над нижнім краєм."
+        description="Плаваюча панель зʼявляється після команди «Вибрати всі» у кебабі. Контрастні селектори містять основні атрибути, а дедлайн, оцінка, дублювання й архівація зібрані в меню. На реальній дошці панель закріплена над нижнім краєм."
         filePath="src/components/ui/TaskManagement/BulkActionBar.jsx"
         component="BulkActionBar"
         fullWidth
       >
-        <div className="relative min-h-[88px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute">
+        <div className="relative min-h-[160px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute">
           <BulkActionBar
             count={4}
-            statusOptions={[{ value: 'todo', label: 'До виконання', color: '#6b7280' }]}
+            statusOptions={[{ value: 'todo', label: 'До виконання', dotColor: '#6b7280' }]}
             memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}
             priorityOptions={[{ value: 'medium', label: 'Середній' }]}
+            labelOptions={[{ value: 'design', label: 'Дизайн', dotColor: '#8b5cf6' }]}
+            typeOptions={[{ value: 'task', label: 'Завдання' }]}
+            sprintOptions={[{ value: 'sprint-1', label: 'Спринт 12' }]}
+            canArchive
             onApply={() => {}}
             onClear={() => {}}
           />

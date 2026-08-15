@@ -90,7 +90,12 @@ npm run test:unit
 npm run test:rules:emulator
 npm run build
 npm run kit:scan
+npm run kit:drift
 npm run kit:audit
+npm run kit:props
+npm run kit:states
+npm run kit:a11y
+npm run test:visual
 ```
 
 On Windows with Firebase CLI 15 and Node 24, the rules assertions can finish successfully while the CLI reports an error during emulator shutdown. Always check the Node test summary (`pass`, `fail`) separately from that known teardown error.
@@ -159,6 +164,7 @@ A project board's columns are that project's statuses, and `projects/{id}.hidden
 ## Documentation
 
 - [Current product guardrails and roadmap](docs/ROADMAP.md)
+- [Help, public pages and complete bulk-operations contract](docs/SPRINT_HELP_AND_BULK_OPERATIONS.md)
 - [UI Kit contract](docs/UI_KIT_CONTRACT.md)
 - [Task hierarchy, logical links and accounting](docs/TASK_HIERARCHY_AND_LINKS.md)
 - [Issue hierarchy v2 migration](docs/migrations/ISSUE_HIERARCHY_V2.md)

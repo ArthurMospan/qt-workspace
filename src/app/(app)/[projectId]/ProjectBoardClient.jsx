@@ -31,6 +31,7 @@ import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -50,12 +51,9 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const resourceContextReady = !resourceOrganizationId || activeOrgId === resourceOrganizationId;
   const scopedProjectId = resourceContextReady ? projectId : null;
   const {
-    issues,
+    issues: sourceIssues,
     issueLinks,
     loading: issuesLoading,
-    loadingMore: issuesLoadingMore,
-    hasMore: hasMoreIssues,
-    loadMore: loadMoreIssues,
     createIssue,
     updateIssue,
     moveIssue,
@@ -63,9 +61,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const {
     sprints,
     loading: sprintsLoading,
-    loadingMore: sprintsLoadingMore,
-    hasMore: hasMoreSprints,
-    loadMore: loadMoreSprints,
     startSprint,
     completeSprint,
   } = useSprints(projectId);
@@ -74,6 +69,15 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const showToast   = useWorkspaceStore(s => s.showToast);
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const projectSearch = useWorkspaceStore(s => s.projectSearch);
+  const resolveBulkStatusId = useCallback((issue, value) => (
+    value?.mode === 'status' ? value.id : null
+  ), []);
+  const { issues, applyBulkAction } = useBulkIssueActions({
+    issues: sourceIssues,
+    organizationId: activeOrgId,
+    showToast,
+    resolveStatusId: resolveBulkStatusId,
+  });
 
   const project  = projects?.find(p => p.id === projectId);
   const teamUids = Array.isArray(project?.team) ? project.team : [];
@@ -169,6 +173,14 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
 
     return true;
   });
+  const selectionScopeKey = [
+    projectId,
+    projectSearch,
+    boardSprintFilter,
+    boardAssigneeFilter,
+    boardPriorityFilter,
+    boardTypeFilter,
+  ].join('|');
   usePublishLocalSearchResults(projectSearch, boardIssues.length);
 
   const actor = {
@@ -253,21 +265,8 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
 
   const handleBulkUpdate = useCallback(async (action, value, selectedIssues) => {
-    const patch = action === 'status'
-      ? { status: value, columnId: value }
-      : action === 'assignee'
-        ? { assigneeIds: value === '__unassigned__' ? [] : [value] }
-        : { priority: value };
-    const results = await Promise.allSettled(
-      selectedIssues.map(issue => updateIssue(issue.id, patch, actor)),
-    );
-    const failed = results.filter(result => result.status === 'rejected');
-    const saved = results.length - failed.length;
-    if (saved > 0) showToast(`Оновлено завдань: ${saved}`);
-    if (failed.length > 0) {
-      showToast(`Не вдалося оновити завдань: ${failed.length}`, 'error');
-    }
-  }, [updateIssue, showToast]); // eslint-disable-line react-hooks/exhaustive-deps
+    await applyBulkAction(action, value, selectedIssues);
+  }, [applyBulkAction]);
 
   const isBoard = activeTab === 'board' && boardView === 'kanban';
   const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
@@ -326,20 +325,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
         onTabChange={setActiveTab}
         actions={
           <>
-            {(hasMoreIssues || hasMoreSprints) && (
-              <Button
-                onClick={() => {
-                  if (hasMoreIssues) loadMoreIssues();
-                  if (hasMoreSprints) loadMoreSprints();
-                }}
-                style="secondary"
-                size="md"
-                loading={issuesLoadingMore || sprintsLoadingMore}
-                title="Завантажити наступну порцію завдань, звʼязків і спринтів"
-              >
-                Завантажити ще
-              </Button>
-            )}
             {isShared && (
               <Link
                 href={`/${projectId}/portal`}
@@ -491,6 +476,8 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               issueLinks={issueLinks}
               sprints={sprints}
               isArchived={isArchived}
+              canArchive={can(orgRole, 'delete:issue')}
+              selectionScopeKey={selectionScopeKey}
             />
           </div>
         ) : (
@@ -505,6 +492,9 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             projectName={project?.name}
             hiddenGroupIds={project?.hiddenColumns || []}
             activeTimerIssueId={activeTimer?.issueId}
+            onBulkUpdate={handleBulkUpdate}
+            canArchive={can(orgRole, 'delete:issue')}
+            selectionScopeKey={selectionScopeKey}
           />
         )
       )}

@@ -2,6 +2,7 @@
 
 import Dialog from '../Dialog';
 import { useApplePlatform } from '@/lib/hooks/useApplePlatform';
+import { SHORTCUT_GROUPS } from '@/lib/content/shortcuts.mjs';
 
 // ─── UI Kit: KeyboardShortcutsDialog ─────────────────────────────────────────
 // The app had shortcuts and no way to find out about them, which makes a
@@ -9,28 +10,7 @@ import { useApplePlatform } from '@/lib/hooks/useApplePlatform';
 // palette — QUI-103 took "?" away, because a printable character cannot be a
 // global shortcut without eating the character.
 
-export const SHORTCUT_GROUPS = [
-  {
-    label: 'Всюди',
-    items: [
-      { keys: ['⌘', 'K'], label: 'Командна палітра', alt: ['Ctrl', 'K'] },
-      { keys: ['Esc'], label: 'Закрити вікно або панель' },
-    ],
-  },
-  {
-    label: 'У палітрі',
-    items: [
-      { keys: ['↑', '↓'], label: 'Вибір' },
-      { keys: ['↵'], label: 'Відкрити' },
-    ],
-  },
-  {
-    label: 'У завданні',
-    items: [
-      { keys: ['Esc'], label: 'Повернутись до дошки' },
-    ],
-  },
-];
+export { SHORTCUT_GROUPS };
 
 function Key({ children }) {
   return (

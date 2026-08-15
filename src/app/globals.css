@@ -1,10 +1,9 @@
 /* src/app/globals.css — QuickTeam Workspace: light theme, same tokens as qt/ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Condensed:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-inter: 'Inter', sans-serif;
-  --font-roboto: 'Roboto Condensed', sans-serif;
+  --font-inter: var(--font-inter-loaded), sans-serif;
+  --font-roboto: var(--font-roboto-loaded), sans-serif;
 
   /* ── Brand tokens — single source of truth for the workspace palette.
      Utilities: bg-ink / text-ink / bg-canvas / bg-surface / border-line /
@@ -279,6 +278,20 @@
   .ui-control[data-ui-composition='settings-row-action'] {
     --ui-control-line: calc(var(--ui-control-height) - 24px);
     width: 100%;
+  }
+  .ui-button[data-ui-composition='sidebar-help-action'] {
+    width: 100%;
+    border-radius: 10px;
+    color: var(--sb-muted, var(--color-muted)) !important;
+    background: transparent !important;
+  }
+  .ui-button[data-ui-composition='sidebar-help-action'][data-sidebar-collapsed='false'] {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+  .ui-button[data-ui-composition='sidebar-help-action']:hover {
+    color: var(--sb-text, var(--color-ink)) !important;
+    background: var(--sb-hover, var(--color-canvas)) !important;
   }
   .ui-control[data-ui-composition='status-entry'] {
     --ui-control-height: 44px;
@@ -868,6 +881,9 @@
     z-index: 900;
     display: flex;
     max-width: calc(100vw - 32px);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
     align-items: center;
     gap: 6px;
     padding: 8px;
@@ -877,6 +893,9 @@
     border-radius: 14px;
     box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
     transform: translateX(-50%);
+  }
+  .ui-bulk-actions[data-ui-composition='bulk-actions']::-webkit-scrollbar {
+    display: none;
   }
   .ui-bulk-actions__count {
     flex-shrink: 0;
@@ -895,7 +914,6 @@
     .ui-bulk-actions[data-ui-composition='bulk-actions'] {
       bottom: calc(var(--qt-nav-bottom-height, 64px) + 16px);
       max-width: calc(100vw - 16px);
-      overflow-x: auto;
     }
   }
 
@@ -929,6 +947,14 @@
     margin-right: calc(var(--page-px, 16px) * -1);
     padding-left: var(--page-px, 16px);
     padding-right: var(--page-px, 16px);
+    width: calc(100% + var(--page-px, 16px) * 2);
+  }
+  /* Kanban is itself a horizontal viewport. Unlike generic full-bleed rows it
+     must not keep page padding inside that viewport: those blank strips crop
+     the outer columns as soon as the board scrolls. */
+  .kanban-full-bleed {
+    margin-left: calc(var(--page-px, 16px) * -1);
+    margin-right: calc(var(--page-px, 16px) * -1);
     width: calc(100% + var(--page-px, 16px) * 2);
   }
   /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */

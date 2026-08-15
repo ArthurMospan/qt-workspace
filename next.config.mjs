@@ -1,5 +1,16 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { version: packageVersion } = require('./package.json');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Client chrome cannot read package.json at runtime. Expose the package value
+  // at build time so the help menu and the public version registry always show
+  // the exact version npm/build tooling sees, with no second hand-written copy.
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageVersion,
+  },
   // Next externalizes firebase-admin by default. With Firebase Admin 14's
   // required subpath exports (`firebase-admin/app`, `/auth`, `/firestore`), the
   // Vercel function trace can omit those runtime modules even though `next

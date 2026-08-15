@@ -11,7 +11,9 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { NO_PRIORITY, ensureSystemPriorities, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
-import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
+import { COLUMN_VIRTUALIZATION_THRESHOLD } from '@/lib/utils/boardRendering.mjs';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 import {
   createUkrainianDndAnnouncements,
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
@@ -233,13 +235,15 @@ export default function AgileBoard({
   showHiddenLane = false,
   issueLinks = [],
   isArchived,
-  cardPageSize = COLUMN_RENDER_PAGE_SIZE,
+  canArchive = false,
+  selectionScopeKey = '',
   compareIssueCards = compareIssues,
 }) {
   const [mounted, setMounted] = useState(dndReady);
   const {
     statuses: globalStatuses,
     labels,
+    types,
     categoryColumns,
     statusCategoryById,
     priorities,
@@ -309,16 +313,6 @@ export default function AgileBoard({
     .sort(compareIssueCards);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
-  const [selectedIssueIds, setSelectedIssueIds] = useState(() => new Set());
-  const [selectionAnchorId, setSelectionAnchorId] = useState('');
-  // Large cross-project boards stay responsive by rendering a bounded first
-  // page per column. The complete ordered column remains available to the drop
-  // planner, so loading is only a rendering concern and never changes where a
-  // card is persisted.
-  const [visibleCardLimits, setVisibleCardLimits] = useState({});
-  const normalizedCardPageSize = Number.isFinite(cardPageSize) && cardPageSize > 0
-    ? Math.trunc(cardPageSize)
-    : null;
   const dndAnnouncements = useMemo(() => createUkrainianDndAnnouncements({
     itemLabel: draggableId => {
       const issue = boardIssues.find(candidate => candidate.id === draggableId);
@@ -370,7 +364,7 @@ export default function AgileBoard({
   }, []);
 
   const onDragEnd = (result) => {
-    if (isArchived || activeSelectedIssueIds.size > 0) return;
+    if (isArchived || selectionActive) return;
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -475,63 +469,28 @@ export default function AgileBoard({
     }).map(issue => issue.id);
   })();
 
-  // A filtered board can stop rendering a selected task. Keep the stored set
-  // untouched and derive the live intersection instead of synchronously
-  // rewriting state from an effect (which would add a second render).
-  const availableIssueIds = new Set(boardIssues.map(issue => issue.id));
-  const activeSelectedIssueIds = new Set(
-    [...selectedIssueIds].filter(issueId => availableIssueIds.has(issueId)),
-  );
-
-  useEffect(() => {
-    if (activeSelectedIssueIds.size === 0) return undefined;
-    const clearOnEscape = event => {
-      if (event.key !== 'Escape') return;
-      setSelectedIssueIds(new Set());
-      setSelectionAnchorId('');
-    };
-    window.addEventListener('keydown', clearOnEscape);
-    return () => window.removeEventListener('keydown', clearOnEscape);
-  }, [activeSelectedIssueIds.size]);
-
-  const toggleIssueSelection = (issueId, { shiftKey = false } = {}) => {
-    const anchorIndex = selectionOrder.indexOf(selectionAnchorId);
-    const issueIndex = selectionOrder.indexOf(issueId);
-    setSelectedIssueIds(current => {
-      const next = new Set(current);
-      if (shiftKey && anchorIndex >= 0 && issueIndex >= 0) {
-        const start = Math.min(anchorIndex, issueIndex);
-        const end = Math.max(anchorIndex, issueIndex);
-        selectionOrder.slice(start, end + 1).forEach(id => next.add(id));
-      } else if (next.has(issueId)) {
-        next.delete(issueId);
-      } else {
-        next.add(issueId);
-      }
-      return next;
-    });
-    if (!shiftKey || anchorIndex < 0) setSelectionAnchorId(issueId);
-  };
+  const {
+    active: selectionActive,
+    activeSelectedIds: activeSelectedIssueIds,
+    selectedIssues,
+    toggle: toggleIssueSelection,
+    toggleScope: toggleIssueScope,
+    clear: clearSelection,
+  } = useIssueSelection({
+    issues: boardIssues,
+    order: selectionOrder,
+    scopeKey: selectionScopeKey || `${projectId || 'default'}:${byCategory ? 'category' : 'status'}`,
+  });
 
   const toggleColumnSelection = column => {
     const ids = columnCards(boardIssues, column).map(issue => issue.id);
-    setSelectedIssueIds(current => {
-      const next = new Set(current);
-      const allSelected = ids.length > 0 && ids.every(id => next.has(id));
-      ids.forEach(id => (allSelected ? next.delete(id) : next.add(id)));
-      return next;
-    });
-    if (ids.length > 0) setSelectionAnchorId(ids[0]);
+    toggleIssueScope(ids);
   };
-
-  const clearSelection = () => {
-    setSelectedIssueIds(new Set());
-    setSelectionAnchorId('');
-  };
-
-  const selectedIssues = boardIssues.filter(issue => activeSelectedIssueIds.has(issue.id));
   const applyBulkAction = async (action, value) => {
-    await onBulkUpdate?.(action, value, selectedIssues);
+    const normalizedValue = action === 'status'
+      ? { mode: byCategory ? 'category' : 'status', id: value }
+      : value;
+    await onBulkUpdate?.(action, normalizedValue, selectedIssues);
   };
 
   const columnActionMenu = (column, columnIssues) => {
@@ -577,7 +536,7 @@ export default function AgileBoard({
         
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
-          <div className="flex gap-4 pb-2 shrink-0 full-bleed">
+          <div className="flex gap-4 pb-2 shrink-0 kanban-full-bleed">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
               const colTotalIssues = columnCards(boardIssues, col);
@@ -636,6 +595,7 @@ export default function AgileBoard({
                     <Pill tone="count" size="md" className="ml-1">{colTotalIssues.length}</Pill>
                   </div>
                   <div className="flex items-center gap-1">
+                    {columnActionMenu(col, colTotalIssues)}
                     {!isArchived && !col.isHiddenContainer && (
                       <Button
                         onClick={() => onRequestAddIssue
@@ -648,7 +608,6 @@ export default function AgileBoard({
                         title="Додати завдання"
                       />
                     )}
-                    {columnActionMenu(col, colTotalIssues)}
                   </div>
                 </div>
               );
@@ -656,8 +615,9 @@ export default function AgileBoard({
           </div>
         )}
 
-        {/* Scrollable swimlanes area — full-bleed so columns scroll to the panel edge, not the page padding */}
-        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none full-bleed ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
+        {/* The board owns the whole panel width; page gutters must not crop the
+            first and last columns while the horizontal scroller moves. */}
+        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none kanban-full-bleed ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
           {swimlanes.map(lane => (
             <div key={lane.id} className={`mb-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               
@@ -673,13 +633,8 @@ export default function AgileBoard({
                   const colIssues = columnCards(lane.issues, col);
 
                   const dropId = swimlanes.length > 1 ? `${lane.id}::${col.id}` : col.id;
-                  const visibleLimit = normalizedCardPageSize
-                    ? visibleCardLimits[dropId] || normalizedCardPageSize
-                    : colIssues.length;
-                  const renderedColIssues = colIssues.slice(0, visibleLimit);
-                  const remainingIssueCount = colIssues.length - renderedColIssues.length;
                   const shouldVirtualize = swimlanes.length === 1
-                    && colIssues.length > COLUMN_RENDER_PAGE_SIZE;
+                    && colIssues.length > COLUMN_VIRTUALIZATION_THRESHOLD;
 
                   const isCollapsed = collapsedCols.includes(col.id);
 
@@ -743,6 +698,7 @@ export default function AgileBoard({
                             <Pill tone="count" size="md" className="ml-1">{colIssues.length}</Pill>
                           </div>
                           <div className="flex items-center gap-1">
+                            {columnActionMenu(col, colIssues)}
                             {!isArchived && !col.isHiddenContainer && (
                               <Button
                                 onClick={() => onRequestAddIssue
@@ -755,7 +711,6 @@ export default function AgileBoard({
                                 title="Додати завдання"
                               />
                             )}
-                            {columnActionMenu(col, colIssues)}
                           </div>
                         </div>
                       )}
@@ -794,7 +749,7 @@ export default function AgileBoard({
                             issueLinks={issueLinks}
                             isArchived={isArchived}
                             selected={activeSelectedIssueIds.has(issue.id)}
-                            selectionActive={activeSelectedIssueIds.size > 0}
+                            selectionActive={selectionActive}
                             onSelect={onBulkUpdate ? toggleIssueSelection : undefined}
                             showStatusName={byCategory && (
                               col.isHiddenContainer || multiStatusColumnIds.has(col.id)
@@ -808,7 +763,7 @@ export default function AgileBoard({
                             <VirtualDroppableColumn
                               dropId={dropId}
                               issues={colIssues}
-                              isDropDisabled={col.isHiddenContainer || isArchived || activeSelectedIssueIds.size > 0}
+                              isDropDisabled={col.isHiddenContainer || isArchived || selectionActive}
                               className="flex-1 p-[8px] transition-colors hide-scrollbar rounded-b-[16px] overflow-y-auto"
                               renderCard={renderIssueCard}
                             />
@@ -816,7 +771,7 @@ export default function AgileBoard({
                         }
 
                         return (
-                          <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived || activeSelectedIssueIds.size > 0}>
+                          <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived || selectionActive}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
@@ -825,23 +780,8 @@ export default function AgileBoard({
                                   snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                                 }`}
                               >
-                                {renderedColIssues.map((issue, index) => renderIssueCard(issue, index))}
+                                {colIssues.map((issue, index) => renderIssueCard(issue, index))}
                                 {provided.placeholder}
-                                {remainingIssueCount > 0 && (
-                                  <div className="shrink-0 pb-[8px]">
-                                    <Button
-                                      onClick={() => setVisibleCardLimits(current => ({
-                                        ...current,
-                                        [dropId]: visibleLimit + normalizedCardPageSize,
-                                      }))}
-                                      style="ghost"
-                                      size="sm"
-                                      className="w-full"
-                                    >
-                                      Показати ще {Math.min(normalizedCardPageSize, remainingIssueCount)} · лишилося {remainingIssueCount}
-                                    </Button>
-                                  </div>
-                                )}
                                 <div className="shrink-0 h-[4px]" />
                               </div>
                             )}
@@ -861,17 +801,25 @@ export default function AgileBoard({
           statusOptions={columns.filter(column => !column.isHiddenContainer).map(column => ({
             value: column.id,
             label: column.label,
-            color: column.color,
+            dotColor: column.color,
           }))}
-          memberOptions={[
-            { value: '__unassigned__', label: 'Без відповідального' },
-            ...members.map(member => ({
-              value: member.id || member.uid,
-              label: member.name || member.email || 'Учасник',
-              user: member,
-            })),
-          ]}
+          memberOptions={members.map(member => ({
+            value: member.id || member.uid,
+            label: member.name || member.email || 'Учасник',
+            user: member,
+          }))}
           priorityOptions={prioritySelectOptions(priorities)}
+          labelOptions={labels.map(label => ({
+            value: label.id,
+            label: label.label,
+            dotColor: label.color,
+          }))}
+          typeOptions={types.filter(type => type.id !== 'epic').map(taskTypeSelectOption)}
+          sprintOptions={sprints.filter(sprint => sprint.status !== 'completed').map(sprint => ({
+            value: sprint.id,
+            label: sprint.name,
+          }))}
+          canArchive={canArchive}
           onApply={applyBulkAction}
           onClear={clearSelection}
         />

@@ -20,6 +20,7 @@ import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
+import Checkbox from '@/components/ui/Forms/Checkbox';
 
 function fmtDate(raw, timeZone) {
   if (!raw) return null;
@@ -44,6 +45,9 @@ function fmtDate(raw, timeZone) {
  * @param {boolean} props.showProjectName Whether the row names its project — true only on cross-project lists.
  * @param {boolean} props.showStatusName Whether the row names its status — true only where the section heading cannot, i.e. a category holding several statuses.
  * @param {() => void} props.onClick Opens the task.
+ * @param {boolean} props.selected Whether this task is part of the active bulk selection.
+ * @param {boolean} props.selectionActive Whether the row is showing its selection control instead of priority.
+ * @param {(issueId: string, options?: {shiftKey?: boolean}) => void} props.onSelect Toggles this task in the active selection.
  */
 export default function TaskRow({
   issue,
@@ -59,6 +63,9 @@ export default function TaskRow({
   showStatusName = false,
   isTimerActive,
   onClick,
+  selected = false,
+  selectionActive = false,
+  onSelect,
 }) {
   const router = useRouter();
   const { currentUser, projects = [], activeOrg } = useAppContext();
@@ -119,6 +126,11 @@ export default function TaskRow({
   ).length > 0;
 
   const handleRowClick = (e) => {
+    if (selectionActive && onSelect) {
+      e.preventDefault();
+      onSelect(task.id, { shiftKey: e.shiftKey });
+      return;
+    }
     if (onClick) {
       onClick(e);
       return;
@@ -143,7 +155,7 @@ export default function TaskRow({
         event.preventDefault();
         handleRowClick(event);
       }}
-      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] hover:!ring-4 hover:!ring-[#ECECEC] ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
+      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-[#ECECEC]'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
       {/* Main Row Grid/Flex */}
       <div className="flex items-center justify-between w-full flex-wrap md:flex-nowrap gap-[16px] min-w-0">
@@ -222,7 +234,23 @@ export default function TaskRow({
 
         {/* Right Section: Metadata, Badges, Assignees */}
         <div className="flex items-center gap-[16px] shrink-0 flex-wrap md:flex-nowrap">
-          <PriorityIcon priority={priorityConfig} size="md" />
+          {selectionActive && onSelect ? (
+            <span
+              className="flex h-5 w-5 shrink-0 items-center justify-center"
+              onClick={event => event.stopPropagation()}
+              onMouseDown={event => event.stopPropagation()}
+              onTouchStart={event => event.stopPropagation()}
+            >
+              <Checkbox
+                checked={selected}
+                onChange={() => onSelect(task.id)}
+                size="sm"
+                ariaLabel={`Вибрати завдання ${task.issueKey || task.title}`}
+              />
+            </span>
+          ) : (
+            <PriorityIcon priority={priorityConfig} size="md" />
+          )}
           
           {/* Type Badge */}
           {typeObj && (

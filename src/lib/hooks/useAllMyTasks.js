@@ -2,7 +2,7 @@
 
 // src/lib/hooks/useAllMyTasks.js — Fetch all tasks assigned to current user across all projects
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { collection, query, where, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
@@ -29,7 +29,6 @@ import {
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { ISSUE_QUERY_PAGE_SIZE, nextQueryLimit } from '@/lib/utils/queryPagination.mjs';
 
 function issueLabel(issue) {
   return issue?.issueKey || issue?.title || issue?.id || 'без назви';
@@ -48,9 +47,6 @@ export function useAllMyTasks(userId) {
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [pagination, setPagination] = useState({ target: '', limit: ISSUE_QUERY_PAGE_SIZE });
-  const [hasMore, setHasMore] = useState(false);
   const targetRef = useRef('');
   const [myTaskOrders, setMyTaskOrders] = useState({});
   const [myTaskOrderLoading, setMyTaskOrderLoading] = useState(true);
@@ -77,20 +73,6 @@ export function useAllMyTasks(userId) {
     [projects],
   );
   const queryTarget = `${activeOrgId || ''}/${userId || ''}/${projectScope}`;
-  const queryLimit = pagination.target === queryTarget
-    ? pagination.limit
-    : ISSUE_QUERY_PAGE_SIZE;
-  const loadMore = useCallback(() => {
-    if (!activeOrgId || !userId || !projectScope || loadingMore) return;
-    setLoadingMore(true);
-    setPagination(current => ({
-      target: queryTarget,
-      limit: nextQueryLimit(
-        current.target === queryTarget ? current.limit : ISSUE_QUERY_PAGE_SIZE,
-        ISSUE_QUERY_PAGE_SIZE,
-      ),
-    }));
-  }, [activeOrgId, loadingMore, projectScope, queryTarget, userId]);
   useEffect(() => {
     const projectIds = projectScope ? projectScope.split(',') : [];
     if (!activeOrgId || !userId || projectIds.length === 0) {
@@ -99,8 +81,6 @@ export function useAllMyTasks(userId) {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
         setIssueLinks([]);
-        setHasMore(false);
-        setLoadingMore(false);
         // An empty project list before the projects have loaded is not a user
         // with nothing assigned to them.
         setLoading(Boolean(authLoading || orgLoading || projectsLoading));
@@ -114,7 +94,6 @@ export function useAllMyTasks(userId) {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
         setIssueLinks([]);
-        setHasMore(false);
         setLoading(true);
       });
     }
@@ -122,7 +101,6 @@ export function useAllMyTasks(userId) {
     const chunks = chunkProjectIds(projectIds);
     const issueBuckets = new Map();
     const linkBuckets = new Map();
-    const moreByStream = new Map();
     const readyStreams = new Set();
     const expectedStreamCount = chunks.length * 2;
     const unsubs = [];
@@ -130,10 +108,8 @@ export function useAllMyTasks(userId) {
       readyStreams.add(key);
       if (readyStreams.size >= expectedStreamCount) {
         setLoading(false);
-        setLoadingMore(false);
       }
     };
-    const publishHasMore = () => setHasMore([...moreByStream.values()].some(Boolean));
     const publishIssues = () => {
       const allDocs = flattenDocumentBuckets(issueBuckets);
       const docs = allDocs
@@ -155,20 +131,15 @@ export function useAllMyTasks(userId) {
           where('organizationId', '==', activeOrgId),
           where('projectId', 'in', chunk),
           where('assigneeIds', 'array-contains', userId),
-          limit(queryLimit + 1),
         ),
         snap => {
-          issueBuckets.set(issuesKey, snap.docs.slice(0, queryLimit).map(d => ({ id: d.id, ...d.data() })));
-          moreByStream.set(issuesKey, snap.docs.length > queryLimit);
-          publishHasMore();
+          issueBuckets.set(issuesKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
           publishIssues();
           markReady(issuesKey);
         },
         err => {
           reportLoadError('[useAllMyTasks]', err);
           issueBuckets.set(issuesKey, []);
-          moreByStream.set(issuesKey, false);
-          publishHasMore();
           publishIssues();
           markReady(issuesKey);
         },
@@ -180,20 +151,15 @@ export function useAllMyTasks(userId) {
           collection(db, 'issueLinks'),
           where('organizationId', '==', activeOrgId),
           where('projectId', 'in', chunk),
-          limit(queryLimit + 1),
         ),
         snap => {
-          linkBuckets.set(linksKey, snap.docs.slice(0, queryLimit).map(d => ({ id: d.id, ...d.data() })));
-          moreByStream.set(linksKey, snap.docs.length > queryLimit);
-          publishHasMore();
+          linkBuckets.set(linksKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
           setIssueLinks(flattenDocumentBuckets(linkBuckets));
           markReady(linksKey);
         },
         err => {
           reportLoadError('[useAllMyTasks] links', err);
           linkBuckets.set(linksKey, []);
-          moreByStream.set(linksKey, false);
-          publishHasMore();
           setIssueLinks(flattenDocumentBuckets(linkBuckets));
           markReady(linksKey);
         },
@@ -201,7 +167,7 @@ export function useAllMyTasks(userId) {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading, queryLimit, queryTarget]);
+  }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading, queryTarget]);
 
   // Project `order` belongs to project boards. This private settings document
   // holds the user's own cross-project order for "My tasks".
@@ -464,9 +430,6 @@ export function useAllMyTasks(userId) {
     allIssues,
     issueLinks,
     loading: loading || myTaskOrderLoading,
-    loadingMore,
-    hasMore,
-    loadMore,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,

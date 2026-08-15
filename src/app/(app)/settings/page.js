@@ -45,7 +45,6 @@ import {
   Label,
   Pill,
   PriorityBadge,
-  PriorityIcon,
   Surface,
   useConfirm,
   Popover
@@ -91,7 +90,6 @@ import {
   taskTypeIconKey,
 } from '@/lib/design/taskTypeIcons';
 import {
-  NO_PRIORITY,
   isSystemPriorityId,
   priorityPresentation,
 } from '@/lib/utils/priorities.mjs';
@@ -161,9 +159,10 @@ function Row({ label, desc, children, danger = false }) {
   );
 }
 
-function Section({ title, desc, rightAction, children }) {
+function Section({ title, desc, backAction, rightAction, children }) {
   return (
     <div className="flex flex-col">
+      {backAction && <div className="mb-3 flex items-center">{backAction}</div>}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
@@ -371,17 +370,13 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
       )}
       {/* Color */}
       <div className="relative flex h-[18px] w-[18px] shrink-0 items-center justify-center">
-        {readOnly && variant === 'priority' ? (
-          <PriorityIcon priority={priorityConfig} priorities={priorityItems} />
-        ) : (
-          <ColorSwatch
-            size="trigger"
-            color={color}
-            label="Обрати колір"
-            aria-expanded={showPalette}
-            onClick={() => setShowPalette(v => !v)}
-          />
-        )}
+        <ColorSwatch
+          size="trigger"
+          color={color}
+          label={readOnly ? `Колір ${label}` : 'Обрати колір'}
+          aria-expanded={readOnly ? undefined : showPalette}
+          onClick={readOnly ? undefined : () => setShowPalette(v => !v)}
+        />
         {!readOnly && showPalette && (
           <div data-ui-surface="local" className="absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]">
             {COLOR_PALETTE.map(c => (
@@ -2802,14 +2797,12 @@ export default function SettingsPage() {
           <Section
             title={integrationTitle}
             desc="Опис, стан і налаштування інтеграції"
-            rightAction={(
-              <>
-                <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setIntegrationDetail('')}>
-                  Усі інтеграції
-                </Button>
-                {saveButton}
-              </>
+            backAction={(
+              <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setIntegrationDetail('')}>
+                Усі інтеграції
+              </Button>
             )}
+            rightAction={saveButton}
           >
 
             {integrationDetail === 'quickteam-plus' && <IntegrationCard
@@ -3288,16 +3281,6 @@ export default function SettingsPage() {
             </div>
           ) : (
             <Card preset="borderless">
-              <WorkflowItem
-                item={NO_PRIORITY}
-                onSave={NOOP}
-                onDelete={NOOP}
-                canDelete={false}
-                locked
-                readOnly
-                variant="priority"
-                priorityItems={priorities}
-              />
               <DragDropContext
                 dragHandleUsageInstructions={UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS}
                 onDragStart={priorityAnnouncements.onDragStart}

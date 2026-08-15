@@ -148,7 +148,7 @@ function VariantCell({ component, prop, value, count, previewed }) {
       : 'border-[#fde68a] bg-white';
 
   return (
-    <div className={`flex flex-col gap-[4px] rounded-[10px] border p-[8px] ${tone}`}>
+    <div className={`flex min-w-0 flex-col gap-[4px] overflow-hidden rounded-[10px] border p-[8px] ${tone}`}>
       <div
         className={`relative isolate flex min-h-[32px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
           NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
@@ -158,8 +158,8 @@ function VariantCell({ component, prop, value, count, previewed }) {
           ? render({ [prop]: value })
           : <span className="px-2 text-center text-[10px] leading-relaxed text-faint">{VARIANT_ELSEWHERE[component]}</span>}
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="font-mono text-[10px] font-bold text-ink">{value}</span>
+      <div className="flex min-w-0 items-baseline gap-1.5">
+        <span title={value} className="min-w-0 truncate font-mono text-[10px] font-bold text-ink">{value}</span>
         <span className={`ml-auto shrink-0 rounded-full px-[6px] text-[9px] font-bold ${
           count === 0 ? 'bg-canvas text-faint' : 'bg-[#ecfdf5] text-[#047857]'
         }`}>
@@ -199,8 +199,8 @@ export default function VariantMatrixSection() {
       </Surface>
 
       {Object.entries(manifest).map(([component, props]) => (
-        <section key={component} className="rounded-[14px] border border-line bg-white">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+        <section key={component} className="min-w-0 rounded-[14px] border border-line bg-white">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
             <button
               type="button"
               onClick={() => openUsage(component)}
@@ -215,11 +215,11 @@ export default function VariantMatrixSection() {
               <span className="text-[10px] text-faint">{VARIANT_ELSEWHERE[component]}</span>
             )}
           </div>
-          <div className="flex flex-col gap-[8px] p-[10px]">
+          <div className="flex min-w-0 flex-col gap-[8px] p-[10px]">
             {Object.entries(props).map(([prop, values]) => (
-              <div key={prop}>
+              <div key={prop} className="min-w-0">
                 <div className="mb-[6px] font-mono text-[11px] font-bold text-ink">{prop}</div>
-                <div className="grid gap-[5px] [grid-template-columns:repeat(auto-fill,minmax(80px,1fr))]">
+                <div className="grid min-w-0 gap-[5px] [grid-template-columns:repeat(auto-fill,minmax(80px,1fr))]">
                   {values.map(value => (
                     <VariantCell
                       key={value}

@@ -10,14 +10,14 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 297,
+    "files": 303,
     "elements": 4064,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 33
+    "runtimeNameVerification": 34
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3175",
+      "location": "src/app/(app)/settings/page.js:3168",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:511",
+      "location": "src/app/(app)/settings/page.js:506",
       "attributes": [
         "aria-label",
         "title"
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:630",
+      "location": "src/app/(app)/sprints/page.js:647",
       "attributes": [
         "title",
         "aria-label"
@@ -117,6 +117,13 @@
       "location": "src/components/ui/ChatComposerCore.jsx:96",
       "attributes": [
         "aria-label"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/ui/ContextMenu.jsx:99",
+      "attributes": [
+        "title"
       ]
     },
     {
@@ -207,7 +214,7 @@
     },
     {
       "element": "Button",
-      "location": "src/components/ui/TaskManagement/TaskListView.jsx:140",
+      "location": "src/components/ui/TaskManagement/TaskListView.jsx:194",
       "attributes": [
         "title",
         "aria-label"

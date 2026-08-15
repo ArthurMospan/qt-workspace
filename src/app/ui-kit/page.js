@@ -3,6 +3,7 @@ import { useState } from 'react';
 import UsagePanel from './UsagePanel';
 import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
+import { ConfirmProvider } from '@/components/ui';
 import { KitContext } from './preview';
 import ButtonsSection from './sections/buttons';
 import InputsSection from './sections/inputs';
@@ -149,6 +150,7 @@ export default function UIKitPage() {
   const current = SECTIONS.find(s => s.id === activeSection);
 
   return (
+    <ConfirmProvider>
     <KitContext.Provider value={{ openUsage: setUsageFor }}>
     <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
 
@@ -233,5 +235,6 @@ export default function UIKitPage() {
       <UsagePanel component={usageFor} onClose={() => setUsageFor(null)} />
     </div>
     </KitContext.Provider>
+    </ConfirmProvider>
   );
 }

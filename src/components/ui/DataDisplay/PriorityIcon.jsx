@@ -19,6 +19,7 @@ const SIZE_CLASSES = {
  */
 export default function PriorityIcon({ priority, priorities = [], size = 'sm', className = '' }) {
   const config = priorityPresentation(priority, priorities);
+  if (config.isNoPriority) return null;
   const title = `Пріоритет: ${config.label}`;
   const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.sm;
 

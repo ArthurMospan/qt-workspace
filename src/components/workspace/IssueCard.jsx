@@ -161,7 +161,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         onClick={interactive
           ? event => {
             if (isDraggingRef.current) return;
-            if (onSelect && (selectionActive || event.shiftKey)) {
+            if (onSelect && selectionActive) {
               event.preventDefault();
               onSelect(issue.id, { shiftKey: event.shiftKey });
               return;
@@ -197,21 +197,6 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           transition: cardTransition,
         }}
       >
-        {onSelect && (
-          <span
-            className={`absolute left-[10px] top-[10px] z-30 rounded-[5px] bg-white p-[2px] shadow-sm transition-opacity ${selected || selectionActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}
-            onClick={event => event.stopPropagation()}
-            onMouseDown={event => event.stopPropagation()}
-            onTouchStart={event => event.stopPropagation()}
-          >
-            <Checkbox
-              checked={selected}
-              onChange={() => onSelect(issue.id)}
-              size="sm"
-              ariaLabel={`Вибрати завдання ${issue.issueKey || issue.title}`}
-            />
-          </span>
-        )}
         {/* ── Priority glow blob ─────────────────────────── */}
         {pri.restGlow !== 'transparent' && (
           <>
@@ -249,7 +234,23 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
             )}
 
-            <PriorityIcon priority={priorityConfig} size="md" className="ml-auto" />
+            {selectionActive && onSelect ? (
+              <span
+                className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center"
+                onClick={event => event.stopPropagation()}
+                onMouseDown={event => event.stopPropagation()}
+                onTouchStart={event => event.stopPropagation()}
+              >
+                <Checkbox
+                  checked={selected}
+                  onChange={() => onSelect(issue.id)}
+                  size="sm"
+                  ariaLabel={`Вибрати завдання ${issue.issueKey || issue.title}`}
+                />
+              </span>
+            ) : (
+              <PriorityIcon priority={priorityConfig} size="md" className="ml-auto" />
+            )}
           </div>
 
           {/* Row 2: Title */}
