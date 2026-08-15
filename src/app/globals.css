@@ -279,20 +279,6 @@
     --ui-control-line: calc(var(--ui-control-height) - 24px);
     width: 100%;
   }
-  .ui-button[data-ui-composition='sidebar-help-action'] {
-    width: 100%;
-    border-radius: 10px;
-    color: var(--sb-muted, var(--color-muted)) !important;
-    background: transparent !important;
-  }
-  .ui-button[data-ui-composition='sidebar-help-action'][data-sidebar-collapsed='false'] {
-    justify-content: flex-start;
-    padding-inline: 12px;
-  }
-  .ui-button[data-ui-composition='sidebar-help-action']:hover {
-    color: var(--sb-text, var(--color-ink)) !important;
-    background: var(--sb-hover, var(--color-canvas)) !important;
-  }
   .ui-control[data-ui-composition='status-entry'] {
     --ui-control-height: 44px;
     border-radius: var(--ui-radius-inset);
@@ -949,14 +935,6 @@
     padding-right: var(--page-px, 16px);
     width: calc(100% + var(--page-px, 16px) * 2);
   }
-  /* Kanban is itself a horizontal viewport. Unlike generic full-bleed rows it
-     must not keep page padding inside that viewport: those blank strips crop
-     the outer columns as soon as the board scrolls. */
-  .kanban-full-bleed {
-    margin-left: calc(var(--page-px, 16px) * -1);
-    margin-right: calc(var(--page-px, 16px) * -1);
-    width: calc(100% + var(--page-px, 16px) * 2);
-  }
   /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */
   @media (max-width: 767px) {
     .full-bleed-mobile {
@@ -966,6 +944,25 @@
       padding-right: var(--page-px, 16px);
     }
   }
+}
+
+/* Button ships with a `justify-center` utility, so this stateful composition
+   must live after Tailwind's layers. In the expanded rail the icon now shares
+   the exact 20px left edge used by navigation items; the collapsed rail keeps
+   the same centred geometry it has always used. */
+.ui-button[data-ui-composition='sidebar-help-action'] {
+  width: 100%;
+  border-radius: 10px;
+  color: var(--sb-muted, var(--color-muted)) !important;
+  background: transparent !important;
+}
+.ui-button[data-ui-composition='sidebar-help-action'][data-sidebar-collapsed='false'] {
+  justify-content: flex-start;
+  padding-inline: 12px;
+}
+.ui-button[data-ui-composition='sidebar-help-action']:hover {
+  color: var(--sb-text, var(--color-ink)) !important;
+  background: var(--sb-hover, var(--color-canvas)) !important;
 }
 
 /* Respect the OS "reduce motion" setting across the app — drag & drop, modal

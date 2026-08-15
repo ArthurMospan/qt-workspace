@@ -130,13 +130,13 @@ export const HELP_ARTICLES = Object.freeze([
   },
   {
     id: 'kanban-and-bulk-actions', slug: 'kanban-and-bulk-actions', coverage: ['kanban-bulk-selection'],
-    title: 'Kanban, Shift-вибір і масові дії', category: 'work', summary: 'Єдиний selection contract на дошках, у таблицях і спринтах.',
+    title: 'Kanban, Shift-вибір і масові дії', category: 'work', summary: 'Як вибрати кілька задач на дошці, у списку або спринті.',
     keywords: ['kanban', 'shift', 'масові дії', 'bulk', 'вибрати всі', 'escape'], updatedAt: UPDATED_AT,
     relatedRoutes: ['/my', '/sprints', '/[projectId]'], minimumRole: 'member', relatedIds: ['statuses-and-categories', 'sprints-and-backlog'],
     sections: [
       { id: 'selection', title: 'Вибір', paragraphs: ['Відкрийте кебаб колонки, списку або спринту та натисніть «Вибрати всі». Лише після цього checkbox замінює пріоритет у правому верхньому слоті картки або у відповідному слоті рядка; наведення саме по собі режим вибору не вмикає. Shift додає діапазон у поточному візуальному порядку. Повторна команда, Escape або × очищає вибір. Зміна маршруту, організації, проєкту чи фільтра не дозволяє прихованим задачам потрапити в операцію.'], bullets: ['Поки вибір активний, drag-and-drop заблокований.', 'Кількість вибраних оголошується через aria-live.', 'Checkbox і групові команди доступні з клавіатури.'] },
-      { id: 'actions', title: 'Доступні масові дії', paragraphs: ['Усі дії проходять через bounded bulk API. Після часткового результату успішні зміни лишаються, невдалі відкочуються точково, а повідомлення показує кількість і причини.'], bullets: bulkActionNames },
-      { id: 'excluded', title: 'Що не є масовою дією', paragraphs: ['Міжпроєктне перенесення, hierarchy, task links, списання часу, описи й коментарі потребують індивідуального контексту та не доступні масово.'] },
+      { id: 'actions', title: 'Доступні масові дії', paragraphs: ['QuickTeam збереже всі можливі зміни та повідомить, скільки задач оновлено. Якщо частину змін виконати не вдалося, ви побачите кількість і причини помилок.'], bullets: bulkActionNames },
+      { id: 'excluded', title: 'Що не є масовою дією', paragraphs: ['Перенесення між проєктами, підзадачі, зв’язки, списання часу, описи й коментарі потребують роботи з кожною задачею окремо.'] },
     ],
   },
   {

@@ -17,10 +17,11 @@ export default function PublicLayout({ children }) {
       <a href="#public-content" className="qt-skip-link rounded-lg bg-ink px-4 py-2 text-sm font-bold text-white">
         До вмісту
       </a>
-      <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
+      <header className="border-b border-line bg-white">
         <div className="mx-auto flex min-h-16 w-full max-w-[1120px] flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
-          <Link href="/help" aria-label="QuickTeam — довідка" className="mr-auto inline-flex items-center">
-            <Image src="/logo.svg" alt="QuickTeam" width={166} height={40} className="h-auto w-[124px]" priority />
+          <Link href="/help" aria-label="QuickTeam — довідка" className="mr-auto inline-flex items-center gap-2.5">
+            <Image src="/logo-min-dark.svg" alt="" width={40} height={40} className="h-8 w-8" priority />
+            <span className="text-lg font-bold tracking-[-0.02em] text-ink">QuickTeam</span>
           </Link>
           <nav aria-label="Інформаційні сторінки" className="flex flex-wrap items-center gap-1">
             {NAVIGATION.map(item => (

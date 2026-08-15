@@ -499,6 +499,7 @@ export default function AgileBoard({
       && columnIssues.every(issue => activeSelectedIssueIds.has(issue.id));
     return (
       <ContextMenu
+        className="flex"
         trigger={(
           <Button
             style="ghost"
@@ -536,7 +537,7 @@ export default function AgileBoard({
         
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
-          <div className="flex gap-4 pb-2 shrink-0 kanban-full-bleed">
+          <div className="flex gap-4 pb-2 shrink-0 full-bleed">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
               const colTotalIssues = columnCards(boardIssues, col);
@@ -615,9 +616,9 @@ export default function AgileBoard({
           </div>
         )}
 
-        {/* The board owns the whole panel width; page gutters must not crop the
-            first and last columns while the horizontal scroller moves. */}
-        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none kanban-full-bleed ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
+        {/* Scrollable swimlanes area — full-bleed keeps the page gutter inside
+            the scroller, so neither outer column is clipped at its resting edge. */}
+        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none full-bleed ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
           {swimlanes.map(lane => (
             <div key={lane.id} className={`mb-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               

@@ -42,7 +42,7 @@ export default function WorkspaceHelpMenu({ collapsed = false }) {
     <>
       <div className="shrink-0 px-[8px] pb-[8px]">
         <ContextMenu
-          className="block w-full"
+          className="flex h-[40px] w-full items-center"
           dropdownClassName="w-[260px]"
           trigger={(
             <Button

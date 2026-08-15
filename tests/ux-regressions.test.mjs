@@ -42,7 +42,9 @@ test('requested navigation and readability regressions stay fixed', async () => 
   ]);
   assert.match(board, /\{columnActionMenu\(col, colTotalIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
   assert.match(board, /\{columnActionMenu\(col, colIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
-  assert.match(board, /kanban-full-bleed/);
+  assert.doesNotMatch(board, /kanban-full-bleed/);
+  assert.match(board, /className="flex"[\s\S]{0,160}icon=\{MoreHorizontal\}/);
+  assert.match(board, /full-bleed/);
   assert.match(sidebar, /after:-inset-\[8px\]/);
   assert.match(sidebar, /className="flex h-full w-full items-center justify-center transition-colors"/);
   assert.doesNotMatch(help, />\s*Допомога\s*</);
