@@ -473,7 +473,7 @@ function InvoicePreview({
             />
           )}
           <div ref={printRef} className="px-2 py-3 max-w-[640px] mx-auto">
-            <div className="flex items-start justify-between mb-8">
+            <div className="mb-8 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <div>
                 <h1 className="ui-type-metric-title text-ink tracking-tight">РАХУНОК</h1>
                 <div className="mt-1 flex items-center gap-2">
@@ -485,13 +485,13 @@ function InvoicePreview({
                   {invoice.status === 'void' && <Pill tone="neutral" size="sm">Анульовано</Pill>}
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-[12px] text-muted">Дата виставлення</p>
                 <p className="text-[15px] font-bold text-ink">{invoice.date}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 mb-8">
+            <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-8">
               <div>
                 <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Від</p>
                 <p className="text-[13px] font-semibold text-ink">{invoice.fromName || 'Ваша агенція'}</p>
@@ -509,7 +509,22 @@ function InvoicePreview({
               <p className="text-[13px] font-semibold text-ink mt-[2px]">{projectLabel}</p>
             </div>
 
-            <table className="w-full mb-2" style={{ borderCollapse: 'collapse' }}>
+            <div className="mb-2 space-y-2 sm:hidden">
+              {invoiceItems.map((item, index) => (
+                <Card key={item.itemId || item.issueId || item.key || index} preset="bordered-compact" padding="sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold text-ink">{item.title}</p>
+                      <p className="mt-0.5 text-[10px] text-muted">{item.key} · {item.status}</p>
+                    </div>
+                    <p className="shrink-0 text-[12px] font-bold text-ink">{fmtMoney(item.price, invoice.currency)}</p>
+                  </div>
+                  <p className="mt-2 text-[10px] font-medium text-muted">Час: {item.minutes > 0 ? fmtMin(item.minutes) : '—'}</p>
+                </Card>
+              ))}
+            </div>
+
+            <table className="mb-2 hidden w-full sm:table" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th className="text-left text-[10px] font-bold text-muted uppercase tracking-wider pb-2 border-b-2 border-ink">Послуга</th>
@@ -535,24 +550,24 @@ function InvoicePreview({
               </tbody>
             </table>
 
-            <div className="flex flex-col items-end gap-1 mt-4">
-              <div className="flex justify-between w-[240px]">
+            <div className="mt-4 flex flex-col items-stretch gap-1 sm:items-end">
+              <div className="flex w-full justify-between sm:w-[240px]">
                 <span className="text-[12px] text-muted">Підсумок</span>
                 <span className="text-[13px] font-medium text-ink">{fmtMoney(invoice.subtotal, invoice.currency)}</span>
               </div>
               {invoice.discount > 0 && (
-                <div className="flex justify-between w-[240px]">
+                <div className="flex w-full justify-between sm:w-[240px]">
                   <span className="text-[12px] text-muted">Знижка ({invoice.discountPct}%)</span>
                   <span className="text-[13px] font-medium text-green-600">−{fmtMoney(invoice.discount, invoice.currency)}</span>
                 </div>
               )}
               {invoice.tax > 0 && (
-                <div className="flex justify-between w-[240px]">
+                <div className="flex w-full justify-between sm:w-[240px]">
                   <span className="text-[12px] text-muted">ПДВ ({invoice.taxPct}%)</span>
                   <span className="text-[13px] font-medium text-ink">+{fmtMoney(invoice.tax, invoice.currency)}</span>
                 </div>
               )}
-              <div className="flex justify-between w-[240px] border-t border-ink pt-2 mt-1">
+              <div className="mt-1 flex w-full justify-between border-t border-ink pt-2 sm:w-[240px]">
                 <span className="text-[13px] font-bold text-ink">До оплати</span>
                 <span className="text-[18px] font-black text-ink">{fmtMoney(invoice.total, invoice.currency)}</span>
               </div>

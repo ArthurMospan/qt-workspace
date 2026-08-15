@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 97,
-      "used": 97,
+      "components": 98,
+      "used": 98,
       "unused": 0,
-      "covered": 94,
+      "covered": 95,
       "uncovered": 0,
       "routes": 12,
-      "previews": 126,
+      "previews": 127,
       "internal": 3,
       "unlisted": 0
     },
@@ -619,12 +619,12 @@
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:560",
+      "location": "src/components/workspace/TimesheetTab.jsx:604",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:601",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:675",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

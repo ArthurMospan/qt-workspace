@@ -113,6 +113,7 @@ export { default as KeyboardShortcutsDialog } from './Navigation/KeyboardShortcu
 // renders, so /ui-kit shows a conversation instead of a grey box where one goes.
 export { default as MessageBubble } from './Chat/MessageBubble'
 export { default as ChatMessageList } from './Chat/ChatMessageList'
+export { default as UnreadDivider } from './Chat/UnreadDivider'
 export { default as ChatConversationHeader } from './Chat/ChatConversationHeader'
 export { default as ChatSearchBanner } from './Chat/ChatSearchBanner'
 export { default as ChannelInfoPanel } from './Chat/ChannelInfoPanel'

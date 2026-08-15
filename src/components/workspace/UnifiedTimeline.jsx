@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, ChevronDown, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
@@ -12,6 +12,7 @@ import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat
 import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import ChatComposerCore from '@/components/ui/ChatComposerCore';
+import UnreadDivider from '@/components/ui/Chat/UnreadDivider';
 import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -205,6 +206,12 @@ export default function UnifiedTimeline({
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const wrapperRef = useRef(null);
+  const unreadMarkerRef = useRef(null);
+  const wasNearBottomRef = useRef(true);
+  const wasActiveRef = useRef(false);
+  const previousTimelineLengthRef = useRef(0);
+  const positionedIssueRef = useRef(null);
+  const [isUnreadMarkerVisible, setIsUnreadMarkerVisible] = useState(false);
 
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -221,6 +228,7 @@ export default function UnifiedTimeline({
       .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
       .map(comment => comment.id);
   }, [comments, myId]);
+  const firstUnreadCommentId = unreadCommentIds[0] || null;
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -340,9 +348,32 @@ export default function UnifiedTimeline({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [mentionState.active]);
 
+  const scrollToUnread = (behavior = 'smooth') => {
+    unreadMarkerRef.current?.scrollIntoView({ behavior, block: 'center' });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [timeline.length]);
+    const previousLength = previousTimelineLengthRef.current;
+    previousTimelineLengthRef.current = timeline.length;
+    const becameActive = isActive && !wasActiveRef.current;
+    wasActiveRef.current = isActive;
+    if (!isActive || timeline.length === 0) return undefined;
+    const isFirstPositionForIssue = positionedIssueRef.current !== issueId;
+    if (isFirstPositionForIssue) positionedIssueRef.current = issueId;
+    const shouldPositionConversation = isFirstPositionForIssue || becameActive;
+
+    const frame = requestAnimationFrame(() => {
+      if (shouldPositionConversation && firstUnreadCommentId) {
+        scrollToUnread(previousLength === 0 ? 'auto' : 'smooth');
+        return;
+      }
+      if (shouldPositionConversation || wasNearBottomRef.current) {
+        const scroll = scrollRef.current;
+        if (scroll) scroll.scrollTop = scroll.scrollHeight;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [firstUnreadCommentId, isActive, issueId, timeline.length]);
 
   // A compact task screen keeps the timeline mounted while its chat pane is
   // hidden. That preserves the live unread badge without falsely consuming the
@@ -351,11 +382,30 @@ export default function UnifiedTimeline({
     onUnreadCountChange?.(unreadCommentIds.length);
   }, [onUnreadCountChange, unreadCommentIds.length]);
 
-  // Read receipts: only the visible chat consumes comments. Desktop keeps the
-  // split view active, while phone/tablet task details pass isActive=false.
+  // Read receipts: a visible pane alone is not enough. The unread boundary has
+  // to enter the scroll viewport, so opening a long task chat cannot consume
+  // messages that remained above or below the fold.
   useEffect(() => {
-    if (!isActive || !myId || unreadCommentIds.length === 0) return;
-    markCommentsRead(unreadCommentIds, myId);
+    const marker = unreadMarkerRef.current;
+    const scroll = scrollRef.current;
+    if (!isActive || !myId || unreadCommentIds.length === 0 || !marker || !scroll) {
+      return undefined;
+    }
+
+    let readTimer = null;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsUnreadMarkerVisible(entry.isIntersecting);
+      if (!entry.isIntersecting || readTimer) return;
+      readTimer = window.setTimeout(() => {
+        markCommentsRead(unreadCommentIds, myId);
+      }, 500);
+    }, { root: scroll, threshold: 0.8 });
+
+    observer.observe(marker);
+    return () => {
+      observer.disconnect();
+      if (readTimer) window.clearTimeout(readTimer);
+    };
   }, [isActive, markCommentsRead, myId, unreadCommentIds]);
 
   const addPendingFiles = fileList => {
@@ -433,9 +483,16 @@ export default function UnifiedTimeline({
   };
 
   return (
-    <div className="flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-canvas">
       {viewerAttachment && <AttachmentViewer attachment={viewerAttachment} onClose={() => setViewerAttachment(null)} />}
-      <div ref={scrollRef} className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
+      <div
+        ref={scrollRef}
+        onScroll={event => {
+          const scroll = event.currentTarget;
+          wasNearBottomRef.current = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 72;
+        }}
+        className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-5"
+      >
         {timeline.length === 0 && (
           <EmptyState
             icon={ChatIcon}
@@ -469,6 +526,11 @@ export default function UnifiedTimeline({
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
+              {item.id === firstUnreadCommentId && (
+                <div ref={unreadMarkerRef}>
+                  <UnreadDivider count={unreadCommentIds.length} />
+                </div>
+              )}
               <div className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}>
                 {isExternalAuthor ? (
                   <Popover
@@ -582,6 +644,18 @@ export default function UnifiedTimeline({
 
       {!isArchived && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} composition="timeline-composer">
+          {unreadCommentIds.length > 0 && !isUnreadMarkerVisible && (
+            <div className="absolute inset-x-0 -top-10 z-20 flex justify-center">
+              <Button
+                style="primary"
+                size="sm"
+                icon={ChevronDown}
+                onClick={() => scrollToUnread()}
+              >
+                {unreadCommentIds.length} нових
+              </Button>
+            </div>
+          )}
           {mentionState.active && filteredMembers.length > 0 && (
             <MentionMenu
               density="timeline"
@@ -653,7 +727,7 @@ export default function UnifiedTimeline({
                 />
               </div>
             ) : null}
-            leading={!editingComment ? <Button className="self-center" shape="circle" style="ghost" size="icon-sm" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" /> : null}
+            leading={!editingComment ? <Button className="self-center" shape="circle" style="ghost" size="icon" composition="chat-composer-action" icon={Paperclip} type="button" onClick={() => fileInputRef.current?.click()} aria-label="Додати файл" title="Додати файл" /> : null}
             onSubmit={handleSend}
             canSubmit={Boolean(input.trim() || pendingFiles.length > 0)}
             sending={sending}

@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 97,
-    "props": 715,
-    "documentedProps": 715,
+    "components": 98,
+    "props": 718,
+    "documentedProps": 718,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5911,6 +5911,33 @@
           "type": "string",
           "values": [],
           "description": "Type name."
+        }
+      ]
+    },
+    "UnreadDivider": {
+      "file": "src/components/ui/Chat/UnreadDivider.jsx",
+      "summary": "The boundary between previously seen chat history and unread messages.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "count",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "Number of unread messages after the boundary."
+        },
+        {
+          "name": "label",
+          "default": "'Нові повідомлення'",
+          "type": "string",
+          "values": [],
+          "description": "Human-readable boundary label."
         }
       ]
     },

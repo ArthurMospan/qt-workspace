@@ -11,7 +11,7 @@ import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Dialog, Button, CalendarDayCell, FormGroup, Select, Input, EmptyState } from '@/components/ui';
+import { Dialog, Button, CalendarDayCell, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
@@ -197,8 +197,51 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
   const dayTotals = days.map(d => rows.reduce((s, r) => s + (r.byDay[dayKey(d)] || 0), 0));
 
   return (
-    <div className="bg-white rounded-[16px] overflow-y-hidden overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[760px] md:min-w-0">
+    <>
+      <div className="space-y-3 lg:hidden">
+        {rows.map(({ m, uid, byDay, total }) => (
+          <Card
+            key={uid}
+            preset="bordered"
+            padding="md"
+            interactive
+            onClick={() => onSelectMember?.(uid)}
+            className="w-full"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <UserAvatar user={m} size="sm" />
+                <span className="truncate text-[13px] font-bold text-ink">{m.name || m.email}</span>
+              </div>
+              <span className="shrink-0 text-[13px] font-bold text-ink">{total > 0 ? fmtMin(total) : '—'}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-7">
+              {days.map((day, index) => {
+                const minutes = byDay[dayKey(day)] || 0;
+                const isToday = dayKey(day) === todayKey;
+                return (
+                  <div key={dayKey(day)} className={`rounded-[10px] px-1.5 py-2 text-center ${isToday ? 'bg-[#f4f8f5] ring-1 ring-[#dbe9e0]' : 'bg-canvas'}`}>
+                    <p className={`text-[9px] font-bold uppercase ${isToday ? 'text-[#2f6b4b]' : 'text-muted'}`}>
+                      {DAY_LABELS[index]} {day.getDate()}
+                    </p>
+                    <p className={`mt-1 text-[10px] font-bold ${minutes > 0 ? 'text-ink' : 'text-faint'}`}>
+                      {minutes > 0 ? fmtMin(minutes) : '—'}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        ))}
+        <Card preset="bordered-compact" padding="md">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Разом по команді</span>
+            <span className="text-[14px] font-bold text-ink">{fmtMin(dayTotals.reduce((a, b) => a + b, 0))}</span>
+          </div>
+        </Card>
+      </div>
+      <div className="hidden overflow-x-auto rounded-[16px] bg-white lg:block">
+        <table className="w-full min-w-[760px] border-collapse text-left">
         <thead>
           <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
@@ -250,8 +293,9 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
             </td>
           </tr>
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+    </>
   );
 }
 

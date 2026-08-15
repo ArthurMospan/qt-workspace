@@ -286,7 +286,42 @@ function AnalyticsContent({
             <p className="mb-3 text-[11px] leading-relaxed text-muted">
               Батьківські задачі не рахуються окремо: їхня робота представлена підзадачами.
             </p>
-            <div className="overflow-x-auto">
+            <div className="space-y-2 md:hidden">
+              {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
+                <Link key={p.id} href={`/${p.id}`} className="block">
+                  <Card preset="bordered-compact" padding="md" interactive>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-bold text-ink">{p.name}</p>
+                        <p className="mt-0.5 text-[10px] font-medium text-muted">{total} робочих задач</p>
+                      </div>
+                      <ArrowRight size={14} className="mt-0.5 shrink-0 text-muted" />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="h-[6px] min-w-0 flex-1 overflow-hidden rounded-full bg-white">
+                        <div className="h-full rounded-full bg-[#10b981]" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="shrink-0 text-[11px] font-semibold text-muted">{pct}%</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-black/[0.05] pt-3">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Відкрито</p>
+                        <p className="mt-0.5 text-[12px] font-bold text-[#0891b2]">{open}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Прострочено</p>
+                        <p className={`mt-0.5 text-[12px] font-bold ${overdue > 0 ? 'text-red-500' : 'text-faint'}`}>{overdue || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Час · {period}д</p>
+                        <p className="mt-0.5 text-[12px] font-bold text-ink">{fmtH(minutes)}</p>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-[#f0f0f0]">

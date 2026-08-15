@@ -249,7 +249,7 @@
 
   /* Timeline/QuickTeam+ chat composer padding. */
   .chat-composer-dock[data-ui-composition='timeline-composer'] {
-    padding: 12px 16px 20px;
+    padding: 12px 16px calc(20px + var(--sab));
   }
   /* The four duration presets and the metric fields declared their own right
      padding to keep the value clear of the unit label. `Input` has carried the

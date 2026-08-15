@@ -6,6 +6,7 @@ import ChannelInfoPanel from '@/components/ui/Chat/ChannelInfoPanel';
 import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import IssueMentionMenu from '@/components/ui/Chat/IssueMentionMenu';
+import UnreadDivider from '@/components/ui/Chat/UnreadDivider';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import FileInput from '@/components/ui/Forms/FileInput';
@@ -159,6 +160,18 @@ export default function ChatElementsSection() {
             <span className="font-mono text-[10px] font-bold text-ink">density=&quot;timeline&quot;</span>
             <MentionMenu density="timeline" members={KIT_MENTION_MEMBERS} selectedIndex={1} onSelect={() => {}} />
           </div>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Межа непрочитаних повідомлень"
+        description="Стабільно позначає місце, з якого починаються нові повідомлення у чаті завдання. Лічильник збігається з індикатором вкладки чату."
+        filePath="src/components/ui/Chat/UnreadDivider.jsx"
+        component="UnreadDivider"
+        fullWidth
+      >
+        <div className="w-full max-w-[560px]">
+          <UnreadDivider count={4} />
         </div>
       </PreviewBlock>
 

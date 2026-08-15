@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 97,
-    "stateful": 90,
+    "components": 98,
+    "stateful": 91,
     "hover": 66,
     "focus": 65,
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 62
+    "long-text": 63
   },
   "components": {
     "Alert": {
@@ -444,6 +444,9 @@
     "TypeBadge": {
       "long-text": "label"
     },
+    "UnreadDivider": {
+      "long-text": "label"
+    },
     "UserAvatar": {},
     "UserMenu": {
       "hover": "own",
@@ -830,6 +833,9 @@
     ],
     "TypeBadge": [
       "badges"
+    ],
+    "UnreadDivider": [
+      "chat-elements"
     ],
     "UserAvatar": [
       "badges",

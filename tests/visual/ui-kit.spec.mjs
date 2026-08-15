@@ -163,6 +163,32 @@ test('the page is photographed against a frozen clock and without the widget', a
   expect(widgetRequests, 'the bug-reporter script is intercepted').toBeGreaterThan(0);
 });
 
+test('every catalogue section fits a phone viewport without page overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  const sectionSelect = page.locator('select[aria-label="Секція UI Kit"]');
+  const scroller = page.locator('[data-kit-scroll]');
+
+  for (const section of SECTIONS) {
+    await sectionSelect.selectOption(section.id);
+    await expect(scroller).toHaveAttribute('data-kit-section', section.id);
+    await scroller.evaluate(element => { element.scrollTop = 0; });
+    await settle(page);
+
+    const widths = await page.evaluate(() => {
+      const content = document.querySelector('[data-kit-scroll]');
+      return {
+        pageClient: document.documentElement.clientWidth,
+        pageScroll: document.documentElement.scrollWidth,
+        contentClient: content?.clientWidth || 0,
+        contentScroll: content?.scrollWidth || 0,
+      };
+    });
+
+    expect(widths.pageScroll, `${section.id}: page overflow`).toBeLessThanOrEqual(widths.pageClient + 1);
+    expect(widths.contentScroll, `${section.id}: catalogue content overflow`).toBeLessThanOrEqual(widths.contentClient + 1);
+  }
+});
+
 for (const section of SECTIONS) {
   test(`${section.id} — ${section.label}`, async ({ page }) => {
     const scroller = await showSection(page, section.id);

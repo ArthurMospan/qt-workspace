@@ -316,7 +316,36 @@ export default function AnalyticsTab({
         {stats.memberStats.length > 0 && (
           <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Навантаження по виконавцях</SectionTitle>
-            <div className="overflow-x-auto">
+            <div className="space-y-2 md:hidden">
+              {stats.memberStats.map(({ m, total, done, open, overdue: od, minutes }) => (
+                <Link key={m.id || m.uid} href={memberAnalyticsHref(m.id || m.uid)} className="block">
+                  <Card preset="bordered-compact" padding="md" interactive>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <UserAvatar user={m} size="sm" />
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-bold text-ink">{m.name || m.email}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-black/[0.05] pt-3">
+                      {[
+                        ['Всього', total, 'text-ink'],
+                        ['Виконано', done, 'text-[#10b981]'],
+                        ['Відкрито', open, 'text-[#0891b2]'],
+                        ['Прострочено', od || '—', od > 0 ? 'text-red-500' : 'text-faint'],
+                      ].map(([label, value, tone]) => (
+                        <div key={label} className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-medium text-muted">{label}</span>
+                          <span className={`text-[12px] font-bold ${tone}`}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-black/[0.05] pt-3">
+                      <span className="text-[10px] font-medium text-muted">Списано часу</span>
+                      <span className="text-[12px] font-bold text-ink">{minutes > 0 ? fmtH(minutes) : '—'}</span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-line">
