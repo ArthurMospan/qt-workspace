@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, UserCheck, CheckSquare, Settings2, Activity } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, UserCheck, ListTodo, CircleDotDashed, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -21,7 +21,6 @@ import { isExternalActorId } from '@/lib/utils/issueParticipants.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import {
-  Counter,
   EmptyState,
   IconAction,
   PageHeader,
@@ -67,8 +66,13 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const [mentionCount, setMentionCount] = useState(0);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
-  const currentUserId = currentUser?.id || currentUser?.uid;
-  const isCurrentUserOnProject = Boolean(currentUserId && project.team?.includes(currentUserId));
+
+  // Preserve the familiar project-card identity: the people are the useful
+  // context here, not an abstract visibility label. The featured card scales
+  // the whole stack as one unit so placeholders never overpower real faces.
+  const stackAvatar = isLarge ? 'md' : 'sm';
+  const stackChip = isLarge ? 30 : 24;
+  const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
 
   useEffect(() => {
     if (!project?.id || !activeOrgId || !currentUser) return;
@@ -132,27 +136,30 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         }}
         className={`ui-surface group relative flex flex-col justify-between cursor-pointer overflow-visible transition-all duration-300 ${menuOpen ? 'z-30' : 'hover:z-10'} ${
           isLarge 
-            ? 'md:col-span-2'
+            ? 'md:col-span-2 md:row-span-2'
             : ''
         }`}
       >
-        {/* One clear project identity. Team membership used to be hidden in an
-            avatar pile; now the card explicitly says when the current person
-            belongs to this project. */}
+        {/* Top row: the original project-team identity plus the kebab. */}
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
-          <div className="flex min-w-0 items-center gap-[8px]">
-            <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-canvas text-ink">
-              <Folder size={15} />
-            </span>
-            <span
-              className="flex items-center gap-[5px] text-[10px] font-semibold text-muted"
-              title={project.visibility === 'shared' ? 'Спільний проєкт' : 'Внутрішній проєкт'}
-            >
-              {project.visibility === 'shared' ? <Globe size={11} /> : <Lock size={11} />}
-              {project.visibility === 'shared' ? 'Спільний' : 'Внутрішній'}
-            </span>
-            {isCurrentUserOnProject && (
-              <Pill tone="dark" size="md" icon={UserCheck}>Ви в команді</Pill>
+          <div className={`flex ${stackOverlap}`} aria-label={`Учасників проєкту: ${teamCount}`}>
+            {teamCount === 0 && (
+              <div data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                <Users size={isLarge ? 13 : 11} className="text-muted" />
+              </div>
+            )}
+            {(project.team || []).slice(0, 4).map(uid => {
+              const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
+              return member ? (
+                <UserAvatar key={uid} user={member} size={stackAvatar} stacked />
+              ) : (
+                <div key={uid} data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                  <User size={isLarge ? 13 : 11} className="text-muted" />
+                </div>
+              );
+            })}
+            {teamCount > 4 && (
+              <Pill tone="neutral" preset="avatar-counter">+{teamCount - 4}</Pill>
             )}
           </div>
 
@@ -206,18 +213,15 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
 
         {/* Title + description */}
         <div className="flex flex-col gap-[8px] z-10">
-          <h2
-            data-ui-density={isLarge ? 'large' : 'default'}
-            className="ui-type-project-card-title text-ink leading-tight transition-all duration-300 flex items-center gap-2 flex-wrap"
-          >
-            <span>{project.name}</span>
-            {unreadCount > 0 && (
-              <Counter value={unreadCount} size="md" className="shrink-0" />
-            )}
-            {mentionCount > 0 && (
-              <TaskCounters mentions={mentionCount} />
-            )}
-          </h2>
+          <div className="flex flex-wrap items-center gap-[8px]">
+            <h2
+              data-ui-density={isLarge ? 'large' : 'default'}
+              className="ui-type-project-card-title text-ink leading-tight transition-all duration-300"
+            >
+              {project.name}
+            </h2>
+            <TaskCounters mentions={mentionCount} unread={unreadCount > 0} />
+          </div>
           {project.description && (
             <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
               isLarge ? 'text-[14px] max-w-[560px]' : 'text-[13px]'
@@ -235,8 +239,6 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
           now={now}
           currentUser={currentUser}
           orgLoading={orgLoading}
-          teamIds={project.team || []}
-          teamCount={teamCount}
         />
       </div>
 
@@ -276,7 +278,7 @@ const ISSUE_ACTIVITY_EVENTS = {
   updated: 'Оновлено завдання',
 };
 
-function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, teamIds = [], teamCount = 0 }) {
+function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
   const { statuses } = useWorkflowConfig();
   // «в роботі» used to be `statuses.slice(1)` minus the terminal ones — a guess
   // that counted «До виконання» as work in progress and depended on a status's
@@ -416,40 +418,24 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         </div>
       )}
       
-      <div className="flex w-full items-center justify-between gap-[12px] border-t border-[#f3f3f3] pt-[12px]">
-        <div className="flex min-w-0 items-center gap-[6px]">
-          <Pill tone="neutral" size="lg" shape="badge" icon={CheckSquare} title="Усі завдання">
-            {stats.total}
-          </Pill>
-          <Pill tone="neutral" size="lg" shape="badge" icon={Activity} title="Завдання в роботі">
-            {stats.inProgress}
-          </Pill>
-          {stats.mine > 0 && (
-            <Pill color="#3730a3" size="lg" shape="badge" icon={UserCheck} title="Завдання, де ви відповідальний">
-              {stats.mine}
-            </Pill>
-          )}
-        </div>
-        <div className="flex -space-x-[7px] shrink-0" aria-label={`Учасників проєкту: ${teamCount}`}>
-          {teamCount === 0 && (
-            <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-white bg-canvas">
-              <Users size={11} className="text-muted" />
-            </span>
-          )}
-          {teamIds.slice(0, 3).map(uid => {
-            const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
-            return member
-              ? <UserAvatar key={uid} user={member} size="sm" stacked />
-              : (
-                <span key={uid} className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-white bg-canvas">
-                  <User size={10} className="text-muted" />
-                </span>
-              );
-          })}
-          {teamCount > 3 && (
-            <Pill tone="neutral" preset="avatar-counter">+{teamCount - 3}</Pill>
-          )}
-        </div>
+      <div className="flex w-full flex-wrap items-center gap-x-[18px] gap-y-[8px] border-t border-[#f3f3f3] pt-[14px] text-[11px]">
+        <span className="flex items-center gap-[6px] text-muted" title="Усі завдання проєкту">
+          <ListTodo size={14} strokeWidth={1.9} aria-hidden />
+          <strong className="text-ink">{stats.total}</strong>
+          <span>завдань</span>
+        </span>
+        <span className="flex items-center gap-[6px] text-muted" title="Завдання зі статусом категорії «В роботі»">
+          <CircleDotDashed size={14} strokeWidth={1.9} aria-hidden />
+          <strong className="text-ink">{stats.inProgress}</strong>
+          <span>в роботі</span>
+        </span>
+        {stats.mine > 0 && (
+          <span className="flex items-center gap-[6px] text-muted" title="Завдання, де ви відповідальний">
+            <UserCheck size={14} strokeWidth={1.9} aria-hidden />
+            <strong className="text-ink">{stats.mine}</strong>
+            <span>моїх</span>
+          </span>
+        )}
       </div>
     </div>
   );

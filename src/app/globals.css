@@ -448,17 +448,17 @@
     padding: 8px 12px;
   }
   .ui-surface[data-ui-surface='project-card'] {
-    min-height: 176px;
-    gap: 14px;
+    min-height: 220px;
+    gap: 20px;
     border: 1px solid transparent;
     border-radius: var(--ui-radius-surface);
     background: var(--color-surface);
-    padding: 18px;
+    padding: 24px 24px 28px;
   }
   .ui-surface[data-ui-surface='project-card'][data-ui-density='large'] {
-    min-height: 216px;
-    gap: 18px;
-    padding: 22px;
+    min-height: 280px;
+    gap: 32px;
+    padding: 32px 32px 40px;
   }
   .ui-surface[data-ui-surface='project-card']:hover {
     box-shadow: 0 0 0 4px #ececec;

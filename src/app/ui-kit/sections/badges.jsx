@@ -91,7 +91,7 @@ export default function BadgesSection() {
 
       <PreviewBlock
         title="PriorityIcon — system and custom priority language"
-        description="Усі рівні мають 20% кольоровий фон і однакову геометрію; вкладені кільця показують вагу, критичний відрізняється знаком !, а «Без пріоритету» лишається пунктирним."
+        description="Усі рівні мають однакову просту геометрію: суцільна крапка та ореол того самого кольору з прозорістю 40%. Рівень читається за підписом і кольором без додаткової системи кілець."
         component="PriorityIcon"
       >
         <div className="flex flex-wrap items-center gap-5">

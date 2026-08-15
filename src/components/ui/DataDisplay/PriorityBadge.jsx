@@ -5,8 +5,8 @@ import Pill from './Pill';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 
 /**
- * Priority mark plus its configured name. Geometry is shared; colour, label and
- * ring intensity come from the organization's ordered workflow priorities.
+ * Priority mark plus its configured name. Geometry is shared; colour and label
+ * come from the organization's ordered workflow priorities.
  *
  * @param {object|string} props.priority Priority item or id.
  * @param {object[]} props.priorities Ordered workflow priorities.
