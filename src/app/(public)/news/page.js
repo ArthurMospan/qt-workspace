@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Surface from '@/components/ui/Surface';
 import { NEWS_ARTICLES } from '@/lib/content/releaseContent.mjs';
 import { canonicalUrl } from '@/lib/content/product.mjs';
 
@@ -8,19 +9,31 @@ export const metadata = {
   alternates: { canonical: canonicalUrl('/news') },
 };
 
+// Read in the workspace through `WorkspaceInfoCenter`; this route exists for
+// people arriving from outside, and is set in the product's own type scale so
+// it is recognisably the same product.
 export default function NewsPage() {
   return (
-    <div className="mx-auto max-w-[820px]">
-      <p className="ui-type-eyebrow">QuickTeam</p>
-      <h1 className="mt-3 text-4xl font-black tracking-tight">Новини продукту</h1>
-      <div className="mt-8 space-y-4">
+    <div className="flex flex-col gap-[16px]">
+      <div>
+        <p className="ui-type-eyebrow text-muted">QuickTeam</p>
+        <h1 className="ui-type-page-title mt-[8px] text-ink">Новини продукту</h1>
+      </div>
+      <div className="flex flex-col gap-[10px]">
         {NEWS_ARTICLES.map(article => (
-          <article key={article.id} className="rounded-2xl border border-line bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap gap-3 text-xs font-bold text-muted"><span>{article.category}</span><time dateTime={article.publishedAt}>{article.publishedAt}</time></div>
-            <h2 className="mt-3 text-2xl font-black"><Link href={`/news/${article.slug}`} className="hover:underline">{article.title}</Link></h2>
-            <p className="mt-3 text-sm leading-6 text-muted">{article.summary}</p>
-            <Link href={`/news/${article.slug}`} className="mt-4 inline-block text-sm font-bold">Читати →</Link>
-          </article>
+          <Surface key={article.id} preset="bordered-card" padding="lg">
+            <div className="flex flex-wrap gap-[12px] text-[11px] font-bold uppercase tracking-wide text-faint">
+              <span>{article.category}</span>
+              <time dateTime={article.publishedAt}>{article.publishedAt}</time>
+            </div>
+            <h2 className="ui-type-card-title mt-[8px] text-ink">
+              <Link href={`/news/${article.slug}`} className="hover:underline">{article.title}</Link>
+            </h2>
+            <p className="mt-[8px] text-[13px] leading-[1.65] text-muted">{article.summary}</p>
+            <Link href={`/news/${article.slug}`} className="mt-[12px] inline-block text-[12px] font-bold text-ink hover:underline">
+              Читати →
+            </Link>
+          </Surface>
         ))}
       </div>
     </div>

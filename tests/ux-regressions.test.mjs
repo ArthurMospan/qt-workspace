@@ -76,11 +76,33 @@ test('requested navigation and readability regressions stay fixed', async () => 
 });
 
 test('help, news and versions are read in place; contracts keep their own address', async () => {
-  const [menu, centre, legal] = await Promise.all([
+  const [menu, centre, shell, legal, helpExplorer, newsIndex, versions] = await Promise.all([
     read('src/components/WorkspaceHelpMenu.jsx'),
     read('src/components/WorkspaceInfoCenter.jsx'),
+    read('src/app/(public)/layout.js'),
     read('src/app/(public)/_components/LegalDocumentPage.jsx'),
+    read('src/app/(public)/help/HelpExplorer.jsx'),
+    read('src/app/(public)/news/page.js'),
+    read('src/app/(public)/versions/page.js'),
   ]);
+  // The public routes are a document shell, not a second site: no logo lockup,
+  // no navigation across sections, no "Увійти" — only the way back.
+  const withoutComments = source => source.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(shell, /<PublicBackLink \/>/);
+  assert.doesNotMatch(withoutComments(shell), /next\/image|Увійти|<nav/);
+  // …and set in the product's own type scale, not a landing page's.
+  for (const [name, source] of [
+    ['legal document', legal],
+    ['help explorer', helpExplorer],
+    ['news index', newsIndex],
+    ['version history', versions],
+  ]) {
+    assert.doesNotMatch(
+      withoutComments(source),
+      /font-black|rounded-3xl|shadow-sm|text-[34]xl/,
+      `${name} must use the kit's scale, not a second one`,
+    );
+  }
   // Three things you glance at and close. They used to navigate to a separate
   // public shell and throw away whatever was on screen.
   for (const pane of ['help', 'news', 'versions']) {
@@ -91,7 +113,6 @@ test('help, news and versions are read in place; contracts keep their own addres
   for (const legalRoute of ['/terms', '/privacy', '/offer']) {
     assert.match(menu, new RegExp(`router\\.push\\('${legalRoute}'\\)`));
   }
-  assert.match(legal, /<LegalBackLink \/>/);
   assert.match(centre, /HELP_ARTICLES/);
   assert.match(centre, /NEWS_ARTICLES/);
   assert.match(centre, /VERSION_HISTORY/);

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Surface from '@/components/ui/Surface';
 import { notFound } from 'next/navigation';
 import { NEWS_ARTICLES, NEWS_BY_SLUG } from '@/lib/content/releaseContent.mjs';
 import { canonicalUrl } from '@/lib/content/product.mjs';
@@ -19,15 +20,15 @@ export default async function NewsArticlePage({ params }) {
   const article = NEWS_BY_SLUG.get(slug);
   if (!article) notFound();
   return (
-    <article className="mx-auto max-w-[820px] rounded-3xl border border-line bg-white p-6 shadow-sm sm:p-10">
-      <Link href="/news" className="text-sm font-bold text-muted hover:text-ink">← Усі новини</Link>
-      <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-muted"><span>{article.category}</span><time dateTime={article.publishedAt}>{article.publishedAt}</time><span>Версія {article.version}</span></div>
-      <h1 className="mt-4 text-balance text-3xl font-black tracking-tight sm:text-4xl">{article.title}</h1>
-      <p className="mt-4 text-base leading-7 text-muted">{article.summary}</p>
-      <div className="mt-9 space-y-8">
-        {article.sections.map(section => <section key={section.title}><h2 className="text-xl font-black">{section.title}</h2><div className="mt-3 space-y-3 text-sm leading-7 text-muted sm:text-base">{section.paragraphs.map(text => <p key={text}>{text}</p>)}</div></section>)}
+    <Surface preset="card" padding="xl" className="w-full">
+      <Link href="/news" className="text-[12px] font-bold text-muted hover:text-ink">← Усі новини</Link>
+      <div className="mt-[20px] flex flex-wrap gap-[12px] text-[11px] font-bold uppercase tracking-wide text-faint"><span>{article.category}</span><time dateTime={article.publishedAt}>{article.publishedAt}</time><span>Версія {article.version}</span></div>
+      <h1 className="ui-type-page-title mt-[10px] text-ink">{article.title}</h1>
+      <p className="mt-[10px] text-[13px] leading-[1.65] text-muted">{article.summary}</p>
+      <div className="mt-[32px] flex flex-col gap-[28px]">
+        {article.sections.map(section => <section key={section.title}><h2 className="ui-type-section-title text-ink">{section.title}</h2><div className="mt-[10px] flex flex-col gap-[10px] text-[13px] leading-[1.75] text-muted">{section.paragraphs.map(text => <p key={text}>{text}</p>)}</div></section>)}
       </div>
-      <Link href="/versions" className="mt-10 inline-block rounded-[10px] bg-ink px-4 py-2 text-sm font-bold text-white">Історія версій</Link>
-    </article>
+      <Link href="/versions" className="mt-[32px] inline-block text-[12px] font-bold text-ink hover:underline">Історія версій →</Link>
+    </Surface>
   );
 }

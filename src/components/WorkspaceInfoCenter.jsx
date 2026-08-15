@@ -52,7 +52,7 @@ function ArticleBody({ sections }) {
     <div className="flex flex-col gap-[20px]">
       {sections.map(section => (
         <section key={section.id || section.title}>
-          <h4 className="ui-type-item-title text-ink">{section.title}</h4>
+          <h4 className="ui-type-card-title text-ink">{section.title}</h4>
           <div className="mt-[8px] flex flex-col gap-[8px]">
             {(section.paragraphs || []).map(text => (
               <p key={text} className="text-[13px] leading-[1.65] text-muted">{text}</p>
@@ -110,7 +110,7 @@ function HelpPane({ openArticle, onOpenArticle, onCloseArticle }) {
           <Pill tone="neutral" size="sm" shape="badge" weight="medium">
             {CATEGORY_LABEL.get(openArticle.category)}
           </Pill>
-          <h3 className="mt-[10px] ui-type-card-title text-ink">{openArticle.title}</h3>
+          <h3 className="mt-[10px] ui-type-section-title text-ink">{openArticle.title}</h3>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-muted">{openArticle.summary}</p>
         </div>
         <ArticleBody sections={openArticle.sections} />
@@ -182,7 +182,7 @@ function NewsPane({ openArticle, onOpenArticle, onCloseArticle }) {
           <span className="text-[11px] font-bold uppercase tracking-wide text-faint">
             {openArticle.category} · {openArticle.publishedAt}
           </span>
-          <h3 className="mt-[8px] ui-type-card-title text-ink">{openArticle.title}</h3>
+          <h3 className="mt-[8px] ui-type-section-title text-ink">{openArticle.title}</h3>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-muted">{openArticle.summary}</p>
         </div>
         <ArticleBody sections={openArticle.sections} />
