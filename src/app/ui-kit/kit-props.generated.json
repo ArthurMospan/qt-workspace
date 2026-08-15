@@ -461,6 +461,7 @@
             "metric-editor",
             "metric-text",
             "project-name",
+            "section-kebab",
             "settings-row-action",
             "sidebar-help-action",
             "status-entry",

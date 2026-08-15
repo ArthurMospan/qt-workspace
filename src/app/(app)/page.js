@@ -465,9 +465,11 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           <span>в роботі</span>
         </span>
         {stats.overdue > 0 && (
-          <span className="flex items-center gap-[6px] text-[#ef4444]" title="Завдання, у яких минув дедлайн">
+          // Same ink as the counts beside it. A card that lists three facts
+          // does not need one of them shouting — the word already says it.
+          <span className="flex items-center gap-[6px] text-muted" title="Завдання, у яких минув дедлайн">
             <CalendarClock size={14} strokeWidth={1.9} aria-hidden />
-            <strong>{stats.overdue}</strong>
+            <strong className="text-ink">{stats.overdue}</strong>
             <span>прострочено</span>
           </span>
         )}

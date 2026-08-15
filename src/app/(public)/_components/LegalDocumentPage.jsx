@@ -1,8 +1,12 @@
 import Link from 'next/link';
+import LegalBackLink from './LegalBackLink';
 
 export default function LegalDocumentPage({ document }) {
   return (
     <article className="mx-auto max-w-[880px] rounded-3xl border border-line bg-white p-6 shadow-sm sm:p-10">
+      {/* A contract is the one thing in the product that is still a page of its
+          own, so it is also the one thing that needs a way back. */}
+      <LegalBackLink />
       <p className="ui-type-eyebrow">QuickTeam · {document.entity.name}</p>
       <h1 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">{document.title}</h1>
       <p className="mt-4 text-base leading-7 text-muted">{document.summary}</p>

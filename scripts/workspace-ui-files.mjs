@@ -23,7 +23,11 @@ function walk(dir) {
 function resolveSourceFile(candidate) {
   const normalized = normalize(candidate);
   const candidates = [
-    normalized,
+    // Only when the specifier already names a source file. An exact path was
+    // accepted whatever its extension, so `import pkg from '../package.json'`
+    // resolved to package.json and the graph walker then handed it to a
+    // JavaScript parser, which died on the first colon.
+    ...(SOURCE_EXTENSIONS.includes(extname(normalized)) ? [normalized] : []),
     ...SOURCE_EXTENSIONS.map(extension => `${normalized}${extension}`),
     ...SOURCE_EXTENSIONS.map(extension => join(normalized, `index${extension}`)),
   ];
@@ -55,6 +59,7 @@ function localSpecifiers(source) {
       'classProperties',
       'dynamicImport',
       'topLevelAwait',
+      'importAttributes',
     ],
   });
   const specifiers = [];

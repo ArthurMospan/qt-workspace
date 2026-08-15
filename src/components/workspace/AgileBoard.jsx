@@ -313,6 +313,43 @@ export default function AgileBoard({
     .sort(compareIssueCards);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
+
+  // Whether anything is currently hidden past the left or right edge of the
+  // board, so the edge shadows only appear where a column has actually gone
+  // under one. Read from the element rather than derived from column widths:
+  // collapsing a column, resizing the window and dropping a card all change the
+  // answer, and only the scroller itself knows all three.
+  const boardScrollRef = useRef(null);
+  const [boardOverflow, setBoardOverflow] = useState({ start: false, end: false });
+  const measureBoardOverflow = useCallback(() => {
+    const node = boardScrollRef.current;
+    if (!node) return;
+    const maxScroll = node.scrollWidth - node.clientWidth;
+    const next = {
+      start: node.scrollLeft > 1,
+      // One pixel of slack: fractional layout widths leave a sub-pixel of
+      // scroll left at the far end, which kept the shadow lit forever.
+      end: maxScroll > 1 && node.scrollLeft < maxScroll - 1,
+    };
+    setBoardOverflow(current => (
+      current.start === next.start && current.end === next.end ? current : next
+    ));
+  }, []);
+
+  useLayoutEffect(() => {
+    const node = boardScrollRef.current;
+    if (!node) return undefined;
+    const observer = new ResizeObserver(measureBoardOverflow);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [measureBoardOverflow]);
+
+  // Collapsing a column or dropping a card changes the content width without
+  // resizing the scroller, so the observer above never hears about it. Reading
+  // two properties after each render is cheaper than tracking every cause, and
+  // the setter bails when nothing changed.
+  useLayoutEffect(measureBoardOverflow);
+
   const dndAnnouncements = useMemo(() => createUkrainianDndAnnouncements({
     itemLabel: draggableId => {
       const issue = boardIssues.find(candidate => candidate.id === draggableId);
@@ -508,8 +545,9 @@ export default function AgileBoard({
         trigger={(
           <Button
             style="ghost"
-            size="icon-sm"
+            size="icon-xs"
             icon={MoreVertical}
+            composition="section-kebab"
             className="hover:!bg-white"
             aria-label={`Дії з колонкою ${column.label}`}
             title="Дії з колонкою"
@@ -542,7 +580,17 @@ export default function AgileBoard({
           panel edges (`bleed-edges`) and the gutter lives inside the scroller
           (`bleed-gutter`). Both on one element cancelled out — the parent clip
           ate the bleed and left the padding lying over the outer columns. */}
-      <div className="flex flex-col h-full overflow-hidden bleed-edges">
+      <div
+        className="relative flex flex-col h-full overflow-hidden bleed-edges"
+        data-scrolled-start={boardOverflow.start ? 'true' : 'false'}
+        data-scrolled-end={boardOverflow.end ? 'true' : 'false'}
+      >
+        {/* A column leaving the viewport used to simply stop existing against
+            the same colour it was drawn on. These two hairline gradients give
+            it something to go under, and each only appears once there is
+            actually something hidden on that side. */}
+        <span aria-hidden className="kanban-scroll-shadow kanban-scroll-shadow--start" />
+        <span aria-hidden className="kanban-scroll-shadow kanban-scroll-shadow--end" />
 
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
@@ -578,7 +626,7 @@ export default function AgileBoard({
                         strip itself carries the click; this is its affordance. */}
                     <Button
                       style="ghost"
-                      size="icon-sm"
+                      size="icon-xs"
                       icon={ChevronRight}
                       className="mb-4 hover:!bg-white"
                       title="Розгорнути колонку"
@@ -591,17 +639,17 @@ export default function AgileBoard({
               }
               return (
                 <div key={col.id} className="flex items-center justify-between w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 px-4 pt-2 pb-1 rounded-t-[12px]">
-                  <div className="flex items-center gap-[6px]">
+                  <div className="flex min-w-0 items-center gap-[6px]">
                     <Button
                       onClick={() => toggleColumnCollapse(col.id)}
                       style="ghost"
-                      size="icon-sm"
+                      size="icon-xs"
                       icon={ChevronLeft}
-                      className="-ml-[6px] hover:!bg-white"
+                      className="-ml-2 hover:!bg-white"
                       title="Згорнути колонку"
                     />
                     <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                    <h2 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h2>
+                    <h2 className="ui-type-column-title text-ink uppercase tracking-wide truncate" title={col.label}>{col.label}</h2>
                     <Pill tone="count" size="md" className="ml-1">{colTotalIssues.length}</Pill>
                   </div>
                   <div className="flex items-center gap-1">
@@ -612,7 +660,7 @@ export default function AgileBoard({
                           ? onRequestAddIssue(col.id)
                           : setActiveAddColId(col.id)}
                         style="ghost"
-                        size="icon-sm"
+                        size="icon-xs"
                         icon={Plus}
                         className="hover:!bg-white"
                         title="Додати завдання"
@@ -628,7 +676,11 @@ export default function AgileBoard({
         {/* Scrollable swimlanes area. The gutter is padding *inside* the
             scroller, so the outer columns rest on the page margin and then
             travel all the way to the panel edge when the board is scrolled. */}
-        <div className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none bleed-gutter ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}>
+        <div
+          ref={boardScrollRef}
+          onScroll={measureBoardOverflow}
+          className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none bleed-gutter ${swimlanes.length === 1 ? 'overflow-y-hidden pb-2 flex flex-col' : 'pb-6'}`}
+        >
           {swimlanes.map(lane => (
             <div key={lane.id} className={`mb-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               
@@ -672,7 +724,7 @@ export default function AgileBoard({
                           <>
                             <Button
                               style="ghost"
-                              size="icon-sm"
+                              size="icon-xs"
                               icon={ChevronRight}
                               className="mb-4 hover:!bg-white"
                               title="Розгорнути колонку"
@@ -695,17 +747,17 @@ export default function AgileBoard({
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (
                         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-                          <div className="flex items-center gap-[6px]">
+                          <div className="flex min-w-0 items-center gap-[6px]">
                             <Button
                               onClick={() => toggleColumnCollapse(col.id)}
                               style="ghost"
-                              size="icon-sm"
+                              size="icon-xs"
                               icon={ChevronLeft}
-                              className="-ml-[6px] hover:!bg-white"
+                              className="-ml-2 hover:!bg-white"
                               title="Згорнути колонку"
                             />
                             <span className="w-[8px] h-[8px] rounded-full" style={{ background: col.color }} />
-                            <h2 className="ui-type-column-title text-ink uppercase tracking-wide">{col.label}</h2>
+                            <h2 className="ui-type-column-title text-ink uppercase tracking-wide truncate" title={col.label}>{col.label}</h2>
                             <Pill tone="count" size="md" className="ml-1">{colIssues.length}</Pill>
                           </div>
                           <div className="flex items-center gap-1">
@@ -716,7 +768,7 @@ export default function AgileBoard({
                                   ? onRequestAddIssue(col.id)
                                   : setActiveAddColId(col.id)}
                                 style="ghost"
-                                size="icon-sm"
+                                size="icon-xs"
                                 icon={Plus}
                                 className="hover:!bg-white"
                                 title="Додати завдання"

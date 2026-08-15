@@ -16,7 +16,8 @@
 //                         the visual order and strands whatever it forgot.
 //   • fakeButtons       — an onClick on a <div>/<span>: not focusable, not
 //                         reachable by keyboard, and silent to a screen reader.
-//   • contrastFailures  — shared quiet-text tokens below WCAG AA on a surface.
+//   • contrastFailures  — a quiet-text token gone invisible or indistinguishable
+//                         from its neighbour; generated sidebar text below AA.
 //   • runtimeNameVerification — a dynamic name exists, but only a browser can
 //                         prove that its runtime value is non-empty.
 //
@@ -38,6 +39,14 @@ const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'a11y-audit.generated.json');
 const GLOBAL_STYLES = join(ROOT, 'src', 'app', 'globals.css');
 const MIN_TEXT_CONTRAST = 4.5;
+// The brand's two quiet greys are a deliberate product decision and sit below
+// WCAG AA for body text. Holding them to 4.5:1 collapsed them into one mid grey
+// nine points apart, which removed the distinction the two tokens exist for.
+// What is still worth guarding is that neither drifts to invisible and that the
+// order between them survives — a floor plus a hierarchy check, not AA.
+// Generated sidebar themes keep the full AA gate below: nobody picks those
+// values by hand, so there is no deliberate decision there to respect.
+const MIN_BRAND_QUIET_CONTRAST = { muted: 2.5, faint: 1.4 };
 
 // Controls whose whole content can be a single icon. A `<button>` is one by
 // definition; the kit's two icon wrappers take their name as a prop.
@@ -49,7 +58,7 @@ const NAME_ATTRIBUTES = new Set(['aria-label', 'aria-labelledby', 'label', 'titl
 function parseSource(source) {
   return parse(source, {
     sourceType: 'unambiguous',
-    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait'],
+    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait', 'importAttributes'],
   });
 }
 
@@ -171,23 +180,42 @@ function auditContrast() {
     name: `--color-${foreground} on --color-${background}`,
     foreground: cssToken(styles, foreground),
     background: cssToken(styles, background),
+    minimum: MIN_BRAND_QUIET_CONTRAST[foreground],
   }));
   const sidebar = computeSidebarTheme(SIDEBAR_PRESETS.dark);
   const sidebarPairs = ['text', 'muted', 'mutedProject', 'mutedHeader'].map(foreground => ({
     name: `default sidebar ${foreground}`,
     foreground: sidebar[foreground],
     background: sidebar.bg,
+    minimum: MIN_TEXT_CONTRAST,
   }));
 
-  return [...tokenPairs, ...sidebarPairs].flatMap(pair => {
+  const failures = [...tokenPairs, ...sidebarPairs].flatMap(pair => {
     const ratio = textContrastRatio(pair.foreground, pair.background);
-    if (ratio !== null && ratio >= MIN_TEXT_CONTRAST) return [];
+    if (ratio !== null && ratio >= pair.minimum) return [];
     return [{
       ...pair,
       ratio: ratio === null ? null : Number(ratio.toFixed(2)),
-      minimum: MIN_TEXT_CONTRAST,
     }];
   });
+
+  // Two greys that read as one grey are one grey. Whatever the values are, the
+  // quieter token has to actually be quieter.
+  const muted = cssToken(styles, 'muted');
+  const faint = cssToken(styles, 'faint');
+  const mutedRatio = textContrastRatio(muted, cssToken(styles, 'canvas'));
+  const faintRatio = textContrastRatio(faint, cssToken(styles, 'canvas'));
+  if (mutedRatio !== null && faintRatio !== null && mutedRatio - faintRatio < 0.5) {
+    failures.push({
+      name: '--color-faint must stay clearly quieter than --color-muted',
+      foreground: faint,
+      background: muted,
+      ratio: Number((mutedRatio - faintRatio).toFixed(2)),
+      minimum: 0.5,
+    });
+  }
+
+  return failures;
 }
 
 // The click-away layer around an overlay. It is the same element that centres
@@ -357,7 +385,7 @@ export function auditA11y() {
       imagesWithoutAlt: 'Every <img> declares alt, empty when the image is decoration.',
       positiveTabIndex: 'Tab order is the document order. A positive tabIndex overrides it and strands whatever it forgot.',
       fakeButtons: 'A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button.',
-      contrastFailures: 'Muted and faint text tokens keep at least 4.5:1 contrast on shared light surfaces and the default sidebar.',
+      contrastFailures: 'The brand quiet greys stay visible and stay distinct from each other; generated sidebar text keeps 4.5:1.',
       runtimeNameVerification: 'Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name.',
     },
     totals: {

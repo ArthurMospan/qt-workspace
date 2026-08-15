@@ -183,8 +183,9 @@ export default function TaskListView({
                   trigger={(
                     <Button
                       style="ghost"
-                      size="icon-sm"
+                      size="icon-xs"
                       icon={MoreVertical}
+                      composition="section-kebab"
                       className="hover:!bg-white"
                       aria-label={`Дії зі списком ${section.label}`}
                       title="Дії зі списком"
@@ -201,7 +202,7 @@ export default function TaskListView({
               )}
               <Button
                 style="ghost"
-                size="icon-sm"
+                size="icon-xs"
                 icon={isCollapsed ? ChevronRight : ChevronDown}
                 className={`${onBulkUpdate && section.id !== '__hidden__' ? '' : 'ml-auto'} hover:!bg-white`}
                 aria-expanded={!isCollapsed}

@@ -28,6 +28,10 @@ const SIZES = {
  * it read as one more piece of bookkeeping; at the end of the row, where the
  * eye stops, it reads as the thing that is addressed to you.
  *
+ * The "something is new here" dot closes the row after all of them. It is not a
+ * count of anything, so it does not belong in the middle of counts — it is the
+ * mark you look for last, and it sits where the eye lands last.
+ *
  * @param {number} props.attachments Files on the task.
  * @param {number} props.mentions Unread messages naming the current user.
  * @param {number} props.messages Messages in the task chat.
@@ -60,15 +64,15 @@ export default function TaskCounters({
           <span>{messages}</span>
         </span>
       )}
-      {unread && (
-        <span role="status" aria-label="Є нове в задачі" title="Є нове в задачі">
-          <Counter variant="dot" size="sm" status="info" />
-        </span>
-      )}
       {mentions > 0 && (
         <span className="flex items-center gap-[4px] text-ink" title={`Вас згадали: ${mentions}`}>
           <AtSign size={scale.icon} strokeWidth={2.4} />
           <span>{mentions}</span>
+        </span>
+      )}
+      {unread && (
+        <span role="status" aria-label="Є нове в задачі" title="Є нове в задачі">
+          <Counter variant="dot" size="sm" status="info" />
         </span>
       )}
     </div>

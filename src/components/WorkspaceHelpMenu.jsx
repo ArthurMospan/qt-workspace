@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Button, ContextMenu, Dialog } from '@/components/ui';
+import WorkspaceInfoCenter from '@/components/WorkspaceInfoCenter';
 import { ONEB_SUPPORT_CONTACTS } from '@/lib/content/supportContacts.mjs';
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
@@ -26,16 +27,23 @@ function openExternal(url) {
 export default function WorkspaceHelpMenu({ collapsed = false }) {
   const router = useRouter();
   const [supportOpen, setSupportOpen] = useState(false);
+  // Help, news and versions read in place. They used to navigate to a separate
+  // public shell — another header, another nav, another "Увійти" — which threw
+  // away whatever the user had on screen to answer a question about it.
+  // See `WorkspaceInfoCenter` for why the legal documents still do not.
+  const [infoPane, setInfoPane] = useState(null);
   const items = [
     { label: 'Написати у підтримку', icon: Headphones, onClick: () => setSupportOpen(true) },
     { isDivider: true },
-    { label: 'Довідка', icon: BookOpen, onClick: () => router.push('/help') },
+    { label: 'Довідка', icon: BookOpen, onClick: () => setInfoPane('help') },
+    { label: 'Новини', icon: Newspaper, onClick: () => setInfoPane('news') },
+    { label: `Версія ${APP_VERSION}`, icon: Info, onClick: () => setInfoPane('versions') },
+    { isDivider: true },
+    // A contract needs an address that can be linked, printed and cited, so
+    // these three stay full pages.
     { label: 'Умови користування', icon: ShieldCheck, onClick: () => router.push('/terms') },
     { label: 'Конфіденційність', icon: ShieldCheck, onClick: () => router.push('/privacy') },
     { label: 'Публічна оферта', icon: FileText, onClick: () => router.push('/offer') },
-    { isDivider: true },
-    { label: 'Новини', icon: Newspaper, onClick: () => router.push('/news') },
-    { label: `Версія ${APP_VERSION}`, icon: Info, onClick: () => router.push('/versions') },
   ];
 
   return (
@@ -64,6 +72,12 @@ export default function WorkspaceHelpMenu({ collapsed = false }) {
         />
       </div>
 
+      <WorkspaceInfoCenter
+        pane={infoPane}
+        onPaneChange={setInfoPane}
+        onClose={() => setInfoPane(null)}
+      />
+
       <Dialog
         isOpen={supportOpen}
         onClose={() => setSupportOpen(false)}
@@ -90,7 +104,7 @@ export default function WorkspaceHelpMenu({ collapsed = false }) {
           ))}
           <button
             type="button"
-            onClick={() => router.push('/versions')}
+            onClick={() => { setSupportOpen(false); setInfoPane('versions'); }}
             className="mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink"
           >
             <History size={12} />

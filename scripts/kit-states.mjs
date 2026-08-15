@@ -65,7 +65,7 @@ const NATIVE_DISABLEABLE = new Set(['button', 'input', 'textarea', 'select', 'fi
 function parseSource(source) {
   return parse(source, {
     sourceType: 'unambiguous',
-    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait'],
+    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties', 'dynamicImport', 'topLevelAwait', 'importAttributes'],
   });
 }
 

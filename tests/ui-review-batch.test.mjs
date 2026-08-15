@@ -412,17 +412,18 @@ test('every collapse control that folds a group of tasks is the same button', as
   for (const [name, source] of [['sprints', sprints], ['board', board], ['list view', listView]]) {
     assert.match(
       source,
-      /style="ghost"\s*\r?\n\s*size="icon-sm"/,
-      `${name} must fold with the shared ghost icon-sm control`,
+      /style="ghost"\s*\r?\n\s*size="icon-xs"/,
+      `${name} must fold with the shared ghost icon-xs control`,
     );
-    // A 20px box holding a 16px glyph reads as a stray icon beside the `sm`
-    // buttons it sits with. One 28px square in all three places.
-    assert.doesNotMatch(source, /size="icon-xs"/, `${name} must not keep a 20px control`);
+    // A bigger box pushed longer status names onto a second row and broke the
+    // rank of column headers. The controls stay miniature; what changed is the
+    // kebab's glyph and its optical weight beside the plus.
+    assert.doesNotMatch(source, /size="icon-sm"/, `${name} must keep the miniature control`);
   }
   // The sprint header specifically: it used to be `icon`, a 32px box against
   // the other two.
   assert.doesNotMatch(sprints, /size="icon"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
-  assert.match(sprints, /size="icon-sm"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
+  assert.match(sprints, /size="icon-xs"\s*\r?\n\s*icon=\{isExpanded \? ChevronDown : ChevronRight\}/);
 });
 
 test('the sidebar theme picker never nests a ColorSwatch button in another button', async () => {

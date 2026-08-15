@@ -647,7 +647,7 @@ export default function GlobalSprintsPage() {
                         >
                           <Button
                             style="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             icon={isExpanded ? ChevronDown : ChevronRight}
                             className="shrink-0 hover:!bg-white"
                             aria-expanded={isExpanded}
@@ -677,8 +677,9 @@ export default function GlobalSprintsPage() {
                             trigger={(
                               <Button
                                 style="ghost"
-                                size="icon-sm"
+                                size="icon-xs"
                                 icon={MoreVertical}
+                                composition="section-kebab"
                                 className="hover:!bg-white"
                                 aria-label={`Дії зі списком ${sprint.name}`}
                                 title="Дії зі списком"
@@ -775,7 +776,7 @@ export default function GlobalSprintsPage() {
                 >
                   <Button
                     style="ghost"
-                    size="icon-sm"
+                    size="icon-xs"
                     icon={ChevronRight}
                     className="mb-4 hover:!bg-white"
                     title="Розгорнути колонку завдань"
@@ -801,9 +802,9 @@ export default function GlobalSprintsPage() {
                       <Button
                         onClick={() => setBacklogCollapsed(true)}
                         style="ghost"
-                        size="icon-sm"
+                        size="icon-xs"
                         icon={ChevronLeft}
-                        className="-ml-[6px] hover:!bg-white"
+                        className="-ml-2 hover:!bg-white"
                         title="Згорнути колонку завдань"
                       />
                       <span className="h-[8px] w-[8px] rounded-full bg-muted" />
@@ -815,8 +816,9 @@ export default function GlobalSprintsPage() {
                         trigger={(
                           <Button
                             style="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             icon={MoreVertical}
+                            composition="section-kebab"
                             className="hover:!bg-white"
                             aria-label="Дії зі списком без спринта"
                             title="Дії зі списком"
@@ -833,7 +835,7 @@ export default function GlobalSprintsPage() {
                       <Button
                         onClick={() => setShowCreateTaskModal(true)}
                         style="ghost"
-                        size="icon-sm"
+                        size="icon-xs"
                         icon={Plus}
                         className="hover:!bg-white"
                         title="Додати завдання без спринту"

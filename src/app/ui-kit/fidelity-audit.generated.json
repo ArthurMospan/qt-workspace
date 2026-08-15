@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 207,
-    "parsedFiles": 207,
+    "productFiles": 213,
+    "parsedFiles": 213,
     "parseErrors": 0,
     "nativeControls": 17,
     "structures": {
@@ -236,7 +236,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:91",
+      "location": "src/components/WorkspaceHelpMenu.jsx:105",
       "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
       "text": "QuickTeam",
       "childElements": [
@@ -434,12 +434,12 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:752",
+      "location": "src/app/(app)/sprints/page.js:753",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:762",
+      "location": "src/app/(app)/sprints/page.js:763",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -514,7 +514,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:556",
+      "location": "src/components/workspace/AgileBoard.jsx:604",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },

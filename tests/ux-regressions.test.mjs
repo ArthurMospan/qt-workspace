@@ -43,10 +43,14 @@ test('requested navigation and readability regressions stay fixed', async () => 
   assert.match(board, /\{columnActionMenu\(col, colTotalIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
   assert.match(board, /\{columnActionMenu\(col, colIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
   assert.doesNotMatch(board, /kanban-full-bleed/);
-  // The kebab and the plus beside it are one pair: same vertical glyph, same
-  // 28px box. A 20px box with a horizontal "meatball" read as a stray icon.
-  assert.match(board, /className="flex"[\s\S]{0,220}icon=\{MoreVertical\}/);
-  assert.doesNotMatch(board, /size="icon-xs"/);
+  // The kebab and the plus beside it are one pair: the same miniature box, the
+  // vertical glyph the rest of the product uses, and a smaller icon size so
+  // three filled dots do not read darker than two hairline strokes.
+  assert.match(board, /className="flex"[\s\S]{0,260}icon=\{MoreVertical\}/);
+  assert.match(board, /icon=\{MoreVertical\}\s*\r?\n\s*composition="section-kebab"/);
+  // A larger box pushed long status names onto a second row.
+  assert.doesNotMatch(board, /size="icon-sm"/);
+  assert.match(board, /ui-type-column-title[^"]*truncate" title=\{col\.label\}/);
   // The clip and the gutter belong to different boxes — one element carrying
   // both cancels itself out inside an `overflow: hidden` parent.
   assert.match(board, /overflow-hidden bleed-edges/);
@@ -69,6 +73,44 @@ test('requested navigation and readability regressions stay fixed', async () => 
   assert.doesNotMatch(bulk, /!bg-white hover:!bg-canvas !text-ink/);
   assert.match(bulk, /ui-bulk-actions__trigger/);
   assert.equal((bulk.match(/ui-bulk-actions__control/g) || []).length, 6);
+});
+
+test('help, news and versions are read in place; contracts keep their own address', async () => {
+  const [menu, centre, legal] = await Promise.all([
+    read('src/components/WorkspaceHelpMenu.jsx'),
+    read('src/components/WorkspaceInfoCenter.jsx'),
+    read('src/app/(public)/_components/LegalDocumentPage.jsx'),
+  ]);
+  // Three things you glance at and close. They used to navigate to a separate
+  // public shell and throw away whatever was on screen.
+  for (const pane of ['help', 'news', 'versions']) {
+    assert.match(menu, new RegExp(`setInfoPane\\('${pane}'\\)`));
+  }
+  assert.doesNotMatch(menu, /router\.push\('\/(help|news|versions)'\)/);
+  // A contract needs an address that can be linked, printed and cited.
+  for (const legalRoute of ['/terms', '/privacy', '/offer']) {
+    assert.match(menu, new RegExp(`router\\.push\\('${legalRoute}'\\)`));
+  }
+  assert.match(legal, /<LegalBackLink \/>/);
+  assert.match(centre, /HELP_ARTICLES/);
+  assert.match(centre, /NEWS_ARTICLES/);
+  assert.match(centre, /VERSION_HISTORY/);
+});
+
+test('the quiet greys stay light and stay three steps apart', async () => {
+  const [styles, { textContrastRatio }] = await Promise.all([
+    read('src/app/globals.css'),
+    import('../scripts/kit-a11y.mjs'),
+  ]);
+  const token = name => styles.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6})`, 'i'))?.[1];
+  const canvas = token('canvas');
+  const muted = textContrastRatio(token('muted'), canvas);
+  const faint = textContrastRatio(token('faint'), canvas);
+  // Pushed to AA these two landed nine points apart and the product went heavy.
+  // What has to hold is that they are visible and that they are not one grey.
+  assert.ok(muted > 2, `muted must stay readable, got ${muted}`);
+  assert.ok(muted < 4, `muted must stay light, got ${muted}`);
+  assert.ok(muted - faint > 0.5, 'faint must stay clearly quieter than muted');
 });
 
 test('a stopped timer keeps its minutes until they are written down', async () => {

@@ -69,6 +69,12 @@ export const COMPOSITION_ICON_SIZES = {
   'settings-row-action': 13,
   'sidebar-help-action': 17,
 
+  // The section kebab, beside a plus in the same 20px box. Three filled dots
+  // and two hairline strokes are not the same amount of ink at the same pixel
+  // size: at 16 the kebab read as the darker of the two. 13 matches its optical
+  // weight to the plus without changing either box.
+  'section-kebab': 13,
+
   // Chat-only icon sizes. The generic size scale gives a 20px box a 16px icon,
   // which is right for dense toolbars and wrong for a chat message action —
   // those were 12px and jumped by four when the free `iconSize` prop went away.
