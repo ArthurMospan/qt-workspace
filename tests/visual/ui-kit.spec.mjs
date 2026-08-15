@@ -69,17 +69,6 @@ test.beforeEach(async ({ page }) => {
       return route.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
     },
   );
-  // The local Codex/browser sandbox blocks outbound font requests. Local runs
-  // intentionally do not compare pixels, so an empty stylesheet keeps the
-  // smoke test focused on rendering and interactions. CI still loads the real
-  // fonts before comparing the committed Linux baselines.
-  if (!process.env.CI) {
-    await page.route(
-      'https://fonts.googleapis.com/**',
-      route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
-    );
-  }
-
   await page.goto('/ui-kit', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-kit-scroll]');
   // The dev build paints its own indicator in the corner of every page.
