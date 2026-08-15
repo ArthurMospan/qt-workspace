@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -10,6 +10,11 @@ import Counter from '@/components/ui/DataDisplay/Counter';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Surface from '@/components/ui/Surface';
 import TaskRow from './TaskRow';
+import ContextMenu from '@/components/ui/ContextMenu';
+import BulkActionBar from './BulkActionBar';
+import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 
 /**
  * The list view of a board: tasks grouped by status — or, on a list that spans
@@ -29,6 +34,9 @@ import TaskRow from './TaskRow';
  * @param {string} props.projectName Its name, for the per-row project chip.
  * @param {boolean} props.showProjectName Whether each row names its project — true only on cross-project lists.
  * @param {string} props.activeTimerIssueId The task whose timer is running, if any.
+ * @param {(action: string, value: unknown, issues: object[]) => Promise<unknown>} props.onBulkUpdate Applies one bulk action to the selected rows.
+ * @param {boolean} props.canArchive Whether the current role may archive selected tasks.
+ * @param {string} props.selectionScopeKey Clears selection when a route or filter scope changes.
  * @param {string} props.emptyTitle Headline of the empty state.
  * @param {string} props.emptyDescription Sentence under it.
  */
@@ -46,10 +54,13 @@ export default function TaskListView({
   groupBy = 'status',
   hiddenGroupIds = [],
   activeTimerIssueId,
+  onBulkUpdate,
+  canArchive = false,
+  selectionScopeKey = '',
   emptyTitle = 'Завдань не знайдено',
   emptyDescription = 'Змініть фільтри або створіть нове завдання.',
 }) {
-  const { statuses, categoryColumns, statusCategoryById } = useWorkflowConfig();
+  const { statuses, categoryColumns, statusCategoryById, priorities, types } = useWorkflowConfig();
   const [collapsedSections, setCollapsedSections] = useState([]);
   const toggleSection = sectionId => setCollapsedSections(current => (
     current.includes(sectionId)
@@ -96,6 +107,27 @@ export default function TaskListView({
       issues: hiddenIssues,
     }] : []),
   ].filter(section => section.issues.length > 0);
+  const selectionOrder = sections.flatMap(section => section.issues.map(issue => issue.id));
+  const {
+    active: selectionActive,
+    activeSelectedIds: activeSelectedIssueIds,
+    selectedIssues,
+    toggle: toggleIssueSelection,
+    toggleScope: toggleIssueScope,
+    clear: clearSelection,
+  } = useIssueSelection({
+    issues,
+    order: selectionOrder,
+    scopeKey: selectionScopeKey || `${projectId || 'cross-project'}:${groupBy}`,
+  });
+  const toggleSectionSelection = sectionIssues => toggleIssueScope(
+    sectionIssues.map(issue => issue.id),
+  );
+  const applyBulkAction = (action, value) => onBulkUpdate?.(
+    action,
+    action === 'status' ? { mode: byCategory ? 'category' : 'status', id: value } : value,
+    selectedIssues,
+  );
 
   if (issues.length === 0) {
     return (
@@ -137,11 +169,33 @@ export default function TaskListView({
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: section.color }} />
               <h3 className="ui-type-column-title uppercase tracking-wide text-ink">{section.label}</h3>
               <Counter value={section.issues.length} size="sm" appearance="subtle" className="ml-1" />
+              {onBulkUpdate && section.id !== '__hidden__' && (
+                <ContextMenu
+                  className="ml-auto"
+                  trigger={(
+                    <Button
+                      style="ghost"
+                      size="icon-xs"
+                      icon={MoreHorizontal}
+                      className="hover:!bg-white"
+                      aria-label={`Дії зі списком ${section.label}`}
+                      title="Дії зі списком"
+                    />
+                  )}
+                  items={[{
+                    label: section.issues.every(issue => activeSelectedIssueIds.has(issue.id))
+                      ? 'Зняти вибір у списку'
+                      : 'Вибрати всі у списку',
+                    icon: CheckSquare,
+                    onClick: () => toggleSectionSelection(section.issues),
+                  }]}
+                />
+              )}
               <Button
                 style="ghost"
                 size="icon-xs"
                 icon={isCollapsed ? ChevronRight : ChevronDown}
-                className="ml-auto hover:!bg-white"
+                className={`${onBulkUpdate && section.id !== '__hidden__' ? '' : 'ml-auto'} hover:!bg-white`}
                 aria-expanded={!isCollapsed}
                 title={isCollapsed ? 'Розгорнути' : 'Згорнути'}
                 aria-label={`${isCollapsed ? 'Розгорнути' : 'Згорнути'} ${section.label}`}
@@ -169,6 +223,9 @@ export default function TaskListView({
                     showProjectName={showProjectName}
                     showStatusName={section.showStatusName}
                     isTimerActive={activeTimerIssueId === issue.id}
+                    selected={activeSelectedIssueIds.has(issue.id)}
+                    selectionActive={selectionActive}
+                    onSelect={onBulkUpdate ? toggleIssueSelection : undefined}
                   />
                 );
               })}
@@ -177,6 +234,29 @@ export default function TaskListView({
           </Surface>
         );
       })}
+      <BulkActionBar
+        count={onBulkUpdate ? activeSelectedIssueIds.size : 0}
+        statusOptions={groups.map(group => ({
+          value: group.id,
+          label: group.label,
+          dotColor: group.color,
+        }))}
+        memberOptions={members.map(member => ({
+          value: member.id || member.uid,
+          label: member.name || member.email || 'Учасник',
+          user: member,
+        }))}
+        priorityOptions={prioritySelectOptions(priorities)}
+        labelOptions={labels.map(label => ({ value: label.id, label: label.label, dotColor: label.color }))}
+        typeOptions={types.filter(type => type.id !== 'epic').map(taskTypeSelectOption)}
+        sprintOptions={sprints.filter(sprint => sprint.status !== 'completed').map(sprint => ({
+          value: sprint.id,
+          label: sprint.name,
+        }))}
+        canArchive={canArchive}
+        onApply={applyBulkAction}
+        onClear={clearSelection}
+      />
     </div>
   );
 }

@@ -359,7 +359,7 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
                 По проєктах (закрито за {period}д)
               </h3>
               <div className="flex flex-col gap-3">
-                {stats.byProject.slice(0, 6).map(({ p, count, total }) => (
+                {stats.byProject.map(({ p, count, total }) => (
                   <div key={p.id} className="flex items-center gap-3">
                     <span className="text-[12px] font-medium text-[#6a6a6a] truncate flex-1 max-w-[120px]">{p.name}</span>
                     <div className="flex-1 h-[5px] bg-canvas rounded-full overflow-hidden">

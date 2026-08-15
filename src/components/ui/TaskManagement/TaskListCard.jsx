@@ -27,7 +27,6 @@ import TaskRow from './TaskRow';
  * @param {object[]} props.projects Projects, for naming each row's project.
  * @param {object[]} props.issueLinks Relations, for the blocked marker.
  * @param {boolean} props.showProjectName Whether each row names its project — true on cross-project lists.
- * @param {number} props.limit How many rows to draw.
  * @param {string} props.emptyText Sentence shown when there is nothing to list.
  * @param {React.ReactNode} props.action Optional control on the right of the caption.
  * @param {string} props.className Placement in the parent only.
@@ -45,12 +44,10 @@ export default function TaskListCard({
   projects = [],
   issueLinks = [],
   showProjectName = true,
-  limit = 8,
   emptyText = 'Завдань немає',
   action,
   className = '',
 }) {
-  const shown = issues.slice(0, limit);
   const total = typeof count === 'number' ? count : issues.length;
 
   return (
@@ -62,11 +59,11 @@ export default function TaskListCard({
         </h3>
         {action && <span className="ml-auto shrink-0">{action}</span>}
       </div>
-      {shown.length === 0 ? (
+      {issues.length === 0 ? (
         <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {shown.map(issue => {
+          {issues.map(issue => {
             const project = projects.find(item => item.id === issue.projectId);
             return (
               <TaskRow

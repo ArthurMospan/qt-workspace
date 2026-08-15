@@ -233,6 +233,8 @@ export default function TaskCRMSection() {
           projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
           showProjectName
           hiddenGroupIds={[lastStatusId]}
+          onBulkUpdate={() => {}}
+          canArchive
         />
       </PreviewBlock>
 
@@ -252,6 +254,8 @@ export default function TaskCRMSection() {
           showProjectName
           groupBy="category"
           hiddenGroupIds={['cancelled']}
+          onBulkUpdate={() => {}}
+          canArchive
         />
       </PreviewBlock>
 
@@ -271,7 +275,6 @@ export default function TaskCRMSection() {
             labels={demoLabels}
             sprints={demoSprints}
             projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
-            limit={3}
           />
           <TaskListCard
             title="Нещодавно закриті завдання"
@@ -302,13 +305,15 @@ export default function TaskCRMSection() {
             sprints={demoSprints}
             onAddIssue={() => {}}
             onMoveIssue={() => {}}
+            onBulkUpdate={() => {}}
+            canArchive
           />
         </div>
       </PreviewBlock>
 
       <PreviewBlock
         title="Agile Board — колонки-категорії"
-        description="groupBy=&quot;category&quot; — режим «Моїх завдань». Колонки не статуси, а пʼять спільних категорій. Великі колонки рендеряться сторінками, а повний порядок лишається доступним логіці перенесення."
+        description="groupBy=&quot;category&quot; — режим «Моїх завдань». Колонки не статуси, а пʼять спільних категорій. Великі колонки віртуалізують лише DOM поза viewport, але не ховають задачі за кнопкою."
         filePath="src/components/workspace/AgileBoard.jsx"
         fullWidth
       >
@@ -322,11 +327,12 @@ export default function TaskCRMSection() {
             sprints={demoSprints}
             showProjectName
             groupBy="category"
-            cardPageSize={1}
             hiddenColumns={['cancelled']}
             showHiddenLane
             onAddIssue={() => {}}
             onMoveIssue={() => {}}
+            onBulkUpdate={() => {}}
+            canArchive
           />
         </div>
       </PreviewBlock>

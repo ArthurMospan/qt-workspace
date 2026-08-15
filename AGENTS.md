@@ -52,6 +52,8 @@ This is a single Next.js 16.3.0 App Router application with React 19 and Firebas
 
 ## Repository hygiene
 
+- Будь-яка зміна видимої користувачеві поведінки, назви, дозволів або workflow оновлює відповідну статтю довідки в тому самому PR. Довідка не може описувати функцію, якої продукт не має. Видимі релізні зміни також оновлюють новини та історію версій.
+
 - Never commit `.env*`, service-account keys, build output, logs, or local agent scratch data.
 - Keep durable setup and architecture documentation under `docs/`. Do not add generated reports, session notes, or temporary plans to the repository root.
 - Preserve user changes and verify references before deleting source files.

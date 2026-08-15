@@ -102,7 +102,7 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
 
         {/* Footer */}
         <div className="w-full flex items-center gap-6 p-6 md:p-8 shrink-0 relative z-50">
-          <Link href="/privacy-policy" className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium">
+          <Link href="/privacy" className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium">
             Політика конфіденційності
           </Link>
           <span className="text-white/30 text-[12px] font-medium">

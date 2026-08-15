@@ -15,6 +15,13 @@ export async function createIssueViaApi({ organizationId, projectId, data }) {
   }, 'Не вдалося створити задачу');
 }
 
+export async function bulkIssuesViaApi({ organizationId, issueIds, action, value }) {
+  return authenticatedIssueRequest('/api/issues/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ organizationId, issueIds, action, value }),
+  }, 'Не вдалося виконати масову дію');
+}
+
 /**
  * Tell whoever was just given a task. Being assigned is the same event wherever
  * the task was created from, so both composers say it the same way — the one on

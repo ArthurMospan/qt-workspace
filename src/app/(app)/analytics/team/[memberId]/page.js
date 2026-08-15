@@ -42,9 +42,6 @@ export default function MemberAnalyticsPage() {
     issues,
     timeLogs,
     loading,
-    loadingMore,
-    hasMore,
-    loadMore,
   } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
   const { events, loading: calendarLoading } = useCalendarEvents();
   const [projectFilters, setProjectFilters] = useState([]);
@@ -141,16 +138,6 @@ export default function MemberAnalyticsPage() {
                   onChange={setPeriod}
                   options={PERIOD_OPTIONS}
                 />
-                {hasMore && (
-                  <Button
-                    style="secondary"
-                    size="sm"
-                    loading={loadingMore}
-                    onClick={loadMore}
-                  >
-                    Довантажити дані
-                  </Button>
-                )}
               </FilterBar>
             )}
           />

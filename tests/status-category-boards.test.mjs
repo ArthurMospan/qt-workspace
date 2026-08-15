@@ -228,13 +228,13 @@ test('the personal board cannot be folded down to nothing', async () => {
   const myTasks = await read('../src/app/(app)/my/page.js');
   assert.match(myTasks, /next\.length >= categoryColumns\.length/);
   assert.match(myTasks, /Хоча б одна колонка має лишатися видимою/);
-  assert.match(myTasks, /cardPageSize=\{30\}/);
+  assert.doesNotMatch(myTasks, /cardPageSize=/);
 });
 
-test('the personal board renders large columns in pages inside fixed-height columns', async () => {
+test('the personal board virtualizes large columns without progressive reveal controls', async () => {
   const board = await read('../src/components/workspace/AgileBoard.jsx');
-  assert.match(board, /const renderedColIssues = colIssues\.slice\(0, visibleLimit\)/);
-  assert.match(board, /Показати ще \{Math\.min\(normalizedCardPageSize, remainingIssueCount\)\}/);
+  assert.match(board, /<VirtualDroppableColumn/);
+  assert.doesNotMatch(board, /renderedColIssues|Показати ще|visibleCardLimits/);
   assert.match(board, /overflow-y-hidden pb-2 flex flex-col/);
   assert.match(board, /rounded-b-\[16px\] overflow-y-auto/);
 });

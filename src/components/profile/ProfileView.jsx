@@ -51,9 +51,6 @@ export default function ProfileView({ user, onClose }) {
   const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
   const {
     tasks,
-    loadingMore: tasksLoadingMore,
-    hasMore: hasMoreTasks,
-    loadMore: loadMoreTasks,
   } = useAllMyTasks(user?.id || user?.uid);
   const { positions = [], closedStatusIds } = useWorkflowConfig();
   const { members: orgMembers } = useOrganization();
@@ -374,17 +371,6 @@ export default function ProfileView({ user, onClose }) {
                     />
                   );
                 })}
-                {hasMoreTasks && (
-                  <Button
-                    style="secondary"
-                    size="sm"
-                    loading={tasksLoadingMore}
-                    onClick={loadMoreTasks}
-                    className="mt-2 self-center"
-                  >
-                    Завантажити ще
-                  </Button>
-                )}
               </>
             )}
           </div>

@@ -67,6 +67,7 @@ const ICON_SIZES = {
 // "add row" button, which reads better with an icon smaller than its lg box.
 export const COMPOSITION_ICON_SIZES = {
   'settings-row-action': 13,
+  'sidebar-help-action': 17,
 
   // Chat-only icon sizes. The generic size scale gives a 20px box a 16px icon,
   // which is right for dense toolbars and wrong for a chat message action —

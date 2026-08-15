@@ -309,7 +309,7 @@ function ProjectDistribution({ stat, projects }) {
         <p className="py-6 text-center text-[12px] text-faint">Немає проєктних даних за період</p>
       ) : (
         <div className="space-y-4">
-          {rows.slice(0, 8).map(row => (
+          {rows.map(row => (
             <div key={row.project.id}>
               <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px]">
                 <span className="truncate font-semibold text-ink">{row.project.name}</span>
@@ -330,7 +330,7 @@ function ProjectDistribution({ stat, projects }) {
 // — a third way of drawing a task, after the board row and the overview list.
 // `TaskListCard` is the one way now: the same row, the same badges, the same
 // click through to the task.
-function IssueList({ title, issues, projects, members, emptyText, limit = 8 }) {
+function IssueList({ title, issues, projects, members, emptyText }) {
   return (
     <TaskListCard
       title={title}
@@ -338,7 +338,6 @@ function IssueList({ title, issues, projects, members, emptyText, limit = 8 }) {
       members={members}
       projects={projects}
       emptyText={emptyText}
-      limit={limit}
     />
   );
 }
@@ -366,7 +365,7 @@ function RecentTime({ logs, issues, events, projects }) {
         <p className="py-6 text-center text-[12px] text-faint">Час за вибраний період не списувався</p>
       ) : (
         <div className="divide-y divide-line">
-          {logs.slice(0, 10).map(log => {
+          {logs.map(log => {
             const event = isCalendarEventTimeLog(log)
               ? eventsByKey.get(calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt))
               : null;
@@ -432,7 +431,6 @@ function MemberOverview({ stat, projects, members, events, period }) {
           projects={projects}
           members={members}
           emptyText="Немає задач у статусі «В роботі»"
-          limit={6}
         />
         <ProjectDistribution stat={stat} projects={projects} />
         <IssueList
@@ -441,7 +439,6 @@ function MemberOverview({ stat, projects, members, events, period }) {
           projects={projects}
           members={members}
           emptyText="За вибраний період задач не завершено"
-          limit={8}
         />
         <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
       </div>
@@ -478,7 +475,6 @@ function MemberWork({ stat, projects, members, events }) {
           projects={projects}
           members={members}
           emptyText="За цим фільтром завдань немає"
-          limit={50}
         />
         <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
       </div>
