@@ -54,7 +54,7 @@ export function Breadcrumb({
           outsideResultCount={searchOutsideResultCount}
           outsideLoading={searchOutsideLoading}
           placeholder={searchPlaceholder}
-          className="border-ink w-[300px]"
+          className="min-w-0 w-full max-w-[300px] border-ink"
         />
       </div>
     );

@@ -173,16 +173,16 @@ function OnboardingPageContent() {
         {step === 1 && (
           <div className="w-full flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
             
-            <div className="w-full flex items-center mb-6 relative">
+            <div className="relative mb-6 flex w-full flex-col items-center gap-4 sm:block">
               <button 
                 onClick={() => setStep(0)} 
-                className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-white/50 hover:text-white text-[13px] font-bold transition-colors"
+                className="flex self-start items-center gap-2 text-[13px] font-bold text-white/50 transition-colors hover:text-white sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2"
               >
                 <ArrowRight size={16} className="rotate-180" /> 
                 Назад
               </button>
-              <div className="w-full text-center">
-                <h1 className="text-white text-[32px] font-black tracking-tight mb-[6px]">Оберіть тариф</h1>
+              <div className="w-full text-center sm:px-24">
+                <h1 className="mb-[6px] text-[28px] font-black tracking-tight text-white sm:text-[32px]">Оберіть тариф</h1>
                 <p className="text-white/50 text-[15px] leading-relaxed">
                   Почніть безкоштовно або розблокуйте весь потенціал {orgName}.
                 </p>

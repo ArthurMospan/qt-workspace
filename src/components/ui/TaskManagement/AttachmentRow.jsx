@@ -45,30 +45,27 @@ export default function AttachmentRow({
   const fileType = detectFileType(attachment);
 
   return (
-    <div data-ui-surface="nested-card" data-ui-padding="compact-row" className="ui-surface group flex min-w-0 items-center gap-3">
+    <div data-ui-surface="nested-card" data-ui-padding="compact-row" className="ui-surface flex min-w-0 items-center gap-3 transition-colors hover:bg-canvas">
+      {/* Thumbnail, text, and the whitespace between them are one target. The
+          old split target underlined only the filename, so a large row looked
+          clickable in one tiny place even though the preview action was the
+          same everywhere. */}
       <button
         type="button"
         onClick={() => onOpen(attachment)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-canvas"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-[8px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
         aria-label={`Переглянути ${attachment.name}`}
       >
-        {fileType === 'image' && url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="h-full w-full object-cover" />
-        ) : <FileText size={16} className="text-muted" />}
-      </button>
-      {/* The name opens the preview — the obvious target, and what the
-          thumbnail beside it already did. The row used to spend a slot
-          on an "open in a new tab" link instead, which is the one thing
-          the preview makes unnecessary; downloading is what was missing. */}
-      <button
-        type="button"
-        onClick={() => onOpen(attachment)}
-        className="min-w-0 flex-1 text-left"
-        aria-label={`Переглянути ${attachment.name}`}
-      >
-        <p className="truncate text-[12px] font-semibold text-ink group-hover:underline">{attachment.name}</p>
-        <p className="text-[10px] text-faint">{fmtBytes(attachment.size)}</p>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white">
+          {fileType === 'image' && url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          ) : <FileText size={16} className="text-muted" />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12px] font-semibold text-ink">{attachment.name}</span>
+          <span className="block text-[10px] text-faint">{fmtBytes(attachment.size)}</span>
+        </span>
       </button>
       {isEditing && url && (
         <Button style="ghost" size="sm" onClick={() => onInsert(attachment, fileType, url)}>

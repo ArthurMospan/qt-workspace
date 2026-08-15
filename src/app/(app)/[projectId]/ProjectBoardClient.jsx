@@ -219,10 +219,10 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   }, [router, showToast]);
 
   const handleCreateFullIssue = useCallback(async (formData) => {
-    await createIssue({
+    const created = await createIssue({
       title: formData.title,
       description: formData.description || '',
-      columnId: formData.status || 'todo',
+      columnId: formData.status || 'backlog',
       priority: formData.priority || 'medium',
       type: formData.type || 'task',
       assigneeIds: formData.assignees || [],
@@ -232,6 +232,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       sprintId: formData.sprintId || null,
     }, actor);
     showToast('Задачу створено ✓');
+    return { ...created, projectId };
   }, [createIssue, showToast]); // eslint-disable-line
 
   const handleMoveIssue = useCallback(async (issueId, newColumnId, position, updateFields = null) => {
@@ -250,6 +251,23 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       showToast(`Помилка переміщення. Відновлено попередній стан: ${failed.reason?.message || failed.reason}`, 'error');
     }
   }, [moveIssue, updateIssue, showToast]); // eslint-disable-line
+
+  const handleBulkUpdate = useCallback(async (action, value, selectedIssues) => {
+    const patch = action === 'status'
+      ? { status: value, columnId: value }
+      : action === 'assignee'
+        ? { assigneeIds: value === '__unassigned__' ? [] : [value] }
+        : { priority: value };
+    const results = await Promise.allSettled(
+      selectedIssues.map(issue => updateIssue(issue.id, patch, actor)),
+    );
+    const failed = results.filter(result => result.status === 'rejected');
+    const saved = results.length - failed.length;
+    if (saved > 0) showToast(`Оновлено завдань: ${saved}`);
+    if (failed.length > 0) {
+      showToast(`Не вдалося оновити завдань: ${failed.length}`, 'error');
+    }
+  }, [updateIssue, showToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isBoard = activeTab === 'board' && boardView === 'kanban';
   const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
@@ -469,6 +487,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               activeTimerIssueId={activeTimer?.issueId}
               onAddIssue={handleAddIssue}
               onMoveIssue={handleMoveIssue}
+              onBulkUpdate={handleBulkUpdate}
               issueLinks={issueLinks}
               sprints={sprints}
               isArchived={isArchived}

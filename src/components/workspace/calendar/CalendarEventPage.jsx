@@ -7,6 +7,7 @@ import {
   Check,
   Clock3,
   Copy,
+  CopyPlus,
   ExternalLink,
   Link2,
   LockKeyhole,
@@ -324,6 +325,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     loading,
     error: loadError,
     refresh,
+    createEvent,
     updateEvent,
     removeEvent,
     respondToEvent,
@@ -458,6 +460,26 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       showToast('Не вдалося скопіювати посилання', 'error');
     }
   }, [showToast]);
+
+  const duplicateEvent = useCallback(async () => {
+    if (!event) return;
+    try {
+      const base = calendarEventFormInitialValue(event, event.startAt, currentUserId);
+      // An expanded recurring occurrence is duplicated as the event currently
+      // on screen, not as a second invisible series with the same schedule.
+      const created = await createEvent(calendarEventFormPayload({
+        ...base,
+        title: `${base.title || 'Подія'} (копія)`,
+        recurrenceFrequency: 'none',
+        recurrenceInterval: 1,
+        recurrenceUntil: '',
+      }, currentUserId));
+      showToast('Копію події створено', 'success');
+      router.push(calendarEventHref(created));
+    } catch (duplicateError) {
+      showToast(duplicateError.message || 'Не вдалося дублювати подію', 'error');
+    }
+  }, [createEvent, currentUserId, event, router, showToast]);
 
   useEffect(() => {
     useWorkspaceStore.setState({
@@ -741,7 +763,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       >
         <div className="mx-auto flex w-full max-w-[1120px] flex-col">
           <div className="sticky top-0 z-[30]">
-            <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
+            <div className="flex w-full flex-col items-stretch justify-between gap-[10px] bg-white pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
               <div className="min-w-0 flex-1">
                 {isEditing ? (
                   <TitleInput
@@ -814,7 +836,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2 pt-1">
+              <div className="flex shrink-0 items-center self-end gap-2 pt-1 sm:self-auto">
                 {isEditing ? (
                   <>
                     <Button style="secondary" size="md" icon={X} onClick={cancelEdit}>Скасувати</Button>
@@ -845,6 +867,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                       dropdownClassName="w-[210px]"
                       items={[
                         { label: 'Копіювати посилання', icon: Copy, onClick: copyEventLink },
+                        { label: 'Дублювати', icon: CopyPlus, onClick: duplicateEvent },
                         ...(canManage ? [
                           { label: 'Редагувати текст', icon: Pencil, onClick: enterEdit },
                           { label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true },

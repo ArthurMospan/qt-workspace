@@ -293,7 +293,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
   return (
     <>
-      <div className="flex items-center gap-[6px] shrink-0 ml-4 z-50">
+      <div className="ml-2 flex shrink-0 items-center gap-[6px] z-50 sm:ml-4">
         {/* ── Bell ──────────────────────── */}
         {mode !== 'chat' && (
           <div className="relative" ref={bellRef}>
@@ -416,7 +416,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                           <span className="w-[6px] h-[6px] bg-ink rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
                         )}
                         {/* Hover actions */}
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
                           <IconAction
                             label={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
                             onClick={e => {

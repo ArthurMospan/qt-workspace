@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import {
   AlertTriangle,
+  ArrowLeft,
+  ChevronRight,
   Clock3,
   DatabaseBackup,
   ScanSearch,
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
-import { Card, Pill } from '@/components/ui';
+import { Button, Card, Pill } from '@/components/ui';
 import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 
 const UPCOMING_PROVIDERS = [
@@ -119,8 +122,70 @@ export default function DataMigrationSettings({
   projects = [],
   showToast,
 }) {
+  const [selectedProviderId, setSelectedProviderId] = useState('');
+  const selectedProvider = UPCOMING_PROVIDERS.find(provider => provider.id === selectedProviderId);
+
+  if (!selectedProviderId) {
+    const providers = [
+      {
+        id: 'youtrack',
+        name: 'YouTrack',
+        logo: '/integrations/youtrack.svg',
+        description: 'Керований імпорт проєктів, задач, людей та історії.',
+        status: 'Готово',
+        ready: true,
+      },
+      ...UPCOMING_PROVIDERS.map(provider => ({
+        ...provider,
+        status: 'У планах',
+        ready: false,
+      })),
+    ];
+    return (
+      <div className="flex flex-col gap-[8px]">
+        {providers.map(provider => (
+          <Card
+            key={provider.id}
+            preset="bordered"
+            padding="md"
+            interactive
+            onClick={() => setSelectedProviderId(provider.id)}
+          >
+            <div className="flex items-center gap-[12px]">
+              <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[10px] border border-line bg-white">
+                <Image src={provider.logo} alt="" width={30} height={30} className="h-[28px] w-[28px] object-contain" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-bold text-ink">{provider.name}</span>
+                <span className="mt-[2px] block truncate text-[11px] text-muted">{provider.description}</span>
+              </span>
+              <Pill color={provider.ready ? '#10b981' : '#9a9a9a'} appearance="soft-outline" size="md">
+                {provider.status}
+              </Pill>
+              <ChevronRight size={16} className="shrink-0 text-faint" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (selectedProvider) {
+    return (
+      <div className="space-y-5">
+        <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setSelectedProviderId('')}>
+          Усі джерела
+        </Button>
+        <UpcomingProviderCard provider={selectedProvider} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setSelectedProviderId('')}>
+        Усі джерела
+      </Button>
       <Card preset="borderless" padding="lg" className="overflow-hidden">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
@@ -166,22 +231,6 @@ export default function DataMigrationSettings({
           showToast={showToast}
           presentation="migration"
         />
-      </section>
-
-      <section>
-        <div className="mb-3">
-          <h3 className="ui-type-compact-title text-ink">Наступні джерела</h3>
-          <p className="mt-0.5 max-w-[760px] text-[11px] leading-relaxed text-muted">
-            Додаємо провайдери окремо: для кожного потрібні власні правила полів, статусів,
-            ієрархії та користувачів. Так міграція не перетвориться на ненадійний універсальний CSV.
-          </p>
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {UPCOMING_PROVIDERS.map(provider => (
-            <UpcomingProviderCard key={provider.id} provider={provider} />
-          ))}
-        </div>
       </section>
 
       <div className="flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3">

@@ -448,17 +448,17 @@
     padding: 8px 12px;
   }
   .ui-surface[data-ui-surface='project-card'] {
-    min-height: 220px;
-    gap: 20px;
+    min-height: 176px;
+    gap: 14px;
     border: 1px solid transparent;
     border-radius: var(--ui-radius-surface);
     background: var(--color-surface);
-    padding: 24px 24px 28px;
+    padding: 18px;
   }
   .ui-surface[data-ui-surface='project-card'][data-ui-density='large'] {
-    min-height: 280px;
-    gap: 32px;
-    padding: 32px 32px 40px;
+    min-height: 216px;
+    gap: 18px;
+    padding: 22px;
   }
   .ui-surface[data-ui-surface='project-card']:hover {
     box-shadow: 0 0 0 4px #ececec;
@@ -858,13 +858,54 @@
     );
   }
 
+  /* Multi-select actions float above every board and remain reachable above
+     the mobile navigation. The composition owns the fixed geometry; callers
+     only provide the available actions. */
+  .ui-bulk-actions[data-ui-composition='bulk-actions'] {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 900;
+    display: flex;
+    max-width: calc(100vw - 32px);
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    color: white;
+    background: var(--color-ink);
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
+    transform: translateX(-50%);
+  }
+  .ui-bulk-actions__count {
+    flex-shrink: 0;
+    padding-inline: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .ui-bulk-actions__divider {
+    width: 1px;
+    height: 22px;
+    flex-shrink: 0;
+    background: rgb(255 255 255 / 16%);
+  }
+  @media (max-width: 767px) {
+    .ui-bulk-actions[data-ui-composition='bulk-actions'] {
+      bottom: calc(var(--qt-nav-bottom-height, 64px) + 16px);
+      max-width: calc(100vw - 16px);
+      overflow-x: auto;
+    }
+  }
+
   /* ── Page gutter — single source of truth for page horizontal padding.
      Pages apply .page-gutter (instead of px-[24px] md:px-[32px]); rows that
      must scroll edge-to-edge (kanban, tabs, timesheet) apply .full-bleed and
      automatically match whatever gutter their page declares. ── */
   .page-gutter,
   .workspace-page-layout {
-    --page-px: 24px;
+    --page-px: 16px;
     padding-left: var(--page-px);
     padding-right: var(--page-px);
   }
@@ -875,24 +916,28 @@
     gap: 8px;
     padding-top: 56px;
   }
+  @media (min-width: 640px) {
+    .page-gutter,
+    .workspace-page-layout { --page-px: 24px; }
+  }
   @media (min-width: 768px) {
     .page-gutter,
     .workspace-page-layout { --page-px: 32px; }
   }
   .full-bleed {
-    margin-left: calc(var(--page-px, 24px) * -1);
-    margin-right: calc(var(--page-px, 24px) * -1);
-    padding-left: var(--page-px, 24px);
-    padding-right: var(--page-px, 24px);
-    width: calc(100% + var(--page-px, 24px) * 2);
+    margin-left: calc(var(--page-px, 16px) * -1);
+    margin-right: calc(var(--page-px, 16px) * -1);
+    padding-left: var(--page-px, 16px);
+    padding-right: var(--page-px, 16px);
+    width: calc(100% + var(--page-px, 16px) * 2);
   }
   /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */
   @media (max-width: 767px) {
     .full-bleed-mobile {
-      margin-left: calc(var(--page-px, 24px) * -1);
-      margin-right: calc(var(--page-px, 24px) * -1);
-      padding-left: var(--page-px, 24px);
-      padding-right: var(--page-px, 24px);
+      margin-left: calc(var(--page-px, 16px) * -1);
+      margin-right: calc(var(--page-px, 16px) * -1);
+      padding-left: var(--page-px, 16px);
+      padding-right: var(--page-px, 16px);
     }
   }
 }

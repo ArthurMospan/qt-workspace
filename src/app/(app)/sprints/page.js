@@ -847,13 +847,13 @@ export default function GlobalSprintsPage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          await createIssueViaApi({
+          const created = await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
             data: {
               title: formData.title,
               description: formData.description || '',
-              status: formData.status || 'todo',
+              status: formData.status || 'backlog',
               priority: formData.priority || 'medium',
               type: formData.type || 'task',
               assigneeIds: formData.assignees || [],
@@ -866,6 +866,7 @@ export default function GlobalSprintsPage() {
           });
 
           showToast('Задачу створено ✓');
+          return { ...created, projectId: formData.projectId };
         }}
         projects={projects}
         teamMembers={members}

@@ -174,7 +174,16 @@ function DaySeparator({ timestamp }) {
   );
 }
 
-export default function UnifiedTimeline({ issueId, projectId, issue, isArchived, org, members = [] }) {
+export default function UnifiedTimeline({
+  issueId,
+  projectId,
+  issue,
+  isArchived,
+  org,
+  members = [],
+  isActive = true,
+  onUnreadCountChange,
+}) {
   const router = useRouter();
   const { currentUser, projects = [] } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -206,6 +215,12 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
     ignoreIndex: -1,
   });
   const myId = currentUser?.uid || currentUser?.id;
+  const unreadCommentIds = useMemo(() => {
+    if (!myId) return [];
+    return comments
+      .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
+      .map(comment => comment.id);
+  }, [comments, myId]);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -329,15 +344,19 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [timeline.length]);
 
-  // Read receipts: while the chat is open, mark every visible comment from
-  // other people that this user hasn't read yet. Best-effort (see hook).
+  // A compact task screen keeps the timeline mounted while its chat pane is
+  // hidden. That preserves the live unread badge without falsely consuming the
+  // messages before the reader actually opens the chat.
   useEffect(() => {
-    if (!myId) return;
-    const unread = comments
-      .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
-      .map(comment => comment.id);
-    if (unread.length) markCommentsRead(unread, myId);
-  }, [comments, myId, markCommentsRead]);
+    onUnreadCountChange?.(unreadCommentIds.length);
+  }, [onUnreadCountChange, unreadCommentIds.length]);
+
+  // Read receipts: only the visible chat consumes comments. Desktop keeps the
+  // split view active, while phone/tablet task details pass isActive=false.
+  useEffect(() => {
+    if (!isActive || !myId || unreadCommentIds.length === 0) return;
+    markCommentsRead(unreadCommentIds, myId);
+  }, [isActive, markCommentsRead, myId, unreadCommentIds]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
@@ -362,6 +381,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
         for (const file of pendingFiles) attachments.push(await uploadFile(file, folder));
         const mentionedUserIds = extractMentionedUserIds(text, members, myId);
         await addComment(issueId, text, currentUser, attachments, replyTo, { mentionedUserIds });
+        const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
         if (mentionedUserIds.length > 0) {
           try {
             await sendNotification({
@@ -369,7 +389,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
               type: 'mentioned',
               title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
               body: text.slice(0, 500),
-              link: issuePath(issue, project || projectId),
+              link: taskChatLink,
               issueId,
               projectId,
               organizationId: project?.organizationId || org?.id || '',
@@ -396,7 +416,7 @@ export default function UnifiedTimeline({ issueId, projectId, issue, isArchived,
             type: 'commented',
             title: `${currentUser?.name || 'Колега'} прокоментував завдання`,
             body: text.slice(0, 500) || 'Вкладення',
-            link: issuePath(issue, project || projectId),
+            link: taskChatLink,
             issueId,
             projectId,
             organizationId: project?.organizationId || org?.id || '',

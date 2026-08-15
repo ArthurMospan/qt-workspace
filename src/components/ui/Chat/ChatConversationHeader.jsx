@@ -100,7 +100,8 @@ export default function ChatConversationHeader({
           className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]"
         >
           <Pin size={12} />
-          <span>{pinnedCount} закріплено</span>
+          <span className="sm:hidden">{pinnedCount}</span>
+          <span className="hidden sm:inline">{pinnedCount} закріплено</span>
         </button>
       )}
 

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Counter from './DataDisplay/Counter';
 
 // ─── UI Kit: Tabs Component ───────────────────────────────────────────────────
 // Height rule: h-[36px] — matches inputs and buttons for perfect alignment.
@@ -91,6 +92,13 @@ export default function Tabs({
           <>
             {Icon && <Icon size={14} />}
             {tab.label}
+            {Number(tab.count) > 0 && (
+              <Counter
+                value={tab.count}
+                size="sm"
+                appearance={active ? 'solid' : 'subtle'}
+              />
+            )}
           </>
         );
 

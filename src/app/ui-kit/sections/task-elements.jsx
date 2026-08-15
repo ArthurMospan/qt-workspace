@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
-import { AttributeTrigger, UserAvatar, AttachmentRow, TimeLogRow, TimeTrackingControl, MarkdownEditor, MarkdownViewer, AttachmentViewer, TitleInput, DescriptionPlaceholder, IssueLinkRow, SelectableChip } from '@/components/ui';
+import { AttributeTrigger, UserAvatar, AttachmentRow, BulkActionBar, TimeLogRow, TimeTrackingControl, MarkdownEditor, MarkdownViewer, AttachmentViewer, TitleInput, DescriptionPlaceholder, IssueLinkRow, SelectableChip } from '@/components/ui';
 import { Settings2, Check, Tag as TagIcon, Users } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 
@@ -147,7 +147,7 @@ export default function TaskElementsSection() {
 
       <PreviewBlock
         title="Вкладення завдання"
-        description="Мініатюра, назва з розміром, завантаження й видалення в одному рядку — чотири рукописні контроли, найщільніша латка нативної розмітки на цій поверхні."
+        description="Уся зона від мініатюри до назви відкриває файл і підсвічується разом; завантаження та видалення лишаються окремими діями."
         filePath="src/components/ui/TaskManagement/AttachmentRow.jsx"
         component="AttachmentRow"
         fullWidth
@@ -158,6 +158,25 @@ export default function TaskElementsSection() {
           onDelete={() => {}}
           onDownload={() => {}}
         />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Масові дії із завданнями"
+        description="Плаваюча панель зʼявляється після вибору карток і тримає статус, відповідального та пріоритет в одному передбачуваному місці. На реальній дошці вона закріплена над нижнім краєм."
+        filePath="src/components/ui/TaskManagement/BulkActionBar.jsx"
+        component="BulkActionBar"
+        fullWidth
+      >
+        <div className="relative min-h-[88px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute">
+          <BulkActionBar
+            count={4}
+            statusOptions={[{ value: 'todo', label: 'До виконання', color: '#6b7280' }]}
+            memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}
+            priorityOptions={[{ value: 'medium', label: 'Середній' }]}
+            onApply={() => {}}
+            onClear={() => {}}
+          />
+        </div>
       </PreviewBlock>
 
       <PreviewBlock

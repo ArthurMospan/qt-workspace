@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, CheckSquare, Settings2, Activity } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, Globe, MoreVertical, Trash2, User, UserCheck, CheckSquare, Settings2, Activity } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -27,11 +27,14 @@ import {
   PageHeader,
   LoadingSpinner,
   ProjectSettingsForm,
+  Pill,
   useConfirm,
 } from '@/components/ui';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import TaskCounters from '@/components/ui/TaskManagement/TaskCounters';
 import ContextMenu from '@/components/ui/ContextMenu';
 import Alert from '@/components/ui/Feedback/Alert';
 import Card from '@/components/ui/Layout/Card';
@@ -53,7 +56,7 @@ import {
 } from '@/lib/utils/inviteEmails';
 
 // ── Project Card ─────────────────────────────────────────────────────────────
-const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading }) => {
+const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading, now }) => {
   const router = useRouter();
   const { currentUser, activeOrgId, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -61,21 +64,11 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const [menuOpen, setMenuOpen] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
+  const [mentionCount, setMentionCount] = useState(0);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
-
-  // The featured card is twice the size in both directions. A 32px avatar reads
-  // as a detail there and as the loudest thing on a small card, so the stack
-  // steps down with the card — avatar, placeholder and overlap together, or the
-  // fallback circles end up larger than the faces beside them.
-  const stackAvatar = isLarge ? 'md' : 'sm';
-  const stackChip = isLarge ? 30 : 24;
-  const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
+  const currentUserId = currentUser?.id || currentUser?.uid;
+  const isCurrentUserOnProject = Boolean(currentUserId && project.team?.includes(currentUserId));
 
   useEffect(() => {
     if (!project?.id || !activeOrgId || !currentUser) return;
@@ -89,8 +82,14 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
     let messagesList = [];
 
     const updateUnread = () => {
-      const count = messagesList.filter(m => (m.createdAt?.toMillis?.() || 0) > lastReadTime).length;
-      setUnreadCount(count);
+      const unread = messagesList.filter(message => (
+        message.senderId !== uid
+        && (message.createdAt?.toMillis?.() || 0) > lastReadTime
+      ));
+      setUnreadCount(unread.length);
+      setMentionCount(unread.filter(message => (
+        extractMentionedUserIds(message.text, members, message.senderId).includes(uid)
+      )).length);
     };
 
     const unsubRead = onSnapshot(readStateRef, (snap) => {
@@ -107,7 +106,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       unsubRead();
       unsubMsgs();
     };
-  }, [project.id, activeOrgId, currentUser]);
+  }, [project.id, activeOrgId, currentUser, members]);
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
@@ -133,32 +132,27 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         }}
         className={`ui-surface group relative flex flex-col justify-between cursor-pointer overflow-visible transition-all duration-300 ${menuOpen ? 'z-30' : 'hover:z-10'} ${
           isLarge 
-            ? 'md:col-span-2 md:row-span-2'
+            ? 'md:col-span-2'
             : ''
         }`}
       >
-        {/* Top row: avatars + kebab */}
+        {/* One clear project identity. Team membership used to be hidden in an
+            avatar pile; now the card explicitly says when the current person
+            belongs to this project. */}
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
-          <div className={`flex ${stackOverlap}`}>
-            {teamCount === 0 && (
-              <div data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
-                <Users size={isLarge ? 13 : 11} className="text-muted" />
-              </div>
-            )}
-            {(project.team || []).slice(0, 4).map(uid => {
-              const m = members.find(mbr => (mbr.id || mbr.uid) === uid);
-              return m ? (
-                <UserAvatar key={uid} user={m} size={stackAvatar} stacked />
-              ) : (
-                <div key={uid} data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
-                  <User size={isLarge ? 13 : 11} className="text-muted" />
-                </div>
-              );
-            })}
-            {teamCount > 4 && (
-              <div style={{ width: stackChip, height: stackChip }} className="rounded-full bg-[#e0e0e0] flex items-center justify-center text-[9px] font-bold text-muted border-2 border-white">
-                +{teamCount - 4}
-              </div>
+          <div className="flex min-w-0 items-center gap-[8px]">
+            <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-canvas text-ink">
+              <Folder size={15} />
+            </span>
+            <span
+              className="flex items-center gap-[5px] text-[10px] font-semibold text-muted"
+              title={project.visibility === 'shared' ? 'Спільний проєкт' : 'Внутрішній проєкт'}
+            >
+              {project.visibility === 'shared' ? <Globe size={11} /> : <Lock size={11} />}
+              {project.visibility === 'shared' ? 'Спільний' : 'Внутрішній'}
+            </span>
+            {isCurrentUserOnProject && (
+              <Pill tone="dark" size="md" icon={UserCheck}>Ви в команді</Pill>
             )}
           </div>
 
@@ -220,6 +214,9 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             {unreadCount > 0 && (
               <Counter value={unreadCount} size="md" className="shrink-0" />
             )}
+            {mentionCount > 0 && (
+              <TaskCounters mentions={mentionCount} />
+            )}
           </h2>
           {project.description && (
             <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
@@ -231,7 +228,16 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         </div>
 
         {/* Real-time stats and Dynamic content */}
-        <ProjectStatsSection isLarge={isLarge} members={members} issues={issues} now={now} currentUser={currentUser} orgLoading={orgLoading} />
+        <ProjectStatsSection
+          isLarge={isLarge}
+          members={members}
+          issues={issues}
+          now={now}
+          currentUser={currentUser}
+          orgLoading={orgLoading}
+          teamIds={project.team || []}
+          teamCount={teamCount}
+        />
       </div>
 
       {/* Modals */}
@@ -270,7 +276,7 @@ const ISSUE_ACTIVITY_EVENTS = {
   updated: 'Оновлено завдання',
 };
 
-function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
+function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, teamIds = [], teamCount = 0 }) {
   const { statuses } = useWorkflowConfig();
   // «в роботі» used to be `statuses.slice(1)` minus the terminal ones — a guess
   // that counted «До виконання» as work in progress and depended on a status's
@@ -279,12 +285,17 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 
   const stats = useMemo(() => {
     let inProgressCount = 0;
+    let assignedToCurrentUser = 0;
     let newestIssue = null;
     let newestActivity = null;
 
     for (const issue of issues) {
       if (inProgressIds.includes(issue.columnId || issue.status)) {
         inProgressCount++;
+      }
+      const currentUserId = currentUser?.id || currentUser?.uid;
+      if (currentUserId && issue.assigneeIds?.includes(currentUserId)) {
+        assignedToCurrentUser++;
       }
 
       // Only what the activity record says, never `updatedAt` — see
@@ -297,11 +308,6 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         newestIssue = issue;
       }
     }
-
-    const commentsCount = issues.reduce(
-      (sum, issue) => sum + (typeof issue.commentCount === 'number' ? issue.commentCount : 0),
-      0,
-    );
 
     let lastActionStr = null;
     if (newestIssue) {
@@ -362,7 +368,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     return {
       total: issues.length,
       inProgress: inProgressCount,
-      comments: commentsCount,
+      mine: assignedToCurrentUser,
       lastAction: lastActionStr
     };
   }, [currentUser, inProgressIds, issues, members, orgLoading]);
@@ -410,23 +416,39 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         </div>
       )}
       
-      <div className="pt-[14px] border-t border-[#f8f8f8] w-full">
-        {/* Shaded stats block with soft custom dividers */}
-        <div className="flex items-center justify-between bg-[#fafafa] rounded-[10px] py-[10px]">
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.total}</span>
-            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">завдань</span>
-          </div>
-          <div className="w-[1px] h-[16px] bg-line" />
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.inProgress}</span>
-            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">в роботі</span>
-          </div>
-          <div className="w-[1px] h-[16px] bg-line" />
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <span className="text-[14px] font-bold text-ink leading-none mb-1">{stats.comments}</span>
-            <span className="text-[9px] font-bold text-muted uppercase tracking-wider">повідомлень</span>
-          </div>
+      <div className="flex w-full items-center justify-between gap-[12px] border-t border-[#f3f3f3] pt-[12px]">
+        <div className="flex min-w-0 items-center gap-[6px]">
+          <Pill tone="neutral" size="lg" shape="badge" icon={CheckSquare} title="Усі завдання">
+            {stats.total}
+          </Pill>
+          <Pill tone="neutral" size="lg" shape="badge" icon={Activity} title="Завдання в роботі">
+            {stats.inProgress}
+          </Pill>
+          {stats.mine > 0 && (
+            <Pill color="#3730a3" size="lg" shape="badge" icon={UserCheck} title="Завдання, де ви відповідальний">
+              {stats.mine}
+            </Pill>
+          )}
+        </div>
+        <div className="flex -space-x-[7px] shrink-0" aria-label={`Учасників проєкту: ${teamCount}`}>
+          {teamCount === 0 && (
+            <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-white bg-canvas">
+              <Users size={11} className="text-muted" />
+            </span>
+          )}
+          {teamIds.slice(0, 3).map(uid => {
+            const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
+            return member
+              ? <UserAvatar key={uid} user={member} size="sm" stacked />
+              : (
+                <span key={uid} className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-white bg-canvas">
+                  <User size={10} className="text-muted" />
+                </span>
+              );
+          })}
+          {teamCount > 3 && (
+            <Pill tone="neutral" preset="avatar-counter">+{teamCount - 3}</Pill>
+          )}
         </div>
       </div>
     </div>
@@ -942,6 +964,7 @@ export default function WorkspacePage() {
                     issues={issuesByProject[p.id] || []}
                     isLarge={index === 0 && selectedMember === 'all' && dateFilter === 'all'}
                     orgLoading={orgLoading}
+                    now={now}
                   />
                 ))}
               </div>
@@ -972,13 +995,13 @@ export default function WorkspacePage() {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');
           }
-          await createIssueViaApi({
+          const created = await createIssueViaApi({
             organizationId: activeOrgId,
             projectId: formData.projectId,
             data: {
               title: formData.title,
               description: formData.description || '',
-              status: formData.status || 'todo',
+              status: formData.status || 'backlog',
               priority: formData.priority || 'medium',
               type: formData.type || 'task',
               assigneeIds: formData.assignees || [],
@@ -988,6 +1011,7 @@ export default function WorkspacePage() {
               sprintId: formData.sprintId || null,
             },
           });
+          return { ...created, projectId: formData.projectId };
         }}
         projects={projects}
         stages={[]}

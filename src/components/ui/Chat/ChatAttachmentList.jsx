@@ -175,7 +175,7 @@ export function ChatAttachmentList({
 }) {
   if (attachments.length === 0) return null;
   return (
-    <div className={`mt-2 grid min-w-[210px] max-w-[560px] grid-cols-1 gap-1.5 sm:grid-cols-2 ${className}`}>
+    <div className={`mt-2 grid min-w-0 w-full max-w-[560px] grid-cols-1 gap-1.5 sm:min-w-[210px] sm:grid-cols-2 ${className}`}>
       {attachments.map((attachment, index) => (
         <AttachmentTile
           key={`${attachment.chatAttachmentKey || attachment.name || 'file'}-${index}`}

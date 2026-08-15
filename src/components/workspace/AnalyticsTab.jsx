@@ -246,7 +246,7 @@ export default function AnalyticsTab({
         )}
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
             <SectionTitle>Завдання по статусах</SectionTitle>
             {stats.byStatus.length === 0 ? (

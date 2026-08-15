@@ -1095,6 +1095,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
         {/* LEFT: invoice form & task selection — біла картка на сірій панелі аналітики */}
         <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface lg:col-span-2 flex flex-col gap-4 min-w-0">
           <Tabs
+            className="w-full overflow-x-auto hide-scrollbar"
             tabs={[
               { id: 'details', label: 'Деталі' },
               { id: 'issues', label: `Позиції (${checkedCount}/${billingItems.length})` },
@@ -1191,7 +1192,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                   composition="billing-selection"
                 />
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
                   <Select
                     filterRole="status"
                     value={filterStatus}
@@ -1265,8 +1266,8 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 <div className="py-12 text-center text-[13px] text-faint font-semibold">Немає збережених рахунків</div>
               ) : (
                 savedInvoices.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between p-4 border border-line rounded-2xl bg-[#fafafa]">
-                    <div>
+                  <div key={inv.id} className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-line bg-[#fafafa] p-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[13px] font-bold text-ink">{inv.number}</p>
                         {inv.status === 'void' && (
@@ -1277,7 +1278,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                         {inv.date} · {inv.items?.length || 0} {plural(inv.items?.length || 0, ['позиція', 'позиції', 'позицій'])}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <Button
                         style="ghost"
                         size="icon-sm"
@@ -1313,7 +1314,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             Рахунок · {project?.name || 'Проєкт'}
           </h3>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <Field label="Валюта">
               <Select
                 value={currency}

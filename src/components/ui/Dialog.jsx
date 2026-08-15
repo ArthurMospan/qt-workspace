@@ -86,8 +86,8 @@ export default function Dialog({
       ? 'ui-type-eyebrow'
       : 'ui-type-section-title';
   const bodyPaddingClass = {
-    default: 'px-6 py-5',
-    spacious: 'p-6',
+    default: 'px-5 py-5 sm:px-6',
+    spacious: 'p-5 sm:p-6',
     responsive: 'p-5 sm:p-6',
     invite: 'px-5 py-5 sm:px-7',
     horizontal: 'px-6 py-0',
@@ -136,7 +136,7 @@ export default function Dialog({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-line shrink-0">
+          <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-line shrink-0 sm:px-6">
             <div className="min-w-0">
               <h2 id={titleId} className={`${titleClass} text-ink`}>{title}</h2>
               {description ? (
@@ -159,7 +159,7 @@ export default function Dialog({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-line flex justify-end gap-3 bg-canvas shrink-0">
+          <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-line bg-canvas px-5 py-4 sm:px-6">
             {footer}
           </div>
         )}

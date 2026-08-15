@@ -24,6 +24,7 @@ import { createIssueViaApi, notifyIssueAssigned } from '@/lib/services/issues';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import {
   availableStatusesInCategory,
+  resolveCategoryStatusId,
   statusCategoryLabel,
   statusCategoryOf,
 } from '@/lib/utils/statusCategories.mjs';
@@ -69,6 +70,7 @@ export default function MyTasksPage() {
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
+    updateTask,
   } = useAllMyTasks(uid);
   const {
     sprints,
@@ -97,8 +99,8 @@ export default function MyTasksPage() {
   // A member profile can ask for the composer with that member already on it.
   const requestedAssignee = searchParams.get('assignee') || '';
   const composerAssignees = useMemo(
-    () => (requestedAssignee ? [requestedAssignee] : null),
-    [requestedAssignee],
+    () => (requestedAssignee ? [requestedAssignee] : (uid ? [uid] : [])),
+    [requestedAssignee, uid],
   );
   const composerOpen = showCreateTaskModal || composerRequestedByUrl;
   const closeComposer = () => {
@@ -198,6 +200,30 @@ export default function MyTasksPage() {
     const saved = await commitMove(move, statusId);
     if (saved) setPendingStatusMove(null);
     else setPendingStatusMove(current => current ? { ...current, busy: false } : current);
+  };
+
+  const handleBulkUpdate = async (action, value, selectedIssues) => {
+    const results = await Promise.allSettled(selectedIssues.map(issue => {
+      if (action === 'status') {
+        const issueProject = (projects || []).find(project => project.id === issue.projectId);
+        const statusId = resolveCategoryStatusId(value, statuses, {
+          currentStatusId: issue.columnId || issue.status,
+          hiddenStatusIds: issueProject?.hiddenColumns || [],
+        });
+        if (!statusId) throw new Error(`У проєкті «${issueProject?.name || issue.projectId}» немає такого статусу`);
+        return updateTask(issue.id, { status: statusId, columnId: statusId });
+      }
+      if (action === 'assignee') {
+        return updateTask(issue.id, {
+          assigneeIds: value === '__unassigned__' ? [] : [value],
+        });
+      }
+      return updateTask(issue.id, { priority: value });
+    }));
+    const failed = results.filter(result => result.status === 'rejected');
+    const saved = results.length - failed.length;
+    if (saved > 0) showToast(`Оновлено завдань: ${saved}`);
+    if (failed.length > 0) showToast(`Не вдалося оновити завдань: ${failed.length}`, 'error');
   };
 
   // Group sprints by status
@@ -344,6 +370,7 @@ export default function MyTasksPage() {
                 setShowCreateTaskModal(true);
               }}
               onMoveIssue={handleMoveIssue}
+              onBulkUpdate={handleBulkUpdate}
               issueLinks={issueLinks}
             />
           </div>
@@ -379,7 +406,7 @@ export default function MyTasksPage() {
             data: {
               title: formData.title,
               description: formData.description || '',
-              status: formData.status || 'todo',
+              status: formData.status || 'backlog',
               priority: formData.priority || 'medium',
               type: formData.type || 'task',
               assigneeIds: formData.assignees || [],
@@ -401,6 +428,7 @@ export default function MyTasksPage() {
           });
 
           showToast('Задачу створено ✓');
+          return { ...created, projectId: formData.projectId };
         }}
         projects={projects}
         stages={[]}

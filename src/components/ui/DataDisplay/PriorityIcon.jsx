@@ -11,8 +11,8 @@ const RING_STROKE_WIDTH = 1.4;
 
 /**
  * Canonical priority mark, using the exact 16px geometry from the supplied
- * SVGs: two concentric rings and a centre circle. Low fades both rings, medium
- * activates the inner ring, and high activates both. Critical uses the supplied
+ * SVGs: two concentric rings and a centre circle. Inactive rings are neutral
+ * grey, medium activates the inner ring, and high activates both. Critical uses the supplied
  * filled ring with an exclamation mark; no priority remains a neutral dashed
  * ring. Custom levels interpolate ring opacity by their configured position.
  *
@@ -69,8 +69,8 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
       title={title}
       className={`${sizeClass} shrink-0 ${className}`.trim()}
     >
-      <circle cx="8" cy="8" r="5.5" fill={config.color} fillOpacity="0.2" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity={config.outerOpacity} />
-      <circle cx="8" cy="8" r="3.5" fill="none" stroke={config.color} strokeWidth={RING_STROKE_WIDTH} strokeOpacity={config.innerOpacity} />
+      <circle cx="8" cy="8" r="5.5" fill="none" stroke={config.outerColor || config.color} strokeWidth={RING_STROKE_WIDTH} />
+      <circle cx="8" cy="8" r="3.5" fill="none" stroke={config.innerColor || config.color} strokeWidth={RING_STROKE_WIDTH} />
       <circle cx="8" cy="8" r="0.7" fill={config.color} />
     </svg>
   );

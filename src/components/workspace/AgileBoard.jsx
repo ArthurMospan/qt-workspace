@@ -2,14 +2,15 @@
 // src/components/workspace/AgileBoard.jsx — 7-column kanban with DnD and Swimlanes
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import IssueCard from './IssueCard';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, CheckSquare } from 'lucide-react';
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
+import { BulkActionBar, ContextMenu } from '@/components/ui';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
-import { NO_PRIORITY, ensureSystemPriorities } from '@/lib/utils/priorities.mjs';
+import { NO_PRIORITY, ensureSystemPriorities, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { COLUMN_RENDER_PAGE_SIZE } from '@/lib/utils/queryPagination.mjs';
 import {
   createUkrainianDndAnnouncements,
@@ -225,6 +226,7 @@ export default function AgileBoard({
   onAddIssue,
   onRequestAddIssue,
   onMoveIssue,
+  onBulkUpdate,
   swimlane = 'none',
   groupBy = 'status',
   hiddenColumns = [],
@@ -307,6 +309,8 @@ export default function AgileBoard({
     .sort(compareIssueCards);
 
   const [activeAddColId, setActiveAddColId] = useState(null);
+  const [selectedIssueIds, setSelectedIssueIds] = useState(() => new Set());
+  const [selectionAnchorId, setSelectionAnchorId] = useState('');
   // Large cross-project boards stay responsive by rendering a bounded first
   // page per column. The complete ordered column remains available to the drop
   // planner, so loading is only a rendering concern and never changes where a
@@ -366,7 +370,7 @@ export default function AgileBoard({
   }, []);
 
   const onDragEnd = (result) => {
-    if (isArchived) return;
+    if (isArchived || activeSelectedIssueIds.size > 0) return;
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -457,6 +461,104 @@ export default function AgileBoard({
     return [{ id: 'all', title: null, issues: boardIssues }];
   })();
 
+  // Column-major order mirrors how the eye scans this board. De-duplicating is
+  // important for assignee swimlanes, where one task can legitimately appear
+  // in more than one lane.
+  const selectionOrder = (() => {
+    const seen = new Set();
+    return columns.flatMap(column => swimlanes.flatMap(lane => (
+      columnCards(lane.issues, column)
+    ))).filter(issue => {
+      if (seen.has(issue.id)) return false;
+      seen.add(issue.id);
+      return true;
+    }).map(issue => issue.id);
+  })();
+
+  // A filtered board can stop rendering a selected task. Keep the stored set
+  // untouched and derive the live intersection instead of synchronously
+  // rewriting state from an effect (which would add a second render).
+  const availableIssueIds = new Set(boardIssues.map(issue => issue.id));
+  const activeSelectedIssueIds = new Set(
+    [...selectedIssueIds].filter(issueId => availableIssueIds.has(issueId)),
+  );
+
+  useEffect(() => {
+    if (activeSelectedIssueIds.size === 0) return undefined;
+    const clearOnEscape = event => {
+      if (event.key !== 'Escape') return;
+      setSelectedIssueIds(new Set());
+      setSelectionAnchorId('');
+    };
+    window.addEventListener('keydown', clearOnEscape);
+    return () => window.removeEventListener('keydown', clearOnEscape);
+  }, [activeSelectedIssueIds.size]);
+
+  const toggleIssueSelection = (issueId, { shiftKey = false } = {}) => {
+    const anchorIndex = selectionOrder.indexOf(selectionAnchorId);
+    const issueIndex = selectionOrder.indexOf(issueId);
+    setSelectedIssueIds(current => {
+      const next = new Set(current);
+      if (shiftKey && anchorIndex >= 0 && issueIndex >= 0) {
+        const start = Math.min(anchorIndex, issueIndex);
+        const end = Math.max(anchorIndex, issueIndex);
+        selectionOrder.slice(start, end + 1).forEach(id => next.add(id));
+      } else if (next.has(issueId)) {
+        next.delete(issueId);
+      } else {
+        next.add(issueId);
+      }
+      return next;
+    });
+    if (!shiftKey || anchorIndex < 0) setSelectionAnchorId(issueId);
+  };
+
+  const toggleColumnSelection = column => {
+    const ids = columnCards(boardIssues, column).map(issue => issue.id);
+    setSelectedIssueIds(current => {
+      const next = new Set(current);
+      const allSelected = ids.length > 0 && ids.every(id => next.has(id));
+      ids.forEach(id => (allSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+    if (ids.length > 0) setSelectionAnchorId(ids[0]);
+  };
+
+  const clearSelection = () => {
+    setSelectedIssueIds(new Set());
+    setSelectionAnchorId('');
+  };
+
+  const selectedIssues = boardIssues.filter(issue => activeSelectedIssueIds.has(issue.id));
+  const applyBulkAction = async (action, value) => {
+    await onBulkUpdate?.(action, value, selectedIssues);
+  };
+
+  const columnActionMenu = (column, columnIssues) => {
+    if (isArchived || column.isHiddenContainer || !onBulkUpdate) return null;
+    const allSelected = columnIssues.length > 0
+      && columnIssues.every(issue => activeSelectedIssueIds.has(issue.id));
+    return (
+      <ContextMenu
+        trigger={(
+          <Button
+            style="ghost"
+            size="icon-xs"
+            icon={MoreHorizontal}
+            className="hover:!bg-white"
+            aria-label={`Дії з колонкою ${column.label}`}
+            title="Дії з колонкою"
+          />
+        )}
+        items={[{
+          label: allSelected ? 'Зняти вибір у колонці' : 'Вибрати всі у колонці',
+          icon: CheckSquare,
+          onClick: () => toggleColumnSelection(column),
+        }]}
+      />
+    );
+  };
+
   if (!mounted) {
     return null; // Avoid SSR hydration mismatches and React 18 strict mode DnD bug
   }
@@ -546,6 +648,7 @@ export default function AgileBoard({
                         title="Додати завдання"
                       />
                     )}
+                    {columnActionMenu(col, colTotalIssues)}
                   </div>
                 </div>
               );
@@ -652,6 +755,7 @@ export default function AgileBoard({
                                 title="Додати завдання"
                               />
                             )}
+                            {columnActionMenu(col, colIssues)}
                           </div>
                         </div>
                       )}
@@ -689,6 +793,9 @@ export default function AgileBoard({
                             isTimerActive={activeTimerIssueId === issue.id}
                             issueLinks={issueLinks}
                             isArchived={isArchived}
+                            selected={activeSelectedIssueIds.has(issue.id)}
+                            selectionActive={activeSelectedIssueIds.size > 0}
+                            onSelect={onBulkUpdate ? toggleIssueSelection : undefined}
                             showStatusName={byCategory && (
                               col.isHiddenContainer || multiStatusColumnIds.has(col.id)
                             )}
@@ -701,7 +808,7 @@ export default function AgileBoard({
                             <VirtualDroppableColumn
                               dropId={dropId}
                               issues={colIssues}
-                              isDropDisabled={col.isHiddenContainer || isArchived}
+                              isDropDisabled={col.isHiddenContainer || isArchived || activeSelectedIssueIds.size > 0}
                               className="flex-1 p-[8px] transition-colors hide-scrollbar rounded-b-[16px] overflow-y-auto"
                               renderCard={renderIssueCard}
                             />
@@ -709,7 +816,7 @@ export default function AgileBoard({
                         }
 
                         return (
-                          <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived}>
+                          <Droppable droppableId={dropId} isDropDisabled={col.isHiddenContainer || isArchived || activeSelectedIssueIds.size > 0}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
@@ -749,6 +856,25 @@ export default function AgileBoard({
             </div>
           ))}
         </div>
+        <BulkActionBar
+          count={onBulkUpdate ? activeSelectedIssueIds.size : 0}
+          statusOptions={columns.filter(column => !column.isHiddenContainer).map(column => ({
+            value: column.id,
+            label: column.label,
+            color: column.color,
+          }))}
+          memberOptions={[
+            { value: '__unassigned__', label: 'Без відповідального' },
+            ...members.map(member => ({
+              value: member.id || member.uid,
+              label: member.name || member.email || 'Учасник',
+              user: member,
+            })),
+          ]}
+          priorityOptions={prioritySelectOptions(priorities)}
+          onApply={applyBulkAction}
+          onClear={clearSelection}
+        />
       </div>
     </DragDropContext>
   );

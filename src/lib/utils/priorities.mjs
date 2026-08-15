@@ -24,6 +24,8 @@ export const NO_PRIORITY = Object.freeze({
   isNoPriority: true,
 });
 
+export const INACTIVE_PRIORITY_COLOR = '#cfcfcf';
+
 const SYSTEM_PRIORITY_SET = new Set(SYSTEM_PRIORITY_IDS);
 const DEFAULT_BY_ID = new Map(DEFAULT_SYSTEM_PRIORITIES.map(item => [item.id, item]));
 const SYSTEM_RING_OPACITY = Object.freeze({
@@ -130,6 +132,8 @@ export function priorityPresentation(priority, priorities = []) {
       critical: false,
       outerOpacity: 0.2,
       innerOpacity: 0.2,
+      outerColor: INACTIVE_PRIORITY_COLOR,
+      innerColor: INACTIVE_PRIORITY_COLOR,
     };
   }
 
@@ -143,6 +147,13 @@ export function priorityPresentation(priority, priorities = []) {
     isNoPriority: false,
     outerOpacity: rings.outer,
     innerOpacity: rings.inner,
+    // Priority is a small two-step meter. An unfilled step is neutral grey,
+    // never a translucent copy of the active colour: medium therefore reads
+    // as one yellow ring plus one grey ring instead of a vague pale-yellow
+    // target. Custom ranks keep using their configured position to decide
+    // which steps are active.
+    outerColor: rings.outer >= 0.7 ? (source?.color || fallback?.color || '#9a9a9a') : INACTIVE_PRIORITY_COLOR,
+    innerColor: rings.inner >= 0.7 ? (source?.color || fallback?.color || '#9a9a9a') : INACTIVE_PRIORITY_COLOR,
   };
 }
 

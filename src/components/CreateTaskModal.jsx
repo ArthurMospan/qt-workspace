@@ -1,6 +1,7 @@
 'use client';
 // src/components/CreateTaskModal.jsx — Light theme modal
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { Check, Play, Tag as TagIcon } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
@@ -23,7 +24,9 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import Alert from '@/components/ui/Feedback/Alert';
+import ToggleSwitch from '@/components/ui/Forms/ToggleSwitch';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import {
   MAX_ISSUE_ESTIMATE_HOURS,
   clampIssueEstimateHours,
@@ -37,13 +40,14 @@ import {
 // status in every project, so the status can only be resolved once a project is
 // chosen — and again if it is changed.
 export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null }) {
+  const router = useRouter();
   const { currentUser, activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
 
   const [form, setForm] = useState({
-    title: '', description: '', status: 'todo',
+    title: '', description: '', status: 'backlog',
     priority: 'medium', type: 'task',
     assignees: [], labelIds: [], dueDate: '',
     estimateHours: '',
@@ -57,6 +61,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   // same way the project dialog does it. The submit button used to be disabled
   // instead, which says "you cannot do this" without ever saying why.
   const [fieldErrors, setFieldErrors] = useState({});
+  const [createAnother, setCreateAnother] = useState(false);
+  const titleInputRef = useRef(null);
 
   const selectedProject = projects?.find(p => p.id === form.projectId) || projectContext;
   const activeHiddenCols = selectedProject?.hiddenColumns;
@@ -85,8 +91,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   const defaultStatusId = () => (
     initialStatus
     || categoryStatusId
-    || (visibleStatuses.some(s => s.id === 'todo') ? 'todo' : visibleStatuses[0]?.id)
-    || 'todo'
+    || resolveCategoryStatusId('backlog', statuses, {
+      hiddenStatusIds: activeHiddenCols || [],
+    })
+    || visibleStatuses[0]?.id
+    || 'backlog'
   );
 
   const initialForm = () => ({
@@ -95,7 +104,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     status: defaultStatusId(),
     priority: 'medium',
     type: 'task',
-    assignees: initialAssignees?.length ? initialAssignees : [],
+    assignees: initialAssignees?.length
+      ? initialAssignees
+      : [currentUser?.id || currentUser?.uid].filter(Boolean),
     labelIds: [],
     dueDate: '',
     estimateHours: '',
@@ -109,6 +120,26 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     setError('');
     setFieldErrors({});
     setDraftTouched(false);
+    setCreateAnother(false);
+  };
+
+  const resetForAnother = () => {
+    setMode('task');
+    // Keep the routing/context choices that make a run of similar tasks fast,
+    // but clear the content that would accidentally duplicate real work.
+    setForm(current => ({
+      ...initialForm(),
+      projectId: current.projectId,
+      status: current.status,
+      priority: current.priority,
+      type: current.type,
+      assignees: current.assignees,
+      sprintId: current.sprintId,
+    }));
+    setError('');
+    setFieldErrors({});
+    setDraftTouched(false);
+    requestAnimationFrame(() => titleInputRef.current?.focus());
   };
 
   const closeAndReset = () => {
@@ -210,17 +241,29 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     setLoading(true);
     setError('');
     try {
-      await onSubmit({
+      const submitted = {
         ...form,
         createdBy: currentUser?.id || currentUser?.uid,
         dueDate: form.dueDate
           ? fromDateInput(form.dueDate, { endOfDay: true, timeZone })
           : null,
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
-        sprintId: form.sprintId || null
-      });
+        sprintId: form.sprintId || null,
+      };
+      const created = await onSubmit(submitted);
+      if (createAnother) {
+        resetForAnother();
+        return;
+      }
+
+      const createdProjectId = created?.projectId || submitted.projectId || projectContext?.id;
+      const createdProject = projects?.find(project => project.id === createdProjectId)
+        || (projectContext?.id === createdProjectId ? projectContext : createdProjectId);
       resetDraft();
       onClose();
+      if (created?.id && createdProjectId) {
+        router.push(issuePath(created, createdProject));
+      }
     } catch (err) {
       console.error('[CreateTask]', err);
       setError(userFacingErrorMessage(err, 'Не вдалося створити завдання'));
@@ -240,6 +283,13 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       closeConfirmation="Закрити форму й втратити незбережені зміни?"
       footer={mode === 'task' ? (
         <>
+          <ToggleSwitch
+            checked={createAnother}
+            onChange={setCreateAnother}
+            size="sm"
+            label="Створити ще одне"
+            className="mr-auto self-center"
+          />
           <Button style="secondary" size="md" onClick={closeAndReset} type="button">
             Скасувати
           </Button>
@@ -288,6 +338,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           {/* Title */}
           <FormGroup label="Назва" required error={fieldErrors.title} className="lg:col-span-2">
             <Input
+              ref={titleInputRef}
               autoFocus
               value={form.title}
               onChange={e => set('title', e.target.value)}
