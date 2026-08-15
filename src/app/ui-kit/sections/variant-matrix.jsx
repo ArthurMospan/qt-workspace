@@ -148,7 +148,7 @@ function VariantCell({ component, prop, value, count, previewed }) {
       : 'border-[#fde68a] bg-white';
 
   return (
-    <div className={`flex min-w-0 flex-col gap-[4px] rounded-[10px] border p-[8px] ${tone}`}>
+    <div className={`flex min-w-0 flex-col gap-[4px] overflow-hidden rounded-[10px] border p-[8px] ${tone}`}>
       <div
         className={`relative isolate flex min-h-[32px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
           NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
@@ -159,7 +159,7 @@ function VariantCell({ component, prop, value, count, previewed }) {
           : <span className="px-2 text-center text-[10px] leading-relaxed text-faint">{VARIANT_ELSEWHERE[component]}</span>}
       </div>
       <div className="flex min-w-0 items-baseline gap-1.5">
-        <span className="min-w-0 break-all font-mono text-[10px] font-bold leading-tight text-ink">{value}</span>
+        <span title={value} className="min-w-0 truncate font-mono text-[10px] font-bold text-ink">{value}</span>
         <span className={`ml-auto shrink-0 rounded-full px-[6px] text-[9px] font-bold ${
           count === 0 ? 'bg-canvas text-faint' : 'bg-[#ecfdf5] text-[#047857]'
         }`}>
