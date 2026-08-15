@@ -394,13 +394,65 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     router.replace(`${canonicalIssuePath}${query ? `?${query}` : ''}`, { scroll: false });
   }, [canonicalIssuePath, isModal, issue, issueLocator, project, router, searchParams]);
 
+  // Minutes a stopped timer produced and nobody has written down yet. They live
+  // in the store (and localStorage), not in the URL: the canonical-key redirect
+  // above remounts this component a beat after the task loads, and a `logTime`
+  // query param consumed into local state did not survive that — the dialog
+  // vanished a second after it appeared and the tracked time went with it.
+  const pendingTimeLog = useWorkspaceStore(s => s.pendingTimeLog);
+  const clearPendingTimeLog = useWorkspaceStore(s => s.clearPendingTimeLog);
+  const pendingForThisIssue = Boolean(
+    issueId
+    && pendingTimeLog
+    && pendingTimeLog.entityType !== 'calendar_event'
+    && pendingTimeLog.minutes > 0
+    && pendingTimeLog.issueId === issueId,
+  );
+
+  useEffect(() => {
+    if (!pendingForThisIssue) return;
+    const minutes = pendingTimeLog.minutes;
+    queueMicrotask(() => setLogForm(current => (current || {
+      minutes,
+      desc: '',
+      fromTimer: true,
+    })));
+  }, [pendingForThisIssue, pendingTimeLog?.minutes, pendingTimeLog?.stoppedAt]);
+
+  // Legacy `?logTime=` links (bookmarks, the older mobile nav) still work; the
+  // param is only stripped once its minutes are safely in the store.
   useEffect(() => {
     const logTimeParam = searchParams.get('logTime');
-    if (logTimeParam) {
-      queueMicrotask(() => setLogForm({ minutes: parseInt(logTimeParam), desc: '' }));
-      router.replace(canonicalIssuePath || pathname, { scroll: false });
+    if (!logTimeParam) return;
+    const minutes = Math.round(Number(logTimeParam));
+    if (!Number.isFinite(minutes) || minutes <= 0) return;
+    if (!pendingForThisIssue) {
+      queueMicrotask(() => setLogForm(current => current || { minutes, desc: '', fromTimer: true }));
     }
-  }, [canonicalIssuePath, searchParams, pathname, router]);
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete('logTime');
+    const nextQuery = nextSearchParams.toString();
+    const nextPath = canonicalIssuePath || pathname;
+    router.replace(nextQuery ? `${nextPath}?${nextQuery}` : nextPath, { scroll: false });
+  }, [canonicalIssuePath, pendingForThisIssue, searchParams, pathname, router]);
+
+  // Closing the dialog on time that is not saved anywhere else has to be a
+  // decision, not an accident — a stray Escape used to be indistinguishable
+  // from throwing the hours away.
+  const closeLogForm = async () => {
+    if (logForm?.fromTimer && logForm.minutes > 0) {
+      const discard = await confirmDialog({
+        title: 'Не зберігати відстежений час?',
+        message: `${logForm.minutes} хв з таймера ще не списано. Якщо закрити зараз, цей час буде втрачено.`,
+        confirmText: 'Не зберігати',
+        cancelText: 'Повернутись',
+        danger: true,
+      });
+      if (!discard) return;
+      clearPendingTimeLog();
+    }
+    setLogForm(null);
+  };
 
   const copyIssueLink = () => copyIssueUrl(canonicalIssuePath, showToast);
 
@@ -711,7 +763,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleTimerToggle = async () => {
     if (isTimerMine) {
       const result = stopTimer();
-      if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '' });
+      if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '', fromTimer: true });
     } else {
       if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
       startTimer(issueId, projectId, { issueKey: issue.issueKey });
@@ -762,6 +814,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     } else if (logForm.minutes === 0 && logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
       showToast('Оцінку часу оновлено ✓');
     }
+    // Saved — the stopped timer's minutes now live in a time log.
+    if (logForm.fromTimer) clearPendingTimeLog();
     setLogForm(null);
   };
 
@@ -1415,7 +1469,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             {logForm && (
               <Dialog
                 isOpen
-                onClose={() => setLogForm(null)}
+                onClose={closeLogForm}
                 title="Трекінг часу"
                 titleContext="dialog"
                 size="md"
@@ -1491,7 +1545,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   )}
                   
                   <div className="flex gap-3 justify-end mt-2">
-                    <Button style="secondary" size="md" onClick={() => setLogForm(null)}>Скасувати</Button>
+                    <Button style="secondary" size="md" onClick={closeLogForm}>Скасувати</Button>
                     <Button style="primary" size="md" onClick={handleLogTime}>{logForm.id ? 'Зберегти зміни' : 'Зберегти'}</Button>
                   </div>
 

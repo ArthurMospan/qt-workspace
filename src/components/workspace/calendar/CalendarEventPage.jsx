@@ -421,14 +421,34 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     : null;
   const quickForm = quickState.eventKey === eventFormKey ? quickState.form : eventForm;
   const logTimeParam = searchParams.get('logTime');
+  // Minutes from a timer stopped elsewhere (the sidebar capsule, the command
+  // palette) are handed over through the store, which survives the reload or
+  // remount that used to swallow a `logTime` query param before the user had
+  // confirmed them. See `stopTimer` in the workspace store.
+  const pendingTimeLog = useWorkspaceStore(state => state.pendingTimeLog);
+  const clearPendingTimeLog = useWorkspaceStore(state => state.clearPendingTimeLog);
+  const pendingMinutesForThisEvent = (
+    pendingTimeLog?.entityType === 'calendar_event'
+    && pendingTimeLog.issueId === timerKey
+    && pendingTimeLog.minutes > 0
+  ) ? pendingTimeLog.minutes : 0;
+
+  useEffect(() => {
+    if (!canTrackTime || !pendingMinutesForThisEvent) return;
+    queueMicrotask(() => {
+      setTimerMinutes(current => current || pendingMinutesForThisEvent);
+      setTimePanelOpen(true);
+      setActionError('');
+    });
+  }, [canTrackTime, pendingMinutesForThisEvent]);
 
   useEffect(() => {
     if (!event || !logTimeParam) return;
 
     const minutes = Math.round(Number(logTimeParam));
-    if (canTrackTime && Number.isFinite(minutes) && minutes > 0) {
+    if (canTrackTime && !pendingMinutesForThisEvent && Number.isFinite(minutes) && minutes > 0) {
       queueMicrotask(() => {
-        setTimerMinutes(minutes);
+        setTimerMinutes(current => current || minutes);
         setTimePanelOpen(true);
         setActionError('');
       });
@@ -438,7 +458,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     nextSearchParams.delete('logTime');
     const nextQuery = nextSearchParams.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }, [canTrackTime, event, logTimeParam, pathname, router, searchParams]);
+  }, [canTrackTime, event, logTimeParam, pathname, pendingMinutesForThisEvent, router, searchParams]);
 
   const projectOptions = useMemo(() => [
     { value: '', label: 'Без проєкту' },
@@ -678,6 +698,8 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
         showToast('Час події додано в аналітику', 'success');
       }
       setTimerMinutes(0);
+      // Written down — the stopped timer no longer owes the user anything.
+      if (pendingMinutesForThisEvent) clearPendingTimeLog();
       return true;
     } catch (timeError) {
       setActionError(timeError.message || 'Не вдалося зберегти час');
@@ -1413,6 +1435,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
             setTimePanelOpen(false);
             setTimerMinutes(0);
             setActionError('');
+            // Closing the panel is the decision not to log those minutes;
+            // without this the pending log would reopen it on every visit.
+            if (pendingMinutesForThisEvent) clearPendingTimeLog();
           }}
           onSave={handleSaveTime}
           onDelete={handleDeleteTime}

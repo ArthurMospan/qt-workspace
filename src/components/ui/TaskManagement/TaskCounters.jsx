@@ -24,6 +24,10 @@ const SIZES = {
  * kind of fact — how many of a thing there are — and only its ink is different,
  * because being named is the one of the three addressed to you personally.
  *
+ * It is also the last of the three. Sitting between the files and the messages
+ * it read as one more piece of bookkeeping; at the end of the row, where the
+ * eye stops, it reads as the thing that is addressed to you.
+ *
  * @param {number} props.attachments Files on the task.
  * @param {number} props.mentions Unread messages naming the current user.
  * @param {number} props.messages Messages in the task chat.
@@ -50,12 +54,6 @@ export default function TaskCounters({
           <span>{attachments}</span>
         </span>
       )}
-      {mentions > 0 && (
-        <span className="flex items-center gap-[4px] text-ink" title={`Вас згадали: ${mentions}`}>
-          <AtSign size={scale.icon} strokeWidth={2.4} />
-          <span>{mentions}</span>
-        </span>
-      )}
       {messages > 0 && (
         <span className="flex items-center gap-[4px] text-muted" title={`${messages} ${plural(messages, ['повідомлення', 'повідомлення', 'повідомлень'])} в чаті`}>
           <ChatIcon size={scale.icon + 1} />
@@ -65,6 +63,12 @@ export default function TaskCounters({
       {unread && (
         <span role="status" aria-label="Є нове в задачі" title="Є нове в задачі">
           <Counter variant="dot" size="sm" status="info" />
+        </span>
+      )}
+      {mentions > 0 && (
+        <span className="flex items-center gap-[4px] text-ink" title={`Вас згадали: ${mentions}`}>
+          <AtSign size={scale.icon} strokeWidth={2.4} />
+          <span>{mentions}</span>
         </span>
       )}
     </div>

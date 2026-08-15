@@ -134,9 +134,10 @@ export default function MobileNav() {
 
   const handleStopTimer = e => {
     e.stopPropagation();
+    // The minutes ride in the store, not in the URL — see `stopTimer`.
     const result = stopTimer();
     setMoreOpen(false);
-    const targetHref = timerTargetHref(result, { minutes: result?.minutes });
+    const targetHref = timerTargetHref(result);
     if (targetHref) router.push(targetHref);
   };
 

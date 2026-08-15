@@ -15,8 +15,16 @@ function formatElapsed(seconds) {
 // elapsed time is always recomputed from `startedAt`, which keeps a restored
 // timer accurate even after hours of downtime and immune to clock throttling.
 const TIMER_STORAGE_KEY = 'qt_active_timer';
+// Stopping the timer is not the same thing as writing the time down. Between
+// those two moments the minutes exist nowhere else, and every way of leaving
+// the page — a canonical-URL redirect, a reload, a mistaken click — used to
+// destroy them silently. They are persisted the instant the timer stops and
+// only cleared once the user has saved or explicitly discarded them.
+const PENDING_LOG_STORAGE_KEY = 'qt_pending_time_log';
 // A timer left running overnight is a forgotten timer, not 14 billable hours.
 const MAX_TIMER_MS = 12 * 60 * 60 * 1000;
+// An unsaved slip is worth keeping across a reload, not across a fortnight.
+const MAX_PENDING_LOG_MS = 7 * 24 * 60 * 60 * 1000;
 
 function readStoredTimer() {
   if (typeof window === 'undefined') return null;
@@ -42,6 +50,30 @@ function writeStoredTimer(timer) {
   } catch { /* private mode / quota — the in-memory timer still works */ }
 }
 
+function readStoredPendingLog() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(PENDING_LOG_STORAGE_KEY);
+    if (!raw) return null;
+    const stored = JSON.parse(raw);
+    const minutes = Number(stored?.minutes);
+    const stoppedAt = Number(stored?.stoppedAt);
+    if (!stored?.issueId || !Number.isFinite(minutes) || minutes <= 0) return null;
+    if (!Number.isFinite(stoppedAt) || Date.now() - stoppedAt > MAX_PENDING_LOG_MS) return null;
+    return { ...stored, minutes: Math.round(minutes), stoppedAt };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPendingLog(pending) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (pending) window.localStorage.setItem(PENDING_LOG_STORAGE_KEY, JSON.stringify(pending));
+    else window.localStorage.removeItem(PENDING_LOG_STORAGE_KEY);
+  } catch { /* private mode / quota — the in-memory pending log still works */ }
+}
+
 const elapsedSeconds = startedAt => Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
 
 const useWorkspaceStore = create((set, get) => ({
@@ -50,6 +82,9 @@ const useWorkspaceStore = create((set, get) => ({
   activeTimer:    null,   // { issueId, projectId, startedAt, entityType?, ...context }
   timerElapsed:   0,      // seconds
   _timerInterval: null,
+  // Minutes a stopped timer produced that nobody has written down yet.
+  // { issueId, projectId, minutes, stoppedAt, entityType?, ...context }
+  pendingTimeLog: null,
 
   // Returns false when a timer is already running instead of silently
   // discarding it — replacing it used to throw away the tracked time.
@@ -76,13 +111,35 @@ const useWorkspaceStore = create((set, get) => ({
     // may not have updated recently.
     const seconds = elapsedSeconds(activeTimer.startedAt);
     const result = { ...activeTimer, minutes: Math.max(1, Math.ceil(seconds / 60)) };
-    set({ activeTimer: null, timerElapsed: 0, _timerInterval: null });
+    // Written down before anything navigates. The screen that asks the user to
+    // confirm these minutes may be remounted by a canonical-URL redirect or
+    // closed by a reload before they get to press save; the minutes have to be
+    // somewhere that survives both.
+    const pending = { ...result, stoppedAt: Date.now() };
+    writeStoredPendingLog(pending);
+    set({
+      activeTimer: null,
+      timerElapsed: 0,
+      _timerInterval: null,
+      pendingTimeLog: pending,
+    });
     return result;
+  },
+
+  /** The user saved the minutes, or knowingly threw them away. */
+  clearPendingTimeLog: () => {
+    writeStoredPendingLog(null);
+    set({ pendingTimeLog: null });
   },
 
   // Re-attaches a timer that survived a reload. Safe to call repeatedly.
   restoreTimer: () => {
     const { activeTimer, _timerInterval } = get();
+    if (!get().pendingTimeLog) {
+      const storedPending = readStoredPendingLog();
+      if (storedPending) set({ pendingTimeLog: storedPending });
+      else writeStoredPendingLog(null);
+    }
     if (activeTimer) return;
     const stored = readStoredTimer();
     if (!stored) {

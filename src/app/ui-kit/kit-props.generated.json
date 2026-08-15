@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 98,
-    "props": 728,
-    "documentedProps": 728,
+    "props": 729,
+    "documentedProps": 729,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5155,6 +5155,13 @@
           "type": "boolean",
           "values": [],
           "description": "Whether the current role may archive selected tasks."
+        },
+        {
+          "name": "compareIssueCards",
+          "default": "compareIssues",
+          "type": "(a: object, b: object) => number",
+          "values": [],
+          "description": "Row order inside a section; the same comparator the board uses, so both views of one list agree on where a new task belongs."
         },
         {
           "name": "emptyDescription",

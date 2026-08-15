@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, UserCheck, ListTodo, CircleDotDashed, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, AtSign, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -43,6 +43,8 @@ import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
+import { isDueDateOverdue } from '@/lib/utils/date';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -117,6 +119,52 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
     router.push(`/${project.id}`);
   };
 
+  // Built from what this role may actually do, not filtered afterwards — an
+  // entry that would only ever be refused is never offered.
+  const canEditProject = can(orgRole, 'edit:project_settings');
+  const canDeleteProject = can(orgRole, 'delete:project');
+  const projectMenuItems = [
+    // One entry, one dialog — the same one the project page opens. Splitting
+    // settings from members meant two different dialogs edited the same
+    // project record.
+    ...(canEditProject
+      ? [{ icon: Settings2, label: 'Налаштування', onClick: () => setShowBoardConfig(true) }]
+      : []),
+    ...(canEditProject
+      ? [
+        { isDivider: true },
+        !isArchived
+          ? { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
+          : { icon: ArchiveRestore, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' },
+      ]
+      : []),
+    ...(canDeleteProject
+      ? [
+        { isDivider: true },
+        {
+          icon: Trash2,
+          label: 'Видалити',
+          isDanger: true,
+          onClick: async () => {
+            if (await confirmDialog({
+              title: 'Видалити проєкт?',
+              message: `Ви видаляєте «${project.name}». Цю дію неможливо скасувати.`,
+              confirmText: 'Видалити',
+              danger: true,
+            })) {
+              try {
+                await deleteProject(project.id);
+                showToast('Проєкт видалено');
+              } catch (error) {
+                showToast(userFacingErrorMessage(error, 'Не вдалося видалити проєкт'), 'error');
+              }
+            }
+          },
+        },
+      ]
+      : []),
+  ];
+
   return (
     <>
       <div
@@ -170,45 +218,25 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
               shows lives in Settings → Архів проєктів and is already a kit
               Button. The menu item below is dead for the same reason; it costs
               one line and keeps the menu correct if the filter ever changes. */}
-          <div className="relative no-nav flex items-center gap-[8px]">
-            <ContextMenu
-              onOpenChange={setMenuOpen}
-              // QUI-105. 32px, not 28px. This is the only control on a project
-              // card and it sits in a corner with nothing beside it to make a
-              // small target forgivable — `sm` is the size for dense toolbars,
-              // which this is the opposite of.
-              trigger={
-                <IconAction label="Дії з проєктом" icon={MoreVertical} size="md" appearance="quiet" />
-              }
-              items={[
-                // One entry, one dialog — the same one the project page opens.
-                // Splitting settings from members meant two different dialogs
-                // edited the same project record.
-                { icon: Settings2, label: 'Налаштування', onClick: () => setShowBoardConfig(true) },
-                { isDivider: true },
-                !isArchived ? (
-                  { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
-                ) : (
-                  { icon: ArchiveRestore, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' }
-                ),
-                { isDivider: true },
-                { icon: Trash2, label: 'Видалити', isDanger: true, onClick: async () => {
-                  if (await confirmDialog({
-                    title: 'Видалити проєкт?',
-                    message: `Ви видаляєте «${project.name}». Цю дію неможливо скасувати.`,
-                    confirmText: 'Видалити', danger: true,
-                  })) {
-                    try {
-                      await deleteProject(project.id);
-                      showToast('Проєкт видалено');
-                    } catch (error) {
-                      showToast(userFacingErrorMessage(error, 'Не вдалося видалити проєкт'), 'error');
-                    }
-                  }
-                } },
-              ]}
-            />
-          </div>
+          {/* A member sees no kebab at all. Every entry in it is owner/admin
+              work, and a menu that only ever answers "у вас немає прав" is
+              worse than no menu: it advertises three things you cannot do on
+              a project you are simply a participant of. */}
+          {projectMenuItems.length > 0 && (
+            <div className="relative no-nav flex items-center gap-[8px]">
+              <ContextMenu
+                onOpenChange={setMenuOpen}
+                // QUI-105. 32px, not 28px. This is the only control on a project
+                // card and it sits in a corner with nothing beside it to make a
+                // small target forgivable — `sm` is the size for dense toolbars,
+                // which this is the opposite of.
+                trigger={
+                  <IconAction label="Дії з проєктом" icon={MoreVertical} size="md" appearance="quiet" />
+                }
+                items={projectMenuItems}
+              />
+            </div>
+          )}
         </div>
 
         {/* Title + description */}
@@ -239,6 +267,8 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
           now={now}
           currentUser={currentUser}
           orgLoading={orgLoading}
+          unreadCount={unreadCount}
+          mentionCount={mentionCount}
         />
       </div>
 
@@ -278,8 +308,10 @@ const ISSUE_ACTIVITY_EVENTS = {
   updated: 'Оновлено завдання',
 };
 
-function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading }) {
-  const { statuses } = useWorkflowConfig();
+function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, unreadCount = 0, mentionCount = 0 }) {
+  const { statuses, closedStatusIds } = useWorkflowConfig();
+  const { activeOrg } = useAppContext();
+  const timeZone = organizationTimeZone(activeOrg);
   // «в роботі» used to be `statuses.slice(1)` minus the terminal ones — a guess
   // that counted «До виконання» as work in progress and depended on a status's
   // position in the list. It is now the category that says so.
@@ -287,17 +319,20 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 
   const stats = useMemo(() => {
     let inProgressCount = 0;
-    let assignedToCurrentUser = 0;
+    let overdueCount = 0;
     let newestIssue = null;
     let newestActivity = null;
 
     for (const issue of issues) {
-      if (inProgressIds.includes(issue.columnId || issue.status)) {
+      const statusId = issue.columnId || issue.status;
+      if (inProgressIds.includes(statusId)) {
         inProgressCount++;
       }
-      const currentUserId = currentUser?.id || currentUser?.uid;
-      if (currentUserId && issue.assigneeIds?.includes(currentUserId)) {
-        assignedToCurrentUser++;
+      // «N моїх» said nothing a person could act on — the number they care
+      // about is what is late and what is waiting for them, which is the same
+      // pair of facts a task card carries.
+      if (!closedStatusIds.includes(statusId) && isDueDateOverdue(issue.dueDate, { timeZone })) {
+        overdueCount++;
       }
 
       // Only what the activity record says, never `updatedAt` — see
@@ -370,10 +405,10 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     return {
       total: issues.length,
       inProgress: inProgressCount,
-      mine: assignedToCurrentUser,
+      overdue: overdueCount,
       lastAction: lastActionStr
     };
-  }, [currentUser, inProgressIds, issues, members, orgLoading]);
+  }, [closedStatusIds, currentUser, inProgressIds, issues, members, orgLoading, timeZone]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -429,11 +464,25 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           <strong className="text-ink">{stats.inProgress}</strong>
           <span>в роботі</span>
         </span>
-        {stats.mine > 0 && (
-          <span className="flex items-center gap-[6px] text-muted" title="Завдання, де ви відповідальний">
-            <UserCheck size={14} strokeWidth={1.9} aria-hidden />
-            <strong className="text-ink">{stats.mine}</strong>
-            <span>моїх</span>
+        {stats.overdue > 0 && (
+          <span className="flex items-center gap-[6px] text-[#ef4444]" title="Завдання, у яких минув дедлайн">
+            <CalendarClock size={14} strokeWidth={1.9} aria-hidden />
+            <strong>{stats.overdue}</strong>
+            <span>прострочено</span>
+          </span>
+        )}
+        {mentionCount > 0 && (
+          <span className="flex items-center gap-[6px] text-ink" title="Непрочитані повідомлення, у яких вас згадали">
+            <AtSign size={14} strokeWidth={2.2} aria-hidden />
+            <strong>{mentionCount}</strong>
+            <span>вам</span>
+          </span>
+        )}
+        {unreadCount > 0 && (
+          <span className="flex items-center gap-[6px] text-muted" title="Непрочитані повідомлення в чаті проєкту">
+            <MessageSquare size={14} strokeWidth={1.9} aria-hidden />
+            <strong className="text-ink">{unreadCount}</strong>
+            <span>нових</span>
           </span>
         )}
       </div>

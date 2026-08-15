@@ -82,8 +82,9 @@ export default function WorkspaceCommandPalette() {
       return;
     }
     if (command.action === 'stop-timer') {
+      // The minutes ride in the store, not in the URL — see `stopTimer`.
       const result = stopTimer();
-      const href = timerTargetHref(result, { minutes: result?.minutes });
+      const href = timerTargetHref(result);
       if (href) router.push(href);
       return;
     }

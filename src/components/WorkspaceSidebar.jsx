@@ -104,8 +104,11 @@ export default function WorkspaceSidebar() {
   const handleStopGlobalTimer = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // The minutes ride in the store, not in the URL — see `stopTimer`. A query
+    // param was stripped by the task page's own canonical redirect before the
+    // user could confirm it, and the tracked time went with it.
     const result = stopTimer();
-    const targetHref = timerTargetHref(result, { minutes: result?.minutes });
+    const targetHref = timerTargetHref(result);
     if (targetHref) router.push(targetHref);
   };
 
@@ -369,7 +372,7 @@ export default function WorkspaceSidebar() {
               const targetHref = timerTargetHref(activeTimer);
               if (targetHref) router.push(targetHref);
             }}
-            className={`transition-colors rounded-[12px] flex items-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}
+            className={`transition-colors rounded-[12px] flex items-center cursor-pointer ${collapsed ? 'justify-center flex-col gap-1 py-2' : 'justify-between pl-[12px] pr-[4px] py-[4px]'}`}
             style={{ backgroundColor: 'var(--sb-active)' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--sb-hover)'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--sb-active)'; }}

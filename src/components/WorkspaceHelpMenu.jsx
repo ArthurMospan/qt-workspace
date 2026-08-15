@@ -40,14 +40,19 @@ export default function WorkspaceHelpMenu({ collapsed = false }) {
 
   return (
     <>
-      <div className="shrink-0 px-[8px] pb-[8px]">
+      {/* A quiet 32px square, not a full-width rail item: help is the least
+          urgent thing in the sidebar and a slab as wide as «Налаштування» read
+          as another destination. Expanded, the square is centred on the same
+          axis as the navigation icons (20px + half an 18px glyph); collapsed,
+          it centres in the rail like everything else. */}
+      <div className={`shrink-0 flex pb-[10px] ${collapsed ? 'justify-center px-0' : 'pl-[13px] pr-[8px]'}`}>
         <ContextMenu
-          className="flex h-[40px] w-full items-center"
+          className="flex items-center"
           dropdownClassName="w-[260px]"
           trigger={(
             <Button
               style="ghost"
-              size="lg"
+              size="icon"
               icon={CircleHelp}
               composition="sidebar-help-action"
               data-sidebar-collapsed={collapsed ? 'true' : 'false'}

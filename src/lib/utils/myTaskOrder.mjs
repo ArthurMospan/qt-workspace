@@ -14,6 +14,16 @@ export function normalizeMyTaskOrders(value) {
   );
 }
 
+/**
+ * A task with no personal position goes *above* the arranged ones, exactly as a
+ * new card does on a project board.
+ *
+ * Dropping a card assigns a position to every card in that column, so "has no
+ * personal order" means "arrived after the last time you arranged this column"
+ * — a task created a minute ago. Sorting those to the bottom buried every new
+ * task under the whole backlog, which is the opposite of what the same action
+ * does everywhere else in the product.
+ */
 export function compareMyTaskIssues(orders = {}) {
   return (a, b) => {
     const aOrder = orders[a?.id];
@@ -21,7 +31,7 @@ export function compareMyTaskIssues(orders = {}) {
     const aOrdered = Number.isFinite(aOrder);
     const bOrdered = Number.isFinite(bOrder);
     if (aOrdered && bOrdered && aOrder !== bOrder) return aOrder - bOrder;
-    if (aOrdered !== bOrdered) return aOrdered ? -1 : 1;
+    if (aOrdered !== bOrdered) return aOrdered ? 1 : -1;
     const fallback = compareIssues(a, b);
     if (fallback !== 0) return fallback;
     return String(a?.id || '').localeCompare(String(b?.id || ''));

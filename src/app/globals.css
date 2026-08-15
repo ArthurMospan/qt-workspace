@@ -860,16 +860,21 @@
   /* Multi-select actions float above every board and remain reachable above
      the mobile navigation. The composition owns the fixed geometry; callers
      only provide the available actions. */
+  /* The bar used to be one non-wrapping row inside a scroller with no visible
+     scrollbar: past four or five actions the last controls were simply cut off
+     mid-word with nothing on screen saying they could be reached. It wraps
+     instead — a toolbar that grows upward is legible at any width, and every
+     action stays whole. */
   .ui-bulk-actions[data-ui-composition='bulk-actions'] {
     position: fixed;
     left: 50%;
     bottom: 24px;
     z-index: 900;
     display: flex;
-    max-width: calc(100vw - 32px);
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: max-content;
+    max-width: min(calc(100vw - 32px), 960px);
     align-items: center;
     gap: 6px;
     padding: 8px;
@@ -879,9 +884,6 @@
     border-radius: 14px;
     box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
     transform: translateX(-50%);
-  }
-  .ui-bulk-actions[data-ui-composition='bulk-actions']::-webkit-scrollbar {
-    display: none;
   }
   .ui-bulk-actions__count {
     flex-shrink: 0;
@@ -895,6 +897,32 @@
     height: 22px;
     flex-shrink: 0;
     background: rgb(255 255 255 / 16%);
+  }
+  /* The attribute pickers belong to the dark bar, so they are drawn on it —
+     a translucent chip with a hairline. Solid white blocks read as pieces of
+     another surface dropped on top of this one. */
+  .ui-bulk-actions__control {
+    flex-shrink: 0;
+    max-width: 100%;
+  }
+  .ui-bulk-actions__control > button,
+  .ui-bulk-actions[data-ui-composition='bulk-actions'] .ui-bulk-actions__trigger {
+    width: auto;
+    min-width: 0;
+    background: rgb(255 255 255 / 10%);
+    border: 1px solid rgb(255 255 255 / 14%);
+    color: white;
+  }
+  .ui-bulk-actions__control > button:hover:not(:disabled),
+  .ui-bulk-actions[data-ui-composition='bulk-actions'] .ui-bulk-actions__trigger:hover:not(:disabled) {
+    background: rgb(255 255 255 / 20%);
+  }
+  .ui-bulk-actions__control > button span,
+  .ui-bulk-actions__control > button svg {
+    color: white;
+  }
+  .ui-bulk-actions__control > button svg {
+    opacity: 0.7;
   }
   @media (max-width: 767px) {
     .ui-bulk-actions[data-ui-composition='bulk-actions'] {
@@ -935,6 +963,24 @@
     padding-right: var(--page-px, 16px);
     width: calc(100% + var(--page-px, 16px) * 2);
   }
+  /* The two halves of `.full-bleed`, for the case where they belong to
+     different boxes. A kanban needs its *clipping* box to reach the panel edge
+     and its *scrolling* box to keep the gutter — putting both on one element
+     inside an `overflow: hidden` parent means the parent crops away exactly the
+     bleed the padding was compensating for, and the gutter comes back as a
+     blank strip lying across the outer columns while the board scrolls. */
+  .bleed-edges {
+    margin-left: calc(var(--page-px, 16px) * -1);
+    margin-right: calc(var(--page-px, 16px) * -1);
+    width: calc(100% + var(--page-px, 16px) * 2);
+  }
+  .bleed-gutter {
+    padding-left: var(--page-px, 16px);
+    padding-right: var(--page-px, 16px);
+    /* Snap points land at the gutter, not under it. */
+    scroll-padding-left: var(--page-px, 16px);
+    scroll-padding-right: var(--page-px, 16px);
+  }
   /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */
   @media (max-width: 767px) {
     .full-bleed-mobile {
@@ -946,23 +992,20 @@
   }
 }
 
-/* Button ships with a `justify-center` utility, so this stateful composition
-   must live after Tailwind's layers. In the expanded rail the icon now shares
-   the exact 20px left edge used by navigation items; the collapsed rail keeps
-   the same centred geometry it has always used. */
+/* Button's own colour utilities live in Tailwind's last layer, so this
+   composition has to be written after them to win. A 32px square that stays
+   quiet until it is pointed at — the placement is in `WorkspaceHelpMenu`. */
 .ui-button[data-ui-composition='sidebar-help-action'] {
-  width: 100%;
+  width: 32px;
   border-radius: 10px;
   color: var(--sb-muted, var(--color-muted)) !important;
   background: transparent !important;
-}
-.ui-button[data-ui-composition='sidebar-help-action'][data-sidebar-collapsed='false'] {
-  justify-content: flex-start;
-  padding-inline: 12px;
+  opacity: 0.75;
 }
 .ui-button[data-ui-composition='sidebar-help-action']:hover {
   color: var(--sb-text, var(--color-ink)) !important;
   background: var(--sb-hover, var(--color-canvas)) !important;
+  opacity: 1;
 }
 
 /* Respect the OS "reduce motion" setting across the app — drag & drop, modal

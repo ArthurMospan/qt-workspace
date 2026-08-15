@@ -114,7 +114,9 @@ export default function BulkActionBar({
     if (accepted) await apply('archive');
   };
 
-  const triggerClass = '!bg-white hover:!bg-canvas !text-ink shadow-sm';
+  // Geometry only. The chip's colours belong to the dark bar and are set in
+  // `globals.css` beside the bar itself, so one change reaches every picker.
+  const triggerClass = 'ui-bulk-actions__trigger !w-auto px-[10px] rounded-[10px] text-[12px]';
   const assigneeActions = [
     { id: 'assignees-add', label: 'Додати' },
     { id: 'assignees-remove', label: 'Прибрати' },
@@ -140,6 +142,7 @@ export default function BulkActionBar({
         options={statusOptions}
         placeholder="Статус"
         triggerIcon={CircleDot}
+        className="ui-bulk-actions__control"
         compact
         size="sm"
         disabled={Boolean(busyAction)}
@@ -157,6 +160,7 @@ export default function BulkActionBar({
         ]}
         placeholder="Відповідальні"
         triggerIcon={Users}
+        className="ui-bulk-actions__control"
         compact
         size="sm"
         disabled={Boolean(busyAction)}
@@ -171,6 +175,7 @@ export default function BulkActionBar({
         options={priorityOptions}
         placeholder="Пріоритет"
         triggerIcon={Flag}
+        className="ui-bulk-actions__control"
         compact
         size="sm"
         disabled={Boolean(busyAction)}
@@ -189,6 +194,7 @@ export default function BulkActionBar({
           ]}
           placeholder="Мітки"
           triggerIcon={Tags}
+          className="ui-bulk-actions__control"
           compact
           size="sm"
           disabled={Boolean(busyAction)}
@@ -203,6 +209,7 @@ export default function BulkActionBar({
           options={typeOptions}
           placeholder="Тип"
           triggerIcon={Shapes}
+          className="ui-bulk-actions__control"
           compact
           size="sm"
           disabled={Boolean(busyAction)}
@@ -219,6 +226,7 @@ export default function BulkActionBar({
           options={[{ value: '__backlog__', label: 'Без спринта' }, ...sprintOptions]}
           placeholder="Спринт"
           triggerIcon={Zap}
+          className="ui-bulk-actions__control"
           compact
           size="sm"
           disabled={Boolean(busyAction)}
@@ -235,7 +243,7 @@ export default function BulkActionBar({
             disabled={Boolean(busyAction)}
             aria-label="Інші масові дії"
             title="Інші масові дії"
-            className="!bg-white hover:!bg-canvas !text-ink"
+            className="ui-bulk-actions__trigger"
           />
         )}
         items={[

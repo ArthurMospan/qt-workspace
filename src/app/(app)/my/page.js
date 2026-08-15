@@ -370,6 +370,7 @@ export default function MyTasksPage() {
             projects={projects}
             showProjectName
             groupBy="category"
+            compareIssueCards={compareTaskCards}
             hiddenGroupIds={hiddenCategories}
             onBulkUpdate={handleBulkUpdate}
             canArchive={can(orgRole, 'delete:issue')}

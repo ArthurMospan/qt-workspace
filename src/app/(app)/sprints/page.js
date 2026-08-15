@@ -21,7 +21,7 @@ import { useLocalization } from '@/lib/hooks/useLocalization';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
-  AlertCircle, CheckSquare, Filter, MoreHorizontal
+  AlertCircle, CheckSquare, Filter, MoreVertical
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -626,8 +626,9 @@ export default function GlobalSprintsPage() {
                             the row shrank to its content, so the empty space beside
                             the title did nothing. Now the whole strip toggles and
                             the chevron is the same control the board and the task
-                            list use to fold a section: ghost, `icon-xs`, a 20px
-                            box. It was `icon` — a 32px box — which made the one
+                            list use to fold a section: ghost, `icon-sm`, a 28px
+                            box that lines up with the `sm` buttons beside it. It
+                            was a 20px box, which made the one
                             accordion in the product that collapses a group of
                             tasks look like a different kind of control from the
                             two others that do exactly that. */}
@@ -646,7 +647,7 @@ export default function GlobalSprintsPage() {
                         >
                           <Button
                             style="ghost"
-                            size="icon-xs"
+                            size="icon-sm"
                             icon={isExpanded ? ChevronDown : ChevronRight}
                             className="shrink-0 hover:!bg-white"
                             aria-expanded={isExpanded}
@@ -676,8 +677,8 @@ export default function GlobalSprintsPage() {
                             trigger={(
                               <Button
                                 style="ghost"
-                                size="icon-xs"
-                                icon={MoreHorizontal}
+                                size="icon-sm"
+                                icon={MoreVertical}
                                 className="hover:!bg-white"
                                 aria-label={`Дії зі списком ${sprint.name}`}
                                 title="Дії зі списком"
@@ -774,7 +775,7 @@ export default function GlobalSprintsPage() {
                 >
                   <Button
                     style="ghost"
-                    size="icon-xs"
+                    size="icon-sm"
                     icon={ChevronRight}
                     className="mb-4 hover:!bg-white"
                     title="Розгорнути колонку завдань"
@@ -800,9 +801,9 @@ export default function GlobalSprintsPage() {
                       <Button
                         onClick={() => setBacklogCollapsed(true)}
                         style="ghost"
-                        size="icon-xs"
+                        size="icon-sm"
                         icon={ChevronLeft}
-                        className="-ml-2 hover:!bg-white"
+                        className="-ml-[6px] hover:!bg-white"
                         title="Згорнути колонку завдань"
                       />
                       <span className="h-[8px] w-[8px] rounded-full bg-muted" />
@@ -814,8 +815,8 @@ export default function GlobalSprintsPage() {
                         trigger={(
                           <Button
                             style="ghost"
-                            size="icon-xs"
-                            icon={MoreHorizontal}
+                            size="icon-sm"
+                            icon={MoreVertical}
                             className="hover:!bg-white"
                             aria-label="Дії зі списком без спринта"
                             title="Дії зі списком"
@@ -832,7 +833,7 @@ export default function GlobalSprintsPage() {
                       <Button
                         onClick={() => setShowCreateTaskModal(true)}
                         style="ghost"
-                        size="icon-xs"
+                        size="icon-sm"
                         icon={Plus}
                         className="hover:!bg-white"
                         title="Додати завдання без спринту"

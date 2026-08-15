@@ -43,14 +43,74 @@ test('requested navigation and readability regressions stay fixed', async () => 
   assert.match(board, /\{columnActionMenu\(col, colTotalIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
   assert.match(board, /\{columnActionMenu\(col, colIssues\)\}[\s\S]{0,600}icon=\{Plus\}/);
   assert.doesNotMatch(board, /kanban-full-bleed/);
-  assert.match(board, /className="flex"[\s\S]{0,160}icon=\{MoreHorizontal\}/);
-  assert.match(board, /full-bleed/);
+  // The kebab and the plus beside it are one pair: same vertical glyph, same
+  // 28px box. A 20px box with a horizontal "meatball" read as a stray icon.
+  assert.match(board, /className="flex"[\s\S]{0,220}icon=\{MoreVertical\}/);
+  assert.doesNotMatch(board, /size="icon-xs"/);
+  // The clip and the gutter belong to different boxes — one element carrying
+  // both cancels itself out inside an `overflow: hidden` parent.
+  assert.match(board, /overflow-hidden bleed-edges/);
+  assert.match(board, /overflow-auto[^"]*bleed-gutter/);
   assert.match(sidebar, /after:-inset-\[8px\]/);
   assert.match(sidebar, /className="flex h-full w-full items-center justify-center transition-colors"/);
+  // The running timer is a quiet capsule in the rail, not a floating card.
+  assert.doesNotMatch(sidebar, /shadow-\[0_4px_12px_rgba\(0,0,0,0\.2\)\]/);
   assert.doesNotMatch(help, />\s*Допомога\s*</);
   assert.doesNotMatch(help, /<Tooltip/);
+  // Help is a square, not a rail-wide slab.
+  assert.doesNotMatch(help.slice(0, help.indexOf('<Dialog')), /w-full/);
+  assert.match(help, /size="icon"\s+icon=\{CircleHelp\}/);
   assert.match(search, /text-\[#cfcfcf\]/);
   assert.doesNotMatch(team, /lastActivity|Остання активність/);
   assert.match(settings, /backAction=\{\([\s\S]*Усі інтеграції/);
-  assert.match(bulk, /!bg-white hover:!bg-canvas !text-ink/);
+  // The bulk bar's pickers are drawn on the dark bar, never as white blocks
+  // dropped on top of it, and the bar wraps instead of cropping its last
+  // controls inside an invisible scroller.
+  assert.doesNotMatch(bulk, /!bg-white hover:!bg-canvas !text-ink/);
+  assert.match(bulk, /ui-bulk-actions__trigger/);
+  assert.equal((bulk.match(/ui-bulk-actions__control/g) || []).length, 6);
+});
+
+test('a stopped timer keeps its minutes until they are written down', async () => {
+  const [store, detail, sidebar] = await Promise.all([
+    read('src/store/useWorkspaceStore.js'),
+    read('src/components/workspace/IssueDetail.jsx'),
+    read('src/components/WorkspaceSidebar.jsx'),
+  ]);
+  // Persisted the moment the timer stops, so a reload or the task page's own
+  // canonical-URL redirect cannot take the tracked time with it.
+  assert.match(store, /pendingTimeLog/);
+  assert.match(store, /writeStoredPendingLog\(pending\)/);
+  assert.match(store, /clearPendingTimeLog/);
+  // The handoff is the store, not a query param that gets stripped on arrival.
+  assert.doesNotMatch(sidebar, /timerTargetHref\(result, \{ minutes/);
+  assert.match(detail, /pendingTimeLog/);
+  assert.match(detail, /closeLogForm/);
+  // Closing the dialog on unsaved timer minutes has to be a decision.
+  assert.match(detail, /Не зберігати відстежений час\?/);
+});
+
+test('a project card offers no action the role cannot perform', async () => {
+  const projects = await read('src/app/(app)/page.js');
+  assert.match(projects, /const canEditProject = can\(orgRole, 'edit:project_settings'\)/);
+  assert.match(projects, /const canDeleteProject = can\(orgRole, 'delete:project'\)/);
+  assert.match(projects, /\{projectMenuItems\.length > 0 && \(/);
+  // «N моїх» is not something anyone acts on; what is late and what is waiting
+  // for you is.
+  assert.doesNotMatch(projects, /<span>моїх<\/span>/);
+  assert.match(projects, /<span>прострочено<\/span>/);
+});
+
+test('a new task appears at the top of My tasks, as it does on a board', async () => {
+  const { compareMyTaskIssues } = await import('../src/lib/utils/myTaskOrder.mjs');
+  const arranged = { old: 0, older: 1 };
+  const fresh = { id: 'fresh', order: -9 };
+  const sorted = [
+    { id: 'old', order: -1 },
+    { id: 'older', order: -2 },
+    fresh,
+  ].toSorted(compareMyTaskIssues(arranged));
+  assert.equal(sorted[0].id, 'fresh');
+  // Cards the user has arranged keep the order they were dragged into.
+  assert.deepEqual(sorted.slice(1).map(issue => issue.id), ['old', 'older']);
 });

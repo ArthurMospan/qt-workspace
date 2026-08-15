@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, MoreVertical } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -15,6 +15,7 @@ import BulkActionBar from './BulkActionBar';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
+import { compareIssues } from '@/lib/utils/optimistic.mjs';
 
 /**
  * The list view of a board: tasks grouped by status — or, on a list that spans
@@ -28,6 +29,7 @@ import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
  * @param {object[]} props.sprints Sprint definitions, for the sprint column.
  * @param {object[]} props.projects Projects, needed when the list spans more than one.
  * @param {object[]} props.issueLinks Relations between tasks.
+ * @param {(a: object, b: object) => number} props.compareIssueCards Row order inside a section; the same comparator the board uses, so both views of one list agree on where a new task belongs.
  * @param {'status'|'category'} props.groupBy What a section is: one status, or one status category.
  * @param {string[]} props.hiddenGroupIds Groups folded into «Приховані» — status ids, or category ids under `groupBy="category"`.
  * @param {string} props.projectId Current project.
@@ -52,6 +54,7 @@ export default function TaskListView({
   projectName,
   showProjectName = false,
   groupBy = 'status',
+  compareIssueCards = compareIssues,
   hiddenGroupIds = [],
   activeTimerIssueId,
   onBulkUpdate,
@@ -88,14 +91,19 @@ export default function TaskListView({
       if (count > 1) multiStatusGroupIds.add(category);
     }
   }
+  // The list and the board are two views of one arrangement, so they sort the
+  // same way. Without this the list kept whatever order the query happened to
+  // return — on «Мої завдання» that was due date ascending, which put every
+  // freshly created task at the very bottom.
+  const sortSection = sectionIssues => [...sectionIssues].sort(compareIssueCards);
   const visibleSections = groups
     .filter(group => !hiddenGroupIds.includes(group.id))
     .map(group => ({
       ...group,
       showStatusName: multiStatusGroupIds.has(group.id),
-      issues: issues.filter(issue => groupIdForIssue(issue) === group.id),
+      issues: sortSection(issues.filter(issue => groupIdForIssue(issue) === group.id)),
     }));
-  const hiddenIssues = issues.filter(issue => hiddenGroupIds.includes(groupIdForIssue(issue)));
+  const hiddenIssues = sortSection(issues.filter(issue => hiddenGroupIds.includes(groupIdForIssue(issue))));
   const sections = [
     ...visibleSections,
     ...(hiddenIssues.length > 0 ? [{
@@ -175,8 +183,8 @@ export default function TaskListView({
                   trigger={(
                     <Button
                       style="ghost"
-                      size="icon-xs"
-                      icon={MoreHorizontal}
+                      size="icon-sm"
+                      icon={MoreVertical}
                       className="hover:!bg-white"
                       aria-label={`Дії зі списком ${section.label}`}
                       title="Дії зі списком"
@@ -193,7 +201,7 @@ export default function TaskListView({
               )}
               <Button
                 style="ghost"
-                size="icon-xs"
+                size="icon-sm"
                 icon={isCollapsed ? ChevronRight : ChevronDown}
                 className={`${onBulkUpdate && section.id !== '__hidden__' ? '' : 'ml-auto'} hover:!bg-white`}
                 aria-expanded={!isCollapsed}

@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 303,
-    "elements": 4064,
+    "elements": 4076,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:647",
+      "location": "src/app/(app)/sprints/page.js:648",
       "attributes": [
         "title",
         "aria-label"
@@ -214,7 +214,7 @@
     },
     {
       "element": "Button",
-      "location": "src/components/ui/TaskManagement/TaskListView.jsx:194",
+      "location": "src/components/ui/TaskManagement/TaskListView.jsx:202",
       "attributes": [
         "title",
         "aria-label"

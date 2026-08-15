@@ -99,7 +99,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:200",
+      "location": "src/components/MobileNav.jsx:201",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -115,7 +115,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:260",
+      "location": "src/components/MobileNav.jsx:261",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -236,7 +236,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:86",
+      "location": "src/components/WorkspaceHelpMenu.jsx:91",
       "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
       "text": "QuickTeam",
       "childElements": [
@@ -251,7 +251,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:243",
+      "location": "src/components/WorkspaceSidebar.jsx:246",
       "className": "relative mt-1 shrink-0 ml-[8px] transition-colors after:absolute after:-inset-[8px] after:content-['']",
       "text": "",
       "childElements": [
@@ -266,7 +266,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:257",
+      "location": "src/components/WorkspaceSidebar.jsx:260",
       "className": "flex h-full w-full items-center justify-center transition-colors",
       "text": "",
       "childElements": [
@@ -281,7 +281,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:308",
+      "location": "src/components/WorkspaceSidebar.jsx:311",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -296,7 +296,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:386",
+      "location": "src/components/WorkspaceSidebar.jsx:389",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -363,17 +363,17 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/WorkspaceSidebar.jsx:243",
+      "location": "src/components/WorkspaceSidebar.jsx:246",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:257",
+      "location": "src/components/WorkspaceSidebar.jsx:260",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:308",
+      "location": "src/components/WorkspaceSidebar.jsx:311",
       "tag": "button",
       "context": "branding-action"
     }
@@ -399,12 +399,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:147",
+      "location": "src/app/(app)/page.js:195",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:156",
+      "location": "src/app/(app)/page.js:204",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -434,12 +434,12 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:751",
+      "location": "src/app/(app)/sprints/page.js:752",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:761",
+      "location": "src/app/(app)/sprints/page.js:762",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -514,7 +514,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:546",
+      "location": "src/components/workspace/AgileBoard.jsx:556",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
@@ -554,7 +554,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1690",
+      "location": "src/components/workspace/IssueDetail.jsx:1744",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },
