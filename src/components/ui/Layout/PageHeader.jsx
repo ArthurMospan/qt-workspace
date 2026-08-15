@@ -81,12 +81,12 @@ export function PageHeader({
       <div className="absolute inset-0 z-[-1] backdrop-blur-md bg-white/20 pointer-events-none" />
 
       {/* Row 1: Title + Actions — actions ALWAYS sit right of the title */}
-      <div className="flex items-center justify-between gap-[12px] md:gap-[16px] w-full">
-        <h1 className="text-[24px] font-bold text-ink tracking-tight truncate min-w-0">
+      <div className="flex w-full flex-col items-stretch justify-between gap-[8px] sm:flex-row sm:items-center sm:gap-[12px] md:gap-[16px]">
+        <h1 className="min-w-0 truncate text-[22px] font-bold tracking-tight text-ink sm:text-[24px]">
           {title}
         </h1>
 
-        <div className="flex items-center gap-[8px] shrink-0">
+        <div className="flex w-full shrink-0 items-center justify-end gap-[8px] overflow-x-auto hide-scrollbar sm:w-auto sm:overflow-visible">
           {tabs?.length > 0 && (
             <div className="hidden md:block">
               <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />

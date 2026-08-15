@@ -37,12 +37,12 @@ export function PreviewBlock({ title, description, children, filePath, component
 
   return (
     <div className="flex flex-col gap-[12px]">
-      <div className="flex items-start justify-between w-full gap-3">
+      <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-[16px] font-bold text-[#1f1f1f]">{title}</h3>
           {description && <p className="text-[12px] text-[#9a9a9a] mt-[2px]">{description}</p>}
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:shrink-0 sm:justify-end">
           {(usageEntry || apiEntry) && (
             <button
               onClick={() => openUsage(component)}
@@ -96,7 +96,7 @@ export function PreviewBlock({ title, description, children, filePath, component
         )}
         </div>
       </div>
-      <div className={`rounded-[16px] p-[24px] ${dark ? 'bg-[#1f1f1f]' : 'bg-white border border-[#f0f0f0]'} ${fullWidth ? '' : 'flex flex-wrap items-center gap-[12px]'}`}>
+      <div className={`min-w-0 overflow-x-auto rounded-[16px] p-[12px] sm:p-[24px] ${dark ? 'bg-[#1f1f1f]' : 'bg-white border border-[#f0f0f0]'} ${fullWidth ? '' : 'flex flex-wrap items-center gap-[12px]'}`}>
         {children}
       </div>
       {showCode && code && (

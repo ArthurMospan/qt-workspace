@@ -494,6 +494,11 @@ export default function CalendarPage() {
   );
 
   useEffect(() => {
+    if (!window.matchMedia('(max-width: 639px)').matches) return;
+    queueMicrotask(() => setView(current => current === 'week' ? 'agenda' : current));
+  }, []);
+
+  useEffect(() => {
     if (!events.length) return;
     const eventId = new URLSearchParams(window.location.search).get('event');
     if (!eventId) return;

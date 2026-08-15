@@ -26,11 +26,6 @@ export const NO_PRIORITY = Object.freeze({
 
 const SYSTEM_PRIORITY_SET = new Set(SYSTEM_PRIORITY_IDS);
 const DEFAULT_BY_ID = new Map(DEFAULT_SYSTEM_PRIORITIES.map(item => [item.id, item]));
-const SYSTEM_RING_OPACITY = Object.freeze({
-  high: { outer: 0.88, inner: 0.88 },
-  medium: { outer: 0.52, inner: 0.88 },
-  low: { outer: 0.4, inner: 0.4 },
-});
 
 export function isSystemPriorityId(priorityId) {
   return SYSTEM_PRIORITY_SET.has(priorityId);
@@ -85,39 +80,6 @@ export function selectablePriorities(items) {
   return [NO_PRIORITY, ...ensureSystemPriorities(items)];
 }
 
-function mix(from, to, amount) {
-  return Number((from + (to - from) * amount).toFixed(3));
-}
-
-function customRingOpacity(priorityId, priorities) {
-  const list = ensureSystemPriorities(priorities);
-  const index = list.findIndex(item => item.id === priorityId);
-  if (index < 0) return SYSTEM_RING_OPACITY.low;
-
-  const highIndex = list.findIndex(item => item.id === 'high');
-  const mediumIndex = list.findIndex(item => item.id === 'medium');
-  const lowIndex = list.findIndex(item => item.id === 'low');
-
-  if (index < highIndex) return SYSTEM_RING_OPACITY.high;
-  if (index < mediumIndex) {
-    const span = Math.max(1, mediumIndex - highIndex);
-    const amount = (index - highIndex) / span;
-    return {
-      outer: mix(0.88, 0.52, amount),
-      inner: 0.88,
-    };
-  }
-  if (index < lowIndex) {
-    const span = Math.max(1, lowIndex - mediumIndex);
-    const amount = (index - mediumIndex) / span;
-    return {
-      outer: 0.52,
-      inner: mix(0.88, 0.4, amount),
-    };
-  }
-  return SYSTEM_RING_OPACITY.low;
-}
-
 export function priorityPresentation(priority, priorities = []) {
   const source = typeof priority === 'string'
     ? selectablePriorities(priorities).find(item => item.id === priority)
@@ -128,21 +90,16 @@ export function priorityPresentation(priority, priorities = []) {
     return {
       ...NO_PRIORITY,
       critical: false,
-      outerOpacity: 0.2,
-      innerOpacity: 0.2,
     };
   }
 
   const fallback = DEFAULT_BY_ID.get(id);
-  const rings = SYSTEM_RING_OPACITY[id] || customRingOpacity(id, priorities);
   return {
     id,
     label: source?.label || fallback?.label || 'Пріоритет',
     color: source?.color || fallback?.color || '#9a9a9a',
     critical: id === 'blocker',
     isNoPriority: false,
-    outerOpacity: rings.outer,
-    innerOpacity: rings.inner,
   };
 }
 

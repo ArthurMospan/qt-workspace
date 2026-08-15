@@ -14,6 +14,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -67,7 +68,8 @@ export default function ProfileView({ user, onClose }) {
   // Live membership record from the role-filtered organization members API.
   const memberRecord = orgMembers.find(m => (m.id || m.uid) === uid);
   
-  const isOnline = user.lastActive && (now - new Date(user.lastActive).getTime() < 120000);
+  const isOnline = user.online === true || isPresenceOnline(user.lastActive, now);
+  const presenceLabel = user.presenceLabel || formatLastSeenUk(user.lastActive, { now, online: isOnline });
   const details = getRealProfileDetails(user);
 
   const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
@@ -163,6 +165,9 @@ export default function ProfileView({ user, onClose }) {
             <p className="text-[14px] text-muted font-medium">
               {positionName}
             </p>
+            <p className={`text-[11px] font-medium ${isOnline ? 'text-[#10b981]' : 'text-faint'}`}>
+              {presenceLabel}
+            </p>
           </div>
 
           {/* Actions — four 56px circles.
@@ -234,13 +239,13 @@ export default function ProfileView({ user, onClose }) {
         </div>
 
         {/* TABS */}
-        <div className="mt-6 flex justify-center w-full px-8">
+        <div className="mt-6 flex w-full justify-center overflow-x-auto px-4 sm:px-8">
           <Tabs variant="raised" tabs={tabsConfig} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
       </div>
 
       {/* BODY SECTION */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 w-full max-w-[800px] mx-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 w-full max-w-[800px] mx-auto">
         
         {activeTab === 'profile' && (
           <div className="flex flex-col gap-8">

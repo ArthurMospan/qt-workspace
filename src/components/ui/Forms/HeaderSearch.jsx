@@ -63,7 +63,7 @@ export const HeaderSearch = forwardRef(({
   };
 
   return (
-    <div className={`relative flex h-[36px] w-full max-w-[320px] items-center border-b border-transparent transition-colors focus-within:border-line ${className}`}>
+    <div className={`relative flex h-[36px] min-w-0 w-full max-w-[320px] items-center border-b border-transparent transition-colors focus-within:border-line ${className}`}>
       <Search size={14} className="text-muted absolute left-0 pointer-events-none" />
       <input
         ref={ref}
@@ -77,7 +77,7 @@ export const HeaderSearch = forwardRef(({
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="h-full w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3]"
+        className="h-full min-w-0 w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3]"
         {...props}
       />
       {value && (

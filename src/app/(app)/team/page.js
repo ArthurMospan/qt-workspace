@@ -23,13 +23,16 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
+import { useOrganizationPresence } from '@/lib/hooks/useOrganizationPresence';
+import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 
 // ── Invite Modal ─────────────────────────────────────────────────────────────
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function TeamPage() {
-  const { orgRole } = useAppContext();
+  const { orgRole, currentUser } = useAppContext();
   const { members, loading, inviteMember } = useOrganization();
   const { positions = [] } = useWorkflowConfig();
+  const presenceByUserId = useOrganizationPresence();
   
   const [showInviteModal, setShowInviteModal] = useState(false);
   // QUI-104. Search can now answer with a person, and an answer has to land on
@@ -50,10 +53,28 @@ export default function TeamPage() {
 
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
 
-  const filteredMembers = useMemo(() => members.filter(m =>
+  const membersWithPresence = useMemo(() => members.map(member => {
+    const memberId = member.id || member.uid;
+    const currentUserId = currentUser?.id || currentUser?.uid;
+    const lastActive = memberId === currentUserId
+      ? now
+      : (presenceByUserId[memberId] || member.lastActive);
+    const online = memberId === currentUserId || isPresenceOnline(lastActive, now);
+    return {
+      ...member,
+      lastActive,
+      online,
+      presenceLabel: formatLastSeenUk(lastActive, { now, online }),
+      positionName: positions.find(position => position.id === member.positionId)?.label
+        || member.title
+        || 'Посада не вказана',
+    };
+  }), [currentUser, members, now, positions, presenceByUserId]);
+
+  const filteredMembers = useMemo(() => membersWithPresence.filter(m =>
     (m.name || '').toLowerCase().includes(teamSearch.toLowerCase()) ||
     (m.email || '').toLowerCase().includes(teamSearch.toLowerCase())
-  ), [members, teamSearch]);
+  ), [membersWithPresence, teamSearch]);
   usePublishLocalSearchResults(teamSearch, filteredMembers.length);
 
   useEffect(() => {
@@ -72,7 +93,7 @@ export default function TeamPage() {
     }
   }, [loading, members, selectedUid, filteredMembers]);
 
-  const selectedMember = members.find(m => (m.id || m.uid) === selectedUid);
+  const selectedMember = membersWithPresence.find(m => (m.id || m.uid) === selectedUid);
 
   return (
     <SidebarLayout
@@ -80,13 +101,7 @@ export default function TeamPage() {
       mobilePane={mobilePane === 'detail' ? 'content' : 'sidebar'}
       sidebar={
         <MemberRail
-          members={filteredMembers.map(member => ({
-            ...member,
-            online: Boolean(member.lastActive && now - new Date(member.lastActive).getTime() < 120000),
-            positionName: positions.find(p => p.id === member.positionId)?.label
-              || member.title
-              || 'Посада не вказана',
-          }))}
+          members={filteredMembers}
           activeId={selectedUid}
           onSelect={member => { setSelectedUid(member.id || member.uid); setMobilePane('detail'); }}
           loading={loading}

@@ -141,7 +141,7 @@ export default function TopHeader({
             outsideResultCount={searchOutsideResultCount}
             outsideLoading={searchOutsideLoading}
             placeholder="Пошук по чатах..."
-            className="w-[240px]"
+            className="w-full max-w-[240px]"
           />
         </div>
       );
@@ -163,17 +163,17 @@ export default function TopHeader({
   };
 
   return (
-    <header className={`h-[56px] shrink-0 bg-white flex items-center pl-[16px] pr-[10px] justify-between z-30 w-full ${!hideBorder ? 'border-b border-[#f0f0f0]' : ''}`}>
+    <header className={`h-[56px] shrink-0 bg-white flex items-center pl-[12px] pr-[8px] sm:pl-[16px] sm:pr-[10px] justify-between z-30 w-full ${!hideBorder ? 'border-b border-[#f0f0f0]' : ''}`}>
       <div className="flex-1 min-w-0 flex items-center">
         {renderLeft()}
       </div>
 
       {mode === 'chat' && onlineUsers.length > 0 && (
-        <div className="ml-3 mr-2 shrink-0">{renderOnlineUsers()}</div>
+        <div className="ml-3 mr-2 hidden shrink-0 md:block">{renderOnlineUsers()}</div>
       )}
 
       {rightContent ? rightContent : (
-        <div className="flex items-center gap-[6px] shrink-0 ml-4 z-50">
+        <div className="ml-2 flex shrink-0 items-center gap-[6px] z-50 sm:ml-4">
           {showNotifications && (
             <button
               type="button"

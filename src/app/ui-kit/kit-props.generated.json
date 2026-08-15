@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 96,
-    "props": 709,
-    "documentedProps": 709,
+    "components": 97,
+    "props": 715,
+    "documentedProps": 715,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -318,6 +318,54 @@
           "type": "boolean",
           "values": [],
           "description": "Whether the trail offers a search toggle at all."
+        }
+      ]
+    },
+    "BulkActionBar": {
+      "file": "src/components/ui/TaskManagement/BulkActionBar.jsx",
+      "summary": "Fixed toolbar for actions that apply to a board selection.",
+      "props": [
+        {
+          "name": "count",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "Number of currently selected issues."
+        },
+        {
+          "name": "memberOptions",
+          "default": "[]",
+          "type": "Array<{value: string, label: string}>",
+          "values": [],
+          "description": "Assignee actions available for the selection."
+        },
+        {
+          "name": "onApply",
+          "default": "",
+          "type": "(action: string, value: string) => Promise<void>|void",
+          "values": [],
+          "description": "Applies one field change to the selection."
+        },
+        {
+          "name": "onClear",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Clears the current board selection."
+        },
+        {
+          "name": "priorityOptions",
+          "default": "[]",
+          "type": "Array<{value: string, label: string}>",
+          "values": [],
+          "description": "Priority actions available for the selection."
+        },
+        {
+          "name": "statusOptions",
+          "default": "[]",
+          "type": "Array<{value: string, label: string}>",
+          "values": [],
+          "description": "Status actions available for the selection."
         }
       ]
     },
@@ -3807,7 +3855,7 @@
     },
     "PriorityBadge": {
       "file": "src/components/ui/DataDisplay/PriorityBadge.jsx",
-      "summary": "Priority mark plus its configured name. Geometry is shared; colour, label and ring intensity come from the organization's ordered workflow priorities.",
+      "summary": "Priority mark plus its configured name. Geometry is shared; colour and label come from the organization's ordered workflow priorities.",
       "props": [
         {
           "name": "className",
@@ -3834,7 +3882,7 @@
     },
     "PriorityIcon": {
       "file": "src/components/ui/DataDisplay/PriorityIcon.jsx",
-      "summary": "Canonical priority mark, using the exact 16px geometry from the supplied SVGs: two concentric rings and a centre circle.",
+      "summary": "Canonical priority mark: one solid colour dot on a 40%-opacity halo of the same colour.",
       "props": [
         {
           "name": "className",

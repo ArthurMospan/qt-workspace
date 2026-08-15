@@ -13,9 +13,9 @@
     "long-text"
   ],
   "totals": {
-    "components": 96,
-    "stateful": 89,
-    "hover": 65,
+    "components": 97,
+    "stateful": 90,
+    "hover": 66,
     "focus": 65,
     "disabled": 34,
     "loading": 6,
@@ -30,7 +30,7 @@
     },
     "AttachmentRow": {
       "hover": "own",
-      "focus": "global"
+      "focus": "own"
     },
     "AttachmentViewer": {
       "hover": "own",
@@ -51,6 +51,9 @@
     "Breadcrumb": {
       "hover": "own",
       "focus": "own"
+    },
+    "BulkActionBar": {
+      "hover": "own"
     },
     "Button": {
       "disabled": "prop",
@@ -468,6 +471,9 @@
       "chat-elements",
       "variant-matrix",
       "states"
+    ],
+    "BulkActionBar": [
+      "task-elements"
     ],
     "Button": [
       "buttons",

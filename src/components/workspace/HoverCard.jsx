@@ -16,6 +16,7 @@ import {
 import { toLocalDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',
@@ -157,7 +158,7 @@ export default function HoverCard({ type, value, children, members }) {
     && (
       hoveredUserId === currentUserId
       || data.online === true
-      || (data.lastActive && now - new Date(data.lastActive).getTime() < 2 * 60 * 1000)
+      || isPresenceOnline(data.lastActive, now)
     )
   );
   const userSubtitle = data?.positionName
@@ -205,7 +206,7 @@ export default function HoverCard({ type, value, children, members }) {
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-1">
                   <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#10b981]' : 'bg-faint'}`} />
-                  {isOnline ? 'Онлайн' : 'Не в мережі'}
+                  {formatLastSeenUk(data.lastActive, { now, online: isOnline })}
                 </div>
               </div>
             ) : (

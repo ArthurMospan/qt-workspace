@@ -314,7 +314,7 @@ test('a member profile offers four icon actions, with the emergency call in the 
   // Both new actions land somewhere that knows what to do with them.
   assert.match(profile, /\/my\?new=1&assignee=/);
   assert.match(myTasks, /searchParams\.get\('assignee'\)/);
-  assert.match(composer, /assignees: initialAssignees\?\.length \? initialAssignees : \[\]/);
+  assert.match(composer, /assignees: initialAssignees\?\.length[\s\S]{0,80}\? initialAssignees[\s\S]{0,100}currentUser/);
   assert.match(profile, /\/calendar\?new=1&with=/);
   assert.match(calendar, /searchParams\.get\('with'\)/);
   assert.match(eventDialog, /initialParticipantIds/);

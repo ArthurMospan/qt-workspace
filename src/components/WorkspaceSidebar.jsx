@@ -21,6 +21,7 @@ import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
+import WorkspaceHelpMenu from '@/components/WorkspaceHelpMenu';
 
 import { can } from '@/lib/utils/can';
 
@@ -345,6 +346,8 @@ export default function WorkspaceSidebar() {
             })}
         </div>
       </div>
+
+      <WorkspaceHelpMenu collapsed={collapsed} />
 
       {/* Global Timer Capsule */}
       {activeTimer && (

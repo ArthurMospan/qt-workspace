@@ -52,7 +52,7 @@ import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
   Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
-  Link2, Copy, Sparkles, Tag as TagIcon,
+  Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
   Maximize2, ListTree,
 } from 'lucide-react';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
@@ -274,6 +274,26 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // монтується лише при відкритті таба, щоб не смикати сесію QT+ даремно).
   const qtplusLink = project?.qtplusLink || null;
   const [chatView, setChatView] = useState('chat');
+  const requestedTaskPane = searchParams.get('view') === 'chat' ? 'chat' : 'task';
+  const [taskPaneSelection, setTaskPaneSelection] = useState(null);
+  const [isCompactTaskLayout, setIsCompactTaskLayout] = useState(true);
+  const [taskChatUnreadState, setTaskChatUnreadState] = useState({ issueId: '', count: 0 });
+  const taskPane = taskPaneSelection?.issueId === issueId
+    ? taskPaneSelection.pane
+    : requestedTaskPane;
+  const unreadTaskChatCount = taskChatUnreadState.issueId === issueId
+    ? taskChatUnreadState.count
+    : 0;
+  const handleTaskPaneChange = (pane) => {
+    setTaskPaneSelection({ issueId, pane });
+  };
+  const handleTaskChatUnreadChange = (count) => {
+    setTaskChatUnreadState(current => (
+      current.issueId === issueId && current.count === count
+        ? current
+        : { issueId, count }
+    ));
+  };
 
   const { logs: timeLogs, totalMinutes: loggedMinutes, addTimeLog, updateTimeLog, deleteTimeLog } = useTimeLogs(issueId, projectId);
   const {
@@ -325,6 +345,17 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const [isEditing,    setIsEditing]   = useState(false);
   // Local editable fields (draft while in edit mode)
   const [draft, setDraft] = useState({});
+
+  // Phone and tablet layouts use one pane at a time. Keeping this query in JS
+  // as well as CSS lets the timeline defer read receipts while its pane is
+  // hidden; on desktop the split view remains continuously active.
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px)');
+    const updateLayout = () => setIsCompactTaskLayout(media.matches);
+    updateLayout();
+    media.addEventListener('change', updateLayout);
+    return () => media.removeEventListener('change', updateLayout);
+  }, []);
 
   const issueActivityAt = issueActivityCursor(issue);
   const currentUserId = currentUser?.uid || currentUser?.id || null;
@@ -856,6 +887,37 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!issue || isArchived) return;
+    try {
+      const duplicateStatus = issue.columnId || issue.status || resolveCategoryStatusId('backlog', STATUSES, {
+        hiddenStatusIds: activeHiddenCols,
+      }) || 'backlog';
+      const duplicateSprint = sprints.find(sprint => (
+        sprint.id === issue.sprintId && sprint.status !== 'completed'
+      ));
+      const created = await createIssue({
+        title: `${issue.title || 'Завдання'} (копія)`,
+        description: issue.description || '',
+        type: issue.type || 'task',
+        priority: issue.priority || 'medium',
+        status: duplicateStatus,
+        columnId: duplicateStatus,
+        assigneeIds: Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [],
+        labelIds: Array.isArray(issue.labelIds) ? issue.labelIds : [],
+        dueDate: parseDueDate(issue.dueDate, { timeZone })?.toISOString() || null,
+        estimateMinutes: Number(issue.estimateMinutes) || 0,
+        sprintId: duplicateSprint?.id || null,
+        parentIssueId: existingParentIssueId(issue),
+      }, actor);
+      showToast('Копію завдання створено');
+      if (isModal && onClose) onClose();
+      router.push(issuePath(created, project || projectId));
+    } catch (error) {
+      showToast(error.message || 'Не вдалося дублювати завдання', 'error');
+    }
+  };
+
   const handleDelete = async () => {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
@@ -911,28 +973,44 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
+      <div className={`flex min-h-0 flex-1 flex-col ${isModal ? '' : 'pt-[56px]'}`}>
+      {!isModal && (
+        <div className="page-gutter shrink-0 bg-white py-2 lg:hidden">
+          <Tabs
+            variant="underline"
+            className="w-full"
+            tabs={[
+              { id: 'task', label: 'Завдання', icon: ListTree },
+              { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
+            ]}
+            activeTab={taskPane}
+            onTabChange={handleTaskPaneChange}
+          />
+        </div>
+      )}
+
       {/* The bottom breathing room belongs only to the data column. Putting it
           on this shared wrapper shortens the chat by the same amount and makes
           the fixed panel jump upward. */}
       <div
         onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pt-[56px] pb-0'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
+        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pb-0'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
       >
 
-        <div className={`grid grid-cols-1 gap-[20px] items-stretch ${isModal ? '' : 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] lg:flex-1 lg:min-h-0'}`}>
+        <div className={`grid grid-cols-1 gap-[20px] items-stretch ${isModal ? '' : `${taskPane === 'chat' ? 'flex-1 min-h-0' : ''} lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] lg:flex-1 lg:min-h-0`}`}>
 
           {/* LEFT SIDE (Data) */}
           <div
             ref={leftScrollRef}
             onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-            className={`flex flex-col overflow-visible ${isModal ? '' : 'pb-[20px] custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
+            className={`${!isModal && taskPane === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col overflow-visible ${isModal ? '' : 'pb-[20px] custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
           >
             <div
-              className={`sticky ${isModal ? 'top-0' : 'top-[56px] lg:top-0'} z-[30]`}
+              className="sticky top-0 z-[30]"
             >
 
              {/* TITLE & ACTIONS */}
-             <div className="flex w-full items-start justify-between gap-[16px] bg-white pb-[12px] pt-[12px]">
+             <div className="flex w-full flex-col items-stretch justify-between gap-[10px] bg-white pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
                <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {parentIssueId && (
               <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
@@ -1057,7 +1135,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 pt-1">
+          <div className="flex shrink-0 items-center self-end gap-2 pt-1 sm:self-auto">
             {isEditing ? (
               <>
                 <Button style="secondary" size="md" onClick={cancelEdit}>Скасувати</Button>
@@ -1079,6 +1157,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 dropdownClassName="w-[210px]"
                 items={[
                   { label: 'Копіювати посилання', icon: Copy, onClick: copyIssueLink },
+                  ...(!isArchived ? [{ label: 'Дублювати', icon: CopyPlus, onClick: handleDuplicate }] : []),
                   { label: 'Скопіювати AI-промпт', icon: Sparkles, onClick: copyAiPrompt },
                   ...(!isArchived ? [
                     {
@@ -1783,7 +1862,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
           {/* Chat is only useful on the full task page. */}
           {!isModal && (
-            <div className="mb-[32px] h-[65dvh] min-h-0 lg:sticky lg:top-0 lg:mb-0 lg:h-full lg:pb-[32px]">
+            <div className={`${taskPane === 'task' ? 'hidden lg:block' : 'block'} h-full min-h-0 lg:sticky lg:top-0 lg:pb-[32px]`}>
               <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
                 {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
                 {qtplusLink?.projectId && (
@@ -1811,7 +1890,16 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   {chatView === 'qtplus' && qtplusLink?.projectId ? (
                     <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
                   ) : (
-                    <UnifiedTimeline issueId={issueId} projectId={projectId} issue={issue} isArchived={isArchived} org={activeOrg} members={members} />
+                    <UnifiedTimeline
+                      issueId={issueId}
+                      projectId={projectId}
+                      issue={issue}
+                      isArchived={isArchived}
+                      org={activeOrg}
+                      members={members}
+                      isActive={!isCompactTaskLayout || taskPane === 'chat'}
+                      onUnreadCountChange={handleTaskChatUnreadChange}
+                    />
                   )}
                 </div>
               </div>
@@ -1819,6 +1907,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             )}
 
         </div>
+      </div>
       </div>
     </div>
   );

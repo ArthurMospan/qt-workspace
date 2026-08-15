@@ -33,6 +33,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { formatLastSeenUk } from '@/lib/utils/presence.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
@@ -730,6 +731,7 @@ export default function ChatPage() {
         id,
         name: m.name || m.email,
         online: m.online,
+        lastActive: m.lastActive,
         avatar: m.avatar,
         isActive: activeDMSet.has(id),
         statusEmoji: m.statusEmoji,
@@ -1166,7 +1168,13 @@ export default function ChatPage() {
                 ? (channels.find(c => c.id === activeChannel.id)?.name || activeChannel.id)
                 : (dms.find(d => d.id === activeChannel.id)?.name || 'Особисті')}
               subtitle={activeChannel.type === 'dm'
-                ? (dms.find(d => d.id === activeChannel.id)?.online ? 'в мережі' : 'не в мережі')
+                ? (() => {
+                  const directMember = dms.find(d => d.id === activeChannel.id);
+                  return formatLastSeenUk(directMember?.lastActive, {
+                    now,
+                    online: directMember?.online,
+                  });
+                })()
                 : (activeChannelData?.description || currentChannel?.description || '')}
               statusEmoji={activeChannel.type === 'dm' ? dms.find(d => d.id === activeChannel.id)?.statusEmoji : null}
               statusTitle={dms.find(d => d.id === activeChannel.id)?.status}

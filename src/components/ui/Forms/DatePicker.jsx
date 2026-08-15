@@ -125,7 +125,7 @@ export const DatePicker = forwardRef(({
     const updatePopupPosition = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const popupWidth = 320;
+      const popupWidth = Math.min(320, window.innerWidth - 16);
       const popupHeight = mode === 'range' ? 410 : 390;
       const left = Math.min(Math.max(8, rect.left), window.innerWidth - popupWidth - 8);
       const hasRoomBelow = window.innerHeight - rect.bottom >= popupHeight;
@@ -287,7 +287,7 @@ export const DatePicker = forwardRef(({
         <div
           ref={popupRef}
           data-qt-floating-overlay
-          className="fixed z-[1100] w-[320px] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
+          className="fixed z-[1100] w-[min(320px,calc(100vw-16px))] rounded-[12px] border border-line bg-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
           style={{ top: popupPosition.top, left: popupPosition.left }}
         >
           {/* Header */}

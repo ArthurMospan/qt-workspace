@@ -47,3 +47,6 @@ ag-stop-probe.json
 calls.json
 msgs.json
 my_diff.txt
+
+.vercel
+.claude/

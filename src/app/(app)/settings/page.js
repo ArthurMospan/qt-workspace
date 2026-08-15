@@ -19,7 +19,7 @@ import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
-  Copy, ExternalLink, ChevronRight, AlertTriangle,
+  Copy, ExternalLink, ChevronRight, ArrowLeft, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
@@ -151,12 +151,12 @@ const NAV = [
 
 function Row({ label, desc, children, danger = false }) {
   return (
-    <div className="flex items-center justify-between gap-6 py-[12px]">
+    <div className="flex flex-col items-stretch justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6">
       <div className="min-w-0 flex-1">
         <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-ink'}`}>{label}</p>
         {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-muted'}`}>{desc}</p>}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="w-full sm:w-auto sm:shrink-0">{children}</div>
     </div>
   );
 }
@@ -190,7 +190,7 @@ function InlineEditField({ value, onChange, saved, onSave, placeholder = '', typ
     try { await onSave(); } finally { setSaving(false); }
   };
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative max-sm:w-full ${className}`}>
       <Input
         type={type}
         value={value}
@@ -221,7 +221,7 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
     try { await onSave(); } finally { setSaving(false); }
   };
   return (
-    <div className="flex w-[260px] items-center gap-1.5">
+    <div className="flex w-full items-center gap-1.5 sm:w-[260px]">
       <DatePicker
         value={value}
         onChange={onChange}
@@ -640,6 +640,7 @@ export default function SettingsPage() {
   const isOwner = myRole === 'owner';
 
   const [activeSection, setActiveSection] = useState('profile');
+  const [integrationDetail, setIntegrationDetail] = useState('');
 
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
@@ -1401,6 +1402,7 @@ export default function SettingsPage() {
       revertProfile(); // chose to leave → discard so the guard stops prompting
     }
     setActiveSection(newSection);
+    setIntegrationDetail('');
     return true;
   };
 
@@ -2466,7 +2468,7 @@ export default function SettingsPage() {
                 options={[
                   { value: 'ua', label: 'Українська' }
                 ]}
-                className="w-[240px]"
+                className="w-full sm:w-[240px]"
               />
             </Row>
             <Row label="Формат дати" desc="Оберіть зручний формат представлення дати">
@@ -2478,7 +2480,7 @@ export default function SettingsPage() {
                   { value: 'YYYY-MM-DD', label: `YYYY-MM-DD (${yyyy}-${mm}-${dd})` },
                   { value: 'MM/DD/YYYY', label: `MM/DD/YYYY (${mm}/${dd}/${yyyy})` }
                 ]}
-                className="w-[240px]"
+                className="w-full sm:w-[240px]"
               />
             </Row>
             <Row label="Перший день тижня" desc="Перший день тижня в сітці календаря (DatePicker)">
@@ -2489,7 +2491,7 @@ export default function SettingsPage() {
                   { value: 'Monday', label: 'Понеділок' },
                   { value: 'Sunday', label: 'Неділя' }
                 ]}
-                className="w-[240px]"
+                className="w-full sm:w-[240px]"
               />
             </Row>
             <Row label="Формат часу" desc="Виберіть між 24-годинним або 12-годинним форматом відображення">
@@ -2500,7 +2502,7 @@ export default function SettingsPage() {
                   { value: '24h', label: `24-годинний (${hours24Str}:${mins})` },
                   { value: '12h', label: `12-годинний (${hours12Num}:${mins} ${ampm})` }
                 ]}
-                className="w-[240px]"
+                className="w-full sm:w-[240px]"
               />
             </Row>
             <Row label="Часовий пояс" desc="Поточний регіональний час для планування">
@@ -2508,7 +2510,7 @@ export default function SettingsPage() {
                 value={timezone}
                 onChange={setTimezone}
                 options={tzOptions}
-                className="w-[240px]"
+                className="w-full sm:w-[240px]"
               />
             </Row>
           </Card>
@@ -2600,7 +2602,7 @@ export default function SettingsPage() {
                 <div className="pt-[12px]">
                   <p className="text-[13px] font-medium text-ink mb-[2px]">Тема сайдбару</p>
                   <p className="text-[12px] text-muted mb-[12px]">Оберіть колірну схему бічної панелі</p>
-                  <div className="flex gap-[16px]">
+                  <div className="flex flex-wrap gap-[16px]">
                     {THEME_OPTIONS.map(opt => {
                       const isActive = sidebarTheme === opt.id;
                       const isCustomUnselected = opt.id === 'custom' && !isActive;
@@ -2733,10 +2735,84 @@ export default function SettingsPage() {
           }
         };
 
-        return (
-          <Section title="Інтеграції" desc="Керуй підключеними сервісами" rightAction={saveButton}>
+        const integrationRows = [
+          {
+            id: 'quickteam-plus',
+            title: 'QuickTeam+',
+            description: 'Клієнтські запити та оновлення з порталу.',
+            logo: '/quickteam.png',
+            status: qtEnabled ? 'Підключено' : 'Вимкнено',
+            active: qtEnabled,
+          },
+          {
+            id: 'telegram',
+            title: 'Telegram',
+            description: 'Створення задач із робочої Telegram-групи.',
+            logo: '/integrations/telegram.svg',
+            status: telegramGroupStatus.connected
+              ? 'Підключено'
+              : telegramGroupStatus.configured ? 'Не підключено' : 'Недоступно',
+            active: telegramGroupStatus.connected,
+          },
+          {
+            id: 'buggybag',
+            title: 'BuggyBag Portal',
+            description: 'Баг-репорти клієнтів як задачі QuickTeam.',
+            logo: '/bug-logo.png',
+            status: buggyBagEnabled ? 'Підключено' : 'Вимкнено',
+            active: buggyBagEnabled,
+          },
+        ];
 
-            <IntegrationCard
+        if (!integrationDetail) {
+          return (
+            <Section title="Інтеграції" desc="Підключені сервіси та доступні канали">
+              <div className="flex flex-col gap-[8px]">
+                {integrationRows.map(item => (
+                  <Card
+                    key={item.id}
+                    preset="bordered"
+                    padding="md"
+                    interactive
+                    onClick={() => setIntegrationDetail(item.id)}
+                  >
+                    <div className="flex items-center gap-[12px]">
+                      <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
+                        <Image src={item.logo} alt="" width={30} height={30} className="h-[28px] w-[28px] object-contain" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-bold text-ink">{item.title}</span>
+                        <span className="mt-[2px] block truncate text-[11px] text-muted">{item.description}</span>
+                      </span>
+                      <Pill color={item.active ? '#10b981' : '#9a9a9a'} size="md" appearance="soft-outline">
+                        {item.status}
+                      </Pill>
+                      <ChevronRight size={16} className="shrink-0 text-faint" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Section>
+          );
+        }
+
+        const integrationTitle = integrationRows.find(item => item.id === integrationDetail)?.title || 'Інтеграція';
+
+        return (
+          <Section
+            title={integrationTitle}
+            desc="Опис, стан і налаштування інтеграції"
+            rightAction={(
+              <>
+                <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setIntegrationDetail('')}>
+                  Усі інтеграції
+                </Button>
+                {saveButton}
+              </>
+            )}
+          >
+
+            {integrationDetail === 'quickteam-plus' && <IntegrationCard
               title="QuickTeam+"
               description="Синхронізує клієнтські запити та оновлення з порталу QuickTeam+."
               logoSrc="/quickteam.png"
@@ -2756,10 +2832,10 @@ export default function SettingsPage() {
                   Відкрити портал <ExternalLink size={11} />
                 </a>
               ) : null}
-            />
+            />}
 
             {/* Telegram bot — group task capture */}
-            <IntegrationCard
+            {integrationDetail === 'telegram' && <IntegrationCard
               title="Telegram"
               description="Створюйте задачі прямо з робочої Telegram-групи та автоматично додавайте їх у вибраний проєкт."
               logoSrc="/integrations/telegram.svg"
@@ -2881,10 +2957,10 @@ export default function SettingsPage() {
                   ]}
                 />
               ) : null}
-            </IntegrationCard>
+            </IntegrationCard>}
 
             {/* BuggyBag Portal */}
-            <IntegrationCard
+            {integrationDetail === 'buggybag' && <IntegrationCard
               title="BuggyBag Portal"
               description="Перетворює баг-репорти клієнтів на задачі QuickTeam разом зі скріншотами та технічними даними."
               logoSrc="/bug-logo.png"
@@ -2925,7 +3001,7 @@ export default function SettingsPage() {
                   </div>
                 </IntegrationNote>
               )}
-            </IntegrationCard>
+            </IntegrationCard>}
           </Section>
         );
       }
@@ -2940,7 +3016,7 @@ export default function SettingsPage() {
           <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
             <Card preset="bordered" padding="none" className="overflow-hidden transition-all">
               <div className={`bg-white px-6 py-6 border-b border-line`}>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                   <div>
                     <Pill appearance="outline" shape="badge" size="md" uppercase className="mb-3">
                       {isPro ? 'PRO PLAN' : 'FREE PLAN'}
@@ -2948,7 +3024,7 @@ export default function SettingsPage() {
                     <h3 className="ui-type-detail-title text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
                     <p className="text-[13px] text-muted">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-[32px] font-black text-ink leading-none mb-1">{isPro ? '$15' : '$0'}<span className="text-[14px] text-faint font-medium">/міс</span></p>
                   </div>
                 </div>

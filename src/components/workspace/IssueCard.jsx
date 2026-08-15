@@ -24,6 +24,7 @@ import TaskIdentity from '@/components/ui/TaskManagement/TaskIdentity';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
+import Checkbox from '@/components/ui/Forms/Checkbox';
 import { priorityPresentation } from '@/lib/utils/priorities.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 
@@ -51,7 +52,7 @@ function hexToRgba(hex, alpha) {
 // `showStatusName` is for a column that is not a status: on «Мої завдання» the
 // columns are the five shared categories, so a card in «У роботі» could be in
 // «Код-ревʼю» or in «QA» and the column no longer says which.
-export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, className = '', cardRef, virtualStyle, dragProvided, dragSnapshot }) {
+export default function IssueCard({ issue, issues = [], allIssues, issueLinks = [], members = [], labels = [], sprints = [], index, projectId, projectName, showProjectName = false, showStatusName = false, isTimerActive, isArchived, interactive = true, selected = false, selectionActive = false, onSelect, className = '', cardRef, virtualStyle, dragProvided, dragSnapshot }) {
   const router   = useRouter();
   const { currentUser, projects = [], activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
@@ -127,8 +128,8 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     // lift shadow below — and the cursor is by definition over the card being
     // dragged. Dropping the ring while lifted lets the lift actually show, and
     // stops the shadow swapping abruptly the moment the card is released.
-    const hoverRing = lifted || !interactive ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
-    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
+    const hoverRing = lifted || !interactive || selected ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
+    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${selected ? 'ring-2 ring-ink' : ''} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
     // `none` is the library asking for an instant snap and cannot be combined
     // with further entries — appending to it would void the whole declaration.
     const cardTransition = !libraryTransition || libraryTransition === 'none'
@@ -158,7 +159,15 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         onDragStart={() => { isDraggingRef.current = true; }}
         onDragEnd={() => { isDraggingRef.current = false; }}
         onClick={interactive
-          ? () => { if (!isDraggingRef.current) router.push(issuePath(issue, project || projectId)); }
+          ? event => {
+            if (isDraggingRef.current) return;
+            if (onSelect && (selectionActive || event.shiftKey)) {
+              event.preventDefault();
+              onSelect(issue.id, { shiftKey: event.shiftKey });
+              return;
+            }
+            router.push(issuePath(issue, project || projectId));
+          }
           : undefined}
         className={cardClassName}
         style={{
@@ -188,6 +197,21 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           transition: cardTransition,
         }}
       >
+        {onSelect && (
+          <span
+            className={`absolute left-[10px] top-[10px] z-30 rounded-[5px] bg-white p-[2px] shadow-sm transition-opacity ${selected || selectionActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}
+            onClick={event => event.stopPropagation()}
+            onMouseDown={event => event.stopPropagation()}
+            onTouchStart={event => event.stopPropagation()}
+          >
+            <Checkbox
+              checked={selected}
+              onChange={() => onSelect(issue.id)}
+              size="sm"
+              ariaLabel={`Вибрати завдання ${issue.issueKey || issue.title}`}
+            />
+          </span>
+        )}
         {/* ── Priority glow blob ─────────────────────────── */}
         {pri.restGlow !== 'transparent' && (
           <>
@@ -383,7 +407,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
 
   if (isDraggable) {
     return (
-      <Draggable draggableId={issue.id} index={index} isDragDisabled={isArchived}>
+      <Draggable draggableId={issue.id} index={index} isDragDisabled={isArchived || selectionActive}>
         {(provided, snapshot) => renderCardContent(provided, snapshot)}
       </Draggable>
     );
