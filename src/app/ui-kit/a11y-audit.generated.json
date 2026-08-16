@@ -10,14 +10,14 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 312,
-    "elements": 4137,
+    "files": 315,
+    "elements": 4150,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 34
+    "runtimeNameVerification": 33
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -58,28 +58,28 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:107",
+      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:118",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:126",
+      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:145",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:53",
+      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:172",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:80",
+      "location": "src/components/ui/Chat/ChatAttachmentList.jsx:48",
       "attributes": [
         "aria-label"
       ]
@@ -200,14 +200,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:61",
-      "attributes": [
-        "aria-label"
-      ]
-    },
-    {
-      "element": "button",
-      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:95",
+      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:116",
       "attributes": [
         "aria-label"
       ]
@@ -230,7 +223,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
+      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
       "attributes": [
         "label"
       ]

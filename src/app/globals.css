@@ -504,6 +504,57 @@
   .ui-surface[data-ui-padding='wide'] { padding: 12px 16px; }
   .ui-surface[data-ui-padding='compact-row'] { padding: 8px 10px; }
 
+  /* ── The typed file square ────────────────────────────────────────────────
+     One geometry and one colour per family of file, so a PDF looks like a PDF
+     wherever it is attached — a task, a channel, a thread, the viewer's header.
+     Before this, every one of those places drew the same grey page glyph and a
+     reader had to read the extension to tell a spreadsheet from a zip.
+
+     The tint is `currentColor` mixed into the surface rather than a second
+     declared colour, so a family is one hex here and the chip follows it. Two
+     sizes: the list square, and the small one a chat tile puts over a preview.
+     The hues are identity, not status — they never mean good or bad. */
+  .ui-file-glyph {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: var(--ui-radius-action);
+    background: color-mix(in oklab, currentcolor 12%, transparent);
+    color: var(--color-muted);
+  }
+  .ui-file-glyph[data-ui-density='sm'] {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+  .ui-file-glyph[data-ui-density='lg'] {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--ui-radius-inset);
+  }
+  /* On the dark side of a chat bubble the mixed tint disappears into the
+     bubble, so the chip borrows the bubble's own light instead. The hue stays:
+     it is what makes the family recognisable, and every one of them clears
+     contrast on #303030. */
+  .ui-file-glyph[data-ui-tone='dark'] {
+    background: rgb(255 255 255 / 14%);
+  }
+  .ui-file-glyph[data-ui-file-kind='image']   { color: #0e8f96; }
+  .ui-file-glyph[data-ui-file-kind='video']   { color: #4a5bd0; }
+  .ui-file-glyph[data-ui-file-kind='audio']   { color: #b5468f; }
+  .ui-file-glyph[data-ui-file-kind='pdf']     { color: #d64545; }
+  .ui-file-glyph[data-ui-file-kind='sheet']   { color: #1a8a5a; }
+  .ui-file-glyph[data-ui-file-kind='doc']     { color: #2f6fd0; }
+  .ui-file-glyph[data-ui-file-kind='slides']  { color: #dd7a2f; }
+  .ui-file-glyph[data-ui-file-kind='text']    { color: #6a6a6a; }
+  .ui-file-glyph[data-ui-file-kind='code']    { color: #6b53c9; }
+  .ui-file-glyph[data-ui-file-kind='archive'] { color: #9a7b2f; }
+  .ui-file-glyph[data-ui-file-kind='file']    { color: #8a8a8a; }
+
   /* Semantic pill family. Status, type, metadata and counters share geometry
      while keeping their distinct data meaning through wrapper components. */
   .ui-pill {

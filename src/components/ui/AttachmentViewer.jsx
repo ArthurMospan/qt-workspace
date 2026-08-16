@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, ExternalLink, FileText, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, ExternalLink, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
-
-function getUrl(attachment) {
-  return attachment?.previewUrl || attachment?.url || attachment?.downloadUrl || attachment?.downloadURL || attachment?.audioUrl || '';
-}
+import FileThumb from '@/components/ui/Attachments/FileThumb';
+import {
+  attachmentKind,
+  attachmentKindLabel,
+  attachmentMetaLabel,
+  attachmentUrl,
+} from '@/lib/utils/attachmentKinds.mjs';
 
 // Cloudinary forces a download (rather than inline view) when the delivery URL
 // carries the fl_attachment flag. For any other host we fall back to the raw
@@ -19,27 +22,21 @@ function downloadUrlFor(url) {
   return url;
 }
 
-function getKind(attachment) {
-  const type = (attachment?.resourceType || attachment?.type || attachment?.mimeType || '').toLowerCase();
-  const source = `${attachment?.name || ''} ${getUrl(attachment)}`;
-  if (type === 'image' || type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg|heic|heif|tiff?)(?:[?#]|$)/i.test(source)) return 'image';
-  if (type === 'application/pdf' || /\.pdf(?:[?#]|$)/i.test(source)) return 'pdf';
-  if (type === 'video' || type.startsWith('video/') || /\.(mp4|webm|mov|m4v)(?:[?#]|$)/i.test(source)) return 'video';
-  if (type === 'audio' || type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)(?:[?#]|$)/i.test(source)) return 'audio';
-  return 'file';
-}
-
 /**
- * Full-screen viewer for one attachment — image, PDF, or the download card for
- * anything the browser cannot render.
+ * Full-screen viewer for one attachment — picture, PDF, video, plain text, or
+ * the download card for anything the browser cannot render.
+ *
+ * Sound never reaches here: an audio attachment plays in the row or the message
+ * it is attached to, and a black full-screen overlay to hear twelve seconds of
+ * voice was the interaction this viewer got most obviously wrong.
  *
  * @param {object} props.attachment The file to show; `null` closes the viewer.
  * @param {() => void} props.onClose Closes it.
  */
 export default function AttachmentViewer({ attachment, onClose }) {
   const [scale, setScale] = useState(1);
-  const url = getUrl(attachment);
-  const kind = useMemo(() => getKind(attachment), [attachment]);
+  const url = attachmentUrl(attachment);
+  const kind = useMemo(() => attachmentKind(attachment), [attachment]);
   const name = attachment?.name || 'Вкладення';
   const dialogRef = useModalFocus({ isOpen: Boolean(attachment && url), onClose });
 
@@ -55,6 +52,11 @@ export default function AttachmentViewer({ attachment, onClose }) {
 
   if (!attachment || !url || typeof document === 'undefined') return null;
 
+  // Text and source files are the second most common thing a colleague drops on
+  // a task after a picture, and they used to land on the "cannot show this"
+  // card. The browser renders both as text; the frame is all it needed.
+  const rendersInFrame = kind === 'pdf' || kind === 'text' || kind === 'code';
+
   return createPortal(
     <div
       data-ui-overlay="media-viewer"
@@ -69,8 +71,11 @@ export default function AttachmentViewer({ attachment, onClose }) {
       }}
     >
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-black/35 px-4 text-white">
-        <FileText size={18} className="shrink-0 text-white/65" />
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{name}</span>
+        <FileThumb attachment={attachment} previewUrl={url} density="sm" dark />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold">{name}</span>
+          <span className="block text-[10px] text-white/50">{attachmentMetaLabel(attachment, kind)}</span>
+        </span>
         {kind === 'image' && (
           <div className="flex items-center gap-1" aria-label="Масштаб зображення">
             <button data-ui-control="media-action" type="button" onClick={() => setScale(value => Math.max(0.5, value - 0.25))} className="rounded-[7px] p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Зменшити"><ZoomOut size={17} /></button>
@@ -97,14 +102,21 @@ export default function AttachmentViewer({ attachment, onClose }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={name} className="max-h-full max-w-full select-none object-contain transition-transform duration-150" style={{ transform: `scale(${scale})` }} />
         )}
-        {kind === 'pdf' && <iframe src={url} title={name} className="h-full w-full max-w-6xl rounded-[8px] bg-white" />}
+        {rendersInFrame && <iframe src={url} title={name} className="h-full w-full max-w-6xl rounded-[8px] bg-white" />}
         {kind === 'video' && <video src={url} controls autoPlay className="max-h-full max-w-full" />}
         {kind === 'audio' && <audio src={url} controls autoPlay className="w-full max-w-xl" />}
-        {kind === 'file' && (
-          <div data-ui-surface="local" className="flex max-w-sm flex-col items-center gap-4 rounded-[8px] bg-white p-8 text-center">
-            <FileText size={40} className="text-muted" />
-            <p className="max-w-full break-words text-[14px] font-semibold text-ink">{name}</p>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-[7px] bg-ink px-4 py-2 text-[13px] font-semibold text-white"><ExternalLink size={15} /> Відкрити файл</a>
+        {!rendersInFrame && kind !== 'image' && kind !== 'video' && kind !== 'audio' && (
+          // The honest card: the browser will not render this one, so say what
+          // it is instead of drawing a generic page and hoping.
+          <div data-ui-surface="local" className="flex max-w-sm flex-col items-center gap-4 rounded-[16px] bg-white p-8 text-center">
+            <FileThumb attachment={attachment} density="lg" />
+            <div>
+              <p className="max-w-full break-words text-[14px] font-semibold text-ink">{name}</p>
+              <p className="mt-1 text-[11px] text-muted">
+                {attachmentKindLabel(kind)} — його не можна показати тут
+              </p>
+            </div>
+            <a href={attachment.secureDownloadUrl || downloadUrlFor(url)} download={name} className="inline-flex items-center gap-2 rounded-[7px] bg-ink px-4 py-2 text-[13px] font-semibold text-white"><Download size={15} /> Завантажити</a>
           </div>
         )}
       </div>

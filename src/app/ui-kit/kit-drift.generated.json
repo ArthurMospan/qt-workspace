@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 40,
-    "declaredValues": 358,
+    "componentsWithVariants": 41,
+    "declaredValues": 361,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 221,
+    "usedAndPreviewed": 223,
     "usedWithoutPreview": 0,
-    "declaredUnused": 103
+    "declaredUnused": 104
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -230,6 +230,12 @@
       "component": "EmptyState",
       "prop": "surface",
       "value": "transparent",
+      "namespace": null
+    },
+    {
+      "component": "FileThumb",
+      "prop": "density",
+      "value": "md",
       "namespace": null
     },
     {
@@ -967,6 +973,13 @@
         "md"
       ]
     },
+    "FileThumb": {
+      "density": [
+        "lg",
+        "md",
+        "sm"
+      ]
+    },
     "MentionMenu": {
       "density": [
         "composer",
@@ -1288,7 +1301,7 @@
     "CalendarEntry.tone.event": 1,
     "CalendarEntry.tone.deadline": 1,
     "IconAction.size.xs": 6,
-    "IconAction.appearance.quiet": 12,
+    "IconAction.appearance.quiet": 13,
     "TextAction.tone.muted": 5,
     "TextAction.size.xs": 4,
     "Surface.padding.sm": 2,
@@ -1301,7 +1314,7 @@
     "IconAction.composition.chat-panel-action": 3,
     "UserAvatar.size.md": 5,
     "IconAction.shape.compact": 2,
-    "IconAction.appearance.quiet-danger": 2,
+    "IconAction.appearance.quiet-danger": 3,
     "IconAction.composition.chat-micro-action": 4,
     "Dialog.size.md": 6,
     "Button.size.md": 58,
@@ -1352,7 +1365,7 @@
     "SidebarLayout.context.team": 1,
     "Surface.preset.nested-card": 1,
     "FormGroup.gap.md": 8,
-    "IconAction.size.sm": 7,
+    "IconAction.size.sm": 9,
     "Textarea.composition.audio-transcript": 1,
     "IconAction.composition.auth-close": 1,
     "IconAction.appearance.auth-close": 1,
@@ -1458,6 +1471,8 @@
     "Pill.size.chat-day-wide": 1,
     "EmptyState.context.centered": 1,
     "EmptyState.density.compact": 2,
+    "FileThumb.density.sm": 2,
+    "FileThumb.density.lg": 1,
     "UserAvatar.size.chat-inline": 1,
     "Pill.tone.accent": 1,
     "UserAvatar.size.chat-message": 2,
@@ -1599,6 +1614,9 @@
     "EmptyState.density.compact",
     "EmptyState.surface.card",
     "EmptyState.surface.transparent",
+    "FileThumb.density.lg",
+    "FileThumb.density.md",
+    "FileThumb.density.sm",
     "FilterBar.context.default",
     "FilterBar.context.detail",
     "FilterBar.context.projects",

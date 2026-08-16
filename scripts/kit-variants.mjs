@@ -87,6 +87,12 @@ const SOURCES = {
   MarkdownViewer: {
     size: { map: ['DataDisplay/MarkdownViewer.jsx', 'SIZES'] },
   },
+  // Three squares, not three sizes of icon: the list square, the small one that
+  // rides inside a chat tile, and the large one the viewer's fallback card puts
+  // above a file it cannot render.
+  FileThumb: {
+    density: { map: ['Attachments/FileThumb.jsx', 'GLYPH_SIZES'] },
+  },
   MentionMenu: {
     density: { map: ['Chat/MentionMenu.jsx', 'DENSITIES'] },
   },

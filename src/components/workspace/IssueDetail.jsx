@@ -1742,7 +1742,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               </div>
               <div className="flex flex-col gap-[6px]">
                  {(issue.subtasks || []).map((s, i) => (
-                  <div key={s.id || i} data-ui-surface="local" className="flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]">
+                  <div
+                    key={s.id || i}
+                    data-ui-surface="nested-card"
+                    data-ui-padding="row"
+                    className="ui-surface flex items-center gap-3 border border-[#f0f0f0]"
+                  >
                     {s.done
                       ? <CheckSquare size={16} className="shrink-0 text-[#10b981]" />
                       : <Square size={16} className="shrink-0 text-faint" />}

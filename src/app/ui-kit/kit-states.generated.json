@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 99,
-    "stateful": 92,
+    "components": 101,
+    "stateful": 93,
     "hover": 66,
     "focus": 65,
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 64
+    "long-text": 65
   },
   "components": {
     "Alert": {
@@ -41,6 +41,9 @@
       "hover": "own",
       "focus": "global",
       "long-text": "children"
+    },
+    "AudioPlayer": {
+      "long-text": "title"
     },
     "AvatarButton": {
       "disabled": "native",
@@ -177,6 +180,7 @@
       "focus": "global",
       "long-text": "value"
     },
+    "FileThumb": {},
     "FilterBar": {
       "long-text": "children"
     },
@@ -473,6 +477,9 @@
       "task-elements",
       "variant-matrix"
     ],
+    "AudioPlayer": [
+      "task-elements"
+    ],
     "AvatarButton": [
       "chat-elements",
       "variant-matrix",
@@ -591,6 +598,10 @@
     ],
     "FileInput": [
       "chat-elements"
+    ],
+    "FileThumb": [
+      "task-elements",
+      "variant-matrix"
     ],
     "FilterBar": [
       "selects",

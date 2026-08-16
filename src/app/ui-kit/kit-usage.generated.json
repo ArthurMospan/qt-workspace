@@ -2,14 +2,14 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 99,
-    "used": 99,
+    "components": 101,
+    "used": 101,
     "unused": 0,
     "covered": 96,
     "uncovered": 0,
     "routes": 12,
-    "previews": 128,
-    "internal": 3,
+    "previews": 130,
+    "internal": 5,
     "unlisted": 0
   },
   "routes": {
@@ -47,6 +47,7 @@
     ],
     "/[projectId]": [
       "Alert",
+      "AudioPlayer",
       "BulkActionBar",
       "Button",
       "Card",
@@ -67,7 +68,6 @@
       "Label",
       "LoadingSpinner",
       "MarkdownEditor",
-      "MediaPlayButton",
       "PageHeader",
       "Pill",
       "PriorityIcon",
@@ -516,6 +516,21 @@
       "usedIn": [
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
+      ]
+    },
+    "AudioPlayer": {
+      "file": "src/components/ui/Attachments/AudioPlayer.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [
+        "AttachmentRow",
+        "ChatAttachmentList"
+      ],
+      "routes": [
+        "/[projectId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/qtplus/cards/AudioCard.jsx"
       ]
     },
     "AvatarButton": {
@@ -1082,6 +1097,18 @@
         "src/components/workspace/UnifiedTimeline.jsx"
       ]
     },
+    "FileThumb": {
+      "file": "src/components/ui/Attachments/FileThumb.jsx",
+      "count": 0,
+      "showcased": true,
+      "usedByKit": [
+        "AttachmentRow",
+        "AttachmentViewer",
+        "ChatAttachmentList"
+      ],
+      "routes": [],
+      "usedIn": []
+    },
     "FilterBar": {
       "file": "src/components/ui/FilterBar.jsx",
       "count": 7,
@@ -1151,6 +1178,7 @@
       "count": 15,
       "showcased": true,
       "usedByKit": [
+        "AttachmentRow",
         "ChannelInfoPanel",
         "ChatConversationHeader",
         "MarkdownEditor",
@@ -1411,15 +1439,13 @@
     },
     "MediaPlayButton": {
       "file": "src/components/ui/MediaPlayButton.jsx",
-      "count": 1,
+      "count": 0,
       "showcased": true,
-      "usedByKit": [],
-      "routes": [
-        "/[projectId]"
+      "usedByKit": [
+        "AudioPlayer"
       ],
-      "usedIn": [
-        "src/components/workspace/qtplus/cards/AudioCard.jsx"
-      ]
+      "routes": [],
+      "usedIn": []
     },
     "MemberRail": {
       "file": "src/components/ui/Navigation/MemberRail.jsx",
@@ -2491,11 +2517,11 @@
             "src/components/workspace/IssueDetail.jsx:1700",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/IssueDetail.jsx:1725",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1826",
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1831",
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900",
             "src/components/workspace/UnifiedTimeline.jsx:649",
             "src/components/workspace/WorkloadTab.jsx:509",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
@@ -2729,10 +2755,10 @@
             "src/components/workspace/IssueDetail.jsx:1549",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
@@ -2792,7 +2818,7 @@
             "src/components/workspace/IssueDetail.jsx:1197",
             "src/components/workspace/IssueDetail.jsx:1550",
             "src/components/workspace/IssueDetail.jsx:1701",
-            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1831",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649"
@@ -3055,11 +3081,11 @@
             "src/components/workspace/IssueDetail.jsx:1700",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/IssueDetail.jsx:1725",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1826",
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1831",
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3270,11 +3296,11 @@
             "src/components/workspace/IssueDetail.jsx:1700",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/IssueDetail.jsx:1725",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1826",
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1831",
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3461,11 +3487,11 @@
             "src/components/workspace/IssueDetail.jsx:1700",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/IssueDetail.jsx:1725",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1826",
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1831",
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3697,8 +3723,8 @@
             "src/components/workspace/IssueDetail.jsx:1700",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/IssueDetail.jsx:1725",
-            "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1830",
+            "src/components/workspace/IssueDetail.jsx:1831",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3786,9 +3812,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1857",
-            "src/components/workspace/IssueDetail.jsx:1885",
-            "src/components/workspace/IssueDetail.jsx:1895"
+            "src/components/workspace/IssueDetail.jsx:1862",
+            "src/components/workspace/IssueDetail.jsx:1890",
+            "src/components/workspace/IssueDetail.jsx:1900"
           ]
         },
         "chat-composer-action": {
@@ -3870,7 +3896,7 @@
             "src/components/MobileNav.jsx:270",
             "src/components/MobileNav.jsx:299",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         },
@@ -3942,7 +3968,7 @@
             "src/app/(app)/chat/page.js:293",
             "src/app/(app)/chat/page.js:302",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:106"
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:19"
           ]
         },
         "quiet-danger": {
@@ -4106,7 +4132,7 @@
             "src/components/profile/ProfileModal.jsx:46",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/MediaLightbox.jsx:23",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         },
@@ -4158,7 +4184,7 @@
             "src/components/profile/ProfileView.jsx:227",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/MediaLightbox.jsx:23",
-            "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
+            "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
             "src/components/workspace/qtplus/cards/FileCard.jsx:81"
           ]
         },
@@ -4649,8 +4675,8 @@
             "src/components/workspace/IssueDetail.jsx:1418",
             "src/components/workspace/IssueDetail.jsx:1430",
             "src/components/workspace/IssueDetail.jsx:1442",
-            "src/components/workspace/IssueDetail.jsx:1801",
-            "src/components/workspace/IssueDetail.jsx:1809",
+            "src/components/workspace/IssueDetail.jsx:1806",
+            "src/components/workspace/IssueDetail.jsx:1814",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -4756,8 +4782,8 @@
             "src/components/workspace/IssueDetail.jsx:1418",
             "src/components/workspace/IssueDetail.jsx:1430",
             "src/components/workspace/IssueDetail.jsx:1442",
-            "src/components/workspace/IssueDetail.jsx:1801",
-            "src/components/workspace/IssueDetail.jsx:1809",
+            "src/components/workspace/IssueDetail.jsx:1806",
+            "src/components/workspace/IssueDetail.jsx:1814",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -4908,8 +4934,8 @@
             "src/components/workspace/IssueDetail.jsx:1418",
             "src/components/workspace/IssueDetail.jsx:1430",
             "src/components/workspace/IssueDetail.jsx:1442",
-            "src/components/workspace/IssueDetail.jsx:1801",
-            "src/components/workspace/IssueDetail.jsx:1809",
+            "src/components/workspace/IssueDetail.jsx:1806",
+            "src/components/workspace/IssueDetail.jsx:1814",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -6115,6 +6141,9 @@
           ]
         }
       }
+    },
+    "FileThumb": {
+      "density": {}
     },
     "MentionMenu": {
       "density": {
@@ -7399,7 +7428,7 @@
             "src/components/CreateTaskModal.jsx:310",
             "src/components/InviteMemberDialog.jsx:115",
             "src/components/workspace/BillingTab.jsx:1112",
-            "src/components/workspace/IssueDetail.jsx:1925"
+            "src/components/workspace/IssueDetail.jsx:1930"
           ]
         },
         "raised": {
@@ -7844,7 +7873,9 @@
     "Трекінг часу": "<div className=\"flex items-center gap-[24px]\">\n  <TimeTrackingControl\n    running={timerRunning}\n    onToggle={() => setTimerRunning(v => !v)}\n    onOpen={() => {}}\n    spentLabel={timerRunning ? '1г 12хв' : '48хв'}\n    estimateLabel=\"4г\"\n  />\n  <span className=\"text-[10px] text-[#cfcfcf]\">натисніть, щоб побачити стан «йде запис»</span>\n</div>",
     "Тригери у смузі атрибутів": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {[[false, false, 'details'], [false, true, 'details · натиснутий'], [true, false, 'details · condensed']].map(([condensed, active, role]) => (\n    <div key={role} className=\"flex w-[120px] flex-col items-center gap-[6px]\">\n      <AttributeTrigger variant=\"details\" condensed={condensed} active={active} aria-label=\"Деталі завдання\">\n        <Settings2 size={14} />\n        <span>Деталі</span>\n      </AttributeTrigger>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n  {[[false, 'cell'], [true, 'cell · condensed']].map(([condensed, role]) => (\n    <div key={role} className=\"flex w-[150px] flex-col items-center gap-[6px]\">\n      <div className=\"w-full rounded-[10px] bg-canvas p-1.5\">\n        <AttributeTrigger variant=\"cell\" condensed={condensed} aria-label=\"Учасники події\">\n          <span className=\"block h-[14px] overflow-hidden text-[10px] font-bold uppercase leading-[14px] tracking-wider text-muted\">Учасники</span>\n          <span className=\"flex items-center text-[13px] font-medium text-ink\"><Users size={13} className=\"mr-1.5 shrink-0 text-muted\" />3 учасників</span>\n        </AttributeTrigger>\n      </div>\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
     "Запис у журналі часу": "<div className=\"flex flex-col gap-[8px]\">\n  <TimeLogRow\n    member={demoUser}\n    spentLabel=\"1г 30хв\"\n    dateLabel=\"12 травня\"\n    description=\"Зібрав макети й звів до одного файлу\"\n    canEdit\n    onEdit={() => {}}\n    onDelete={() => {}}\n  />\n  <TimeLogRow member={{ name: 'Олена Коваль' }} spentLabel=\"45хв\" dateLabel=\"12 травня\" />\n</div>",
-    "Вкладення завдання": "<AttachmentRow\n  attachment={demoAttachment}\n  onOpen={() => setViewerOpen(true)}\n  onDelete={() => {}}\n  onDownload={() => {}}\n/>",
+    "Тип файлу": "<div className=\"flex flex-wrap gap-3\">\n  {ATTACHMENT_KINDS.map(kind => (\n    <span key={kind} className=\"flex w-[86px] flex-col items-center gap-1.5 text-center\">\n      <FileThumb attachment={{ name: KIND_SAMPLES[kind] }} />\n      <span className=\"text-[10px] font-semibold text-muted\">{attachmentKindLabel(kind)}</span>\n    </span>\n  ))}\n</div>",
+    "Аудіо, яке чути на місці": "<div data-ui-surface=\"compact-bordered-card\" data-ui-padding=\"sm\" className=\"ui-surface max-w-[380px]\">\n  <AudioPlayer title=\"дзвінок-12-05.m4a\" meta=\"Аудіо · 4,2 МБ\" />\n</div>",
+    "Вкладення завдання": "<div className=\"flex flex-col gap-1.5\">\n  <AttachmentRow\n    attachment={demoAttachment}\n    onOpen={() => setViewerOpen(true)}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n  <AttachmentRow\n    attachment={{ id: 'a2', name: 'кошторис.xlsx', size: 41200 }}\n    onOpen={() => setViewerOpen(true)}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n  <AttachmentRow\n    attachment={{ id: 'a3', name: 'дзвінок-12-05.m4a', size: 4404019 }}\n    onOpen={() => {}}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n</div>",
     "Масові дії із завданнями": "<div className=\"relative min-h-[160px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute\">\n  <BulkActionBar\n    count={4}\n    statusOptions={[{ value: 'todo', label: 'До виконання', dotColor: '#6b7280' }]}\n    memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}\n    priorityOptions={[{ value: 'medium', label: 'Середній' }]}\n    labelOptions={[{ value: 'design', label: 'Дизайн', dotColor: '#8b5cf6' }]}\n    typeOptions={[{ value: 'task', label: 'Завдання' }]}\n    sprintOptions={[{ value: 'sprint-1', label: 'Спринт 12' }]}\n    canArchive\n    onApply={() => {}}\n    onClear={() => {}}\n  />\n</div>",
     "Перегляд вкладення": "<Button style=\"secondary\" size=\"sm\" onClick={() => setViewerOpen(true)}>Відкрити перегляд</Button>\n{viewerOpen && (\n  <AttachmentViewer\n    attachment={{ name: 'brief.pdf', url: 'data:application/pdf;base64,', type: 'application/pdf' }}\n    onClose={() => setViewerOpen(false)}\n  />\n)}",
     "Звʼязок між задачами": "<div className=\"flex flex-col gap-[6px]\">\n  <IssueLinkRow label=\"Блокує\" onRemove={() => {}}>\n    <span className=\"text-[13px] font-semibold text-ink truncate\">\n      <span className=\"text-muted font-medium mr-1 uppercase\">QT-128</span>\n      Перевірити копірайт другого екрана\n    </span>\n  </IssueLinkRow>\n  <IssueLinkRow label=\"Повʼязано\" requiresReview onRemove={() => {}}>\n    <span className=\"text-[13px] font-semibold text-ink truncate\">\n      <span className=\"text-muted font-medium mr-1 uppercase\">QT-77</span>\n      Старий імпорт із YouTrack\n    </span>\n  </IssueLinkRow>\n</div>",

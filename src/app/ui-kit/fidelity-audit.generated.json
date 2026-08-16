@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 215,
-    "parsedFiles": 215,
+    "productFiles": 216,
+    "parsedFiles": 216,
     "parseErrors": 0,
     "nativeControls": 17,
     "structures": {
@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 49,
+    "localSurfaceExceptions": 47,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -40,14 +40,14 @@
   },
   "kit": {
     "totals": {
-      "components": 99,
-      "used": 99,
+      "components": 101,
+      "used": 101,
       "unused": 0,
       "covered": 96,
       "uncovered": 0,
       "routes": 12,
-      "previews": 128,
-      "internal": 3,
+      "previews": 130,
+      "internal": 5,
       "unlisted": 0
     },
     "unusedComponents": []
@@ -554,19 +554,9 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1745",
-      "tag": "div",
-      "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
-    },
-    {
       "location": "src/components/workspace/IssueModal.jsx:11",
       "tag": "div",
       "className": "relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
-    },
-    {
-      "location": "src/components/workspace/qtplus/cards/AudioCard.jsx:94",
-      "tag": "div",
-      "className": "rounded-[12px] border border-line bg-surface px-3 py-3 flex flex-col gap-2 group"
     },
     {
       "location": "src/components/workspace/qtplus/cards/ChecklistCard.jsx:9",

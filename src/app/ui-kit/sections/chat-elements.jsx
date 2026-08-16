@@ -30,6 +30,11 @@ const KIT_IMAGE_DATA_URI = 'data:image/svg+xml;utf8,'
 const KIT_CHAT_ATTACHMENTS = [
   { chatAttachmentKey: 'a1', name: 'onboarding-v2.png', size: 218_000, type: 'image/png', url: KIT_IMAGE_DATA_URI },
   { chatAttachmentKey: 'a2', name: 'brief.docx', size: 61_400, type: 'application/msword' },
+  { chatAttachmentKey: 'a3', name: 'кошторис.xlsx', size: 41_200, type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  // No bytes behind it in the catalogue, so the transport is silent — but the
+  // shape is the real one: a voice note in a channel is a player, never a tile
+  // that opens a full-screen viewer to be heard.
+  { chatAttachmentKey: 'a4', name: 'дзвінок-12-05.m4a', size: 4_404_019, type: 'audio/mp4', url: 'data:audio/mp4;base64,' },
 ];
 
 // Plain objects, not File instances: the pending tile calls createObjectURL for

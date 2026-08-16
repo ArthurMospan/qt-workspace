@@ -1,20 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Eye, FileText, Film, Image as ImageIcon, Music2, X } from 'lucide-react';
-import {
-  chatAttachmentKind,
-  formatChatFileSize,
-} from '@/lib/utils/chatAttachments.mjs';
-import { useChatAttachmentAccess } from '@/lib/hooks/useChatAttachmentAccess';
+// The files on a chat message.
+//
+// Three kinds of file get a treatment of their own here, and the rule is the
+// same one the task's attachment row follows — a task where you can hear a
+// voice note and a chat where you cannot is the kind of difference nobody can
+// explain to a user:
+//
+//   • a picture shows the picture;
+//   • a video shows its own first frame, with the play badge over it, and opens
+//     in the viewer where it actually plays;
+//   • a sound file plays right here, in the message, with no viewer at all.
+//
+// Everything else is a name, a size and its family's glyph — a PDF red, a
+// spreadsheet green, an archive amber — decided once by `FileThumb`.
 
-const KIND_ICON = {
-  image: ImageIcon,
-  video: Film,
-  audio: Music2,
-  pdf: FileText,
-  file: FileText,
-};
+import { useEffect, useState } from 'react';
+import { Eye, Play, X } from 'lucide-react';
+import AudioPlayer from '@/components/ui/Attachments/AudioPlayer';
+import FileThumb from '@/components/ui/Attachments/FileThumb';
+import {
+  attachmentKind,
+  attachmentMetaLabel,
+} from '@/lib/utils/attachmentKinds.mjs';
+import { useChatAttachmentAccess } from '@/lib/hooks/useChatAttachmentAccess';
 
 function AttachmentTile({
   attachment,
@@ -26,26 +35,82 @@ function AttachmentTile({
 }) {
   const privateAccess = useChatAttachmentAccess(attachment);
   const url = previewUrl || privateAccess.url;
-  const kind = chatAttachmentKind({ ...attachment, previewUrl: url });
+  const kind = attachmentKind({ ...attachment, previewUrl: url });
   const name = attachment?.name || 'Файл';
-  const sizeLabel = formatChatFileSize(attachment?.size);
-  const Icon = KIND_ICON[kind] || FileText;
-  const isImage = kind === 'image' && url;
+  const metaLabel = attachmentMetaLabel(attachment, kind);
+  const open = () => onOpen?.({
+    ...attachment,
+    previewUrl: url,
+    secureDownloadUrl: privateAccess.downloadUrl,
+  });
 
-  if (isImage) {
+  const removeButton = onRemove ? (
+    <button
+      type="button"
+      onClick={onRemove}
+      aria-label={`Прибрати ${name}`}
+      className={`shrink-0 rounded-[6px] p-1 ${dark ? 'text-white/55 hover:bg-white/10 hover:text-white' : 'text-faint hover:bg-canvas hover:text-ink'}`}
+    >
+      <X size={13} />
+    </button>
+  ) : null;
+
+  // ── Sound: no tile, no viewer, just the player ────────────────────────────
+  if (kind === 'audio' && url) {
+    return (
+      <div
+        className={`w-full rounded-[10px] border px-2.5 py-2 ${
+          dark
+            ? 'border-white/10 bg-white/10'
+            : 'border-black/[0.06] bg-white/80'
+        }`}
+      >
+        <AudioPlayer
+          src={url}
+          title={name}
+          meta={metaLabel}
+          dark={dark}
+          actions={removeButton}
+        />
+      </div>
+    );
+  }
+
+  // ── Picture and video: the file is its own preview ────────────────────────
+  if ((kind === 'image' || kind === 'video') && url) {
     const content = (
       <>
         <span className={`relative block w-full overflow-hidden bg-canvas ${compact ? 'h-[96px]' : 'h-[140px]'}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt={name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          />
+          {kind === 'image' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt={name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            // `#t=0.1` steps past the black leader frame most encoders write, so
+            // the tile shows the video rather than a black rectangle.
+            <video
+              src={`${url}#t=0.1`}
+              preload="metadata"
+              muted
+              playsInline
+              tabIndex={-1}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          )}
           {!onRemove && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/10 group-hover:opacity-100">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white">
-                <Eye size={15} />
+            <span className={`absolute inset-0 flex items-center justify-center transition-all ${
+              kind === 'video'
+                ? 'bg-black/20'
+                : 'bg-black/0 opacity-0 group-hover:bg-black/10 group-hover:opacity-100'
+            }`}
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white">
+                {kind === 'video'
+                  ? <Play size={15} fill="currentColor" className="ml-[2px]" />
+                  : <Eye size={15} />}
               </span>
             </span>
           )}
@@ -63,7 +128,7 @@ function AttachmentTile({
         <span className={`flex items-center gap-2 px-3 py-2 ${dark ? 'bg-white/10' : 'bg-white/90'}`}>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[12px] font-semibold">{name}</span>
-            {sizeLabel && <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{sizeLabel}</span>}
+            <span className={`block text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>{metaLabel}</span>
           </span>
         </span>
       </>
@@ -77,45 +142,26 @@ function AttachmentTile({
     return onRemove
       ? <div className={className}>{content}</div>
       : (
-        <button
-          type="button"
-          onClick={() => onOpen?.({
-            ...attachment,
-            previewUrl: url,
-            secureDownloadUrl: privateAccess.downloadUrl,
-          })}
-          className={className}
-          aria-label={`Переглянути ${name}`}
-        >
+        <button type="button" onClick={open} className={className} aria-label={`Переглянути ${name}`}>
           {content}
         </button>
       );
   }
 
+  // ── Everything else: the typed row ────────────────────────────────────────
   const content = (
     <>
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] ${dark ? 'bg-white/10' : 'bg-canvas'}`}>
-        <Icon size={16} className={dark ? 'text-white/65' : 'text-muted'} />
-      </span>
+      <FileThumb attachment={attachment} previewUrl={url} density="sm" dark={dark} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[12px] font-semibold">{name}</span>
         <span className={`block truncate text-[10px] ${dark ? 'text-white/55' : 'text-faint'}`}>
-          {sizeLabel || (kind === 'pdf' ? 'PDF' : kind === 'video' ? 'Відео' : kind === 'audio' ? 'Аудіо' : 'Файл')}
+          {metaLabel}
         </span>
       </span>
-      {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Прибрати ${name}`}
-          className={`shrink-0 rounded-[6px] p-1 ${dark ? 'text-white/55 hover:bg-white/10 hover:text-white' : 'text-faint hover:bg-canvas hover:text-ink'}`}
-        >
-          <X size={13} />
-        </button>
-      ) : null}
+      {removeButton}
     </>
   );
-  const className = `flex min-w-0 w-full items-center gap-3 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${
+  const className = `flex min-w-0 w-full items-center gap-2.5 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${
     dark
       ? 'bg-white/10 text-white hover:bg-white/15'
       : 'bg-white/80 text-ink hover:border-[#d7d7d7] hover:bg-white'
@@ -123,16 +169,7 @@ function AttachmentTile({
 
   return url && !onRemove
     ? (
-      <button
-        type="button"
-        onClick={() => onOpen?.({
-          ...attachment,
-          previewUrl: url,
-          secureDownloadUrl: privateAccess.downloadUrl,
-        })}
-        className={className}
-        aria-label={`Переглянути ${name}`}
-      >
+      <button type="button" onClick={open} className={className} aria-label={`Переглянути ${name}`}>
         {content}
       </button>
     )
@@ -140,7 +177,14 @@ function AttachmentTile({
 }
 
 function PendingAttachment({ file, onRemove, compact }) {
-  const [previewUrl] = useState(() => file?.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
+  // A picture and a sound are worth resolving before the message is sent: you
+  // can see what you picked and hear the voice note back. A video is not — the
+  // browser has to decode it to paint one frame, and a composer holding four
+  // clips would decode four videos for four thumbnails nobody asked for. Its
+  // typed glyph says what it is until it is sent.
+  const [previewUrl] = useState(() => (
+    /^(?:image|audio)\//.test(file?.type || '') ? URL.createObjectURL(file) : ''
+  ));
 
   useEffect(() => {
     if (!previewUrl) return undefined;

@@ -33,6 +33,13 @@ export { default as ColorSwatch } from './Forms/ColorSwatch'
 export { default as ListRow } from './Layout/ListRow'
 export { default as MediaPlayButton } from './MediaPlayButton'
 
+// ===== ATTACHMENTS =====
+// What a file is, and what you can do with it without leaving the page. Both
+// are answered once and used by the task surface, the chat and the viewer, so a
+// spreadsheet looks like a spreadsheet and a voice note plays wherever it lands.
+export { default as FileThumb } from './Attachments/FileThumb'
+export { default as AudioPlayer } from './Attachments/AudioPlayer'
+
 // ===== CALENDAR =====
 // The calendar is a structure with its own vocabulary, like chat: a day cell,
 // the date in its corner, and the hour strip you click to create at a time.

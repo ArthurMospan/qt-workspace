@@ -8,6 +8,13 @@ import {
   messageMatchesChatSearch,
 } from '../src/lib/utils/chatAttachments.mjs';
 import {
+  attachmentKind,
+  attachmentKindLabel,
+  formatMediaTime,
+  isMediaKind,
+  isVisualKind,
+} from '../src/lib/utils/attachmentKinds.mjs';
+import {
   activeTypingUserIds,
   canAccessChatChannel,
   channelIdFromName,
@@ -82,7 +89,40 @@ test('chat attachment kind supports MIME types and URL extensions', () => {
   assert.equal(chatAttachmentKind({ type: 'image/png' }), 'image');
   assert.equal(chatAttachmentKind({ resourceType: 'video' }), 'video');
   assert.equal(chatAttachmentKind({ url: 'https://cdn.test/file.pdf?download=1' }), 'pdf');
-  assert.equal(chatAttachmentKind({ name: 'notes.docx' }), 'file');
+});
+
+// The chat and the task surface answer "what is this file" with one resolver,
+// so this list is the contract for both. Office's own MIME types are the reason
+// the map exists: nothing about `…spreadsheetml.sheet` says «таблиця», and a
+// raw upload arrives as application/octet-stream with only its name to go on.
+test('attachment kinds cover the families a workspace actually receives', () => {
+  assert.equal(attachmentKind({ name: 'notes.docx' }), 'doc');
+  assert.equal(attachmentKind({ name: 'кошторис.xlsx' }), 'sheet');
+  assert.equal(attachmentKind({ name: 'звіт.csv' }), 'sheet');
+  assert.equal(attachmentKind({ name: 'deck.pptx' }), 'slides');
+  assert.equal(attachmentKind({ name: 'макети.zip' }), 'archive');
+  assert.equal(attachmentKind({ name: 'schema.json' }), 'code');
+  assert.equal(attachmentKind({ name: 'нотатки.txt' }), 'text');
+  assert.equal(attachmentKind({ name: 'дзвінок.m4a' }), 'audio');
+  assert.equal(attachmentKind({ name: 'дамп.bin' }), 'file');
+  assert.equal(
+    attachmentKind({ mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'sheet',
+  );
+  // The declared type wins over the name, and a query string is not an extension.
+  assert.equal(attachmentKind({ name: 'report.pdf', mimeType: 'image/png' }), 'image');
+  assert.equal(attachmentKind({ url: 'https://cdn.test/a/b?name=x.zip' }), 'file');
+});
+
+test('a kind knows what it is called and how it may be shown', () => {
+  assert.equal(attachmentKindLabel('sheet'), 'Таблиця');
+  assert.equal(attachmentKindLabel('nonsense'), 'Файл');
+  // «Медіа» in the channel filter means image, video or audio — not "anything
+  // with a preview", which would have swept PDFs in with the photos.
+  assert.equal(isMediaKind('audio'), true);
+  assert.equal(isMediaKind('pdf'), false);
+  assert.equal(isVisualKind('video'), true);
+  assert.equal(isVisualKind('audio'), false);
 });
 
 test('chat search finds text, author, and attachment names', () => {
@@ -114,9 +154,20 @@ test('collectChatAttachments keeps message context and skips broken records', ()
 });
 
 test('formatChatFileSize produces readable labels', () => {
-  assert.equal(formatChatFileSize(1024), '1.0 КБ');
-  assert.equal(formatChatFileSize(5 * 1024 * 1024), '5.0 МБ');
+  // Ukrainian decimal comma: the rest of the interface is Ukrainian and the
+  // file size was the one number that said otherwise.
+  assert.equal(formatChatFileSize(1024), '1,0 КБ');
+  assert.equal(formatChatFileSize(5 * 1024 * 1024), '5,0 МБ');
   assert.equal(formatChatFileSize(undefined), '');
+});
+
+test('media time is clock-shaped and survives unknown durations', () => {
+  assert.equal(formatMediaTime(0), '0:00');
+  assert.equal(formatMediaTime(67), '1:07');
+  assert.equal(formatMediaTime(3671), '1:01:11');
+  // A browser reports NaN until it has read the metadata, and the player draws
+  // that state on every card before the first byte arrives.
+  assert.equal(formatMediaTime(NaN), '0:00');
 });
 
 test('private attachment delivery uses the same channel membership boundary', () => {

@@ -1,9 +1,28 @@
 'use client';
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
-import { AttributeTrigger, UserAvatar, AttachmentRow, BulkActionBar, TimeLogRow, TimeTrackingControl, MarkdownEditor, MarkdownViewer, AttachmentViewer, TitleInput, DescriptionPlaceholder, IssueLinkRow, SelectableChip } from '@/components/ui';
+import { AttributeTrigger, UserAvatar, AttachmentRow, AudioPlayer, FileThumb, BulkActionBar, TimeLogRow, TimeTrackingControl, MarkdownEditor, MarkdownViewer, AttachmentViewer, TitleInput, DescriptionPlaceholder, IssueLinkRow, SelectableChip } from '@/components/ui';
 import { Settings2, Check, Tag as TagIcon, Users } from 'lucide-react';
+import { ATTACHMENT_KINDS, attachmentKindLabel } from '@/lib/utils/attachmentKinds.mjs';
 import { PreviewBlock } from '../preview';
+
+// One demo file per family, named the way a real one would be, so the row of
+// squares below is the actual resolver's output rather than a list of icons
+// somebody typed. Adding a kind to `attachmentKinds.mjs` and forgetting it here
+// shows up as a grey «Файл» square in the catalogue.
+const KIND_SAMPLES = {
+  image: 'onboarding-v2.png',
+  video: 'демо-запис.mp4',
+  audio: 'дзвінок-12-05.m4a',
+  pdf: 'договір.pdf',
+  sheet: 'кошторис.xlsx',
+  doc: 'бриф.docx',
+  slides: 'презентація.pptx',
+  text: 'нотатки.txt',
+  code: 'schema.json',
+  archive: 'макети.zip',
+  file: 'дамп.bin',
+};
 
 // The task surface's own elements, the way chat has its own. Everything here
 // used to be markup inside IssueDetail, CreateTaskModal or the markdown files —
@@ -146,18 +165,61 @@ export default function TaskElementsSection() {
       </PreviewBlock>
 
       <PreviewBlock
+        title="Тип файлу"
+        description="Квадрат перед назвою файлу — і єдине місце в продукті, де вирішується, як виглядає файл. Картинка показує себе, відео — власний перший кадр зі значком відтворення, решта отримує гліф і відтінок своєї родини. Родину визначає `attachmentKinds.mjs`, спільний із чатом, тому .xlsx зелений і в задачі, і в каналі."
+        filePath="src/components/ui/Attachments/FileThumb.jsx"
+        component="FileThumb"
+        fullWidth
+      >
+        <div className="flex flex-wrap gap-3">
+          {ATTACHMENT_KINDS.map(kind => (
+            <span key={kind} className="flex w-[86px] flex-col items-center gap-1.5 text-center">
+              <FileThumb attachment={{ name: KIND_SAMPLES[kind] }} />
+              <span className="text-[10px] font-semibold text-muted">{attachmentKindLabel(kind)}</span>
+            </span>
+          ))}
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Аудіо, яке чути на місці"
+        description="Плеєр, а не посилання на лайтбокс. Стан читається з самого <audio>, бо браузер ставить на паузу й без нас; доріжка — справжній slider зі стрілками, Home і End. Два плеєри одночасно не грають: старт зупиняє решту. Той самий компонент стоїть у вкладеннях задачі, у чаті та в клієнтському порталі."
+        filePath="src/components/ui/Attachments/AudioPlayer.jsx"
+        component="AudioPlayer"
+        fullWidth
+      >
+        <div data-ui-surface="compact-bordered-card" data-ui-padding="sm" className="ui-surface max-w-[380px]">
+          <AudioPlayer title="дзвінок-12-05.m4a" meta="Аудіо · 4,2 МБ" />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
         title="Вкладення завдання"
-        description="Уся зона від мініатюри до назви відкриває файл і підсвічується разом; завантаження та видалення лишаються окремими діями."
+        description="Уся зона від мініатюри до назви відкриває файл і підсвічується разом; завантаження та видалення лишаються окремими діями. Аудіофайл виняток: рядок сам стає плеєром, бо відкривати чорний повноекранний перегляд заради дванадцяти секунд голосу — не те, чого хтось хотів."
         filePath="src/components/ui/TaskManagement/AttachmentRow.jsx"
         component="AttachmentRow"
         fullWidth
       >
-        <AttachmentRow
-          attachment={demoAttachment}
-          onOpen={() => setViewerOpen(true)}
-          onDelete={() => {}}
-          onDownload={() => {}}
-        />
+        <div className="flex flex-col gap-1.5">
+          <AttachmentRow
+            attachment={demoAttachment}
+            onOpen={() => setViewerOpen(true)}
+            onDelete={() => {}}
+            onDownload={() => {}}
+          />
+          <AttachmentRow
+            attachment={{ id: 'a2', name: 'кошторис.xlsx', size: 41200 }}
+            onOpen={() => setViewerOpen(true)}
+            onDelete={() => {}}
+            onDownload={() => {}}
+          />
+          <AttachmentRow
+            attachment={{ id: 'a3', name: 'дзвінок-12-05.m4a', size: 4404019 }}
+            onOpen={() => {}}
+            onDelete={() => {}}
+            onDownload={() => {}}
+          />
+        </div>
       </PreviewBlock>
 
       <PreviewBlock

@@ -14,6 +14,12 @@
 // on the text baseline and the box is a couple of pixels taller than the icon.
 // Swapping it would silently resize the hit area, so the row owns the markup and
 // the geometry travels with it.
+//
+// The one thing that did change: the answer to the cursor. Relations sat two
+// centimetres under the subtasks and the attachments and answered a hover with
+// `bg-[#eeeeee]` — going *darker* on a panel that is already grey, so the row
+// sank into the background while its neighbours lifted off it. It now draws the
+// same nested card those two draw, and lifts the same way.
 
 import React from 'react';
 import { Trash2 } from 'lucide-react';
@@ -38,7 +44,11 @@ export default function IssueLinkRow({
   children,
 }) {
   return (
-    <div data-ui-surface="local" className="flex items-center justify-between gap-3 px-3 py-[9px] bg-white rounded-[10px] hover:bg-[#eeeeee] transition-colors group">
+    <div
+      data-ui-surface="nested-card"
+      data-ui-padding="row"
+      className="ui-surface group flex items-center justify-between gap-3 border border-[#f0f0f0] transition-all duration-200 hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC]"
+    >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Pill tone="neutral" size="sm" shape="badge" uppercase>
           {label}

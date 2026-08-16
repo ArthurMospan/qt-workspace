@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 99,
-    "props": 733,
-    "documentedProps": 733,
+    "components": 101,
+    "props": 745,
+    "documentedProps": 745,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -62,7 +62,7 @@
     },
     "AttachmentRow": {
       "file": "src/components/ui/TaskManagement/AttachmentRow.jsx",
-      "summary": "One file on a task: its type glyph, name, size, and the actions available for it.",
+      "summary": "One file on a task: what kind it is, its name and size, and the actions available for it.",
       "props": [
         {
           "name": "attachment",
@@ -88,28 +88,28 @@
         {
           "name": "onDelete",
           "default": "",
-          "type": "() => void",
+          "type": "(attachmentId: string) => void",
           "values": [],
           "description": "Removes it from the task."
         },
         {
           "name": "onDownload",
           "default": "",
-          "type": "() => void",
+          "type": "(url: string, name: string) => void",
           "values": [],
           "description": "Downloads it."
         },
         {
           "name": "onInsert",
           "default": "",
-          "type": "() => void",
+          "type": "(attachment, kind, url) => void",
           "values": [],
           "description": "Inserts a markdown link to it into the description."
         },
         {
           "name": "onOpen",
           "default": "",
-          "type": "() => void",
+          "type": "(attachment) => void",
           "values": [],
           "description": "Opens the file in the viewer."
         }
@@ -117,7 +117,7 @@
     },
     "AttachmentViewer": {
       "file": "src/components/ui/AttachmentViewer.jsx",
-      "summary": "Full-screen viewer for one attachment — image, PDF, or the download card for anything the browser cannot render.",
+      "summary": "Full-screen viewer for one attachment — picture, PDF, video, plain text, or the download card for anything the browser cannot render.",
       "props": [
         {
           "name": "attachment",
@@ -169,6 +169,54 @@
             "details"
           ],
           "description": "Which shape: the strip's overflow control, or an attribute cell that opens a popover."
+        }
+      ]
+    },
+    "AudioPlayer": {
+      "file": "src/components/ui/Attachments/AudioPlayer.jsx",
+      "summary": "One audio file: play, scrub, and how far in you are.",
+      "props": [
+        {
+          "name": "actions",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Row actions — download, remove — placed after the title."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "dark",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The player sits on a dark surface (own message bubble)."
+        },
+        {
+          "name": "meta",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The quiet line under it — kind and size, usually."
+        },
+        {
+          "name": "src",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Where the sound is. Without it the control is present but disabled — a private attachment whose signed URL has not arrived yet."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The file's name."
         }
       ]
     },
@@ -2154,6 +2202,51 @@
         }
       ]
     },
+    "FileThumb": {
+      "file": "src/components/ui/Attachments/FileThumb.jsx",
+      "summary": "One file, as a square: its own picture where it has one, its family's glyph where it does not.",
+      "props": [
+        {
+          "name": "attachment",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "The stored file record, or a picked `File`."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "dark",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The square sits on a dark surface, so the tint borrows the surface's light instead of the hue's."
+        },
+        {
+          "name": "density",
+          "default": "'md'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ],
+          "description": "How big the square is. `md` is the list square; `sm` rides inside a chat tile."
+        },
+        {
+          "name": "previewUrl",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Overrides where the picture comes from — a blob URL for a file that is not uploaded yet, or a signed URL for a private one."
+        }
+      ]
+    },
     "FilterBar": {
       "file": "src/components/ui/FilterBar.jsx",
       "summary": "The row of filters under a page header.",
@@ -2953,6 +3046,13 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        },
+        {
+          "name": "dark",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The button sits on a dark surface — an own message bubble — where canvas-on-ink is invisible."
         },
         {
           "name": "disabled",
