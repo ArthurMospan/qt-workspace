@@ -86,6 +86,11 @@ import {
   STATUS_CATEGORY_IDS,
 } from '@/lib/utils/statusCategories.mjs';
 import {
+  planOrphanStatusMigrations,
+  planStatusMigrations,
+  statusMigrationTarget,
+} from '@/lib/utils/statusMigrationPlan.mjs';
+import {
   taskTypeIcon,
   taskTypeIconKey,
 } from '@/lib/design/taskTypeIcons';
@@ -2000,12 +2005,10 @@ export default function SettingsPage() {
       showToast(problem, 'error');
       return;
     }
-    // The tasks go to a status of the same category first: deleting «QA» must not
-    // send its work to «Готово» just because that happens to be next in the list.
+    // Where the work goes is one rule, shared with «Скинути до стандартних»
+    // — see `statusMigrationPlan`.
     const remaining = statuses.filter(s => s.id !== id && !s.isNew);
-    const target = remaining.find(s => s.category === targetStatus.category)
-      || remaining.find(s => !isClosingCategory(s.category))
-      || remaining[0];
+    const target = statusMigrationTarget(targetStatus, remaining);
     if (!target) return;
     if (!(await confirmDialog({
       title: 'Видалити статус?',
@@ -2057,6 +2060,97 @@ export default function SettingsPage() {
     }
   };
 
+  // Resetting statuses is a deletion of every custom status at once, so it goes
+  // the same way a single deletion does: say where the work lands, then move it
+  // in the same transaction that rewrites the workflow.
+  //
+  // It used to just call `setStatuses(DEFAULT_STATUSES)` and let the debounced
+  // autosave post the new list with no migrations. The server refuses that —
+  // it will not strand tasks on a status that is about to stop existing — so
+  // the save came back «Для видалених або застарілих статусів потрібно вибрати
+  // ціль міграції» and the section rolled back. For any organization with real
+  // work on a custom status, the reset button simply did not work.
+  const handleStatusesReset = async () => {
+    const mutationOrganizationId = activeOrgId;
+    if (!mutationOrganizationId) return;
+
+    const persistedStatuses = statuses.filter(status => !status.isNew);
+    const migrations = planStatusMigrations(persistedStatuses, DEFAULT_STATUSES);
+    const movedLabels = migrations
+      .map(migration => persistedStatuses.find(status => status.id === migration.fromStatusId))
+      .filter(Boolean)
+      .map(status => `«${status.label}»`);
+
+    if (!(await confirmDialog({
+      title: 'Скинути статуси?',
+      message: movedLabels.length > 0
+        // Naming them is the whole point: this is the only reset in settings
+        // that moves tasks, and the person pressing it should know which.
+        ? `Стандартний набір QuickTeam не містить ${movedLabels.join(', ')}. Завдання з цих статусів буде переміщено у стандартний статус тієї самої категорії. Цю дію не можна скасувати.`
+        : 'Усі ваші статуси в цій секції буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.',
+      confirmText: 'Скинути й перемістити',
+      cancelText: 'Залишити',
+      danger: true,
+    }))) return;
+    if (wfOrgId.current !== mutationOrganizationId) return;
+
+    const payload = {
+      statuses: cleanWorkflowItems(DEFAULT_STATUSES),
+      types: cleanWorkflowItems(types),
+      priorities: cleanWorkflowItems(priorities),
+      labels: cleanWorkflowItems(labels),
+      positions: cleanWorkflowItems(positions),
+    };
+    wfLatestPayload.current = payload;
+    wfLatestJson.current = JSON.stringify(payload);
+    setWfLoading(true);
+    try {
+      let result;
+      try {
+        result = await queueWorkflowMutation(payload, {
+          statusMigrations: migrations,
+          notify: false,
+        });
+      } catch (error) {
+        // A task can stand on a status the workflow document no longer lists at
+        // all — an import, or a status removed before this rule existed. There
+        // is no category to match on, so the server tells us which ids are
+        // still unaccounted for and they go to the entry status.
+        const orphanIds = error?.code === 'STATUS_MIGRATION_REQUIRED'
+          ? (error.statuses || []).map(entry => entry.statusId)
+          : [];
+        const orphanMigrations = planOrphanStatusMigrations(
+          orphanIds,
+          DEFAULT_STATUSES,
+          migrations,
+        );
+        if (orphanMigrations.length === 0) throw error;
+        if (wfOrgId.current !== mutationOrganizationId) return;
+        // The failed attempt rolled the queue's idea of "latest" back to the
+        // persisted workflow. Without restating it, the retry would succeed and
+        // then immediately be followed by a save of the old statuses.
+        wfLatestPayload.current = payload;
+        wfLatestJson.current = JSON.stringify(payload);
+        result = await queueWorkflowMutation(payload, {
+          statusMigrations: [...migrations, ...orphanMigrations],
+          notify: false,
+        });
+      }
+      if (wfOrgId.current !== mutationOrganizationId) return;
+      setStatuses(DEFAULT_STATUSES);
+      showToast(
+        result.migratedIssues > 0
+          ? `Статуси скинуто, переміщено завдань: ${result.migratedIssues}`
+          : 'Статуси скинуто',
+      );
+    } catch (error) {
+      if (wfOrgId.current !== mutationOrganizationId) return;
+      showToast(error.message || 'Не вдалося скинути статуси', 'error');
+    } finally {
+      if (wfOrgId.current === mutationOrganizationId) setWfLoading(false);
+    }
+  };
+
   const handleDragEnd = (result, list, setList) => {
     if (!result.destination) return;
     const items = Array.from(list);
@@ -2079,7 +2173,12 @@ export default function SettingsPage() {
     statuses: {
       noun: 'статуси',
       hint: 'Перетягуйте статуси між категоріями. Категорія визначає поведінку завдання на спільних дошках, у прогресі та звітах.',
-      apply: () => setStatuses(DEFAULT_STATUSES),
+      // Statuses are the one section whose reset moves real work, so it does
+      // not go through the debounced autosave. The handler is called from the
+      // button below rather than held on this object: a closure stored on a
+      // plain object built during render counts as render code, and this one
+      // reads refs.
+      movesTasks: true,
     },
     types: {
       noun: 'типи',
@@ -2117,6 +2216,10 @@ export default function SettingsPage() {
           icon={RefreshCw}
           className="-ml-3 text-faint hover:text-muted"
           onClick={async () => {
+            if (cfg.movesTasks) {
+              await handleStatusesReset();
+              return;
+            }
             const resetOrganizationId = activeOrgId;
             if (!(await confirmDialog({
               title: `Скинути ${cfg.noun}?`,
