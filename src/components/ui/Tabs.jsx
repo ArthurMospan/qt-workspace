@@ -23,7 +23,11 @@ const SHAPES = {
   },
   underline: {
     strip: 'flex w-full min-w-max items-center border-b border-line',
-    tab: 'min-w-[140px] flex-1 whitespace-nowrap border-b-2 px-3 pb-2 pt-1 text-[13px]',
+    // `-mb-px` is what makes the selected rule land *on* the strip's hairline
+    // rather than a pixel above it. Without it the two lines stack — a black
+    // mark floating over an unbroken grey one — instead of the black one
+    // replacing the grey for the width of the tab you are standing on.
+    tab: '-mb-px min-w-[140px] flex-1 whitespace-nowrap border-b-2 px-3 pb-2 pt-1 text-[13px]',
     labelled: '',
     iconOnly: '',
     on: 'border-ink font-semibold text-ink',

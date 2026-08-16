@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 324,
-    "elements": 4031,
+    "elements": 4034,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -192,7 +192,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/Tabs.jsx:132",
+      "location": "src/components/ui/Tabs.jsx:136",
       "attributes": [
         "title",
         "aria-label"
@@ -230,14 +230,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:65",
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:77",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "IconAction",
-      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:81",
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:86",
       "attributes": [
         "label"
       ]

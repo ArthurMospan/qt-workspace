@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  resolveMaterialUrl, extOf, kindOf, badgeFor, toMaterialView,
+  resolveMaterialUrl, extOf, kindOf, kindLabelOf, toMaterialView,
 } from '../src/lib/portal/qtplusMaterialView.mjs';
 
 // Фікстури відтворюють РЕАЛЬНУ схему порталу.
@@ -32,9 +32,25 @@ test('resolveMaterialUrl: нічого немає -> null', () => {
   assert.equal(resolveMaterialUrl({ type: 'note', content: 'текст' }), null);
 });
 
-test('resolveMaterialUrl: відкидає javascript: та data:', () => {
+test('resolveMaterialUrl: відкидає javascript: та небезпечні data:', () => {
   assert.equal(resolveMaterialUrl({ type: 'link', url: 'javascript:alert(1)' }), null);
   assert.equal(resolveMaterialUrl({ type: 'link', url: 'data:text/html,<script>' }), null);
+  assert.equal(resolveMaterialUrl({ type: 'link', url: 'data:text/html;base64,PHNjcmlwdD4=' }), null);
+  // SVG у data: виконує скрипт, якщо його відкрити документом — не пропускаємо.
+  assert.equal(resolveMaterialUrl({ type: 'sketch', previewUrl: 'data:image/svg+xml;base64,PHN2Zz4=' }), null);
+});
+
+test('resolveMaterialUrl: скетч приходить растровим data: URL і мусить пройти', () => {
+  // Портальний скетч зберігається як canvas.toDataURL('image/png') прямо в
+  // документі матеріалу (qt FunctionalModals.jsx). Суцільна заборона data:
+  // означала, що намальоване від руки не показувалось узагалі.
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==';
+  assert.equal(resolveMaterialUrl({ type: 'sketch', title: 'sketch-1.png', previewUrl: png, url: png }), png);
+  assert.equal(kindOf({ type: 'sketch', title: 'sketch-1.png', previewUrl: png }), 'image');
+  const v = toMaterialView({ id: 's1', type: 'sketch', title: 'sketch-1.png', desc: 'Намальовано від руки', previewUrl: png, url: png, fileType: 'image/png' });
+  assert.equal(v.kind, 'image');
+  assert.equal(v.url, png);
+  assert.equal(v.meta, 'Зображення · Намальовано від руки');
 });
 
 test('resolveMaterialUrl: не падає на сміттєвому вводі', () => {
@@ -50,15 +66,25 @@ test('extOf', () => {
   assert.equal(extOf(null), '');
 });
 
-test('kindOf: розширення перемагає поле type', () => {
-  // Портал зберігає відео як type:'file' — тип визначається розширенням.
+test('kindOf: родина файлу — зі спільного словника вкладень', () => {
+  // Портал зберігає відео як type:'file' — родина визначається розширенням.
+  // Словник той самий, що й у вкладеннях задачі: doc/sheet/slides окремо,
+  // архів окремо, код окремо від простого тексту.
   assert.equal(kindOf({ type: 'file', title: 'promo.mp4' }), 'video');
   assert.equal(kindOf({ type: 'file', title: 'brief.pdf' }), 'pdf');
   assert.equal(kindOf({ type: 'file', title: 'photo.heic' }), 'image');
-  assert.equal(kindOf({ type: 'file', title: 'kostorys.docx' }), 'office');
-  assert.equal(kindOf({ type: 'file', title: 'index.tsx' }), 'text');
-  assert.equal(kindOf({ type: 'file', title: 'archive.zip' }), 'file');
+  assert.equal(kindOf({ type: 'file', title: 'kostorys.docx' }), 'doc');
+  assert.equal(kindOf({ type: 'file', title: 'kostorys.xlsx' }), 'sheet');
+  assert.equal(kindOf({ type: 'file', title: 'pitch.pptx' }), 'slides');
+  assert.equal(kindOf({ type: 'file', title: 'index.tsx' }), 'code');
+  assert.equal(kindOf({ type: 'file', title: 'notes.txt' }), 'text');
+  assert.equal(kindOf({ type: 'file', title: 'archive.zip' }), 'archive');
   assert.equal(kindOf({ type: 'file', title: 'README' }), 'file');
+});
+
+test('kindOf: MIME файлу з порталу (fileType) перемагає назву без розширення', () => {
+  assert.equal(kindOf({ type: 'file', title: 'kostorys', fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'sheet');
+  assert.equal(kindOf({ type: 'file', title: 'scan', fileType: 'application/pdf' }), 'pdf');
 });
 
 test('kindOf: аудіо за type або за розширенням', () => {
@@ -87,12 +113,13 @@ test('kindOf: нефайлові типи проходять як є', () => {
   assert.equal(kindOf({ type: 'note', title: 'Ідея' }), 'note');
 });
 
-test('badgeFor', () => {
-  assert.equal(badgeFor({ type: 'file', title: 'brief.pdf' }).label, 'PDF');
-  assert.equal(badgeFor({ type: 'file', title: 'kostorys.docx' }).label, 'DOCX');
-  assert.equal(badgeFor({ type: 'file', title: 'logo.png' }).label, 'IMG');
-  assert.equal(badgeFor({ type: 'file', title: 'promo.mp4' }).label, 'VIDEO');
-  assert.equal(badgeFor({ type: 'file', title: 'README' }).label, 'FILE');
+test('kindLabelOf: підпис родини — той самий, що бачить вкладення задачі', () => {
+  assert.equal(kindLabelOf({ type: 'file', title: 'brief.pdf' }), 'PDF');
+  assert.equal(kindLabelOf({ type: 'file', title: 'kostorys.docx' }), 'Документ');
+  assert.equal(kindLabelOf({ type: 'file', title: 'kostorys.xlsx' }), 'Таблиця');
+  assert.equal(kindLabelOf({ type: 'file', title: 'logo.png' }), 'Зображення');
+  assert.equal(kindLabelOf({ type: 'file', title: 'promo.mp4' }), 'Відео');
+  assert.equal(kindLabelOf({ type: 'file', title: 'README' }), 'Файл');
 });
 
 test('toMaterialView: файл', () => {
@@ -105,7 +132,16 @@ test('toMaterialView: файл', () => {
   assert.equal(v.title, 'brief.pdf');
   assert.equal(v.subtitle, 'Бриф клієнта');
   assert.equal(v.url, 'https://res.cloudinary.com/x/brief.pdf');
-  assert.equal(v.badge.label, 'PDF');
+  assert.equal(v.meta, 'PDF · Бриф клієнта');
+  // Форма для FileThumb/AttachmentViewer — щоб картка й вьюер читали файл однаково.
+  assert.equal(v.attachment.name, 'brief.pdf');
+  assert.equal(v.attachment.previewUrl, 'https://res.cloudinary.com/x/brief.pdf');
+});
+
+test('toMaterialView: нефайловий матеріал не має ані meta, ані форми вкладення', () => {
+  const v = toMaterialView({ type: 'note', title: 'Ідея', content: 'Текст' });
+  assert.equal(v.meta, null);
+  assert.equal(v.attachment, null);
 });
 
 test('toMaterialView: без назви -> "Без назви"', () => {
@@ -137,9 +173,14 @@ test('toMaterialView: опитування без голосів не ділит
   assert.deepEqual(v.poll.results, [{ option: 'Синій', count: 0, percent: 0 }]);
 });
 
-test('toMaterialView: нотатка', () => {
-  const v = toMaterialView({ id: 'n1', type: 'note', title: 'Ідея', content: 'Текст', source: 'Дзвінок' });
-  assert.deepEqual(v.note, { content: 'Текст', source: 'Дзвінок' });
+test('toMaterialView: нотатка несе колір стікера з порталу', () => {
+  const v = toMaterialView({ id: 'n1', type: 'note', title: 'Ідея', content: 'Текст', source: 'Дзвінок', color: '#fff3cd' });
+  assert.deepEqual(v.note, { content: 'Текст', source: 'Дзвінок', color: '#fff3cd' });
+});
+
+test('toMaterialView: нотатка без кольору (або зі сміттям) падає на жовтий порталу', () => {
+  assert.equal(toMaterialView({ type: 'note', content: 'Текст' }).note.color, '#fff3cd');
+  assert.equal(toMaterialView({ type: 'note', content: 'Текст', color: 'red; }' }).note.color, '#fff3cd');
 });
 
 test('toMaterialView: лінк з OG', () => {

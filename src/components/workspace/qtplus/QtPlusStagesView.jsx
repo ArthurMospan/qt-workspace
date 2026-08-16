@@ -8,7 +8,7 @@ import MaterialGrid from './MaterialGrid';
 import MediaLightbox from './MediaLightbox';
 
 function Spinner() {
-  return <div className="w-4 h-4 border-2 border-line border-t-ink rounded-full animate-spin" />;
+  return <div className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" />;
 }
 
 function StageMaterials({ stageId, onOpen }) {
@@ -17,18 +17,25 @@ function StageMaterials({ stageId, onOpen }) {
   if (loading) return <div className="py-4"><Spinner /></div>;
   if (error) {
     return (
-      <p className="text-[13px] text-muted py-4">
+      <p className="py-4 text-[13px] text-muted">
         {error === 'no_access'
           ? 'Немає доступу до матеріалів.'
           : 'Не вдалося завантажити матеріали. Спробуйте пізніше.'}
       </p>
     );
   }
-  if (materials.length === 0) return <p className="text-[13px] text-muted py-4">У цьому етапі ще немає матеріалів.</p>;
+  if (materials.length === 0) return <p className="py-4 text-[13px] text-muted">У цьому етапі ще немає матеріалів.</p>;
   return <MaterialGrid materials={materials} onOpen={onOpen} />;
 }
 
-export default function QtPlusStagesView({ qtProjectId }) {
+/**
+ * Етапи проєкту QuickTeam+ і матеріали обраного етапу.
+ *
+ * Шапка приходить згори, але малюється тут, бо тільки тут відомий прогрес: він
+ * стоїть біля назви проєкту, а не окремим рядком під смугою етапів. Тому `header`
+ * може бути функцією — їй передається готовий вузол прогресу.
+ */
+export default function QtPlusStagesView({ qtProjectId, header = null }) {
   const { stages, loading, error } = usePortalStages(qtProjectId);
   // undefined = ще не рахували; null = порахували, доступного етапу немає (усі todo)
   const [selectedId, setSelectedId] = useState(undefined);
@@ -45,43 +52,46 @@ export default function QtPlusStagesView({ qtProjectId }) {
     queueMicrotask(() => setSelectedId(defaultStageId(stages)));
   }, [stages, selectedId]);
 
-  const handleSelect = setSelectedId;
+  const hasStages = !loading && !error && stages.length > 0;
+  const { done, total, percent } = hasStages ? stageProgress(stages) : { done: 0, total: 0, percent: 0 };
+  const selected = hasStages ? stages.find((s) => s.id === selectedId) || null : null;
 
-  if (loading) return <div className="py-4"><Spinner /></div>;
-  if (error) {
-    return (
-      <p className="text-[13px] text-muted py-4">
+  const progress = hasStages ? (
+    <span className="shrink-0 text-[12px] text-muted" title={`Завершено ${done} з ${total} етапів`}>
+      Прогрес: {percent}% ({done}/{total})
+    </span>
+  ) : null;
+
+  const headerNode = typeof header === 'function' ? header(progress) : header;
+
+  let body;
+  if (loading) {
+    body = <div className="py-4"><Spinner /></div>;
+  } else if (error) {
+    body = (
+      <p className="py-4 text-[13px] text-muted">
         {error === 'no_access'
           ? 'Немає доступу до цього проєкту QuickTeam+ вашим акаунтом.'
           : 'Не вдалося завантажити етапи. Спробуйте пізніше.'}
       </p>
     );
+  } else if (stages.length === 0) {
+    body = <p className="py-4 text-[13px] text-muted">Ще немає етапів.</p>;
+  } else if (selectedId === undefined) {
+    body = <div className="py-4"><Spinner /></div>;
+  } else if (!selected) {
+    body = <p className="py-4 text-[13px] text-muted">Роботу над проєктом ще не розпочато.</p>;
+  } else if (!canAccessStage(selected)) {
+    body = <p className="py-4 text-[13px] text-muted">Етап ще не розпочато.</p>;
+  } else {
+    body = <StageMaterials stageId={selected.id} onOpen={setLightbox} />;
   }
-  if (stages.length === 0) return <p className="text-[13px] text-muted py-4">Ще немає етапів.</p>;
-
-  const { done, total, percent } = stageProgress(stages);
-  const selected = stages.find((s) => s.id === selectedId) || null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <StageStepper stages={stages} activeId={selectedId} onSelect={handleSelect} />
-
-      {selectedId === undefined ? (
-        <div className="py-4"><Spinner /></div>
-      ) : selected ? (
-        <>
-          <div className="flex justify-end">
-            <span className="text-[12px] text-muted shrink-0">Прогрес: {percent}% ({done}/{total})</span>
-          </div>
-          {canAccessStage(selected) ? (
-            <StageMaterials stageId={selected.id} onOpen={setLightbox} />
-          ) : (
-            <p className="text-[13px] text-muted py-4">Етап ще не розпочато.</p>
-          )}
-        </>
-      ) : (
-        <p className="text-[13px] text-muted py-4">Роботу над проєктом ще не розпочато.</p>
-      )}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {headerNode && <div className="px-4 pb-3 pt-4">{headerNode}</div>}
+      {hasStages && <StageStepper stages={stages} activeId={selectedId} onSelect={setSelectedId} />}
+      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">{body}</div>
 
       <MediaLightbox view={lightbox} onClose={() => setLightbox(null)} />
     </div>

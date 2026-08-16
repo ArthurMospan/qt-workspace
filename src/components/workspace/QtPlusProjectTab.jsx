@@ -15,19 +15,25 @@ import { disconnectQtPlusAccount, startQtPlusConnect } from '@/lib/portal/qtplus
 import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 
-function LinkedRow({ name, stale, menuItems, href }) {
+// Заголовок привʼязки. Раніше він сидів на власній білій картці всередині
+// білої ж панелі — прямокутник, обведений навколо назви й кнопки без жодної
+// причини, бо відокремлювати його не було від чого. Тепер це просто рядок:
+// назва, прогрес по етапах поруч із нею, «Перейти» і меню дій.
+function LinkedRow({ name, stale, menuItems, href, progress }) {
   return (
-    <div data-ui-surface="nested-card" data-ui-padding="sm" className="ui-surface flex flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <h2 className="ui-type-section-title min-w-0 flex-1 truncate tracking-tight text-ink">
+        <h2 className="ui-type-section-title min-w-0 truncate tracking-tight text-ink">
           {name || 'Без назви'}
         </h2>
+        {progress}
+        <span className="flex-1" />
         {href && (
           <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-[32px] shrink-0 items-center gap-1.5 rounded-[10px] bg-canvas px-3 text-[12px] font-bold text-ink transition-colors hover:bg-[#e8e8e8]"
+            className="inline-flex h-[32px] shrink-0 items-center gap-1.5 rounded-[10px] bg-canvas px-3 text-[12px] font-bold text-ink transition-colors hover:bg-[#ebebeb]"
             title="Відкрити цей проєкт у QuickTeam+"
           >
             <ExternalLink size={13} />
@@ -35,7 +41,7 @@ function LinkedRow({ name, stale, menuItems, href }) {
           </a>
         )}
         {menuItems && (
-          <div className="ml-auto shrink-0">
+          <div className="shrink-0">
             <ContextMenu
               trigger={
                 <IconAction
@@ -157,7 +163,7 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             qtProjectId={link.projectId}
             portalUser={portalUser}
             currentUser={currentUser}
-            header={<LinkedRow name={view.linkedName} href={portalProjectUrl} />}
+            header={(progress) => <LinkedRow name={view.linkedName} href={portalProjectUrl} progress={progress} />}
           />
         ) : (
           <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface">
@@ -178,12 +184,13 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
               qtProjectId={link.projectId}
               portalUser={portalUser}
               currentUser={currentUser}
-              header={(
+              header={(progress) => (
                 <div className="flex flex-col gap-3">
                   <LinkedRow
                     name={view.linkedName}
                     stale={view.staleAccess}
                     href={portalProjectUrl}
+                    progress={progress}
                     menuItems={[
                       ...(portalUser && options.length > 0
                         ? [{ label: 'Змінити привʼязку', icon: Link2, onClick: () => setChanging(true) }]

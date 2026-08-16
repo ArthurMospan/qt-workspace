@@ -7,26 +7,31 @@
  *   previewUrl — файли/зображення/відео/PDF/документи (Cloudinary)
  *   audioUrl   — аудіо (Cloudinary)
  *   url        — ТІЛЬКИ type='link'
+ *   fileType   — MIME браузера (file.type) для завантажених файлів
  * Фаза 4a читала `url` для всього й тому рендерила файли без посилання.
+ *
+ * Що таке файл, вирішує НЕ цей модуль. `attachmentKinds.mjs` — єдине місце в
+ * продукті, яке відповідає на це питання: вкладення задачі, файл у чаті та
+ * матеріал порталу тепер дають однакову родину, однакову піктограму й однаковий
+ * підпис. Раніше тут жив власний словник із п'ятьма родинами й власною
+ * палітрою бейджів, тому .xlsx у задачі був «Таблиця», а той самий .xlsx у
+ * QuickTeam+ — синій «DOC».
  */
 
-const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'heif', 'tiff', 'bmp', 'avif'];
-const VIDEO_EXT = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
-const AUDIO_EXT = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
-const OFFICE_EXT = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp'];
-const TEXT_EXT = ['txt', 'md', 'js', 'jsx', 'ts', 'tsx', 'css', 'html', 'htm', 'json', 'py', 'go', 'php', 'c', 'cpp', 'h', 'java', 'swift', 'kt', 'sql', 'yaml', 'yml', 'xml', 'csv'];
+// Відносний шлях, а не аліас `@/…`: цей модуль читає `node --test` напряму, а
+// про jsconfig-аліаси Node не знає. Так само в решті `.mjs` під src/lib.
+import { attachmentKind, attachmentKindLabel } from '../utils/attachmentKinds.mjs';
 
 const PASSTHROUGH_KINDS = ['link', 'checklist', 'poll', 'note'];
 
-const BADGE = {
-  pdf:    { label: 'PDF',   color: '#ef4444', bg: '#fee2e2' },
-  image:  { label: 'IMG',   color: '#3b82f6', bg: '#dbeafe' },
-  video:  { label: 'VIDEO', color: '#f97316', bg: '#ffedd5' },
-  audio:  { label: 'AUDIO', color: '#1f1f1f', bg: '#f5f5f5' },
-  office: { label: 'DOC',   color: '#3b82f6', bg: '#dbeafe' },
-  text:   { label: 'TXT',   color: '#64748b', bg: '#f1f5f9' },
-  file:   { label: 'FILE',  color: '#9a9a9a', bg: '#f5f5f5' },
-};
+// Портальний скетч не їде в сховище: полотно зберігається як base64-PNG прямо в
+// документі матеріалу (qt FunctionalModals.jsx — canvas.toDataURL('image/png')).
+// Тому суцільна заборона `data:` означала «намальоване від руки не існує»: URL
+// відкидався, картка лишалась без прев'ю й без дії. Пропускаємо лише РАСТРОВІ
+// зображення — саме те, що пише полотно. SVG свідомо поза списком: він виконує
+// скрипт, якщо його відкрити як документ, а решта схем (`javascript:`,
+// `data:text/html`) не проходить взагалі.
+const DATA_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|avif);base64,[A-Za-z0-9+/=]+$/;
 
 /** Розширення з назви: 'logo.PNG' -> 'png'. */
 export function extOf(title) {
@@ -37,13 +42,14 @@ export function extOf(title) {
 }
 
 /**
- * URL матеріалу за правилами порталу. Пропускаємо лише http(s) —
- * javascript:/data: у href дали б XSS через дані порталу.
+ * URL матеріалу за правилами порталу. Пропускаємо http(s) і растровий
+ * `data:image/*` (скетч) — решта схем у href дала б XSS через дані порталу.
  */
 export function resolveMaterialUrl(raw) {
   const m = raw && typeof raw === 'object' ? raw : {};
   const candidate = [m.audioUrl, m.previewUrl, m.url].find((v) => typeof v === 'string' && v);
   if (!candidate) return null;
+  if (candidate.startsWith('data:')) return DATA_IMAGE.test(candidate) ? candidate : null;
   let parsed;
   try {
     parsed = new URL(candidate);
@@ -53,37 +59,39 @@ export function resolveMaterialUrl(raw) {
   return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? candidate : null;
 }
 
-/** Вид матеріалу. Розширення важливіше за `type`: портал кладе відео як type='file'. */
+/**
+ * Вкладенняподібна форма матеріалу — те, що `attachmentKinds.mjs` уміє читати.
+ * Одна форма і для визначення родини, і для перегляду у вьюері, тому картка та
+ * вьюер не можуть розійтись у тому, що це за файл.
+ */
+export function toAttachmentShape(raw) {
+  const m = raw && typeof raw === 'object' ? raw : {};
+  return {
+    name: (typeof m.title === 'string' && m.title.trim()) || 'Без назви',
+    previewUrl: resolveMaterialUrl(m),
+    mimeType: typeof m.fileType === 'string' ? m.fileType : undefined,
+  };
+}
+
+/**
+ * Вид матеріалу: або власний тип порталу (нотатка, чеклист, опитування,
+ * посилання), або родина файлу зі спільного словника вкладень.
+ */
 export function kindOf(raw) {
   const m = raw && typeof raw === 'object' ? raw : {};
   if (PASSTHROUGH_KINDS.includes(m.type)) return m.type;
-  // Явний сигнал аудіо перемагає розширення й мусить стояти ПЕРЕД відео: диктофон
-  // порталу кодує запис через MediaRecorder у audio/webm або audio/mp4 і зберігає
-  // title='audio-recording-*.webm' — а webm/mp4 також у списку відео. Тому на
-  // розширення покладатись не можна; type:'audio' та audioUrl однозначні (у відео
-  // їх немає — воно приходить як type:'file' з previewUrl).
+  // Явний сигнал аудіо перемагає розширення й мусить стояти ПЕРЕД усім іншим:
+  // диктофон порталу кодує запис через MediaRecorder у audio/webm або audio/mp4
+  // і зберігає title='audio-recording-*.webm' — а webm/mp4 читаються як відео.
+  // Тому на розширення покладатись не можна; type:'audio' та audioUrl однозначні
+  // (у відео їх немає — воно приходить як type:'file' з previewUrl).
   if (m.type === 'audio' || (typeof m.audioUrl === 'string' && m.audioUrl)) return 'audio';
-  const ext = extOf(m.title);
-  if (AUDIO_EXT.includes(ext)) return 'audio';
-  if (IMAGE_EXT.includes(ext)) return 'image';
-  if (VIDEO_EXT.includes(ext)) return 'video';
-  if (ext === 'pdf') return 'pdf';
-  if (OFFICE_EXT.includes(ext)) return 'office';
-  if (TEXT_EXT.includes(ext)) return 'text';
-  if (m.type === 'image') return 'image';
-  return 'file';
+  return attachmentKind(toAttachmentShape(m));
 }
 
-/** Бейдж типу: підпис + кольори. Єдине місце з сирим hex — це не бренд-палітра. */
-export function badgeFor(raw) {
-  const m = raw && typeof raw === 'object' ? raw : {};
-  const kind = kindOf(m);
-  const ext = extOf(m.title);
-  const base = BADGE[kind] || BADGE.file;
-  if (kind === 'office' || kind === 'text' || kind === 'file') {
-    return { ...base, label: ext ? ext.toUpperCase() : base.label };
-  }
-  return base;
+/** Як називається ця родина в інтерфейсі — той самий підпис, що й у задачі. */
+export function kindLabelOf(raw) {
+  return attachmentKindLabel(kindOf(raw));
 }
 
 function domainOf(url) {
@@ -124,8 +132,15 @@ export function toMaterialView(raw) {
     };
   }
 
+  // `color` — колір стікера, який ставить портал (за замовчуванням #fff3cd).
+  // Без нього нотатка в нас була білим прямокутником серед білих карток файлів,
+  // хоч у клієнта вона жовта; це те саме, що показувати чужу нотатку.
   const note = kind === 'note'
-    ? { content: typeof m.content === 'string' ? m.content : '', source: m.source || null }
+    ? {
+        content: typeof m.content === 'string' ? m.content : '',
+        source: m.source || null,
+        color: typeof m.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(m.color) ? m.color : '#fff3cd',
+      }
     : null;
 
   const link = kind === 'link'
@@ -137,13 +152,22 @@ export function toMaterialView(raw) {
       }
     : null;
 
+  // `meta` — рядок під назвою: «PDF · 1.2 MB». Рівно та сама конструкція, що й
+  // `attachmentMetaLabel` у вкладеннях задачі; розмір беремо з `desc`, бо портал
+  // кладе туди готовий рядок розміру й байтів у нас немає.
+  const isFileKind = !PASSTHROUGH_KINDS.includes(kind);
+  const subtitle = m.desc || m.source || null;
+
   return {
     id: m.id || null,
     kind,
     title,
-    subtitle: m.desc || m.source || null,
+    subtitle,
+    meta: isFileKind ? [attachmentKindLabel(kind), subtitle].filter(Boolean).join(' · ') : null,
     url,
-    badge: badgeFor(m),
+    // Форма, яку читають FileThumb та AttachmentViewer — щоб картка й вьюер
+    // визначали родину файлу одним і тим самим кодом.
+    attachment: isFileKind ? toAttachmentShape(m) : null,
     checklist,
     poll,
     note,

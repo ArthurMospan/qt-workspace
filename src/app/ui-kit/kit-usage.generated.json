@@ -5,11 +5,11 @@
     "components": 110,
     "used": 110,
     "unused": 0,
-    "covered": 104,
+    "covered": 105,
     "uncovered": 0,
     "routes": 12,
     "previews": 140,
-    "internal": 6,
+    "internal": 5,
     "unlisted": 0
   },
   "routes": {
@@ -47,6 +47,7 @@
     ],
     "/[projectId]": [
       "Alert",
+      "AttachmentViewer",
       "AudioPlayer",
       "BarList",
       "BulkActionBar",
@@ -63,6 +64,7 @@
       "Dialog",
       "EmptyState",
       "FileInput",
+      "FileThumb",
       "FilterBar",
       "FormGroup",
       "IconAction",
@@ -509,10 +511,11 @@
     },
     "AttachmentViewer": {
       "file": "src/components/ui/AttachmentViewer.jsx",
-      "count": 3,
+      "count": 4,
       "showcased": true,
       "usedByKit": [],
       "routes": [
+        "/[projectId]",
         "/[projectId]/issue/[issueId]",
         "/chat",
         "/sprints"
@@ -520,7 +523,8 @@
       "usedIn": [
         "src/app/(app)/chat/page.js",
         "src/components/workspace/IssueDetail.jsx",
-        "src/components/workspace/UnifiedTimeline.jsx"
+        "src/components/workspace/UnifiedTimeline.jsx",
+        "src/components/workspace/qtplus/MediaLightbox.jsx"
       ]
     },
     "AttributeTrigger": {
@@ -1206,15 +1210,19 @@
     },
     "FileThumb": {
       "file": "src/components/ui/Attachments/FileThumb.jsx",
-      "count": 0,
+      "count": 1,
       "showcased": true,
       "usedByKit": [
         "AttachmentRow",
         "AttachmentViewer",
         "ChatAttachmentList"
       ],
-      "routes": [],
-      "usedIn": []
+      "routes": [
+        "/[projectId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/qtplus/cards/FileCard.jsx"
+      ]
     },
     "FilterBar": {
       "file": "src/components/ui/FilterBar.jsx",
@@ -2575,9 +2583,9 @@
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
             "src/components/workspace/BillingTab.jsx:1439",
             "src/components/workspace/BillingTab.jsx:1453",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
-            "src/components/workspace/QtPlusProjectTab.jsx:287"
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
+            "src/components/workspace/QtPlusProjectTab.jsx:294"
           ]
         },
         "icon-lg": {
@@ -2915,7 +2923,7 @@
             "src/components/workspace/IssueDetail.jsx:1859",
             "src/components/workspace/IssueDetail.jsx:1887",
             "src/components/workspace/IssueDetail.jsx:1897",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:571",
@@ -2975,7 +2983,7 @@
             "src/components/workspace/IssueDetail.jsx:1554",
             "src/components/workspace/IssueDetail.jsx:1699",
             "src/components/workspace/IssueDetail.jsx:1828",
-            "src/components/workspace/QtPlusProjectTab.jsx:287",
+            "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649"
           ]
@@ -3056,7 +3064,7 @@
             "src/components/workspace/IssueDetail.jsx:1105",
             "src/components/workspace/IssueDetail.jsx:1118",
             "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/UnifiedTimeline.jsx:730",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
@@ -3242,9 +3250,9 @@
             "src/components/workspace/IssueDetail.jsx:1859",
             "src/components/workspace/IssueDetail.jsx:1887",
             "src/components/workspace/IssueDetail.jsx:1897",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
-            "src/components/workspace/QtPlusProjectTab.jsx:287",
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
+            "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
@@ -3457,9 +3465,9 @@
             "src/components/workspace/IssueDetail.jsx:1859",
             "src/components/workspace/IssueDetail.jsx:1887",
             "src/components/workspace/IssueDetail.jsx:1897",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
-            "src/components/workspace/QtPlusProjectTab.jsx:287",
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
+            "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
@@ -3648,9 +3656,9 @@
             "src/components/workspace/IssueDetail.jsx:1859",
             "src/components/workspace/IssueDetail.jsx:1887",
             "src/components/workspace/IssueDetail.jsx:1897",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
-            "src/components/workspace/QtPlusProjectTab.jsx:287",
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
+            "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
@@ -3881,9 +3889,9 @@
             "src/components/workspace/IssueDetail.jsx:1724",
             "src/components/workspace/IssueDetail.jsx:1827",
             "src/components/workspace/IssueDetail.jsx:1828",
-            "src/components/workspace/QtPlusProjectTab.jsx:206",
-            "src/components/workspace/QtPlusProjectTab.jsx:209",
-            "src/components/workspace/QtPlusProjectTab.jsx:287",
+            "src/components/workspace/QtPlusProjectTab.jsx:213",
+            "src/components/workspace/QtPlusProjectTab.jsx:216",
+            "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
@@ -4051,9 +4059,9 @@
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/MobileNav.jsx:270",
             "src/components/MobileNav.jsx:299",
-            "src/components/workspace/QtPlusProjectTab.jsx:41",
+            "src/components/workspace/QtPlusProjectTab.jsx:47",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
-            "src/components/workspace/qtplus/cards/FileCard.jsx:81"
+            "src/components/workspace/qtplus/cards/FileCard.jsx:86"
           ]
         },
         "lg": {
@@ -4064,7 +4072,7 @@
           "files": [
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
-            "src/components/workspace/qtplus/MediaLightbox.jsx:23"
+            "src/components/workspace/qtplus/MediaLightbox.jsx:29"
           ]
         },
         "xl": {
@@ -4123,7 +4131,7 @@
           "files": [
             "src/app/(app)/chat/page.js:293",
             "src/app/(app)/chat/page.js:302",
-            "src/components/workspace/QtPlusProjectTab.jsx:41",
+            "src/components/workspace/QtPlusProjectTab.jsx:47",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19"
           ]
         },
@@ -4219,7 +4227,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/components/workspace/qtplus/MediaLightbox.jsx:23"
+            "src/components/workspace/qtplus/MediaLightbox.jsx:29"
           ]
         },
         "overlay": {
@@ -4228,7 +4236,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/components/workspace/qtplus/cards/FileCard.jsx:81"
+            "src/components/workspace/qtplus/cards/FileCard.jsx:86"
           ]
         }
       },
@@ -4286,10 +4294,10 @@
             "src/components/AuthLayout.jsx:56",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
-            "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/MediaLightbox.jsx:23",
+            "src/components/workspace/QtPlusProjectTab.jsx:47",
+            "src/components/workspace/qtplus/MediaLightbox.jsx:29",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
-            "src/components/workspace/qtplus/cards/FileCard.jsx:81"
+            "src/components/workspace/qtplus/cards/FileCard.jsx:86"
           ]
         },
         "micro": {
@@ -4338,10 +4346,10 @@
             "src/components/profile/ProfileView.jsx:197",
             "src/components/profile/ProfileView.jsx:209",
             "src/components/profile/ProfileView.jsx:227",
-            "src/components/workspace/QtPlusProjectTab.jsx:41",
-            "src/components/workspace/qtplus/MediaLightbox.jsx:23",
+            "src/components/workspace/QtPlusProjectTab.jsx:47",
+            "src/components/workspace/qtplus/MediaLightbox.jsx:29",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
-            "src/components/workspace/qtplus/cards/FileCard.jsx:81"
+            "src/components/workspace/qtplus/cards/FileCard.jsx:86"
           ]
         },
         "chat-composer-action": {
@@ -4833,8 +4841,8 @@
             "src/components/workspace/IssueDetail.jsx:1403",
             "src/components/workspace/IssueDetail.jsx:1803",
             "src/components/workspace/IssueDetail.jsx:1811",
-            "src/components/workspace/QtPlusProjectTab.jsx:199",
-            "src/components/workspace/QtPlusProjectTab.jsx:280",
+            "src/components/workspace/QtPlusProjectTab.jsx:206",
+            "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:477",
             "src/components/workspace/TimesheetTab.jsx:489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:662",
@@ -4940,8 +4948,8 @@
             "src/components/workspace/IssueDetail.jsx:1403",
             "src/components/workspace/IssueDetail.jsx:1803",
             "src/components/workspace/IssueDetail.jsx:1811",
-            "src/components/workspace/QtPlusProjectTab.jsx:199",
-            "src/components/workspace/QtPlusProjectTab.jsx:280",
+            "src/components/workspace/QtPlusProjectTab.jsx:206",
+            "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:477",
             "src/components/workspace/TimesheetTab.jsx:489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:662",
@@ -5092,8 +5100,8 @@
             "src/components/workspace/IssueDetail.jsx:1403",
             "src/components/workspace/IssueDetail.jsx:1803",
             "src/components/workspace/IssueDetail.jsx:1811",
-            "src/components/workspace/QtPlusProjectTab.jsx:199",
-            "src/components/workspace/QtPlusProjectTab.jsx:280",
+            "src/components/workspace/QtPlusProjectTab.jsx:206",
+            "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:477",
             "src/components/workspace/TimesheetTab.jsx:489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:662",
@@ -6284,7 +6292,26 @@
       }
     },
     "FileThumb": {
-      "density": {}
+      "density": {
+        "lg": {
+          "count": 1,
+          "routes": [
+            "/[projectId]"
+          ],
+          "files": [
+            "src/components/workspace/qtplus/cards/FileCard.jsx:69"
+          ]
+        },
+        "sm": {
+          "count": 1,
+          "routes": [
+            "/[projectId]"
+          ],
+          "files": [
+            "src/components/workspace/qtplus/cards/FileCard.jsx:99"
+          ]
+        }
+      }
     },
     "MentionMenu": {
       "density": {
@@ -6799,9 +6826,9 @@
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:151",
             "src/components/WorkspaceInfoCenter.jsx:195",
-            "src/components/workspace/QtPlusProjectTab.jsx:241",
-            "src/components/workspace/QtPlusProjectTab.jsx:251",
-            "src/components/workspace/QtPlusProjectTab.jsx:263"
+            "src/components/workspace/QtPlusProjectTab.jsx:248",
+            "src/components/workspace/QtPlusProjectTab.jsx:258",
+            "src/components/workspace/QtPlusProjectTab.jsx:270"
           ]
         },
         "flexible": {
@@ -6812,7 +6839,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/QtPlusProjectTab.jsx:271",
+            "src/components/workspace/QtPlusProjectTab.jsx:278",
             "src/components/workspace/UnifiedTimeline.jsx:497"
           ]
         },
@@ -6854,10 +6881,10 @@
             "src/components/profile/ProfileView.jsx:359",
             "src/components/profile/ProfileView.jsx:395",
             "src/components/workspace/AnalyticsTab.jsx:223",
-            "src/components/workspace/QtPlusProjectTab.jsx:241",
-            "src/components/workspace/QtPlusProjectTab.jsx:251",
-            "src/components/workspace/QtPlusProjectTab.jsx:263",
-            "src/components/workspace/QtPlusProjectTab.jsx:271",
+            "src/components/workspace/QtPlusProjectTab.jsx:248",
+            "src/components/workspace/QtPlusProjectTab.jsx:258",
+            "src/components/workspace/QtPlusProjectTab.jsx:270",
+            "src/components/workspace/QtPlusProjectTab.jsx:278",
             "src/components/workspace/TimesheetTab.jsx:621",
             "src/components/workspace/UnifiedTimeline.jsx:497",
             "src/components/workspace/VelocityTab.jsx:189",
@@ -6919,10 +6946,10 @@
             "src/components/WorkspaceInfoCenter.jsx:151",
             "src/components/WorkspaceInfoCenter.jsx:195",
             "src/components/workspace/AnalyticsTab.jsx:223",
-            "src/components/workspace/QtPlusProjectTab.jsx:241",
-            "src/components/workspace/QtPlusProjectTab.jsx:251",
-            "src/components/workspace/QtPlusProjectTab.jsx:263",
-            "src/components/workspace/QtPlusProjectTab.jsx:271"
+            "src/components/workspace/QtPlusProjectTab.jsx:248",
+            "src/components/workspace/QtPlusProjectTab.jsx:258",
+            "src/components/workspace/QtPlusProjectTab.jsx:270",
+            "src/components/workspace/QtPlusProjectTab.jsx:278"
           ]
         }
       }
@@ -7195,7 +7222,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3212",
-            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
+            "src/components/workspace/qtplus/cards/NoteCard.jsx:21"
           ]
         },
         "(default)": {
@@ -7285,7 +7312,7 @@
             "src/components/WorkspaceInfoCenter.jsx:79",
             "src/components/workspace/BillingTab.jsx:514",
             "src/components/workspace/TimesheetTab.jsx:236",
-            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
+            "src/components/workspace/qtplus/cards/NoteCard.jsx:21"
           ]
         }
       }
@@ -7560,7 +7587,7 @@
           ],
           "files": [
             "src/components/workspace/IssueDetail.jsx:1020",
-            "src/components/workspace/qtplus/StageStepper.jsx:41"
+            "src/components/workspace/qtplus/StageStepper.jsx:44"
           ]
         }
       }

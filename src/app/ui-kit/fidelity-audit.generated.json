@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 46,
+    "localSurfaceExceptions": 45,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -43,11 +43,11 @@
       "components": 110,
       "used": 110,
       "unused": 0,
-      "covered": 104,
+      "covered": 105,
       "uncovered": 0,
       "routes": 12,
       "previews": 140,
-      "internal": 6,
+      "internal": 5,
       "unlisted": 0
     },
     "unusedComponents": []
@@ -203,7 +203,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:65",
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:77",
       "className": "absolute inset-0 cursor-pointer",
       "text": "",
       "childElements": [],
@@ -578,9 +578,9 @@
       "className": "rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden"
     },
     {
-      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:51",
+      "location": "src/components/workspace/qtplus/cards/FileCard.jsx:62",
       "tag": "div",
-      "className": "rounded-[12px] border border-line bg-surface overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-shadow"
+      "className": "group overflow-hidden rounded-[12px] border border-line bg-surface transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
     },
     {
       "location": "src/components/workspace/qtplus/cards/LinkCard.jsx:19",
@@ -596,11 +596,6 @@
       "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:86",
       "tag": "div",
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
-    },
-    {
-      "location": "src/components/workspace/qtplus/MediaLightbox.jsx:35",
-      "tag": "div",
-      "className": "bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center"
     },
     {
       "location": "src/components/workspace/TimesheetTab.jsx:142",

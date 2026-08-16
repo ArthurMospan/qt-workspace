@@ -37,7 +37,10 @@ export default function StageStepper({ stages, activeId, onSelect }) {
   });
 
   return (
-    <div ref={scrollRef} className="w-full overflow-x-auto border-b border-line">
+    // Смуга рисує `Tabs` — своєю ж лінією знизу. Тут її дублювала друга
+    // `border-b`, і активний етап підкреслювався ПОВЕРХ двох ліній замість
+    // однієї. Обгортка тепер відповідає лише за горизонтальний скрол.
+    <div ref={scrollRef} className="w-full overflow-x-auto">
       <Tabs variant="underline" tabs={tabs} activeTab={activeId} onTabChange={onSelect} />
     </div>
   );

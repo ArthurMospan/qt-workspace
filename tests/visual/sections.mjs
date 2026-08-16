@@ -21,6 +21,7 @@ export const SECTIONS = [
   { id: 'filters', label: 'Filter Bar' },
   { id: 'navigation-overlays', label: 'Navigation & Overlays' },
   { id: 'progress', label: 'KPI Cards' },
+  { id: 'charts', label: 'Графіки й таблиці' },
   { id: 'feedback', label: 'Feedback & States' },
   { id: 'skeletons', label: 'Skeletons' },
   { id: 'chat-composer', label: 'Chat Composer Dock' },
@@ -32,6 +33,7 @@ export const SECTIONS = [
   { id: 'page-headers', label: 'Page Header (Шапка)' },
   { id: 'sidebar-layout', label: 'Workspace Shell' },
   { id: 'inner-nav-layout', label: 'SidebarLayout — 3 контексти' },
+  { id: 'detail-layout', label: 'Деталі задачі й події' },
   { id: 'variant-matrix', label: 'Матриця варіантів' },
   { id: 'states', label: 'Матриця станів' },
 ];

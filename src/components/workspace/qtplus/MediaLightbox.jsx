@@ -1,20 +1,26 @@
 'use client';
 import { X } from 'lucide-react';
 import IconAction from '@/components/ui/IconAction';
+import AttachmentViewer from '@/components/ui/AttachmentViewer';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
 
-/** Повноекранний перегляд. Escape і клік по підкладці закривають. Тільки читання. */
-export default function MediaLightbox({ view, onClose }) {
-  const dialogRef = useModalFocus({ isOpen: Boolean(view), onClose });
-
-  if (!view) return null;
+/**
+ * Повноекранний перегляд матеріалу. Тільки читання.
+ *
+ * Файл сюди більше не потрапляє власним шляхом: його показує `AttachmentViewer`
+ * — той самий вьюер, що відкриває вкладення задачі та файл із чату. Тут лишилась
+ * єдина річ, якої в тому вьюері немає й бути не може: нотатка, бо вона не файл і
+ * не має URL.
+ */
+function NoteLightbox({ view, onClose }) {
+  const dialogRef = useModalFocus({ isOpen: true, onClose });
 
   return (
     <div
       data-ui-overlay="media-viewer"
       ref={dialogRef}
       tabIndex={-1}
-      className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center p-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-6"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -30,33 +36,24 @@ export default function MediaLightbox({ view, onClose }) {
         className="absolute right-4 top-4"
       />
 
-      <div className="max-w-[90vw] max-h-[90vh] flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
-        {!view.url && view.kind !== 'note' && (
-          <div data-ui-surface="local" className="bg-surface rounded-[16px] px-6 py-8 max-w-[420px] text-center">
-            <p className="text-[13px] text-muted">Файл недоступний.</p>
-          </div>
-        )}
-        {view.kind === 'image' && view.url && (
-          // eslint-disable-next-line @next/next/no-img-element -- portal media is served from arbitrary partner hosts, which next/image cannot whitelist
-          <img src={view.url} alt={view.title} className="max-w-[90vw] max-h-[80vh] object-contain rounded-[12px]" />
-        )}
-        {view.kind === 'video' && view.url && (
-          <video src={view.url} controls autoPlay className="max-w-[90vw] max-h-[80vh] rounded-[12px]" />
-        )}
-        {view.kind === 'pdf' && view.url && (
-          <iframe src={view.url} title={view.title} className="w-[90vw] h-[80vh] rounded-[12px] bg-white border-0" />
-        )}
-        {view.kind === 'text' && view.url && (
-          <iframe src={view.url} title={view.title} className="w-[70vw] h-[80vh] rounded-[12px] bg-white border-0" />
-        )}
-        {view.kind === 'note' && (
-          <div data-ui-surface="card" data-ui-padding="xl" className="ui-surface max-w-[640px] max-h-[80vh] overflow-y-auto">
-            <p className="text-[15px] text-ink whitespace-pre-wrap">{view.note.content}</p>
-            {view.note.source && <p className="text-[12px] text-muted mt-3 italic">Джерело: {view.note.source}</p>}
-          </div>
-        )}
-        <p className="text-[13px] text-white/70">{view.title}</p>
+      <div className="flex max-h-[90vh] max-w-[640px] flex-col items-stretch gap-3" onClick={(e) => e.stopPropagation()}>
+        <div
+          data-ui-surface="card"
+          data-ui-padding="xl"
+          className="ui-surface max-h-[80vh] overflow-y-auto"
+          style={{ backgroundColor: view.note.color }}
+        >
+          <p className="whitespace-pre-wrap text-[15px] text-ink">{view.note.content}</p>
+          {view.note.source && <p className="mt-3 text-[12px] italic text-muted">Джерело: {view.note.source}</p>}
+        </div>
+        <p className="text-center text-[13px] text-white/70">{view.title}</p>
       </div>
     </div>
   );
+}
+
+export default function MediaLightbox({ view, onClose }) {
+  if (!view) return null;
+  if (view.kind === 'note') return <NoteLightbox view={view} onClose={onClose} />;
+  return <AttachmentViewer attachment={view.attachment} onClose={onClose} />;
 }
