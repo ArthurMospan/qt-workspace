@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import UsagePanel from './UsagePanel';
-import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
+import { Bell, Loader, Settings, LayoutGrid, Type, Palette, Square, AlignLeft, ToggleLeft, Layers, MessageSquare, Hash, Filter, CheckSquare, MoreVertical, TrendingUp, BarChart3, Users, List, PanelLeftOpen, Grid3x3, MousePointerClick } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { ConfirmProvider } from '@/components/ui';
 import { KitContext } from './preview';
@@ -35,6 +35,7 @@ import VariantMatrixSection from './sections/variant-matrix';
 import StatesSection from './sections/states';
 import SkeletonsSection from './sections/skeletons';
 import DetailLayoutSection from './sections/detail-layout';
+import ChartsSection from './sections/charts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV SECTIONS
@@ -69,6 +70,7 @@ const GROUPS = [
       { id: 'filters',      label: 'Filter Bar',         icon: Filter },
       { id: 'navigation-overlays', label: 'Navigation & Overlays', icon: MoreVertical },
       { id: 'progress',     label: 'KPI Cards',          icon: TrendingUp },
+      { id: 'charts',       label: 'Графіки й таблиці',  icon: BarChart3 },
       { id: 'feedback',     label: 'Feedback & States',  icon: Bell },
       { id: 'skeletons',    label: 'Skeletons',          icon: Loader },
       { id: 'chat-composer', label: 'Chat Composer Dock', icon: ChatIcon },
@@ -119,6 +121,7 @@ const SECTION_MAP = {
   badges:     <BadgesSection />,
   avatars:    <AvatarsSection />,
   progress:   <ProgressSection />,
+  charts:     <ChartsSection />,
   'navigation-overlays': <NavigationOverlaysSection />,
   dialogs:    <DialogsSection />,
   filters:    <FiltersSection />,

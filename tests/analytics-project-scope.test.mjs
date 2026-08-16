@@ -26,7 +26,9 @@ test('analytics describes the leaf-task accounting rule without changing it', as
   ]);
 
   assert.match(analytics, /label="Робочі задачі"/);
-  assert.match(analytics, /Робочих задач/);
+  // The column header is «Задач» now; the table it heads is `DataTable`, whose
+  // columns are objects rather than a hand-written <thead>.
+  assert.match(analytics, /header: 'Задач'/);
   assert.match(analytics, /Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями\./);
   assert.match(accounting, /return issues\.filter\(issue => \{[\s\S]{0,160}!summaryIssueIds\.has\(id\)/);
 });

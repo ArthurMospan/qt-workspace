@@ -114,9 +114,14 @@ test('the variant matrix renders every component that can stand alone', () => {
 // asks for two presets. The presets stay declared: they are the component's
 // vocabulary, and `preset="text"` / `width="full"` are its own defaults, which
 // cannot be deleted for want of a call site.
+// Raised 107 → 109 with the analytics vocabulary. Both additions are a
+// component's own default — `DetailSection density="section"` and
+// `FileThumb density="md"` — which no call site passes and none should, for the
+// same reason `Skeleton preset="text"` does not: a default is the value you get
+// by writing nothing.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 107,
+    committed.totals.declaredUnused <= 109,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

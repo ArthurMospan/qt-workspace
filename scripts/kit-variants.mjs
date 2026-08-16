@@ -161,6 +161,10 @@ const SOURCES = {
   SidebarLayout: { context: { map: ['Layout/SidebarLayout.jsx', 'CONTEXTS'] } },
   DetailLayout: { context: { map: ['Layout/DetailLayout.jsx', 'CONTEXTS'] } },
   DetailSection: { density: { map: ['Layout/DetailSection.jsx', 'DENSITIES'] } },
+  // Progress is `neutral` by default because most progress means nothing beyond
+  // itself; the three severities are the exception, and they say so in words as
+  // well as in hue.
+  Meter: { tone: { map: ['Charts/Meter.jsx', 'TONES'] } },
   FilterBar: { context: { map: ['FilterBar.jsx', 'WIDTHS'] } },
   Popover: {
     align: { literal: ['start', 'center', 'end'] },

@@ -395,7 +395,10 @@ test('what measures output reads delivered; what asks "is there work left" reads
   assert.match(dashboard, /const deliveredSet = new Set\(deliveredStatusIds\)/);
   assert.match(analytics, /const done\s+= issues\.filter\(i => deliveredSet\.has/);
   assert.match(analyticsTab, /const done\s+= filteredIssues\.filter\(i => deliveredSet\.has/);
-  assert.match(velocity, /function WeeklyVelocityChart\([^)]*deliveredSet/);
+  // The weekly chart is a hook feeding the shared `ColumnChart` now, but the
+  // set it reads is the same one: velocity measures output, and a cancelled
+  // task produced none.
+  assert.match(velocity, /function useWeeklyVelocity\([^)]*deliveredSet/);
   assert.match(workload, /done: actionableIssues\.filter\(issue => \(\s*\n\s*deliveredSet\.has/);
   assert.match(team, /const done = memberIssues\.filter\(issue => deliveredSet\.has/);
   assert.match(billing, /deliveredStatusIds\.includes\(issue\.columnId \|\| issue\.status\)/);
@@ -403,7 +406,11 @@ test('what measures output reads delivered; what asks "is there work left" reads
   // And the ones that must stay closed: a cancelled task is not overdue, does not
   // block anything, and is not work remaining on a burndown.
   assert.match(analytics, /isDueDateOverdue\(i\.dueDate, \{ now, timeZone \}\)[\s\S]{0,80}&& !closedSet\.has/);
-  assert.match(velocity, /function BurndownChart\([^)]*closedSet/);
+  // The burndown draws work *remaining*, so a cancelled task lowers the line
+  // the same way a finished one does — that is the closed set, not the
+  // delivered one. It feeds the shared `TrendChart` now; the set it reads is
+  // unchanged.
+  assert.match(velocity, /function useBurndown\([^)]*closedSet/);
   assert.match(workload, /const openItems = memberIssues\.filter\(issue => !closedSet\.has/);
 });
 

@@ -11,9 +11,9 @@
     "productFiles": 216,
     "parsedFiles": 216,
     "parseErrors": 0,
-    "nativeControls": 17,
+    "nativeControls": 18,
     "structures": {
-      "analytics": 1,
+      "analytics": 2,
       "qtplus": 1,
       "board": 1,
       "settings": 1,
@@ -26,28 +26,28 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 47,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 16,
+    "button": 17,
     "input": 0,
     "textarea": 1,
     "select": 0
   },
   "kit": {
     "totals": {
-      "components": 103,
-      "used": 103,
+      "components": 110,
+      "used": 110,
       "unused": 0,
-      "covered": 98,
+      "covered": 104,
       "uncovered": 0,
       "routes": 12,
-      "previews": 132,
-      "internal": 5,
+      "previews": 140,
+      "internal": 6,
       "unlisted": 0
     },
     "unusedComponents": []
@@ -218,7 +218,26 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:556",
+      "location": "src/components/workspace/WorkloadTab.jsx:183",
+      "className": "flex min-w-0 items-center gap-3 text-left",
+      "text": "",
+      "childElements": [
+        "UserAvatar",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "structure": "analytics",
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/WorkloadTab.jsx:533",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -340,6 +359,10 @@
       "count": 2
     },
     {
+      "file": "src/components/workspace/WorkloadTab.jsx",
+      "count": 2
+    },
+    {
       "file": "src/components/OrgSwitcherScreen.jsx",
       "count": 1
     },
@@ -349,10 +372,6 @@
     },
     {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 1
     },
     {
@@ -499,11 +518,6 @@
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:354",
-      "tag": "div",
-      "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
-    },
-    {
       "location": "src/components/SearchModal.jsx:43",
       "tag": "div",
       "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
@@ -604,7 +618,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:498",
+      "location": "src/components/workspace/WorkloadTab.jsx:475",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

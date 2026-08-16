@@ -64,6 +64,17 @@ export { default as TypeBadge } from './DataDisplay/TypeBadge'
 export { default as Pill } from './DataDisplay/Pill'
 export { default as Counter } from './DataDisplay/Counter'
 export { default as KpiCard } from './DataDisplay/KpiCard'
+export { default as DataTable } from './DataDisplay/DataTable'
+
+// ===== CHARTS =====
+// The analytics vocabulary, in one place. Before this, "how much of each" was
+// written five times across four files and no two agreed on the bar height, the
+// track colour or what a full bar meant.
+export { default as BarList } from './Charts/BarList'
+export { default as ColumnChart } from './Charts/ColumnChart'
+export { default as TrendChart } from './Charts/TrendChart'
+export { default as Meter } from './Charts/Meter'
+export { default as Sparkline } from './Charts/Sparkline'
 export { default as MarkdownViewer, setTaskChecked } from './DataDisplay/MarkdownViewer'
 export { default as TaskCounters } from './TaskManagement/TaskCounters'
 export { default as TaskIdentity } from './TaskManagement/TaskIdentity'
@@ -91,6 +102,7 @@ export { default as Alert } from './Feedback/Alert'
 export { default as LoadingSpinner } from './Feedback/LoadingSpinner'
 export { default as Skeleton } from './Feedback/Skeleton'
 export { default as EmptyState } from './Feedback/EmptyState'
+export { default as SignalList } from './Feedback/SignalList'
 
 // ===== LAYOUT COMPONENTS =====
 export { default as Card } from './Layout/Card'

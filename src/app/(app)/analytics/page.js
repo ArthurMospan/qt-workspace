@@ -6,12 +6,10 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
-import Link from 'next/link';
 import {
-  BarChart2, AlertTriangle, Clock, Users, Zap, Target, Receipt, ArrowRight,
-  ChevronLeft, ChevronRight, Plus, StickyNote, Video,
+  BarChart2, AlertTriangle, Clock, Folders, Users, Zap, Target, Receipt,
+  ChevronLeft, ChevronRight, Plus,
 } from 'lucide-react';
-import { CalendarIcon } from '@/lib/design/icons';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -20,8 +18,8 @@ import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
-  Button, LoadingSpinner, EmptyState, Alert, Card, PageHeader, KpiCard, Segmented, Surface,
-  TaskListCard,
+  BarList, Button, Card, DataTable, DetailSection, EmptyState, KpiCard, LoadingSpinner,
+  Meter, PageHeader, Segmented, SignalList, Surface, TaskListCard,
 } from '@/components/ui';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -60,12 +58,22 @@ function fmtH(min) {
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
 
-function SectionTitle({ children }) {
-  return <h2 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-3">{children}</h2>;
-}
-
 function FilterDivider() {
   return <span className="w-[1px] h-[16px] bg-[#e3e3e3] mx-[2px] shrink-0" />;
+}
+
+// Every block on this screen is a white card with the same heading, and the
+// heading is the one the detail pages use. It used to be a local `SectionTitle`
+// here, a different local `SectionTitle` in AnalyticsTab, and a bare h3 with
+// hand-typed classes in three more places.
+function ChartCard({ icon, title, meta, action, children, className = '' }) {
+  return (
+    <Card preset="borderless" padding="lg" className={className}>
+      <DetailSection icon={icon} title={title} meta={meta} action={action}>
+        {children}
+      </DetailSection>
+    </Card>
+  );
 }
 
 // ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
@@ -133,6 +141,24 @@ function AnalyticsContent({
     };
   }, [events, now, period]);
 
+  // The shape behind the headline figure. A tile that says "18 closed" and a
+  // tile that says "18 closed, and it was 3 all of last week" are different
+  // facts, and the row only ever showed the first.
+  const closedTrend = useMemo(() => {
+    const buckets = Math.min(Math.max(Math.round(period / 3), 6), 14);
+    const span = (period * 86_400_000) / buckets;
+    const start = now - period * 86_400_000;
+    return Array.from({ length: buckets }, (_, index) => {
+      const from = start + index * span;
+      const to = from + span;
+      return issues.filter(issue => {
+        if (!deliveredSet.has(issue.columnId || issue.status)) return false;
+        const at = getCompletedAtMillis(issue);
+        return at >= from && at < to;
+      }).length;
+    });
+  }, [deliveredSet, issues, now, period]);
+
   const stats = useMemo(() => {
     const periodAgo = now - period * 24 * 3600 * 1000;
 
@@ -183,14 +209,13 @@ function AnalyticsContent({
     const byStatus = (statuses || []).map(({ id, label, color }) => ({
       id, label, color, count: issues.filter(i => i.columnId === id).length,
     })).filter(s => s.count > 0);
-    const maxStatus = Math.max(...byStatus.map(s => s.count), 1);
 
     const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !closedSet.has(i.columnId || i.status)).length;
     const unestimated = issues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !closedSet.has(i.columnId || i.status)).length;
 
     return {
       total, done, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
-      byProject, byStatus, maxStatus, noAssignee, unestimated,
+      byProject, byStatus, noAssignee, unestimated,
       completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
     };
   }, [
@@ -229,208 +254,166 @@ function AnalyticsContent({
     );
   }
 
+  // The workspace's attention list, ordered by how much each thing matters.
+  // This was two stacks of `Alert` — a component built to interrupt — so five
+  // findings arrived as five banners in four colours on the calmest screen in
+  // the product. None of them interrupt anything; they are a reading.
+  const signals = [
+    stats.dependencyBlocked > 0 && {
+      id: 'blocked',
+      tone: 'critical',
+      count: stats.dependencyBlocked,
+      title: `${plural(stats.dependencyBlocked, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
+      description: 'Їх стримують незавершені задачі',
+    },
+    stats.overdue.length > 0 && {
+      id: 'overdue',
+      tone: 'critical',
+      count: stats.overdue.length,
+      title: 'Прострочені завдання',
+      description: 'Дедлайн минув, робота відкрита',
+    },
+    stats.blockerPriority > 0 && {
+      id: 'blocker-priority',
+      tone: 'warning',
+      count: stats.blockerPriority,
+      title: 'Критичний пріоритет',
+      description: 'Потребують негайної уваги',
+    },
+    stats.noAssignee > 0 && {
+      id: 'no-assignee',
+      tone: 'warning',
+      count: stats.noAssignee,
+      title: 'Без виконавця',
+      description: 'Ніхто не відповідає за результат',
+    },
+    stats.unestimated > 0 && {
+      id: 'unestimated',
+      tone: 'info',
+      count: stats.unestimated,
+      title: 'Без оцінки',
+      description: 'Поза беклогом, але без плану за часом',
+    },
+  ].filter(Boolean);
+
+  // Where the period's time actually went. Four calendar tiles used to sit here
+  // as a second KPI row — a dashboard of counts that answered nothing anybody
+  // asks about a calendar. This is one question with one answer.
+  const timeSplit = [
+    { id: 'tasks', label: 'Завдання', value: Math.max(0, Math.round(stats.periodMin - calendarStats.meetingMinutes - calendarStats.focusMinutes)) },
+    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), color: 'var(--color-chart-2)', meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
+    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes), color: 'var(--color-chart-3)' },
+  ].filter(row => row.value > 0);
+
   return (
     <div className="flex-1 overflow-y-auto bg-transparent">
-      <div className="w-full pb-16">
+      <div className="flex w-full flex-col gap-4 pb-16">
 
         {/* KPI */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard icon={Target} label="Робочі задачі"
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
-          <KpiCard icon={Zap} label={`Закрито за ${period}д`} onClick={() => onTabChange('velocity')}
-            value={stats.recentDone} sub="тренди — у Продуктивності" />
-          <KpiCard icon={Clock} label={`Списано часу · ${period}д`} onClick={() => onTabChange('timesheet')}
+          <KpiCard icon={Zap} label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('velocity')}
+            value={stats.recentDone} series={closedTrend} sub="тренди — у Продуктивності" />
+          <KpiCard icon={Clock} label={`Списано часу за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
           <KpiCard icon={AlertTriangle} label="Прострочено"
-            value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'все вчасно'} />
+            value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'усе вчасно'} />
         </div>
 
-        <SectionTitle>Календар · {period} {plural(period, ['день', 'дні', 'днів'])}</SectionTitle>
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard icon={CalendarIcon} label="Заплановано"
-            value={calendarStats.upcoming} sub={`період: ${period} ${plural(period, ['день', 'дні', 'днів'])}`} />
-          <KpiCard icon={Video} label="Мітинги"
-            value={calendarStats.meetings} sub={`${fmtH(Math.round(calendarStats.meetingMinutes))} за період`} />
-          <KpiCard icon={Clock} label="Фокус-час"
-            value={fmtH(Math.round(calendarStats.focusMinutes))} sub={`період: ${period} ${plural(period, ['день', 'дні', 'днів'])}`} />
-          <KpiCard icon={StickyNote} label="Нотатки"
-            value={calendarStats.notes} sub="у видимому календарі" />
-        </div>
-
-        {/* Statuses + Projects */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card preset="borderless" padding="lg">
-            <SectionTitle>По статусах</SectionTitle>
-            {/* Label above the bar rather than squeezed into a 90px column:
-                at 10px in that width every status name was truncated. */}
-            <div className="flex flex-col gap-[14px]">
-              {stats.byStatus.map(({ id, label, color, count }) => (
-                <div key={id} className="flex flex-col gap-[6px]">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                      <span className="truncate text-[13px] font-semibold text-ink">{label}</span>
-                    </span>
-                    <span className="shrink-0 text-[14px] font-bold text-ink tabular-nums">{count}</span>
-                  </div>
-                  <div className="h-[6px] overflow-hidden rounded-full bg-[#f0f0f0]">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${(count / stats.maxStatus) * 100}%`, background: color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card preset="borderless" padding="lg" className="md:col-span-2">
-            <SectionTitle>По проєктах</SectionTitle>
-            <p className="mb-3 text-[11px] leading-relaxed text-muted">
-              Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями.
-            </p>
-            <div className="space-y-2 md:hidden">
-              {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
-                <Link key={p.id} href={`/${p.id}`} className="block">
-                  <Card preset="bordered-compact" padding="md" interactive>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-bold text-ink">{p.name}</p>
-                        <p className="mt-0.5 text-[10px] font-medium text-muted">{total} робочих задач</p>
-                      </div>
-                      <ArrowRight size={14} className="mt-0.5 shrink-0 text-muted" />
-                    </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      <div className="h-[6px] min-w-0 flex-1 overflow-hidden rounded-full bg-white">
-                        <div className="h-full rounded-full bg-[#10b981]" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="shrink-0 text-[11px] font-semibold text-muted">{pct}%</span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-black/[0.05] pt-3">
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Відкрито</p>
-                        <p className="mt-0.5 text-[12px] font-bold text-[#0891b2]">{open}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Прострочено</p>
-                        <p className={`mt-0.5 text-[12px] font-bold ${overdue > 0 ? 'text-red-500' : 'text-faint'}`}>{overdue || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Час · {period}д</p>
-                        <p className="mt-0.5 text-[12px] font-bold text-ink">{fmtH(minutes)}</p>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[#f0f0f0]">
-                    {['Проєкт', 'Робочих задач', 'Прогрес', 'Відкрито', 'Прострочено', `Час · ${period}д`, ''].map(h => (
-                      <th key={h} className="pb-2 text-[10px] font-bold text-muted uppercase tracking-wide pr-4 last:pr-0">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f8f8f8]">
-                  {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (
-                    <tr key={p.id} className="group">
-                      {/* «Внутрішній / Клієнтський» is gone. Client
-                          collaboration lives in QuickTeam+, not in the internal
-                          workspace, so every project in this table was
-                          "Внутрішній" — a column that answered a question
-                          nobody could ask, left over from a model the product
-                          no longer has. */}
-                      <td className="py-3 pr-4">
-                        <p className="text-[13px] font-semibold text-ink">{p.name}</p>
-                      </td>
-                      <td className="py-3 pr-4 text-[13px] font-semibold text-ink">{total}</td>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-[80px] h-[5px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                            <div className="h-full bg-[#10b981] rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-[11px] font-semibold text-muted">{pct}%</span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-[12px] text-[#0891b2] font-semibold">{open}</td>
-                      <td className="py-3 pr-4">
-                        {overdue > 0 ? <span className="text-[12px] font-semibold text-red-500">{overdue}</span>
-                          : <span className="text-[12px] text-faint">—</span>}
-                      </td>
-                      <td className="py-3 pr-4 text-[12px] text-muted">{fmtH(minutes)}</td>
-                      <td className="py-3">
-                        <Link href={`/${p.id}`}
-                          className="inline-flex min-h-[24px] items-center gap-1 py-[3px] text-[11px] font-medium text-faint opacity-100 transition-opacity hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                          Відкрити <ArrowRight size={11} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-
-        {/* Overdue + Insights */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {stats.overdue.length > 0 && (
-            <TaskListCard
-              title="Прострочені"
-              icon={AlertTriangle}
-              iconClassName="text-red-500"
-              issues={stats.overdue}
-              allIssues={issueReferenceIssues}
-              members={members}
-              projects={projects}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <ChartCard icon={BarChart2} title="По статусах">
+            <BarList
+              items={stats.byStatus.map(status => ({
+                id: status.id,
+                label: status.label,
+                value: status.count,
+                // The status owns this colour: it is configured per workspace
+                // and is the same swatch on the board, in the list and here.
+                color: status.color,
+              }))}
+              emptyText="Задач немає"
             />
-          )}
-          <Card preset="borderless" padding="lg">
-            <SectionTitle>Інсайти</SectionTitle>
-            <div className="flex flex-col gap-3">
-              {stats.dependencyBlocked > 0 && (
-                <Alert
-                  variant="error"
-                  title={`${stats.dependencyBlocked} ${plural(stats.dependencyBlocked, ['завдання', 'завдання', 'завдань'])} заблоковано`}
-                  description="Їх стримують незавершені залежності"
-                />
-              )}
-              {stats.blockerPriority > 0 && (
-                <Alert
-                  variant="warning"
-                  title={`${stats.blockerPriority} ${plural(stats.blockerPriority, ['завдання', 'завдання', 'завдань'])} із пріоритетом «Критичний»`}
-                  description="Потребують негайної уваги"
-                />
-              )}
-              {stats.noAssignee > 0 && (
-                <Alert
-                  variant="warning"
-                  title={`${stats.noAssignee} ${plural(stats.noAssignee, ['завдання', 'завдання', 'завдань'])} без виконавця`}
-                />
-              )}
-              {stats.unestimated > 0 && (
-                <Alert
-                  variant="info"
-                  title={`${stats.unestimated} ${plural(stats.unestimated, ['завдання', 'завдання', 'завдань'])} без оцінки`}
-                />
-              )}
-              {stats.inProgress > 0 && (
-                <Alert
-                  variant="success"
-                  title={`${stats.inProgress} ${plural(stats.inProgress, ['завдання', 'завдання', 'завдань'])} в роботі`}
-                />
-              )}
-              {stats.dependencyBlocked === 0
-                && stats.blockerPriority === 0
-                && stats.noAssignee === 0
-                && stats.overdue.length === 0 && (
-                <Alert
-                  variant="success"
-                  title="Все виглядає добре!"
-                />
-              )}
-            </div>
-          </Card>
+          </ChartCard>
+
+          <ChartCard
+            icon={Clock}
+            title={`Куди пішов час · ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
+            meta={fmtH(stats.periodMin)}
+          >
+            <BarList
+              scale="total"
+              items={timeSplit}
+              format={fmtH}
+              emptyText="За період час не списували"
+            />
+            <p className="mt-4 border-t border-[color:var(--color-chart-grid)] pt-3 text-[11px] leading-relaxed text-muted">
+              Попереду {calendarStats.upcoming} {plural(calendarStats.upcoming, ['подія', 'події', 'подій'])} на найближчі {period} {plural(period, ['день', 'дні', 'днів'])}
+              {calendarStats.notes > 0 ? ` · ${calendarStats.notes} ${plural(calendarStats.notes, ['нотатка', 'нотатки', 'нотаток'])} у календарі` : ''}
+            </p>
+          </ChartCard>
+
+          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
+            <SignalList signals={signals} emptyText="Нічого термінового — усе під контролем" />
+          </ChartCard>
         </div>
+
+        <ChartCard
+          icon={Folders}
+          title="По проєктах"
+          meta={`${stats.byProject.length} ${plural(stats.byProject.length, ['проєкт', 'проєкти', 'проєктів'])}`}
+        >
+          <p className="-mt-1 text-[11px] leading-relaxed text-muted">
+            Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями.
+          </p>
+          {/* «Внутрішній / Клієнтський» is gone. Client collaboration lives in
+              QuickTeam+, not in the internal workspace, so every project in this
+              table was "Внутрішній" — a column that answered a question nobody
+              could ask, left over from a model the product no longer has. */}
+          <DataTable
+            rows={stats.byProject}
+            rowKey={row => row.p.id}
+            rowHref={row => `/${row.p.id}`}
+            emptyText="Проєктів немає"
+            columns={[
+              {
+                id: 'project',
+                header: 'Проєкт',
+                lead: true,
+                cell: row => <span className="block truncate text-[13px] font-semibold text-ink">{row.p.name}</span>,
+              },
+              { id: 'total', header: 'Задач', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{row.total}</span> },
+              {
+                id: 'progress',
+                header: 'Прогрес',
+                width: '180px',
+                cell: row => <Meter value={row.pct / 100} reading={`${row.pct}%`} height={6} />,
+              },
+              { id: 'open', header: 'Відкрито', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-ink">{row.open}</span> },
+              {
+                id: 'overdue',
+                header: 'Прострочено',
+                align: 'right',
+                width: '112px',
+                cell: row => (row.overdue > 0
+                  ? <span className="ui-type-figure text-[#ef4444]">{row.overdue}</span>
+                  : <span className="ui-type-figure text-faint">—</span>),
+              },
+              { id: 'time', header: `Час · ${period}д`, align: 'right', width: '110px', cell: row => <span className="ui-type-figure text-muted">{fmtH(row.minutes)}</span> },
+            ]}
+          />
+        </ChartCard>
+
+        {stats.overdue.length > 0 && (
+          <TaskListCard
+            title="Прострочені"
+            icon={AlertTriangle}
+            issues={stats.overdue}
+            allIssues={issueReferenceIssues}
+            members={members}
+            projects={projects}
+          />
+        )}
       </div>
     </div>
   );

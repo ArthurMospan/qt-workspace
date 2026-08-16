@@ -22,13 +22,20 @@ test('QUI-129 renders the project status chart the same way as global analytics'
     read('../src/app/(app)/analytics/page.js'),
   ]);
   // The tab squeezed each status label into a fixed 100px column and truncated
-  // every name; the global page put the label above its bar. One chart now.
+  // every name; the global page put the label above its bar. They then agreed
+  // by copying each other, which is an agreement that lasts until the next
+  // edit — so it is one component now, and "the same way" is structural.
+  const barList = await read('../src/components/ui/Charts/BarList.jsx');
+  assert.match(barList, /<span className="h-2 w-2 shrink-0 rounded-full" style=\{\{ background: item\.color \}\} \/>/);
+  assert.match(barList, /truncate text-\[13px\] font-semibold text-ink/);
+  assert.match(barList, /ui-type-figure shrink-0 text-ink/);
   for (const source of [tab, global]) {
-    assert.match(source, /<span className="h-2 w-2 shrink-0 rounded-full" style=\{\{ background: color \}\} \/>/);
-    assert.match(source, /truncate text-\[13px\] font-semibold text-ink/);
-    assert.match(source, /text-\[14px\] font-bold text-ink tabular-nums/);
+    assert.match(source, /<BarList/);
   }
   assert.doesNotMatch(tab, /w-\[100px\] text-\[11px\] font-medium text-muted/);
+  // The priority bar multiplied its share by three "to make small bars
+  // visible", which is a chart that misstates its own values.
+  assert.doesNotMatch(tab, /\* 100 \* 3/);
 });
 
 test('QUI-129 and QUI-139 keep the project header free of team avatars', async () => {

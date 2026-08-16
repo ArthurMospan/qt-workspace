@@ -27,10 +27,16 @@ test('dense analytics, timesheet and invoice data have dedicated mobile cards', 
   const timesheet = read('src/components/workspace/TimesheetTab.jsx');
   const billing = read('src/components/workspace/BillingTab.jsx');
 
-  assert.match(workspaceAnalytics, /space-y-2 md:hidden/);
-  assert.match(workspaceAnalytics, /hidden overflow-x-auto md:block/);
-  assert.match(projectAnalytics, /space-y-2 md:hidden/);
-  assert.match(projectAnalytics, /hidden overflow-x-auto md:block/);
+  // The two analytics tables are `DataTable` now, and the stacked layout is
+  // part of it rather than a second block each screen wrote for itself. Both
+  // screens had written it, and only one of the three tables on them had it at
+  // all — the team overview shipped a six-column grid with no phone layout.
+  const dataTable = read('src/components/ui/DataDisplay/DataTable.jsx');
+  assert.match(dataTable, /hidden w-full border-collapse md:table/);
+  assert.match(dataTable, /flex flex-col gap-2 md:hidden/);
+  for (const source of [workspaceAnalytics, projectAnalytics]) {
+    assert.match(source, /<DataTable/);
+  }
   assert.match(timesheet, /space-y-3 lg:hidden/);
   assert.match(timesheet, /hidden overflow-x-auto rounded-\[16px\] bg-white lg:block/);
   assert.match(billing, /mb-2 space-y-2 sm:hidden/);

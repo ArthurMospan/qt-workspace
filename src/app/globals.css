@@ -21,6 +21,35 @@
      themes, which are generated rather than chosen, keep the hard AA gate. */
   --color-muted:      #9a9a9a;  /* secondary text, placeholders */
   --color-faint:      #cfcfcf;  /* disabled / very light text */
+
+  /* ── Chart tokens ────────────────────────────────────────────────────
+     Analytics used to pick a colour per chart, and there were eleven of them:
+     emerald for "done", cyan for "logged", #0891b2 for "open", a hand-mixed
+     #7ba98d/#c96a5a/#b8b8b8 workload bar, yellow-400 for a budget nearing its
+     limit, ink for a project bar. Nothing meant anything twice, and four cards
+     side by side read as four unrelated widgets.
+
+     Three slots, in a fixed order, assigned in sequence and never cycled. They
+     were not chosen by eye: this trio clears the lightness band, the chroma
+     floor, all-pairs separation under protanopia and deuteranopia, and 3:1
+     against white — the checks are what makes the set safe to change.
+
+     `chart-1` is the measure and carries almost everything on its own; a second
+     and third slot appear only where two or three series genuinely share a
+     plot. Magnitude is one hue, never a value-ramp across nominal categories:
+     colouring a project bar darker because it is longer spends the identity
+     channel re-encoding what the bar length already says.
+
+     Status keeps its own reserved scale (success/warning/danger/info) and never
+     stands in for "series 2". Entity colours — a status, a type, a priority —
+     come from the workspace's own configuration and are the entity's, not the
+     chart's. */
+  --color-chart-1:       #2f6fb0;  /* the measure */
+  --color-chart-2:       #cf7a22;
+  --color-chart-3:       #0e8f74;
+  --color-chart-track:   #eef2f6;  /* the unfilled half of a bar or a meter */
+  --color-chart-context: #bcbcbc;  /* the series that is context, not the point */
+  --color-chart-grid:    #f0f0f0;  /* hairline axes and rules */
 }
 
 @layer base {
@@ -76,6 +105,11 @@
     --ui-type-item-title-size: 12px;
     --ui-type-micro-title-size: 11px;
     --ui-type-eyebrow-size: 11px;
+    /* The two sizes analytics needs and had been spelling by hand: the headline
+       figure on a stat tile, and every number that sits in a column under
+       another number. */
+    --ui-type-metric-value-size: 26px;
+    --ui-type-figure-size: 13px;
   }
   body {
     font-family: var(--font-inter);
@@ -914,6 +948,24 @@
   }
   .ui-type-member-title[data-ui-density='standalone'] {
     font-size: 26px !important;
+  }
+  /* The figure a stat tile leads with. Proportional digits on purpose: with
+     `tabular-nums` every digit takes the width of a zero, and at this size a
+     number like 121 comes out visibly loose. Tabular is for columns. */
+  .ui-type-metric-value {
+    font-size: var(--ui-type-metric-value-size) !important;
+    font-weight: 700 !important;
+    font-variant-numeric: proportional-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  /* A number that sits under another number: a table cell, an axis tick, the
+     value beside a bar. Here equal-width digits are the point — they are what
+     makes a column of figures line up. */
+  .ui-type-figure {
+    font-size: var(--ui-type-figure-size) !important;
+    font-weight: 600 !important;
+    font-variant-numeric: tabular-nums;
   }
   .ui-type-eyebrow,
   .ui-label {

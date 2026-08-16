@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 103,
-    "stateful": 95,
-    "hover": 66,
-    "focus": 65,
+    "components": 110,
+    "stateful": 98,
+    "hover": 68,
+    "focus": 67,
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 67
+    "long-text": 68
   },
   "components": {
     "Alert": {
@@ -51,6 +51,7 @@
       "focus": "global",
       "long-text": "label"
     },
+    "BarList": {},
     "Breadcrumb": {
       "hover": "own",
       "focus": "own"
@@ -141,6 +142,7 @@
       "focus": "global",
       "long-text": "label"
     },
+    "ColumnChart": {},
     "CommandPalette": {
       "hover": "own",
       "focus": "global"
@@ -156,6 +158,10 @@
       "focus": "global"
     },
     "Counter": {},
+    "DataTable": {
+      "hover": "own",
+      "focus": "global"
+    },
     "DatePicker": {
       "disabled": "prop",
       "error": "prop",
@@ -287,6 +293,9 @@
       "focus": "global",
       "long-text": "label"
     },
+    "Meter": {
+      "long-text": "label"
+    },
     "MobilePaneBack": {
       "hover": "own",
       "focus": "global",
@@ -360,7 +369,12 @@
     "SidebarLayout": {
       "long-text": "children"
     },
+    "SignalList": {
+      "hover": "own",
+      "focus": "global"
+    },
     "Skeleton": {},
+    "Sparkline": {},
     "StatusPill": {
       "long-text": "label"
     },
@@ -454,6 +468,7 @@
       "hover": "own",
       "focus": "own"
     },
+    "TrendChart": {},
     "TypeBadge": {
       "long-text": "label"
     },
@@ -490,6 +505,9 @@
       "chat-elements",
       "variant-matrix",
       "states"
+    ],
+    "BarList": [
+      "charts"
     ],
     "BulkActionBar": [
       "task-elements"
@@ -529,6 +547,7 @@
     ],
     "Card": [
       "surfaces",
+      "charts",
       "variant-matrix",
       "states"
     ],
@@ -568,6 +587,9 @@
       "inputs",
       "variant-matrix"
     ],
+    "ColumnChart": [
+      "charts"
+    ],
     "CommandPalette": [
       "navigation-overlays"
     ],
@@ -585,6 +607,9 @@
       "badges",
       "variant-matrix"
     ],
+    "DataTable": [
+      "charts"
+    ],
     "DatePicker": [
       "inputs",
       "task-attributes",
@@ -597,6 +622,7 @@
       "detail-layout"
     ],
     "DetailSection": [
+      "charts",
       "detail-layout",
       "variant-matrix"
     ],
@@ -657,6 +683,7 @@
     ],
     "KpiCard": [
       "progress",
+      "charts",
       "states"
     ],
     "Label": [
@@ -693,6 +720,10 @@
     ],
     "MetaTrigger": [
       "navigation-overlays"
+    ],
+    "Meter": [
+      "charts",
+      "variant-matrix"
     ],
     "MobilePaneBack": [
       "inner-nav-layout"
@@ -769,9 +800,15 @@
     "SidebarLayout": [
       "inner-nav-layout"
     ],
+    "SignalList": [
+      "charts"
+    ],
     "Skeleton": [
       "skeletons",
       "variant-matrix"
+    ],
+    "Sparkline": [
+      "charts"
     ],
     "StatusPill": [
       "badges",
@@ -862,6 +899,9 @@
     "TopHeader": [
       "headers"
     ],
+    "TrendChart": [
+      "charts"
+    ],
     "TypeBadge": [
       "badges"
     ],
@@ -871,6 +911,7 @@
     "UserAvatar": [
       "badges",
       "avatars",
+      "charts",
       "chat-elements",
       "task-elements",
       "inner-nav-layout",

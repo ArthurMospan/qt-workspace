@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Folders,
   LayoutDashboard,
   ListChecks,
   Target,
@@ -20,10 +21,14 @@ import {
 import { CalendarIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
+  BarList,
   Button,
+  Card,
+  DataTable,
+  DetailSection,
   EmptyState,
   KpiCard,
-  ListRow,
+  Meter,
   Pill,
   Segmented,
   TaskListCard,
@@ -115,138 +120,120 @@ function RiskPill({ stat }) {
   return <Pill tone="success" size="md">Стабільно</Pill>;
 }
 
-// Open work is neutral, not black: a full-width ink bar read as an alert on a
-// row where nothing was actually wrong. Same muted palette as the timesheet.
-function WorkloadBar({ open, done, overdue }) {
-  const total = Math.max(open + done, 1);
-  const doneWidth = (done / total) * 100;
-  const openWidth = (open / total) * 100;
+// The same card and heading every other analytics block uses. The workload bar
+// that used to live here mixed its own #7ba98d, #c96a5a and #b8b8b8 — three
+// colours that appear nowhere else in the product, for a fact the row already
+// stated twice in figures.
+function ChartCard({ icon, title, meta, children, className = '' }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-canvas">
-        <span className="h-full bg-[#7ba98d]" style={{ width: `${doneWidth}%` }} />
-        <span
-          className={overdue > 0 ? 'h-full bg-[#c96a5a]' : 'h-full bg-[#b8b8b8]'}
-          style={{ width: `${openWidth}%` }}
-        />
-      </div>
-      <span className="w-[74px] shrink-0 text-right text-[11px] font-semibold text-muted">
-        {open} відкрито
-      </span>
-    </div>
+    <Card preset="borderless" padding="lg" className={className}>
+      <DetailSection icon={icon} title={title} meta={meta}>
+        {children}
+      </DetailSection>
+    </Card>
   );
 }
 
 function TeamOverview({ stats, summary, period, positions, now, onSelectMember }) {
   return (
-    <div className="w-full pb-16">
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="flex w-full flex-col gap-4 pb-16">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           icon={Clock}
-
           value={fmtH(summary.minutes)}
-          label={`Списано за ${period}д`}
+          label={`Списано за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
           sub="за задачами та подіями"
         />
         <KpiCard
           icon={CheckCircle2}
-
           value={summary.done}
-          label={`Завершено за ${period}д`}
+          label={`Завершено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
           sub="сума по учасниках"
         />
         <KpiCard
           icon={ListChecks}
-
           value={summary.open}
           label="Відкритих завдань"
-          sub={`${stats.filter(stat => stat.inProgress > 0).length} людей мають роботу в процесі`}
+          sub={`${stats.filter(stat => stat.inProgress > 0).length} ${plural(stats.filter(stat => stat.inProgress > 0).length, ['людина має', 'людини мають', 'людей мають'])} роботу в процесі`}
         />
         <KpiCard
           icon={AlertTriangle}
-
           value={summary.overdue}
           label="Прострочених"
           sub={summary.overdue ? 'потребують рішення керівника' : 'критичних затримок немає'}
         />
       </div>
 
-      <div className="overflow-hidden rounded-[18px] bg-white">
-        <div className="hidden grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] gap-4 border-b border-line px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-muted lg:grid">
-          <span>Учасник</span>
-          <span>Поточний фокус</span>
-          <span className="text-center">Готово</span>
-          <span className="text-center">В роботі</span>
-          <span className="text-center">Час</span>
-          <span className="text-right">Стан</span>
-        </div>
-
-        <div className="divide-y divide-line">
-          {stats.map(stat => {
-            return (
-              <ListRow
-                key={stat.uid}
-                density="roomy"
-                onClick={() => onSelectMember(stat.uid)}
-                className="grid gap-4 lg:grid-cols-[minmax(230px,1.4fr)_minmax(220px,1.2fr)_80px_80px_90px_115px] lg:items-center"
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <UserAvatar user={stat.member} size="lg" />
+      <ChartCard icon={Users} title="Команда" meta={`${stats.length} ${plural(stats.length, ['учасник', 'учасники', 'учасників'])}`}>
+        {/* This was a six-column CSS grid written out twice — once for the
+            header and once for every row — with a fourth heading style, a 15px
+            figure that appears nowhere else, emerald and cyan numbers, and a
+            hand-mixed three-colour progress bar underneath. It is the same
+            table as «По проєктах» now, and the numbers are the same figures. */}
+        <DataTable
+          rows={stats}
+          rowKey={row => row.uid}
+          emptyText="У команді ще немає учасників із задачами"
+          columns={[
+            {
+              id: 'member',
+              header: 'Учасник',
+              lead: true,
+              cell: row => (
+                <button
+                  type="button"
+                  onClick={() => onSelectMember(row.uid)}
+                  className="flex min-w-0 items-center gap-3 text-left"
+                >
+                  <UserAvatar user={row.member} size="lg" />
                   <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-bold text-ink">
-                      {memberName(stat.member)}
+                    <span className="block truncate text-[13px] font-semibold text-ink">
+                      {memberName(row.member)}
                     </span>
                     <span className="mt-0.5 block truncate text-[11px] text-muted">
-                      {positionLabel(stat.member, positions)} · {relativeActivity(stat.lastActivity, now)}
+                      {positionLabel(row.member, positions)} · {relativeActivity(row.lastActivity, now)}
                     </span>
                   </span>
-                </span>
-
-                <span className="min-w-0">
-                  {stat.inProgressItems.length > 0 ? (
-                    <>
-                      <span className="block truncate text-[12px] font-semibold text-ink">
-                        {stat.inProgressItems[0].title}
-                      </span>
-                      <span className="mt-1 block text-[10px] text-muted">
-                        {stat.inProgressItems.length > 1
-                          ? `+ ще ${stat.inProgressItems.length - 1} в роботі`
-                          : 'Зараз у роботі'}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-[12px] text-faint">Немає задач у статусі «В роботі»</span>
+                </button>
+              ),
+            },
+            {
+              id: 'focus',
+              header: 'Поточний фокус',
+              cell: row => (row.inProgressItems.length > 0 ? (
+                <span className="block min-w-0">
+                  <span className="block truncate text-[12px] font-medium text-ink">
+                    {row.inProgressItems[0].title}
+                  </span>
+                  {row.inProgressItems.length > 1 && (
+                    <span className="mt-0.5 block text-[10px] text-muted">
+                      + ще {row.inProgressItems.length - 1} в роботі
+                    </span>
                   )}
                 </span>
-
-                <span className="grid grid-cols-3 gap-3 lg:contents">
-                  <span className="text-center">
-                    <span className="block text-[15px] font-bold text-emerald-600">{stat.done}</span>
-                    <span className="text-[9px] uppercase text-faint lg:hidden">готово</span>
-                  </span>
-                  <span className="text-center">
-                    <span className="block text-[15px] font-bold text-ink">{stat.inProgress}</span>
-                    <span className="text-[9px] uppercase text-faint lg:hidden">в роботі</span>
-                  </span>
-                  <span className="text-center">
-                    <span className="block text-[13px] font-bold text-cyan-700">{fmtH(stat.minutes)}</span>
-                    <span className="text-[9px] uppercase text-faint lg:hidden">час</span>
-                  </span>
-                </span>
-
-                <span className="flex items-center justify-between gap-3 lg:block lg:text-right">
-                  <RiskPill stat={stat} />
-                  <ChevronRight size={15} className="text-faint lg:hidden" />
-                </span>
-
-                <span className="lg:col-span-6">
-                  <WorkloadBar open={stat.open} done={stat.done} overdue={stat.overdue} />
-                </span>
-              </ListRow>
-            );
-          })}
-        </div>
-      </div>
+              ) : (
+                <span className="text-[12px] text-faint">Немає задач у роботі</span>
+              )),
+            },
+            {
+              id: 'progress',
+              header: 'Прогрес',
+              width: '150px',
+              cell: row => (
+                <Meter
+                  value={row.done / Math.max(row.done + row.open, 1)}
+                  reading={`${row.open} відкрито`}
+                  height={6}
+                />
+              ),
+            },
+            { id: 'done', header: 'Готово', align: 'right', width: '88px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
+            { id: 'inProgress', header: 'В роботі', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{row.inProgress}</span> },
+            { id: 'time', header: 'Час', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-muted">{fmtH(row.minutes)}</span> },
+            { id: 'state', header: 'Стан', align: 'right', width: '150px', cell: row => <RiskPill stat={row} /> },
+          ]}
+        />
+      </ChartCard>
     </div>
   );
 }
@@ -300,29 +287,20 @@ function ProjectDistribution({ stat, projects }) {
     }))
     .filter(row => row.minutes > 0 || row.open > 0)
     .sort((a, b) => b.minutes - a.minutes || b.open - a.open);
-  const maxMinutes = Math.max(...rows.map(row => row.minutes), 1);
 
   return (
-    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-      <h3 className="ui-type-eyebrow mb-4 uppercase tracking-wider text-muted">Розподіл по проєктах</h3>
-      {rows.length === 0 ? (
-        <p className="py-6 text-center text-[12px] text-faint">Немає проєктних даних за період</p>
-      ) : (
-        <div className="space-y-4">
-          {rows.map(row => (
-            <div key={row.project.id}>
-              <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px]">
-                <span className="truncate font-semibold text-ink">{row.project.name}</span>
-                <span className="shrink-0 text-muted">{fmtH(row.minutes)} · {row.open} відкрито</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-canvas">
-                <div className="h-full rounded-full bg-cyan-600" style={{ width: `${(row.minutes / maxMinutes) * 100}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <ChartCard icon={Folders} title="Розподіл по проєктах">
+      <BarList
+        items={rows.map(row => ({
+          id: row.project.id,
+          label: row.project.name,
+          value: row.minutes,
+          meta: `${row.open} відкрито`,
+        }))}
+        format={fmtH}
+        emptyText="Немає проєктних даних за період"
+      />
+    </ChartCard>
   );
 }
 
@@ -359,12 +337,11 @@ function RecentTime({ logs, issues, events, projects }) {
   }, [events]);
 
   return (
-    <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-      <h3 className="ui-type-eyebrow mb-3 uppercase tracking-wider text-muted">Останні записи часу</h3>
+    <ChartCard icon={Clock} title="Останні записи часу">
       {logs.length === 0 ? (
         <p className="py-6 text-center text-[12px] text-faint">Час за вибраний період не списувався</p>
       ) : (
-        <div className="divide-y divide-line">
+        <div className="divide-y divide-[color:var(--color-chart-grid)]">
           {logs.map(log => {
             const event = isCalendarEventTimeLog(log)
               ? eventsByKey.get(calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt))
@@ -386,7 +363,7 @@ function RecentTime({ logs, issues, events, projects }) {
                     {date ? ` · ${date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}` : ''}
                   </span>
                 </span>
-                <span className="shrink-0 text-[12px] font-bold text-cyan-700">{fmtH(log.spentMinutes)}</span>
+                <span className="ui-type-figure shrink-0 text-ink">{fmtH(log.spentMinutes)}</span>
               </>
             );
             if (event) {
@@ -407,7 +384,7 @@ function RecentTime({ logs, issues, events, projects }) {
           })}
         </div>
       )}
-    </div>
+    </ChartCard>
   );
 }
 

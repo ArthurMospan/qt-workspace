@@ -1,6 +1,7 @@
 'use client';
 
 import Card from '@/components/ui/Layout/Card';
+import DetailSection from '@/components/ui/Layout/DetailSection';
 import TaskRow from './TaskRow';
 
 /**
@@ -52,37 +53,45 @@ export default function TaskListCard({
 
   return (
     <Card preset="borderless" padding="lg" className={className}>
-      <div className="mb-3 flex items-center gap-2">
-        {Icon && <Icon size={13} className={`shrink-0 ${iconClassName}`} />}
-        <h3 className="ui-type-eyebrow uppercase tracking-wider text-muted">
-          {title}{total > 0 ? ` (${total})` : ''}
-        </h3>
-        {action && <span className="ml-auto shrink-0">{action}</span>}
-      </div>
-      {issues.length === 0 ? (
-        <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {issues.map(issue => {
-            const project = projects.find(item => item.id === issue.projectId);
-            return (
-              <TaskRow
-                key={issue.id}
-                issue={issue}
-                issues={issues}
-                allIssues={allIssues}
-                issueLinks={issueLinks}
-                members={members}
-                labels={labels}
-                sprints={sprints}
-                projectId={issue.projectId}
-                projectName={project?.name}
-                showProjectName={showProjectName}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* The same heading every other block on the screen has. This card used to
+          carry a fourth spelling of it — an eyebrow with the count in
+          parentheses — which is why a page of these read as a page of
+          unrelated widgets. */}
+      <DetailSection
+        icon={Icon}
+        title={title}
+        count={total}
+        action={action ? <span className="ml-auto shrink-0">{action}</span> : null}
+      >
+        {issues.length === 0 ? (
+          <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
+        ) : (
+          // Every row, always. Analytics does not fetch a set and then hide part
+          // of it — see tests/query-completeness.test.mjs. A shorter card would
+          // be quieter, but a number you cannot get to the rows behind is worse
+          // than a long list.
+          <div className="flex flex-col gap-2">
+            {issues.map(issue => {
+              const project = projects.find(item => item.id === issue.projectId);
+              return (
+                <TaskRow
+                  key={issue.id}
+                  issue={issue}
+                  issues={issues}
+                  allIssues={allIssues}
+                  issueLinks={issueLinks}
+                  members={members}
+                  labels={labels}
+                  sprints={sprints}
+                  projectId={issue.projectId}
+                  projectName={project?.name}
+                  showProjectName={showProjectName}
+                />
+              );
+            })}
+          </div>
+        )}
+      </DetailSection>
     </Card>
   );
 }

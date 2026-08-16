@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 103,
-    "props": 763,
-    "documentedProps": 763,
+    "components": 110,
+    "props": 798,
+    "documentedProps": 798,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -269,6 +269,47 @@
           "type": "object",
           "values": [],
           "description": "The person to draw."
+        }
+      ]
+    },
+    "BarList": {
+      "file": "src/components/ui/Charts/BarList.jsx",
+      "summary": "A list of named quantities, as bars.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "emptyText",
+          "default": "'Немає даних'",
+          "type": "string",
+          "values": [],
+          "description": "Shown instead of an empty list."
+        },
+        {
+          "name": "format",
+          "default": "",
+          "type": "(value: number) => string",
+          "values": [],
+          "description": "How to print a value. Defaults to the number itself."
+        },
+        {
+          "name": "items",
+          "default": "[]",
+          "type": "{id: string, label: string, value: number, color?: string, leading?: React.ReactNode, meta?: string}[]",
+          "values": [],
+          "description": "What to draw. `color` is for entities that own one — a status, a type — never for encoding size. `leading` replaces the colour dot where the entity has a glyph of its own, which is also what keeps identity from resting on colour alone."
+        },
+        {
+          "name": "scale",
+          "default": "'max'",
+          "type": "'max'|'total'",
+          "values": [],
+          "description": "What a full bar means: the largest value here, or the sum of them."
         }
       ]
     },
@@ -1599,6 +1640,47 @@
         }
       ]
     },
+    "ColumnChart": {
+      "file": "src/components/ui/Charts/ColumnChart.jsx",
+      "summary": "Columns over time, with one or two series.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "data",
+          "default": "[]",
+          "type": "{label: string, values: number[]}[]",
+          "values": [],
+          "description": "One entry per time slot; `values` is one number per series, in series order."
+        },
+        {
+          "name": "format",
+          "default": "",
+          "type": "(value: number) => string",
+          "values": [],
+          "description": "How a value reads in the tooltip."
+        },
+        {
+          "name": "height",
+          "default": "120",
+          "type": "number",
+          "values": [],
+          "description": "Plot height in pixels, excluding the axis band below it."
+        },
+        {
+          "name": "series",
+          "default": "[]",
+          "type": "{label: string, color: string}[]",
+          "values": [],
+          "description": "What each value means. Two at most — the second is drawn as context behind the first."
+        }
+      ]
+    },
     "CommandPalette": {
       "file": "src/components/ui/Navigation/CommandPalette.jsx",
       "summary": "The workspace command palette.",
@@ -1831,6 +1913,54 @@
             "dot"
           ],
           "description": "Whether the badge carries a number or only says \"there is something here\"."
+        }
+      ]
+    },
+    "DataTable": {
+      "file": "src/components/ui/DataDisplay/DataTable.jsx",
+      "summary": "A table of figures with a stacked layout below the breakpoint.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "columns",
+          "default": "[]",
+          "type": "DataTableColumn[]",
+          "values": [],
+          "description": "What the table has."
+        },
+        {
+          "name": "emptyText",
+          "default": "'Немає даних'",
+          "type": "string",
+          "values": [],
+          "description": "Shown instead of an empty table."
+        },
+        {
+          "name": "rowHref",
+          "default": "",
+          "type": "(row: object) => string",
+          "values": [],
+          "description": "Makes the whole row a link, which is what a row in analytics almost always wants to be."
+        },
+        {
+          "name": "rowKey",
+          "default": "row => row.id",
+          "type": "(row: object) => string",
+          "values": [],
+          "description": "Stable key per row."
+        },
+        {
+          "name": "rows",
+          "default": "[]",
+          "type": "object[]",
+          "values": [],
+          "description": "What it shows."
         }
       ]
     },
@@ -2923,7 +3053,7 @@
     },
     "KpiCard": {
       "file": "src/components/ui/DataDisplay/KpiCard.jsx",
-      "summary": "One number on an analytics screen: the figure, what it counts, and how it moved.",
+      "summary": "One number on an analytics screen: the figure, what it counts, how it moved, and the shape it moved in.",
       "props": [
         {
           "name": "className",
@@ -2937,7 +3067,7 @@
           "default": "",
           "type": "React.ComponentType",
           "values": [],
-          "description": "Glyph in the grey chip. The chip is never themable — see below."
+          "description": "Glyph in the grey chip. The chip is never themable — see above."
         },
         {
           "name": "label",
@@ -2952,6 +3082,13 @@
           "type": "() => void",
           "values": [],
           "description": "Makes the card a control, with the hover ring that goes with it."
+        },
+        {
+          "name": "series",
+          "default": "",
+          "type": "number[]",
+          "values": [],
+          "description": "Recent history, oldest first, drawn as a sparkline beside the figure."
         },
         {
           "name": "sub",
@@ -3448,6 +3585,58 @@
           "type": "object",
           "values": [],
           "description": "The person, for the avatar."
+        }
+      ]
+    },
+    "Meter": {
+      "file": "src/components/ui/Charts/Meter.jsx",
+      "summary": "A share of a whole, drawn as one bar.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "height",
+          "default": "8",
+          "type": "number",
+          "values": [],
+          "description": "Bar thickness in pixels."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What is being measured, above the bar."
+        },
+        {
+          "name": "reading",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The figure, printed opposite the label."
+        },
+        {
+          "name": "tone",
+          "default": "'neutral'",
+          "type": "'neutral'|'warning'|'danger'",
+          "values": [
+            "danger",
+            "neutral",
+            "warning"
+          ],
+          "description": "What the level means. `neutral` is the default because most progress means nothing beyond itself."
+        },
+        {
+          "name": "value",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How much of the limit is used, 0–1. Values above 1 fill the bar and are still reported in the label."
         }
       ]
     },
@@ -4722,6 +4911,33 @@
         }
       ]
     },
+    "SignalList": {
+      "file": "src/components/ui/Feedback/SignalList.jsx",
+      "summary": "The short list of things worth a second look, ordered by how much they matter.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "emptyText",
+          "default": "'Усе гаразд'",
+          "type": "string",
+          "values": [],
+          "description": "The one line a workspace with nothing wrong gets."
+        },
+        {
+          "name": "signals",
+          "default": "[]",
+          "type": "Signal[]",
+          "values": [],
+          "description": "What to show. An empty list draws `emptyText` instead."
+        }
+      ]
+    },
     "Skeleton": {
       "file": "src/components/ui/Feedback/Skeleton.jsx",
       "summary": "The kit's loading placeholder. One block, in a named shape. It carries no dimensions of its own: `preset`, `width` and `tone` all resolve in `globals.",
@@ -4784,6 +5000,40 @@
             "wide"
           ],
           "description": "Share of the line it occupies. Ignored by the square presets."
+        }
+      ]
+    },
+    "Sparkline": {
+      "file": "src/components/ui/Charts/Sparkline.jsx",
+      "summary": "A bare line over the last N values.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "height",
+          "default": "22",
+          "type": "number",
+          "values": [],
+          "description": "Drawing height in pixels."
+        },
+        {
+          "name": "values",
+          "default": "[]",
+          "type": "number[]",
+          "values": [],
+          "description": "Oldest first. Fewer than two draws nothing."
+        },
+        {
+          "name": "width",
+          "default": "68",
+          "type": "number",
+          "values": [],
+          "description": "Drawing width in pixels."
         }
       ]
     },
@@ -6234,6 +6484,47 @@
           "type": "number",
           "values": [],
           "description": "Number on the bell."
+        }
+      ]
+    },
+    "TrendChart": {
+      "file": "src/components/ui/Charts/TrendChart.jsx",
+      "summary": "A measured series over time, optionally against a reference.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "data",
+          "default": "[]",
+          "type": "{label: string, value: number, reference?: number}[]",
+          "values": [],
+          "description": "One entry per time slot."
+        },
+        {
+          "name": "height",
+          "default": "130",
+          "type": "number",
+          "values": [],
+          "description": "Plot height in pixels, excluding the axis band below it."
+        },
+        {
+          "name": "referenceLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What the reference line means. Omit it and no reference is drawn."
+        },
+        {
+          "name": "valueLabel",
+          "default": "'Фактично'",
+          "type": "string",
+          "values": [],
+          "description": "What the measured line means. Named in the legend and the tooltip."
         }
       ]
     },

@@ -2,14 +2,14 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 103,
-    "used": 103,
+    "components": 110,
+    "used": 110,
     "unused": 0,
-    "covered": 98,
+    "covered": 104,
     "uncovered": 0,
     "routes": 12,
-    "previews": 132,
-    "internal": 5,
+    "previews": 140,
+    "internal": 6,
     "unlisted": 0
   },
   "routes": {
@@ -48,6 +48,7 @@
     "/[projectId]": [
       "Alert",
       "AudioPlayer",
+      "BarList",
       "BulkActionBar",
       "Button",
       "Card",
@@ -56,7 +57,9 @@
       "Checkbox",
       "ContextMenu",
       "Counter",
+      "DataTable",
       "DatePicker",
+      "DetailSection",
       "Dialog",
       "EmptyState",
       "FileInput",
@@ -68,12 +71,14 @@
       "Label",
       "LoadingSpinner",
       "MarkdownEditor",
+      "Meter",
       "PageHeader",
       "Pill",
       "PriorityIcon",
       "ProjectSettingsForm",
       "Select",
       "SelectableChip",
+      "SignalList",
       "Tabs",
       "Tag",
       "TaskCounters",
@@ -137,11 +142,15 @@
     ],
     "/analytics": [
       "Alert",
+      "BarList",
       "Button",
       "CalendarDayCell",
       "Card",
       "Checkbox",
+      "ColumnChart",
+      "DataTable",
       "DatePicker",
+      "DetailSection",
       "Dialog",
       "EmptyState",
       "FilterBar",
@@ -149,8 +158,8 @@
       "Input",
       "KpiCard",
       "Label",
-      "ListRow",
       "LoadingSpinner",
+      "Meter",
       "MultiSelect",
       "PageHeader",
       "Pill",
@@ -158,6 +167,7 @@
       "PriorityIcon",
       "Segmented",
       "Select",
+      "SignalList",
       "Surface",
       "Tabs",
       "Tag",
@@ -165,24 +175,29 @@
       "TaskIdentity",
       "TaskListCard",
       "Textarea",
+      "TrendChart",
       "TypeBadge",
       "UserAvatar"
     ],
     "/analytics/team/[memberId]": [
       "Alert",
+      "BarList",
       "Button",
       "CalendarDayCell",
       "Card",
       "Checkbox",
+      "ColumnChart",
+      "DataTable",
       "DatePicker",
+      "DetailSection",
       "Dialog",
       "EmptyState",
       "FilterBar",
       "FormGroup",
       "Input",
       "KpiCard",
-      "ListRow",
       "LoadingSpinner",
+      "Meter",
       "MultiSelect",
       "Pill",
       "PriorityIcon",
@@ -193,6 +208,7 @@
       "TaskCounters",
       "TaskIdentity",
       "TaskListCard",
+      "TrendChart",
       "TypeBadge",
       "UserAvatar"
     ],
@@ -456,7 +472,7 @@
   "components": {
     "Alert": {
       "file": "src/components/ui/Feedback/Alert.jsx",
-      "count": 8,
+      "count": 6,
       "showcased": true,
       "usedByKit": [],
       "routes": [
@@ -470,12 +486,10 @@
         "/team"
       ],
       "usedIn": [
-        "src/app/(app)/analytics/page.js",
         "src/app/(app)/page.js",
         "src/components/CreateTaskModal.jsx",
         "src/components/InviteMemberDialog.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
-        "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/VelocityTab.jsx"
       ]
@@ -550,6 +564,23 @@
       ],
       "usedIn": [
         "src/components/workspace/UnifiedTimeline.jsx"
+      ]
+    },
+    "BarList": {
+      "file": "src/components/ui/Charts/BarList.jsx",
+      "count": 4,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/[projectId]",
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/app/(app)/analytics/page.js",
+        "src/components/workspace/AnalyticsTab.jsx",
+        "src/components/workspace/VelocityTab.jsx",
+        "src/components/workspace/WorkloadTab.jsx"
       ]
     },
     "Breadcrumb": {
@@ -698,7 +729,7 @@
     },
     "Card": {
       "file": "src/components/ui/Layout/Card.jsx",
-      "count": 10,
+      "count": 12,
       "showcased": true,
       "usedByKit": [
         "TaskListCard"
@@ -720,6 +751,8 @@
         "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/TimesheetTab.jsx",
+        "src/components/workspace/VelocityTab.jsx",
+        "src/components/workspace/WorkloadTab.jsx",
         "src/components/workspace/qtplus/cards/NoteCard.jsx"
       ]
     },
@@ -875,6 +908,19 @@
         "src/app/(app)/settings/page.js"
       ]
     },
+    "ColumnChart": {
+      "file": "src/components/ui/Charts/ColumnChart.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/VelocityTab.jsx"
+      ]
+    },
     "CommandPalette": {
       "file": "src/components/ui/Navigation/CommandPalette.jsx",
       "count": 1,
@@ -961,6 +1007,22 @@
         "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx"
       ]
     },
+    "DataTable": {
+      "file": "src/components/ui/DataDisplay/DataTable.jsx",
+      "count": 3,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/[projectId]",
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/app/(app)/analytics/page.js",
+        "src/components/workspace/AnalyticsTab.jsx",
+        "src/components/workspace/WorkloadTab.jsx"
+      ]
+    },
     "DatePicker": {
       "file": "src/components/ui/Forms/DatePicker.jsx",
       "count": 7,
@@ -1018,16 +1080,25 @@
     },
     "DetailSection": {
       "file": "src/components/ui/Layout/DetailSection.jsx",
-      "count": 2,
+      "count": 6,
       "showcased": true,
-      "usedByKit": [],
+      "usedByKit": [
+        "TaskListCard"
+      ],
       "routes": [
+        "/[projectId]",
         "/[projectId]/issue/[issueId]",
+        "/analytics",
+        "/analytics/team/[memberId]",
         "/calendar/event/[eventId]",
         "/sprints"
       ],
       "usedIn": [
+        "src/app/(app)/analytics/page.js",
+        "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/IssueDetail.jsx",
+        "src/components/workspace/VelocityTab.jsx",
+        "src/components/workspace/WorkloadTab.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
     },
@@ -1396,16 +1467,12 @@
     },
     "ListRow": {
       "file": "src/components/ui/Layout/ListRow.jsx",
-      "count": 2,
+      "count": 1,
       "showcased": true,
       "usedByKit": [],
-      "routes": [
-        "/analytics",
-        "/analytics/team/[memberId]"
-      ],
+      "routes": [],
       "usedIn": [
-        "src/components/SearchModal.jsx",
-        "src/components/workspace/WorkloadTab.jsx"
+        "src/components/SearchModal.jsx"
       ]
     },
     "LoadingSpinner": {
@@ -1535,6 +1602,22 @@
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
     },
+    "Meter": {
+      "file": "src/components/ui/Charts/Meter.jsx",
+      "count": 3,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/[projectId]",
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/app/(app)/analytics/page.js",
+        "src/components/workspace/AnalyticsTab.jsx",
+        "src/components/workspace/WorkloadTab.jsx"
+      ]
+    },
     "MobilePaneBack": {
       "file": "src/components/ui/Navigation/MobilePaneBack.jsx",
       "count": 2,
@@ -1651,7 +1734,7 @@
     },
     "Pill": {
       "file": "src/components/ui/DataDisplay/Pill.jsx",
-      "count": 18,
+      "count": 17,
       "showcased": true,
       "usedByKit": [
         "ChatMessageList",
@@ -1694,7 +1777,6 @@
         "src/components/workspace/IssueCard.jsx",
         "src/components/workspace/IssueDetail.jsx",
         "src/components/workspace/UnifiedTimeline.jsx",
-        "src/components/workspace/VelocityTab.jsx",
         "src/components/workspace/WorkloadTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx",
@@ -1897,6 +1979,20 @@
         "src/app/(app)/team/page.js"
       ]
     },
+    "SignalList": {
+      "file": "src/components/ui/Feedback/SignalList.jsx",
+      "count": 2,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/[projectId]",
+        "/analytics"
+      ],
+      "usedIn": [
+        "src/app/(app)/analytics/page.js",
+        "src/components/workspace/AnalyticsTab.jsx"
+      ]
+    },
     "Skeleton": {
       "file": "src/components/ui/Feedback/Skeleton.jsx",
       "count": 1,
@@ -1906,6 +2002,16 @@
       "usedIn": [
         "src/components/WorkspaceSidebar.jsx"
       ]
+    },
+    "Sparkline": {
+      "file": "src/components/ui/Charts/Sparkline.jsx",
+      "count": 0,
+      "showcased": true,
+      "usedByKit": [
+        "KpiCard"
+      ],
+      "routes": [],
+      "usedIn": []
     },
     "StatusPill": {
       "file": "src/components/ui/DataDisplay/StatusPill.jsx",
@@ -2316,6 +2422,19 @@
         "src/components/WorkspaceHeader.jsx"
       ]
     },
+    "TrendChart": {
+      "file": "src/components/ui/Charts/TrendChart.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [],
+      "routes": [
+        "/analytics",
+        "/analytics/team/[memberId]"
+      ],
+      "usedIn": [
+        "src/components/workspace/VelocityTab.jsx"
+      ]
+    },
     "TypeBadge": {
       "file": "src/components/ui/DataDisplay/TypeBadge.jsx",
       "count": 2,
@@ -2434,7 +2553,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:291",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/layout.js:116",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/page.js:920",
@@ -2473,7 +2592,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
-            "src/app/(app)/analytics/page.js:656",
+            "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/my/page.js:310",
             "src/components/workspace/IssueDetail.jsx:1166",
             "src/components/workspace/IssueDetail.jsx:1169",
@@ -2490,8 +2609,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:703",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:686",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:583",
             "src/app/(app)/settings/page.js:3123",
@@ -2501,9 +2620,9 @@
             "src/components/WorkspaceHeader.jsx:342",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:510"
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:487"
           ]
         },
         "sm": {
@@ -2521,7 +2640,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:702",
+            "src/app/(app)/analytics/page.js:685",
             "src/app/(app)/calendar/page.js:582",
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:956",
@@ -2560,7 +2679,7 @@
             "src/components/workspace/IssueDetail.jsx:1883",
             "src/components/workspace/IssueDetail.jsx:1893",
             "src/components/workspace/UnifiedTimeline.jsx:649",
-            "src/components/workspace/WorkloadTab.jsx:509",
+            "src/components/workspace/WorkloadTab.jsx:486",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1095",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1264"
@@ -2823,8 +2942,8 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:656",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/my/page.js:438",
@@ -2877,9 +2996,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:702",
-            "src/app/(app)/analytics/page.js:703",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:685",
+            "src/app/(app)/analytics/page.js:686",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:582",
             "src/app/(app)/calendar/page.js:583",
@@ -2939,10 +3058,10 @@
             "src/components/workspace/IssueDetail.jsx:1720",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/UnifiedTimeline.jsx:730",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:509",
-            "src/components/workspace/WorkloadTab.jsx:510",
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:486",
+            "src/components/workspace/WorkloadTab.jsx:487",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:601",
             "src/components/workspace/calendar/CalendarEventPage.jsx:823",
             "src/components/workspace/calendar/CalendarEventPage.jsx:836"
@@ -2979,11 +3098,11 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:291",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:656",
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:702",
-            "src/app/(app)/analytics/page.js:703",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:685",
+            "src/app/(app)/analytics/page.js:686",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/calendar/page.js:565",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:582",
@@ -3129,10 +3248,10 @@
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:509",
-            "src/components/workspace/WorkloadTab.jsx:510",
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:486",
+            "src/components/workspace/WorkloadTab.jsx:487",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:571",
@@ -3193,11 +3312,11 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:291",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:656",
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:702",
-            "src/app/(app)/analytics/page.js:703",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:685",
+            "src/app/(app)/analytics/page.js:686",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/calendar/page.js:565",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:582",
@@ -3345,10 +3464,10 @@
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
             "src/components/workspace/UnifiedTimeline.jsx:730",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:509",
-            "src/components/workspace/WorkloadTab.jsx:510",
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:486",
+            "src/components/workspace/WorkloadTab.jsx:487",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:571",
@@ -3398,11 +3517,11 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:291",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:656",
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:702",
-            "src/app/(app)/analytics/page.js:703",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:685",
+            "src/app/(app)/analytics/page.js:686",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/calendar/page.js:565",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:582",
@@ -3536,10 +3655,10 @@
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
             "src/components/workspace/UnifiedTimeline.jsx:730",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:509",
-            "src/components/workspace/WorkloadTab.jsx:510",
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:486",
+            "src/components/workspace/WorkloadTab.jsx:487",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:571",
@@ -3631,11 +3750,11 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/analytics/page.js:656",
-            "src/app/(app)/analytics/page.js:701",
-            "src/app/(app)/analytics/page.js:702",
-            "src/app/(app)/analytics/page.js:703",
-            "src/app/(app)/analytics/page.js:705",
+            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:684",
+            "src/app/(app)/analytics/page.js:685",
+            "src/app/(app)/analytics/page.js:686",
+            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/calendar/page.js:565",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:582",
@@ -3768,10 +3887,10 @@
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649",
-            "src/components/workspace/WorkloadTab.jsx:269",
-            "src/components/workspace/WorkloadTab.jsx:508",
-            "src/components/workspace/WorkloadTab.jsx:509",
-            "src/components/workspace/WorkloadTab.jsx:510",
+            "src/components/workspace/WorkloadTab.jsx:256",
+            "src/components/workspace/WorkloadTab.jsx:485",
+            "src/components/workspace/WorkloadTab.jsx:486",
+            "src/components/workspace/WorkloadTab.jsx:487",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:571",
@@ -4668,12 +4787,12 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:428",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/analytics/page.js:662",
-            "src/app/(app)/analytics/page.js:674",
-            "src/app/(app)/analytics/page.js:720",
-            "src/app/(app)/analytics/page.js:748",
-            "src/app/(app)/analytics/page.js:759",
-            "src/app/(app)/analytics/page.js:769",
+            "src/app/(app)/analytics/page.js:645",
+            "src/app/(app)/analytics/page.js:657",
+            "src/app/(app)/analytics/page.js:703",
+            "src/app/(app)/analytics/page.js:731",
+            "src/app/(app)/analytics/page.js:742",
+            "src/app/(app)/analytics/page.js:752",
             "src/app/(app)/calendar/page.js:569",
             "src/app/(app)/calendar/page.js:579",
             "src/app/(app)/my/page.js:275",
@@ -4757,12 +4876,12 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:428",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/analytics/page.js:662",
-            "src/app/(app)/analytics/page.js:674",
-            "src/app/(app)/analytics/page.js:720",
-            "src/app/(app)/analytics/page.js:748",
-            "src/app/(app)/analytics/page.js:759",
-            "src/app/(app)/analytics/page.js:769",
+            "src/app/(app)/analytics/page.js:645",
+            "src/app/(app)/analytics/page.js:657",
+            "src/app/(app)/analytics/page.js:703",
+            "src/app/(app)/analytics/page.js:731",
+            "src/app/(app)/analytics/page.js:742",
+            "src/app/(app)/analytics/page.js:752",
             "src/app/(app)/calendar/page.js:569",
             "src/app/(app)/calendar/page.js:579",
             "src/app/(app)/my/page.js:275",
@@ -4860,9 +4979,9 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:381",
-            "src/app/(app)/analytics/page.js:674",
-            "src/app/(app)/analytics/page.js:720",
-            "src/app/(app)/analytics/page.js:748",
+            "src/app/(app)/analytics/page.js:657",
+            "src/app/(app)/analytics/page.js:703",
+            "src/app/(app)/analytics/page.js:731",
             "src/app/(app)/calendar/page.js:579",
             "src/app/(app)/page.js:935",
             "src/app/(app)/sprints/page.js:561"
@@ -4879,7 +4998,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:428",
-            "src/app/(app)/analytics/page.js:759",
+            "src/app/(app)/analytics/page.js:742",
             "src/app/(app)/my/page.js:275",
             "src/app/(app)/sprints/page.js:572"
           ]
@@ -4896,7 +5015,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/analytics/page.js:769",
+            "src/app/(app)/analytics/page.js:752",
             "src/app/(app)/calendar/page.js:569",
             "src/app/(app)/my/page.js:285",
             "src/app/(app)/sprints/page.js:582",
@@ -4909,7 +5028,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:662"
+            "src/app/(app)/analytics/page.js:645"
           ]
         },
         "date": {
@@ -5014,9 +5133,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:685",
-            "src/app/(app)/analytics/page.js:711",
-            "src/app/(app)/analytics/page.js:739",
+            "src/app/(app)/analytics/page.js:668",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:722",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:570",
             "src/app/(app)/chat/page.js:1086",
@@ -5041,9 +5160,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:685",
-            "src/app/(app)/analytics/page.js:711",
-            "src/app/(app)/analytics/page.js:739",
+            "src/app/(app)/analytics/page.js:668",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:722",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:570",
             "src/app/(app)/my/page.js:266",
@@ -5080,9 +5199,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:685",
-            "src/app/(app)/analytics/page.js:711",
-            "src/app/(app)/analytics/page.js:739",
+            "src/app/(app)/analytics/page.js:668",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:722",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:570",
             "src/app/(app)/my/page.js:266",
@@ -5121,7 +5240,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:788",
+            "src/app/(app)/analytics/page.js:771",
             "src/app/(app)/analytics/team/[memberId]/page.js:109",
             "src/app/(app)/calendar/page.js:592",
             "src/app/(app)/page.js:969",
@@ -5177,7 +5296,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:788",
+            "src/app/(app)/analytics/page.js:771",
             "src/app/(app)/analytics/team/[memberId]/page.js:109",
             "src/app/(app)/page.js:969",
             "src/app/(app)/page.js:991"
@@ -5235,7 +5354,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:788",
+            "src/app/(app)/analytics/page.js:771",
             "src/app/(app)/page.js:969"
           ]
         },
@@ -5310,13 +5429,13 @@
             "src/components/workspace/BillingTab.jsx:485",
             "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/IssueCard.jsx:381",
-            "src/components/workspace/WorkloadTab.jsx:113",
+            "src/components/workspace/WorkloadTab.jsx:118",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:368",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816"
           ]
         },
         "(default)": {
-          "count": 11,
+          "count": 10,
           "routes": [
             "/",
             "/[projectId]",
@@ -5341,8 +5460,7 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/VelocityTab.jsx:322"
+            "src/components/workspace/IssueCard.jsx:299"
           ]
         },
         "ink-subtle": {
@@ -5395,7 +5513,7 @@
           ],
           "files": [
             "src/components/workspace/BillingTab.jsx:249",
-            "src/components/workspace/WorkloadTab.jsx:110"
+            "src/components/workspace/WorkloadTab.jsx:115"
           ]
         },
         "danger": {
@@ -5417,7 +5535,7 @@
           "files": [
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueDetail.jsx:1153",
-            "src/components/workspace/WorkloadTab.jsx:107"
+            "src/components/workspace/WorkloadTab.jsx:112"
           ]
         },
         "success": {
@@ -5427,7 +5545,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/workspace/WorkloadTab.jsx:115"
+            "src/components/workspace/WorkloadTab.jsx:120"
           ]
         },
         "dark": {
@@ -5481,7 +5599,7 @@
           ]
         },
         "md": {
-          "count": 15,
+          "count": 14,
           "routes": [
             "/",
             "/[projectId]",
@@ -5507,11 +5625,10 @@
             "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/IssueCard.jsx:381",
-            "src/components/workspace/VelocityTab.jsx:322",
-            "src/components/workspace/WorkloadTab.jsx:107",
-            "src/components/workspace/WorkloadTab.jsx:110",
-            "src/components/workspace/WorkloadTab.jsx:113",
-            "src/components/workspace/WorkloadTab.jsx:115"
+            "src/components/workspace/WorkloadTab.jsx:112",
+            "src/components/workspace/WorkloadTab.jsx:115",
+            "src/components/workspace/WorkloadTab.jsx:118",
+            "src/components/workspace/WorkloadTab.jsx:120"
           ]
         },
         "sm": {
@@ -5614,7 +5731,7 @@
           ]
         },
         "(default)": {
-          "count": 34,
+          "count": 33,
           "routes": [
             "/",
             "/[projectId]",
@@ -5652,11 +5769,10 @@
             "src/components/workspace/IssueCard.jsx:381",
             "src/components/workspace/IssueDetail.jsx:1153",
             "src/components/workspace/UnifiedTimeline.jsx:171",
-            "src/components/workspace/VelocityTab.jsx:322",
-            "src/components/workspace/WorkloadTab.jsx:107",
-            "src/components/workspace/WorkloadTab.jsx:110",
-            "src/components/workspace/WorkloadTab.jsx:113",
+            "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
+            "src/components/workspace/WorkloadTab.jsx:118",
+            "src/components/workspace/WorkloadTab.jsx:120",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:276",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
@@ -5669,7 +5785,7 @@
       },
       "appearance": {
         "(default)": {
-          "count": 39,
+          "count": 38,
           "routes": [
             "/",
             "/[projectId]",
@@ -5714,11 +5830,10 @@
             "src/components/workspace/IssueCard.jsx:381",
             "src/components/workspace/IssueDetail.jsx:1153",
             "src/components/workspace/UnifiedTimeline.jsx:171",
-            "src/components/workspace/VelocityTab.jsx:322",
-            "src/components/workspace/WorkloadTab.jsx:107",
-            "src/components/workspace/WorkloadTab.jsx:110",
-            "src/components/workspace/WorkloadTab.jsx:113",
+            "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
+            "src/components/workspace/WorkloadTab.jsx:118",
+            "src/components/workspace/WorkloadTab.jsx:120",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:276",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:368",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816",
@@ -5753,7 +5868,7 @@
       },
       "preset": {
         "(default)": {
-          "count": 42,
+          "count": 41,
           "routes": [
             "/",
             "/[projectId]",
@@ -5799,11 +5914,10 @@
             "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/IssueDetail.jsx:1153",
             "src/components/workspace/UnifiedTimeline.jsx:171",
-            "src/components/workspace/VelocityTab.jsx:322",
-            "src/components/workspace/WorkloadTab.jsx:107",
-            "src/components/workspace/WorkloadTab.jsx:110",
-            "src/components/workspace/WorkloadTab.jsx:113",
+            "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
+            "src/components/workspace/WorkloadTab.jsx:118",
+            "src/components/workspace/WorkloadTab.jsx:120",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:276",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
@@ -5878,10 +5992,10 @@
             "src/components/workspace/BillingTab.jsx:485",
             "src/components/workspace/IssueCard.jsx:381",
             "src/components/workspace/IssueDetail.jsx:1153",
-            "src/components/workspace/WorkloadTab.jsx:107",
-            "src/components/workspace/WorkloadTab.jsx:110",
-            "src/components/workspace/WorkloadTab.jsx:113",
+            "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
+            "src/components/workspace/WorkloadTab.jsx:118",
+            "src/components/workspace/WorkloadTab.jsx:120",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:276",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
@@ -5890,7 +6004,7 @@
           ]
         },
         "medium": {
-          "count": 12,
+          "count": 11,
           "routes": [
             "/",
             "/[projectId]",
@@ -5915,7 +6029,6 @@
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/UnifiedTimeline.jsx:171",
-            "src/components/workspace/VelocityTab.jsx:322",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1369"
           ]
@@ -5949,11 +6062,11 @@
           "files": [
             "src/app/(app)/page.js:202",
             "src/components/WorkspaceHeader.jsx:83",
-            "src/components/workspace/WorkloadTab.jsx:271"
+            "src/components/workspace/WorkloadTab.jsx:258"
           ]
         },
         "sm": {
-          "count": 7,
+          "count": 6,
           "routes": [
             "/",
             "/[projectId]",
@@ -5970,8 +6083,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:430",
-            "src/components/workspace/AnalyticsTab.jsx:323",
-            "src/components/workspace/AnalyticsTab.jsx:369",
+            "src/components/workspace/AnalyticsTab.jsx:348",
             "src/components/workspace/IssueCard.jsx:373",
             "src/components/workspace/TimesheetTab.jsx:213",
             "src/components/workspace/TimesheetTab.jsx:264",
@@ -5987,7 +6099,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3289",
-            "src/components/workspace/WorkloadTab.jsx:194"
+            "src/components/workspace/WorkloadTab.jsx:188"
           ]
         },
         "xs": {
@@ -6595,7 +6707,7 @@
     "Alert": {
       "variant": {
         "error": {
-          "count": 6,
+          "count": 4,
           "routes": [
             "/",
             "/[projectId]",
@@ -6605,30 +6717,23 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:391",
             "src/app/(app)/page.js:605",
             "src/app/(app)/page.js:944",
             "src/components/CreateTaskModal.jsx:330",
-            "src/components/workspace/AnalyticsTab.jsx:405",
-            "src/components/workspace/VelocityTab.jsx:297"
+            "src/components/workspace/VelocityTab.jsx:226"
           ]
         },
         "warning": {
-          "count": 12,
+          "count": 8,
           "routes": [
-            "/[projectId]",
             "/analytics",
             "/settings",
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:398",
-            "src/app/(app)/analytics/page.js:405",
             "src/components/InviteMemberDialog.jsx:158",
             "src/components/integrations/YouTrackImportCard.jsx:609",
             "src/components/integrations/YouTrackImportCard.jsx:667",
-            "src/components/workspace/AnalyticsTab.jsx:412",
-            "src/components/workspace/AnalyticsTab.jsx:419",
             "src/components/workspace/BillingTab.jsx:1191",
             "src/components/workspace/BillingTab.jsx:1356",
             "src/components/workspace/BillingTab.jsx:1421",
@@ -6637,27 +6742,14 @@
           ]
         },
         "info": {
-          "count": 4,
+          "count": 2,
           "routes": [
-            "/[projectId]",
             "/analytics",
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:411",
             "src/components/integrations/YouTrackImportCard.jsx:523",
-            "src/components/workspace/AnalyticsTab.jsx:425",
             "src/components/workspace/BillingTab.jsx:460"
-          ]
-        },
-        "success": {
-          "count": 2,
-          "routes": [
-            "/analytics"
-          ],
-          "files": [
-            "src/app/(app)/analytics/page.js:417",
-            "src/app/(app)/analytics/page.js:426"
           ]
         }
       }
@@ -6665,7 +6757,7 @@
     "EmptyState": {
       "context": {
         "(default)": {
-          "count": 11,
+          "count": 12,
           "routes": [
             "/analytics",
             "/analytics/team/[memberId]",
@@ -6674,16 +6766,17 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:223",
+            "src/app/(app)/analytics/page.js:248",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:597",
             "src/app/(app)/team/page.js:133",
-            "src/components/profile/ProfileView.jsx:388",
+            "src/components/profile/ProfileView.jsx:359",
+            "src/components/profile/ProfileView.jsx:395",
             "src/components/workspace/TimesheetTab.jsx:621",
-            "src/components/workspace/VelocityTab.jsx:265",
-            "src/components/workspace/WorkloadTab.jsx:702",
-            "src/components/workspace/WorkloadTab.jsx:714",
+            "src/components/workspace/VelocityTab.jsx:189",
+            "src/components/workspace/WorkloadTab.jsx:679",
+            "src/components/workspace/WorkloadTab.jsx:691",
             "src/components/workspace/calendar/CalendarEventPage.jsx:745"
           ]
         },
@@ -6695,7 +6788,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:977",
-            "src/components/workspace/AnalyticsTab.jsx:179"
+            "src/components/workspace/AnalyticsTab.jsx:223"
           ]
         },
         "inset": {
@@ -6737,7 +6830,7 @@
       },
       "density": {
         "(default)": {
-          "count": 20,
+          "count": 21,
           "routes": [
             "/",
             "/[projectId]",
@@ -6750,7 +6843,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:223",
+            "src/app/(app)/analytics/page.js:248",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:597",
@@ -6758,17 +6851,18 @@
             "src/app/(app)/team/page.js:133",
             "src/components/WorkspaceInfoCenter.jsx:151",
             "src/components/WorkspaceInfoCenter.jsx:195",
-            "src/components/profile/ProfileView.jsx:388",
-            "src/components/workspace/AnalyticsTab.jsx:179",
+            "src/components/profile/ProfileView.jsx:359",
+            "src/components/profile/ProfileView.jsx:395",
+            "src/components/workspace/AnalyticsTab.jsx:223",
             "src/components/workspace/QtPlusProjectTab.jsx:241",
             "src/components/workspace/QtPlusProjectTab.jsx:251",
             "src/components/workspace/QtPlusProjectTab.jsx:263",
             "src/components/workspace/QtPlusProjectTab.jsx:271",
             "src/components/workspace/TimesheetTab.jsx:621",
             "src/components/workspace/UnifiedTimeline.jsx:497",
-            "src/components/workspace/VelocityTab.jsx:265",
-            "src/components/workspace/WorkloadTab.jsx:702",
-            "src/components/workspace/WorkloadTab.jsx:714",
+            "src/components/workspace/VelocityTab.jsx:189",
+            "src/components/workspace/WorkloadTab.jsx:679",
+            "src/components/workspace/WorkloadTab.jsx:691",
             "src/components/workspace/calendar/CalendarEventPage.jsx:745"
           ]
         },
@@ -6786,7 +6880,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 14,
+          "count": 15,
           "routes": [
             "/",
             "/[projectId]",
@@ -6799,18 +6893,19 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:223",
+            "src/app/(app)/analytics/page.js:248",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:597",
             "src/app/(app)/page.js:977",
             "src/app/(app)/team/page.js:133",
-            "src/components/profile/ProfileView.jsx:388",
+            "src/components/profile/ProfileView.jsx:359",
+            "src/components/profile/ProfileView.jsx:395",
             "src/components/workspace/TimesheetTab.jsx:621",
             "src/components/workspace/UnifiedTimeline.jsx:497",
-            "src/components/workspace/VelocityTab.jsx:265",
-            "src/components/workspace/WorkloadTab.jsx:702",
-            "src/components/workspace/WorkloadTab.jsx:714",
+            "src/components/workspace/VelocityTab.jsx:189",
+            "src/components/workspace/WorkloadTab.jsx:679",
+            "src/components/workspace/WorkloadTab.jsx:691",
             "src/components/workspace/calendar/CalendarEventPage.jsx:745",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:92"
           ]
@@ -6823,7 +6918,7 @@
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:151",
             "src/components/WorkspaceInfoCenter.jsx:195",
-            "src/components/workspace/AnalyticsTab.jsx:179",
+            "src/components/workspace/AnalyticsTab.jsx:223",
             "src/components/workspace/QtPlusProjectTab.jsx:241",
             "src/components/workspace/QtPlusProjectTab.jsx:251",
             "src/components/workspace/QtPlusProjectTab.jsx:263",
@@ -6850,7 +6945,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:277",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:461",
-            "src/app/(app)/analytics/page.js:215",
+            "src/app/(app)/analytics/page.js:240",
             "src/app/(app)/analytics/team/[memberId]/page.js:87",
             "src/app/(app)/calendar/page.js:595",
             "src/app/(app)/loading.js:28",
@@ -6861,7 +6956,7 @@
             "src/app/(app)/settings/page.js:3482",
             "src/app/(app)/settings/page.js:3552",
             "src/app/(app)/settings/page.js:3578",
-            "src/components/profile/ProfileView.jsx:385",
+            "src/components/profile/ProfileView.jsx:392",
             "src/components/workspace/BillingTab.jsx:1240",
             "src/components/workspace/calendar/CalendarEventPage.jsx:737"
           ]
@@ -6984,12 +7079,12 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:695",
-            "src/app/(app)/analytics/page.js:735",
-            "src/app/(app)/analytics/page.js:780",
+            "src/app/(app)/analytics/page.js:678",
+            "src/app/(app)/analytics/page.js:718",
+            "src/app/(app)/analytics/page.js:763",
             "src/app/(app)/analytics/team/[memberId]/page.js:136",
-            "src/components/workspace/WorkloadTab.jsx:460",
-            "src/components/workspace/WorkloadTab.jsx:499"
+            "src/components/workspace/WorkloadTab.jsx:437",
+            "src/components/workspace/WorkloadTab.jsx:476"
           ]
         },
         "canvas": {
@@ -7016,14 +7111,14 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:695",
-            "src/app/(app)/analytics/page.js:735",
-            "src/app/(app)/analytics/page.js:780",
+            "src/app/(app)/analytics/page.js:678",
+            "src/app/(app)/analytics/page.js:718",
+            "src/app/(app)/analytics/page.js:763",
             "src/app/(app)/analytics/team/[memberId]/page.js:136",
             "src/components/WorkspaceHeader.jsx:356",
             "src/components/workspace/BillingTab.jsx:301",
-            "src/components/workspace/WorkloadTab.jsx:460",
-            "src/components/workspace/WorkloadTab.jsx:499"
+            "src/components/workspace/WorkloadTab.jsx:437",
+            "src/components/workspace/WorkloadTab.jsx:476"
           ]
         },
         "dialog-tabs": {
@@ -7055,12 +7150,11 @@
           "routes": [
             "/[projectId]",
             "/analytics",
+            "/analytics/team/[memberId]",
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:262",
-            "src/app/(app)/analytics/page.js:284",
-            "src/app/(app)/analytics/page.js:387",
+            "src/app/(app)/analytics/page.js:71",
             "src/app/(app)/settings/page.js:2331",
             "src/app/(app)/settings/page.js:2391",
             "src/app/(app)/settings/page.js:2465",
@@ -7072,24 +7166,23 @@
             "src/components/integrations/IntegrationCard.jsx:86",
             "src/components/migrations/DataMigrationSettings.jsx:198",
             "src/components/migrations/DataMigrationSettings.jsx:88",
-            "src/components/workspace/AnalyticsTab.jsx:401",
-            "src/components/workspace/BillingTab.jsx:1327"
+            "src/components/workspace/AnalyticsTab.jsx:40",
+            "src/components/workspace/BillingTab.jsx:1327",
+            "src/components/workspace/VelocityTab.jsx:31",
+            "src/components/workspace/WorkloadTab.jsx:129"
           ]
         },
         "md": {
-          "count": 7,
+          "count": 5,
           "routes": [
-            "/[projectId]",
             "/analytics",
             "/analytics/team/[memberId]",
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:292",
             "src/app/(app)/settings/page.js:2969",
             "src/components/WorkspaceInfoCenter.jsx:224",
             "src/components/migrations/DataMigrationSettings.jsx:166",
-            "src/components/workspace/AnalyticsTab.jsx:321",
             "src/components/workspace/TimesheetTab.jsx:203",
             "src/components/workspace/TimesheetTab.jsx:236"
           ]
@@ -7126,7 +7219,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:79",
-            "src/components/profile/ProfileView.jsx:404",
+            "src/components/profile/ProfileView.jsx:411",
             "src/components/workspace/BillingTab.jsx:514"
           ]
         }
@@ -7137,12 +7230,11 @@
           "routes": [
             "/[projectId]",
             "/analytics",
+            "/analytics/team/[memberId]",
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:262",
-            "src/app/(app)/analytics/page.js:284",
-            "src/app/(app)/analytics/page.js:387",
+            "src/app/(app)/analytics/page.js:71",
             "src/app/(app)/settings/page.js:2331",
             "src/app/(app)/settings/page.js:2391",
             "src/app/(app)/settings/page.js:2465",
@@ -7159,25 +7251,10 @@
             "src/components/integrations/IntegrationCard.jsx:86",
             "src/components/migrations/DataMigrationSettings.jsx:198",
             "src/components/migrations/DataMigrationSettings.jsx:88",
-            "src/components/workspace/AnalyticsTab.jsx:401",
-            "src/components/workspace/BillingTab.jsx:1327"
-          ]
-        },
-        "bordered-compact": {
-          "count": 7,
-          "routes": [
-            "/[projectId]",
-            "/analytics",
-            "/analytics/team/[memberId]"
-          ],
-          "files": [
-            "src/app/(app)/analytics/page.js:292",
-            "src/components/WorkspaceInfoCenter.jsx:224",
-            "src/components/WorkspaceInfoCenter.jsx:79",
-            "src/components/workspace/AnalyticsTab.jsx:321",
-            "src/components/workspace/BillingTab.jsx:514",
-            "src/components/workspace/TimesheetTab.jsx:236",
-            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
+            "src/components/workspace/AnalyticsTab.jsx:40",
+            "src/components/workspace/BillingTab.jsx:1327",
+            "src/components/workspace/VelocityTab.jsx:31",
+            "src/components/workspace/WorkloadTab.jsx:129"
           ]
         },
         "bordered": {
@@ -7192,8 +7269,23 @@
             "src/app/(app)/settings/page.js:2969",
             "src/app/(app)/settings/page.js:3212",
             "src/components/migrations/DataMigrationSettings.jsx:166",
-            "src/components/profile/ProfileView.jsx:404",
+            "src/components/profile/ProfileView.jsx:411",
             "src/components/workspace/TimesheetTab.jsx:203"
+          ]
+        },
+        "bordered-compact": {
+          "count": 5,
+          "routes": [
+            "/[projectId]",
+            "/analytics",
+            "/analytics/team/[memberId]"
+          ],
+          "files": [
+            "src/components/WorkspaceInfoCenter.jsx:224",
+            "src/components/WorkspaceInfoCenter.jsx:79",
+            "src/components/workspace/BillingTab.jsx:514",
+            "src/components/workspace/TimesheetTab.jsx:236",
+            "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
           ]
         }
       }
@@ -7291,16 +7383,6 @@
           "routes": [],
           "files": [
             "src/components/SearchModal.jsx:80"
-          ]
-        },
-        "roomy": {
-          "count": 1,
-          "routes": [
-            "/analytics",
-            "/analytics/team/[memberId]"
-          ],
-          "files": [
-            "src/components/workspace/WorkloadTab.jsx:187"
           ]
         }
       }
@@ -7719,6 +7801,28 @@
     },
     "DetailSection": {
       "density": {
+        "(default)": {
+          "count": 9,
+          "routes": [
+            "/[projectId]",
+            "/[projectId]/issue/[issueId]",
+            "/analytics",
+            "/analytics/team/[memberId]",
+            "/calendar/event/[eventId]",
+            "/sprints"
+          ],
+          "files": [
+            "src/app/(app)/analytics/page.js:72",
+            "src/components/workspace/AnalyticsTab.jsx:41",
+            "src/components/workspace/IssueDetail.jsx:1589",
+            "src/components/workspace/VelocityTab.jsx:32",
+            "src/components/workspace/WorkloadTab.jsx:130",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1292",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1309",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1333",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1361"
+          ]
+        },
         "group": {
           "count": 5,
           "routes": [
@@ -7732,20 +7836,22 @@
             "src/components/workspace/IssueDetail.jsx:173",
             "src/components/workspace/IssueDetail.jsx:1759"
           ]
-        },
+        }
+      }
+    },
+    "Meter": {
+      "tone": {
         "(default)": {
-          "count": 5,
+          "count": 3,
           "routes": [
-            "/[projectId]/issue/[issueId]",
-            "/calendar/event/[eventId]",
-            "/sprints"
+            "/[projectId]",
+            "/analytics",
+            "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1589",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1292",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1309",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1333",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1361"
+            "src/app/(app)/analytics/page.js:390",
+            "src/components/workspace/AnalyticsTab.jsx:260",
+            "src/components/workspace/WorkloadTab.jsx:223"
           ]
         }
       }
@@ -7764,10 +7870,10 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:368",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:427",
-            "src/app/(app)/analytics/page.js:661",
-            "src/app/(app)/analytics/page.js:672",
-            "src/app/(app)/analytics/page.js:710",
-            "src/app/(app)/analytics/page.js:738",
+            "src/app/(app)/analytics/page.js:644",
+            "src/app/(app)/analytics/page.js:655",
+            "src/app/(app)/analytics/page.js:693",
+            "src/app/(app)/analytics/page.js:721",
             "src/app/(app)/calendar/page.js:568",
             "src/app/(app)/my/page.js:265",
             "src/app/(app)/sprints/page.js:551"
@@ -7920,6 +8026,14 @@
     "Context Menu": "<div className=\"flex items-start gap-[40px] flex-wrap\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Інтерактивне меню</span>\n    <ContextMenu\n      trigger={<Button style=\"secondary\" size=\"icon\" icon={MoreVertical}>Меню</Button>}\n      items={menuItems}\n    />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Меню-перемикач (мітки задачі)</span>\n    <ContextMenu\n      trigger={(\n        <Button style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n          Додати мітку\n        </Button>\n      )}\n      dropdownClassName=\"w-[220px]\"\n      closeOnSelect={false}\n      items={toggleMenuItems}\n    />\n  </div>\n</div>",
     "Командна палітра": "<div className=\"flex items-center gap-[16px] flex-wrap\">\n  <Button style=\"secondary\" icon={Command} onClick={() => setPaletteOpen(true)}>\n    Відкрити палітру\n  </Button>\n  <Button style=\"secondary\" icon={Keyboard} onClick={() => setShortcutsOpen(true)}>\n    Гарячі клавіші\n  </Button>\n</div>\n<CommandPalette\n  isOpen={paletteOpen}\n  onClose={() => setPaletteOpen(false)}\n  commands={paletteCommands}\n  issues={KIT_PALETTE_ISSUES}\n  projects={KIT_PALETTE_PROJECTS}\n  onSelect={() => {}}\n  initialQuery=\"дизайн\"\n  initialScope={{ type: 'project', projectId: 'p1', label: 'у проєкті Mobile App Redesign' }}\n  requestKey={1}\n/>\n<KeyboardShortcutsDialog isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />",
     "KPI Cards": "<div className=\"grid grid-cols-2 lg:grid-cols-4 gap-4 w-full\">\n  <KpiCard label=\"Всі завдання\" value=\"89 / 124\" sub=\"71% прогресу\" icon={Target} trend={12} />\n  <KpiCard label=\"Velocity (7д)\" value=\"14\" sub=\"завдань за тиждень\" icon={Zap} trend={-5} />\n  <KpiCard label=\"Списано часу\" value=\"45г 30хв\" sub=\"по 4 проєктах\" icon={Clock} />\n  <KpiCard label=\"Команда\" value=\"8\" sub=\"учасників із завданнями\" icon={Users} />\n</div>",
+    "Показник": "<div className=\"grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">\n  <KpiCard icon={BarChart2} value=\"18 / 46\" label=\"Робочі задачі\" sub=\"39% виконано\" />\n  <KpiCard\n    icon={TrendingDown}\n    value={18}\n    label=\"Закрито за 30 днів\"\n    trend={24}\n    series={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]}\n    sub=\"проти попереднього періоду\"\n  />\n  <KpiCard icon={Wallet} value=\"64г\" label=\"Списано часу\" sub=\"деталі — у Табелі\" />\n  <KpiCard icon={AlertTriangle} value={3} label=\"Прострочено\" sub=\"потребують уваги\" />\n</div>",
+    "Спарклайн": "<div className=\"flex items-center gap-4\">\n  <Sparkline values={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]} />\n  <Sparkline values={[18, 14, 15, 9, 11, 8, 9, 6, 4, 3, 5, 2]} />\n</div>",
+    "Скільки чого": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={BarChart2} title=\"По статусах\">\n      <BarList\n        items={[\n          { id: 'todo', label: 'До виконання', value: 14, color: '#6b7280' },\n          { id: 'progress', label: 'У роботі', value: 9, color: '#2f6fb0' },\n          { id: 'review', label: 'На перевірці', value: 4, color: '#cf7a22' },\n          { id: 'done', label: 'Готово', value: 19, color: '#0e8f74' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={Flag} title=\"Куди пішов час\" meta=\"64г\">\n      <BarList\n        scale=\"total\"\n        format={minutes => `${Math.round(minutes / 60)}г`}\n        items={[\n          { id: 'tasks', label: 'Завдання', value: 2400 },\n          { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },\n          { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n</div>",
+    "Кількість у часі": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={BarChart2} title=\"Активність\" meta=\"7 днів\">\n    <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />\n  </DetailSection>\n</Card>",
+    "Тренд із опорною лінією": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={TrendingDown} title=\"Скільки роботи лишилось\" meta=\"12 днів\">\n    <TrendChart data={DEMO_BURNDOWN} valueLabel=\"Фактично лишилось\" referenceLabel=\"Рівний темп\" height={140} />\n  </DetailSection>\n</Card>",
+    "Частка від межі": "<div className=\"grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0.42} label=\"Бюджет у нормі\" reading=\"42%\" />\n  <Meter value={0.78} tone=\"warning\" label=\"Наближається до межі\" reading=\"78%\" />\n  <Meter value={0.96} tone=\"danger\" label=\"Майже вичерпано\" reading=\"96%\" />\n</div>",
+    "Таблиця показників": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={Users} title=\"Навантаження по виконавцях\" meta=\"3\">\n    <DataTable\n      rows={DEMO_MEMBERS}\n      rowKey={row => row.id}\n      columns={[\n        {\n          id: 'member',\n          header: 'Учасник',\n          lead: true,\n          cell: row => (\n            <span className=\"flex min-w-0 items-center gap-2\">\n              <UserAvatar user={{ id: row.id, name: row.name }} size=\"sm\" />\n              <span className=\"min-w-0 truncate text-[13px] font-semibold text-ink\">{row.name}</span>\n            </span>\n          ),\n        },\n        {\n          id: 'progress',\n          header: 'Прогрес',\n          width: '160px',\n          cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.open} відкрито`} height={6} />,\n        },\n        { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-muted\">{row.done}</span> },\n        { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-ink\">{Math.round(row.minutes / 60)}г</span> },\n      ]}\n    />\n  </DetailSection>\n</Card>",
+    "Що потребує уваги": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList\n        signals={[\n          { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },\n          { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },\n          { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },\n          { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList signals={[]} emptyText=\"Нічого термінового — усе під контролем\" />\n    </DetailSection>\n  </Card>\n</div>",
     "Alerts": "<div className=\"flex flex-col gap-[12px] max-w-[600px]\">\n  <Alert variant=\"success\" title=\"Операція успішна\">Проєкт успішно створено та додано до бази даних.</Alert>\n  <Alert variant=\"info\" title=\"Потребує уваги\">Будь ласка, перевірте правильність введених даних.</Alert>\n  <Alert variant=\"warning\" title=\"Попередження\">Термін виконання завдання спливає сьогодні.</Alert>\n  <Alert variant=\"error\" title=\"Не вдалося завантажити проєкти\">Спробуйте оновити сторінку.</Alert>\n</div>",
     "Loading Spinner": "<div className=\"flex items-center gap-[24px]\">\n  <LoadingSpinner size=\"sm\" />\n  <LoadingSpinner size=\"md\" />\n</div>",
     "Toast": "<div className=\"flex flex-wrap gap-2\">\n  {['success', 'error', 'warning', 'info', 'loading'].map(variant => (\n    <Button key={variant} style=\"secondary\" size=\"md\" onClick={() => setToast(variant)}>\n      {variant}\n    </Button>\n  ))}\n</div>\n{toast && (\n  <Toast\n    key={toast}\n    variant={toast}\n    message={`Toast variant=\"${toast}\"`}\n    action=\"Скасувати\"\n    onAction={() => setToast(null)}\n    autoClose={false}\n    onClose={() => setToast(null)}\n  />\n)}",

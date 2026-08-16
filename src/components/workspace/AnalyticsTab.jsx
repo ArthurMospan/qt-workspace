@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
-  Clock, AlertCircle, Users, Target, Zap, BarChart2, AlertTriangle, ClipboardList,
+  AlertCircle, Users, Target, Zap, BarChart2, AlertTriangle, ClipboardList, Flag, Wallet,
 } from 'lucide-react';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import KpiCard from '@/components/ui/DataDisplay/KpiCard';
@@ -12,8 +12,9 @@ import { isDueDateOverdue } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
-import Link from 'next/link';
-import { Alert, Card, TaskListCard } from '@/components/ui';
+import {
+  BarList, Card, DataTable, DetailSection, Meter, SignalList, TaskListCard,
+} from '@/components/ui';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
@@ -29,8 +30,19 @@ function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
-function SectionTitle({ children }) {
-  return <h3 className="ui-type-eyebrow text-muted uppercase tracking-wider mb-3">{children}</h3>;
+
+// The same card and the same heading the workspace analytics screen uses. This
+// file used to carry its own `SectionTitle` — an eyebrow, where the other file
+// had a near-identical eyebrow of its own — which is how the two screens that
+// answer the same questions ended up looking like different products.
+function ChartCard({ icon, title, meta, children, className = '' }) {
+  return (
+    <Card preset="borderless" padding="lg" className={className}>
+      <DetailSection icon={icon} title={title} meta={meta}>
+        {children}
+      </DetailSection>
+    </Card>
+  );
 }
 
 export default function AnalyticsTab({
@@ -170,7 +182,39 @@ export default function AnalyticsTab({
     timeZone,
   ]);
 
-  const maxStatus  = Math.max(...stats.byStatus.map(s => s.count), 1);
+  // The project's attention list. This was four `Alert` banners under a heading
+  // called «Увага» — the loudest component in the kit, stacked, on the quietest
+  // screen. The findings themselves have not changed.
+  const signals = [
+    stats.dependencyBlocked > 0 && {
+      id: 'blocked',
+      tone: 'critical',
+      count: stats.dependencyBlocked,
+      title: `${plural(stats.dependencyBlocked, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
+      description: 'Їх стримують незавершені задачі',
+    },
+    stats.blockerPriority > 0 && {
+      id: 'blocker-priority',
+      tone: 'warning',
+      count: stats.blockerPriority,
+      title: 'Критичний пріоритет',
+      description: 'Потребують негайної уваги',
+    },
+    stats.noAssignee.length > 0 && {
+      id: 'no-assignee',
+      tone: 'warning',
+      count: stats.noAssignee.length,
+      title: 'Без виконавця',
+      description: 'Ніхто не відповідає за результат',
+    },
+    stats.unestimated.length > 0 && {
+      id: 'unestimated',
+      tone: 'info',
+      count: stats.unestimated.length,
+      title: 'Без оцінки',
+      description: 'Поза беклогом, але без плану за часом',
+    },
+  ].filter(Boolean);
 
   if (filteredIssues.length === 0) {
     return (
@@ -212,90 +256,62 @@ export default function AnalyticsTab({
 
         {/* ── Budget burn ──────────────────────────────────────────── */}
         {stats.burnPct !== null && (
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-            <div className="flex items-center justify-between mb-4">
-              <SectionTitle>Бюджет часу</SectionTitle>
-              <span className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${
-                stats.burnPct >= 90 ? 'bg-red-50 text-red-600'
-                : stats.burnPct >= 70 ? 'bg-yellow-50 text-yellow-600'
-                : 'bg-line text-ink'
-              }`}>
-                {stats.burnPct}% використано
-              </span>
+          <ChartCard icon={Wallet} title="Бюджет часу" meta={`${project?.totalBudgetHours}г заплановано`}>
+            <Meter
+              value={stats.burnPct / 100}
+              // The only place on this screen where a colour means good or bad,
+              // and it says so in words as well as in hue.
+              tone={stats.burnPct >= 90 ? 'danger' : stats.burnPct >= 70 ? 'warning' : 'neutral'}
+              label={stats.burnPct >= 90 ? 'Бюджет майже вичерпано' : stats.burnPct >= 70 ? 'Бюджет наближається до межі' : 'Бюджет у нормі'}
+              reading={`${stats.burnPct}%`}
+            />
+            <div className="grid grid-cols-3 gap-4 border-t border-[color:var(--color-chart-grid)] pt-3">
+              {[
+                ['Витрачено', `${stats.spentHours}г`],
+                ['Залишилось', `${stats.remainH}г`],
+                ['Бюджет', `${project?.totalBudgetHours}г`],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[11px] text-muted">{label}</p>
+                  <p className="ui-type-figure mt-0.5 text-ink">{value}</p>
+                </div>
+              ))}
             </div>
-            <div className="h-[8px] bg-canvas rounded-full overflow-hidden mb-3">
-              <div className={`h-full rounded-full transition-all ${
-                stats.burnPct >= 90 ? 'bg-red-500' : stats.burnPct >= 70 ? 'bg-yellow-400' : 'bg-ink'
-              }`} style={{ width: `${stats.burnPct}%` }} />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Витрачено</p>
-                <p className="text-[18px] font-bold text-ink">{stats.spentHours}г</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Залишилось</p>
-                <p className="text-[18px] font-bold text-ink">{stats.remainH}г</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Бюджет</p>
-                <p className="text-[18px] font-bold text-ink">{project?.totalBudgetHours}г</p>
-              </div>
-            </div>
-          </div>
+          </ChartCard>
         )}
 
         {/* ── Status distribution + Priority breakdown ─────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-            <SectionTitle>Завдання по статусах</SectionTitle>
-            {stats.byStatus.length === 0 ? (
-              <p className="text-[12px] text-faint py-4">Задач немає</p>
-            ) : (
-              // QUI-129. The same chart as /analytics → «По статусах», which
-              // squeezed its label into a 100px column here and truncated every
-              // status name. Label above the bar, dot for the status colour,
-              // count on the same baseline — one chart, one look.
-              <div className="flex flex-col gap-[14px]">
-                {stats.byStatus.map(({ col, count, label, color }) => (
-                  <div key={col} className="flex flex-col gap-[6px]">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                        <span className="truncate text-[13px] font-semibold text-ink">{label}</span>
-                      </span>
-                      <span className="shrink-0 text-[14px] font-bold text-ink tabular-nums">{count}</span>
-                    </div>
-                    <div className="h-[6px] overflow-hidden rounded-full bg-[#f0f0f0]">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${(count / maxStatus) * 100}%`, background: color }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ChartCard icon={BarChart2} title="Завдання по статусах">
+            {/* The same chart as /analytics → «По статусах», and now literally
+                the same component: this file used to carry its own copy, and
+                the priority chart beside it carried a third. */}
+            <BarList
+              items={stats.byStatus.map(({ col, count, label, color }) => ({
+                id: col, label, value: count, color,
+              }))}
+              emptyText="Задач немає"
+            />
+          </ChartCard>
 
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-            <SectionTitle>Відкриті по пріоритету</SectionTitle>
-            {stats.byPriority.length === 0 ? (
-              <p className="text-[12px] text-faint py-4">Немає відкритих завдань</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {stats.byPriority.map(({ p, label, color, count }) => (
-                  <div key={p} className="flex items-center gap-3">
-                    <span className="flex w-[110px] shrink-0 items-center gap-2 text-[11px] font-semibold text-ink">
-                      <PriorityIcon priority={p} priorities={priorities} />
-                      <span className="truncate">{label}</span>
-                    </span>
-                    <div className="flex-1 h-[6px] bg-canvas rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min((count / Math.max(stats.total,1)) * 100 * 3, 100)}%`, background: color }} />
-                    </div>
-                    <span className="text-[12px] font-bold text-ink w-[24px] text-right shrink-0">{count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ChartCard icon={Flag} title="Відкриті по пріоритету">
+            {/* The bar used to multiply its share by three "to make small bars
+                visible", which is a chart that lies about its own values. It
+                scales to the largest priority now, like every other bar list. */}
+            <BarList
+              items={stats.byPriority.map(({ p, label, color, count }) => ({
+                id: p,
+                label,
+                value: count,
+                color,
+                // The priority's own glyph, not a dot: a priority has a shape as
+                // well as a hue, and that shape is what tells the two urgent
+                // levels apart for a reader who cannot see the difference.
+                leading: <PriorityIcon priority={p} priorities={priorities} />,
+              }))}
+              emptyText="Немає відкритих завдань"
+            />
+          </ChartCard>
         </div>
 
         {/* ── Overdue issues ───────────────────────────────────────── */}
@@ -303,7 +319,6 @@ export default function AnalyticsTab({
           <TaskListCard
             title="Прострочені завдання"
             icon={AlertTriangle}
-            iconClassName="text-red-500"
             issues={stats.overdue}
             allIssues={issues}
             members={members}
@@ -313,122 +328,51 @@ export default function AnalyticsTab({
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <div data-ui-surface="card" data-ui-padding="lg" className="ui-surface">
-            <SectionTitle>Навантаження по виконавцях</SectionTitle>
-            <div className="space-y-2 md:hidden">
-              {stats.memberStats.map(({ m, total, done, open, overdue: od, minutes }) => (
-                <Link key={m.id || m.uid} href={memberAnalyticsHref(m.id || m.uid)} className="block">
-                  <Card preset="bordered-compact" padding="md" interactive>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <UserAvatar user={m} size="sm" />
-                      <span className="min-w-0 flex-1 truncate text-[12px] font-bold text-ink">{m.name || m.email}</span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-black/[0.05] pt-3">
-                      {[
-                        ['Всього', total, 'text-ink'],
-                        ['Виконано', done, 'text-[#10b981]'],
-                        ['Відкрито', open, 'text-[#0891b2]'],
-                        ['Прострочено', od || '—', od > 0 ? 'text-red-500' : 'text-faint'],
-                      ].map(([label, value, tone]) => (
-                        <div key={label} className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-medium text-muted">{label}</span>
-                          <span className={`text-[12px] font-bold ${tone}`}>{value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-black/[0.05] pt-3">
-                      <span className="text-[10px] font-medium text-muted">Списано часу</span>
-                      <span className="text-[12px] font-bold text-ink">{minutes > 0 ? fmtH(minutes) : '—'}</span>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-line">
-                    {['Учасник','Всього','Виконано','Відкрито','Прострочено','Час'].map(h => (
-                      <th key={h} className="pb-3 text-[10px] font-bold text-muted uppercase tracking-wide pr-6 last:pr-0">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {stats.memberStats.map(({ m, total, done, open, overdue: od, minutes }) => (
-                    <tr key={m.id || m.uid} className="group transition-colors hover:bg-canvas/60">
-                      {/* Every other place a person appears in analytics opens
-                          their page; here the row named them and went nowhere,
-                          which is the one screen where "who is loaded up?" most
-                          obviously wants a next click. */}
-                      <td className="py-3 pr-6">
-                        <Link
-                          href={memberAnalyticsHref(m.id || m.uid)}
-                          className="flex items-center gap-2 transition-colors hover:text-ink"
-                          title={`Аналітика: ${m.name || m.email}`}
-                        >
-                          <UserAvatar user={m} size="sm" />
-                          <span className="text-[12px] font-medium text-ink group-hover:underline">{m.name || m.email}</span>
-                        </Link>
-                      </td>
-                      <td className="py-3 pr-6 text-[13px] font-semibold text-ink">{total}</td>
-                      <td className="py-3 pr-6"><span className="text-[12px] font-semibold text-[#10b981]">{done}</span></td>
-                      <td className="py-3 pr-6"><span className="text-[12px] font-semibold text-[#0891b2]">{open}</span></td>
-                      <td className="py-3 pr-6">
-                        {od > 0
-                          ? <span className="text-[12px] font-semibold text-red-500">{od}</span>
-                          : <span className="text-[12px] text-faint">—</span>
-                        }
-                      </td>
-                      <td className="py-3 text-[12px] text-muted">{minutes > 0 ? fmtH(minutes) : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ChartCard icon={Users} title="Навантаження по виконавцях" meta={`${stats.memberStats.length}`}>
+            {/* Two hand-written tables — one for the screen, one for the phone —
+                each with its own header type, its own rules and its own idea of
+                what colour a number is. `DataTable` is both, and it is the same
+                table the workspace screen draws its projects with. */}
+            <DataTable
+              rows={stats.memberStats}
+              rowKey={row => row.m.id || row.m.uid}
+              rowHref={row => memberAnalyticsHref(row.m.id || row.m.uid)}
+              emptyText="Немає виконавців із задачами"
+              columns={[
+                {
+                  id: 'member',
+                  header: 'Учасник',
+                  lead: true,
+                  cell: row => (
+                    <span className="flex min-w-0 items-center gap-2">
+                      <UserAvatar user={row.m} size="sm" />
+                      <span className="min-w-0 truncate text-[13px] font-semibold text-ink">{row.m.name || row.m.email}</span>
+                    </span>
+                  ),
+                },
+                { id: 'total', header: 'Всього', align: 'right', width: '90px', cell: row => <span className="ui-type-figure text-ink">{row.total}</span> },
+                { id: 'done', header: 'Виконано', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
+                { id: 'open', header: 'Відкрито', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-ink">{row.open}</span> },
+                {
+                  id: 'overdue',
+                  header: 'Прострочено',
+                  align: 'right',
+                  width: '112px',
+                  cell: row => (row.overdue > 0
+                    ? <span className="ui-type-figure text-[#ef4444]">{row.overdue}</span>
+                    : <span className="ui-type-figure text-faint">—</span>),
+                },
+                { id: 'time', header: 'Час', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-muted">{row.minutes > 0 ? fmtH(row.minutes) : '—'}</span> },
+              ]}
+            />
+          </ChartCard>
         )}
 
-        {/* ── Warnings ─────────────────────────────────────────────── */}
-        {(stats.noAssignee.length > 0
-          || stats.unestimated.length > 0
-          || stats.blockerPriority > 0
-          || stats.dependencyBlocked > 0) && (
-          // The same notices the workspace overview calls «Інсайти», drawn the
-          // same way. This block was four hand-tinted rows — red-50, amber-50,
-          // yellow-50 and a grey nested panel — so one screen said these things
-          // with `Alert` and the other with four different colours of its own,
-          // and no two rows inside it matched either.
-          <Card preset="borderless" padding="lg">
-            <SectionTitle>Увага</SectionTitle>
-            <div className="flex flex-col gap-3">
-              {stats.dependencyBlocked > 0 && (
-                <Alert
-                  variant="error"
-                  title={`${stats.dependencyBlocked} ${plural(stats.dependencyBlocked, ['завдання', 'завдання', 'завдань'])} заблоковано`}
-                  description="Їх стримують незавершені залежності"
-                />
-              )}
-              {stats.blockerPriority > 0 && (
-                <Alert
-                  variant="warning"
-                  title={`${stats.blockerPriority} ${plural(stats.blockerPriority, ['завдання', 'завдання', 'завдань'])} із пріоритетом «Критичний»`}
-                  description="Потребують негайної уваги"
-                />
-              )}
-              {stats.noAssignee.length > 0 && (
-                <Alert
-                  variant="warning"
-                  title={`${stats.noAssignee.length} ${plural(stats.noAssignee.length, ['завдання', 'завдання', 'завдань'])} без виконавця`}
-                />
-              )}
-              {stats.unestimated.length > 0 && (
-                <Alert
-                  variant="info"
-                  title={`${stats.unestimated.length} ${plural(stats.unestimated.length, ['завдання', 'завдання', 'завдань'])} без оцінки`}
-                />
-              )}
-            </div>
-          </Card>
+        {/* ── What needs a look ────────────────────────────────────── */}
+        {signals.length > 0 && (
+          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
+            <SignalList signals={signals} />
+          </ChartCard>
         )}
 
         {/* ── Empty state ───────────────────────────────────────────── */}

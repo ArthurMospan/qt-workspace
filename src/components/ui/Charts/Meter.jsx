@@ -1,0 +1,74 @@
+'use client';
+
+// ─── UI Kit: Meter ───────────────────────────────────────────────────────────
+// One ratio against a limit: hours burnt against a budget, subtasks finished
+// against subtasks opened.
+//
+// The budget bar this replaces changed hue with severity — ink under 70%, then
+// yellow-400, then red-500 — while the subtask bar next to it was emerald at
+// every value and the workload bar mixed its own #7ba98d and #c96a5a. Three
+// bars, three unrelated palettes, one question.
+//
+// Severity is a real thing to say, so it stays: but it is said with the status
+// scale the rest of the product uses and a word beside the number, because a
+// bar that is only red says "bad" to everyone except the readers who cannot see
+// that it is red.
+
+import React from 'react';
+
+// Three tones, not four. A `good` step was declared and never reached: a meter
+// that is fine says so by being neutral, and colouring "nothing is wrong" green
+// spends the reader's attention on the one thing that did not need it.
+const TONES = {
+  // Ordinary progress. Nothing is wrong, so nothing is coloured as though it is.
+  neutral: { fill: 'var(--color-chart-1)', text: 'text-ink' },
+  warning: { fill: '#b45309', text: 'text-[#b45309]' },
+  danger: { fill: '#ef4444', text: 'text-[#ef4444]' },
+};
+
+/**
+ * A share of a whole, drawn as one bar.
+ *
+ * @param {number} props.value How much of the limit is used, 0–1. Values above 1 fill the bar and are still reported in the label.
+ * @param {'neutral'|'warning'|'danger'} props.tone What the level means. `neutral` is the default because most progress means nothing beyond itself.
+ * @param {string} props.label What is being measured, above the bar.
+ * @param {React.ReactNode} props.reading The figure, printed opposite the label.
+ * @param {number} props.height Bar thickness in pixels.
+ * @param {string} props.className Placement in the parent only.
+ */
+export default function Meter({
+  value = 0,
+  tone = 'neutral',
+  label,
+  reading,
+  height = 8,
+  className = '',
+}) {
+  const level = TONES[tone] || TONES.neutral;
+  const share = Math.max(0, Math.min(1, Number(value) || 0));
+
+  return (
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      {(label || reading) && (
+        <div className="flex items-baseline justify-between gap-3">
+          {label && <span className="truncate text-[12px] font-semibold text-ink">{label}</span>}
+          {reading && <span className={`ui-type-figure shrink-0 ${level.text}`}>{reading}</span>}
+        </div>
+      )}
+      <div
+        className="w-full overflow-hidden rounded-full"
+        style={{ height, background: 'var(--color-chart-track)' }}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(share * 100)}
+        aria-label={label}
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-300"
+          style={{ width: `${share * 100}%`, background: level.fill }}
+        />
+      </div>
+    </div>
+  );
+}

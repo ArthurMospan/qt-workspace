@@ -59,7 +59,14 @@ test('the known board controls, tab icons, headings and breadcrumbs carry access
   assert.doesNotMatch(breadcrumb, /<React\.Fragment/);
   assert.doesNotMatch(board, /<h3 className="ui-type-column-title/);
   assert.match(board, /<h2 className="ui-type-column-title/);
-  assert.match(analytics, /min-h-\[24px\]/);
+  // The projects table used to end each row with a 24px "Відкрити →" link that
+  // only appeared on hover — a target you had to find before you could hit it.
+  // `DataTable` makes the identifying cell of every row the link instead, so
+  // the target is the row, and it is there whether or not a pointer is.
+  assert.match(analytics, /<DataTable[\s\S]{0,400}rowHref=/);
+  const dataTable = await read('src/components/ui/DataDisplay/DataTable.jsx');
+  assert.match(dataTable, /column === leadColumn && href \?[\s\S]{0,120}<a href=\{href\}/);
+  assert.doesNotMatch(analytics, /sm:opacity-0 sm:group-hover:opacity-100/);
 });
 
 test('drag announcements use Ukrainian labels and never expose droppable ids', () => {
