@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 41,
-    "declaredValues": 361,
+    "componentsWithVariants": 43,
+    "declaredValues": 365,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 223,
+    "usedAndPreviewed": 226,
     "usedWithoutPreview": 0,
-    "declaredUnused": 104
+    "declaredUnused": 105
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -212,6 +212,12 @@
       "component": "Counter",
       "prop": "variant",
       "value": "count",
+      "namespace": null
+    },
+    {
+      "component": "DetailSection",
+      "prop": "density",
+      "value": "section",
       "namespace": null
     },
     {
@@ -1226,6 +1232,18 @@
         "team"
       ]
     },
+    "DetailLayout": {
+      "context": [
+        "event",
+        "task"
+      ]
+    },
+    "DetailSection": {
+      "density": [
+        "group",
+        "section"
+      ]
+    },
     "FilterBar": {
       "context": [
         "default",
@@ -1426,7 +1444,9 @@
     "Select.filterRole.status": 1,
     "Pill.tone.danger": 3,
     "Tag.size.small": 2,
+    "DetailSection.density.group": 5,
     "TextAction.size.lg": 1,
+    "DetailLayout.context.task": 1,
     "Tabs.variant.underline": 2,
     "Popover.align.start": 2,
     "Popover.padding.default": 1,
@@ -1457,6 +1477,7 @@
     "Pill.size.wide-sm": 5,
     "ResponseChoice.size.tile": 1,
     "LoadingSpinner.size.sm": 3,
+    "DetailLayout.context.event": 1,
     "TaskAttributesPanel.context.calendar": 1,
     "AttributeTrigger.variant.cell": 2,
     "AttributeTrigger.variant.details": 1,
@@ -1591,6 +1612,10 @@
     "Counter.status.success",
     "Counter.variant.count",
     "Counter.variant.dot",
+    "DetailLayout.context.event",
+    "DetailLayout.context.task",
+    "DetailSection.density.group",
+    "DetailSection.density.section",
     "Dialog.bodyPadding.default",
     "Dialog.bodyPadding.flush",
     "Dialog.bodyPadding.horizontal",

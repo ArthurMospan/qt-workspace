@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 101,
-      "used": 101,
+      "components": 103,
+      "used": 103,
       "unused": 0,
-      "covered": 96,
+      "covered": 98,
       "uncovered": 0,
       "routes": 12,
-      "previews": 130,
+      "previews": 132,
       "internal": 5,
       "unlisted": 0
     },
@@ -549,7 +549,7 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:282",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:285",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },

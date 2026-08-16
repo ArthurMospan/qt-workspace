@@ -504,6 +504,50 @@
   .ui-surface[data-ui-padding='wide'] { padding: 12px 16px; }
   .ui-surface[data-ui-padding='compact-row'] { padding: 8px 10px; }
 
+  /* ── The detail page shell ────────────────────────────────────────────────
+     A task and a calendar event are the same screen with different contents,
+     and they had drifted into two different screens. The numbers that made them
+     behave differently live here now, once.
+
+     `--ui-detail-header` is the allowance for the fixed WorkspaceHeader, which
+     is absolutely positioned over the main area and reserves nothing. The task
+     put that allowance *above* its scroll container and the event put it *on*
+     it — one line apart, and the reason the two pages scrolled differently:
+     padding on the scroller is inside the scrollport, so `sticky top-0` parked
+     the event's title underneath the header instead of below it.
+
+     `--ui-detail-viewport-inset` is what the scrollport is shorter than the
+     window: the header allowance plus the 12px the workspace shell insets the
+     main pane by, top and bottom. The conversation rail is sized from it so it
+     fills its column exactly and scrolls itself instead of the page. */
+  .ui-detail-shell {
+    --ui-detail-header: 56px;
+    --ui-detail-viewport-inset: calc(var(--ui-detail-header) + 24px);
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: var(--ui-detail-header);
+  }
+  /* Inside a dialog there is no fixed header above and no window height to
+     borrow: the dialog owns both, and paints white behind the shell. */
+  .ui-detail-shell[data-ui-density='embedded'] {
+    --ui-detail-header: 0px;
+
+    background: var(--color-surface);
+  }
+  .ui-detail-aside {
+    min-height: 0;
+  }
+  @media (min-width: 1024px) {
+    .ui-detail-aside {
+      position: sticky;
+      top: 0;
+      height: calc(100dvh - var(--ui-detail-viewport-inset));
+      padding-bottom: 20px;
+    }
+  }
+
   /* ── The typed file square ────────────────────────────────────────────────
      One geometry and one colour per family of file, so a PDF looks like a PDF
      wherever it is attached — a task, a channel, a thread, the viewer's header.

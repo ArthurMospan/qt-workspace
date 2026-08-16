@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/[projectId]/issue/[issueId]/page.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAppContext }        from '@/lib/context/AppContext';
@@ -43,14 +43,14 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { MultiSelect, Select } from '@/components/ui/Select';
-import { AttributeTrigger, ContextMenu, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
-  Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
+  AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
   Maximize2,
@@ -162,23 +162,6 @@ function Ring({ pct, color, size = 36, stroke = 3.5 }) {
   );
 }
 
-// ── Section heading ────────────────────────────────────────────────
-// Мітки, Вкладення, Підзавдання and Зв’язки all label a list on the same panel,
-// so they get one heading instead of four near-identical ones. Local on
-// purpose: it is a composition of kit primitives (icon + ui-type-item-title +
-// Pill) bound to this detail view, not a new reusable visual component.
-function SectionHeading({ icon: Icon, title, count, meta, action }) {
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <Icon size={13} className="shrink-0 text-muted" />
-      <h3 className="ui-type-item-title text-ink">{title}</h3>
-      {count > 0 && <Pill tone="ink-subtle" size="sm">{count}</Pill>}
-      {meta && <span className="text-[10px] font-medium text-muted">{meta}</span>}
-      {action}
-    </div>
-  );
-}
-
 // ── Attachment rows ────────────────────────────────────────────────
 // Lives on the description's canvas panel, so each row is a white surface —
 // the same card-on-canvas relationship the rest of the workspace uses. There
@@ -187,8 +170,7 @@ function SectionHeading({ icon: Icon, title, count, meta, action }) {
 function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, onDelete }) {
   if (attachments.length === 0) return null;
   return (
-    <div>
-      <SectionHeading icon={Paperclip} title="Вкладення" count={attachments.length} />
+    <DetailSection density="group" icon={Paperclip} title="Вкладення" count={attachments.length}>
       <div className="flex flex-col gap-1.5">
         {attachments.map(attachment => (
           <AttachmentRow
@@ -203,7 +185,7 @@ function AttachmentRows({ attachments, isEditing, isArchived, onOpen, onInsert, 
           />
         ))}
       </div>
-    </div>
+    </DetailSection>
   );
 }
 
@@ -339,7 +321,6 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
   const [uploadingAttach, setUploadingAttach] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
-  const leftScrollRef = useRef(null);
   const TIME_LOGS_PER_PAGE = 5;
 
   // ── Edit mode state ───────────────────────────────────────────────
@@ -1024,48 +1005,32 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // RENDER
   // ════════════════════════════════════════════════════════════════
   return (
-    <div className={`flex-1 flex flex-col overflow-hidden ${isModal ? 'bg-white' : 'bg-transparent'}`}>
+    <>
       {/* Lightbox */}
       {viewerMat && <MediaViewer mat={viewerMat} onClose={() => setViewerMat(null)} />}
 
-      <div className={`flex min-h-0 flex-1 flex-col ${isModal ? '' : 'pt-[56px]'}`}>
-      {!isModal && (
-        <div className="page-gutter shrink-0 bg-white py-2 lg:hidden">
-          <Tabs
-            variant="underline"
-            className="w-full"
-            tabs={[
-              { id: 'task', label: 'Завдання', icon: TaskIcon },
-              { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
-            ]}
-            activeTab={taskPane}
-            onTabChange={handleTaskPaneChange}
-          />
-        </div>
-      )}
-
-      {/* The bottom breathing room belongs only to the data column. Putting it
-          on this shared wrapper shortens the chat by the same amount and makes
-          the fixed panel jump upward. */}
-      <div
-        onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-        className={`w-full page-gutter ${isModal ? 'pt-[8px] pb-[32px]' : 'pb-0'} flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar`}
-      >
-
-        <div className={`grid grid-cols-1 gap-[20px] items-stretch ${isModal ? '' : `${taskPane === 'chat' ? 'flex-1 min-h-0' : ''} lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] lg:flex-1 lg:min-h-0`}`}>
-
-          {/* LEFT SIDE (Data) */}
-          <div
-            ref={leftScrollRef}
-            onScroll={event => setIsHeaderScrolled(event.currentTarget.scrollTop > 4)}
-            className={`${!isModal && taskPane === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col overflow-visible ${isModal ? '' : 'pb-[20px] custom-scrollbar lg:min-h-0 lg:overflow-y-auto lg:pr-2'}`}
-          >
-            <div
-              className="sticky top-0 z-[30]"
-            >
-
-             {/* TITLE & ACTIONS */}
-             <div className="flex w-full flex-col items-stretch justify-between gap-[10px] bg-white pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
+      <DetailLayout
+        context="task"
+        standalone={!isModal}
+        scrolled={isHeaderScrolled}
+        onScrolledChange={setIsHeaderScrolled}
+        mobilePane={!isModal && taskPane === 'chat' ? 'aside' : 'content'}
+        lead={!isModal ? (
+          <div className="page-gutter shrink-0 bg-white py-2 lg:hidden">
+            <Tabs
+              variant="underline"
+              className="w-full"
+              tabs={[
+                { id: 'task', label: 'Завдання', icon: TaskIcon },
+                { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
+              ]}
+              activeTab={taskPane}
+              onTabChange={handleTaskPaneChange}
+            />
+          </div>
+        ) : null}
+        header={(
+             <div className="flex w-full flex-col items-stretch justify-between gap-[10px] pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
                <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {parentIssueId && (
               <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
@@ -1246,16 +1211,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             )}
           </div>
             </div>
-
-            {/* ATTRIBUTES STRIP */}
-            <div className="relative isolate -mx-2 px-2">
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-x-2 top-0 z-[5] h-1/2 transition-opacity duration-200 ${isHeaderScrolled ? 'opacity-100' : 'opacity-0'}`}
-              style={{
-                background: 'linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.92) 34%, rgba(255,255,255,0) 100%)',
-              }}
-            />
+        )}
+        attributes={(
             <TaskAttributesPanel
               singleRow
               context="task"
@@ -1463,8 +1420,51 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 </>
               }
             />
+        )}
+        aside={!isModal ? (
+          // Chat is only useful on the full task page.
+          <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
+            {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
+            {qtplusLink?.projectId && (
+              <div className="relative flex shrink-0 items-center justify-center bg-canvas px-4 pb-2 pt-3">
+                <Tabs
+                  tabs={[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }]}
+                  activeTab={chatView}
+                  onTabChange={setChatView}
+                />
+                {chatView === 'qtplus' && process.env.NEXT_PUBLIC_QTPLUS_URL && (
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${qtplusLink.projectId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute right-4 rounded-[8px] p-2 text-muted transition-colors hover:bg-white hover:text-ink"
+                    title="Відкрити проєкт у QuickTeam+"
+                    aria-label="Відкрити проєкт у QuickTeam+"
+                  >
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+              </div>
+            )}
+            <div className="flex min-h-0 flex-1 flex-col">
+              {chatView === 'qtplus' && qtplusLink?.projectId ? (
+                <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
+              ) : (
+                <UnifiedTimeline
+                  issueId={issueId}
+                  projectId={projectId}
+                  issue={issue}
+                  isArchived={isArchived}
+                  org={activeOrg}
+                  members={members}
+                  isActive={!isCompactTaskLayout || taskPane === 'chat'}
+                  onUnreadCountChange={handleTaskChatUnreadChange}
+                />
+              )}
             </div>
-            </div>
+          </div>
+        ) : null}
+      >
 
             {/* LOG TIME FORM MODAL */}
             {logForm && (
@@ -1585,14 +1585,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               </Dialog>
             )}
 
-            {/* MAIN SECTIONS PANEL */}
-            <div className="mt-1 flex w-full flex-col gap-5">
-              <div className="flex flex-col gap-5 overflow-visible">
               {/* DESCRIPTION */}
-              <div className="flex flex-col gap-3 py-1">
-                <div className="flex items-center gap-3">
-                  <h2 className="ui-type-card-title text-ink">Опис</h2>
-                </div>
+              <DetailSection icon={AlignLeft} title="Опис">
                 <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface flex w-full flex-col gap-4">
                   {isEditing ? (
                     <>
@@ -1630,8 +1624,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   )}
 
                 {(issue.labelIds || []).length > 0 && (
-                  <div className="pt-1">
-                    <SectionHeading icon={TagIcon} title="Мітки" count={issue.labelIds.length} />
+                  <DetailSection density="group" icon={TagIcon} title="Мітки" count={issue.labelIds.length} className="pt-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {(issue.labelIds || []).map(id => {
                         const label = availableLabels.find(item => item.id === id);
@@ -1639,20 +1632,21 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                         return <Tag key={id} label={label.label || label.name} color={label.color} onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== id) })} />;
                       })}
                     </div>
-                  </div>
+                  </DetailSection>
                 )}
 
               {/* REAL CHILD ISSUES */}
               {(childIssues.length > 0 || showSubInput) && (
-                <div className="pt-2">
-                  <SectionHeading
-                    icon={TaskIcon}
-                    title="Підзавдання"
-                    count={childIssues.length}
-                    meta={openChildCount > 0 ? `${childIssuesDone}/${childIssues.length} · ${openChildCount} ще в роботі` : `${childIssuesDone}/${childIssues.length}`}
-                  />
+                <DetailSection
+                  density="group"
+                  icon={TaskIcon}
+                  title="Підзавдання"
+                  count={childIssues.length}
+                  meta={openChildCount > 0 ? `${childIssuesDone}/${childIssues.length} · ${openChildCount} ще в роботі` : `${childIssuesDone}/${childIssues.length}`}
+                  className="pt-2"
+                >
                   {childIssues.length > 0 && (
-                    <div className="mb-4 h-[4px] overflow-hidden rounded-full bg-line">
+                    <div className="mb-1 h-[4px] overflow-hidden rounded-full bg-line">
                       <div
                         className="h-full rounded-full bg-[#10b981] transition-all"
                         style={{ width: `${(childIssuesDone / childIssues.length) * 100}%` }}
@@ -1711,16 +1705,17 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       </Surface>
                     )}
                   </div>
-                </div>
+                </DetailSection>
               )}
 
               {/* LEGACY CHECKLIST — new lightweight steps live in description Markdown */}
               {checklistAll > 0 && (
-              <div className="pt-2">
-              <SectionHeading
+              <DetailSection
+                density="group"
                 icon={CheckSquare}
                 title="Старий чекліст"
                 meta={`${checklistDone}/${checklistAll}`}
+                className="pt-2"
                 action={!isArchived ? (
                   <Button
                     style="ghost"
@@ -1733,11 +1728,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     Перенести в опис
                   </Button>
                 ) : null}
-              />
-              <p className="mb-3 text-[10px] leading-relaxed text-muted">
+              >
+              <p className="text-[10px] leading-relaxed text-muted">
                 Це старий формат. Нові чеклісти додавайте як checkbox у описі задачі.
               </p>
-              <div className="h-[4px] bg-line rounded-full mb-4 overflow-hidden">
+              <div className="h-[4px] bg-line rounded-full mb-1 overflow-hidden">
                 <div className="h-full bg-[#10b981] rounded-full transition-all" style={{ width: `${(checklistDone / checklistAll) * 100}%` }} />
               </div>
               <div className="flex flex-col gap-[6px]">
@@ -1757,13 +1752,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   </div>
                 ))}
               </div>
-              </div>
+              </DetailSection>
               )}
               {/* ISSUE LINKS */}
               {(currentIssueLinks.length > 0 || showLinkInput) && (
-              <div className="flex flex-col pt-2">
-              <SectionHeading icon={Link2} title="Зв’язки" count={currentIssueLinks.length} />
-
+              <DetailSection density="group" icon={Link2} title="Зв’язки" count={currentIssueLinks.length} className="pt-2">
               <div className="flex flex-col gap-[6px]">
                 {currentIssueLinks.map(({ link, perspective }) => {
                     const otherIssue = issues.find(candidate => candidate.id === perspective.otherIssueId)
@@ -1852,7 +1845,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   </div>
                 )}
               </div>
-            </div>
+            </DetailSection>
             )}
                 </div>
                 {!isArchived && (
@@ -1912,63 +1905,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     </Button>
                   </div>
                 )}
-              </div>
-
-            </div>
-
-            {/* End of MAIN SECTIONS PANEL */}
-            </div>
-          </div>
-
-          {/* Chat is only useful on the full task page. */}
-          {!isModal && (
-            <div className={`${taskPane === 'task' ? 'hidden lg:block' : 'block'} h-full min-h-0 lg:sticky lg:top-0 lg:pb-[32px]`}>
-              <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
-                {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
-                {qtplusLink?.projectId && (
-                  <div className="relative flex shrink-0 items-center justify-center bg-canvas px-4 pb-2 pt-3">
-                    <Tabs
-                      tabs={[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }]}
-                      activeTab={chatView}
-                      onTabChange={setChatView}
-                    />
-                    {chatView === 'qtplus' && process.env.NEXT_PUBLIC_QTPLUS_URL && (
-                      <a
-                        href={`${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${qtplusLink.projectId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute right-4 rounded-[8px] p-2 text-muted transition-colors hover:bg-white hover:text-ink"
-                        title="Відкрити проєкт у QuickTeam+"
-                        aria-label="Відкрити проєкт у QuickTeam+"
-                      >
-                        <ExternalLink size={13} />
-                      </a>
-                    )}
-                  </div>
-                )}
-                <div className="flex min-h-0 flex-1 flex-col">
-                  {chatView === 'qtplus' && qtplusLink?.projectId ? (
-                    <IssueQtPlusChat qtProjectId={qtplusLink.projectId} currentUser={currentUser} />
-                  ) : (
-                    <UnifiedTimeline
-                      issueId={issueId}
-                      projectId={projectId}
-                      issue={issue}
-                      isArchived={isArchived}
-                      org={activeOrg}
-                      members={members}
-                      isActive={!isCompactTaskLayout || taskPane === 'chat'}
-                      onUnreadCountChange={handleTaskChatUnreadChange}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-            )}
-
-        </div>
-      </div>
-      </div>
-    </div>
+            </DetailSection>
+      </DetailLayout>
+    </>
   );
 }

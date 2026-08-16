@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 101,
-    "props": 745,
-    "documentedProps": 745,
+    "components": 103,
+    "props": 763,
+    "documentedProps": 763,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1976,6 +1976,150 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        }
+      ]
+    },
+    "DetailLayout": {
+      "file": "src/components/ui/Layout/DetailLayout.jsx",
+      "summary": "The scroll container, measure, sticky title and optional rail that a task and a calendar event share.",
+      "props": [
+        {
+          "name": "aside",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The rail beside the content — the task's conversation."
+        },
+        {
+          "name": "attributes",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The attribute strip, given the fade that hides content sliding under the title."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'event'",
+          "type": "'task'|'event'",
+          "values": [
+            "event",
+            "task"
+          ],
+          "description": "Which detail page: how wide the measure is, and whether there is a rail."
+        },
+        {
+          "name": "header",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The title and its actions. Made sticky here."
+        },
+        {
+          "name": "lead",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A full-width row above the scroller, outside the measure: the mobile pane switch."
+        },
+        {
+          "name": "mobilePane",
+          "default": "'content'",
+          "type": "'content'|'aside'",
+          "values": [],
+          "description": "Which column is on screen below 1024px. Ignored above it, where both are."
+        },
+        {
+          "name": "onScrolledChange",
+          "default": "",
+          "type": "(scrolled: boolean) => void",
+          "values": [],
+          "description": "Fires when the content leaves the top."
+        },
+        {
+          "name": "scrolled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The content has left the top — the same flag the strip condenses on, so the fade and the strip cannot disagree."
+        },
+        {
+          "name": "scrollRef",
+          "default": "",
+          "type": "React.Ref",
+          "values": [],
+          "description": "The scroll container, for callers that reset the position."
+        },
+        {
+          "name": "standalone",
+          "default": "true",
+          "type": "boolean",
+          "values": [],
+          "description": "A real page under the fixed header. `false` is the dialog, which owns its own chrome and height."
+        }
+      ]
+    },
+    "DetailSection": {
+      "file": "src/components/ui/Layout/DetailSection.jsx",
+      "summary": "A titled block of a task or a calendar event.",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A control belonging to the heading rather than to the content."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "count",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "How many things are in it; drawn only when there are any."
+        },
+        {
+          "name": "density",
+          "default": "'section'",
+          "type": "'section'|'group'",
+          "values": [
+            "group",
+            "section"
+          ],
+          "description": "Which of the page's two heading levels this is."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "The block's glyph."
+        },
+        {
+          "name": "meta",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A quiet clause after the count — progress, a ratio, a warning."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What the block is."
         }
       ]
     },

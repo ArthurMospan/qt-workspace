@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Forms/Textarea';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { AttributeTrigger, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, Skeleton, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow, Tabs, FileThumb } from '@/components/ui';
+import { AttributeTrigger, DetailSection, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, Skeleton, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow, Tabs, FileThumb } from '@/components/ui';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import TextAction from '@/components/ui/TextAction';
@@ -106,6 +106,11 @@ const VARIANT_BASE = {
   SelectableChip: (props) => <SelectableChip selected {...props}>Чіп</SelectableChip>,
   MarkdownViewer: (props) => <MarkdownViewer content="Опис завдання" {...props} />,
   FileThumb: (props) => <FileThumb attachment={{ name: 'кошторис.xlsx' }} {...props} />,
+  DetailSection: (props) => (
+    <DetailSection icon={Folder} title="Вкладення" count={3} {...props}>
+      <span className="text-[11px] text-muted">Вміст блоку</span>
+    </DetailSection>
+  ),
   EmptyState: (props) => <EmptyState icon={Folder} title="Порожньо" description="Немає записів." {...props} />,
   Popover: (props) => (
     <Popover trigger={<span className="text-[11px] font-semibold text-ink underline">Відкрити</span>} {...props}>
@@ -135,6 +140,7 @@ const VARIANT_ELSEWHERE = {
   TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',
   ChatComposerDock: 'Прикріплений до низу екрана — див. «Chat Composer Dock»',
   SidebarLayout: 'Каркас цілого екрана — див. «SidebarLayout — 3 контексти»',
+  DetailLayout: 'Каркас цілої сторінки — див. «Деталі задачі й події»',
 };
 
 // A dark value needs a dark backdrop to be visible at all.

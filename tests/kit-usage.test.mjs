@@ -372,10 +372,25 @@ test('high-risk composed previews keep the product markup signatures', () => {
   // keep its selects pinned at full height inside the sticky header while the
   // task card collapsed its labels and faded behind it, so the same control
   // behaved differently depending on which record you had open.
+  //
+  // The scroll container itself is no longer either page's: both hand their
+  // title, strip and sections to `DetailLayout`, which owns the scrollport, the
+  // threshold, the sticky box and the fade. That is what makes "the same page"
+  // true structurally rather than by two files agreeing to match.
+  const detailLayout = readFileSync(new URL('../src/components/ui/Layout/DetailLayout.jsx', import.meta.url), 'utf8');
+  assert.match(detailLayout, /scrollTop > 4/);
   for (const source of [issueDetail, calendarEvent]) {
     assert.match(source, /getTaskAttributeChrome\(\{ condensed: isHeaderScrolled \}\)/);
     assert.match(source, /condensed=\{isHeaderScrolled\}/);
-    assert.match(source, /scrollTop > 4/);
+    assert.match(source, /<DetailLayout[\s\S]{0,400}scrolled=\{isHeaderScrolled\}/);
+    assert.match(source, /onScrolledChange=\{setIsHeaderScrolled\}/);
+  }
+  // The header allowance is the difference that made the two pages scroll
+  // differently: the task reserved it above its scroller and the event on it,
+  // so the event's sticky title parked under the fixed header. Neither page
+  // reserves it any more — `.ui-detail-shell` does, once.
+  for (const source of [issueDetail, calendarEvent]) {
+    assert.doesNotMatch(source, /pt-\[56px\]/, 'the fixed-header allowance belongs to the shell');
   }
   // Both records render the same timer. The calendar used to carry a
   // byte-identical copy of it, down to the 1px nudge that centres the play

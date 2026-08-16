@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
+  AlignLeft,
   BellRing,
   Check,
   Clock3,
@@ -40,6 +41,8 @@ import {
   Button,
   ContextMenu,
   DatePicker,
+  DetailLayout,
+  DetailSection,
   Dialog,
   EmptyState,
   getTaskAttributeChrome,
@@ -778,14 +781,13 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
   } = getTaskAttributeChrome({ condensed: isHeaderScrolled });
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-transparent">
-      <div
-        onScroll={scrollEvent => setIsHeaderScrolled(scrollEvent.currentTarget.scrollTop > 4)}
-        className="page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px] pt-[56px]"
-      >
-        <div className="mx-auto flex w-full max-w-[1120px] flex-col">
-          <div className="sticky top-0 z-[30]">
-            <div className="flex w-full flex-col items-stretch justify-between gap-[10px] bg-white pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
+    <>
+      <DetailLayout
+        context="event"
+        scrolled={isHeaderScrolled}
+        onScrolledChange={setIsHeaderScrolled}
+        header={(
+          <div className="flex w-full flex-col items-stretch justify-between gap-[10px] pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
               <div className="min-w-0 flex-1">
                 {isEditing ? (
                   <TitleInput
@@ -899,20 +901,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   </>
                 )}
               </div>
-            </div>
           </div>
-
-          {/* ATTRIBUTES STRIP — same behaviour as the task card: it scrolls out
-              from under the sticky title, condensing its labels and fading
-              behind the header instead of staying pinned at full height. */}
-          <div className="relative isolate -mx-2 mt-[12px] px-2">
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-x-2 top-0 z-[5] h-1/2 transition-opacity duration-200 ${isHeaderScrolled ? 'opacity-100' : 'opacity-0'}`}
-              style={{
-                background: 'linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.92) 34%, rgba(255,255,255,0) 100%)',
-              }}
-            />
+        )}
+        attributes={(
               <TaskAttributesPanel
                 singleRow
                 context="calendar"
@@ -1296,13 +1287,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   </>
                 )}
               />
-          </div>
-
-          <main className="flex flex-col gap-6 py-1">
-            <section>
-              <div className="mb-3 flex items-center gap-3">
-                <h2 className="ui-type-card-title text-ink">Опис</h2>
-              </div>
+        )}
+      >
+            <DetailSection icon={AlignLeft} title="Опис">
               {isEditing ? (
                 <Textarea
                   value={draft.description}
@@ -1316,14 +1303,10 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   {event.description || <span className="text-faint">Опис не додано</span>}
                 </div>
               )}
-            </section>
+            </DetailSection>
 
             {showsPlace && (
-            <section>
-              <div className="mb-3 flex items-center gap-2">
-                <MapPin size={14} className="text-muted" />
-                <h2 className="ui-type-card-title text-ink">Місце</h2>
-              </div>
+            <DetailSection icon={MapPin} title="Місце">
               {isEditing ? (
                 <Input
                   value={draft.location}
@@ -1343,15 +1326,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   aria-label="Місце події"
                 />
               )}
-            </section>
+            </DetailSection>
             )}
 
             {showsPlace && (
-            <section>
-              <div className="mb-3 flex items-center gap-2">
-                <Link2 size={14} className="text-muted" />
-                <h2 className="ui-type-card-title text-ink">Посилання</h2>
-              </div>
+            <DetailSection icon={Link2} title="Посилання">
               {isEditing ? (
                 <Input
                   type="url"
@@ -1375,15 +1354,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   )}
                 </div>
               )}
-            </section>
+            </DetailSection>
             )}
 
             {showsParticipants && (
-            <section>
-              <div className="mb-3 flex items-center gap-2">
-                <Users size={14} className="text-muted" />
-                <h2 className="ui-type-card-title text-ink">Учасники</h2>
-              </div>
+            <DetailSection icon={Users} title="Учасники" count={event.participantIds?.length || 0}>
               <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface w-full">
                 {event.participantIds?.length ? (
                   <div className="flex flex-wrap gap-2">
@@ -1410,15 +1385,13 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                   </div>
                 )}
               </div>
-            </section>
+            </DetailSection>
             )}
-          </main>
 
           {actionError && !timePanelOpen && (
-            <p className="mt-4 text-[12px] font-medium text-red-600">{actionError}</p>
+            <p className="text-[12px] font-medium text-red-600">{actionError}</p>
           )}
-        </div>
-      </div>
+      </DetailLayout>
 
       {timePanelOpen && (
         <CalendarEventTimeSheet
@@ -1443,6 +1416,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
           onDelete={handleDeleteTime}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 101,
-    "stateful": 93,
+    "components": 103,
+    "stateful": 95,
     "hover": 66,
     "focus": 65,
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 65
+    "long-text": 67
   },
   "components": {
     "Alert": {
@@ -168,6 +168,12 @@
       "hover": "own",
       "focus": "global",
       "long-text": "children"
+    },
+    "DetailLayout": {
+      "long-text": "children"
+    },
+    "DetailSection": {
+      "long-text": "children, title"
     },
     "Dialog": {
       "long-text": "children, description, title"
@@ -587,6 +593,13 @@
     "DescriptionPlaceholder": [
       "task-elements"
     ],
+    "DetailLayout": [
+      "detail-layout"
+    ],
+    "DetailSection": [
+      "detail-layout",
+      "variant-matrix"
+    ],
     "Dialog": [
       "dialogs"
     ],
@@ -709,6 +722,7 @@
     "Pill": [
       "badges",
       "chat-elements",
+      "detail-layout",
       "variant-matrix",
       "states"
     ],
@@ -860,6 +874,7 @@
       "chat-elements",
       "task-elements",
       "inner-nav-layout",
+      "detail-layout",
       "variant-matrix"
     ],
     "UserMenu": [

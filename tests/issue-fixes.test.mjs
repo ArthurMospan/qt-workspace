@@ -18,10 +18,12 @@ test('QUI-77 keeps task detail additions compact and floating menus stationary',
     read('../src/components/ui/Navigation/Popover.jsx'),
     read('../src/components/ui/Select.jsx'),
   ]);
-  const mainSections = issueDetail.slice(
-    issueDetail.indexOf('{/* MAIN SECTIONS PANEL */}'),
-    issueDetail.indexOf('{/* TIME LOGS LIST */}'),
-  );
+  // The task's sections: everything from the description down. The two wrapper
+  // divs that used to be called «MAIN SECTIONS PANEL» are gone — the stack of
+  // sections is `DetailLayout`'s children now, and the description is the first
+  // of them.
+  const mainSections = issueDetail.slice(issueDetail.indexOf('{/* DESCRIPTION */}'));
+  assert.ok(mainSections.length > 0, 'the description opens the task sections');
 
   assert.match(issueDetail, /<Popover[\s\S]{0,180}align="start"[\s\S]{0,180}hideArrow/);
   // The two densities are unchanged; they are named now instead of being two

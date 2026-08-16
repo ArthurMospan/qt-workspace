@@ -34,6 +34,7 @@ import TokensSection from './sections/tokens';
 import VariantMatrixSection from './sections/variant-matrix';
 import StatesSection from './sections/states';
 import SkeletonsSection from './sections/skeletons';
+import DetailLayoutSection from './sections/detail-layout';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV SECTIONS
@@ -89,6 +90,7 @@ const GROUPS = [
       { id: 'page-headers',      label: 'Page Header (Шапка)',            icon: Type },
       { id: 'sidebar-layout',    label: 'Workspace Shell',                icon: PanelLeftOpen },
       { id: 'inner-nav-layout',  label: 'SidebarLayout — 3 контексти',    icon: List },
+      { id: 'detail-layout',     label: 'Деталі задачі й події',          icon: TaskIcon },
     ]
   },
   {
@@ -126,6 +128,7 @@ const SECTION_MAP = {
   'page-headers':    <PageHeadersSection />,
   'sidebar-layout':  <SidebarSection />,
   'inner-nav-layout': <NavMenuSection />,
+  'detail-layout':    <DetailLayoutSection />,
   'task-crm':  <TaskCRMSection />,
   'task-elements': <TaskElementsSection />,
   feedback:   <FeedbackSection />,
