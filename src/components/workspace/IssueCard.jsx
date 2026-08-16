@@ -161,7 +161,9 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
         onClick={interactive
           ? event => {
             if (isDraggingRef.current) return;
-            if (onSelect && selectionActive) {
+            // Shift+click starts a selection as well as extending one, so the
+            // board has the same door into selection mode the list has.
+            if (onSelect && (selectionActive || event.shiftKey)) {
               event.preventDefault();
               onSelect(issue.id, { shiftKey: event.shiftKey });
               return;

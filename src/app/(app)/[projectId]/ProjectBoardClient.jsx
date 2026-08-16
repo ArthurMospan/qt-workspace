@@ -72,7 +72,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const resolveBulkStatusId = useCallback((issue, value) => (
     value?.mode === 'status' ? value.id : null
   ), []);
-  const { issues, applyBulkAction } = useBulkIssueActions({
+  const { issues, applyBulkAction, bulkProgress } = useBulkIssueActions({
     issues: sourceIssues,
     organizationId: activeOrgId,
     showToast,
@@ -493,6 +493,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             hiddenGroupIds={project?.hiddenColumns || []}
             activeTimerIssueId={activeTimer?.issueId}
             onBulkUpdate={handleBulkUpdate}
+            bulkProgress={bulkProgress}
             canArchive={can(orgRole, 'delete:issue')}
             selectionScopeKey={selectionScopeKey}
           />

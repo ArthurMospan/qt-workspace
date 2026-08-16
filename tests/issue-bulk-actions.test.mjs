@@ -67,6 +67,30 @@ test('selection starts by scope, supports Shift ranges and drops invisible ids',
   assert.deepEqual([...visibleSelectedIds(range, [{ id: 'a' }, { id: 'c' }])], ['a', 'c']);
 });
 
+test('Shift+click opens selection mode; a plain click still cannot', async () => {
+  // The shortcut card promised «Вибрати діапазон» while the only way into
+  // selection mode was the list kebab: the hook returned early whenever no task
+  // was selected yet, so the very first shift+click did nothing at all.
+  const hook = await read('src/lib/hooks/useIssueSelection.js');
+  assert.match(hook, /if \(!active && !shiftKey\) return;/);
+
+  // Both surfaces that carry a selectable task have to hand shift through
+  // before selection exists, or the hook never hears about the first one.
+  for (const path of [
+    'src/components/ui/TaskManagement/TaskRow.jsx',
+    'src/components/workspace/IssueCard.jsx',
+  ]) {
+    const source = await read(path);
+    assert.match(source, /onSelect && \((?:selectionActive \|\| e(?:vent)?\.shiftKey)\)/);
+  }
+
+  // And the card in Help has to say both halves: shift starts a selection, and
+  // the next shift+click is what makes it a range.
+  const shortcuts = await read('src/lib/content/shortcuts.mjs');
+  assert.match(shortcuts, /Почати вибір із цього завдання/);
+  assert.match(shortcuts, /вибрати все між першим і цим/);
+});
+
 test('bulk route enforces auth, project scope, canonical routes and partial results', async () => {
   const route = await read('src/app/api/issues/bulk/route.js');
   assert.match(route, /authorizeOrgRequest\(request, organizationId/);
@@ -79,7 +103,44 @@ test('bulk route enforces auth, project scope, canonical routes and partial resu
   assert.match(route, /db\.runTransaction/);
   assert.match(route, /collection\('audit'\)/);
   assert.match(route, /const failed = results\.filter/);
-  assert.match(route, /NextResponse\.json\(\{[\s\S]*requested:[\s\S]*updated,[\s\S]*failed,/);
+  assert.match(route, /NextResponse\.json\(\{[\s\S]*requested:[\s\S]*updated:[\s\S]*failed,/);
+  // The notice names the people to be told. It is routing data for the server's
+  // own delivery pass and must not travel back to the browser with the results.
+  assert.match(route, /updated\.map\(\(\{ notice, \.\.\.result \}\) => result\)/);
+});
+
+test('bulk work costs one project touch and one delivery pass, not one per task', async () => {
+  const route = await read('src/app/api/issues/bulk/route.js');
+  // Every task in a selection usually shares one project, so writing the
+  // project inside each task's transaction made them all contend on a single
+  // hot document and serialise the whole operation behind it.
+  assert.doesNotMatch(route, /transaction\.update\(projectRef/);
+  assert.match(route, /touchedProjectIds[\s\S]*touch\.commit\(\)/);
+  // The workflow is one shared document read once for the operation, not once
+  // inside every transaction.
+  assert.doesNotMatch(route, /transaction\.get\(workflowRef\)/);
+  // Notifications leave in a single pass. A per-task send meant a per-task
+  // email and Telegram round-trip — minutes of them on a large selection.
+  assert.doesNotMatch(route, /createNotification/);
+  assert.match(route, /deliverBulkNotifications\(\{/);
+
+  const delivery = await read('src/lib/server/bulkNotifications.js');
+  // One membership/settings/profile read for the whole audience, and the
+  // outside channels are a digest per person rather than per task.
+  assert.match(delivery, /db\.getAll\([\s\S]*orgMemberships/);
+  assert.match(delivery, /itemsByUserId: telegramItems/);
+  assert.match(delivery, /shouldDeliver\(preferences, 'email', event\.type\)/);
+});
+
+test('a bulk action reports how far it has got instead of going silently dead', async () => {
+  const hook = await read('src/lib/hooks/useBulkIssueActions.js');
+  assert.match(hook, /setProgress\(\{ action, done: 0, total: issueIds\.length \}\)/);
+  assert.match(hook, /finally \{\s*setProgress\(null\);/);
+  assert.match(hook, /bulkProgress: progress/);
+
+  const bar = await read('src/components/ui/TaskManagement/BulkActionBar.jsx');
+  assert.match(bar, /ui-bulk-actions__spinner/);
+  assert.match(bar, /progress\.done/);
 });
 
 test('client batches a large select-all and rolls back only failed ids', async () => {

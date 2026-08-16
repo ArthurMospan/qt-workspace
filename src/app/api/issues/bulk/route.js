@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { POST as createIssue } from '../route';
 import { DELETE as deleteIssue } from '../[issueId]/route';
 import { PATCH as transitionIssueStatus } from '../[issueId]/status/route';
-import { POST as createNotification } from '../../notifications/route';
+import { deliverBulkNotifications } from '@/lib/server/bulkNotifications';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
@@ -147,7 +147,13 @@ function updateForAction({ actionId, value, issue, workflow, timeZone }) {
   }
 }
 
-async function notifyForAction({ request, issue, nextIssue, actionId, organizationId, actorId }) {
+/**
+ * What one task has to say, or `null` when it has nothing. Nothing is sent from
+ * here: the notices are collected across the whole operation and delivered once
+ * at the end, because a per-task send meant a per-task email and a per-task
+ * Telegram round-trip — the whole reason a large selection took minutes.
+ */
+function noticeForAction({ issue, nextIssue, actionId, organizationId, actorId }) {
   let userIds = [];
   let type = '';
   let title = '';
@@ -161,23 +167,17 @@ async function notifyForAction({ request, issue, nextIssue, actionId, organizati
     type = 'assigned';
     title = `${issue.issueKey || 'Задача'}: вас призначено відповідальним`;
   }
-  if (!userIds.length) return;
-  const notificationRequest = jsonRequest(
-    new URL('/api/notifications', request.url),
-    request,
-    'POST',
-    {
-      userIds,
-      type,
-      title,
-      body: issue.title || issue.issueKey || 'Завдання',
-      link: issuePath(issue, issue.projectId),
-      issueId: issue.id,
-      projectId: issue.projectId,
-      organizationId,
-    },
-  );
-  await createNotification(notificationRequest).catch(() => null);
+  if (!userIds.length) return null;
+  return {
+    userIds,
+    type,
+    title,
+    body: issue.title || issue.issueKey || 'Завдання',
+    link: issuePath(issue, issue.projectId),
+    issueId: issue.id,
+    projectId: issue.projectId,
+    organizationId,
+  };
 }
 
 async function inChunks(items, worker) {
@@ -284,8 +284,17 @@ export async function POST(request) {
           if (!requestedStatus) throw new Error(`У проєкті «${project.name || project.id}» немає доступного статусу цієї категорії`);
           const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}/status`, request.url), request, 'PATCH', { status: requestedStatus });
           await responseResult(await transitionIssueStatus(internal, { params: Promise.resolve({ issueId: issue.id }) }));
-          await notifyForAction({ request, issue, nextIssue: { ...issue, status: requestedStatus, columnId: requestedStatus }, actionId, organizationId, actorId: authorization.user.uid });
-          return { id: issue.id, patch: { status: requestedStatus, columnId: requestedStatus } };
+          return {
+            id: issue.id,
+            patch: { status: requestedStatus, columnId: requestedStatus },
+            notice: noticeForAction({
+              issue,
+              nextIssue: { ...issue, status: requestedStatus, columnId: requestedStatus },
+              actionId,
+              organizationId,
+              actorId: authorization.user.uid,
+            }),
+          };
         }
 
         const normalizedValue = action.value === 'memberIds'
@@ -293,8 +302,6 @@ export async function POST(request) {
           : body.value;
         const issueRef = db.collection('issues').doc(issue.id);
         const projectRef = db.collection('projects').doc(issue.projectId);
-        const workflowRef = db.collection('organizations').doc(organizationId)
-          .collection('settings').doc('workflow');
         const sprintRef = actionId === 'sprint'
           ? db.collection('sprints').doc(body.value)
           : null;
@@ -303,7 +310,6 @@ export async function POST(request) {
         await db.runTransaction(async transaction => {
           const freshSnap = await transaction.get(issueRef);
           const freshProjectSnap = await transaction.get(projectRef);
-          const freshWorkflowSnap = await transaction.get(workflowRef);
           const freshSprintSnap = sprintRef ? await transaction.get(sprintRef) : null;
           if (!freshSnap.exists) throw new Error('Завдання більше не існує');
           const fresh = { id: freshSnap.id, ...freshSnap.data() };
@@ -318,8 +324,12 @@ export async function POST(request) {
             || freshSprintSnap.data().organizationId !== organizationId
             || freshSprintSnap.data().status === 'completed'
           )) throw new Error('Спринт не належить організації або вже завершений');
-          const freshWorkflow = freshWorkflowSnap.exists ? freshWorkflowSnap.data() : {};
-          patch = updateForAction({ actionId, value: normalizedValue, issue: fresh, workflow: freshWorkflow, timeZone });
+          // The workflow is one document shared by every task in the operation
+          // and it is only read to validate an id against it. Reading it inside
+          // each transaction meant fifty reads of the same document and fifty
+          // transactions that a single unrelated workflow edit could abort. It
+          // is read once, above, with the rest of the operation's context.
+          patch = updateForAction({ actionId, value: normalizedValue, issue: fresh, workflow, timeZone });
           freshIssue = fresh;
           const now = FieldValue.serverTimestamp();
           transaction.update(issueRef, {
@@ -331,7 +341,12 @@ export async function POST(request) {
             lastActivityActorName: authorization.user.name || authorization.user.email || '',
             lastActivityActorAvatar: authorization.user.picture || null,
           });
-          transaction.update(projectRef, { updatedAt: now });
+          // The project's `updatedAt` is deliberately NOT written here. Every
+          // task in a selection usually belongs to the same project, so this
+          // line made eight concurrent transactions all write the same document
+          // — they conflicted, retried with backoff, and serialised the whole
+          // operation behind one hot row. It is written once per project after
+          // the loop instead, which is the same fact stated once.
           transaction.create(issueRef.collection('audit').doc(), {
             userId: authorization.user.uid,
             userName: authorization.user.name || authorization.user.email || '',
@@ -341,8 +356,17 @@ export async function POST(request) {
             createdAt: now,
           });
         });
-        await notifyForAction({ request, issue: freshIssue, nextIssue: { ...freshIssue, ...patch }, actionId, organizationId, actorId: authorization.user.uid });
-        return { id: issue.id, patch };
+        return {
+          id: issue.id,
+          patch,
+          notice: noticeForAction({
+            issue: freshIssue,
+            nextIssue: { ...freshIssue, ...patch },
+            actionId,
+            organizationId,
+            actorId: authorization.user.uid,
+          }),
+        };
       } catch (error) {
         return { id: issue.id, error: String(error?.message || error || 'Невідома помилка') };
       }
@@ -350,9 +374,42 @@ export async function POST(request) {
 
     const updated = results.filter(result => !result.error);
     const failed = results.filter(result => result.error).map(result => ({ id: result.id, reason: result.error }));
+
+    // One touch per project the operation actually changed, not one per task.
+    const touchedProjectIds = [...new Set(
+      updated
+        .map(result => issues.find(issue => issue.id === result.id)?.projectId)
+        .filter(Boolean),
+    )];
+    if (touchedProjectIds.length) {
+      const touch = db.batch();
+      for (const id of touchedProjectIds) {
+        touch.update(db.collection('projects').doc(id), { updatedAt: FieldValue.serverTimestamp() });
+      }
+      await touch.commit().catch(error => console.warn('[issue-bulk] project touch failed:', error.message));
+    }
+
+    // One delivery pass for the whole operation: a row in the bell per task, a
+    // single digest per person on email and Telegram.
+    const notices = updated.map(result => result.notice).filter(Boolean);
+    if (notices.length) {
+      await deliverBulkNotifications({
+        organizationId,
+        actor: {
+          uid: authorization.user.uid,
+          name: authorization.user.name || authorization.user.email || '',
+          avatar: authorization.user.picture || '',
+        },
+        events: notices,
+        digestTitle: actionId === 'status' ? 'Змінено статус задач' : 'Вас призначено відповідальним',
+      }).catch(error => console.warn('[issue-bulk] notification delivery failed:', error.message));
+    }
+
     return NextResponse.json({
       requested: issueIds.length,
-      updated,
+      // `notice` is server-side routing data — it names the recipients of the
+      // notification — and has no business travelling back to the browser.
+      updated: updated.map(({ notice, ...result }) => result),
       failed,
       summary: `Оновлено ${updated.length} із ${issueIds.length}`,
     });

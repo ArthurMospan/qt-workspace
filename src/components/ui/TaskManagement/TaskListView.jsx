@@ -37,6 +37,7 @@ import { compareIssues } from '@/lib/utils/optimistic.mjs';
  * @param {boolean} props.showProjectName Whether each row names its project — true only on cross-project lists.
  * @param {string} props.activeTimerIssueId The task whose timer is running, if any.
  * @param {(action: string, value: unknown, issues: object[]) => Promise<unknown>} props.onBulkUpdate Applies one bulk action to the selected rows.
+ * @param {{done: number, total: number}} props.bulkProgress How far the running bulk action has got, for the toolbar to report.
  * @param {boolean} props.canArchive Whether the current role may archive selected tasks.
  * @param {string} props.selectionScopeKey Clears selection when a route or filter scope changes.
  * @param {string} props.emptyTitle Headline of the empty state.
@@ -58,6 +59,7 @@ export default function TaskListView({
   hiddenGroupIds = [],
   activeTimerIssueId,
   onBulkUpdate,
+  bulkProgress = null,
   canArchive = false,
   selectionScopeKey = '',
   emptyTitle = 'Завдань не знайдено',
@@ -245,6 +247,7 @@ export default function TaskListView({
       })}
       <BulkActionBar
         count={onBulkUpdate ? activeSelectedIssueIds.size : 0}
+        progress={bulkProgress}
         statusOptions={groups.map(group => ({
           value: group.id,
           label: group.label,

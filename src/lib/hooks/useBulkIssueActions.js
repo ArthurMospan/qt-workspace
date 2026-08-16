@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { bulkIssuesViaApi } from '@/lib/services/issues';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { optimisticBulkPatches } from '@/lib/bulk/issueBulkOptimistic.mjs';
@@ -12,6 +12,32 @@ function batches(values, size) {
     result.push(values.slice(offset, offset + size));
   }
   return result;
+}
+
+// How many server-sized batches are in flight at once. Not unbounded: the
+// endpoint rate-limits a user to 20 bulk requests a minute, and a selection of
+// a thousand tasks would otherwise open twenty connections in one breath and
+// spend the whole allowance before the first reply. Three is enough to hide the
+// round-trip while leaving the limit room to breathe.
+const BATCH_CONCURRENCY = 3;
+
+/**
+ * Runs the batches with a bounded number in flight, calling `onSettled` after
+ * each one so the caller can count what has already landed. Results come back
+ * in the order the batches were sent, not the order they finished.
+ */
+async function inFlight(items, limit, worker, onSettled) {
+  const results = new Array(items.length);
+  let next = 0;
+  const runner = async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await worker(items[index]);
+      onSettled?.(items[index]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runner));
+  return results;
 }
 
 function resultMessage(result, selectedIssues, action) {
@@ -40,6 +66,9 @@ export function useBulkIssueActions({
   resolveStatusId,
 }) {
   const [optimisticIssues, applyPatch, revertPatch] = useOptimisticPatch(issues);
+  // `null` when nothing is running. The bar reads this to say how far along a
+  // long selection is instead of going silently dead for minutes.
+  const [progress, setProgress] = useState(null);
   const visibleIssues = useMemo(
     () => optimisticIssues.filter(issue => !issue._bulkArchived),
     [optimisticIssues],
@@ -51,26 +80,38 @@ export function useBulkIssueActions({
     const issueIds = scopedIssues.map(issue => issue.id);
     const optimistic = optimisticBulkPatches(scopedIssues, action, value, resolveStatusId);
     applyPatch(optimistic);
+    setProgress({ action, done: 0, total: issueIds.length });
 
     try {
       // The endpoint is deliberately bounded. A user-facing «select all» must
       // still mean all, so larger selections are sent as safe server-sized
       // batches and merged into one partial-result contract.
       const result = { requested: issueIds.length, updated: [], failed: [] };
-      for (const issueIdBatch of batches(issueIds, MAX_BULK_ISSUES)) {
-        try {
-          const batch = await bulkIssuesViaApi({
-            organizationId,
-            issueIds: issueIdBatch,
-            action,
-            value,
-          });
-          result.updated.push(...(batch.updated || []));
-          result.failed.push(...(batch.failed || []));
-        } catch (error) {
-          const reason = error?.message || 'Не вдалося виконати масову дію';
-          result.failed.push(...issueIdBatch.map(id => ({ id, reason })));
-        }
+      const sent = batches(issueIds, MAX_BULK_ISSUES);
+      const outcomes = await inFlight(
+        sent,
+        BATCH_CONCURRENCY,
+        async issueIdBatch => {
+          try {
+            const batch = await bulkIssuesViaApi({
+              organizationId,
+              issueIds: issueIdBatch,
+              action,
+              value,
+            });
+            return { updated: batch.updated || [], failed: batch.failed || [] };
+          } catch (error) {
+            const reason = error?.message || 'Не вдалося виконати масову дію';
+            return { updated: [], failed: issueIdBatch.map(id => ({ id, reason })) };
+          }
+        },
+        issueIdBatch => setProgress(current => (current
+          ? { ...current, done: current.done + issueIdBatch.length }
+          : current)),
+      );
+      for (const outcome of outcomes) {
+        result.updated.push(...outcome.updated);
+        result.failed.push(...outcome.failed);
       }
       const failedIds = (result.failed || []).map(item => item.id);
       if (failedIds.length) revertPatch(failedIds);
@@ -92,10 +133,12 @@ export function useBulkIssueActions({
         updated: [],
         failed: issueIds.map(id => ({ id, reason: error?.message || 'Не вдалося виконати масову дію' })),
       };
+    } finally {
+      setProgress(null);
     }
   }, [applyPatch, organizationId, resolveStatusId, revertPatch, showToast]);
 
-  return { issues: visibleIssues, applyBulkAction };
+  return { issues: visibleIssues, applyBulkAction, bulkProgress: progress };
 }
 
 export default useBulkIssueActions;

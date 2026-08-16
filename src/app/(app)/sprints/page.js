@@ -258,7 +258,7 @@ export default function GlobalSprintsPage() {
       hiddenStatusIds: project?.hiddenColumns || [],
     });
   }, [projects, statuses]);
-  const { issues, applyBulkAction } = useBulkIssueActions({
+  const { issues, applyBulkAction, bulkProgress } = useBulkIssueActions({
     issues: dndIssues,
     organizationId: activeOrgId,
     showToast,
@@ -855,6 +855,7 @@ export default function GlobalSprintsPage() {
 
       <BulkActionBar
         count={activeSelectedIssueIds.size}
+        progress={bulkProgress}
         statusOptions={categoryColumns.map(category => ({
           value: category.id,
           label: category.label,

@@ -2722,7 +2722,7 @@
             "src/app/(app)/chat/page.js:1037",
             "src/app/(app)/chat/page.js:1045",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
@@ -2954,7 +2954,7 @@
             "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:250",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:587",
             "src/app/(app)/page.js:607",
@@ -3122,7 +3122,7 @@
             "src/app/(app)/layout.js:116",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/my/page.js:310",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
@@ -3336,7 +3336,7 @@
             "src/app/(app)/layout.js:116",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/my/page.js:310",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
@@ -3540,7 +3540,7 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/layout.js:116",
             "src/app/(app)/my/page.js:310",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
@@ -3773,7 +3773,7 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/my/page.js:310",
-            "src/app/(app)/my/page.js:438",
+            "src/app/(app)/my/page.js:439",
             "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
@@ -5435,8 +5435,8 @@
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:325",
-            "src/components/workspace/IssueCard.jsx:381",
+            "src/components/workspace/IssueCard.jsx:327",
+            "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/WorkloadTab.jsx:118",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:368",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816"
@@ -5468,7 +5468,7 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/IssueCard.jsx:299"
+            "src/components/workspace/IssueCard.jsx:301"
           ]
         },
         "ink-subtle": {
@@ -5541,7 +5541,7 @@
             "/team"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:311",
+            "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueDetail.jsx:1157",
             "src/components/workspace/WorkloadTab.jsx:112"
           ]
@@ -5632,7 +5632,7 @@
             "src/components/workspace/AgileBoard.jsx:733",
             "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:276",
-            "src/components/workspace/IssueCard.jsx:381",
+            "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
             "src/components/workspace/WorkloadTab.jsx:118",
@@ -5665,9 +5665,9 @@
             "src/components/workspace/BillingTab.jsx:249",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/IssueDetail.jsx:1157"
           ]
         },
@@ -5733,9 +5733,9 @@
             "src/components/WorkspaceInfoCenter.jsx:110",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueCard.jsx:325"
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327"
           ]
         },
         "(default)": {
@@ -5774,7 +5774,7 @@
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:381",
+            "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/IssueDetail.jsx:1157",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/WorkloadTab.jsx:112",
@@ -5832,10 +5832,10 @@
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueCard.jsx:325",
-            "src/components/workspace/IssueCard.jsx:381",
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327",
+            "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/IssueDetail.jsx:1157",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/WorkloadTab.jsx:112",
@@ -5917,9 +5917,9 @@
             "src/components/workspace/BillingTab.jsx:249",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/IssueDetail.jsx:1157",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/WorkloadTab.jsx:112",
@@ -5954,7 +5954,7 @@
           "files": [
             "src/app/(app)/page.js:210",
             "src/components/workspace/BillingTab.jsx:276",
-            "src/components/workspace/IssueCard.jsx:381"
+            "src/components/workspace/IssueCard.jsx:383"
           ]
         }
       },
@@ -5998,7 +5998,7 @@
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
-            "src/components/workspace/IssueCard.jsx:381",
+            "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/IssueDetail.jsx:1157",
             "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
@@ -6033,9 +6033,9 @@
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:110",
             "src/components/migrations/DataMigrationSettings.jsx:114",
-            "src/components/workspace/IssueCard.jsx:299",
-            "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueCard.jsx:325",
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1369"
@@ -6092,7 +6092,7 @@
           "files": [
             "src/app/(app)/page.js:430",
             "src/components/workspace/AnalyticsTab.jsx:348",
-            "src/components/workspace/IssueCard.jsx:373",
+            "src/components/workspace/IssueCard.jsx:375",
             "src/components/workspace/TimesheetTab.jsx:213",
             "src/components/workspace/TimesheetTab.jsx:264",
             "src/components/workspace/TimesheetTab.jsx:605"
@@ -6501,7 +6501,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:429",
+            "src/app/(app)/my/page.js:430",
             "src/app/(app)/page.js:578",
             "src/app/(app)/sprints/page.js:128",
             "src/app/(app)/sprints/page.js:177",
@@ -6575,7 +6575,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:429",
+            "src/app/(app)/my/page.js:430",
             "src/components/UserStatusSetter.jsx:68"
           ]
         },
@@ -6659,7 +6659,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:429",
+            "src/app/(app)/my/page.js:430",
             "src/components/WorkspaceInfoCenter.jsx:264",
             "src/components/workspace/IssueDetail.jsx:1475",
             "src/components/workspace/calendar/CalendarEventPage.jsx:201"
@@ -6714,7 +6714,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:429"
+            "src/app/(app)/my/page.js:430"
           ]
         },
         "dialog": {
@@ -7674,7 +7674,7 @@
             "/team"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:335"
+            "src/components/workspace/IssueCard.jsx:337"
           ]
         },
         "(default)": {
@@ -8102,7 +8102,7 @@
     "Тип файлу": "<div className=\"flex flex-wrap gap-3\">\n  {ATTACHMENT_KINDS.map(kind => (\n    <span key={kind} className=\"flex w-[86px] flex-col items-center gap-1.5 text-center\">\n      <FileThumb attachment={{ name: KIND_SAMPLES[kind] }} />\n      <span className=\"text-[10px] font-semibold text-muted\">{attachmentKindLabel(kind)}</span>\n    </span>\n  ))}\n</div>",
     "Аудіо, яке чути на місці": "<div data-ui-surface=\"compact-bordered-card\" data-ui-padding=\"sm\" className=\"ui-surface max-w-[380px]\">\n  <AudioPlayer title=\"дзвінок-12-05.m4a\" meta=\"Аудіо · 4,2 МБ\" />\n</div>",
     "Вкладення завдання": "<div className=\"flex flex-col gap-1.5\">\n  <AttachmentRow\n    attachment={demoAttachment}\n    onOpen={() => setViewerOpen(true)}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n  <AttachmentRow\n    attachment={{ id: 'a2', name: 'кошторис.xlsx', size: 41200 }}\n    onOpen={() => setViewerOpen(true)}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n  <AttachmentRow\n    attachment={{ id: 'a3', name: 'дзвінок-12-05.m4a', size: 4404019 }}\n    onOpen={() => {}}\n    onDelete={() => {}}\n    onDownload={() => {}}\n  />\n</div>",
-    "Масові дії із завданнями": "<div className=\"relative min-h-[160px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute\">\n  <BulkActionBar\n    count={4}\n    statusOptions={[{ value: 'todo', label: 'До виконання', dotColor: '#6b7280' }]}\n    memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}\n    priorityOptions={[{ value: 'medium', label: 'Середній' }]}\n    labelOptions={[{ value: 'design', label: 'Дизайн', dotColor: '#8b5cf6' }]}\n    typeOptions={[{ value: 'task', label: 'Завдання' }]}\n    sprintOptions={[{ value: 'sprint-1', label: 'Спринт 12' }]}\n    canArchive\n    onApply={() => {}}\n    onClear={() => {}}\n  />\n</div>",
+    "Масові дії із завданнями": "<div className=\"flex flex-col gap-3\">\n  <div className=\"relative min-h-[160px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute\">\n    <BulkActionBar\n      count={4}\n      statusOptions={[{ value: 'todo', label: 'До виконання', dotColor: '#6b7280' }]}\n      memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}\n      priorityOptions={[{ value: 'medium', label: 'Середній' }]}\n      labelOptions={[{ value: 'design', label: 'Дизайн', dotColor: '#8b5cf6' }]}\n      typeOptions={[{ value: 'task', label: 'Завдання' }]}\n      sprintOptions={[{ value: 'sprint-1', label: 'Спринт 12' }]}\n      canArchive\n      onApply={() => {}}\n      onClear={() => {}}\n    />\n  </div>\n  {/* Той самий компонент під час виконання. `progress` — це і є ознака\n      «зараз щось іде»: із ним панель показує лічильник і не приймає\n      нових команд, тому стан малюється тут статично, без таймера. */}\n  <div className=\"relative min-h-[160px] overflow-hidden rounded-[12px] bg-canvas [&_.ui-bulk-actions]:!absolute\">\n    <BulkActionBar\n      count={320}\n      progress={{ action: 'status', done: 150, total: 320 }}\n      statusOptions={[{ value: 'todo', label: 'До виконання', dotColor: '#6b7280' }]}\n      memberOptions={[{ value: 'kit-arthur', label: 'Артур Моспан', user: demoUser }]}\n      priorityOptions={[{ value: 'medium', label: 'Середній' }]}\n      labelOptions={[{ value: 'design', label: 'Дизайн', dotColor: '#8b5cf6' }]}\n      typeOptions={[{ value: 'task', label: 'Завдання' }]}\n      sprintOptions={[{ value: 'sprint-1', label: 'Спринт 12' }]}\n      canArchive\n      onApply={() => {}}\n      onClear={() => {}}\n    />\n  </div>\n</div>",
     "Перегляд вкладення": "<Button style=\"secondary\" size=\"sm\" onClick={() => setViewerOpen(true)}>Відкрити перегляд</Button>\n{viewerOpen && (\n  <AttachmentViewer\n    attachment={{ name: 'brief.pdf', url: 'data:application/pdf;base64,', type: 'application/pdf' }}\n    onClose={() => setViewerOpen(false)}\n  />\n)}",
     "Звʼязок між задачами": "<div className=\"flex flex-col gap-[6px]\">\n  <IssueLinkRow label=\"Блокує\" onRemove={() => {}}>\n    <span className=\"text-[13px] font-semibold text-ink truncate\">\n      <span className=\"text-muted font-medium mr-1 uppercase\">QT-128</span>\n      Перевірити копірайт другого екрана\n    </span>\n  </IssueLinkRow>\n  <IssueLinkRow label=\"Повʼязано\" requiresReview onRemove={() => {}}>\n    <span className=\"text-[13px] font-semibold text-ink truncate\">\n      <span className=\"text-muted font-medium mr-1 uppercase\">QT-77</span>\n      Старий імпорт із YouTrack\n    </span>\n  </IssueLinkRow>\n</div>",
     "Чіпи вибору": "<div className=\"flex flex-wrap items-center gap-[8px]\">\n  <SelectableChip shape=\"person\" selected={pickedAssignee} onClick={() => setPickedAssignee(v => !v)}>\n    <span aria-hidden=\"true\"><UserAvatar user={demoUser} size=\"xs\" /></span>\n    <span className=\"max-w-[180px] truncate\">Артур Моспан</span>\n    {pickedAssignee && <Check size={12} className=\"shrink-0\" />}\n  </SelectableChip>\n  <SelectableChip shape=\"person\" selected={false} onClick={() => {}}>\n    <span aria-hidden=\"true\"><UserAvatar user={{ name: 'Олена Коваль' }} size=\"xs\" /></span>\n    <span className=\"max-w-[180px] truncate\">Олена Коваль</span>\n  </SelectableChip>\n  <SelectableChip shape=\"label\" selected={pickedLabel} tone=\"#2563eb\" onClick={() => setPickedLabel(v => !v)}>\n    <TagIcon size={10} className=\"shrink-0 opacity-70\" />\n    дизайн\n  </SelectableChip>\n  <SelectableChip shape=\"label\" selected={false} onClick={() => {}}>\n    <TagIcon size={10} className=\"shrink-0 opacity-70\" />\n    беклог\n  </SelectableChip>\n</div>",

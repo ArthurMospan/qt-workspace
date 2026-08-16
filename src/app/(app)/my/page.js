@@ -83,7 +83,7 @@ export default function MyTasksPage() {
       hiddenStatusIds: issueProject?.hiddenColumns || [],
     });
   }, [projects, statuses]);
-  const { issues: tasks, applyBulkAction } = useBulkIssueActions({
+  const { issues: tasks, applyBulkAction, bulkProgress } = useBulkIssueActions({
     issues: sourceTasks,
     organizationId: activeOrgId,
     showToast,
@@ -373,6 +373,7 @@ export default function MyTasksPage() {
             compareIssueCards={compareTaskCards}
             hiddenGroupIds={hiddenCategories}
             onBulkUpdate={handleBulkUpdate}
+            bulkProgress={bulkProgress}
             canArchive={can(orgRole, 'delete:issue')}
             selectionScopeKey={selectionScopeKey}
           />

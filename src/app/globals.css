@@ -1038,11 +1038,31 @@
     transform: translateX(-50%);
   }
   .ui-bulk-actions__count {
+    display: inline-flex;
     flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
     padding-inline: 8px;
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+  }
+  /* The bar's own spinner. It is drawn on the dark bar, so it borrows the
+     bar's light rather than the ink the rest of the product spins in. */
+  @keyframes qt-spin {
+    to { transform: rotate(360deg); }
+  }
+  .ui-bulk-actions__spinner {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    border: 2px solid rgb(255 255 255 / 25%);
+    border-top-color: white;
+    border-radius: 9999px;
+    animation: qt-spin 720ms linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-bulk-actions__spinner { animation-duration: 2s; }
   }
   .ui-bulk-actions__divider {
     width: 1px;
@@ -1057,10 +1077,18 @@
     flex-shrink: 0;
     max-width: 100%;
   }
-  .ui-bulk-actions__control > button,
-  .ui-bulk-actions[data-ui-composition='bulk-actions'] .ui-bulk-actions__trigger {
+  /* Width belongs to the pickers alone. This used to sit on the shared
+     `__trigger` class as well, and the overflow kebab wears that class only for
+     its colours — so `width: auto` beat its `w-[28px]` and collapsed a square
+     button onto its 14px glyph with `p-0` around it. A sliver of a button
+     between two full-width pickers. The pickers keep `auto`; the kebab keeps
+     the square every other icon button in the product has. */
+  .ui-bulk-actions__control > button {
     width: auto;
     min-width: 0;
+  }
+  .ui-bulk-actions__control > button,
+  .ui-bulk-actions[data-ui-composition='bulk-actions'] .ui-bulk-actions__trigger {
     background: rgb(255 255 255 / 10%);
     border: 1px solid rgb(255 255 255 / 14%);
     color: white;

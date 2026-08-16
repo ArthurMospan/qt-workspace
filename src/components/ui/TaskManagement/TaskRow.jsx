@@ -126,7 +126,10 @@ export default function TaskRow({
   ).length > 0;
 
   const handleRowClick = (e) => {
-    if (selectionActive && onSelect) {
+    // Shift reaches the selection even before there is one: it is how a list
+    // starts selecting without going through the kebab. Without the shift the
+    // row keeps opening the task, exactly as before.
+    if (onSelect && (selectionActive || e.shiftKey)) {
       e.preventDefault();
       onSelect(task.id, { shiftKey: e.shiftKey });
       return;

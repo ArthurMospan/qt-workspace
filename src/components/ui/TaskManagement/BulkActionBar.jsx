@@ -43,10 +43,12 @@ function encodedOptions(options, operations) {
  * @param {boolean} props.canArchive Whether the current role may archive tasks.
  * @param {string} props.archiveDisabledReason Explanation shown when archive is unavailable.
  * @param {(action: string, value?: unknown) => Promise<unknown>} props.onApply Runs one registry action for the selection.
+ * @param {{done: number, total: number}} props.progress How far the running operation has got, when the caller can tell.
  * @param {() => void} props.onClear Leaves selection mode.
  */
 export default function BulkActionBar({
   count,
+  progress = null,
   statusOptions = [],
   memberOptions = [],
   priorityOptions = [],
@@ -63,8 +65,13 @@ export default function BulkActionBar({
 
   if (!count) return null;
 
+  // Running means either: this bar started the action, or the caller is still
+  // reporting progress for one. Both are true at once in the workspace; the
+  // second alone is what lets the catalogue draw the running state at all.
+  const busy = Boolean(busyAction) || Boolean(progress);
+
   const apply = async (action, value) => {
-    if (busyAction) return;
+    if (busy) return;
     setBusyAction(action);
     try {
       await onApply?.(action, value);
@@ -134,7 +141,21 @@ export default function BulkActionBar({
       role="toolbar"
       aria-label={`Дії з вибраними завданнями: ${count}`}
     >
-      <strong className="ui-bulk-actions__count" aria-live="polite">Обрано: {count}</strong>
+      {/* While an action runs the bar said nothing at all: every control simply
+          went dead and stayed dead — for minutes on a large selection, with no
+          way to tell a slow save from a broken one. The count is the natural
+          place for that news, because it is already the sentence the bar is
+          making about the selection. */}
+      <strong className="ui-bulk-actions__count" aria-live="polite">
+        {busy ? (
+          <>
+            <span className="ui-bulk-actions__spinner" aria-hidden="true" />
+            {progress && progress.total
+              ? `Виконуємо: ${progress.done} із ${progress.total}`
+              : `Виконуємо для ${count}…`}
+          </>
+        ) : `Обрано: ${count}`}
+      </strong>
       <span className="ui-bulk-actions__divider" aria-hidden="true" />
       <Select
         value=""
@@ -145,7 +166,7 @@ export default function BulkActionBar({
         className="ui-bulk-actions__control"
         compact
         size="sm"
-        disabled={Boolean(busyAction)}
+        disabled={busy}
         ariaLabel="Змінити статус вибраних завдань"
         buttonClassName={triggerClass}
       />
@@ -163,7 +184,7 @@ export default function BulkActionBar({
         className="ui-bulk-actions__control"
         compact
         size="sm"
-        disabled={Boolean(busyAction)}
+        disabled={busy}
         ariaLabel="Змінити відповідальних вибраних завдань"
         buttonClassName={triggerClass}
       />
@@ -178,7 +199,7 @@ export default function BulkActionBar({
         className="ui-bulk-actions__control"
         compact
         size="sm"
-        disabled={Boolean(busyAction)}
+        disabled={busy}
         ariaLabel="Змінити пріоритет вибраних завдань"
         buttonClassName={triggerClass}
       />
@@ -197,7 +218,7 @@ export default function BulkActionBar({
           className="ui-bulk-actions__control"
           compact
           size="sm"
-          disabled={Boolean(busyAction)}
+          disabled={busy}
           ariaLabel="Змінити мітки вибраних завдань"
           buttonClassName={triggerClass}
         />
@@ -212,7 +233,7 @@ export default function BulkActionBar({
           className="ui-bulk-actions__control"
           compact
           size="sm"
-          disabled={Boolean(busyAction)}
+          disabled={busy}
           ariaLabel="Змінити тип вибраних завдань"
           buttonClassName={triggerClass}
         />
@@ -229,7 +250,7 @@ export default function BulkActionBar({
           className="ui-bulk-actions__control"
           compact
           size="sm"
-          disabled={Boolean(busyAction)}
+          disabled={busy}
           ariaLabel="Перемістити вибрані завдання у спринт"
           buttonClassName={triggerClass}
         />
@@ -240,7 +261,7 @@ export default function BulkActionBar({
             style="secondary"
             size="icon-sm"
             icon={MoreHorizontal}
-            disabled={Boolean(busyAction)}
+            disabled={busy}
             aria-label="Інші масові дії"
             title="Інші масові дії"
             className="ui-bulk-actions__trigger"
@@ -268,7 +289,7 @@ export default function BulkActionBar({
         size="icon-sm"
         icon={X}
         onClick={onClear}
-        disabled={Boolean(busyAction)}
+        disabled={busy}
         aria-label="Зняти вибір"
         title="Зняти вибір"
         className="!text-white hover:!bg-white/15"

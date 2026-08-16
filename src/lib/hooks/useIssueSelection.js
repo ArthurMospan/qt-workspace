@@ -38,9 +38,14 @@ export function useIssueSelection({ issues = [], order = [], scopeKey = '' }) {
   }, [active, clear]);
 
   const toggle = useCallback((issueId, { shiftKey = false } = {}) => {
-    // Selection mode is entered only from a column/list kebab. A card click or
-    // hover cannot create it by accident.
-    if (!active) return;
+    // A plain click never creates a selection — that is what keeps opening a
+    // task from turning into selecting one by accident. Shift+click does, and
+    // has to: it was the documented way to select several tasks and it did
+    // nothing at all, because the only door into selection mode was the list
+    // kebab and this guard closed the other one. Holding shift is not an
+    // accident, so the first shift+click starts the selection with one task and
+    // the next one extends the range from it.
+    if (!active && !shiftKey) return;
     setSelectedIds(current => toggleIssueId(current, issueId, order, anchorId, shiftKey));
     if (!shiftKey || order.indexOf(anchorId) < 0) setAnchorId(issueId);
   }, [active, anchorId, order]);

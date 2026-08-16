@@ -121,7 +121,9 @@ test('bulk toolbar remains usable at phone width and opens its confirm flow', as
   await page.locator('select[aria-label="Секція UI Kit"]').selectOption('task-elements');
   await expect(scroller).toHaveAttribute('data-kit-section', 'task-elements');
 
-  const toolbar = page.getByRole('toolbar', { name: /Дії з вибраними завданнями/ });
+  // The catalogue now shows the toolbar twice — idle, and mid-operation with
+  // every control disabled. This flow is about the idle one.
+  const toolbar = page.getByRole('toolbar', { name: 'Дії з вибраними завданнями: 4' });
   await expect(toolbar).toBeVisible();
   expect(await toolbar.evaluate(element => element.scrollWidth >= element.clientWidth)).toBe(true);
   // On a phone the less-frequent actions are intentionally reachable by
@@ -129,7 +131,7 @@ test('bulk toolbar remains usable at phone width and opens its confirm flow', as
   // clipped, off-screen coordinate in the catalogue preview.
   await toolbar.scrollIntoViewIfNeeded();
   await toolbar.evaluate(element => { element.scrollLeft = element.scrollWidth; });
-  const moreActions = page.getByRole('button', { name: 'Інші масові дії' });
+  const moreActions = toolbar.getByRole('button', { name: 'Інші масові дії' });
   await expect(moreActions).toBeInViewport();
   await moreActions.click();
   const deadlineAction = page.getByRole('menuitem', { name: 'Встановити дедлайн' });

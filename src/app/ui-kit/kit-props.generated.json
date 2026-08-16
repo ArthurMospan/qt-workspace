@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 110,
-    "props": 798,
-    "documentedProps": 798,
+    "props": 800,
+    "documentedProps": 800,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -469,6 +469,13 @@
           "type": "object[]",
           "values": [],
           "description": "Configured priorities, including the explicit none option."
+        },
+        {
+          "name": "progress",
+          "default": "null",
+          "type": "{done: number, total: number}",
+          "values": [],
+          "description": "How far the running operation has got, when the caller can tell."
         },
         {
           "name": "sprintOptions",
@@ -5677,6 +5684,13 @@
           "type": "object[]",
           "values": [],
           "description": "Every task in scope, for resolving parents and links."
+        },
+        {
+          "name": "bulkProgress",
+          "default": "null",
+          "type": "{done: number, total: number}",
+          "values": [],
+          "description": "How far the running bulk action has got, for the toolbar to report."
         },
         {
           "name": "canArchive",
