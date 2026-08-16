@@ -11,10 +11,27 @@
 // Only the semantic ones live here. A tick that means "this succeeded" and a
 // tick that means «Мої завдання» are different decisions that happen to look
 // alike, so the first keeps its own icon at its own call site.
-import { Calendar, MessageCircle, SquareCheckBig } from 'lucide-react';
+import { Calendar, CornerDownRight, MessageCircle, SquareCheckBig } from 'lucide-react';
 
 /** «Мої завдання», a task, a task list. A tick in a rounded square. */
 export const TaskIcon = SquareCheckBig;
+
+/**
+ * «Підзавдання для …» — this task hangs under that one. The arrow that turns
+ * down and to the right, on every surface that states the relation.
+ *
+ * It is here for exactly the reason this file exists. The board card drew the
+ * arrow and the task page drew `Layers`, so the same fact about the same task
+ * had two glyphs depending on which screen you read it on. (The card's arrow
+ * was itself once the literal character "↳", which has no consistent metrics —
+ * it sits below the baseline in some fonts and above it in others — so this is
+ * the second time this one relation has needed pinning down.)
+ *
+ * Not `TaskIcon`: that means "a task", and this means "under another task".
+ * The «Підзавдання» section heading, which labels a list of them, keeps
+ * `TaskIcon` — it is naming tasks, not the relation.
+ */
+export const ParentTaskIcon = CornerDownRight;
 
 /** «Календар», a calendar event, a date range. The grid without its dots. */
 export const CalendarIcon = Calendar;

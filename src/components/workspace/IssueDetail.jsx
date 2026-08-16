@@ -50,12 +50,12 @@ import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig
 import useWorkspaceStore       from '@/store/useWorkspaceStore';
 import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
-  AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
+  AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
   Maximize2,
 } from 'lucide-react';
-import { TaskIcon } from '@/lib/design/icons';
+import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { auth, db } from '@/lib/firebase';
@@ -1034,7 +1034,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {parentIssueId && (
               <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
-                <Layers size={12} className="shrink-0" />
+                {/* The same arrow the board card and the list row draw for this
+                    relation. This line used to be `Layers`, so the one fact
+                    "this hangs under that" had two glyphs depending on which
+                    screen you happened to be reading it on. */}
+                <ParentTaskIcon size={12} strokeWidth={2} className="shrink-0" />
                 <span className="shrink-0">Підзавдання для</span>
                 <Link
                   href={issuePath(parentIssue || { id: parentIssueId }, project || projectId)}

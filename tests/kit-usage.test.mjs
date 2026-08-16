@@ -178,7 +178,15 @@ test('the approved follow-up decisions stay encoded in the product', () => {
   // what made it sit crooked against the text beside it.
   assert.match(issueCard, /parentIssue=\{parentIssueId \? \(parentIssue \|\| \{ issueKey: '' \}\) : null\}/);
   const identity = readFileSync(new URL('../src/components/ui/TaskManagement/TaskIdentity.jsx', import.meta.url), 'utf8');
-  assert.match(identity, /<CornerDownRight/);
+  const taskPage = readFileSync(new URL('../src/components/workspace/IssueDetail.jsx', import.meta.url), 'utf8');
+  // One glyph for one relation, and it lives in `design/icons` rather than at
+  // either call site: the board card drew the arrow and the task page drew
+  // `Layers`, so "this hangs under that" looked like two different facts
+  // depending on which screen you read it on.
+  for (const source of [identity, taskPage]) {
+    assert.match(source, /<ParentTaskIcon/);
+  }
+  assert.doesNotMatch(taskPage, /<Layers/);
   // Rendered, not merely mentioned — the component's own comment explains why
   // the character was dropped, so the check is for it appearing in JSX.
   for (const source of [issueCard, taskRow, identity]) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { CornerDownRight } from 'lucide-react';
+import { ParentTaskIcon } from '@/lib/design/icons';
 import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
 
 /**
@@ -64,12 +64,14 @@ export default function TaskIdentity({
           {/* A real icon, drawn on the same grid as every other glyph. This was
               the literal character "↳", which has no consistent metrics: it sits
               below the baseline in some fonts and above it in others, and no
-              font in the stack draws it at the weight of the text beside it. */}
+              font in the stack draws it at the weight of the text beside it.
+              The glyph itself comes from `design/icons`, because the task page
+              states the same relation and was drawing `Layers` for it. */}
           <span
             className="flex min-w-0 items-center gap-[3px] font-mono text-[10px] font-medium tracking-wide text-faint"
             title={parentIssue.title || 'Батьківське завдання'}
           >
-            <CornerDownRight size={11} strokeWidth={2} className="shrink-0" />
+            <ParentTaskIcon size={11} strokeWidth={2} className="shrink-0" />
             <span className="min-w-0 truncate">
               {parentIssue.issueKey || parentIssue.title || 'Батьківське завдання'}
             </span>
