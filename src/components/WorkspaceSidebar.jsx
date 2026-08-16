@@ -251,7 +251,7 @@ export default function WorkspaceSidebar() {
                 onClick={() => setCollapsed(true)}
                 data-ui-control="branding-action"
                 data-ui-action="sidebar-collapse"
-                className="flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] transition-colors"
+                className="flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors"
                 style={{ color: 'var(--sb-muted)' }}
                 onMouseEnter={e => {
                   e.currentTarget.style.backgroundColor = 'var(--sb-hover)';
@@ -275,7 +275,7 @@ export default function WorkspaceSidebar() {
                   aria-label="Розгорнути бічну панель"
                   data-ui-control="branding-action"
                   data-ui-action="sidebar-collapse"
-                  className="flex h-[32px] w-[32px] cursor-pointer items-center justify-center rounded-[8px] transition-colors"
+                  className="flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors"
                   style={{ color: 'var(--sb-muted)' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.backgroundColor = 'var(--sb-hover)';

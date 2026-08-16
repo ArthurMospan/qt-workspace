@@ -64,7 +64,9 @@ test('requested navigation and readability regressions stay fixed', async () => 
   // A bare pseudo-element hit area answered nothing: no hover, no pointer. The
   // collapse and expand controls are 32px buttons that react like buttons.
   assert.doesNotMatch(sidebar, /after:-inset-\[8px\]/);
-  assert.equal((sidebar.match(/h-\[32px\] w-\[32px\] .{0,20}cursor-pointer/g) || []).length, 2);
+  // 36px, not 32: the old pseudo-element inset already gave the glyph a 36px
+  // target, and shrinking it to fit a hover box would undo the enlargement.
+  assert.equal((sidebar.match(/h-\[36px\] w-\[36px\][^"]*cursor-pointer/g) || []).length, 2);
   // The running timer is a quiet capsule in the rail, not a floating card.
   assert.doesNotMatch(sidebar, /shadow-\[0_4px_12px_rgba\(0,0,0,0\.2\)\]/);
   assert.doesNotMatch(help, />\s*Допомога\s*</);
