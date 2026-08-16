@@ -159,7 +159,31 @@ export default function TaskRow({
     >
       {/* Main Row Grid/Flex */}
       <div className="flex items-center justify-between w-full flex-wrap md:flex-nowrap gap-[16px] min-w-0">
-        
+
+        {/* The priority mark leads the row, because the selection checkbox
+            takes its place and a checkbox belongs at the start of a row, not
+            floating in the middle of the badges. The box is always drawn so a
+            task with no priority does not shift the title left. */}
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+          {selectionActive && onSelect ? (
+            <span
+              className="flex h-5 w-5 items-center justify-center"
+              onClick={event => event.stopPropagation()}
+              onMouseDown={event => event.stopPropagation()}
+              onTouchStart={event => event.stopPropagation()}
+            >
+              <Checkbox
+                checked={selected}
+                onChange={() => onSelect(task.id)}
+                size="sm"
+                ariaLabel={`Вибрати завдання ${task.issueKey || task.title}`}
+              />
+            </span>
+          ) : (
+            <PriorityIcon priority={priorityConfig} size="md" />
+          )}
+        </span>
+
         {/* Left Section: Title & ID (2 lines) */}
         <div className="flex flex-col gap-[2px] min-w-0 flex-1">
           {/* Issue Key, Project, Due Date, Subtasks (Top Row) */}
@@ -233,33 +257,12 @@ export default function TaskRow({
         </div>
 
         {/* Right Section: Metadata, Badges, Assignees.
-            Only the two slots that were actually ragged are pinned: the
-            priority mark, which vanished entirely on a task that had none, and
-            the assignee stack, whose width followed the number of faces and
-            dragged every badge left of it along. The badges between them keep
-            their natural widths — giving them a fixed track too made every row
-            without labels open a wide hole in front of the avatars. */}
+            The assignee stack is pinned to a fixed width: it used to follow the
+            number of faces and drag every badge left of it along, which is what
+            made a list of ten read as ten ragged lines. The badges keep their
+            natural widths — giving them a fixed track too opened a wide hole in
+            front of the avatars on every row without labels. */}
         <div className="flex flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] shrink-0 md:flex-nowrap">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-            {selectionActive && onSelect ? (
-              <span
-                className="flex h-5 w-5 items-center justify-center"
-                onClick={event => event.stopPropagation()}
-                onMouseDown={event => event.stopPropagation()}
-                onTouchStart={event => event.stopPropagation()}
-              >
-                <Checkbox
-                  checked={selected}
-                  onChange={() => onSelect(task.id)}
-                  size="sm"
-                  ariaLabel={`Вибрати завдання ${task.issueKey || task.title}`}
-                />
-              </span>
-            ) : (
-              <PriorityIcon priority={priorityConfig} size="md" />
-            )}
-          </span>
-
           {/* Type Badge */}
           <span className="flex min-w-0 shrink-0 items-center">
             {typeObj && (
