@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 220,
+    "usedAndPreviewed": 221,
     "usedWithoutPreview": 0,
-    "declaredUnused": 104
+    "declaredUnused": 103
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -632,12 +632,6 @@
       "component": "ToggleSwitch",
       "prop": "size",
       "value": "lg",
-      "namespace": null
-    },
-    {
-      "component": "ToggleSwitch",
-      "prop": "size",
-      "value": "md",
       "namespace": null
     },
     {
@@ -1259,14 +1253,14 @@
   },
   "usage": {
     "LoadingSpinner.size.md": 16,
-    "Button.size.lg": 26,
+    "Button.size.lg": 27,
     "Button.composition.workspace-guard": 3,
     "Pill.tone.neutral": 16,
     "Pill.size.lg": 9,
     "Pill.shape.badge": 18,
     "Button.size.icon-lg": 8,
     "Button.style.secondary": 62,
-    "Button.style.primary": 41,
+    "Button.style.primary": 42,
     "Select.filterRole.sprint": 2,
     "Select.variant.ghost": 23,
     "Select.filterRole.member": 7,
@@ -1283,9 +1277,9 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 80,
+    "Button.style.ghost": 79,
     "Button.size.icon-sm": 21,
-    "Button.size.sm": 45,
+    "Button.size.sm": 44,
     "Surface.preset.panel": 9,
     "Surface.padding.lg": 5,
     "Surface.composition.chart-panel": 2,
@@ -1335,7 +1329,8 @@
     "Button.size.icon": 18,
     "Label.context.inline": 1,
     "Textarea.composition.settings-note": 1,
-    "ToggleSwitch.size.sm": 8,
+    "ToggleSwitch.size.sm": 6,
+    "ToggleSwitch.size.md": 2,
     "ColorSwatch.size.theme": 1,
     "Input.composition.color-hex": 1,
     "Input.size.md": 4,

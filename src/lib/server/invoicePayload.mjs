@@ -493,7 +493,7 @@ export function validateSourceLessInvoiceIssue({
   if (hasLiveChildren) {
     reject(
       'INVOICE_SUMMARY_ESTIMATE_CONFLICT',
-      'Оцінку основної задачі з підзадачами не можна виставляти окремо',
+      'Оцінку основної задачі з підзавданнями не можна виставляти окремо',
       409,
       { sourceItemIds: [item.itemId] },
     );

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Hash } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import PresenceDot from '@/components/ui/DataDisplay/PresenceDot';
 import Counter from '@/components/ui/DataDisplay/Counter';
 
 // The chat rail: grouped channels and direct messages.
@@ -52,9 +53,7 @@ export default function ChannelRail({ groups = [], activeId, onSelect = () => {}
                       <div className="w-[18px] h-[18px] rounded-full overflow-hidden">
                         <UserAvatar user={item.user || item} size="chat-mention" />
                       </div>
-                      {item.online && (
-                        <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 rounded-full bg-[#10b981] border border-canvas" />
-                      )}
+                      {item.online && <PresenceDot size="xs" collar="canvas" />}
                     </div>
                   ) : (
                     <Hash size={14} className={active ? 'text-ink' : 'text-muted'} />

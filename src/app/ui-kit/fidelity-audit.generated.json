@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 214,
-    "parsedFiles": 214,
+    "productFiles": 215,
+    "parsedFiles": 215,
     "parseErrors": 0,
     "nativeControls": 17,
     "structures": {
@@ -20,7 +20,7 @@
       "shell": 12,
       "other": 1
     },
-    "styledNativeControls": 11,
+    "styledNativeControls": 13,
     "reviewedNativeControls": 3,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 98,
-      "used": 98,
+      "components": 99,
+      "used": 99,
       "unused": 0,
-      "covered": 95,
+      "covered": 96,
       "uncovered": 0,
       "routes": 12,
-      "previews": 127,
+      "previews": 128,
       "internal": 3,
       "unlisted": 0
     },
@@ -236,7 +236,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:105",
+      "location": "src/components/WorkspaceHelpMenu.jsx:104",
       "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
       "text": "QuickTeam",
       "childElements": [
@@ -251,14 +251,14 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:246",
-      "className": "relative mt-1 shrink-0 ml-[8px] transition-colors after:absolute after:-inset-[8px] after:content-['']",
+      "location": "src/components/WorkspaceSidebar.jsx:250",
+      "className": "flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] transition-colors",
       "text": "",
       "childElements": [
         "PanelLeftClose"
       ],
       "ariaLabel": "Згорнути бічну панель",
-      "styled": false,
+      "styled": true,
       "reviewed": "branding-action",
       "resembles": "IconAction",
       "structure": "shell",
@@ -266,14 +266,14 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:260",
-      "className": "flex h-full w-full items-center justify-center transition-colors",
+      "location": "src/components/WorkspaceSidebar.jsx:273",
+      "className": "flex h-[32px] w-[32px] cursor-pointer items-center justify-center rounded-[8px] transition-colors",
       "text": "",
       "childElements": [
         "PanelLeftOpen"
       ],
       "ariaLabel": "Розгорнути бічну панель",
-      "styled": false,
+      "styled": true,
       "reviewed": "branding-action",
       "resembles": "IconAction",
       "structure": "shell",
@@ -281,7 +281,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:311",
+      "location": "src/components/WorkspaceSidebar.jsx:333",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -296,7 +296,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:389",
+      "location": "src/components/WorkspaceSidebar.jsx:411",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -363,17 +363,17 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/WorkspaceSidebar.jsx:246",
+      "location": "src/components/WorkspaceSidebar.jsx:250",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:260",
+      "location": "src/components/WorkspaceSidebar.jsx:273",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:311",
+      "location": "src/components/WorkspaceSidebar.jsx:333",
       "tag": "button",
       "context": "branding-action"
     }
@@ -409,22 +409,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:366",
+      "location": "src/app/(app)/settings/page.js:368",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:386",
+      "location": "src/app/(app)/settings/page.js:388",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:430",
+      "location": "src/app/(app)/settings/page.js:432",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:549",
+      "location": "src/app/(app)/settings/page.js:551",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -489,17 +489,17 @@
       "className": "mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2"
     },
     {
-      "location": "src/components/migrations/DataMigrationSettings.jsx:85",
+      "location": "src/components/migrations/DataMigrationSettings.jsx:90",
       "tag": "div",
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:149",
+      "location": "src/components/profile/ProfileView.jsx:147",
       "tag": "div",
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:356",
+      "location": "src/components/profile/ProfileView.jsx:354",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]"
     },
@@ -514,7 +514,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:604",
+      "location": "src/components/workspace/AgileBoard.jsx:603",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
@@ -554,7 +554,7 @@
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
     {
-      "location": "src/components/workspace/IssueDetail.jsx:1744",
+      "location": "src/components/workspace/IssueDetail.jsx:1745",
       "tag": "div",
       "className": "flex items-center gap-3 px-3 py-[9px] bg-white rounded-[10px]"
     },

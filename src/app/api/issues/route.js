@@ -86,7 +86,7 @@ export async function POST(request) {
     }
     if (Array.isArray(data.subtasks) && data.subtasks.length > 0) {
       return NextResponse.json({
-        error: 'Вкладені пункти треба додавати як чекліст в описі або як окремі підзадачі',
+        error: 'Вкладені пункти треба додавати як чекліст в описі або як окремі підзавдання',
         code: 'LEGACY_SUBTASKS_UNSUPPORTED',
       }, { status: 400 });
     }

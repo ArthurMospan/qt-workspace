@@ -63,7 +63,7 @@ export const HeaderSearch = forwardRef(({
   };
 
   return (
-    <div className={`relative flex h-[36px] min-w-0 w-full max-w-[320px] items-center border-b border-transparent transition-colors focus-within:border-line ${className}`}>
+    <div className={`group/search relative flex h-[36px] min-w-0 w-full max-w-[320px] items-center border-b border-transparent transition-colors focus-within:border-line ${className}`}>
       <Search size={14} className="text-muted absolute left-0 pointer-events-none" />
       <input
         ref={ref}
@@ -97,11 +97,12 @@ export const HeaderSearch = forwardRef(({
         onClick={openWorkspaceSearch}
         aria-label="Відкрити пошук у задачах і проєктах"
         aria-haspopup="dialog"
-        // A hint, not a control: the field beside it is the thing to use. Boxed
-        // in a bordered canvas chip it was the loudest element in the header,
-        // so it loses the box and sits back to the faint tier, and only comes
-        // forward under the cursor.
-        className="absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#cfcfcf] transition-colors hover:text-[#9a9a9a]"
+        // A hint, not a control, and a hint nobody needs while they are looking
+        // at something else: it appears when the cursor reaches the field or
+        // the field takes focus, and is invisible the rest of the time. It
+        // keeps its box in the layout either way, so the placeholder does not
+        // shift when it fades in.
+        className="pointer-events-none absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#9a9a9a] opacity-0 transition-opacity group-hover/search:pointer-events-auto group-hover/search:opacity-100 group-focus-within/search:pointer-events-auto group-focus-within/search:opacity-100"
       >
         {paletteKeys}
       </button>

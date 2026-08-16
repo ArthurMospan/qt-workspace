@@ -53,8 +53,9 @@ import {
   Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Layers, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
-  Maximize2, ListTree,
+  Maximize2,
 } from 'lucide-react';
+import { TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { auth, db } from '@/lib/firebase';
@@ -162,7 +163,7 @@ function Ring({ pct, color, size = 36, stroke = 3.5 }) {
 }
 
 // ── Section heading ────────────────────────────────────────────────
-// Мітки, Вкладення, Підзадачі and Зв’язки all label a list on the same panel,
+// Мітки, Вкладення, Підзавдання and Зв’язки all label a list on the same panel,
 // so they get one heading instead of four near-identical ones. Local on
 // purpose: it is a composition of kit primitives (icon + ui-type-item-title +
 // Pill) bound to this detail view, not a new reusable visual component.
@@ -773,7 +774,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleParentChange = async nextParentIssueId => {
     if (parentSaving) return;
     if (nextParentIssueId && childIssues.length > 0) {
-      showToast('Задачу з підзадачами не можна зробити підзадачею', 'error');
+      showToast('Задачу з підзавданнями не можна зробити підзавданням', 'error');
       return;
     }
     try {
@@ -881,7 +882,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     const title = subtaskText.trim();
     if (!title || creatingSubtask) return;
     if (parentIssueId) {
-      showToast('Підзадача не може мати власні підзадачі', 'error');
+      showToast('Підзавдання не може мати власні підзавдання', 'error');
       return;
     }
     // A new subtask starts where planned work starts — the category says which
@@ -913,9 +914,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       }, actor);
       setSubtaskText('');
       setShowSubInput(false);
-      showToast(`${created.issueKey || 'Підзадачу'} створено`);
+      showToast(`${created.issueKey || 'Підзавдання'} створено`);
     } catch (error) {
-      showToast(error.message || 'Не вдалося створити підзадачу', 'error');
+      showToast(error.message || 'Не вдалося створити підзавдання', 'error');
     } finally {
       setCreatingSubtask(false);
     }
@@ -976,7 +977,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
       message: childIssues.length > 0
-        ? `Задачу буде прибрано з ${childIssues.length} підзадачами в ієрархії. Одразу після видалення дію можна скасувати.`
+        ? `Задачу буде прибрано з ${childIssues.length} підзавданнями в ієрархії. Одразу після видалення дію можна скасувати.`
         : 'Задачу буде прибрано. Одразу після видалення дію можна скасувати.',
       confirmText: 'Видалити', danger: true,
     }))) return;
@@ -1034,7 +1035,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             variant="underline"
             className="w-full"
             tabs={[
-              { id: 'task', label: 'Завдання', icon: ListTree },
+              { id: 'task', label: 'Завдання', icon: TaskIcon },
               { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
             ]}
             activeTab={taskPane}
@@ -1069,7 +1070,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             {parentIssueId && (
               <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
                 <Layers size={12} className="shrink-0" />
-                <span className="shrink-0">Підзадача для</span>
+                <span className="shrink-0">Підзавдання для</span>
                 <Link
                   href={issuePath(parentIssue || { id: parentIssueId }, project || projectId)}
                   className="min-w-0 truncate font-semibold text-ink hover:underline"
@@ -1453,7 +1454,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                           />
                           {childIssues.length > 0 && (
                             <span className="text-[10px] leading-relaxed text-faint">
-                              Спершу відв’яжіть підзадачі, щоб змінити рівень.
+                              Спершу відв’яжіть підзавдання, щоб змінити рівень.
                             </span>
                           )}
                         </div>
@@ -1645,8 +1646,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               {(childIssues.length > 0 || showSubInput) && (
                 <div className="pt-2">
                   <SectionHeading
-                    icon={ListTree}
-                    title="Підзадачі"
+                    icon={TaskIcon}
+                    title="Підзавдання"
                     count={childIssues.length}
                     meta={openChildCount > 0 ? `${childIssuesDone}/${childIssues.length} · ${openChildCount} ще в роботі` : `${childIssuesDone}/${childIssues.length}`}
                   />
@@ -1690,10 +1691,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                               setSubtaskText('');
                             }
                           }}
-                          placeholder="Назва повноцінної підзадачі"
+                          placeholder="Назва повноцінного підзавдання"
                         />
                         <p className="text-[10px] leading-relaxed text-muted">
-                          Підзадача отримає власний ключ, статус, виконавців, час і аналітику.
+                          Підзавдання отримає власний ключ, статус, виконавців, час і аналітику.
                         </p>
                         <div className="flex justify-end gap-2">
                           <Button style="secondary" size="sm" onClick={() => { setShowSubInput(false); setSubtaskText(''); }}>Скасувати</Button>
@@ -1704,7 +1705,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                             loading={creatingSubtask}
                             onClick={handleAddSubtask}
                           >
-                            Створити підзадачу
+                            Створити підзавдання
                           </Button>
                         </div>
                       </Surface>
@@ -1882,14 +1883,14 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       })}
                     />
                     {!parentIssueId && <Button
-                      aria-label="Додати підзадачу"
+                      aria-label="Додати підзавдання"
                       style="secondary"
                       size="sm"
                       composition="inline-add-action"
                       icon={Plus}
                       onClick={() => setShowSubInput(value => !value)}
                     >
-                      <span className="sm:hidden">Підзадача</span><span className="hidden sm:inline">Додати підзадачу</span>
+                      <span className="sm:hidden">Підзавдання</span><span className="hidden sm:inline">Додати підзавдання</span>
                     </Button>}
                     <Button
                       aria-label="Додати зв’язок"

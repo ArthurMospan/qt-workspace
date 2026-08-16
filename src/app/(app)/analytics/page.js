@@ -284,7 +284,7 @@ function AnalyticsContent({
           <Card preset="borderless" padding="lg" className="md:col-span-2">
             <SectionTitle>По проєктах</SectionTitle>
             <p className="mb-3 text-[11px] leading-relaxed text-muted">
-              Батьківські задачі не рахуються окремо: їхня робота представлена підзадачами.
+              Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями.
             </p>
             <div className="space-y-2 md:hidden">
               {stats.byProject.map(({ p, total, open, overdue, minutes, pct }) => (

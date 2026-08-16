@@ -8,7 +8,10 @@
  * @param {'bordered'|'bordered-compact'|'borderless'|'canvas'|'elevated'} props.preset Which surface it draws. Wins over `variant`.
  * @param {'white'|'gray'} props.variant Legacy shorthand kept for existing call sites; `gray` means `preset="canvas"`.
  * @param {'none'|'sm'|'md'|'lg'} props.padding Inner spacing token.
- * @param {boolean} props.interactive Adds the pointer, hover tint and focus ring. Set it whenever `onClick` is set.
+ * @param {boolean} props.interactive Adds the pointer and the hover an openable
+ *   row gets everywhere in the product — the same tint and halo `TaskRow` uses,
+ *   so an integration and a task answer the cursor identically. It used to
+ *   darken its border too, which no list row does.
  * @param {() => void} props.onClick Click handler.
  * @param {string} props.className Placement in the parent only.
  */
@@ -47,7 +50,7 @@ export default function Card({
       className={`
         ui-surface
         ${onClick ? 'block w-full text-left' : ''}
-        ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:border-faint hover:ring-4 hover:ring-ink/5 transition-all duration-200' : ''}
+        ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC] transition-all duration-200' : ''}
         ${className}
       `}
       onClick={onClick}

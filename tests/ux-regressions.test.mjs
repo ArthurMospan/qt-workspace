@@ -46,8 +46,14 @@ test('requested navigation and readability regressions stay fixed', async () => 
   // The kebab and the plus beside it are one pair: the same miniature box, the
   // vertical glyph the rest of the product uses, and a smaller icon size so
   // three filled dots do not read darker than two hairline strokes.
-  assert.match(board, /className="flex"[\s\S]{0,260}icon=\{MoreVertical\}/);
   assert.match(board, /icon=\{MoreVertical\}\s*\r?\n\s*composition="section-kebab"/);
+  // The wrapper is a flex box in the component itself, so no call site has to
+  // pass `flex` — which collided with its `inline-block` and left the kebab
+  // sitting on a text baseline, a few pixels above the plus beside it.
+  const contextMenu = await read('src/components/ui/ContextMenu.jsx');
+  assert.match(contextMenu, /relative inline-flex items-center/);
+  assert.doesNotMatch(contextMenu, /relative inline-block/);
+  assert.doesNotMatch(board, /<ContextMenu\s*\r?\n\s*className="flex"/);
   // A larger box pushed long status names onto a second row.
   assert.doesNotMatch(board, /size="icon-sm"/);
   assert.match(board, /ui-type-column-title[^"]*truncate" title=\{col\.label\}/);
@@ -55,8 +61,10 @@ test('requested navigation and readability regressions stay fixed', async () => 
   // both cancels itself out inside an `overflow: hidden` parent.
   assert.match(board, /overflow-hidden bleed-edges/);
   assert.match(board, /overflow-auto[^"]*bleed-gutter/);
-  assert.match(sidebar, /after:-inset-\[8px\]/);
-  assert.match(sidebar, /className="flex h-full w-full items-center justify-center transition-colors"/);
+  // A bare pseudo-element hit area answered nothing: no hover, no pointer. The
+  // collapse and expand controls are 32px buttons that react like buttons.
+  assert.doesNotMatch(sidebar, /after:-inset-\[8px\]/);
+  assert.equal((sidebar.match(/h-\[32px\] w-\[32px\] .{0,20}cursor-pointer/g) || []).length, 2);
   // The running timer is a quiet capsule in the rail, not a floating card.
   assert.doesNotMatch(sidebar, /shadow-\[0_4px_12px_rgba\(0,0,0,0\.2\)\]/);
   assert.doesNotMatch(help, />\s*Допомога\s*</);
@@ -64,7 +72,12 @@ test('requested navigation and readability regressions stay fixed', async () => 
   // Help is a square, not a rail-wide slab.
   assert.doesNotMatch(help.slice(0, help.indexOf('<Dialog')), /w-full/);
   assert.match(help, /size="icon"\s+icon=\{CircleHelp\}/);
-  assert.match(search, /text-\[#cfcfcf\]/);
+  // The palette shortcut is a hint, and a hint nobody needs while they are
+  // looking elsewhere: it fades in on hover or focus rather than sitting in the
+  // header all day.
+  assert.match(search, /group\/search/);
+  assert.match(search, /opacity-0 transition-opacity group-hover\/search:/);
+  assert.match(search, /group-focus-within\/search:opacity-100/);
   assert.doesNotMatch(team, /lastActivity|Остання активність/);
   assert.match(settings, /backAction=\{\([\s\S]*Усі інтеграції/);
   // The bulk bar's pickers are drawn on the dark bar, never as white blocks

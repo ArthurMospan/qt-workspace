@@ -10,8 +10,8 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 310,
-    "elements": 4135,
+    "files": 312,
+    "elements": 4137,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3271",
+      "location": "src/app/(app)/settings/page.js:3370",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:511",
+      "location": "src/app/(app)/settings/page.js:513",
       "attributes": [
         "aria-label",
         "title"
@@ -86,7 +86,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/ui/Chat/ChatConversationHeader.jsx:109",
+      "location": "src/components/ui/Chat/ChatConversationHeader.jsx:108",
       "attributes": [
         "label"
       ]
@@ -100,28 +100,28 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:126",
+      "location": "src/components/ui/ChatComposerCore.jsx:100",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:143",
+      "location": "src/components/ui/ChatComposerCore.jsx:130",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:96",
+      "location": "src/components/ui/ChatComposerCore.jsx:147",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ContextMenu.jsx:99",
+      "location": "src/components/ui/ContextMenu.jsx:106",
       "attributes": [
         "title"
       ]
@@ -149,7 +149,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/ImageUpload.jsx:111",
+      "location": "src/components/ui/ImageUpload.jsx:121",
       "attributes": [
         "aria-label"
       ]
@@ -200,14 +200,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:53",
+      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:61",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:87",
+      "location": "src/components/ui/TaskManagement/AttachmentRow.jsx:95",
       "attributes": [
         "aria-label"
       ]

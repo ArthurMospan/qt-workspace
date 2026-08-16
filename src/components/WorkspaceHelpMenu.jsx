@@ -55,7 +55,6 @@ export default function WorkspaceHelpMenu({ collapsed = false }) {
           it centres in the rail like everything else. */}
       <div className={`shrink-0 flex pb-[10px] ${collapsed ? 'justify-center px-0' : 'pl-[13px] pr-[8px]'}`}>
         <ContextMenu
-          className="flex items-center"
           dropdownClassName="w-[260px]"
           trigger={(
             <Button

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
-import { Surface, Card, Badge, StatusBadge, Button, IconAction, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
+import { Surface, Card, Badge, StatusBadge, Button, IconAction, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -142,9 +142,7 @@ export default function ProfileView({ user, onClose }) {
         <div className="flex flex-col items-center text-center px-8">
           <div className="relative mb-2">
             <UserAvatar user={user} size="hero" />
-            {isOnline && (
-              <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#10b981] rounded-full ring-4 ring-white" />
-            )}
+            {isOnline && <PresenceDot size="hero" collar="white" className="bottom-[6px] right-[6px]" />}
             {(user.status || user.statusEmoji) && (
               <div data-ui-surface="local" className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
                 <span className="text-[18px] shrink-0">{user.statusEmoji}</span>

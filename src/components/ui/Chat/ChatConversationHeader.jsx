@@ -4,6 +4,7 @@ import React from 'react';
 import { ArrowLeft, Hash, Info, Pin } from 'lucide-react';
 import IconAction from '../IconAction';
 import UserAvatar from '../DataDisplay/UserAvatar';
+import PresenceDot from '../DataDisplay/PresenceDot';
 
 // ─── UI Kit: Chat Conversation Header ────────────────────────────────────────
 // The bar above a conversation: who you are talking to, how many messages are
@@ -75,9 +76,7 @@ export default function ChatConversationHeader({
           <div className="w-8 h-8 rounded-full overflow-hidden">
             <UserAvatar user={user} size={32} />
           </div>
-          {online && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#10b981] border-2 border-canvas" />
-          )}
+          {online && <PresenceDot size="sm" collar="canvas" />}
         </div>
       )}
       <div className="flex-1 min-w-0">

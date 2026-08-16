@@ -3,6 +3,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import PresenceDot from '@/components/ui/DataDisplay/PresenceDot';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
@@ -81,9 +82,7 @@ export default function MemberRail({
               >
                 <div className="relative shrink-0">
                   <UserAvatar user={member} size="md" />
-                  {member.online && (
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] rounded-full ring-2 ring-canvas" />
-                  )}
+                  {member.online && <PresenceDot size="md" collar="canvas" />}
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${

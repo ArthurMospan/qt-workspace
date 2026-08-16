@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 98,
-    "stateful": 91,
+    "components": 99,
+    "stateful": 92,
     "hover": 66,
     "focus": 65,
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 63
+    "long-text": 64
   },
   "components": {
     "Alert": {
@@ -316,6 +316,9 @@
     "Popover": {
       "focus": "global",
       "long-text": "children"
+    },
+    "PresenceDot": {
+      "long-text": "label"
     },
     "PriorityBadge": {},
     "PriorityIcon": {},
@@ -702,6 +705,9 @@
       "task-attributes",
       "navigation-overlays",
       "variant-matrix"
+    ],
+    "PresenceDot": [
+      "avatars"
     ],
     "PriorityBadge": [
       "badges"

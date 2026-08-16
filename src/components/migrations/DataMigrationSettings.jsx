@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import {
   AlertTriangle,
-  ArrowLeft,
   ChevronRight,
   Clock3,
   DatabaseBackup,
@@ -12,7 +10,7 @@ import {
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
-import { Button, Card, Pill } from '@/components/ui';
+import { Card, Pill } from '@/components/ui';
 import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 
 const UPCOMING_PROVIDERS = [
@@ -28,14 +26,14 @@ const UPCOMING_PROVIDERS = [
     name: 'ClickUp',
     logo: '/integrations/clickup.svg',
     description: 'Перенесення ієрархії Spaces, Folders і Lists у зрозумілу структуру QuickTeam.',
-    entities: ['Простори', 'Папки й списки', 'Задачі', 'Підзадачі', 'Коментарі', 'Вкладення', 'Час', 'Користувачі'],
+    entities: ['Простори', 'Папки й списки', 'Задачі', 'Підзавдання', 'Коментарі', 'Вкладення', 'Час', 'Користувачі'],
   },
   {
     id: 'asana',
     name: 'Asana',
     logo: '/integrations/asana.svg',
     description: 'Для команд, що працюють із проєктами, секціями та задачами в кількох представленнях.',
-    entities: ['Команди', 'Проєкти', 'Секції', 'Задачі', 'Підзадачі', 'Коментарі', 'Вкладення', 'Користувачі'],
+    entities: ['Команди', 'Проєкти', 'Секції', 'Задачі', 'Підзавдання', 'Коментарі', 'Вкладення', 'Користувачі'],
   },
   {
     id: 'trello',
@@ -49,7 +47,7 @@ const UPCOMING_PROVIDERS = [
     name: 'Linear',
     logo: '/integrations/linear.svg',
     description: 'Перехід для продуктових і технічних команд зі збереженням циклів та зв’язків.',
-    entities: ['Команди', 'Проєкти', 'Issues', 'Підзадачі', 'Cycles', 'Зв’язки', 'Коментарі', 'Користувачі'],
+    entities: ['Команди', 'Проєкти', 'Issues', 'Підзавдання', 'Cycles', 'Зв’язки', 'Коментарі', 'Користувачі'],
   },
   {
     id: 'monday',
@@ -59,6 +57,13 @@ const UPCOMING_PROVIDERS = [
     entities: ['Workspaces', 'Дошки', 'Групи', 'Items', 'Subitems', 'Оновлення', 'Файли', 'Користувачі'],
   },
 ];
+
+// One list of names for the header above this component to title itself with.
+// A second copy in the settings page is how «YouTrack» ends up spelled two ways.
+export const MIGRATION_SOURCE_TITLES = Object.freeze({
+  youtrack: 'YouTrack',
+  ...Object.fromEntries(UPCOMING_PROVIDERS.map(provider => [provider.id, provider.name])),
+});
 
 const SAFEGUARDS = [
   {
@@ -116,13 +121,27 @@ function UpcomingProviderCard({ provider }) {
   );
 }
 
+/**
+ * Data migration sources, and the one open source's importer.
+ *
+ * Which source is open is the caller's state, not this component's. Integrations
+ * put their «Усі інтеграції» control in the section header, above the title;
+ * this held its own selection and drew its own «Усі джерела» button inside the
+ * body, below the title — the same navigation in two places, at two heights,
+ * on two screens that are otherwise the same screen. The settings page owns
+ * both now and renders one header.
+ *
+ * @param {string} props.selectedProviderId Which source is open; empty is the list.
+ * @param {(providerId: string) => void} props.onSelectProvider Opens a source.
+ */
 export default function DataMigrationSettings({
   organizationId,
   members = [],
   projects = [],
   showToast,
+  selectedProviderId = '',
+  onSelectProvider,
 }) {
-  const [selectedProviderId, setSelectedProviderId] = useState('');
   const selectedProvider = UPCOMING_PROVIDERS.find(provider => provider.id === selectedProviderId);
 
   if (!selectedProviderId) {
@@ -149,7 +168,7 @@ export default function DataMigrationSettings({
             preset="bordered"
             padding="md"
             interactive
-            onClick={() => setSelectedProviderId(provider.id)}
+            onClick={() => onSelectProvider?.(provider.id)}
           >
             <div className="flex items-center gap-[12px]">
               <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[10px] border border-line bg-white">
@@ -171,21 +190,11 @@ export default function DataMigrationSettings({
   }
 
   if (selectedProvider) {
-    return (
-      <div className="space-y-5">
-        <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setSelectedProviderId('')}>
-          Усі джерела
-        </Button>
-        <UpcomingProviderCard provider={selectedProvider} />
-      </div>
-    );
+    return <UpcomingProviderCard provider={selectedProvider} />;
   }
 
   return (
     <div className="space-y-8">
-      <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setSelectedProviderId('')}>
-        Усі джерела
-      </Button>
       <Card preset="borderless" padding="lg" className="overflow-hidden">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">

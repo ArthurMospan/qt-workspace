@@ -1,5 +1,5 @@
 'use client';
-import { UserAvatar } from '@/components/ui';
+import { PresenceDot, UserAvatar } from '@/components/ui';
 import { PreviewBlock } from '../preview';
 
 export default function AvatarsSection() {
@@ -27,6 +27,25 @@ export default function AvatarsSection() {
       <PreviewBlock title="UserAvatar states" description="Ті самі стани, які реально бачить користувач: брендований колір і відсутні дані.">
         <UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size="lg" tooltip />
         <UserAvatar user={null} size="lg" />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PresenceDot"
+        component="PresenceDot"
+        description="Позначка «зараз онлайн» на розі аватара. Розмір іде за розміром аватара, а не обирається на місці — саме так чотири копії цієї крапки й розійшлися на 8, 10, 12 і 20 пікселів."
+        filePath="src/components/ui/DataDisplay/PresenceDot.jsx"
+      >
+        <div className="flex flex-wrap items-end gap-[16px]">
+          {[['xs', 'chat-mention'], ['sm', 'sm'], ['md', 'md'], ['lg', 'lg'], ['hero', 'xl']].map(([token, avatarSize]) => (
+            <div key={token} className="flex flex-col items-center gap-[6px]">
+              <span className="relative inline-flex">
+                <UserAvatar user={demoUser} size={avatarSize} />
+                <PresenceDot size={token} collar="white" />
+              </span>
+              <span className="text-[9px] font-mono text-[#1f1f1f]">{token}</span>
+            </div>
+          ))}
+        </div>
       </PreviewBlock>
     </div>
   );

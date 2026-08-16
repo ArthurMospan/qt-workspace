@@ -45,7 +45,15 @@ export default function AttachmentRow({
   const fileType = detectFileType(attachment);
 
   return (
-    <div data-ui-surface="nested-card" data-ui-padding="compact-row" className="ui-surface flex min-w-0 items-center gap-3 transition-colors hover:bg-canvas">
+    // Same answer to the cursor as the subtask rows a few centimetres below —
+    // a hairline border and the pale halo. Hovering used to turn the row grey,
+    // which on a grey panel made it disappear into the background instead of
+    // lifting off it.
+    <div
+      data-ui-surface="nested-card"
+      data-ui-padding="compact-row"
+      className="ui-surface flex min-w-0 items-center gap-3 border border-[#f0f0f0] transition-all duration-200 hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC]"
+    >
       {/* Thumbnail, text, and the whitespace between them are one target. The
           old split target underlined only the filename, so a large row looked
           clickable in one tiny place even though the preview action was the

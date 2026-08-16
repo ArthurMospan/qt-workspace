@@ -541,7 +541,6 @@ export default function AgileBoard({
       // real button on the page, and made the horizontal "meatball" look
       // nothing like the vertical kebab the rest of the product uses.
       <ContextMenu
-        className="flex"
         trigger={(
           <Button
             style="ghost"

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Trash2 } from 'lucide-react';
 import {
   deleteFileFromCloudinary,
   uploadFileToCloudinary,
@@ -9,7 +9,12 @@ import {
   organizationImageFolder,
   organizationOwnedImageAsset,
 } from '@/lib/utils/cloudinaryAssets.mjs';
-import { IMAGE_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  IMAGE_UPLOAD_FORMATS,
+  MAX_UPLOAD_MB,
+  RECOMMENDED_IMAGE_MIN_PX,
+} from '@/lib/utils/uploadPolicy.mjs';
 
 /**
  * Picks an image, uploads it, and shows what is currently set — the workspace
@@ -50,7 +55,12 @@ export default function ImageUpload({
   const isDark = theme === 'dark';
   const textColor = isDark ? 'text-white' : 'text-ink';
   const subTextColor = isDark ? 'text-white/40' : 'text-muted';
-  const removeColor = isDark ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500';
+  // A red word sitting under the label was the loudest thing in the row, for
+  // the least likely action in it. It is a quiet icon control now, and it only
+  // takes a colour when the cursor is on it.
+  const removeColor = isDark
+    ? 'text-white/40 hover:text-red-300 hover:bg-white/10'
+    : 'text-faint hover:text-[#ef4444] hover:bg-canvas';
   const bgClass = isDark ? 'bg-[#2a2a2a] border-white/10 hover:border-white/30' : 'bg-canvas border-line hover:border-faint';
   const iconColor = isDark ? 'text-white/50' : 'text-muted';
 
@@ -132,18 +142,26 @@ export default function ImageUpload({
 
       <div className="flex flex-col gap-1 justify-center">
         {showLabel && <span className={`text-[14px] font-medium ${textColor}`}>{label}</span>}
-        {value ? (
+        {showHint && (
+          // What the picker will actually accept, and the size below which the
+          // result looks soft. Both are read from the upload policy, so a new
+          // format never leaves this line lying.
+          <span className={`text-[12px] ${subTextColor}`}>
+            {IMAGE_UPLOAD_FORMATS.slice(0, 4).join(', ')} · від {RECOMMENDED_IMAGE_MIN_PX}×{RECOMMENDED_IMAGE_MIN_PX} px · до {MAX_UPLOAD_MB} МБ
+          </span>
+        )}
+        {value && (
           <button
             type="button"
             disabled={isRemoving || isUploading}
             onClick={handleRemove}
-            className={`text-[12px] transition-colors text-left font-medium ${removeColor}`}
+            title="Видалити зображення"
+            aria-label="Видалити зображення"
+            className={`flex h-[28px] w-[28px] items-center justify-center rounded-[8px] transition-colors disabled:opacity-50 ${removeColor}`}
           >
-            Видалити
+            <Trash2 size={14} />
           </button>
-        ) : showHint ? (
-          <span className={`text-[12px] ${subTextColor}`}>Зображення 1:1, до 25 МБ</span>
-        ) : null}
+        )}
         {uploadError && (
           <span className="text-[12px] font-medium text-red-500">{uploadError}</span>
         )}

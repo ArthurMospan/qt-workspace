@@ -2,13 +2,13 @@
   "generatedBy": "scripts/scan-kit-usage.mjs",
   "scope": "authenticated-workspace",
   "totals": {
-    "components": 98,
-    "used": 98,
+    "components": 99,
+    "used": 99,
     "unused": 0,
-    "covered": 95,
+    "covered": 96,
     "uncovered": 0,
     "routes": 12,
-    "previews": 127,
+    "previews": 128,
     "internal": 3,
     "unlisted": 0
   },
@@ -432,6 +432,7 @@
       "MobilePaneBack",
       "OptionCard",
       "Pill",
+      "PresenceDot",
       "PriorityIcon",
       "SidebarLayout",
       "Surface",
@@ -559,7 +560,7 @@
     },
     "Button": {
       "file": "src/components/ui/Button.jsx",
-      "count": 35,
+      "count": 34,
       "showcased": true,
       "usedByKit": [
         "AttachmentRow",
@@ -612,7 +613,6 @@
         "src/components/WorkspaceOrganizationRouteGuard.jsx",
         "src/components/integrations/IntegrationCard.jsx",
         "src/components/integrations/YouTrackImportCard.jsx",
-        "src/components/migrations/DataMigrationSettings.jsx",
         "src/components/profile/ProfileView.jsx",
         "src/components/workspace/AgileBoard.jsx",
         "src/components/workspace/BillingTab.jsx",
@@ -1656,6 +1656,22 @@
         "src/components/workspace/calendar/CalendarEventPage.jsx"
       ]
     },
+    "PresenceDot": {
+      "file": "src/components/ui/DataDisplay/PresenceDot.jsx",
+      "count": 1,
+      "showcased": true,
+      "usedByKit": [
+        "ChannelRail",
+        "ChatConversationHeader",
+        "MemberRail"
+      ],
+      "routes": [
+        "/team"
+      ],
+      "usedIn": [
+        "src/components/profile/ProfileView.jsx"
+      ]
+    },
     "PriorityBadge": {
       "file": "src/components/ui/DataDisplay/PriorityBadge.jsx",
       "count": 2,
@@ -2342,7 +2358,7 @@
     "Button": {
       "size": {
         "lg": {
-          "count": 26,
+          "count": 27,
           "routes": [
             "/",
             "/[projectId]",
@@ -2359,20 +2375,21 @@
             "src/app/(app)/layout.js:116",
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/page.js:920",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:3547",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3661",
             "src/app/(app)/sprints/page.js:537",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:145",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
             "src/components/workspace/BillingTab.jsx:1439",
             "src/components/workspace/BillingTab.jsx:1453",
@@ -2395,8 +2412,8 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
             "src/app/(app)/analytics/page.js:656",
             "src/app/(app)/my/page.js:310",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
             "src/components/workspace/calendar/CalendarEventPage.jsx:870",
             "src/components/workspace/calendar/CalendarEventPage.jsx:881"
           ]
@@ -2414,9 +2431,9 @@
             "src/app/(app)/analytics/page.js:703",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/calendar/page.js:583",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
             "src/components/WorkspaceHeader.jsx:332",
             "src/components/WorkspaceHeader.jsx:342",
             "src/components/workspace/BillingTab.jsx:1297",
@@ -2427,7 +2444,7 @@
           ]
         },
         "sm": {
-          "count": 44,
+          "count": 43,
           "routes": [
             "/",
             "/[projectId]",
@@ -2445,17 +2462,18 @@
             "src/app/(app)/calendar/page.js:582",
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2298",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3580",
-            "src/app/(app)/settings/page.js:438",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2381",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3701",
+            "src/app/(app)/settings/page.js:440",
             "src/app/(app)/sprints/page.js:698",
             "src/app/(app)/sprints/page.js:708",
             "src/components/UserStatusSetter.jsx:77",
@@ -2465,21 +2483,19 @@
             "src/components/integrations/YouTrackImportCard.jsx:473",
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:501",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
             "src/components/workspace/AgileBoard.jsx:207",
             "src/components/workspace/AgileBoard.jsx:210",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
+            "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894",
+            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895",
             "src/components/workspace/UnifiedTimeline.jsx:649",
             "src/components/workspace/WorkloadTab.jsx:509",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
@@ -2521,7 +2537,7 @@
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
             "src/app/(app)/page.js:587",
-            "src/app/(app)/settings/page.js:3180",
+            "src/app/(app)/settings/page.js:3279",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
@@ -2544,12 +2560,12 @@
             "src/components/workspace/BoardConfigModal.jsx:189",
             "src/components/workspace/BoardConfigModal.jsx:206",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
-            "src/components/workspace/IssueDetail.jsx:1195",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
             "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1548",
+            "src/components/workspace/IssueDetail.jsx:1197",
             "src/components/workspace/IssueDetail.jsx:1549",
+            "src/components/workspace/IssueDetail.jsx:1550",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
@@ -2585,14 +2601,14 @@
             "src/app/(app)/sprints/page.js:817",
             "src/app/(app)/sprints/page.js:835",
             "src/app/(app)/team/page.js:109",
-            "src/components/workspace/AgileBoard.jsx:546",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
-            "src/components/workspace/IssueDetail.jsx:1081"
+            "src/components/workspace/AgileBoard.jsx:545",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/IssueDetail.jsx:1082"
           ]
         },
         "icon": {
@@ -2604,23 +2620,23 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:717",
             "src/app/(app)/sprints/page.js:726",
-            "src/components/WorkspaceHelpMenu.jsx:61",
+            "src/components/WorkspaceHelpMenu.jsx:60",
             "src/components/profile/ProfileView.jsx:137",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
             "src/components/workspace/UnifiedTimeline.jsx:730"
           ]
         }
@@ -2678,13 +2694,13 @@
             "src/app/(app)/page.js:582",
             "src/app/(app)/page.js:586",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3547",
-            "src/app/(app)/settings/page.js:3580",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3701",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:717",
@@ -2692,7 +2708,7 @@
             "src/app/(app)/sprints/page.js:75",
             "src/components/CreateTaskModal.jsx:293",
             "src/components/TeamMemberSettingsDialog.jsx:66",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/integrations/YouTrackImportCard.jsx:473",
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:649",
@@ -2705,18 +2721,18 @@
             "src/components/workspace/BoardConfigModal.jsx:177",
             "src/components/workspace/BoardConfigModal.jsx:189",
             "src/components/workspace/BoardConfigModal.jsx:206",
-            "src/components/workspace/IssueDetail.jsx:1195",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
-            "src/components/workspace/IssueDetail.jsx:1548",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
-            "src/components/workspace/IssueDetail.jsx:1824",
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894",
+            "src/components/workspace/IssueDetail.jsx:1196",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
+            "src/components/workspace/IssueDetail.jsx:1549",
+            "src/components/workspace/IssueDetail.jsx:1581",
+            "src/components/workspace/IssueDetail.jsx:1700",
+            "src/components/workspace/IssueDetail.jsx:1825",
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/TimesheetTab.jsx:469",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:570",
@@ -2730,7 +2746,7 @@
           ]
         },
         "primary": {
-          "count": 36,
+          "count": 37,
           "routes": [
             "/",
             "/[projectId]",
@@ -2753,10 +2769,11 @@
             "src/app/(app)/page.js:587",
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:920",
-            "src/app/(app)/settings/page.js:2298",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3180",
+            "src/app/(app)/settings/page.js:2381",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3279",
+            "src/app/(app)/settings/page.js:3661",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:186",
             "src/app/(app)/sprints/page.js:537",
@@ -2772,17 +2789,17 @@
             "src/components/workspace/BillingTab.jsx:1439",
             "src/components/workspace/BillingTab.jsx:452",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1549",
-            "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1825",
+            "src/components/workspace/IssueDetail.jsx:1197",
+            "src/components/workspace/IssueDetail.jsx:1550",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1826",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:470",
             "src/components/workspace/UnifiedTimeline.jsx:649"
           ]
         },
         "ghost": {
-          "count": 70,
+          "count": 69,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -2804,30 +2821,31 @@
             "src/app/(app)/calendar/page.js:582",
             "src/app/(app)/calendar/page.js:583",
             "src/app/(app)/chat/page.js:1114",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:438",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:440",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:648",
             "src/app/(app)/sprints/page.js:678",
             "src/app/(app)/sprints/page.js:777",
@@ -2838,26 +2856,24 @@
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:332",
             "src/components/WorkspaceHeader.jsx:342",
-            "src/components/WorkspaceHelpMenu.jsx:61",
+            "src/components/WorkspaceHelpMenu.jsx:60",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
-            "src/components/workspace/AgileBoard.jsx:546",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
+            "src/components/workspace/AgileBoard.jsx:545",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1377",
-            "src/components/workspace/IssueDetail.jsx:1081",
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
-            "src/components/workspace/IssueDetail.jsx:1724",
+            "src/components/workspace/IssueDetail.jsx:1082",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/UnifiedTimeline.jsx:730",
             "src/components/workspace/WorkloadTab.jsx:269",
@@ -2924,41 +2940,43 @@
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:920",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2298",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3180",
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:3547",
-            "src/app/(app)/settings/page.js:3580",
-            "src/app/(app)/settings/page.js:438",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2381",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3279",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3661",
+            "src/app/(app)/settings/page.js:3701",
+            "src/app/(app)/settings/page.js:440",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
@@ -2987,8 +3005,8 @@
             "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHelpMenu.jsx:61",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:60",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -2998,18 +3016,16 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
             "src/components/profile/ProfileView.jsx:137",
             "src/components/workspace/AgileBoard.jsx:207",
             "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:546",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
+            "src/components/workspace/AgileBoard.jsx:545",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3024,26 +3040,26 @@
             "src/components/workspace/BoardConfigModal.jsx:189",
             "src/components/workspace/BoardConfigModal.jsx:206",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1081",
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
-            "src/components/workspace/IssueDetail.jsx:1195",
+            "src/components/workspace/IssueDetail.jsx:1082",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
             "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
-            "src/components/workspace/IssueDetail.jsx:1548",
+            "src/components/workspace/IssueDetail.jsx:1197",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
             "src/components/workspace/IssueDetail.jsx:1549",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
+            "src/components/workspace/IssueDetail.jsx:1550",
+            "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894",
+            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3138,41 +3154,43 @@
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:920",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2298",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3180",
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:3547",
-            "src/app/(app)/settings/page.js:3580",
-            "src/app/(app)/settings/page.js:438",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2381",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3279",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3661",
+            "src/app/(app)/settings/page.js:3701",
+            "src/app/(app)/settings/page.js:440",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
@@ -3201,8 +3219,8 @@
             "src/components/TeamMemberSettingsDialog.jsx:66",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHelpMenu.jsx:61",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:60",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/WorkspaceInfoCenter.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -3213,18 +3231,16 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
             "src/components/profile/ProfileView.jsx:137",
             "src/components/workspace/AgileBoard.jsx:207",
             "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:546",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
+            "src/components/workspace/AgileBoard.jsx:545",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3239,26 +3255,26 @@
             "src/components/workspace/BoardConfigModal.jsx:189",
             "src/components/workspace/BoardConfigModal.jsx:206",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1081",
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
-            "src/components/workspace/IssueDetail.jsx:1195",
+            "src/components/workspace/IssueDetail.jsx:1082",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
             "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
-            "src/components/workspace/IssueDetail.jsx:1548",
+            "src/components/workspace/IssueDetail.jsx:1197",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
             "src/components/workspace/IssueDetail.jsx:1549",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
+            "src/components/workspace/IssueDetail.jsx:1550",
+            "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894",
+            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3300,7 +3316,7 @@
       },
       "color": {
         "(default)": {
-          "count": 162,
+          "count": 161,
           "routes": [
             "/",
             "/[projectId]",
@@ -3340,35 +3356,36 @@
             "src/app/(app)/page.js:586",
             "src/app/(app)/page.js:587",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3180",
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486",
-            "src/app/(app)/settings/page.js:3580",
-            "src/app/(app)/settings/page.js:438",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3279",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585",
+            "src/app/(app)/settings/page.js:3701",
+            "src/app/(app)/settings/page.js:440",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
@@ -3396,8 +3413,8 @@
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceHeader.jsx:332",
             "src/components/WorkspaceHeader.jsx:342",
-            "src/components/WorkspaceHelpMenu.jsx:61",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:60",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/WorkspaceInfoCenter.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -3407,18 +3424,16 @@
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
             "src/components/profile/ProfileView.jsx:137",
             "src/components/workspace/AgileBoard.jsx:207",
             "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:546",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
+            "src/components/workspace/AgileBoard.jsx:545",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
@@ -3431,26 +3446,26 @@
             "src/components/workspace/BoardConfigModal.jsx:177",
             "src/components/workspace/BoardConfigModal.jsx:206",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1081",
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
-            "src/components/workspace/IssueDetail.jsx:1195",
+            "src/components/workspace/IssueDetail.jsx:1082",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
             "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
-            "src/components/workspace/IssueDetail.jsx:1548",
+            "src/components/workspace/IssueDetail.jsx:1197",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
             "src/components/workspace/IssueDetail.jsx:1549",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
+            "src/components/workspace/IssueDetail.jsx:1550",
+            "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/IssueDetail.jsx:1825",
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894",
+            "src/components/workspace/IssueDetail.jsx:1826",
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3490,11 +3505,11 @@
           "files": [
             "src/app/(app)/my/page.js:250",
             "src/app/(app)/page.js:920",
-            "src/app/(app)/settings/page.js:2298"
+            "src/app/(app)/settings/page.js:2381"
           ]
         },
         "red": {
-          "count": 13,
+          "count": 14,
           "routes": [
             "/",
             "/[projectId]",
@@ -3506,11 +3521,12 @@
           ],
           "files": [
             "src/app/(app)/page.js:607",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:3547",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3661",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:726",
             "src/components/TeamMemberSettingsDialog.jsx:106",
             "src/components/UserStatusSetter.jsx:77",
@@ -3575,37 +3591,39 @@
             "src/app/(app)/page.js:607",
             "src/app/(app)/page.js:920",
             "src/app/(app)/page.js:956",
-            "src/app/(app)/settings/page.js:2213",
-            "src/app/(app)/settings/page.js:2297",
-            "src/app/(app)/settings/page.js:2298",
-            "src/app/(app)/settings/page.js:2763",
-            "src/app/(app)/settings/page.js:2769",
-            "src/app/(app)/settings/page.js:2904",
-            "src/app/(app)/settings/page.js:2970",
-            "src/app/(app)/settings/page.js:3002",
-            "src/app/(app)/settings/page.js:3024",
-            "src/app/(app)/settings/page.js:3042",
-            "src/app/(app)/settings/page.js:3089",
-            "src/app/(app)/settings/page.js:3095",
-            "src/app/(app)/settings/page.js:3158",
-            "src/app/(app)/settings/page.js:3162",
-            "src/app/(app)/settings/page.js:3180",
-            "src/app/(app)/settings/page.js:3203",
-            "src/app/(app)/settings/page.js:3271",
-            "src/app/(app)/settings/page.js:3506",
-            "src/app/(app)/settings/page.js:3518",
-            "src/app/(app)/settings/page.js:3547",
-            "src/app/(app)/settings/page.js:3580",
-            "src/app/(app)/settings/page.js:438",
-            "src/app/(app)/settings/page.js:490",
-            "src/app/(app)/settings/page.js:491",
-            "src/app/(app)/settings/page.js:505",
-            "src/app/(app)/settings/page.js:511",
-            "src/app/(app)/settings/page.js:518",
-            "src/app/(app)/settings/page.js:586",
-            "src/app/(app)/settings/page.js:587",
-            "src/app/(app)/settings/page.js:598",
-            "src/app/(app)/settings/page.js:602",
+            "src/app/(app)/settings/page.js:2296",
+            "src/app/(app)/settings/page.js:2380",
+            "src/app/(app)/settings/page.js:2381",
+            "src/app/(app)/settings/page.js:2849",
+            "src/app/(app)/settings/page.js:2855",
+            "src/app/(app)/settings/page.js:2890",
+            "src/app/(app)/settings/page.js:3003",
+            "src/app/(app)/settings/page.js:3069",
+            "src/app/(app)/settings/page.js:3101",
+            "src/app/(app)/settings/page.js:3123",
+            "src/app/(app)/settings/page.js:3141",
+            "src/app/(app)/settings/page.js:3188",
+            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3257",
+            "src/app/(app)/settings/page.js:3261",
+            "src/app/(app)/settings/page.js:3279",
+            "src/app/(app)/settings/page.js:3302",
+            "src/app/(app)/settings/page.js:3370",
+            "src/app/(app)/settings/page.js:3605",
+            "src/app/(app)/settings/page.js:3617",
+            "src/app/(app)/settings/page.js:3646",
+            "src/app/(app)/settings/page.js:3661",
+            "src/app/(app)/settings/page.js:3701",
+            "src/app/(app)/settings/page.js:440",
+            "src/app/(app)/settings/page.js:492",
+            "src/app/(app)/settings/page.js:493",
+            "src/app/(app)/settings/page.js:507",
+            "src/app/(app)/settings/page.js:513",
+            "src/app/(app)/settings/page.js:520",
+            "src/app/(app)/settings/page.js:588",
+            "src/app/(app)/settings/page.js:589",
+            "src/app/(app)/settings/page.js:600",
+            "src/app/(app)/settings/page.js:604",
             "src/app/(app)/sprints/page.js:135",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
@@ -3633,7 +3651,7 @@
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:332",
             "src/components/WorkspaceHeader.jsx:342",
-            "src/components/WorkspaceHelpMenu.jsx:91",
+            "src/components/WorkspaceHelpMenu.jsx:90",
             "src/components/WorkspaceInfoCenter.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -3643,17 +3661,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/migrations/DataMigrationSettings.jsx:176",
-            "src/components/migrations/DataMigrationSettings.jsx:186",
             "src/components/profile/ProfileView.jsx:137",
             "src/components/workspace/AgileBoard.jsx:207",
             "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:627",
-            "src/components/workspace/AgileBoard.jsx:643",
-            "src/components/workspace/AgileBoard.jsx:658",
-            "src/components/workspace/AgileBoard.jsx:725",
-            "src/components/workspace/AgileBoard.jsx:751",
-            "src/components/workspace/AgileBoard.jsx:766",
+            "src/components/workspace/AgileBoard.jsx:626",
+            "src/components/workspace/AgileBoard.jsx:642",
+            "src/components/workspace/AgileBoard.jsx:657",
+            "src/components/workspace/AgileBoard.jsx:724",
+            "src/components/workspace/AgileBoard.jsx:750",
+            "src/components/workspace/AgileBoard.jsx:765",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3668,21 +3684,21 @@
             "src/components/workspace/BoardConfigModal.jsx:189",
             "src/components/workspace/BoardConfigModal.jsx:206",
             "src/components/workspace/BoardConfigModal.jsx:209",
-            "src/components/workspace/IssueDetail.jsx:1081",
-            "src/components/workspace/IssueDetail.jsx:1195",
+            "src/components/workspace/IssueDetail.jsx:1082",
             "src/components/workspace/IssueDetail.jsx:1196",
-            "src/components/workspace/IssueDetail.jsx:1200",
-            "src/components/workspace/IssueDetail.jsx:1203",
-            "src/components/workspace/IssueDetail.jsx:1232",
-            "src/components/workspace/IssueDetail.jsx:1243",
-            "src/components/workspace/IssueDetail.jsx:1548",
+            "src/components/workspace/IssueDetail.jsx:1197",
+            "src/components/workspace/IssueDetail.jsx:1201",
+            "src/components/workspace/IssueDetail.jsx:1204",
+            "src/components/workspace/IssueDetail.jsx:1233",
+            "src/components/workspace/IssueDetail.jsx:1244",
             "src/components/workspace/IssueDetail.jsx:1549",
-            "src/components/workspace/IssueDetail.jsx:1580",
-            "src/components/workspace/IssueDetail.jsx:1699",
+            "src/components/workspace/IssueDetail.jsx:1550",
+            "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/IssueDetail.jsx:1700",
-            "src/components/workspace/IssueDetail.jsx:1724",
-            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1701",
+            "src/components/workspace/IssueDetail.jsx:1725",
             "src/components/workspace/IssueDetail.jsx:1825",
+            "src/components/workspace/IssueDetail.jsx:1826",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:209",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
@@ -3716,10 +3732,10 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3357",
-            "src/app/(app)/settings/page.js:3423",
-            "src/app/(app)/settings/page.js:3460",
-            "src/app/(app)/settings/page.js:3486"
+            "src/app/(app)/settings/page.js:3456",
+            "src/app/(app)/settings/page.js:3522",
+            "src/app/(app)/settings/page.js:3559",
+            "src/app/(app)/settings/page.js:3585"
           ]
         },
         "section-kebab": {
@@ -3732,7 +3748,7 @@
           "files": [
             "src/app/(app)/sprints/page.js:678",
             "src/app/(app)/sprints/page.js:817",
-            "src/components/workspace/AgileBoard.jsx:546"
+            "src/components/workspace/AgileBoard.jsx:545"
           ]
         },
         "status-submit": {
@@ -3746,7 +3762,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHelpMenu.jsx:61"
+            "src/components/WorkspaceHelpMenu.jsx:60"
           ]
         },
         "menu-item": {
@@ -3757,8 +3773,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1135",
-            "src/components/workspace/IssueDetail.jsx:1148",
+            "src/components/workspace/IssueDetail.jsx:1136",
+            "src/components/workspace/IssueDetail.jsx:1149",
             "src/components/workspace/calendar/CalendarEventPage.jsx:821",
             "src/components/workspace/calendar/CalendarEventPage.jsx:834"
           ]
@@ -3770,9 +3786,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1856",
-            "src/components/workspace/IssueDetail.jsx:1884",
-            "src/components/workspace/IssueDetail.jsx:1894"
+            "src/components/workspace/IssueDetail.jsx:1857",
+            "src/components/workspace/IssueDetail.jsx:1885",
+            "src/components/workspace/IssueDetail.jsx:1895"
           ]
         },
         "chat-composer-action": {
@@ -3799,8 +3815,8 @@
           "files": [
             "src/app/(app)/calendar/page.js:343",
             "src/app/(app)/chat/page.js:426",
-            "src/app/(app)/settings/page.js:211",
-            "src/app/(app)/settings/page.js:212",
+            "src/app/(app)/settings/page.js:213",
+            "src/app/(app)/settings/page.js:214",
             "src/components/WorkspaceHeader.jsx:420",
             "src/components/WorkspaceHeader.jsx:431"
           ]
@@ -3836,8 +3852,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:238",
-            "src/app/(app)/settings/page.js:246",
+            "src/app/(app)/settings/page.js:240",
+            "src/app/(app)/settings/page.js:248",
             "src/components/MobileNav.jsx:65"
           ]
         },
@@ -3875,10 +3891,10 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:187",
-            "src/components/profile/ProfileView.jsx:199",
-            "src/components/profile/ProfileView.jsx:211",
-            "src/components/profile/ProfileView.jsx:229"
+            "src/components/profile/ProfileView.jsx:185",
+            "src/components/profile/ProfileView.jsx:197",
+            "src/components/profile/ProfileView.jsx:209",
+            "src/components/profile/ProfileView.jsx:227"
           ]
         },
         "micro": {
@@ -3947,8 +3963,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:211",
-            "src/app/(app)/settings/page.js:238"
+            "src/app/(app)/settings/page.js:213",
+            "src/app/(app)/settings/page.js:240"
           ]
         },
         "soft": {
@@ -3961,8 +3977,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:212",
-            "src/app/(app)/settings/page.js:246",
+            "src/app/(app)/settings/page.js:214",
+            "src/app/(app)/settings/page.js:248",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263"
           ]
@@ -4009,10 +4025,10 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:187",
-            "src/components/profile/ProfileView.jsx:199",
-            "src/components/profile/ProfileView.jsx:211",
-            "src/components/profile/ProfileView.jsx:229"
+            "src/components/profile/ProfileView.jsx:185",
+            "src/components/profile/ProfileView.jsx:197",
+            "src/components/profile/ProfileView.jsx:209",
+            "src/components/profile/ProfileView.jsx:227"
           ]
         },
         "inverse": {
@@ -4053,20 +4069,20 @@
             "src/app/(app)/chat/page.js:302",
             "src/app/(app)/chat/page.js:357",
             "src/app/(app)/page.js:234",
-            "src/app/(app)/settings/page.js:211",
-            "src/app/(app)/settings/page.js:212",
-            "src/app/(app)/settings/page.js:238",
-            "src/app/(app)/settings/page.js:246",
+            "src/app/(app)/settings/page.js:213",
+            "src/app/(app)/settings/page.js:214",
+            "src/app/(app)/settings/page.js:240",
+            "src/app/(app)/settings/page.js:248",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
             "src/components/MobileNav.jsx:270",
             "src/components/MobileNav.jsx:299",
             "src/components/WorkspaceHeader.jsx:420",
             "src/components/WorkspaceHeader.jsx:431",
-            "src/components/profile/ProfileView.jsx:187",
-            "src/components/profile/ProfileView.jsx:199",
-            "src/components/profile/ProfileView.jsx:211",
-            "src/components/profile/ProfileView.jsx:229"
+            "src/components/profile/ProfileView.jsx:185",
+            "src/components/profile/ProfileView.jsx:197",
+            "src/components/profile/ProfileView.jsx:209",
+            "src/components/profile/ProfileView.jsx:227"
           ]
         },
         "compact": {
@@ -4123,10 +4139,10 @@
           "files": [
             "src/app/(app)/calendar/page.js:343",
             "src/app/(app)/page.js:234",
-            "src/app/(app)/settings/page.js:211",
-            "src/app/(app)/settings/page.js:212",
-            "src/app/(app)/settings/page.js:238",
-            "src/app/(app)/settings/page.js:246",
+            "src/app/(app)/settings/page.js:213",
+            "src/app/(app)/settings/page.js:214",
+            "src/app/(app)/settings/page.js:240",
+            "src/app/(app)/settings/page.js:248",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
             "src/components/MobileNav.jsx:270",
@@ -4136,10 +4152,10 @@
             "src/components/WorkspaceHeader.jsx:431",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
-            "src/components/profile/ProfileView.jsx:187",
-            "src/components/profile/ProfileView.jsx:199",
-            "src/components/profile/ProfileView.jsx:211",
-            "src/components/profile/ProfileView.jsx:229",
+            "src/components/profile/ProfileView.jsx:185",
+            "src/components/profile/ProfileView.jsx:197",
+            "src/components/profile/ProfileView.jsx:209",
+            "src/components/profile/ProfileView.jsx:227",
             "src/components/workspace/QtPlusProjectTab.jsx:41",
             "src/components/workspace/qtplus/MediaLightbox.jsx:23",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:106",
@@ -4216,7 +4232,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1058",
-            "src/app/(app)/settings/page.js:198",
+            "src/app/(app)/settings/page.js:200",
             "src/app/(app)/sprints/page.js:142",
             "src/app/(app)/sprints/page.js:82",
             "src/components/AudioTaskPanel.jsx:288",
@@ -4258,9 +4274,9 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:411",
-            "src/app/(app)/settings/page.js:552",
-            "src/app/(app)/settings/page.js:564",
+            "src/app/(app)/settings/page.js:413",
+            "src/app/(app)/settings/page.js:554",
+            "src/app/(app)/settings/page.js:566",
             "src/components/workspace/BillingTab.jsx:1363"
           ]
         },
@@ -4273,10 +4289,10 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2746",
+            "src/app/(app)/settings/page.js:2832",
             "src/components/workspace/BillingTab.jsx:131",
             "src/components/workspace/BillingTab.jsx:315",
-            "src/components/workspace/IssueDetail.jsx:1681"
+            "src/components/workspace/IssueDetail.jsx:1682"
           ]
         },
         "lg": {
@@ -4290,11 +4306,11 @@
           "files": [
             "src/components/InviteMemberDialog.jsx:133",
             "src/components/WorkspaceInfoCenter.jsx:126",
-            "src/components/workspace/IssueDetail.jsx:1496",
-            "src/components/workspace/IssueDetail.jsx:1504",
-            "src/components/workspace/IssueDetail.jsx:1520",
-            "src/components/workspace/IssueDetail.jsx:1528",
-            "src/components/workspace/IssueDetail.jsx:1543"
+            "src/components/workspace/IssueDetail.jsx:1497",
+            "src/components/workspace/IssueDetail.jsx:1505",
+            "src/components/workspace/IssueDetail.jsx:1521",
+            "src/components/workspace/IssueDetail.jsx:1529",
+            "src/components/workspace/IssueDetail.jsx:1544"
           ]
         }
       },
@@ -4317,10 +4333,10 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1058",
-            "src/app/(app)/settings/page.js:198",
-            "src/app/(app)/settings/page.js:411",
-            "src/app/(app)/settings/page.js:552",
-            "src/app/(app)/settings/page.js:564",
+            "src/app/(app)/settings/page.js:200",
+            "src/app/(app)/settings/page.js:413",
+            "src/app/(app)/settings/page.js:554",
+            "src/app/(app)/settings/page.js:566",
             "src/app/(app)/sprints/page.js:142",
             "src/app/(app)/sprints/page.js:82",
             "src/components/AudioTaskPanel.jsx:288",
@@ -4337,7 +4353,7 @@
             "src/components/workspace/BillingTab.jsx:1345",
             "src/components/workspace/BillingTab.jsx:1363",
             "src/components/workspace/BillingTab.jsx:315",
-            "src/components/workspace/IssueDetail.jsx:1681",
+            "src/components/workspace/IssueDetail.jsx:1682",
             "src/components/workspace/TimesheetTab.jsx:513",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:375",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:376",
@@ -4362,7 +4378,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2746"
+            "src/app/(app)/settings/page.js:2832"
           ]
         },
         "status-entry": {
@@ -4380,8 +4396,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1496",
-            "src/components/workspace/IssueDetail.jsx:1520",
+            "src/components/workspace/IssueDetail.jsx:1497",
+            "src/components/workspace/IssueDetail.jsx:1521",
             "src/components/workspace/calendar/CalendarEventPage.jsx:215"
           ]
         },
@@ -4393,8 +4409,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1504",
-            "src/components/workspace/IssueDetail.jsx:1528",
+            "src/components/workspace/IssueDetail.jsx:1505",
+            "src/components/workspace/IssueDetail.jsx:1529",
             "src/components/workspace/calendar/CalendarEventPage.jsx:227"
           ]
         },
@@ -4405,7 +4421,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1543"
+            "src/components/workspace/IssueDetail.jsx:1544"
           ]
         },
         "duration-compact-hours": {
@@ -4448,11 +4464,11 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1058",
-            "src/app/(app)/settings/page.js:198",
-            "src/app/(app)/settings/page.js:2746",
-            "src/app/(app)/settings/page.js:411",
-            "src/app/(app)/settings/page.js:552",
-            "src/app/(app)/settings/page.js:564",
+            "src/app/(app)/settings/page.js:200",
+            "src/app/(app)/settings/page.js:2832",
+            "src/app/(app)/settings/page.js:413",
+            "src/app/(app)/settings/page.js:554",
+            "src/app/(app)/settings/page.js:566",
             "src/app/(app)/sprints/page.js:142",
             "src/app/(app)/sprints/page.js:82",
             "src/components/AudioTaskPanel.jsx:288",
@@ -4468,12 +4484,12 @@
             "src/components/workspace/BillingTab.jsx:1341",
             "src/components/workspace/BillingTab.jsx:1345",
             "src/components/workspace/BillingTab.jsx:1363",
-            "src/components/workspace/IssueDetail.jsx:1496",
-            "src/components/workspace/IssueDetail.jsx:1504",
-            "src/components/workspace/IssueDetail.jsx:1520",
-            "src/components/workspace/IssueDetail.jsx:1528",
-            "src/components/workspace/IssueDetail.jsx:1543",
-            "src/components/workspace/IssueDetail.jsx:1681",
+            "src/components/workspace/IssueDetail.jsx:1497",
+            "src/components/workspace/IssueDetail.jsx:1505",
+            "src/components/workspace/IssueDetail.jsx:1521",
+            "src/components/workspace/IssueDetail.jsx:1529",
+            "src/components/workspace/IssueDetail.jsx:1544",
+            "src/components/workspace/IssueDetail.jsx:1682",
             "src/components/workspace/TimesheetTab.jsx:502",
             "src/components/workspace/TimesheetTab.jsx:506",
             "src/components/workspace/TimesheetTab.jsx:513",
@@ -4540,7 +4556,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2289"
+            "src/app/(app)/settings/page.js:2372"
           ]
         },
         "audio-transcript": {
@@ -4603,12 +4619,12 @@
             "src/app/(app)/page.js:935",
             "src/app/(app)/page.js:936",
             "src/app/(app)/page.js:937",
-            "src/app/(app)/settings/page.js:2562",
-            "src/app/(app)/settings/page.js:2573",
-            "src/app/(app)/settings/page.js:2585",
-            "src/app/(app)/settings/page.js:2596",
-            "src/app/(app)/settings/page.js:2607",
-            "src/app/(app)/settings/page.js:2987",
+            "src/app/(app)/settings/page.js:2648",
+            "src/app/(app)/settings/page.js:2659",
+            "src/app/(app)/settings/page.js:2671",
+            "src/app/(app)/settings/page.js:2682",
+            "src/app/(app)/settings/page.js:2693",
+            "src/app/(app)/settings/page.js:3086",
             "src/app/(app)/sprints/page.js:195",
             "src/app/(app)/sprints/page.js:561",
             "src/app/(app)/sprints/page.js:572",
@@ -4627,14 +4643,14 @@
             "src/components/workspace/BillingTab.jsx:1211",
             "src/components/workspace/BillingTab.jsx:1221",
             "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/IssueDetail.jsx:1274",
-            "src/components/workspace/IssueDetail.jsx:1299",
-            "src/components/workspace/IssueDetail.jsx:1390",
-            "src/components/workspace/IssueDetail.jsx:1417",
-            "src/components/workspace/IssueDetail.jsx:1429",
-            "src/components/workspace/IssueDetail.jsx:1441",
-            "src/components/workspace/IssueDetail.jsx:1800",
-            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1275",
+            "src/components/workspace/IssueDetail.jsx:1300",
+            "src/components/workspace/IssueDetail.jsx:1391",
+            "src/components/workspace/IssueDetail.jsx:1418",
+            "src/components/workspace/IssueDetail.jsx:1430",
+            "src/components/workspace/IssueDetail.jsx:1442",
+            "src/components/workspace/IssueDetail.jsx:1801",
+            "src/components/workspace/IssueDetail.jsx:1809",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -4712,12 +4728,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2562",
-            "src/app/(app)/settings/page.js:2573",
-            "src/app/(app)/settings/page.js:2585",
-            "src/app/(app)/settings/page.js:2596",
-            "src/app/(app)/settings/page.js:2607",
-            "src/app/(app)/settings/page.js:2987",
+            "src/app/(app)/settings/page.js:2648",
+            "src/app/(app)/settings/page.js:2659",
+            "src/app/(app)/settings/page.js:2671",
+            "src/app/(app)/settings/page.js:2682",
+            "src/app/(app)/settings/page.js:2693",
+            "src/app/(app)/settings/page.js:3086",
             "src/app/(app)/sprints/page.js:195",
             "src/components/AudioTaskPanel.jsx:190",
             "src/components/AudioTaskPanel.jsx:300",
@@ -4734,14 +4750,14 @@
             "src/components/workspace/BillingTab.jsx:1211",
             "src/components/workspace/BillingTab.jsx:1221",
             "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/IssueDetail.jsx:1274",
-            "src/components/workspace/IssueDetail.jsx:1299",
-            "src/components/workspace/IssueDetail.jsx:1390",
-            "src/components/workspace/IssueDetail.jsx:1417",
-            "src/components/workspace/IssueDetail.jsx:1429",
-            "src/components/workspace/IssueDetail.jsx:1441",
-            "src/components/workspace/IssueDetail.jsx:1800",
-            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1275",
+            "src/components/workspace/IssueDetail.jsx:1300",
+            "src/components/workspace/IssueDetail.jsx:1391",
+            "src/components/workspace/IssueDetail.jsx:1418",
+            "src/components/workspace/IssueDetail.jsx:1430",
+            "src/components/workspace/IssueDetail.jsx:1442",
+            "src/components/workspace/IssueDetail.jsx:1801",
+            "src/components/workspace/IssueDetail.jsx:1809",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -4866,12 +4882,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2562",
-            "src/app/(app)/settings/page.js:2573",
-            "src/app/(app)/settings/page.js:2585",
-            "src/app/(app)/settings/page.js:2596",
-            "src/app/(app)/settings/page.js:2607",
-            "src/app/(app)/settings/page.js:2987",
+            "src/app/(app)/settings/page.js:2648",
+            "src/app/(app)/settings/page.js:2659",
+            "src/app/(app)/settings/page.js:2671",
+            "src/app/(app)/settings/page.js:2682",
+            "src/app/(app)/settings/page.js:2693",
+            "src/app/(app)/settings/page.js:3086",
             "src/app/(app)/sprints/page.js:195",
             "src/components/AudioTaskPanel.jsx:190",
             "src/components/AudioTaskPanel.jsx:300",
@@ -4886,14 +4902,14 @@
             "src/components/integrations/YouTrackImportCard.jsx:633",
             "src/components/workspace/BillingTab.jsx:109",
             "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/IssueDetail.jsx:1274",
-            "src/components/workspace/IssueDetail.jsx:1299",
-            "src/components/workspace/IssueDetail.jsx:1390",
-            "src/components/workspace/IssueDetail.jsx:1417",
-            "src/components/workspace/IssueDetail.jsx:1429",
-            "src/components/workspace/IssueDetail.jsx:1441",
-            "src/components/workspace/IssueDetail.jsx:1800",
-            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1275",
+            "src/components/workspace/IssueDetail.jsx:1300",
+            "src/components/workspace/IssueDetail.jsx:1391",
+            "src/components/workspace/IssueDetail.jsx:1418",
+            "src/components/workspace/IssueDetail.jsx:1430",
+            "src/components/workspace/IssueDetail.jsx:1442",
+            "src/components/workspace/IssueDetail.jsx:1801",
+            "src/components/workspace/IssueDetail.jsx:1809",
             "src/components/workspace/QtPlusProjectTab.jsx:199",
             "src/components/workspace/QtPlusProjectTab.jsx:280",
             "src/components/workspace/TimesheetTab.jsx:477",
@@ -4943,7 +4959,7 @@
             "src/app/(app)/chat/page.js:1086",
             "src/app/(app)/my/page.js:266",
             "src/app/(app)/sprints/page.js:552",
-            "src/components/workspace/IssueDetail.jsx:1281",
+            "src/components/workspace/IssueDetail.jsx:1282",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:701",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:799",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1139",
@@ -4982,7 +4998,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1086",
-            "src/components/workspace/IssueDetail.jsx:1281",
+            "src/components/workspace/IssueDetail.jsx:1282",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:701",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:799",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1139",
@@ -5021,7 +5037,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1086",
-            "src/components/workspace/IssueDetail.jsx:1281",
+            "src/components/workspace/IssueDetail.jsx:1282",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:701",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:799",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1139",
@@ -5057,7 +5073,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3182"
+            "src/app/(app)/settings/page.js:3281"
           ]
         },
         "nested-card": {
@@ -5085,7 +5101,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1680"
+            "src/components/workspace/IssueDetail.jsx:1681"
           ]
         }
       },
@@ -5124,7 +5140,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:976",
-            "src/components/workspace/IssueDetail.jsx:1680"
+            "src/components/workspace/IssueDetail.jsx:1681"
           ]
         },
         "none": {
@@ -5134,7 +5150,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3182",
+            "src/app/(app)/settings/page.js:3281",
             "src/app/(app)/sprints/page.js:794"
           ]
         },
@@ -5184,10 +5200,10 @@
             "src/app/(app)/calendar/page.js:592",
             "src/app/(app)/page.js:976",
             "src/app/(app)/page.js:991",
-            "src/app/(app)/settings/page.js:3182",
+            "src/app/(app)/settings/page.js:3281",
             "src/app/(app)/team/page.js:128",
             "src/components/workspace/BillingTab.jsx:1149",
-            "src/components/workspace/IssueDetail.jsx:1680"
+            "src/components/workspace/IssueDetail.jsx:1681"
           ]
         },
         "scroll-pane": {
@@ -5253,15 +5269,15 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2885",
-            "src/app/(app)/settings/page.js:3117",
-            "src/app/(app)/settings/page.js:3194",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
-            "src/components/migrations/DataMigrationSettings.jsx:109",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
+            "src/app/(app)/settings/page.js:2984",
+            "src/app/(app)/settings/page.js:3216",
+            "src/app/(app)/settings/page.js:3293",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
             "src/components/workspace/IssueCard.jsx:299",
             "src/components/workspace/VelocityTab.jsx:322"
           ]
@@ -5274,9 +5290,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3201",
+            "src/app/(app)/settings/page.js:3300",
             "src/components/WorkspaceHeader.jsx:327",
-            "src/components/workspace/IssueDetail.jsx:174"
+            "src/components/workspace/IssueDetail.jsx:175"
           ]
         },
         "surface": {
@@ -5304,11 +5320,11 @@
             "/my"
           ],
           "files": [
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761"
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760"
           ]
         },
         "warning": {
@@ -5340,7 +5356,7 @@
           ],
           "files": [
             "src/components/workspace/IssueCard.jsx:311",
-            "src/components/workspace/IssueDetail.jsx:1187",
+            "src/components/workspace/IssueDetail.jsx:1188",
             "src/components/workspace/WorkloadTab.jsx:107"
           ]
         },
@@ -5384,12 +5400,12 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:320",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:3201",
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:3300",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
             "src/components/TeamMemberSettingsDialog.jsx:42",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1394"
           ]
         },
@@ -5421,14 +5437,14 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2885",
-            "src/app/(app)/settings/page.js:3117",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761",
+            "src/app/(app)/settings/page.js:2984",
+            "src/app/(app)/settings/page.js:3216",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/IssueCard.jsx:381",
             "src/components/workspace/VelocityTab.jsx:322",
@@ -5455,11 +5471,11 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3194",
+            "src/app/(app)/settings/page.js:3293",
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceHeader.jsx:327",
             "src/components/WorkspaceInfoCenter.jsx:110",
-            "src/components/migrations/DataMigrationSettings.jsx:109",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
             "src/components/workspace/BillingTab.jsx:483",
@@ -5467,8 +5483,8 @@
             "src/components/workspace/IssueCard.jsx:299",
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueCard.jsx:325",
-            "src/components/workspace/IssueDetail.jsx:1187",
-            "src/components/workspace/IssueDetail.jsx:174"
+            "src/components/workspace/IssueDetail.jsx:1188",
+            "src/components/workspace/IssueDetail.jsx:175"
           ]
         },
         "chat-day": {
@@ -5526,10 +5542,10 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:320",
-            "src/app/(app)/settings/page.js:3117",
-            "src/app/(app)/settings/page.js:3194",
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
+            "src/app/(app)/settings/page.js:3216",
+            "src/app/(app)/settings/page.js:3293",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
             "src/components/WorkspaceInfoCenter.jsx:110",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5556,27 +5572,27 @@
           ],
           "files": [
             "src/app/(app)/page.js:210",
-            "src/app/(app)/settings/page.js:2885",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:3201",
+            "src/app/(app)/settings/page.js:2984",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:3300",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:327",
-            "src/components/migrations/DataMigrationSettings.jsx:109",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
             "src/components/workspace/IssueCard.jsx:381",
-            "src/components/workspace/IssueDetail.jsx:1187",
-            "src/components/workspace/IssueDetail.jsx:174",
+            "src/components/workspace/IssueDetail.jsx:1188",
+            "src/components/workspace/IssueDetail.jsx:175",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/VelocityTab.jsx:322",
             "src/components/workspace/WorkloadTab.jsx:107",
@@ -5613,21 +5629,21 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:320",
             "src/app/(app)/page.js:210",
-            "src/app/(app)/settings/page.js:3194",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:3201",
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
+            "src/app/(app)/settings/page.js:3293",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:3300",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:327",
             "src/components/WorkspaceInfoCenter.jsx:110",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5638,8 +5654,8 @@
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueCard.jsx:325",
             "src/components/workspace/IssueCard.jsx:381",
-            "src/components/workspace/IssueDetail.jsx:1187",
-            "src/components/workspace/IssueDetail.jsx:174",
+            "src/components/workspace/IssueDetail.jsx:1188",
+            "src/components/workspace/IssueDetail.jsx:175",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/VelocityTab.jsx:322",
             "src/components/workspace/WorkloadTab.jsx:107",
@@ -5661,8 +5677,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2885",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
+            "src/app/(app)/settings/page.js:2984",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280"
           ]
@@ -5673,8 +5689,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3117",
-            "src/components/migrations/DataMigrationSettings.jsx:109"
+            "src/app/(app)/settings/page.js:3216",
+            "src/components/migrations/DataMigrationSettings.jsx:114"
           ]
         }
       },
@@ -5697,25 +5713,25 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:320",
-            "src/app/(app)/settings/page.js:2885",
-            "src/app/(app)/settings/page.js:3117",
-            "src/app/(app)/settings/page.js:3194",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:3201",
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
+            "src/app/(app)/settings/page.js:2984",
+            "src/app/(app)/settings/page.js:3216",
+            "src/app/(app)/settings/page.js:3293",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:3300",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:327",
             "src/components/WorkspaceInfoCenter.jsx:110",
-            "src/components/migrations/DataMigrationSettings.jsx:109",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5724,8 +5740,8 @@
             "src/components/workspace/IssueCard.jsx:299",
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueCard.jsx:325",
-            "src/components/workspace/IssueDetail.jsx:1187",
-            "src/components/workspace/IssueDetail.jsx:174",
+            "src/components/workspace/IssueDetail.jsx:1188",
+            "src/components/workspace/IssueDetail.jsx:175",
             "src/components/workspace/UnifiedTimeline.jsx:171",
             "src/components/workspace/VelocityTab.jsx:322",
             "src/components/workspace/WorkloadTab.jsx:107",
@@ -5784,20 +5800,20 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:320",
             "src/app/(app)/page.js:210",
-            "src/app/(app)/settings/page.js:2885",
-            "src/app/(app)/settings/page.js:3117",
-            "src/app/(app)/settings/page.js:3194",
-            "src/app/(app)/settings/page.js:3200",
-            "src/app/(app)/settings/page.js:3201",
+            "src/app/(app)/settings/page.js:2984",
+            "src/app/(app)/settings/page.js:3216",
+            "src/app/(app)/settings/page.js:3293",
+            "src/app/(app)/settings/page.js:3299",
+            "src/app/(app)/settings/page.js:3300",
             "src/components/TeamMemberSettingsDialog.jsx:42",
             "src/components/WorkspaceHeader.jsx:327",
-            "src/components/migrations/DataMigrationSettings.jsx:162",
-            "src/components/migrations/DataMigrationSettings.jsx:97",
-            "src/components/workspace/AgileBoard.jsx:636",
-            "src/components/workspace/AgileBoard.jsx:653",
-            "src/components/workspace/AgileBoard.jsx:690",
-            "src/components/workspace/AgileBoard.jsx:734",
-            "src/components/workspace/AgileBoard.jsx:761",
+            "src/components/migrations/DataMigrationSettings.jsx:102",
+            "src/components/migrations/DataMigrationSettings.jsx:181",
+            "src/components/workspace/AgileBoard.jsx:635",
+            "src/components/workspace/AgileBoard.jsx:652",
+            "src/components/workspace/AgileBoard.jsx:689",
+            "src/components/workspace/AgileBoard.jsx:733",
+            "src/components/workspace/AgileBoard.jsx:760",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5805,8 +5821,8 @@
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
             "src/components/workspace/IssueCard.jsx:381",
-            "src/components/workspace/IssueDetail.jsx:1187",
-            "src/components/workspace/IssueDetail.jsx:174",
+            "src/components/workspace/IssueDetail.jsx:1188",
+            "src/components/workspace/IssueDetail.jsx:175",
             "src/components/workspace/WorkloadTab.jsx:107",
             "src/components/workspace/WorkloadTab.jsx:110",
             "src/components/workspace/WorkloadTab.jsx:113",
@@ -5835,11 +5851,11 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:459",
-            "src/app/(app)/settings/page.js:474",
+            "src/app/(app)/settings/page.js:461",
+            "src/app/(app)/settings/page.js:476",
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:110",
-            "src/components/migrations/DataMigrationSettings.jsx:109",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/workspace/IssueCard.jsx:299",
             "src/components/workspace/IssueCard.jsx:311",
             "src/components/workspace/IssueCard.jsx:325",
@@ -5915,7 +5931,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3190",
+            "src/app/(app)/settings/page.js:3289",
             "src/components/workspace/WorkloadTab.jsx:194"
           ]
         },
@@ -6005,7 +6021,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:538"
+            "src/components/workspace/IssueDetail.jsx:539"
           ]
         },
         "danger": {
@@ -6053,7 +6069,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:538"
+            "src/components/workspace/IssueDetail.jsx:539"
           ]
         }
       }
@@ -6095,7 +6111,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1615"
+            "src/components/workspace/IssueDetail.jsx:1616"
           ]
         }
       }
@@ -6138,8 +6154,8 @@
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:294",
-            "src/components/WorkspaceSidebar.jsx:344"
+            "src/components/WorkspaceSidebar.jsx:316",
+            "src/components/WorkspaceSidebar.jsx:366"
           ]
         },
         "md": {
@@ -6172,7 +6188,7 @@
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
             "src/components/OrgSwitcherScreen.jsx:46",
-            "src/components/WorkspaceSidebar.jsx:294",
+            "src/components/WorkspaceSidebar.jsx:316",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6180,7 +6196,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:344"
+            "src/components/WorkspaceSidebar.jsx:366"
           ]
         }
       },
@@ -6206,7 +6222,7 @@
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:190",
-            "src/components/WorkspaceSidebar.jsx:294"
+            "src/components/WorkspaceSidebar.jsx:316"
           ]
         },
         "info": {
@@ -6215,7 +6231,7 @@
           "files": [
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:344"
+            "src/components/WorkspaceSidebar.jsx:366"
           ]
         }
       },
@@ -6243,8 +6259,8 @@
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:294",
-            "src/components/WorkspaceSidebar.jsx:344",
+            "src/components/WorkspaceSidebar.jsx:316",
+            "src/components/WorkspaceSidebar.jsx:366",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6273,7 +6289,7 @@
             "src/app/(app)/chat/page.js:1030",
             "src/components/TeamMemberSettingsDialog.jsx:34",
             "src/components/workspace/BillingTab.jsx:443",
-            "src/components/workspace/IssueDetail.jsx:1470",
+            "src/components/workspace/IssueDetail.jsx:1471",
             "src/components/workspace/calendar/CalendarEventPage.jsx:198"
           ]
         },
@@ -6293,7 +6309,7 @@
             "src/app/(app)/sprints/page.js:128",
             "src/app/(app)/sprints/page.js:177",
             "src/app/(app)/sprints/page.js:68",
-            "src/components/WorkspaceHelpMenu.jsx:81",
+            "src/components/WorkspaceHelpMenu.jsx:80",
             "src/components/workspace/BoardConfigModal.jsx:199",
             "src/components/workspace/TimesheetTab.jsx:462"
           ]
@@ -6348,7 +6364,7 @@
             "src/app/(app)/sprints/page.js:177",
             "src/app/(app)/sprints/page.js:68",
             "src/components/TeamMemberSettingsDialog.jsx:34",
-            "src/components/WorkspaceHelpMenu.jsx:81",
+            "src/components/WorkspaceHelpMenu.jsx:80",
             "src/components/workspace/BillingTab.jsx:443",
             "src/components/workspace/BoardConfigModal.jsx:199",
             "src/components/workspace/TimesheetTab.jsx:462",
@@ -6398,7 +6414,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:264",
-            "src/components/workspace/IssueDetail.jsx:1470",
+            "src/components/workspace/IssueDetail.jsx:1471",
             "src/components/workspace/calendar/CalendarEventPage.jsx:198"
           ]
         }
@@ -6428,7 +6444,7 @@
             "src/components/CreateTaskModal.jsx:276",
             "src/components/InviteMemberDialog.jsx:91",
             "src/components/TeamMemberSettingsDialog.jsx:34",
-            "src/components/WorkspaceHelpMenu.jsx:81",
+            "src/components/WorkspaceHelpMenu.jsx:80",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:443",
             "src/components/workspace/BoardConfigModal.jsx:199",
@@ -6448,7 +6464,7 @@
           "files": [
             "src/app/(app)/my/page.js:429",
             "src/components/WorkspaceInfoCenter.jsx:264",
-            "src/components/workspace/IssueDetail.jsx:1470",
+            "src/components/workspace/IssueDetail.jsx:1471",
             "src/components/workspace/calendar/CalendarEventPage.jsx:198"
           ]
         },
@@ -6488,7 +6504,7 @@
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:443",
             "src/components/workspace/BoardConfigModal.jsx:199",
-            "src/components/workspace/IssueDetail.jsx:1470",
+            "src/components/workspace/IssueDetail.jsx:1471",
             "src/components/workspace/TimesheetTab.jsx:462",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:563",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:633",
@@ -6512,7 +6528,7 @@
           "files": [
             "src/app/(app)/sprints/page.js:177",
             "src/components/UserStatusSetter.jsx:68",
-            "src/components/WorkspaceHelpMenu.jsx:81",
+            "src/components/WorkspaceHelpMenu.jsx:80",
             "src/components/WorkspaceInfoCenter.jsx:264"
           ]
         }
@@ -6605,7 +6621,7 @@
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:597",
             "src/app/(app)/team/page.js:133",
-            "src/components/profile/ProfileView.jsx:390",
+            "src/components/profile/ProfileView.jsx:388",
             "src/components/workspace/TimesheetTab.jsx:621",
             "src/components/workspace/VelocityTab.jsx:265",
             "src/components/workspace/WorkloadTab.jsx:702",
@@ -6684,7 +6700,7 @@
             "src/app/(app)/team/page.js:133",
             "src/components/WorkspaceInfoCenter.jsx:151",
             "src/components/WorkspaceInfoCenter.jsx:195",
-            "src/components/profile/ProfileView.jsx:390",
+            "src/components/profile/ProfileView.jsx:388",
             "src/components/workspace/AnalyticsTab.jsx:179",
             "src/components/workspace/QtPlusProjectTab.jsx:241",
             "src/components/workspace/QtPlusProjectTab.jsx:251",
@@ -6731,7 +6747,7 @@
             "src/app/(app)/calendar/page.js:597",
             "src/app/(app)/page.js:977",
             "src/app/(app)/team/page.js:133",
-            "src/components/profile/ProfileView.jsx:390",
+            "src/components/profile/ProfileView.jsx:388",
             "src/components/workspace/TimesheetTab.jsx:621",
             "src/components/workspace/UnifiedTimeline.jsx:497",
             "src/components/workspace/VelocityTab.jsx:265",
@@ -6782,12 +6798,12 @@
             "src/app/(app)/loading.js:28",
             "src/app/(app)/my/page.js:334",
             "src/app/(app)/page.js:971",
-            "src/app/(app)/settings/page.js:3240",
-            "src/app/(app)/settings/page.js:3338",
-            "src/app/(app)/settings/page.js:3383",
-            "src/app/(app)/settings/page.js:3453",
-            "src/app/(app)/settings/page.js:3479",
-            "src/components/profile/ProfileView.jsx:387",
+            "src/app/(app)/settings/page.js:3339",
+            "src/app/(app)/settings/page.js:3437",
+            "src/app/(app)/settings/page.js:3482",
+            "src/app/(app)/settings/page.js:3552",
+            "src/app/(app)/settings/page.js:3578",
+            "src/components/profile/ProfileView.jsx:385",
             "src/components/workspace/BillingTab.jsx:1240",
             "src/components/workspace/calendar/CalendarEventPage.jsx:734"
           ]
@@ -6864,13 +6880,13 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2689",
-            "src/app/(app)/settings/page.js:313",
+            "src/app/(app)/settings/page.js:2775",
+            "src/app/(app)/settings/page.js:315",
             "src/components/integrations/IntegrationCard.jsx:110"
           ]
         },
         "sm": {
-          "count": 8,
+          "count": 6,
           "routes": [
             "/",
             "/[projectId]",
@@ -6881,14 +6897,22 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2398",
-            "src/app/(app)/settings/page.js:2425",
-            "src/app/(app)/settings/page.js:2428",
-            "src/app/(app)/settings/page.js:2442",
-            "src/app/(app)/settings/page.js:2469",
+            "src/app/(app)/settings/page.js:2484",
+            "src/app/(app)/settings/page.js:2511",
+            "src/app/(app)/settings/page.js:2514",
             "src/components/CreateTaskModal.jsx:286",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:726",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1054"
+          ]
+        },
+        "md": {
+          "count": 2,
+          "routes": [
+            "/settings"
+          ],
+          "files": [
+            "src/app/(app)/settings/page.js:2528",
+            "src/app/(app)/settings/page.js:2555"
           ]
         }
       }
@@ -6922,7 +6946,7 @@
             "src/components/WorkspaceInfoCenter.jsx:274",
             "src/components/workspace/BillingTab.jsx:1198",
             "src/components/workspace/BillingTab.jsx:301",
-            "src/components/workspace/IssueDetail.jsx:1479"
+            "src/components/workspace/IssueDetail.jsx:1480"
           ]
         }
       },
@@ -6952,7 +6976,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:274",
-            "src/components/workspace/IssueDetail.jsx:1479"
+            "src/components/workspace/IssueDetail.jsx:1480"
           ]
         },
         "billing-selection": {
@@ -6979,17 +7003,17 @@
             "src/app/(app)/analytics/page.js:262",
             "src/app/(app)/analytics/page.js:284",
             "src/app/(app)/analytics/page.js:387",
-            "src/app/(app)/settings/page.js:2248",
-            "src/app/(app)/settings/page.js:2308",
-            "src/app/(app)/settings/page.js:2382",
-            "src/app/(app)/settings/page.js:2560",
-            "src/app/(app)/settings/page.js:2638",
-            "src/app/(app)/settings/page.js:2673",
-            "src/app/(app)/settings/page.js:3504",
-            "src/app/(app)/settings/page.js:3561",
+            "src/app/(app)/settings/page.js:2331",
+            "src/app/(app)/settings/page.js:2391",
+            "src/app/(app)/settings/page.js:2465",
+            "src/app/(app)/settings/page.js:2646",
+            "src/app/(app)/settings/page.js:2724",
+            "src/app/(app)/settings/page.js:2759",
+            "src/app/(app)/settings/page.js:3603",
+            "src/app/(app)/settings/page.js:3682",
             "src/components/integrations/IntegrationCard.jsx:86",
-            "src/components/migrations/DataMigrationSettings.jsx:189",
-            "src/components/migrations/DataMigrationSettings.jsx:83",
+            "src/components/migrations/DataMigrationSettings.jsx:198",
+            "src/components/migrations/DataMigrationSettings.jsx:88",
             "src/components/workspace/AnalyticsTab.jsx:401",
             "src/components/workspace/BillingTab.jsx:1327"
           ]
@@ -7004,9 +7028,9 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:292",
-            "src/app/(app)/settings/page.js:2870",
+            "src/app/(app)/settings/page.js:2969",
             "src/components/WorkspaceInfoCenter.jsx:224",
-            "src/components/migrations/DataMigrationSettings.jsx:147",
+            "src/components/migrations/DataMigrationSettings.jsx:166",
             "src/components/workspace/AnalyticsTab.jsx:321",
             "src/components/workspace/TimesheetTab.jsx:203",
             "src/components/workspace/TimesheetTab.jsx:236"
@@ -7019,7 +7043,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3113",
+            "src/app/(app)/settings/page.js:3212",
             "src/components/workspace/qtplus/cards/NoteCard.jsx:16"
           ]
         },
@@ -7029,11 +7053,11 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3243",
-            "src/app/(app)/settings/page.js:3341",
-            "src/app/(app)/settings/page.js:3386",
-            "src/app/(app)/settings/page.js:3456",
-            "src/app/(app)/settings/page.js:3482"
+            "src/app/(app)/settings/page.js:3342",
+            "src/app/(app)/settings/page.js:3440",
+            "src/app/(app)/settings/page.js:3485",
+            "src/app/(app)/settings/page.js:3555",
+            "src/app/(app)/settings/page.js:3581"
           ]
         },
         "sm": {
@@ -7044,7 +7068,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:79",
-            "src/components/profile/ProfileView.jsx:406",
+            "src/components/profile/ProfileView.jsx:404",
             "src/components/workspace/BillingTab.jsx:514"
           ]
         }
@@ -7061,22 +7085,22 @@
             "src/app/(app)/analytics/page.js:262",
             "src/app/(app)/analytics/page.js:284",
             "src/app/(app)/analytics/page.js:387",
-            "src/app/(app)/settings/page.js:2248",
-            "src/app/(app)/settings/page.js:2308",
-            "src/app/(app)/settings/page.js:2382",
-            "src/app/(app)/settings/page.js:2560",
-            "src/app/(app)/settings/page.js:2638",
-            "src/app/(app)/settings/page.js:2673",
-            "src/app/(app)/settings/page.js:3243",
-            "src/app/(app)/settings/page.js:3341",
-            "src/app/(app)/settings/page.js:3386",
-            "src/app/(app)/settings/page.js:3456",
-            "src/app/(app)/settings/page.js:3482",
-            "src/app/(app)/settings/page.js:3504",
-            "src/app/(app)/settings/page.js:3561",
+            "src/app/(app)/settings/page.js:2331",
+            "src/app/(app)/settings/page.js:2391",
+            "src/app/(app)/settings/page.js:2465",
+            "src/app/(app)/settings/page.js:2646",
+            "src/app/(app)/settings/page.js:2724",
+            "src/app/(app)/settings/page.js:2759",
+            "src/app/(app)/settings/page.js:3342",
+            "src/app/(app)/settings/page.js:3440",
+            "src/app/(app)/settings/page.js:3485",
+            "src/app/(app)/settings/page.js:3555",
+            "src/app/(app)/settings/page.js:3581",
+            "src/app/(app)/settings/page.js:3603",
+            "src/app/(app)/settings/page.js:3682",
             "src/components/integrations/IntegrationCard.jsx:86",
-            "src/components/migrations/DataMigrationSettings.jsx:189",
-            "src/components/migrations/DataMigrationSettings.jsx:83",
+            "src/components/migrations/DataMigrationSettings.jsx:198",
+            "src/components/migrations/DataMigrationSettings.jsx:88",
             "src/components/workspace/AnalyticsTab.jsx:401",
             "src/components/workspace/BillingTab.jsx:1327"
           ]
@@ -7107,10 +7131,10 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2870",
-            "src/app/(app)/settings/page.js:3113",
-            "src/components/migrations/DataMigrationSettings.jsx:147",
-            "src/components/profile/ProfileView.jsx:406",
+            "src/app/(app)/settings/page.js:2969",
+            "src/app/(app)/settings/page.js:3212",
+            "src/components/migrations/DataMigrationSettings.jsx:166",
+            "src/components/profile/ProfileView.jsx:404",
             "src/components/workspace/TimesheetTab.jsx:203"
           ]
         }
@@ -7125,7 +7149,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1374"
+            "src/components/workspace/IssueDetail.jsx:1375"
           ]
         },
         "cell": {
@@ -7179,7 +7203,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:378"
+            "src/app/(app)/settings/page.js:380"
           ]
         },
         "choice": {
@@ -7188,7 +7212,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:388"
+            "src/app/(app)/settings/page.js:390"
           ]
         },
         "theme": {
@@ -7197,7 +7221,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2713"
+            "src/app/(app)/settings/page.js:2799"
           ]
         }
       }
@@ -7375,7 +7399,7 @@
             "src/components/CreateTaskModal.jsx:310",
             "src/components/InviteMemberDialog.jsx:115",
             "src/components/workspace/BillingTab.jsx:1112",
-            "src/components/workspace/IssueDetail.jsx:1924"
+            "src/components/workspace/IssueDetail.jsx:1925"
           ]
         },
         "raised": {
@@ -7384,7 +7408,7 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:240"
+            "src/components/profile/ProfileView.jsx:238"
           ]
         },
         "underline": {
@@ -7395,7 +7419,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1033",
+            "src/components/workspace/IssueDetail.jsx:1034",
             "src/components/workspace/qtplus/StageStepper.jsx:41"
           ]
         }
@@ -7452,7 +7476,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2287"
+            "src/app/(app)/settings/page.js:2370"
           ]
         }
       }
@@ -7493,7 +7517,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1638"
+            "src/components/workspace/IssueDetail.jsx:1639"
           ]
         }
       }
@@ -7567,7 +7591,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1258"
+            "src/components/workspace/IssueDetail.jsx:1259"
           ]
         },
         "calendar": {
@@ -7598,7 +7622,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:3623"
+            "src/app/(app)/settings/page.js:3744"
           ]
         },
         "team": {
@@ -7666,8 +7690,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2728",
-            "src/components/workspace/IssueDetail.jsx:1368",
+            "src/app/(app)/settings/page.js:2814",
+            "src/components/workspace/IssueDetail.jsx:1369",
             "src/components/workspace/UnifiedTimeline.jsx:536",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1025",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1123",
@@ -7682,7 +7706,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1102",
+            "src/components/workspace/IssueDetail.jsx:1103",
             "src/components/workspace/calendar/CalendarEventPage.jsx:802"
           ]
         }
@@ -7697,9 +7721,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/settings/page.js:2728",
-            "src/components/workspace/IssueDetail.jsx:1102",
-            "src/components/workspace/IssueDetail.jsx:1368",
+            "src/app/(app)/settings/page.js:2814",
+            "src/components/workspace/IssueDetail.jsx:1103",
+            "src/components/workspace/IssueDetail.jsx:1369",
             "src/components/workspace/UnifiedTimeline.jsx:536",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1025",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1123",
@@ -7725,7 +7749,7 @@
     "Primary Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\">Зберегти</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\">Зберегти</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\">Зберегти</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" icon={Plus}>Новий проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" icon={Plus}>Новий проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" icon={Plus}>Додати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" loading>Збереження...</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" loading>Збереження...</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" loading>Збереження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"primary\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
     "Secondary Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\">Скасувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\">Скасувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\">Скасувати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" icon={Archive}>Архівувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" icon={Archive}>Архівувати</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" icon={Plus}>Додати</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" loading>Завантаження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити проєкт</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"secondary\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
     "Ghost Buttons": "<div className=\"overflow-x-auto w-full\">\n  <table className=\"w-full text-left border-collapse\">\n    <thead>\n      <tr className=\"border-b border-[#f0f0f0]\">\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[240px]\">Стан / Конфігурація</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Large — 36px (lg)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider w-[220px]\">Medium — 32px (md)</th>\n        <th className=\"pb-3 text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Small — 28px (sm)</th>\n      </tr>\n    </thead>\n    <tbody className=\"divide-y divide-[#f4f4f5]\">\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Default (Текст)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\">Детальніше</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\">Детальніше</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\">Детальніше</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">З іконкою</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" icon={ExternalLink}>Відкрити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" icon={ExternalLink}>Відкрити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" icon={ExternalLink}>Відкрити</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Завантаження (loading)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" loading>Завантаження...</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" loading>Завантаження...</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Вимкнено (disabled)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"lg\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"md\" disabled>Недоступно</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" size=\"sm\" disabled>Недоступно</Button></td>\n      </tr>\n      <tr className=\"align-middle\">\n        <td className=\"py-4 text-[13px] font-semibold text-[#1f1f1f]\">Небезпечна дія (danger, color=red)</td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"lg\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"md\" icon={Trash2}>Видалити</Button></td>\n        <td className=\"py-4\"><Button style=\"ghost\" color=\"red\" size=\"sm\" icon={Trash2}>Видалити</Button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
-    "Адаптивний подвійний підпис": "<div className=\"flex flex-wrap items-center gap-[8px]\">\n  <Button aria-label=\"Додати підзадачу\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Підзадача</span><span className=\"hidden sm:inline\">Додати підзадачу</span>\n  </Button>\n  <Button aria-label=\"Додати зв’язок\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Зв’язок</span><span className=\"hidden sm:inline\">Додати зв’язок</span>\n  </Button>\n  <Button aria-label=\"Додати мітку\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Мітка</span><span className=\"hidden sm:inline\">Додати мітку</span>\n  </Button>\n</div>",
+    "Адаптивний подвійний підпис": "<div className=\"flex flex-wrap items-center gap-[8px]\">\n  <Button aria-label=\"Додати підзавдання\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Підзавдання</span><span className=\"hidden sm:inline\">Додати підзавдання</span>\n  </Button>\n  <Button aria-label=\"Додати зв’язок\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Зв’язок</span><span className=\"hidden sm:inline\">Додати зв’язок</span>\n  </Button>\n  <Button aria-label=\"Додати мітку\" style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n    <span className=\"sm:hidden\">Мітка</span><span className=\"hidden sm:inline\">Додати мітку</span>\n  </Button>\n</div>",
     "Icon-Only Buttons": "<div className=\"flex flex-col gap-[20px] w-full\">\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Large — 36×36px (icon-lg)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon-lg\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon-lg\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon-lg\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon-lg\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Medium — 32×32px (icon)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Small — 28×28px (icon-sm)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon-sm\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon-sm\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon-sm\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon-sm\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n</div>",
     "Кнопка відтворення": "<div className=\"flex items-end gap-[20px]\">\n  {[[false, false, 'play'], [true, false, 'pause'], [false, true, 'disabled']].map(([playing, disabled, role]) => (\n    <div key={role} className=\"flex flex-col items-center gap-[6px]\">\n      <MediaPlayButton playing={playing} disabled={disabled} />\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
     "Named Input sizes — sm / md / lg": "<div className=\"max-w-[400px] flex flex-col gap-[12px]\">\n  <Input size=\"sm\" placeholder=\"Small — 28px\" />\n  <Input size=\"md\" placeholder=\"Medium — 32px\" />\n  <Input size=\"lg\" placeholder=\"Large — 36px\" value={val} onChange={e => setVal(e.target.value)} />\n  <Input size=\"md\" preset=\"money\" suffix=\"₴/г\" type=\"number\" defaultValue=\"125\" aria-label=\"Грошове значення\" />\n  <Input size=\"lg\" placeholder=\"Заблоковане поле\" disabled />\n</div>",
@@ -7760,6 +7784,7 @@
     "StatusPill — sprint states": "<div className=\"flex flex-wrap items-center gap-[8px]\">\n  <StatusPill label=\"Активний\" color=\"#10b981\" />\n  <StatusPill label=\"Запланований\" color=\"#9a9a9a\" />\n  <StatusPill label=\"Завершено\" color=\"#1f1f1f\" />\n</div>",
     "UserAvatar sizes": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {sizes.map(([token, px]) => (\n    <div key={token} className=\"flex flex-col items-center gap-[6px]\">\n      <UserAvatar user={demoUser} size={token} tooltip />\n      <span className=\"text-[9px] font-mono text-[#1f1f1f]\">{token}</span>\n      <span className=\"text-[9px] font-mono text-[#cfcfcf]\">{px}px</span>\n    </div>\n  ))}\n</div>",
     "UserAvatar states": "<UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size=\"lg\" tooltip />\n<UserAvatar user={null} size=\"lg\" />",
+    "PresenceDot": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {[['xs', 'chat-mention'], ['sm', 'sm'], ['md', 'md'], ['lg', 'lg'], ['hero', 'xl']].map(([token, avatarSize]) => (\n    <div key={token} className=\"flex flex-col items-center gap-[6px]\">\n      <span className=\"relative inline-flex\">\n        <UserAvatar user={demoUser} size={avatarSize} />\n        <PresenceDot size={token} collar=\"white\" />\n      </span>\n      <span className=\"text-[9px] font-mono text-[#1f1f1f]\">{token}</span>\n    </div>\n  ))}\n</div>",
     "Панельна ієрархія (Layout Surfaces)": "{/* Level 1: Gray Main Panel */}\n<Surface preset=\"panel\" padding=\"lg\" className=\"w-full\">\n  <div className=\"mb-[16px]\">\n    <span className=\"text-[10px] font-bold text-[#9a9a9a] uppercase tracking-wider bg-white border border-[#e9e9e9] px-[8px] py-[3px] rounded-[6px]\">\n      Level 1: Main Panel (#f4f4f5, rounded-[16px])\n    </span>\n    <p className=\"text-[12px] text-[#9a9a9a] mt-[8px]\">Основна сіра контент-зона для розмежування логічних секцій або колонок.</p>\n  </div>\n\n  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-[16px]\">\n    {/* Level 2: White Card Surface */}\n    <Surface preset=\"nested-card\" padding=\"lg\">\n      <span className=\"text-[10px] font-bold text-[#6366f1] uppercase tracking-wider bg-[#6366f1]/8 border border-[#6366f1]/15 px-[8px] py-[3px] rounded-[6px]\">\n        Level 2: White Card (rounded-[12px])\n      </span>\n      <p className=\"text-[13px] text-[#1f1f1f] font-semibold mt-[12px]\">Біла плаваюча картка</p>\n      <p className=\"text-[12px] text-[#9a9a9a] mt-[4px]\">Без рамки та без тіней. Чиста біла поверхня для розміщення окремих завдань, деталей або списків.</p>\n    </Surface>\n\n    <Surface preset=\"card\" padding=\"md\" className=\"flex flex-col\">\n      <span className=\"text-[10px] font-bold text-muted uppercase tracking-wider\">\n        Team page card (rounded-[16px])\n      </span>\n      <p className=\"mt-[12px] text-[13px] font-semibold text-ink\">Біла продуктова поверхня</p>\n      <p className=\"mt-[4px] text-[12px] text-muted\">Другий реально використаний Surface-варіант.</p>\n    </Surface>\n  </div>\n\n</Surface>",
     "Card variants": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <Card preset=\"bordered\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">White card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Стандартна продуктова картка з border-line.</p>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <p className=\"text-[13px] font-bold text-ink\">Borderless white card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">Найпоширеніший фактичний варіант у Settings та Analytics.</p>\n  </Card>\n  <Card preset=\"bordered-compact\" padding=\"none\">\n    <p className=\"px-[16px] pt-[16px] text-[13px] font-bold text-ink\">Bordered compact (rounded-[12px])</p>\n    <p className=\"px-[16px] pb-[16px] pt-[4px] text-[12px] text-muted\">Той самий бордер на меншому радіусі — для карток, що стоять сіткою серед собі подібних, як матеріали QuickTeam+.</p>\n  </Card>\n  <Card preset=\"bordered\" padding=\"lg\" interactive onClick={() => {}}>\n    <p className=\"text-[13px] font-bold text-ink\">Interactive card</p>\n    <p className=\"mt-[4px] text-[12px] text-muted\">З onClick картка стає справжньою кнопкою — фокус, Enter, доступне ім’я — і додає ховер.</p>\n  </Card>\n</div>",
     "Рядок списку": "<div className=\"w-full max-w-[420px] overflow-hidden rounded-[12px] border border-line bg-white\">\n  <div className=\"divide-y divide-[#f0f0f0]\">\n    <ListRow density=\"compact\" className=\"flex items-center justify-between\">\n      <span className=\"text-[13px] font-semibold text-ink\">QT-104 · Зворотний звʼязок</span>\n      <span className=\"font-mono text-[10px] text-faint\">compact</span>\n    </ListRow>\n    <ListRow density=\"compact\" className=\"flex items-center justify-between\">\n      <span className=\"text-[13px] font-semibold text-ink\">QT-118 · Експорт у CSV</span>\n      <span className=\"font-mono text-[10px] text-faint\">compact</span>\n    </ListRow>\n    <ListRow density=\"roomy\" className=\"flex items-center justify-between\">\n      <span className=\"text-[13px] font-bold text-ink\">Артур Моспан</span>\n      <span className=\"font-mono text-[10px] text-faint\">roomy</span>\n    </ListRow>\n  </div>\n</div>",

@@ -249,7 +249,9 @@ test('the chat and team rails exist once, and the pages and catalogue all render
   assert.match(memberRail, /rounded-\[8px\][\s\S]{0,80}isSelected \? 'bg-\[#ebebeb\]'/);
   assert.match(memberRail, /<UserAvatar user=\{member\} size="md" \/>/);
   assert.match(memberRail, /text-\[13px\] font-medium truncate/);
-  assert.match(memberRail, /w-2\.5 h-2\.5 bg-\[#10b981\] rounded-full ring-2 ring-canvas/);
+  // The presence mark is one component now: it was drawn four different ways
+  // at four sizes, and on a profile it was a 28px green disc over the face.
+  assert.match(memberRail, /<PresenceDot size="md" collar="canvas" \/>/);
 
   for (const [name, source] of [['chat', chat], ['team', team], ['kit', kit]]) {
     assert.doesNotMatch(

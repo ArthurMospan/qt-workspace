@@ -186,7 +186,7 @@ export default function TaskRow({
             {/* Real child issue progress */}
             {childAll > 0 && (
               <div className="flex items-center gap-[4px] text-[9px] text-[#555555] font-bold shrink-0 ml-1">
-                <span className="text-[#1a1a1a]">{childDone}/{childAll} підзадач</span>
+                <span className="text-[#1a1a1a]">{childDone}/{childAll} підзавдань</span>
                 <div className="flex gap-[2px]">
                   {Array.from({ length: childAll }).map((_, idx) => (
                     <div 
@@ -233,13 +233,13 @@ export default function TaskRow({
         </div>
 
         {/* Right Section: Metadata, Badges, Assignees.
-            Fixed tracks, not a free-flowing row. Every one of these slots is
-            optional — a task with no priority, no labels or nobody assigned
-            simply dropped its box — so each row put its badges at a different
-            distance from the edge and a list of ten read as ten ragged lines.
-            The grid gives the four slots the same width on every row; below md
-            there is no room for columns, so it falls back to a wrapping row. */}
-        <div className="flex flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] shrink-0 md:grid md:w-[368px] md:grid-cols-[20px_104px_minmax(0,1fr)_76px] md:gap-x-[12px]">
+            Only the two slots that were actually ragged are pinned: the
+            priority mark, which vanished entirely on a task that had none, and
+            the assignee stack, whose width followed the number of faces and
+            dragged every badge left of it along. The badges between them keep
+            their natural widths — giving them a fixed track too made every row
+            without labels open a wide hole in front of the avatars. */}
+        <div className="flex flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] shrink-0 md:flex-nowrap">
           <span className="flex h-5 w-5 shrink-0 items-center justify-center">
             {selectionActive && onSelect ? (
               <span
@@ -261,7 +261,7 @@ export default function TaskRow({
           </span>
 
           {/* Type Badge */}
-          <span className="flex min-w-0 items-center overflow-hidden">
+          <span className="flex min-w-0 shrink-0 items-center">
             {typeObj && (
               <TypeBadge
                 label={typeLabel}

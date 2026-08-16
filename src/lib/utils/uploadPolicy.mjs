@@ -53,6 +53,18 @@ const AUDIO_ENTRIES = Object.entries(FORMAT_POLICY).filter(([extension]) =>
 
 export const IMAGE_UPLOAD_ACCEPT = acceptFor(IMAGE_ENTRIES);
 export const AUDIO_UPLOAD_ACCEPT = acceptFor(AUDIO_ENTRIES);
+
+// What to tell somebody standing in front of the file picker, derived from the
+// formats actually accepted rather than written out beside them. The hint used
+// to read «Зображення 1:1» — a fact about a shape nobody is being asked to
+// produce, and no help at all when the upload is rejected.
+export const IMAGE_UPLOAD_FORMATS = Object.freeze(
+  [...new Set(IMAGE_ENTRIES.map(([extension]) => extension.toUpperCase()))].sort(),
+);
+export const MAX_UPLOAD_MB = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024));
+// Below this a logo is visibly soft on a retina screen at its largest use, the
+// 64px settings preview at 2×. It is advice, not a rule the uploader enforces.
+export const RECOMMENDED_IMAGE_MIN_PX = 256;
 export const ATTACHMENT_UPLOAD_ACCEPT = acceptFor(Object.entries(FORMAT_POLICY));
 
 function normalizedMimeType(value) {

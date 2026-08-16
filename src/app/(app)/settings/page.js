@@ -11,6 +11,8 @@ import { restoreProject } from '@/lib/services/projects';
 import { transferOrganizationOwnership } from '@/lib/services/organizations';
 import { fetchWorkflowViaApi, updateWorkflowViaApi } from '@/lib/services/workflow';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
+import { deleteAccount, fetchAccountDeletionImpact } from '@/lib/services/account';
+import { plural } from '@/lib/utils/plural.mjs';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -63,7 +65,7 @@ import { Colorful } from '@uiw/react-color';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
 import IntegrationCard, { IntegrationCode, IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
-import DataMigrationSettings from '@/components/migrations/DataMigrationSettings';
+import DataMigrationSettings, { MIGRATION_SOURCE_TITLES } from '@/components/migrations/DataMigrationSettings';
 import {
   DEFAULT_STATUSES,
   DEFAULT_TYPES,
@@ -641,6 +643,20 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState('profile');
   const [integrationDetail, setIntegrationDetail] = useState('');
+  // Which migration source is open, held here for the same reason
+  // `integrationDetail` is: the section header above it needs to know.
+  const [migrationProvider, setMigrationProvider] = useState('');
+  // Whether this person may delete themselves, and what it would touch. Loaded
+  // when the danger section opens rather than on every settings visit — it is
+  // three collection queries for a screen most people never reach.
+  const [accountDeletion, setAccountDeletion] = useState({
+    loading: false,
+    busy: false,
+    ownedOrganizations: [],
+    organizationCount: 0,
+    projectCount: 0,
+    assignedIssueCount: 0,
+  });
 
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
@@ -1403,6 +1419,7 @@ export default function SettingsPage() {
     }
     setActiveSection(newSection);
     setIntegrationDetail('');
+    setMigrationProvider('');
     return true;
   };
 
@@ -2151,6 +2168,72 @@ export default function SettingsPage() {
     }
   };
 
+  // The danger section asks the server what deleting this account would touch,
+  // so the confirmation can state it instead of saying "everything".
+  useEffect(() => {
+    if (activeSection !== 'danger') return undefined;
+    let cancelled = false;
+    setAccountDeletion(current => ({ ...current, loading: true }));
+    fetchAccountDeletionImpact()
+      .then(impact => {
+        if (cancelled) return;
+        setAccountDeletion(current => ({
+          ...current,
+          loading: false,
+          ownedOrganizations: impact.ownedOrganizations || [],
+          organizationCount: impact.organizationCount || 0,
+          projectCount: impact.projectCount || 0,
+          assignedIssueCount: impact.assignedIssueCount || 0,
+        }));
+      })
+      .catch(() => {
+        if (!cancelled) setAccountDeletion(current => ({ ...current, loading: false }));
+      });
+    return () => { cancelled = true; };
+  }, [activeSection]);
+
+  const handleDeleteAccount = async () => {
+    if (accountDeletion.busy) return;
+    const scope = [
+      accountDeletion.organizationCount > 0
+        && `${accountDeletion.organizationCount} ${plural(accountDeletion.organizationCount, ['організації', 'організацій', 'організацій'])}`,
+      accountDeletion.projectCount > 0
+        && `${accountDeletion.projectCount} ${plural(accountDeletion.projectCount, ['проєкту', 'проєктів', 'проєктів'])}`,
+      accountDeletion.assignedIssueCount > 0
+        && `${accountDeletion.assignedIssueCount} ${plural(accountDeletion.assignedIssueCount, ['завдання', 'завдань', 'завдань'])}`,
+    ].filter(Boolean);
+
+    // Typed confirmation, not a second «Ви впевнені?». Nothing here can be
+    // undone and there is no trash to fish it back out of.
+    const typed = await confirmDialog({
+      title: 'Видалити обліковий запис назавжди?',
+      message: scope.length > 0
+        ? `Вас буде прибрано з ${scope.join(', ')}. Створені вами завдання й коментарі залишаться в історії команди, але профіль, налаштування та доступ зникнуть назавжди. Введіть ВИДАЛИТИ, щоб підтвердити.`
+        : 'Профіль, налаштування та доступ буде видалено назавжди. Введіть ВИДАЛИТИ, щоб підтвердити.',
+      confirmText: 'Видалити назавжди',
+      cancelText: 'Скасувати',
+      danger: true,
+      input: { placeholder: 'ВИДАЛИТИ' },
+    });
+    if (String(typed || '').trim().toLocaleUpperCase('uk-UA') !== 'ВИДАЛИТИ') return;
+
+    setAccountDeletion(current => ({ ...current, busy: true }));
+    try {
+      await deleteAccount();
+      // The Firebase user no longer exists, so there is nothing left to sign
+      // out of on the server; this clears the client session and lands on login.
+      showToast('Обліковий запис видалено');
+      await signOut();
+    } catch (error) {
+      setAccountDeletion(current => ({
+        ...current,
+        busy: false,
+        ownedOrganizations: error?.organizations || current.ownedOrganizations,
+      }));
+      showToast(error.message || 'Не вдалося видалити обліковий запис', 'error');
+    }
+  };
+
   const handleDragEnd = (result, list, setList) => {
     if (!result.destination) return;
     const items = Array.from(list);
@@ -2246,7 +2329,7 @@ export default function SettingsPage() {
       case 'profile': return (
         <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, завданнях та чаті" rightAction={saveButton}>
           <Card preset="borderless" padding="lg">
-            <Row label="Аватар" desc="Завантажте власне фото (рекомендовано 1:1)">
+            <Row label="Аватар" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
               <ImageUpload
                 value={customAvatar || currentUser?.avatar || ''}
                 storagePath={customAvatarStoragePath}
@@ -2390,7 +2473,10 @@ export default function SettingsPage() {
                   {caption && <p className="mt-[5px] text-[12px] text-muted truncate">{caption}</p>}
                 </div>
               </div>
-              {master && <div className="shrink-0 pt-[6px]">{master}</div>}
+              {/* The channel switch is the big one: it governs every row in
+                  the card below it. The rows are `sm`, so the difference in
+                  size says which is which without a word. */}
+              {master && <div className="shrink-0 pt-[2px]">{master}</div>}
             </div>
 
             {available ? eventRows.map(row => (
@@ -2442,7 +2528,7 @@ export default function SettingsPage() {
                 <ToggleSwitch
                   checked={notif.emailEnabled === true}
                   onChange={v => setNotif(p => ({ ...p, emailEnabled: v }))}
-                  size="sm"
+                  size="md"
                   ariaLabel="Сповіщення на пошту"
                 />
               ),
@@ -2474,7 +2560,7 @@ export default function SettingsPage() {
                     telegramAwaitingLink ||
                     (!telegramBotStatus.configured && !telegramBotStatus.connected)
                   }
-                  size="sm"
+                  size="md"
                   ariaLabel="Сповіщення в Telegram"
                 />
               ),
@@ -2640,7 +2726,7 @@ export default function SettingsPage() {
             <Row label="Назва організації" desc="Видима всім у вашій організації">
               <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
             </Row>
-            <Row label="Логотип організації" desc="Зображення для вашої організації (рекомендовано 1:1)">
+            <Row label="Логотип організації" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
               <ImageUpload
                 value={orgLogo}
                 storagePath={orgLogoStoragePath}
@@ -2790,20 +2876,33 @@ export default function SettingsPage() {
 
 
       // ──────────────────────────────────────────────────────────────
-      case 'migration':
+      case 'migration': {
+        // The same header shape as «Інтеграції» below: the way back lives above
+        // the title, not inside the body, and the title names where you are.
+        const migrationSource = MIGRATION_SOURCE_TITLES[migrationProvider] || '';
         return (
           <Section
-            title="Перенесення даних"
-            desc="Перенесіть робочі проєкти та історію команди у QuickTeam"
+            title={migrationProvider ? migrationSource : 'Перенесення даних'}
+            desc={migrationProvider
+              ? 'Що переноситься, як зіставляються люди й що буде пропущено'
+              : 'Перенесіть робочі проєкти та історію команди у QuickTeam'}
+            backAction={migrationProvider ? (
+              <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setMigrationProvider('')}>
+                Усі джерела
+              </Button>
+            ) : null}
           >
             <DataMigrationSettings
               organizationId={activeOrgId}
               members={members}
               projects={projects}
               showToast={showToast}
+              selectedProviderId={migrationProvider}
+              onSelectProvider={setMigrationProvider}
             />
           </Section>
         );
+      }
 
       case 'integrations': {
         const buggyBagKey = apiKeys.find(k => k.name === 'BuggyBag Integration');
@@ -3549,6 +3648,28 @@ export default function SettingsPage() {
                 </Button>
               </Row>
             )}
+
+            {/* The one action a person is unconditionally entitled to take
+                about their own data. The product used to answer this with
+                «зверніться до підтримки», which is not an answer. */}
+            <Row
+              label="Видалення облікового запису"
+              desc={accountDeletion.ownedOrganizations.length > 0
+                ? `Ви власник: ${accountDeletion.ownedOrganizations.join(', ')}. Спершу передайте власність або зверніться до підтримки.`
+                : 'Вас буде прибрано з усіх організацій, а обліковий запис і особисті дані — видалено назавжди'}
+            >
+              <Button
+                onClick={handleDeleteAccount}
+                style="primary"
+                color="red"
+                size="lg"
+                icon={Trash2}
+                loading={accountDeletion.busy}
+                disabled={accountDeletion.loading || accountDeletion.ownedOrganizations.length > 0}
+              >
+                Видалити акаунт
+              </Button>
+            </Row>
           </Card>
         </Section>
       );

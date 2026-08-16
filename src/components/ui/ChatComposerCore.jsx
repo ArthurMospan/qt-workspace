@@ -4,7 +4,11 @@ import { ArrowUp, Send } from 'lucide-react';
 
 const VARIANTS = {
   workspace: {
-    shell: 'overflow-hidden rounded-2xl border border-line bg-white transition-all hover:border-[#cfcfcf] focus-within:border-[#cfcfcf] focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
+    // A border *and* a focus shadow drew two concentric outlines around the
+    // same box. The task-page composer below already solved this with one ring
+    // that thickens; the workspace chat now wears exactly that, keeping only
+    // its own corner radius and textarea geometry.
+    shell: 'overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]',
     textarea: 'w-full px-4 py-3.5 text-[14px] text-ink placeholder-[#b0b0b0] bg-transparent outline-none resize-none max-h-[200px] leading-relaxed',
   },
   timeline: {

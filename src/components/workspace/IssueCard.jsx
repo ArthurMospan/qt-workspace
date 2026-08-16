@@ -262,7 +262,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           {childAll > 0 && (
             <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-[#555555] font-medium">
               <span className="shrink-0">
-                <strong className="text-[#1a1a1a] font-semibold">{childDone}/{childAll}</strong> підзадач
+                <strong className="text-[#1a1a1a] font-semibold">{childDone}/{childAll}</strong> підзавдань
               </span>
               <div className="flex items-center gap-[3px] shrink-0">
                 {Array.from({ length: childAll }).map((_, idx) => (

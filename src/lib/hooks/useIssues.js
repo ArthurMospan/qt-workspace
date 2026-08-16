@@ -407,7 +407,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
         closedStatusIds,
       });
       if (blockers.children.length > 0) {
-        throw new Error(`Спершу закрийте підзадачі: ${blockers.children.length} ще в роботі`);
+        throw new Error(`Спершу закрийте підзавдання: ${blockers.children.length} ще в роботі`);
       }
       if (blockers.dependencies.length > 0) {
         const names = blockers.dependencies

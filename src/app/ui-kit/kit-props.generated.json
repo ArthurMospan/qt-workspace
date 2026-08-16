@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 98,
-    "props": 729,
-    "documentedProps": 729,
+    "components": 99,
+    "props": 733,
+    "documentedProps": 733,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -767,7 +767,7 @@
           "default": "false",
           "type": "boolean",
           "values": [],
-          "description": "Adds the pointer, hover tint and focus ring. Set it whenever `onClick` is set."
+          "description": "Adds the pointer and the hover an openable"
         },
         {
           "name": "onClick",
@@ -3887,6 +3887,40 @@
           "type": "string",
           "values": [],
           "description": "Placement of the trigger wrapper only."
+        }
+      ]
+    },
+    "PresenceDot": {
+      "file": "src/components/ui/DataDisplay/PresenceDot.jsx",
+      "summary": "\"This person is here right now\", drawn on the corner of their avatar.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "collar",
+          "default": "'canvas'",
+          "type": "'canvas'|'white'",
+          "values": [],
+          "description": "Which surface the avatar sits on."
+        },
+        {
+          "name": "label",
+          "default": "'Зараз онлайн'",
+          "type": "string",
+          "values": [],
+          "description": "Accessible name; the default says what it means."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'xs'|'sm'|'md'|'lg'|'hero'",
+          "values": [],
+          "description": "Matches the avatar's own size token."
         }
       ]
     },

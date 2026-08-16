@@ -70,7 +70,14 @@ export default function ContextMenu({
   };
 
   return (
-    <div className={`relative inline-block ${isOpen ? 'z-50' : ''} ${className}`} ref={containerRef}>
+    // `inline-block` put the trigger on a text baseline: the button kept its
+    // own 20px height, but the wrapper around it grew by the line box's
+    // descender space, so a kebab beside a plus in the same `items-center` row
+    // sat a few pixels high. Callers worked around it by passing `flex`, which
+    // collides with `inline-block` in the same Tailwind layer and wins or loses
+    // by stylesheet order. A wrapper whose only job is to hold one control is
+    // an inline flex box; there is no baseline to sit on.
+    <div className={`relative inline-flex items-center ${isOpen ? 'z-50' : ''} ${className}`} ref={containerRef}>
       {React.cloneElement(trigger, {
         onClick: handleTriggerClick,
       })}

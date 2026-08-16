@@ -149,7 +149,7 @@ export default function WorkspaceSidebar() {
         <div className={`flex items-start ${collapsed ? 'justify-center w-full' : 'justify-between w-full'}`}>
           {!collapsed ? (
             <>
-              <div className="flex items-start min-w-0 flex-1">
+              <div className="flex items-center min-w-0 flex-1">
                 {!brandingReady ? (
                   /* ── Skeleton: доки не приїхали дані організації, краще
                      нічого не показувати, ніж "Company name" / бите лого ── */
@@ -165,7 +165,7 @@ export default function WorkspaceSidebar() {
                     {/* Той самий розклад висот (16px + 20px), що й у реального
                         контенту нижче — щоб перехід скелетон → справжні дані
                         не смикав layout ні на піксель. */}
-                    <div className="flex flex-1 flex-col mt-[-2px] min-w-0 ml-[12px]">
+                    <div className="flex flex-1 flex-col min-w-0 ml-[12px]">
                       <div className="h-[16px] flex items-center">
                         <Skeleton preset="caption" width="wide" tone="sidebar" />
                       </div>
@@ -205,7 +205,7 @@ export default function WorkspaceSidebar() {
                   </Link>
                 )}
                 {brandingReady && (
-                  <div className="flex flex-col mt-[-2px] min-w-0 ml-[12px]">
+                  <div className="flex flex-col min-w-0 ml-[12px]">
                     {/* line-height фіксований (16px / 20px) незалежно від
                         isBranded — інакше рядки міняються розміром шрифту
                         місцями, а висота блоку "стрибає" на 1-2px. */}
@@ -243,11 +243,24 @@ export default function WorkspaceSidebar() {
                   </div>
                 )}
               </div>
+              {/* The hit area used to be a bare pseudo-element inset around a
+                  20px glyph: bigger to click, but nothing answered the cursor,
+                  so it read as decoration. It is a real 32px control now — its
+                  own box, its own hover tint, its own pointer. */}
               <button
                 onClick={() => setCollapsed(true)}
                 data-ui-control="branding-action"
-                className="relative mt-1 shrink-0 ml-[8px] transition-colors after:absolute after:-inset-[8px] after:content-['']"
+                data-ui-action="sidebar-collapse"
+                className="flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] transition-colors"
                 style={{ color: 'var(--sb-muted)' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = 'var(--sb-hover)';
+                  e.currentTarget.style.color = 'var(--sb-text)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--sb-muted)';
+                }}
                 title="Сховати панель"
                 aria-label="Згорнути бічну панель"
               >
@@ -261,8 +274,17 @@ export default function WorkspaceSidebar() {
                   onClick={() => setCollapsed(false)}
                   aria-label="Розгорнути бічну панель"
                   data-ui-control="branding-action"
-                  className="flex h-full w-full items-center justify-center transition-colors"
+                  data-ui-action="sidebar-collapse"
+                  className="flex h-[32px] w-[32px] cursor-pointer items-center justify-center rounded-[8px] transition-colors"
                   style={{ color: 'var(--sb-muted)' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'var(--sb-hover)';
+                    e.currentTarget.style.color = 'var(--sb-text)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--sb-muted)';
+                  }}
                 >
                   <PanelLeftOpen size={20} />
                 </button>
