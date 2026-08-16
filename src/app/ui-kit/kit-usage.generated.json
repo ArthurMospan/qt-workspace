@@ -6154,8 +6154,8 @@
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:316",
-            "src/components/WorkspaceSidebar.jsx:366"
+            "src/components/WorkspaceSidebar.jsx:331",
+            "src/components/WorkspaceSidebar.jsx:381"
           ]
         },
         "md": {
@@ -6188,7 +6188,7 @@
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
             "src/components/OrgSwitcherScreen.jsx:46",
-            "src/components/WorkspaceSidebar.jsx:316",
+            "src/components/WorkspaceSidebar.jsx:331",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6196,7 +6196,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:366"
+            "src/components/WorkspaceSidebar.jsx:381"
           ]
         }
       },
@@ -6222,7 +6222,7 @@
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:190",
-            "src/components/WorkspaceSidebar.jsx:316"
+            "src/components/WorkspaceSidebar.jsx:331"
           ]
         },
         "info": {
@@ -6231,7 +6231,7 @@
           "files": [
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:366"
+            "src/components/WorkspaceSidebar.jsx:381"
           ]
         }
       },
@@ -6259,8 +6259,8 @@
             "src/components/MobileNav.jsx:190",
             "src/components/MobileNav.jsx:216",
             "src/components/MobileNav.jsx:266",
-            "src/components/WorkspaceSidebar.jsx:316",
-            "src/components/WorkspaceSidebar.jsx:366",
+            "src/components/WorkspaceSidebar.jsx:331",
+            "src/components/WorkspaceSidebar.jsx:381",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },

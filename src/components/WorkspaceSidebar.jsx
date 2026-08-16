@@ -206,14 +206,29 @@ export default function WorkspaceSidebar() {
                 )}
                 {brandingReady && (
                   <div className="flex flex-col min-w-0 ml-[12px]">
-                    {/* line-height фіксований (16px / 20px) незалежно від
-                        isBranded — інакше рядки міняються розміром шрифту
-                        місцями, а висота блоку "стрибає" на 1-2px. */}
+                    {/* The lockup is 36px tall in both states, so nothing shifts
+                        when branding arrives — but the two lines do not split it
+                        evenly, because the big line moves from top to bottom and
+                        the ink follows it. Centring the *box* on the logo left
+                        the words 1.5px high.
+
+                        Solving inkCentre = 18 for a fixed 36px column gives
+                        `titleRow = 18 + (titleInk − orgInk) / 2`. Measured ink
+                        heights are 14/12 unbranded and 10/17 branded, so the
+                        split is 19+17 and 15+21; both land the words on the
+                        logo's axis. Whoever changes a font size here re-measures:
+                        `tests/sidebar-brand-lockup.test.mjs` recomputes it. */}
                     <Link href="/" className="hover:opacity-80 transition-opacity">
                        <h1
                          data-ui-type="branding-title"
-                         className="tracking-tight truncate transition-all h-[16px]"
-                         style={{ color: isBranded ? (theme.mutedHeader || theme.muted) : theme.text, fontSize: isBranded ? 12 : 16, lineHeight: '16px', fontWeight: isBranded ? 500 : 700 }}
+                         className="tracking-tight truncate transition-all"
+                         style={{
+                           color: isBranded ? (theme.mutedHeader || theme.muted) : theme.text,
+                           fontSize: isBranded ? 12 : 16,
+                           height: isBranded ? 15 : 19,
+                           lineHeight: isBranded ? '15px' : '19px',
+                           fontWeight: isBranded ? 500 : 700,
+                         }}
                        >QuickTeam</h1>
                     </Link>
                     <div
@@ -226,12 +241,12 @@ export default function WorkspaceSidebar() {
                         event.preventDefault();
                         setShowOrgSwitcher(true);
                       }}
-                      className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit h-[20px]"
-                      style={{ color: isBranded ? theme.text : theme.muted }}
+                      className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit"
+                      style={{ color: isBranded ? theme.text : theme.muted, height: isBranded ? 21 : 17 }}
                     >
                       <span
                         className="truncate max-w-[120px] transition-all"
-                        style={{ fontSize: isBranded ? 16 : 12, lineHeight: '20px', fontWeight: isBranded ? 700 : 500 }}
+                        style={{ fontSize: isBranded ? 16 : 12, lineHeight: isBranded ? '21px' : '17px', fontWeight: isBranded ? 700 : 500 }}
                       >{activeOrg?.name || 'Company name'}</span>
                       {otherOrgUnreadCount > 0 && (
                         <span data-ui-pill="branding-counter" className="min-w-[16px] h-[16px] px-1 rounded-full bg-ink text-white text-[9px] font-bold flex items-center justify-center">

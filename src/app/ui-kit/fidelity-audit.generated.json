@@ -251,7 +251,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:250",
+      "location": "src/components/WorkspaceSidebar.jsx:265",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -266,7 +266,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:273",
+      "location": "src/components/WorkspaceSidebar.jsx:288",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -281,7 +281,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:333",
+      "location": "src/components/WorkspaceSidebar.jsx:348",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -296,7 +296,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:411",
+      "location": "src/components/WorkspaceSidebar.jsx:426",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -363,17 +363,17 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/WorkspaceSidebar.jsx:250",
+      "location": "src/components/WorkspaceSidebar.jsx:265",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:273",
+      "location": "src/components/WorkspaceSidebar.jsx:288",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:333",
+      "location": "src/components/WorkspaceSidebar.jsx:348",
       "tag": "button",
       "context": "branding-action"
     }
